@@ -9,7 +9,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Platform, type TextStyle } from 'react-native';
 import { Avatar } from './Avatar';
-import { Row, Col, Box } from './layout';
+import { Row, Col, Box, PAGE_GUTTER } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -42,7 +42,7 @@ interface ChannelRowProps {
 export const CHANNEL_ROW_HEIGHT = 67;
 const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
-const PREVIEW_LINE_HEIGHT = 20;
+const PREVIEW_LINE_HEIGHT = 19;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
 
@@ -213,7 +213,7 @@ function ChannelRowBase({
       delayLongPress={onLongPress ? 300 : undefined}
       style={({ pressed }) => ({
         backgroundColor: pressed || active === true ? border : 'transparent',
-        paddingHorizontal: 14,
+        paddingHorizontal: PAGE_GUTTER,
       })}
       {...contextMenuProps(onLongPress)}
 >

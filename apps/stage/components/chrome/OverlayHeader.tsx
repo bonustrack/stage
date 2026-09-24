@@ -1,6 +1,6 @@
 
 import type { ReactNode } from 'react';
-import { Row, pinnedTop } from '../layout';
+import { Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { BackButton } from './ScreenHeader';
 
 export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
@@ -14,7 +14,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
         align="center"
         justify="between"
         height={44 + safeTop}
-        padding={{ x: 14, top: safeTop }}
+        padding={{ x: PAGE_GUTTER, top: safeTop }}
         style={pinnedTop(2)}
       >
         <BackButton onBack={onBack} backColor={backColor} hitSlop={10} padding={6} />

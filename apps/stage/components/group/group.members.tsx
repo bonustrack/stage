@@ -2,14 +2,14 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Row, VirtualList } from '../layout';
+import { Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { MemberRow } from './group.parts';
 import { usePalette } from '../../lib/theme';
 
 function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): React.ReactElement {
   const { text: fg, border } = usePalette();
   return (
-    <Row padding={{ x: 16, bottom: 8 }} align="center" justify="between">
+    <Row padding={{ x: PAGE_GUTTER, bottom: 8 }} align="center" justify="between">
       <Text size="xs" role="secondary">
         MEMBERS ({count})
       </Text>

@@ -4,7 +4,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
-import { Col } from '../layout';
+import { Col, PAGE_GUTTER } from '../layout';
 import type { MessengerBubbleProps } from './props';
 import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
@@ -68,7 +68,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
         {...contextMenuProps(point => { g.openMenu(point); })}
         style={[g.swipeStyle, {
           flexDirection: 'row', alignItems: 'flex-start',
-          paddingHorizontal: 12, paddingVertical: 6, gap: 10,
+          paddingHorizontal: PAGE_GUTTER, paddingVertical: 6, gap: 10,
           backgroundColor: rowBackground(replyTarget, dark),
         }]}
       >

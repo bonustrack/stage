@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Box, Row } from '../layout';
+import { Box, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
 import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
@@ -146,7 +146,7 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
   );
 
   return (
-    <Box padding={{ x: 16, bottom: 16 }}>
+    <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Icon name="tag" size={13} color={sub}/>
         <Text size="xs" role="secondary">LABELS</Text>

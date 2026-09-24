@@ -4,6 +4,7 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { cardLinksOf } from '../../lib/cardLinks';
+import { isAttachmentSummary } from './fileCard.model';
 import { Box, Row } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
@@ -56,7 +57,7 @@ function BubbleMain({ d, entry, fg, dark, selectable, highlight, markdownProps }
     ) : null;
   }
   if (d.txReq || d.txReceipt) return null;
-  if (!entry.text) return null;
+  if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
   return <BubbleBody text={entry.text} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
 }
 

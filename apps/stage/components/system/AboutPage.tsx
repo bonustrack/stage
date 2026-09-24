@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, Col } from '../layout';
+import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
@@ -32,7 +32,7 @@ function GitHubLinkRow(): React.ReactElement {
       onPress={() => { capabilities.openUrl(STAGE_GITHUB_URL); }}
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
 >
-      <Box radius="lg" surface="raised" padding={{ x: 14, y: 14 }} margin={{ x: 16, top: 16 }}
+      <Box radius="lg" surface="raised" padding={{ x: 14, y: 14 }} margin={{ x: PAGE_GUTTER, top: 16 }}
         style={{ borderWidth: 1, borderColor: border }}
 >
         <Row gap={12} align="center">
@@ -56,7 +56,7 @@ export function AboutDetails(): React.ReactElement {
   const commitHref = commitUrl(gitHash);
   return (
     <Box>
-      <Box padding={{ x: 16 }}>
+      <Box padding={{ x: PAGE_GUTTER }}>
         <Title level={2} color={head}>About</Title>
         <Text variant="secondary" weight="medium" size="xs" style={{ marginTop: 4, marginBottom: 8 }}>
           Build + runtime metadata for this install.
@@ -73,7 +73,7 @@ export function AboutDetails(): React.ReactElement {
         <SettingsValueRow label="Committed" value={committed.length > 0 ? committed : '-'} />
         <SettingsValueRow label="Build profile" value={buildProfile} />
       </SettingsList>
-      <Box padding={{ x: 16 }}>
+      <Box padding={{ x: PAGE_GUTTER }}>
         <Text role="secondary" variant="caption" weight="medium" style={{ marginTop: 14 }}>
           Commit shows "dev" only when the build could not resolve a git SHA. Tap it to open the commit on GitHub.
         </Text>

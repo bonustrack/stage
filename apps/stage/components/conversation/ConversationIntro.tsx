@@ -2,7 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../layout';
+import { Box, Row, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
 import { convTitle } from './convTitle';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -37,7 +37,7 @@ export function ConversationIntro({ c, convId }: {
     const name = convTitle({ isGroup, groupName, peerAddr });
     const desc = groupDescription.trim();
     return (
-      <Box padding={{ x: 12, y: 24 }} align="start">
+      <Box padding={{ x: PAGE_GUTTER, y: 24 }} align="start">
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
@@ -62,7 +62,7 @@ export function ConversationIntro({ c, convId }: {
   return (
     <Pressable
       onPress={() => { router.push(profileLinkOf(peerAddr)); }}
-      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
+      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: PAGE_GUTTER }}
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>

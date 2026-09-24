@@ -5,7 +5,8 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
-import { Box, Col, Row } from './layout';
+import { Box, Row, PAGE_GUTTER } from './layout';
+import { PAGE_INTRO_TYPE } from './chrome/PageIntro.model';
 
 interface RequestActionBarProps {
   convId: string;
@@ -16,7 +17,7 @@ interface RequestActionBarProps {
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement {
   const { convId, dark, onAccepted } = props;
   const router = useRouter();
-  const { bg, border, text: fg, link, danger } = usePalette();
+  const { bg, border, link } = usePalette();
   const [busy, setBusy] = useState(false);
 
   const onApprove = useCallback((): void => {
@@ -40,41 +41,20 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
 
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Col width={'100%'} padding={{ x: 16, top: 12, bottom: 12 }} align="stretch" gap={10} style={{ alignSelf: 'stretch' }}>
-        <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
-          This is a message request. Approve to reply, or reject to decline.
+      <Row width={'100%'} align="center" gap={10} padding={{ x: PAGE_GUTTER, y: 24 }}>
+        <Text style={{ flex: 1, ...PAGE_INTRO_TYPE.about }}>
+          Approve to reply, or reject to block.
         </Text>
-        <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
-          <Col flex={1} style={{ alignSelf: 'stretch' }}>
-            <Button
-              color="danger"
-              variant="solid"
-              size="lg"
-              dark={dark}
-              fullWidth
-              loading={busy}
-              disabled={busy}
-              label="Reject"
-              tintBg={danger}
-              tintFg={bg}
-              onPress={onReject}
-/>
-          </Col>
-          <Col flex={1} style={{ alignSelf: 'stretch' }}>
-            <Button
-              size="lg"
-              dark={dark}
-              fullWidth
-              loading={busy}
-              disabled={busy}
-              label="Approve"
-              tintBg={link}
-              tintFg={bg}
-              onPress={onApprove}
-/>
-          </Col>
-        </Row>
-      </Col>
+        <Button
+          color="danger" variant="solid" size="lg" pill dark={dark}
+          loading={busy} disabled={busy} label="Reject" onPress={onReject}
+        />
+        <Button
+          size="lg" pill dark={dark}
+          loading={busy} disabled={busy} label="Approve"
+          tintBg={link} tintFg={bg} onPress={onApprove}
+        />
+      </Row>
     </Box>
   );
 }

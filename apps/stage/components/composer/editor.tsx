@@ -9,8 +9,12 @@ import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
-import { Box, Col } from '../layout';
+import { Box, Col, PAGE_GUTTER } from '../layout';
+
+const COMPOSER_ICON_INSET = 7;
 import { usePalette } from '../../lib/theme';
+import { useHover } from '../hover';
+import { HoverTooltip } from '../HoverTooltip';
 
 interface EditorProps {
   dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
@@ -21,21 +25,24 @@ interface EditorProps {
   setSelection: (s: { start: number; end: number }) => void;
   focusNonce: number; blurNonce: number;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
-  quickIcon?: HeroIconName; onQuick?: () => void;
+  quickIcon?: HeroIconName; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
-function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
-  icon: HeroIconName; onPress: () => void; fg: string; chipBg: string; mr?: number;
+function ComposerBtn({ icon, label, onPress, fg, hoverFg, chipBg, mr }: {
+  icon: HeroIconName; label: string; onPress: () => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
 }): React.ReactElement {
+  const { hovered, hoverProps } = useHover();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({
+    <HoverTooltip label={label}>
+    <Pressable accessibilityLabel={label} onPress={onPress} {...hoverProps} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
-      <Icon name={icon} size={24} color={fg}/>
+      <Icon name={icon} size={24} color={hovered ? hoverFg : fg}/>
     </Pressable>
+    </HoverTooltip>
   );
 }
 
@@ -100,12 +107,13 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
     <>
       <ComposerBtn
         icon={p.attachMenuOpen ? 'x' : 'plus'}
+        label={p.attachMenuOpen ? 'Close' : 'Attach'}
         onPress={() => { p.setAttachMenuOpen(o => !o); }}
-        fg={fg} chipBg={chipBg}
+        fg={fg} hoverFg={p.head} chipBg={chipBg}
         mr={showQuick ? -12 : undefined}
       />
       {showQuick && p.quickIcon && p.onQuick
-        ? <ComposerBtn icon={p.quickIcon} onPress={p.onQuick} fg={fg} chipBg={chipBg} />
+        ? <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={fg} hoverFg={p.head} chipBg={chipBg} />
         : null}
     </>
   );
@@ -115,7 +123,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button size="md" pill dark={dark} tintBg={primary}
+    <Button size="md" uniform pill dark={dark} tintBg={primary}
       onPress={p.onSend} icon={<Icon name="arrowSmUp" size={20} color={bg} />} />
   );
 }
@@ -123,7 +131,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col padding={10} background={border} radius="none">
+    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius="none">
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}
@@ -134,6 +142,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         inputSlot={<ComposerInputSlot p={p} />}
         leftControls={<ComposerLeftControls p={p} />}
         rightAction={<ComposerRightAction p={p} primary={primary} />}
+        wrapMic={(mic) => <HoverTooltip label="Record voice message">{mic}</HoverTooltip>}
         onStart={p.onStartRec}
         onCancel={p.onCancelRec}
         onComplete={p.onStopRec}

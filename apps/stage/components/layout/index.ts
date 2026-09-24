@@ -6,3 +6,4 @@ export type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
 export {
   PANE_LEFT_PAD, STICKY_TOP, STICKY_UNDER_CHROME, pinnedTop, pinnedBottom, pinnedEdges, viewportFill,
 } from './webChrome';
+export { PAGE_GUTTER } from './gutter';

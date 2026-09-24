@@ -4,7 +4,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Box, Row } from '../layout';
+import { Box, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
 import { Spinner } from '../Spinner';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
@@ -20,7 +20,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   return (
     <>
       <Box height={140 + insetTop} surface="raised"/>
-      <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+      <Box surface="surface" padding={{ x: PAGE_GUTTER }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
@@ -80,7 +80,7 @@ export function GroupNameEditor({ name, draft, setDraft, saving, onSave, dark }:
 }): React.ReactElement {
   const { link: head } = usePalette();
   return (
-    <Box padding={{ x: 16, bottom: 16 }}>
+    <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       {draft !== null ? (
         <GroupFieldEditor
           label="Name"
@@ -110,7 +110,7 @@ export function GroupDescriptionEditor({ description, draft, setDraft, saving, o
 }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <Box padding={{ x: 16, bottom: 16 }}>
+    <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       <Text size="xs" role="secondary">DESCRIPTION</Text>
       {draft !== null ? (
         <GroupFieldEditor

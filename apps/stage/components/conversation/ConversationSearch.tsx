@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, VirtualList } from '../layout';
+import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
@@ -67,7 +67,7 @@ export function ConversationSearch({ line, query, c }: {
             </Row>
           ) : null}
           {!scanning && result.truncated && result.hits.length > 0 ? (
-            <Box padding={{ x: 16, y: 10 }}><Text size="xs" role="secondary">Showing first matches in recent history.</Text></Box>
+            <Box padding={{ x: PAGE_GUTTER, y: 10 }}><Text size="xs" role="secondary">Showing first matches in recent history.</Text></Box>
           ) : null}
         </>
       }

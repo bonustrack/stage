@@ -1,11 +1,8 @@
-export const MENU_RADIUS = 6;
+import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/dropdown-menu';
+import { TOOLTIP as KIT_TOOLTIP } from '@stage-labs/kit/react-native/tooltip';
+import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
+
 export const MENU_GAP = 8;
-export const MENU_ROW = { padX: 16, padY: 6, gap: 8, icon: 20, lineHeight: 24, listPadY: 6, separator: 1, separatorAlpha: 0.2 } as const;
-export const MENU_SHADOW = {
-  shadowColor: '#000',
-  shadowOpacity: 0.1,
-  shadowRadius: 15,
-  shadowOffset: { width: 0, height: 10 },
-  elevation: 8,
-};
-export const TOOLTIP = { padX: 14, padY: 8, radius: 4, lineHeight: 20, arrow: 8, offset: 14, layer: 60 } as const;
+export const MENU_ROW = { padX: DROPDOWN_MENU.itemPadX, padY: DROPDOWN_MENU.itemPadY } as const;
+export const MENU_SHADOW = OVERLAY_SHADOW;
+export const TOOLTIP = { arrow: KIT_TOOLTIP.arrow, offset: 14, layer: 60 } as const;

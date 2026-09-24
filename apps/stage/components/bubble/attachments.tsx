@@ -2,14 +2,17 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { capabilities } from '../../lib/capabilities';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Spinner } from '../Spinner';
 import { VoiceMessage } from '../VoiceMessage';
 import { MessengerImageAttachment } from './ImageAttachment';
-import { Box, Row } from '../layout';
+import { Box, Col, Row } from '../layout';
+import { Card } from '@stage-labs/kit/react-native/card';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { usePalette } from '../../lib/theme';
+import { fileCardModel } from './fileCard.model';
 import { resolveRemoteAttachment } from '../../modules/messaging';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
@@ -32,22 +35,27 @@ export function AttachmentView({ att, fullUrl, fg }: {
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
     return <VoiceMessage uri={fullUrl} />;
   }
-  return <AttachmentChip label={att.name ?? `${att.kind} attachment`} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
+  const card = fileCardModel(att);
+  return <AttachmentChip label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
 }
 
-function AttachmentChip({ label, fg, onPress }: { label: string; fg: string; onPress: () => void }): React.ReactElement {
+function AttachmentChip({ label, subtitle, fg, onPress }: {
+  label: string; subtitle?: string; fg: string; onPress: () => void;
+}): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  const { border } = usePalette();
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
-      }}
->
-      <Icon name="paperClip" size={16} color={fg}/>
-      <Text size="xs" color={fg} style={{ flexShrink: 1 }} numberOfLines={1}>{label}</Text>
-    </Pressable>
+    <Card dark={dark} background={border} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: 320 }}>
+      <Row align="center" gap={10}>
+        <Box width={40} height={40} radius="md" align="center" justify="center" surface="surface">
+          <Icon name="document" size={22} color={fg}/>
+        </Box>
+        <Col flex={1} minWidth={0} gap={2}>
+          <Text weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
+          {subtitle ? <Text size="sm" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
+        </Col>
+      </Row>
+    </Card>
   );
 }
 

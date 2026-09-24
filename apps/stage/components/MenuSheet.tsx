@@ -8,7 +8,7 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Col } from './layout';
 import { Avatar } from './Avatar';
 import { AnchoredMenu, useAnchoredMenus } from './AnchoredMenu';
-import { MenuHover, MenuList, MenuRow, menuRowPadding } from './MenuRows';
+import { MenuList, MenuRow, menuRowPadding } from './MenuRows';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
@@ -22,20 +22,18 @@ function AccountSwitchRow({ account, active, onSwitch, dark, compact }: {
 }): React.ReactElement {
   const { link: head, text, border } = usePalette();
   return (
-    <MenuHover compact={compact}>
-      <ListViewItem dark={dark} onPress={() => { onSwitch(account.id); }} gap={compact ? 10 : 12} padding={menuRowPadding(compact)}>
-        <Avatar address={account.address} size={compact ? 26 : 30} style={{ backgroundColor: border }}/>
-        <Col minWidth={0} flex={1}>
-          <Text weight="semibold" size={compact ? 'sm' : 'md'} numberOfLines={1} color={head}>
-            {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
-          </Text>
-          <Text size="xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
-            {shortAddress(account.address)}
-          </Text>
-        </Col>
-        {active ? <Icon name="check" size={compact ? 16 : 20} color={head} /> : null}
-      </ListViewItem>
-    </MenuHover>
+    <ListViewItem dark={dark} onPress={() => { onSwitch(account.id); }} gap={compact ? 10 : 12} padding={menuRowPadding(compact)}>
+      <Avatar address={account.address} size={compact ? 26 : 30} style={{ backgroundColor: border }}/>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size={compact ? 'sm' : 'md'} numberOfLines={1} color={head}>
+          {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
+        </Text>
+        <Text size="xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
+          {shortAddress(account.address)}
+        </Text>
+      </Col>
+      {active ? <Icon name="check" size={compact ? 16 : 20} color={head} /> : null}
+    </ListViewItem>
   );
 }
 

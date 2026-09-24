@@ -1,6 +1,6 @@
 
 
-import { Box } from '../layout';
+import { Box, PAGE_GUTTER } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
@@ -17,7 +17,7 @@ export function DisplaySettings(): React.ReactElement {
 
   return (
     <SettingsPage title="Display" keyboardShouldPersistTaps="handled">
-      <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
+      <Text size="xs" role="secondary" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 20, paddingBottom: 8 }}>
         THEME
       </Text>
       <SettingsList>
@@ -42,7 +42,7 @@ export function DisplaySettings(): React.ReactElement {
       </SettingsList>
 
       {custom ? (
-        <Box padding={{ x: 16, top: 24 }}>
+        <Box padding={{ x: PAGE_GUTTER, top: 24 }}>
           <Text size="xs" role="secondary" style={{ paddingBottom: 4 }}>
             CUSTOM COLORS
           </Text>

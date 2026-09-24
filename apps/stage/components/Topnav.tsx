@@ -1,5 +1,5 @@
 
-import { Box, Row, STICKY_UNDER_CHROME } from './layout';
+import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
 import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../lib/webLayout';
@@ -20,7 +20,7 @@ export function Topnav({ left, right, inline }: {
   const bar = (
     <Row
       height={TOPNAV_HEIGHT}
-      padding={{ x: 16, left: railOverlaps ? WEB_TAB_RAIL_WIDTH + 16 : 16 }}
+      padding={{ x: PAGE_GUTTER, left: railOverlaps ? WEB_TAB_RAIL_WIDTH + PAGE_GUTTER : PAGE_GUTTER }}
       align="center"
       justify="between"
       surface="toolbar"

@@ -1,4 +1,4 @@
-import { Row } from '../layout';
+import { Row, PAGE_GUTTER } from '../layout';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 
@@ -12,7 +12,7 @@ export function WalletFooter({
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <Row surface="surface" padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12}
+    <Row surface="surface" padding={{ x: PAGE_GUTTER, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12}
       style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Button color="secondary" variant="solid" size="lg" pill dark={dark} style={{ flex: 1 }}
         onPress={onCancel} label={cancelLabel}/>

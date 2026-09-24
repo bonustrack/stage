@@ -4,7 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Col, ScreenScroll } from '../layout';
+import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { SettingsHeader } from '../chrome/SettingsHeader';
 import { StackHeader } from '../chrome/StackHeader';
 
@@ -31,7 +31,7 @@ export function SettingsPage({ title, root = false, keyboardShouldPersistTaps, c
 export function SettingsSectionLabel({ top = 24, children }: { top?: number; children: string }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <Text size="xs" color={fg} style={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: 8 }}>
+    <Text size="xs" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: top, paddingBottom: 8 }}>
       {children}
     </Text>
   );
@@ -41,7 +41,7 @@ export function SettingsCard({ children }: { children: ReactNode }): React.React
   const dark = useEffectiveColorScheme() === 'dark';
   const { border } = usePalette();
   return (
-    <Box margin={{ x: 16 }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
+    <Box margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
       <Card dark={dark} background={border} padding={0}>
         {children}
       </Card>

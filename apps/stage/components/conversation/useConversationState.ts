@@ -48,6 +48,7 @@ type ConvConsent = Exclude<ReturnType<typeof useConvConsentState>, null>;
 
 interface ConsentGate {
   consent: ConvConsent;
+  consentKnown: boolean;
   markAllowed: () => void;
 }
 
@@ -56,7 +57,11 @@ function useConsentGate(convId: string | undefined): ConsentGate {
   const [allowedHere, setAllowedHere] = useState(false);
   useEffect(() => { setAllowedHere(false); }, [convId, streamed]);
   const markAllowed = useCallback(() => { setAllowedHere(true); }, []);
-  return { consent: allowedHere ? 'allowed' : streamed ?? undefined, markAllowed };
+  return {
+    consent: allowedHere ? 'allowed' : streamed ?? undefined,
+    consentKnown: allowedHere || streamed !== undefined,
+    markAllowed,
+  };
 }
 
 function cachedLabels(cid?: string): string[] {
@@ -187,7 +192,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
-  const { consent, markAllowed: markConsentAllowed } = useConsentGate(convId);
+  const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
 
@@ -240,6 +245,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    onOptimistic, onSent, markAtBottom, consent, consentAllowed, markConsentAllowed,
+    onOptimistic, onSent, markAtBottom, consent, consentKnown, consentAllowed, markConsentAllowed,
   };
 }

@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { Col } from '../../layout';
+import { Col, PAGE_GUTTER } from '../../layout';
 import { TokenRow } from './parts';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
@@ -32,7 +32,7 @@ export function TokensList({
     [rows, nativeChainIds, router],
   );
   return (
-    <Col margin={{ x: 16 }}>
+    <Col margin={{ x: PAGE_GUTTER }}>
       {sortedRows
         .map(({ r, id, onPress }) => (
           <TokenRow

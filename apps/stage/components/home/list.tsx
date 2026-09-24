@@ -17,6 +17,7 @@ import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
+import { useHover } from '../hover';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -44,10 +45,12 @@ function knownPeerAddresses(rows: readonly Row[] | null): string[] {
 function HomeTopnavRight({ head, router, onOpenSearch }: {
   head: string; router: ChannelsListProps['router']; onOpenSearch: () => void;
 }): React.ReactElement {
+  const { link } = usePalette();
+  const search = useHover();
   return (
     <>
-      <Pressable onPress={onOpenSearch} hitSlop={8}>
-        <Icon name="search" size={24} color={head}/>
+      <Pressable onPress={onOpenSearch} hitSlop={8} {...search.hoverProps}>
+        <Icon name="search" size={24} color={search.hovered ? link : head}/>
       </Pressable>
       <HomeOverflowMenu
         color={head}
@@ -82,8 +85,8 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   const { router, query, setQuery, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={head} router={router} onOpenSearch={onOpenSearch} />,
-    [head, router, onOpenSearch],
+    () => <HomeTopnavRight head={sub} router={router} onOpenSearch={onOpenSearch} />,
+    [sub, router, onOpenSearch],
   );
   const override = useMemo(
     () => (searchOpen ? (
@@ -107,7 +110,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
-  const contentStyle = { paddingTop: 12, paddingBottom: 24 };
+  const contentStyle = { paddingBottom: 24 };
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
 
   return (

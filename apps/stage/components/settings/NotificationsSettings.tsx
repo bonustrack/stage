@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { Linking, Platform } from 'react-native';
-import { Box } from '../layout';
+import { Box, PAGE_GUTTER } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
@@ -65,10 +65,10 @@ export function NotificationsSettings(): React.ReactElement {
           />
         </SettingsList>
       </Box>
-      <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+      <Caption color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 12 }}>
         {permLabel}
       </Caption>
-      <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+      <Caption color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 8 }}>
         {describePushStatus(status)}
       </Caption>
       {perm === 'denied' && Platform.OS !== 'web' ? (

@@ -4,7 +4,7 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Input } from '@stage-labs/kit/react-native/input';
-import { Box, Row, STICKY_UNDER_CHROME } from './layout';
+import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -29,7 +29,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
     <Frame>
     <Row
       height={TOPNAV_HEIGHT + topInset}
-      padding={{ x: 16, top: topInset }}
+      padding={{ x: PAGE_GUTTER, top: topInset }}
       align="center" gap={10} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onClose} hitSlop={8}>

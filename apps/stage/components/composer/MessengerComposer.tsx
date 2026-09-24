@@ -1,9 +1,10 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
-import { Col } from '../layout';
+import { Col, PAGE_GUTTER } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
+import { usePastedImages } from './pastedImages';
 import {
   useComposerDrafts, useComposerFocus, useCaretToEnd,
   computeMentions, applyMention, useLastAttachment,
@@ -56,7 +57,7 @@ function ComposerHeader(p: {
         <PendingRow fg={p.fg} sub={p.sub} chipBg={p.chipBg} pending={p.pending} onRemove={p.onRemovePending} />
       ) : null}
       {p.uploading || p.err ? (
-        <Text size="2xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
+        <Text size="2xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
           {p.err ?? 'Uploading…'}
         </Text>
       ) : null}
@@ -72,6 +73,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const s = useComposerState();
   const actions = useComposerActions({ ...props, ...s });
+  usePastedImages((files) => { void actions.onPickedImages(files); });
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
@@ -115,6 +117,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
         attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
         quickIcon={quick?.[0]}
+        quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
         onStartRec={() => void actions.startRec()}

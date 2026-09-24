@@ -9,6 +9,7 @@ import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
+import { HoverTint } from '../hover';
 
 export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['index', 'chatBubble'],
@@ -23,8 +24,10 @@ function TabIcon({ name, icon, active, unreadBadge }: {
 }): React.ReactElement {
   const pal = usePalette();
   return (
+    <HoverTint>
+      {(hovered) => (
     <Box>
-      <Icon name={icon} size={24} color={active ? pal.link : pal.text} focused={active}/>
+      <Icon name={icon} size={24} color={active || hovered ? pal.link : pal.text} focused={active}/>
       {name === 'index' && unreadBadge !== undefined ? (
         <Box
           minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
@@ -35,6 +38,8 @@ function TabIcon({ name, icon, active, unreadBadge }: {
         </Box>
       ) : null}
     </Box>
+      )}
+    </HoverTint>
   );
 }
 

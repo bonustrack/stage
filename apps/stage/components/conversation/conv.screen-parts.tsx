@@ -1,7 +1,7 @@
 
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, pinnedTop } from '../layout';
+import { Box, pinnedTop, PAGE_GUTTER } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { conversationSharePath, profileLinkOf } from '../../lib/links';
 import { shareUrlFor } from '@stage-labs/client/routing/handles';
+import { useHover } from '../hover';
 
 type Conv = ReturnType<typeof useConversationState>;
 
@@ -32,6 +33,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
+  const more = useHover();
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
       <ConvTopnavIdentity
@@ -45,9 +47,10 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
       <Pressable
         onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
         hitSlop={8}
-        style={{ paddingHorizontal: 14, justifyContent: 'center' }}
+        {...more.hoverProps}
+        style={{ paddingLeft: 14, paddingRight: PAGE_GUTTER, justifyContent: 'center' }}
 >
-        <Icon name="dotsVertical" size={24} color={fg}/>
+        <Icon name="dotsVertical" size={24} color={more.hovered ? head : fg}/>
       </Pressable>
     </ConvTopnavShell>
   );
@@ -59,11 +62,11 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
   const { border: rowBg } = usePalette();
   const {
     showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
-    replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, markConsentAllowed,
+    replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, consentKnown, markConsentAllowed,
   } = c;
   const requestPending = consent === 'unknown';
   const waiting = useGroupWaiting(convId, c.isGroup);
-  const composerShown = !requestPending && !waiting;
+  const composerShown = consentKnown && !requestPending && !waiting;
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>

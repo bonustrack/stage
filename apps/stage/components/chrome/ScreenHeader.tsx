@@ -6,7 +6,9 @@ import { Text, type TextSizeToken, type TextWeight } from '@stage-labs/kit/react
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row, STICKY_TOP } from '../layout';
+import { Row, STICKY_TOP, PAGE_GUTTER } from '../layout';
+import { usePalette } from '../../lib/theme';
+import { HoverTint } from '../hover';
 
 type ScreenHeaderTitleStyle =
   | {
@@ -67,16 +69,19 @@ export function BackButton({ onBack, backColor, hitSlop = 8, padding = 4 }: {
   padding?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
+  const { link } = usePalette();
   return (
     <GesturePressable onPress={onBack} hitSlop={hitSlop}>
-      <Box padding={padding}>
-        <Icon
-          name="arrowNarrowLeft"
-          size={24}
-          color={resolveColorToken(backColor, scheme)}
-          dark={scheme === 'dark'}
-        />
-      </Box>
+      <HoverTint style={{ padding }}>
+        {(hovered) => (
+          <Icon
+            name="arrowNarrowLeft"
+            size={24}
+            color={hovered ? link : resolveColorToken(backColor, scheme)}
+            dark={scheme === 'dark'}
+          />
+        )}
+      </HoverTint>
     </GesturePressable>
   );
 }
@@ -104,7 +109,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
         border={border}
         style={STICKY_TOP}
         padding={{
-          x: 12,
+          x: PAGE_GUTTER,
           top: (props.padTop ?? 8) + (props.safeTop ?? 0),
           bottom: props.padBottom ?? 10,
         }}

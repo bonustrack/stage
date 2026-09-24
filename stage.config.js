@@ -23,7 +23,7 @@ export default defineConfig({
           'babel.config.js',
           'lib/**/*.web.{ts,tsx}',
           'lib/xmtp.stripGuard.ts',
-          'components/**/*.web.tsx',
+          'components/**/*.web.{ts,tsx}',
           'modules/**/*.{ts,tsx}',
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',

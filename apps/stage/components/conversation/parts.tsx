@@ -1,12 +1,8 @@
-
-import { useEffect, useState } from 'react';
-
 import { Dimensions, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, pinnedTop } from '../layout';
+import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Avatar } from '../Avatar';
@@ -19,6 +15,7 @@ import { AnchoredOverlay, MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus
 import { MenuList, MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import type { MenuAnchor } from '../bubble/props';
+import { useHover } from '../hover';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
@@ -38,14 +35,17 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
 export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
   fg: string; border: string; safeTop: number; onBack: () => void; children: React.ReactNode;
 }): React.ReactElement {
+  const { link } = usePalette();
+  const back = useHover();
   return (
     <Box style={pinnedTop(2)}>
     <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable
         onPress={onBack}
-        style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
+        {...back.hoverProps}
+        style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
 >
-        <Icon name="arrowNarrowLeft" size={24} color={fg}/>
+        <Icon name="arrowNarrowLeft" size={24} color={back.hovered ? link : fg}/>
       </Pressable>
       {children}
     </Row>
@@ -70,41 +70,18 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
   );
 }
 
-const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];
-
-function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, border, onReact }: {
-  expanded: boolean; setExpanded: (v: boolean) => void; dark: boolean; sub: string;
+function ReactionStrip({ stripBg, border, onReact }: {
   stripBg: string; border: string; onReact: (e: string) => void;
 }): React.ReactElement {
   const edge = { width: 1, color: border };
   return (
     <Row background={stripBg} radius="full" maxWidth={'100%'} padding={{ x: 10, y: 6 }} align="center" gap={4}
       border={{ top: edge, right: edge, bottom: edge, left: edge }} style={MENU_SHADOW}>
-      {expanded ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
-          {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
-            <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4}><Text size="5xl">{e}</Text></Pressable>
-          ))}
-        </ScrollView>
-      ) : (
-        <>
-          {REACT_PRESETS.map(e => (
-            <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
-              <Text size="5xl">{e}</Text>
-            </Pressable>
-          ))}
-          <Pressable
-            onPress={() => { setExpanded(true); }} hitSlop={6}
-            style={{
-              width: 30, height: 30, borderRadius: 999, marginLeft: 2,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
-            }}
-          >
-            <Icon name="chevronDown" size={16} color={sub}/>
-          </Pressable>
-        </>
-      )}
+      {REACT_PRESETS.map(e => (
+        <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
+          <Text size="5xl">{e}</Text>
+        </Pressable>
+      ))}
     </Row>
   );
 }
@@ -166,9 +143,7 @@ export function BubbleActionMenu({
   onSelect: () => void;
   onShareLink: () => void;
 }): React.ReactElement {
-  const [expanded, setExpanded] = useState(false);
   const anchored = useAnchoredMenus();
-  useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
@@ -179,7 +154,7 @@ export function BubbleActionMenu({
     <ActionDropdown hasText={!!target?.text} dark={dark} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
   );
   const strip = (
-    <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.inputBg} border={pal.border} onReact={reactAndClose} />
+    <ReactionStrip stripBg={pal.inputBg} border={pal.border} onReact={reactAndClose} />
   );
 
   if (anchored && anchor.point) {

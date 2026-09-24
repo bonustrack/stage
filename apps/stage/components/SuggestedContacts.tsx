@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Box } from './layout';
+import { Box, PAGE_GUTTER } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { getPeerDescription, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
@@ -15,7 +15,7 @@ export function SuggestedContacts({ known }: { known: readonly string[] }): Reac
   if (addresses.length === 0) return null;
   return (
     <Box>
-      <Box padding={{ x: 16, top: 16, bottom: 6 }}>
+      <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
         <Caption value={SUGGESTED_HEADING} color="secondary" weight="semibold" />
       </Box>
       {addresses.map((address) => (

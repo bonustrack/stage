@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Col } from '../layout';
+import { Box, Col, PAGE_GUTTER } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 import { capabilities } from '../../lib/capabilities';
@@ -99,7 +99,7 @@ function EditPane({ address, handle, view, picture, pickNonce, onPick, onRemove,
       </ProfileHeader>
       <GroupImagePicker openNonce={pickNonce} onPick={onFile} />
       {view.explanation === '' ? null : (
-        <Box padding={{ x: 16, bottom: 12 }}>
+        <Box padding={{ x: PAGE_GUTTER, bottom: 12 }}>
           <Text value={view.explanation} size="md" color="secondary" />
         </Box>
       )}

@@ -16,7 +16,7 @@ import { WalletActionButton } from '../../widgets';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { Box, Col, Row, ScreenScroll } from '../../layout';
+import { Box, Col, Row, ScreenScroll, PAGE_GUTTER } from '../../layout';
 import { fmtUsd, splitUsd } from './parts';
 import { TokensList } from './tokens';
 import { listedNativeChains } from '../TokenSelector.model';
@@ -55,14 +55,14 @@ function WalletTokens({ rows, err, nativeChainIds, c }: {
 }): React.ReactElement {
   if (err) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
         <Text size="md" color={DANGER}>Couldn’t load tokens</Text>
       </Col>
     );
   }
   if (rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center"><Spinner size={28} color={c.head}/></Col>
+      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Spinner size={28} color={c.head}/></Col>
     );
   }
   return (
@@ -92,7 +92,7 @@ function WalletBalanceCard({ err, totalUsd, border, onAction }: {
   const parts = totalUsd === null ? null : splitUsd(fmtUsd(totalUsd));
   const hero = walletHeroDisplay({ parts, error: err });
   return (
-    <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
+    <Col padding={{ top: 4, bottom: 16 }} margin={{ x: PAGE_GUTTER }} align="start">
       <Col gap={12}>
         <Row align="end">
           <HeroTitle value={hero.total} />
@@ -153,7 +153,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
+      <Row margin={{ x: PAGE_GUTTER, top: 8 }} justify="end" align="center" gap={18}>
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       <WalletBalanceCard err={!!err} totalUsd={totalUsd} border={border} onAction={onWalletAction} />

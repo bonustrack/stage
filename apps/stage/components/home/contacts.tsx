@@ -7,7 +7,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Box, Row, Col } from '../layout';
+import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
@@ -123,7 +123,7 @@ export function HomeContactResults(
 
   return (
     <Box>
-      <Box padding={{ x: 16, top: 16, bottom: 6 }}>
+      <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
         <Caption value="PEOPLE" color="secondary" weight="semibold" />
       </Box>
       <ListView dark={dark}>

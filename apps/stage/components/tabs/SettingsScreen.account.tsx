@@ -6,7 +6,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col } from '../layout';
+import { Box, Col, PAGE_GUTTER } from '../layout';
 import { getPrivateKey, canExportPrivateKey, getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { AccountManager, deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
@@ -148,7 +148,7 @@ export function AccountSecuritySection(): React.ReactElement | null {
   return (
     <>
       <SettingsSectionLabel>ACCOUNT</SettingsSectionLabel>
-      <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
+      <Box margin={{ x: PAGE_GUTTER }} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={border} padding={0}>
           {revealed && canExportPrivateKey(rec) ? (
             <ListView dark={dark}>

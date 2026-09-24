@@ -2,14 +2,13 @@ import type { ReactNode } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent } from 'react-native';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
+import { DropdownMenu } from '@stage-labs/kit/react-native/dropdown-menu';
 import { AppModal } from './AppModal';
 import { Box } from './layout';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
 import { documentScroll, isCoarsePointer } from '../lib/webLayout';
-import { usePalette } from '../lib/theme';
-import { MENU_GAP, MENU_RADIUS, MENU_SHADOW } from './menuStyle';
+import { MENU_GAP, MENU_SHADOW } from './menuStyle';
 
 const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
@@ -19,14 +18,7 @@ export { MENU_SHADOW };
 export function MenuSurface({ maxHeight, children }: {
   maxHeight?: number; children: ReactNode;
 }): React.ReactElement {
-  const { border } = usePalette();
-  return (
-    <Box background={border} radius={MENU_RADIUS} style={{ overflow: 'hidden', ...MENU_SHADOW }}>
-      {maxHeight === undefined ? children : (
-        <Scroll style={{ maxHeight }} showsVerticalScrollIndicator={false}>{children}</Scroll>
-      )}
-    </Box>
-  );
+  return <DropdownMenu maxHeight={maxHeight}>{children}</DropdownMenu>;
 }
 
 export function useAnchoredMenus(): boolean {

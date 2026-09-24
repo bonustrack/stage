@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Box } from '../layout';
+import { Box, PAGE_GUTTER } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { historySyncProblem, runHistorySync, useHistorySyncPhase } from '../../lib/historySync';
@@ -27,7 +27,7 @@ export function HistorySyncSection(): React.ReactElement {
   const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
     <>
-      <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
+      <Caption color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28, paddingBottom: 8 }}>
         HISTORY
       </Caption>
       <Box>

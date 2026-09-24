@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Box, Col, Row } from '../layout';
+import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,
   type XmtpInstallation,
@@ -27,7 +27,7 @@ function Session({ inst, busy, onRevoke }: {
   return (
     <Box
       radius={BLOCK_RADIUS_DEFAULT}
-      margin={{ x: 16, top: 8 }}
+      margin={{ x: PAGE_GUTTER, top: 8 }}
       padding={12}
       background={border}
       style={{ borderWidth: 1, borderColor: border }}
@@ -89,20 +89,20 @@ export function MessengerSessions(): React.ReactElement {
 
   return (
     <Col>
-      <Text size="xs" color={fg} style={{ paddingHorizontal: 16, paddingTop: 28 }}>
+      <Text size="xs" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28 }}>
         ACTIVE SESSIONS
       </Text>
       {list === null ? (
-        <Row padding={{ x: 16, top: 12 }} gap={8} align="center">
+        <Row padding={{ x: PAGE_GUTTER, top: 12 }} gap={8} align="center">
           <Spinner size={20} color={fg} />
           <Text size="sm" color={fg}>Loading sessions…</Text>
         </Row>
       ) : error ? (
-        <Text size="sm" color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <Text size="sm" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 12 }}>
           Messaging isn{'’'}t ready yet. Open a chat first, then come back.
         </Text>
       ) : list.length === 0 ? (
-        <Text size="sm" color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <Text size="sm" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 12 }}>
           No active sessions.
         </Text>
       ) : (

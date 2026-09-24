@@ -3,7 +3,7 @@ import { Component } from 'react';
 import type { ReactNode } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box } from '../layout';
+import { Box, PAGE_GUTTER } from '../layout';
 import { bubbleFallbackText, bubbleFallbackShape } from './boundary.model';
 
 interface Props {
@@ -46,7 +46,7 @@ export class BubbleErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (this.state.failed) {
       return (
-        <Box padding={{ x: 16, y: 6 }}>
+        <Box padding={{ x: PAGE_GUTTER, y: 6 }}>
           <Text size="xl" selectable color={this.props.sub} style={{ opacity: 0.85, lineHeight: 21 }}>
             {this.fallbackText()}
           </Text>

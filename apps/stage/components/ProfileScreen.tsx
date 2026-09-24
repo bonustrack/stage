@@ -8,7 +8,7 @@ import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme'
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from './Avatar';
-import { Box, Col, ScreenScroll } from './layout';
+import { Box, Col, ScreenScroll, PAGE_GUTTER } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { profileDisplayName } from './ProfileScreen.model';
@@ -30,7 +30,7 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
   return (
     <>
       <Box height={140 + insetTop} background={c.border}/>
-      <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+      <Box surface="surface" padding={{ x: PAGE_GUTTER, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Avatar
           address={addr || null}
           size={88}
