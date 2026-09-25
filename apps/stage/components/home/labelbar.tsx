@@ -4,9 +4,9 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { channelsLabelChips, selectChannelsFilter } from './model';
 import { Box, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
+import { LabelText } from '../LabelText';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
@@ -70,7 +70,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
                     align="center"
                     background={selected ? link : rowBg}
                   >
-                    <Text value={chip.label} size="md" color={selected ? bg : fg} truncate />
+                    <LabelText label={chip.label} size="md" color={selected ? bg : fg} truncate />
                   </Row>
                 </GesturePressable>
               );

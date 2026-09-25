@@ -6,6 +6,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
+import { LabelText } from '../LabelText';
 import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
@@ -35,7 +36,7 @@ function SuggestionChip({ label, busy, onAdd }: {
       })}
 >
       <Icon name="plus" size={12} color={fg}/>
-      <Text size="xs" color={fg}>{label}</Text>
+      <LabelText label={label} size="xs" color={fg} />
     </Pressable>
   );
 }
@@ -56,7 +57,7 @@ function LabelChips({ labels, onRemove }: {
           background={border}
           padding={{ y: 6, left: 12, right: 10 }}
         >
-          <Text value={label} size="xs" color={fg} />
+          <LabelText label={label} size="xs" color={fg} />
           <Pressable
             hitSlop={8}
             onPress={() => { onRemove(label); }}
