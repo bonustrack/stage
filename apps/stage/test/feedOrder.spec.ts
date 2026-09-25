@@ -46,4 +46,13 @@ describe('feed merge order', () => {
     const twin = entry('twin', fixPosted.ts);
     expect(ids(mergeFeedEntries([fixPosted, inReview], [twin]).entries)).toEqual(['twin', 'fix-posted', 'in-review']);
   });
+
+  test('keeps a reaction stamped before its message above it, so the feed still ends on its oldest message', () => {
+    const early = { ...entry('early', '2026-09-25T13:58:00.000Z'), payload: { reactTo: 'in-progress', emoji: '+1' } };
+    const firstPage = mergeFeedEntries([fixPosted], [inReview, early, inProgress]);
+    expect(ids(firstPage.entries)).toEqual(['fix-posted', 'in-review', 'early', 'in-progress']);
+    const olderPage = mergeFeedEntries(firstPage.entries, [context, addedYou]);
+    expect(ids(olderPage.entries)).toEqual(['fix-posted', 'in-review', 'early', 'in-progress', 'context', 'added-you']);
+    expect(ids(mergeFeedEntries([inReview, early], [inProgress]).entries)).toEqual(['in-review', 'early', 'in-progress']);
+  });
 });
