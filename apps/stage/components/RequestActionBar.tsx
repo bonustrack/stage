@@ -7,6 +7,9 @@ import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/mes
 import { usePalette } from '../lib/theme';
 import { Box, Row, PAGE_GUTTER } from './layout';
 import { PAGE_INTRO_TYPE } from './chrome/PageIntro.model';
+import { useWebTabRail } from '../lib/webLayout';
+
+const FILL = { flex: 1 } as const;
 
 interface RequestActionBarProps {
   convId: string;
@@ -19,6 +22,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   const router = useRouter();
   const { bg, border, link } = usePalette();
   const [busy, setBusy] = useState(false);
+  const wide = useWebTabRail();
+  const buttonStyle = wide ? undefined : FILL;
 
   const onApprove = useCallback((): void => {
     if (busy) return;
@@ -42,15 +47,17 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Row width={'100%'} align="center" gap={10} padding={{ x: PAGE_GUTTER, y: 24 }}>
-        <Text style={{ flex: 1, ...PAGE_INTRO_TYPE.about }}>
-          Approve to reply, or reject to block.
-        </Text>
+        {wide ? (
+          <Text style={{ flex: 1, ...PAGE_INTRO_TYPE.about }}>
+            Approve to reply, or reject to block.
+          </Text>
+        ) : null}
         <Button
-          color="danger" variant="solid" size="lg" pill dark={dark}
+          color="danger" variant="solid" size="lg" pill dark={dark} style={buttonStyle}
           loading={busy} disabled={busy} label="Reject" onPress={onReject}
         />
         <Button
-          size="lg" pill dark={dark}
+          size="lg" pill dark={dark} style={buttonStyle}
           loading={busy} disabled={busy} label="Approve"
           tintBg={link} tintFg={bg} onPress={onApprove}
         />
