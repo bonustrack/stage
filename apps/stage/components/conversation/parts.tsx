@@ -1,4 +1,4 @@
-import { Dimensions, useWindowDimensions } from 'react-native';
+import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -11,6 +11,7 @@ import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
+import { bubbleMenuItems } from './bubbleMenu.model';
 import { AnchoredOverlay, MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
 import { MenuList, MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
@@ -86,19 +87,13 @@ function ReactionStrip({ stripBg, onReact }: {
 
 interface BubbleActions { reply: () => void; copy: () => void; select: () => void; shareLink: () => void }
 
-function bubbleMenuItems(hasText: boolean): { id: keyof BubbleActions; icon: string; label: string }[] {
-  return [
-    { id: 'reply', icon: 'reply', label: 'Reply' },
-    ...(hasText ? [{ id: 'copy' as const, icon: 'copy', label: 'Copy' }, { id: 'select' as const, icon: 'document', label: 'Select' }] : []),
-    { id: 'shareLink', icon: 'send', label: 'Share link' },
-  ];
-}
+const SELECT_TEXT = Platform.OS !== 'web';
 
 function ActionDropdown({ hasText, dark, on }: { hasText: boolean; dark: boolean; on: BubbleActions }): React.ReactElement {
   return (
     <MenuSurface>
       <MenuList dark={dark}>
-        {bubbleMenuItems(hasText).map(item => (
+        {bubbleMenuItems(hasText, { selectText: SELECT_TEXT }).map(item => (
           <MenuRow key={item.id} icon={item.icon} label={item.label} dark={dark} onPress={on[item.id]} />
         ))}
       </MenuList>
