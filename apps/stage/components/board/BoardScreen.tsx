@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
@@ -22,8 +24,9 @@ import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import {
-  BOARD_GAP, UNLABELED_TITLE, boardColumnWidth, boardColumns, type BoardColumn,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, type BoardColumn,
 } from './BoardScreen.model';
 
 const COLUMN_PADDING = 10;
@@ -60,48 +63,58 @@ function ColumnTitle({ label }: { label: string | null }): React.ReactElement {
   return <LabelText label={label} size="lg" weight="semibold" truncate/>;
 }
 
-function BoardColumnView({ column, width, pinned }: {
-  column: BoardColumn<ChannelRowData>; width: number | null; pinned: readonly string[];
+function BoardColumnView({ column, maxHeight, pinned }: {
+  column: BoardColumn<ChannelRowData>;
+  maxHeight?: number;
+  pinned: readonly string[];
 }): React.ReactElement {
   const { border } = usePalette();
   return (
     <Col
-      surface="toolbar"
+      background={border}
       radius={BLOCK_RADIUS_DEFAULT}
       padding={COLUMN_PADDING}
       gap={CARD_GAP}
-      width={width ?? undefined}
-      flex={width === null ? 1 : undefined}
-      style={{ borderWidth: 1, borderColor: border }}
+      width={BOARD_COLUMN_WIDTH}
+      maxHeight={maxHeight}
     >
       <Row align="center" gap={8} padding={{ x: 4, y: 2 }}>
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
       </Row>
-      {column.rows.map(item => (
-        <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)}/>
-      ))}
+      <Scroll gap={CARD_GAP} nestedScrollEnabled style={{ flexGrow: 0, flexShrink: 1 }}>
+        {column.rows.map(item => (
+          <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)}/>
+        ))}
+      </Scroll>
     </Col>
   );
 }
 
-function BoardColumns({ columns, pinned }: {
+function BoardLanes({ columns, pinned }: {
   columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[];
 }): React.ReactElement {
-  const [available, setAvailable] = useState(0);
-  const width = boardColumnWidth(available, columns.length);
+  const { bottom } = useSafeAreaInsets();
+  const [frame, setFrame] = useState(0);
+  const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
+  const laneHeight = frame - padding.paddingTop - padding.paddingBottom;
   return (
-    <Row
-      wrap
-      align="start"
+    <Scroll
+      horizontal
       gap={BOARD_GAP}
-      padding={{ x: PAGE_GUTTER, y: LIST_TOP_GAP }}
-      onLayout={(e) => { setAvailable(e.nativeEvent.layout.width - 2 * PAGE_GUTTER); }}
+      style={{ flex: 1 }}
+      contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
+      onLayout={(e) => { setFrame(e.nativeEvent.layout.height); }}
     >
       {columns.map(column => (
-        <BoardColumnView key={column.key} column={column} width={width} pinned={pinned}/>
+        <BoardColumnView
+          key={column.key}
+          column={column}
+          maxHeight={laneHeight > 0 ? laneHeight : undefined}
+          pinned={pinned}
+        />
       ))}
-    </Row>
+    </Scroll>
   );
 }
 
@@ -122,12 +135,14 @@ function BoardBody(): React.ReactElement {
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   if (columns.length === 0) return <EmptyState title="No channels yet"/>;
-  return <BoardColumns columns={columns} pinned={pinned}/>;
+  return <BoardLanes columns={columns} pinned={pinned}/>;
 }
 
 export function BoardScreen(): React.ReactElement {
+  const { height } = useWindowDimensions();
+  const web = Platform.OS === 'web';
   return (
-    <Col flex={1} surface="surface">
+    <Col flex={web ? undefined : 1} height={web ? height : undefined} surface="surface">
       <StackHeader title="Board" backTo="/"/>
       <BoardBody/>
     </Col>
