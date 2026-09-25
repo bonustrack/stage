@@ -31,6 +31,12 @@ import {
 
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
+const TITLE_SIZE = '2xl';
+
+function columnMaxHeight(laneHeight: number): number | string | undefined {
+  if (Platform.OS === 'web') return '100%';
+  return laneHeight > 0 ? laneHeight : undefined;
+}
 
 function BoardCard({ item, pinned }: { item: ChannelRowData; pinned: boolean }): React.ReactElement {
   const router = useRouter();
@@ -38,7 +44,7 @@ function BoardCard({ item, pinned }: { item: ChannelRowData; pinned: boolean }):
   const isGroup = !item.peerAddress;
   const draftText = getDraft(item.convId);
   return (
-    <Box surface="surface" radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Box background={border} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
       <ChannelRow
         title={rowTitle(item)}
         avatarUri={item.avatarUri}
@@ -59,30 +65,36 @@ function BoardCard({ item, pinned }: { item: ChannelRowData; pinned: boolean }):
 }
 
 function ColumnTitle({ label }: { label: string | null }): React.ReactElement {
-  if (label === null) return <Text value={UNLABELED_TITLE} size="lg" weight="semibold" truncate/>;
-  return <LabelText label={label} size="lg" weight="semibold" truncate/>;
+  if (label === null) return <Text value={UNLABELED_TITLE} size={TITLE_SIZE} weight="semibold" truncate/>;
+  return <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
 }
 
 function BoardColumnView({ column, maxHeight, pinned }: {
   column: BoardColumn<ChannelRowData>;
-  maxHeight?: number;
+  maxHeight?: number | string;
   pinned: readonly string[];
 }): React.ReactElement {
   const { border } = usePalette();
   return (
     <Col
-      background={border}
+      surface="toolbar"
       radius={BLOCK_RADIUS_DEFAULT}
-      padding={COLUMN_PADDING}
+      padding={{ top: COLUMN_PADDING, bottom: COLUMN_PADDING, left: COLUMN_PADDING }}
       gap={CARD_GAP}
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
+      style={{ borderWidth: 1, borderColor: border }}
     >
-      <Row align="center" gap={8} padding={{ x: 4, y: 2 }}>
+      <Row align="center" gap={8} padding={{ left: 4, right: 4 + COLUMN_PADDING, y: 2 }}>
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
       </Row>
-      <Scroll gap={CARD_GAP} nestedScrollEnabled style={{ flexGrow: 0, flexShrink: 1 }}>
+      <Scroll
+        gap={CARD_GAP}
+        nestedScrollEnabled
+        style={{ flexGrow: 0, flexShrink: 1 }}
+        contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
+      >
         {column.rows.map(item => (
           <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)}/>
         ))}
@@ -110,7 +122,7 @@ function BoardLanes({ columns, pinned }: {
         <BoardColumnView
           key={column.key}
           column={column}
-          maxHeight={laneHeight > 0 ? laneHeight : undefined}
+          maxHeight={columnMaxHeight(laneHeight)}
           pinned={pinned}
         />
       ))}

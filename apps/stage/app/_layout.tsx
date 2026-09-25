@@ -11,7 +11,7 @@ import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
-import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
+import { BOARD_SCREEN_OPTIONS, RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
 import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
@@ -120,6 +120,7 @@ function RootLayoutInner(): React.ReactElement {
       <WebContentFrame>
       <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
         <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS}/>
+        <RootStack.Screen name="board" options={BOARD_SCREEN_OPTIONS}/>
       </RootStack>
       </WebContentFrame>
       <SplitSidebar visible={shell.sidebarVisible}/>
