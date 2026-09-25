@@ -18,7 +18,6 @@ import {
   ProfileActions, ProfileHeader, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
-import { ProfileHoldings } from './ProfileScreen.holdings';
 import { ProfileMenu } from './ProfileMenu';
 
 function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
@@ -98,8 +97,6 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
         />
 
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
-
-        {addr ? <ProfileHoldings address={addr} /> : null}
       </ScreenScroll>
 
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
