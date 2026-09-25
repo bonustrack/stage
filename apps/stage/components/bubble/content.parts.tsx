@@ -11,7 +11,7 @@ import { LinkPreviewCard } from '../LinkPreviewCard';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import { Box } from '../layout';
-import { hasMention, unescapeBody } from './helpers';
+import { unescapeBody } from './helpers';
 import type { Attachment } from './helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
 import { HighlightText } from '../HighlightText';
@@ -20,7 +20,7 @@ import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { profileLinkOf } from '../../lib/links';
-import { mentionAddresses, mentionLabel, withMentionLabels } from './mention.model';
+import { bodyView, mentionAddresses, mentionLabel, withMentionLabels } from './mention.model';
 
 function mentionDisplay(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
@@ -123,13 +123,12 @@ function BubbleBodyText({ body, fg, dark, selectable, highlight, markdownProps }
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const query = highlight?.trim() ? highlight : undefined;
-  const mentions = hasMention(body);
-  if (query !== undefined || selectable) {
-    const Plain = mentions ? NamedPlainBody : PlainBody;
-    return <Plain body={body} fg={fg} query={query} />;
+  switch (bodyView(body, query !== undefined || selectable === true)) {
+    case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
+    case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
+    case 'mention': return <MentionBody text={body} fg={fg} dark={dark} />;
+    case 'markdown': return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
   }
-  if (mentions) return <MentionBody text={body} fg={fg} dark={dark} />;
-  return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
 }
 
 export function BubbleBody({ text, fg, dark, selectable, highlight, markdownProps }: {
