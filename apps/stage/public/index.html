@@ -50,6 +50,14 @@
       html.stage-scroll-locked body {
         overflow: hidden;
       }
+      @media (pointer: coarse) {
+        * {
+          scrollbar-width: none;
+        }
+        *::-webkit-scrollbar {
+          display: none;
+        }
+      }
     </style>
     <style id="stage-web-overrides">
       *:focus:not(:focus-visible) {

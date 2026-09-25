@@ -17,7 +17,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: ForwardedRef<Virtu
     visibleAnchor: () => null,
     scrollToAnchor: () => false,
   }), []);
-  return <FlatList<T> ref={list} {...nativeListProps(props)} />;
+  return <FlatList<T> ref={list} showsVerticalScrollIndicator={false} {...nativeListProps(props)} />;
 }
 
 export const VirtualList = forwardRef(VirtualListInner) as <T>(
