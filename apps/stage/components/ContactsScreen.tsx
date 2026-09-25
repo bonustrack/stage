@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
 import type { SimultaneousRefs } from './SwipeTabs.types';
-import { Col, VirtualList } from './layout';
+import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
@@ -47,7 +47,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         renderItem={renderItem}
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP }}
         ListHeaderComponent={<SuggestedContacts known={known} />}
       />
     </Col>

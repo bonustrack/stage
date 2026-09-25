@@ -6,7 +6,7 @@ import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { channelsLabelChips, selectChannelsFilter } from './model';
-import { Box, Row, PAGE_GUTTER } from '../layout';
+import { Box, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
@@ -32,8 +32,7 @@ export function useHomeFilters(): {
 
 export { deriveBarLabels as deriveLabels } from '@stage-labs/client/xmtp/channelsFilter';
 
-const CHIPS_GAP = 14;
-const CHIPS_PADDING = { x: PAGE_GUTTER, y: CHIPS_GAP };
+const CHIPS_PADDING = { x: PAGE_GUTTER, y: LIST_TOP_GAP };
 
 export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll, panRef }: {
   labels: string[];
