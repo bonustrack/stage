@@ -6,23 +6,9 @@ import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
-import { localIdsByLiveId, matchConfirmed, mergeConfirmed } from './outboundRows.model';
+import { outboundView, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
-
-function useOptimisticCleanup(
-  optimistic: HistoryEntry[], confirmed: Map<string, string>,
-  setOptimistic: React.Dispatch<React.SetStateAction<HistoryEntry[]>>,
-  setConfirmedIds: React.Dispatch<React.SetStateAction<Map<string, string>>>,
-): void {
-  useEffect(() => {
-    if (!optimistic.length) return;
-    const live = optimistic.filter(o => !confirmed.has(o.id));
-    if (live.length === optimistic.length) return;
-    setOptimistic(live);
-    setConfirmedIds(prev => mergeConfirmed(prev, confirmed));
-  }, [optimistic, confirmed]);
-}
 
 function useStickyBottom(
   allBubblesLength: number, convId: string | undefined, atBottom: () => boolean,
@@ -59,20 +45,18 @@ export function useOutboundLayer(
     });
   });
 
-  const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
+  const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
   const liveBubbles = useMemo(() => events.filter(e => !isReaction(e)), [events]);
-  const confirmed = useMemo(
-    () => matchConfirmed(optimistic, liveBubbles, myUri, confirmedIds),
-    [liveBubbles, optimistic, myUri, confirmedIds],
+  const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
+  const allBubbles = useMemo(
+    () => (view.pending.length ? [...view.pending, ...liveBubbles] : liveBubbles),
+    [view, liveBubbles],
   );
-  const allBubbles = useMemo(() => {
-    if (!optimistic.length) return liveBubbles;
-    return [...optimistic.filter(o => !confirmed.has(o.id)), ...liveBubbles];
-  }, [liveBubbles, optimistic, confirmed]);
-  useOptimisticCleanup(optimistic, confirmed, setOptimistic, setConfirmedIds);
-  const localIdOf = useMemo(() => localIdsByLiveId(confirmedIds, confirmed), [confirmedIds, confirmed]);
+  useEffect(() => {
+    if (view.confirmed.size) setOutbound(s => settleOutbound(s, view.confirmed));
+  }, [view]);
+  const { localIdOf } = view;
   const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
   useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
@@ -91,14 +75,14 @@ export function useOutboundLayer(
     attachments: { mime?: string; name?: string }[];
     replyTo?: string; payload?: HistoryEntry['payload'];
   }) => {
-    setOptimistic(prev => [{
+    setOutbound(s => ({ ...s, optimistic: [{
       id: localId, ts: new Date().toISOString(),
       station: 'xmtp', line: activeLine,
       from: myUri, to: activeLine,
       text: text || undefined,
       ...(replyTo ? { replyTo } : {}),
       ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
-    }, ...prev]);
+    }, ...s.optimistic] }));
     scrollToNewest();
     setShowJump(false);
     const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
@@ -106,19 +90,11 @@ export function useOutboundLayer(
   }, [activeLine, myUri, convId]);
 
   const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {
-    if (sentId) {
-      setConfirmedIds(prev => {
-        const next = new Map(prev);
-        next.set(localId, sentId);
-        return next;
-      });
-    } else {
-      setOptimistic(prev => prev.filter(o => o.id !== localId));
-    }
+    setOutbound(s => recordSent(s, localId, sentId));
   }, []);
 
   return {
     showJump, setShowJump, scrollToNewest, jumpHighlightId,
-    listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
+    listRef, confirmedIds: outbound.confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
   };
 }

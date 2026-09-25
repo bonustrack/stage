@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { localIdsByLiveId, matchConfirmed, mergeConfirmed } from '../components/conversation/outboundRows.model';
+import {
+  matchConfirmed, mergeConfirmed, outboundView, recordSent, settleOutbound,
+  type OutboundState, type OutboundView,
+} from '../components/conversation/outboundRows.model';
 
 const ME = 'metro://xmtp/me';
 const T0 = Date.parse('2026-09-25T10:00:00.000Z');
@@ -9,34 +12,48 @@ const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry
   id, ts: new Date(T0 + ms).toISOString(), station: 'xmtp', line: 'l', from: ME, to: 'l', text, ...extra,
 });
 
-function settle(optimistic: HistoryEntry[], live: HistoryEntry[], confirmedIds: Map<string, string>) {
-  const confirmed = matchConfirmed(optimistic, live, ME, confirmedIds);
-  const pending = optimistic.filter(o => !confirmed.has(o.id));
-  const nextIds = mergeConfirmed(confirmedIds, confirmed);
-  const afterCleanup = matchConfirmed(pending, live, ME, nextIds);
-  return {
-    keyBefore: (id: string) => localIdsByLiveId(confirmedIds, confirmed).get(id) ?? id,
-    keyAfter: (id: string) => localIdsByLiveId(nextIds, afterCleanup).get(id) ?? id,
-    pending,
-  };
+const pendingState = (...optimistic: HistoryEntry[]): OutboundState => ({ optimistic, confirmedIds: new Map() });
+const keyOf = (view: OutboundView, id: string) => view.localIdOf.get(id) ?? id;
+
+function settle(state: OutboundState, live: HistoryEntry[]) {
+  const before = outboundView(state, live, ME);
+  const next = settleOutbound(state, before.confirmed);
+  return { before, next, after: outboundView(next, live, ME) };
 }
 
 describe('a sent message keeps its row once the server confirms it', () => {
   test('a text-matched confirmation keeps the pending row key after cleanup', () => {
-    const sent = entry('tmp_1', 0, 'hello');
-    const { keyBefore, keyAfter, pending } = settle([sent], [entry('real_1', 400, 'hello')], new Map());
-    expect(pending).toEqual([]);
-    expect(keyBefore('real_1')).toBe('tmp_1');
-    expect(keyAfter('real_1')).toBe('tmp_1');
+    const { before, next, after } = settle(pendingState(entry('tmp_1', 0, 'hello')), [entry('real_1', 400, 'hello')]);
+    expect(before.pending).toEqual([]);
+    expect(next.optimistic).toEqual([]);
+    expect(keyOf(before, 'real_1')).toBe('tmp_1');
+    expect(keyOf(after, 'real_1')).toBe('tmp_1');
   });
 
   test('an id-matched confirmation keeps the pending row key after cleanup', () => {
-    const sent = entry('tmp_1', 0, '@alice hi');
-    const live = [entry('real_1', 400, 'alice hi')];
-    const { keyBefore, keyAfter, pending } = settle([sent], live, new Map([['tmp_1', 'real_1']]));
-    expect(pending).toEqual([]);
-    expect(keyBefore('real_1')).toBe('tmp_1');
-    expect(keyAfter('real_1')).toBe('tmp_1');
+    const sent = recordSent(pendingState(entry('tmp_1', 0, '@alice hi')), 'tmp_1', 'real_1');
+    const { before, next, after } = settle(sent, [entry('real_1', 400, 'alice hi')]);
+    expect(next.optimistic).toEqual([]);
+    expect(keyOf(before, 'real_1')).toBe('tmp_1');
+    expect(keyOf(after, 'real_1')).toBe('tmp_1');
+  });
+
+  test('sending the same text again leaves the settled row alone and waits for its own message', () => {
+    const first = [entry('real_1', 400, 'ok')];
+    const settled = settle(pendingState(entry('tmp_1', 0, 'ok')), first).next;
+    const again = { ...settled, optimistic: [entry('tmp_2', 700, 'ok')] };
+    const waiting = outboundView(again, first, ME);
+    expect(waiting.pending.map(o => o.id)).toEqual(['tmp_2']);
+    expect(keyOf(waiting, 'real_1')).toBe('tmp_1');
+    const { before, after } = settle(again, [...first, entry('real_2', 1_100, 'ok')]);
+    expect([keyOf(before, 'real_1'), keyOf(before, 'real_2')]).toEqual(['tmp_1', 'tmp_2']);
+    expect([keyOf(after, 'real_1'), keyOf(after, 'real_2')]).toEqual(['tmp_1', 'tmp_2']);
+    expect(after.pending).toEqual([]);
+  });
+
+  test('a failed send drops its pending row', () => {
+    const state = pendingState(entry('tmp_2', 100, 'b'), entry('tmp_1', 0, 'a'));
+    expect(recordSent(state, 'tmp_1').optimistic.map(o => o.id)).toEqual(['tmp_2']);
   });
 });
 
