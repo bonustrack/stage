@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ImageLoadEventData, ImageStyle, NativeSyntheticEvent } from 'react-native';
-import { Image } from '@stage-labs/kit/react-native/image';
+import { getImageSize, Image } from '@stage-labs/kit/react-native/image';
+import { ignore } from '../../lib/errorPolicy';
 import { MediaCard } from '../MediaCard';
 import { ImageViewer } from '../ImageViewer';
-import { imageBox, loadedImageSize, sameSize, type ImageSize } from './imageBox.model';
+import { imageBox, sameSize, validSize, type ImageSize } from './imageBox.model';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 const KNOWN_SIZES_CAP = 500;
@@ -26,11 +27,14 @@ export function MessengerImageAttachment({ uri }: { uri: string }): React.ReactE
     if (loadedUri.current && loadedUri.current !== uri) setPrevUri(loadedUri.current);
   }, [uri]);
   const onLoad = useCallback((event: NativeSyntheticEvent<ImageLoadEventData>) => {
-    const size = loadedImageSize(event.nativeEvent);
-    if (size) {
+    const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
+      const size = validSize(measured);
+      if (!size) return false;
       rememberSize(uri, size);
       setNatural(prev => (sameSize(prev, size) ? prev : size));
-    }
+      return true;
+    };
+    if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
     loadedUri.current = uri;
     setPrevUri(null);
   }, [uri]);

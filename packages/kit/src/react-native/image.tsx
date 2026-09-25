@@ -102,6 +102,12 @@ export function Image(props: ImageProps): React.ReactElement {
   );
 }
 
+export function getImageSize(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    RNImage.getSize(src, (width, height) => { resolve({ width, height }); }, reject);
+  });
+}
+
 export function imageRadius(radius?: ImageRadius | number): ViewStyle {
   const r = radiusValue(radius) ?? BLOCK_RADIUS_DEFAULT;
   return { borderRadius: r };

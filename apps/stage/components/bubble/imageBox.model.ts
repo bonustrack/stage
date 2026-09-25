@@ -4,19 +4,11 @@ export interface ImageSize { width: number; height: number }
 
 interface ImageBox extends ImageSize { aspectRatio: number }
 
-interface LoadEventLike {
-  source?: { width?: number; height?: number };
-  target?: { naturalWidth?: number; naturalHeight?: number } | null;
-}
-
-function positiveSize(width: number | undefined, height: number | undefined): ImageSize | undefined {
+export function validSize(size: { width?: number; height?: number } | undefined): ImageSize | undefined {
+  const width = size?.width;
+  const height = size?.height;
   if (width === undefined || height === undefined) return undefined;
   return width > 0 && height > 0 ? { width, height } : undefined;
-}
-
-export function loadedImageSize(event: LoadEventLike | undefined): ImageSize | undefined {
-  return positiveSize(event?.source?.width, event?.source?.height)
-    ?? positiveSize(event?.target?.naturalWidth, event?.target?.naturalHeight);
 }
 
 export function imageBox(natural: ImageSize | undefined, max = IMAGE_BOX_MAX): ImageBox {
