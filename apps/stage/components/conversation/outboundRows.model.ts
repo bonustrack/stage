@@ -1,4 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import { hasAttachments } from './feed-helpers';
 
 export function matchConfirmed(
@@ -75,4 +76,8 @@ export function recordSent(state: OutboundState, localId: string, sentId?: strin
   if (!sentId) return { ...state, optimistic: state.optimistic.filter(o => o.id !== localId) };
   const confirmedIds = mergeConfirmed(state.confirmedIds, new Map([[localId, sentId]]));
   return confirmedIds === state.confirmedIds ? state : { ...state, confirmedIds };
+}
+
+export function optimisticRowPreview(text: string, attachments: readonly { mime?: string; name?: string }[]): string {
+  return text.trim() || attachmentsPreview(attachments.map(a => ({ mimeType: a.mime, filename: a.name })));
 }

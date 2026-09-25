@@ -21,12 +21,17 @@ describe('previewOfXmtpContent for attachments', () => {
   test('falls back to attachments when the kinds are mixed', () => {
     const mixed = { attachments: [remote('a.jpg'), remote('b.mp4')] };
     expect(previewOfXmtpContent(mixed, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 2 attachments');
+    const mostlyImages = { attachments: [remote('a.jpg'), remote('b.jpg'), remote('c.mp4')] };
+    expect(previewOfXmtpContent(mostlyImages, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 3 attachments');
   });
 
-  test('never leaks the raw content type for an attachment', () => {
+  test('reads as an attachment when the content could not be decoded', () => {
     for (const typeId of ['attachment', 'remoteStaticAttachment', 'multiRemoteStaticAttachment', 'multiRemoteAttachment']) {
-      expect(previewOfXmtpContent({ attachments: [] }, `xmtp.org/${typeId}:1.0`)).not.toContain('[');
+      expect(previewOfXmtpContent(undefined, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
+      expect(previewOfXmtpContent(null, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
     }
+    expect(previewOfXmtpContent({ attachments: [] }, 'xmtp.org/multiRemoteStaticAttachment:1.0'))
+      .toBe('Sent an attachment');
   });
 });
 

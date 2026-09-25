@@ -1,12 +1,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
-import { outboundView, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
+import {
+  optimisticRowPreview, outboundView, recordSent, settleOutbound, type OutboundState,
+} from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 
@@ -85,9 +86,7 @@ export function useOutboundLayer(
     }, ...s.optimistic] }));
     scrollToNewest();
     setShowJump(false);
-    const preview = text.trim()
-      || attachmentsPreview(attachments.map(a => ({ mimeType: a.mime, filename: a.name })));
-    if (convId) patchRowSent(convId, preview);
+    if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
   }, [activeLine, myUri, convId]);
 
   const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {

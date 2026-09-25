@@ -2,7 +2,7 @@
 import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
 } from '../../modules/messaging';
-import { mimeOf } from '../../lib/attachmentFiles';
+import { outgoingFileMeta } from '../../lib/attachmentFiles';
 import { type Attachment, INLINE_ATTACHMENT_MAX_BYTES } from './types';
 
 let seq = 0;
@@ -37,11 +37,7 @@ export function planSendSteps(
       localId: mintLocalId(), text: '', attachments: multiAtts,
       run: () => xmtpSendMultiRemoteAttachment(
         xmtpLine,
-        multiAtts.map((at) => ({
-          fileUri: at.url,
-          mimeType: mimeOf(at.mime, at.name ?? at.url),
-          filename: at.name ?? at.id,
-        })),
+        multiAtts.map((at) => ({ fileUri: at.url, ...outgoingFileMeta(at) })),
       ),
     });
   }
@@ -55,8 +51,7 @@ export function planSendSteps(
 }
 
 async function sendAudio(xmtpLine: string, at: Attachment): Promise<string> {
-  const mimeType = mimeOf(at.mime, at.name ?? at.url);
-  const filename = at.name ?? at.id;
+  const { mimeType, filename } = outgoingFileMeta(at);
   const dataB64 = await fileUriToBase64(at.url);
   const padding = dataB64.endsWith('==') ? 2 : dataB64.endsWith('=') ? 1 : 0;
   const byteLen = Math.floor((dataB64.length * 3) / 4) - padding;

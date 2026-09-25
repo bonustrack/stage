@@ -20,6 +20,19 @@ export function mimeOf(mime: string | undefined | null, nameOrUri: string): stri
   return mimeFromName(nameOrUri.split('?')[0]?.split('#')[0] ?? '');
 }
 
+interface OutgoingFile { id: string; url: string; mime?: string; name?: string }
+
+export function outgoingFileMeta(at: OutgoingFile): { mimeType: string; filename: string } {
+  const mimeType = mimeOf(at.mime, at.name ?? at.url);
+  return { mimeType, filename: withExtension(at.name ?? at.id, mimeType) };
+}
+
+function withExtension(name: string, mimeType: string): string {
+  if (name.includes('.')) return name;
+  const ext = Object.keys(EXT_MIME).find(k => EXT_MIME[k] === mimeType);
+  return ext ? `${name}.${ext}` : name;
+}
+
 export async function fileUriToBase64(uri: string): Promise<string> {
   const res = await fetch(uri);
   const blob = await res.blob();

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  matchConfirmed, mergeConfirmed, outboundView, recordSent, settleOutbound,
+  matchConfirmed, mergeConfirmed, optimisticRowPreview, outboundView, recordSent, settleOutbound,
   type OutboundState, type OutboundView,
 } from '../components/conversation/outboundRows.model';
 
@@ -95,5 +95,18 @@ describe('recording confirmations', () => {
     expect(next).not.toBe(prev);
     expect([...next]).toEqual([['tmp_1', 'real_1'], ['tmp_2', 'real_2']]);
     expect(prev.size).toBe(1);
+  });
+});
+
+describe('optimisticRowPreview', () => {
+  test('shows the text when there is some', () => {
+    expect(optimisticRowPreview('  hi  ', [{ mime: 'image/png' }])).toBe('hi');
+  });
+
+  test('words the attachments when there is no text', () => {
+    expect(optimisticRowPreview('', [{ mime: 'image/png' }])).toBe('Sent an image');
+    expect(optimisticRowPreview(' ', [{ mime: 'image/png' }, { name: 'b.jpg' }, { mime: 'image/heic' }]))
+      .toBe('Sent 3 images');
+    expect(optimisticRowPreview('', [{ name: 'a.jpg' }, { mime: 'application/pdf' }])).toBe('Sent 2 attachments');
   });
 });

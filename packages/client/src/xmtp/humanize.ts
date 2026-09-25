@@ -84,8 +84,8 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
   reply: previewReply,
-  attachment: decoded => attachmentsPreview([decoded as AttachmentMeta]),
-  remoteStaticAttachment: decoded => attachmentsPreview([decoded as AttachmentMeta]),
+  attachment: previewSingleAttachment,
+  remoteStaticAttachment: previewSingleAttachment,
   multiRemoteStaticAttachment: previewMultiRemote,
   multiRemoteAttachment: previewMultiRemote,
 };
@@ -124,15 +124,20 @@ const KIND_NOUNS: Record<AttachmentKind, { one: string; many: string }> = {
 };
 
 export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
-  const kinds = items.map(attachmentKindOf);
-  const first = kinds[0] ?? 'file';
-  if (kinds.length <= 1) return `Sent ${KIND_NOUNS[first].one}`;
-  const noun = kinds.every(k => k === first) ? KIND_NOUNS[first].many : 'attachments';
-  return `Sent ${kinds.length} ${noun}`;
+  const [first, ...rest] = items.map(attachmentKindOf);
+  if (!first) return 'Sent an attachment';
+  if (rest.length === 0) return `Sent ${KIND_NOUNS[first].one}`;
+  const noun = rest.every(k => k === first) ? KIND_NOUNS[first].many : 'attachments';
+  return `Sent ${rest.length + 1} ${noun}`;
+}
+
+function previewSingleAttachment(decoded: unknown): string {
+  return attachmentsPreview(decoded ? [decoded] : []);
 }
 
 function previewMultiRemote(decoded: unknown): string {
-  return attachmentsPreview((decoded as { attachments?: AttachmentMeta[] }).attachments ?? []);
+  const content = decoded as { attachments?: AttachmentMeta[] } | null | undefined;
+  return attachmentsPreview(content?.attachments ?? []);
 }
 
 function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string[]): boolean {
