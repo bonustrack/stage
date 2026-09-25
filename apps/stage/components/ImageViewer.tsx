@@ -1,49 +1,60 @@
-
 import { useEffect, useState } from 'react';
 
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, type GestureResponderEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Col } from './layout';
-import { Spinner } from './Spinner';
-import * as MediaLibrary from 'expo-media-library';
-import { Directory, File, Paths } from 'expo-file-system';
-import { base64ToBytes } from '@stage-labs/client/text/base64';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { capabilities } from '../lib/capabilities';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Col, PAGE_GUTTER, Row } from './layout';
+import { AnchoredMenu, menuPointBelowEnd } from './AnchoredMenu';
+import type { MenuPoint } from './AnchoredMenu.model';
+import { MenuList, MenuRow } from './MenuRows';
+import { HoverTooltip } from './HoverTooltip';
+import { TooltipHost } from './system/TooltipHost';
+import { downloadImage } from '../lib/imageDownload';
+import { describeError } from '../lib/errorPolicy';
+import { useSafeAreaInsets } from '../lib/safeArea';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { lockDocumentScroll } from '../lib/webLayout';
 
 const WEB_FRAME = Platform.OS === 'web' ? { paddingVertical: 104, paddingHorizontal: 18 } : null;
 
-function extOf(uri: string): string {
-  const dataMime = /^data:image\/([a-z0-9.+-]+)/i.exec(uri)?.[1];
-  if (dataMime) return dataMime === 'jpeg' ? 'jpg' : dataMime;
-  const urlExt = /\.([a-z0-9]{3,4})(?:[?#]|$)/i.exec(uri)?.[1];
-  return (urlExt ?? 'jpg').toLowerCase();
+function ViewerButton({ icon, label, dark, loading, onPress }: {
+  icon: HeroIconName; label: string; dark: boolean; loading?: boolean;
+  onPress: (event: GestureResponderEvent) => void;
+}): React.ReactElement {
+  const { link: head } = usePalette();
+  return (
+    <HoverTooltip label={label} placement="below">
+      <Button
+        uniform pill color="secondary" variant="solid" dark={dark} loading={loading}
+        accessibilityLabel={label}
+        iconStart={<Icon name={icon} size={20} color={head}/>}
+        onPress={onPress}
+      />
+    </HoverTooltip>
+  );
 }
 
-function tempDir(): Directory {
-  const dir = new Directory(Paths.cache, 'image-viewer');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return dir;
-}
-
-async function toLocalUri(uri: string): Promise<string> {
-  if (uri.startsWith('file://')) return uri;
-  const ext = extOf(uri);
-  if (uri.startsWith('data:')) {
-    const b64 = uri.slice(uri.indexOf(',') + 1);
-    const file = new File(tempDir(), `img-${Date.now()}.${ext}`);
-    if (file.exists) file.delete();
-    file.create();
-    file.write(base64ToBytes(b64));
-    return file.uri;
-  }
-  const dest = new File(tempDir(), `img-${Date.now()}.${ext}`);
-  const downloaded = await File.downloadFileAsync(uri, dest);
-  return downloaded.uri;
+function ViewerMenu({ dark, saving, onDownload }: {
+  dark: boolean; saving: boolean; onDownload: () => void;
+}): React.ReactElement {
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const close = (): void => { setAnchor(null); };
+  return (
+    <>
+      <ViewerButton
+        icon="dotsVertical" label="More" dark={dark} loading={saving}
+        onPress={(e) => { setAnchor(menuPointBelowEnd(e)); }}
+      />
+      <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
+        <MenuList dark={dark}>
+          <MenuRow icon="arrowDownTray" label="Download" dark={dark} onPress={() => { close(); onDownload(); }}/>
+        </MenuList>
+      </AnchoredMenu>
+    </>
+  );
 }
 
 export function ImageViewer({ uri, visible, onClose }: {
@@ -52,6 +63,8 @@ export function ImageViewer({ uri, visible, onClose }: {
   onClose: () => void;
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
+  const dark = useEffectiveColorScheme() === 'dark';
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!visible) return undefined;
@@ -62,17 +75,9 @@ export function ImageViewer({ uri, visible, onClose }: {
     if (saving || !uri) return;
     setSaving(true);
     try {
-      const perm = await MediaLibrary.requestPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert('Permission needed', 'Allow photo library access to save images.');
-        return;
-      }
-      const local = await toLocalUri(uri);
-      await MediaLibrary.saveToLibraryAsync(local);
-      if (Platform.OS === 'android') capabilities.toast('Saved to photos');
-      else Alert.alert('Saved', 'Image saved to your photos.');
+      await downloadImage(uri);
     } catch (e) {
-      Alert.alert('Download failed', (e as Error).message ?? 'Could not save image.');
+      Alert.alert('Download failed', describeError(e));
     } finally {
       setSaving(false);
     }
@@ -90,33 +95,11 @@ export function ImageViewer({ uri, visible, onClose }: {
           ) : null}
         </Pressable>
 
-        <Pressable
-          onPress={onClose}
-          style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
-          hitSlop={10}
->
-          <Icon name="x" size={24} color="#ffffff"/>
-        </Pressable>
-
-        <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>
-          <Pressable
-            onPress={() => { void onDownload(); }}
-            disabled={saving}
-            style={({ pressed }) => ({
-              flexDirection: 'row', alignItems: 'center', gap: 8,
-              paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999,
-              backgroundColor: 'rgba(255,255,255,0.14)',
-              opacity: pressed ? 0.7 : saving ? 0.6 : 1,
-            })}
->
-            {saving
-              ? <Spinner size={20} color="#ffffff"/>
-              : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
-            <Text weight="semibold" size="md" color={'#ffffff'}>
-              {saving ? 'Saving…' : 'Download'}
-            </Text>
-          </Pressable>
-        </Box>
+        <Row gap={8} style={{ position: 'absolute', top: insets.top + PAGE_GUTTER, right: PAGE_GUTTER }}>
+          <ViewerMenu dark={dark} saving={saving} onDownload={() => { void onDownload(); }}/>
+          <ViewerButton icon="x" label="Close" dark={dark} onPress={onClose}/>
+        </Row>
+        <TooltipHost/>
       </Col>
     </Dialog>
   );
