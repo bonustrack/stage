@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { Box, pinnedEdges } from '../layout';
-import { isSplitRoute } from '../tabs/splitRoutes';
+import { isRailedRoute } from '../tabs/splitRoutes';
 import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 import { usePalette } from '../../lib/theme';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
@@ -14,7 +14,7 @@ export function TopChrome({ decorated }: { decorated: boolean }): React.ReactEle
   const inset = useTopChromeInset();
   const pathname = usePathname();
   const wide = useWebTabRail() && decorated && !isOnboardingRoute(pathname);
-  const railed = wide && isSplitRoute(pathname);
+  const railed = wide && isRailedRoute(pathname);
   const { border } = usePalette();
   useEffect(() => {
     if (typeof document === 'undefined') return;

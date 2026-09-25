@@ -64,6 +64,7 @@ function HomeTopnavRight({ head, router, onOpenSearch }: {
       <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />
       <HomeOverflowMenu
         color={head}
+        onBoard={() => { router.push('/board'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));

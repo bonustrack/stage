@@ -76,6 +76,7 @@ interface ChannelsOverflowItem {
 }
 
 export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
+  { id: 'board', label: 'Board view', icon: 'viewBoards' },
   { id: 'copy-address', label: 'Copy address', icon: 'copy' },
   { id: 'profile', label: 'Profile', icon: 'user' },
   { id: 'settings', label: 'Settings', icon: 'cog' },

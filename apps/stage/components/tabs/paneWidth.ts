@@ -28,7 +28,8 @@ function syncCssVar(): void {
     el.id = STYLE_ID;
     document.head.appendChild(el);
   }
-  el.textContent = `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }`;
+  el.textContent = `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }`
+    + ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`;
 }
 
 let width = readInitial();

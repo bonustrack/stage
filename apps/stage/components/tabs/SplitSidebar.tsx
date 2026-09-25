@@ -10,26 +10,33 @@ import { WebTabRail } from './WebTabRail';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { usePaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
-import { isSplitRoute, isTabRoute } from './splitRoutes';
+import { isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 
-function usePaneScope(active: boolean): void {
+function usePaneScope(scope: string | null): void {
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (!active) return;
-    document.documentElement.dataset.stagepane = '1';
+    if (scope === null) return;
+    document.documentElement.dataset.stagepane = scope;
     return () => { delete document.documentElement.dataset.stagepane; };
-  }, [active]);
+  }, [scope]);
+}
+
+function paneScopeOf(active: boolean, railOnly: boolean): string | null {
+  if (active) return '1';
+  return railOnly ? 'rail' : null;
 }
 
 export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElement | null {
   const rail = useWebTabRail();
   const pathname = usePathname();
   const active = visible && rail && isSplitRoute(pathname);
-  usePaneScope(active);
+  const railOnly = visible && rail && isRailOnlyRoute(pathname);
+  usePaneScope(paneScopeOf(active, railOnly));
   const paneWidth = usePaneWidth();
   const inset = useTopChromeInset();
   const { border } = usePalette();
   const unreadBadge = unreadBadgeLabel(useTotalUnread());
+  if (railOnly) return <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>;
   if (!active) return null;
   return (
     <>

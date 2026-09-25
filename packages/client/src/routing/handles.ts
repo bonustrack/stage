@@ -13,7 +13,7 @@ const STAGE_ORIGIN = 'https://stage.box';
 
 const RESERVED_ROOT_SEGMENTS = new Set([
   'channels', 'channel', 'group', 'profile', 'user', 'settings', 'contacts', 'wallet', 'accounts',
-  'requests', 'new-group', 'add-members', 'embed', 'xmtp',
+  'requests', 'new-group', 'add-members', 'embed', 'xmtp', 'board',
 ]);
 
 const PEER_KINDS = new Set<HandleKind>(['address', 'stage', 'basename', 'ens']);

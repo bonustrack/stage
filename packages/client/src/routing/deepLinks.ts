@@ -7,7 +7,8 @@ export type ParsedRoute =
   | { pathname: '/user/[address]'; params: { address: string } }
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
-  | { pathname: '/(tabs)/contacts'; params?: undefined };
+  | { pathname: '/(tabs)/contacts'; params?: undefined }
+  | { pathname: '/board'; params?: undefined };
 
 function stripAuthority(work: string): string {
   const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(work);
@@ -55,6 +56,7 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
   settings: { pathname: '/(tabs)/settings' },
   contacts: { pathname: '/(tabs)/contacts' },
+  board: { pathname: '/board' },
 };
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);

@@ -22,11 +22,11 @@ import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
 
-function rowTitle(item: RowT): string {
+export function rowTitle(item: RowT): string {
   return item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
 }
 
-function rowPreview(item: RowT): string {
+export function rowPreview(item: RowT): string {
   const sender = item.lastSenderAddress;
   return rowPreviewText({
     preview: item.lastPreview,
@@ -36,7 +36,7 @@ function rowPreview(item: RowT): string {
   });
 }
 
-function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
+export function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
   if (item.avatarUri || !item.avatarAddress) return null;
   if (isGroup || isPeerResolved(item.avatarAddress)) return item.avatarAddress;
   return null;

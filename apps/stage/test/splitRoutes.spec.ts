@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isSplitRoute, isTabRoute } from '../components/tabs/splitRoutes';
+import { isRailOnlyRoute, isRailedRoute, isSplitRoute, isTabRoute } from '../components/tabs/splitRoutes';
 
 describe('isSplitRoute', () => {
   test('home, conversations, and direct messages split', () => {
@@ -32,6 +32,7 @@ describe('isSplitRoute', () => {
 
   test('other stack routes stay single-column', () => {
     expect(isSplitRoute('/user/abc')).toBe(false);
+    expect(isSplitRoute('/board')).toBe(false);
   });
 });
 
@@ -41,5 +42,21 @@ describe('isTabRoute', () => {
     expect(isTabRoute('/wallet')).toBe(true);
     expect(isTabRoute('/wallet/send')).toBe(false);
     expect(isTabRoute('/settings/security')).toBe(false);
+  });
+});
+
+describe('isRailOnlyRoute', () => {
+  test('the board keeps the rail without the channels pane', () => {
+    expect(isRailOnlyRoute('/board')).toBe(true);
+    expect(isRailOnlyRoute('/')).toBe(false);
+    expect(isRailOnlyRoute('/channel/abc')).toBe(false);
+  });
+});
+
+describe('isRailedRoute', () => {
+  test('split routes and the board sit next to the rail, other stack routes do not', () => {
+    expect(isRailedRoute('/board')).toBe(true);
+    expect(isRailedRoute('/channel/abc')).toBe(true);
+    expect(isRailedRoute('/user/abc')).toBe(false);
   });
 });
