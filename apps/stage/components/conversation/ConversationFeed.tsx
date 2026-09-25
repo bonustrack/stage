@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { Box, VirtualList } from '../layout';
+import { Box, Col, PANE_LEFT_PAD, VirtualList, viewportFill } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
@@ -183,15 +183,16 @@ function feedScrollEvents(c: ConvState, convId: string, refs: FeedScrollRefs): P
 }
 
 const LOADER_DELAY_MS = 180;
+let feedShownOnce = false;
 
 function useSlowOpen(waiting: boolean): boolean {
   const [slow, setSlow] = useState(false);
   useEffect(() => {
-    if (!waiting) { setSlow(false); return; }
+    if (!waiting) { feedShownOnce = true; setSlow(false); return; }
     const timer = setTimeout(() => { setSlow(true); }, LOADER_DELAY_MS);
     return () => { clearTimeout(timer); };
   }, [waiting]);
-  return slow;
+  return slow || !feedShownOnce;
 }
 
 export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
@@ -205,7 +206,6 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   const topPad = useSafeAreaInsets().top + TOPNAV_HEIGHT;
   const { renderItem, extraData } = useFeedRenderItem(c);
   const intro = <ConversationIntro c={c} convId={convId} />;
-  const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
   const refs = useFeedScrollRefs(convId);
   const { metrics, positioned } = refs;
   const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
@@ -217,7 +217,11 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   }
 
   if (empty) {
-    return <Box flex={1} padding={{ top: topPad }}>{slowOpen ? spinner : null}</Box>;
+    return (
+      <Col flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD]}>
+        {slowOpen ? <Spinner size={28} color={head} /> : null}
+      </Col>
+    );
   }
 
   const olderEdge = (

@@ -5,11 +5,33 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
+    <script>
+      try {
+        var t = localStorage.getItem('stage.secure.app.theme') || localStorage.getItem('secure.app.theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style id="expo-reset">
       html {
         scrollbar-gutter: stable;
+        background: #ffffff;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        html {
+          background: #0e0f10;
+          color-scheme: dark;
+        }
+      }
+      html[data-theme='light'] {
+        background: #ffffff;
+        color-scheme: light;
+      }
+      html[data-theme='dark'] {
+        background: #0e0f10;
+        color-scheme: dark;
       }
       body {
         margin: 0;
@@ -28,10 +50,54 @@
         outline: none;
       }
     </style>
+    <style id="stage-boot-style">
+      #stage-boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000000;
+      }
+      @media (prefers-color-scheme: dark) {
+        #stage-boot {
+          color: #ffffff;
+        }
+      }
+      html[data-theme='light'] #stage-boot {
+        color: #000000;
+      }
+      html[data-theme='dark'] #stage-boot {
+        color: #ffffff;
+      }
+      #stage-boot svg {
+        animation: stage-boot-spin 0.5s linear infinite;
+      }
+      @keyframes stage-boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
   </head>
 
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="stage-boot">
+      <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient x1="28.154%" y1="63.74%" x2="74.629%" y2="17.783%" id="stage-boot-grad">
+            <stop stop-color="currentColor" offset="0%" />
+            <stop stop-color="currentColor" stop-opacity="0" offset="70%" />
+          </linearGradient>
+        </defs>
+        <g transform="translate(2)" fill="none" fill-rule="evenodd">
+          <circle stroke="url(#stage-boot-grad)" stroke-width="4" cx="10" cy="12" r="10" />
+          <path d="M10 2C4.477 2 0 6.477 0 12" stroke="currentColor" stroke-width="4" />
+          <rect x="8" y="0" width="4" height="4" fill="currentColor" />
+        </g>
+      </svg>
+    </div>
     <div id="root"></div>
   </body>
 </html>

@@ -1,7 +1,7 @@
 import '../lib/jsPolyfills';
 import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
+import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
 import { Col, WebContentFrame, viewportFill } from '../components/layout';
@@ -35,8 +35,14 @@ import { reported } from '../lib/errorPolicy';
 
 const queryClient = getQueryClient();
 
+const APP_FONTS = {
+  'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf') as number,
+  'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
+};
+
 applyWebGlobalStyles();
 installAlertShim();
+void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
@@ -76,8 +82,11 @@ function RootLayoutInner(): React.ReactElement {
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-  }, [dark]);
+    const root = document.documentElement;
+    root.style.colorScheme = dark ? 'dark' : 'light';
+    root.style.backgroundColor = bg;
+    document.getElementById('stage-boot')?.remove();
+  }, [dark, bg]);
 
   useDeepLinks();
   useDocumentScrollRestore();
@@ -97,10 +106,7 @@ function RootLayoutInner(): React.ReactElement {
   }, [onboarding.hasAccount]);
   useEffect(() => { ensureMessagingStreamSync(); }, []);
 
-  const [loaded] = useFonts({
-    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf') as number,
-    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
-  });
+  const [loaded] = useFonts(APP_FONTS);
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);

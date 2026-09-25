@@ -77,7 +77,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     }
   }, [query.isFetching, query.isFetched, events.length, line]);
 
-  const status = feedStatus(enabled && !!line, query.isError, query.isSuccess || events.length > 0);
+  const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
   const error = query.error ? (query.error).message : null;
 
   const loadOlder = useCallback(async (): Promise<void> => {
