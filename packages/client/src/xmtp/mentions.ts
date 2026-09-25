@@ -10,8 +10,12 @@ export type MentionSegment =
 
 export const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
+export function mentionToken(address: string): string {
+  return `@${address.toLowerCase()}`;
+}
+
 export function formatMention(address: string): string {
-  return `@${address.toLowerCase()} `;
+  return `${mentionToken(address)} `;
 }
 
 export function hasMention(text: string): boolean {

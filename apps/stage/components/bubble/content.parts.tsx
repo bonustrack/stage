@@ -20,17 +20,21 @@ import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { profileLinkOf } from '../../lib/links';
+import { mentionAddresses, mentionLabel, withMentionLabels } from './mention.model';
+
+function mentionDisplay(address: string): string {
+  return mentionLabel(getPeerName(address) ?? shortAddress(address));
+}
 
 function MentionLink({ address, dark }: { address: string; dark: boolean }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
-  const display = getPeerName(address) ?? shortAddress(address);
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text size="3xl" weight="semibold"
       onPress={() => { router.push(profileLinkOf(address)); }} color={linkColor}
       suppressHighlighting>
-      @{display}
+      {mentionDisplay(address)}
     </Text>
   );
 }
@@ -102,13 +106,29 @@ class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
   }
 }
 
+interface PlainBodyProps { body: string; fg: string; query?: string }
+
+function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
+  if (query) return <HighlightText text={body} query={query} fg={fg} />;
+  return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+}
+
+function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
+  usePeerProfiles(mentionAddresses(body));
+  return <PlainBody body={withMentionLabels(body, mentionDisplay)} fg={fg} query={query} />;
+}
+
 function BubbleBodyText({ body, fg, dark, selectable, highlight, markdownProps }: {
   body: string; fg: string; dark: boolean; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
-  if (highlight?.trim()) return <HighlightText text={body} query={highlight} fg={fg} />;
-  if (selectable) return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
-  if (hasMention(body)) return <MentionBody text={body} fg={fg} dark={dark} />;
+  const query = highlight?.trim() ? highlight : undefined;
+  const mentions = hasMention(body);
+  if (query !== undefined || selectable) {
+    const Plain = mentions ? NamedPlainBody : PlainBody;
+    return <Plain body={body} fg={fg} query={query} />;
+  }
+  if (mentions) return <MentionBody text={body} fg={fg} dark={dark} />;
   return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
 }
 

@@ -1,5 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { humanizeGroupUpdated, type GroupUpdatedContent, type InboxNamer } from '@stage-labs/client/xmtp/humanize';
+import { mentionToken } from '@stage-labs/client/xmtp/mentions';
 
 function groupUpdateOf(entry: HistoryEntry): GroupUpdatedContent | null {
   const payload = entry.payload as { system?: boolean; groupUpdate?: GroupUpdatedContent } | undefined;
@@ -16,11 +17,10 @@ export function withMemberNames<E extends HistoryEntry>(entry: E, nameOf: InboxN
 export function memberNamer(
   selfInboxId: string | null,
   addressOf: (inboxId: string) => string | null,
-  nameOfAddress: (address: string) => string,
 ): InboxNamer {
   return (inboxId) => {
     if (inboxId === selfInboxId) return 'you';
     const address = addressOf(inboxId);
-    return address ? nameOfAddress(address) : null;
+    return address ? mentionToken(address) : null;
   };
 }

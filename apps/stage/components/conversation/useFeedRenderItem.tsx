@@ -10,8 +10,7 @@ import { useRouter } from 'expo-router';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
-import { getPeerName } from '../../lib/peerProfiles';
-import { XMTP_USER_PREFIX, shortAddress } from '../../modules/messaging';
+import { XMTP_USER_PREFIX } from '../../modules/messaging';
 import { memberNamer, withMemberNames } from './systemNames.model';
 
 type ConvState = ReturnType<typeof useConversationState>;
@@ -60,13 +59,8 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
 
   const namedEntry = useMemo(() => {
     const selfInboxId = myUri.startsWith(XMTP_USER_PREFIX) ? myUri.slice(XMTP_USER_PREFIX.length) || null : null;
-    const nameOf = memberNamer(
-      selfInboxId,
-      inboxId => senderEthOf(`${XMTP_USER_PREFIX}${inboxId}`),
-      address => getPeerName(address) ?? shortAddress(address),
-    );
+    const nameOf = memberNamer(selfInboxId, inboxId => senderEthOf(`${XMTP_USER_PREFIX}${inboxId}`));
     const cache = new WeakMap<Bubble, Bubble>();
-    void profilesVersion;
     return (item: Bubble): Bubble => {
       const hit = cache.get(item);
       if (hit) return hit;
@@ -74,7 +68,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       cache.set(item, named);
       return named;
     };
-  }, [myUri, senderEthOf, profilesVersion]);
+  }, [myUri, senderEthOf]);
 
   const onAvatarPress = useCallback((address: string) => {
     router.push(profileLinkOf(address));
