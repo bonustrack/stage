@@ -3,24 +3,22 @@ import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  useConvMeta, fetchGroupRoles, messagingKeys, lineOfConv, leaveGroupConv, shortAddress,
+  useConvMeta, fetchGroupRoles, groupEditRights, messagingKeys, lineOfConv, leaveGroupConv, shortAddress,
 } from '../../modules/messaging';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
+import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
-import { uploadAvatar } from '../../lib/profile';
-import {
-  addGroupMember, removeGroupMember, updateGroupImage, updateGroupDescription, updateGroupName,
-} from './group.helpers';
+import { addGroupMember, removeGroupMember } from './group.helpers';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 type Meta = ReturnType<typeof useConvMeta>;
-type BusyKey = 'name' | 'description' | 'image' | 'add' | 'leave';
+type BusyKey = 'add' | 'leave';
 type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
 
-interface GroupPickedFile { uri: string; mime: string; name?: string }
+export const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false };
 
 function useMemberDirectory(convId: string | undefined, meta: Meta): {
   members: string[]; memberNames: Names; memberRoles: Roles;
@@ -52,22 +50,28 @@ function useMemberDirectory(convId: string | undefined, meta: Meta): {
   return { members, memberNames, memberRoles };
 }
 
+export function useConvMetaPatch(convId: string | undefined): (patch: Partial<Meta>) => void {
+  const queryClient = useQueryClient();
+  return (patch) => {
+    if (!convId) return;
+    const key = messagingKeys.convMeta(convId);
+    queryClient.setQueryData<Meta>(key, m => (m ? { ...m, ...patch } : m));
+    void queryClient.invalidateQueries({ queryKey: key });
+  };
+}
+
 function useTaskRunner(convId: string | undefined): {
   busy: Partial<Record<BusyKey, boolean>>;
   run: (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task) => Promise<boolean>;
 } {
-  const queryClient = useQueryClient();
+  const patchMeta = useConvMetaPatch(convId);
   const [busy, setBusy] = useState<Partial<Record<BusyKey, boolean>>>({});
   const run = async (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task): Promise<boolean> => {
     const mark = typeof track === 'function' ? track : (on: boolean): void => { setBusy(b => ({ ...b, [track]: on })); };
     mark(true);
     try {
       const patch = await task();
-      if (patch && convId) {
-        const key = messagingKeys.convMeta(convId);
-        queryClient.setQueryData<Meta>(key, m => (m ? { ...m, ...patch } : m));
-        void queryClient.invalidateQueries({ queryKey: key });
-      }
+      if (patch) patchMeta(patch);
       return true;
     } catch (e) {
       Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
@@ -83,31 +87,13 @@ export function useGroupDetail(convId: string | undefined) {
   const meta = useConvMeta(convId);
   const directory = useMemberDirectory(convId, meta);
   const { busy, run } = useTaskRunner(convId);
-  const [nameDraft, setNameDraft] = useState<string | null>(null);
-  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
   const [addDraft, setAddDraft] = useState('');
   const [removing, setRemoving] = useState<string | null>(null);
-  const [pickNonce, setPickNonce] = useState(0);
-
-  const saveName = async (): Promise<void> => {
-    const next = nameDraft?.trim() ?? '';
-    if (!next || busy.name) return;
-    const ok = await run('name', 'Rename failed', async () => {
-      await updateGroupName(line, next);
-      return { groupName: next };
-    });
-    if (ok) setNameDraft(null);
-  };
-
-  const saveDescription = async (): Promise<void> => {
-    const next = descriptionDraft?.trim() ?? '';
-    if (busy.description) return;
-    const ok = await run('description', 'Description update failed', async () => {
-      await updateGroupDescription(line, next);
-      return { groupDescription: next };
-    });
-    if (ok) setDescriptionDraft(null);
-  };
+  const { data: rights = NO_EDIT_RIGHTS } = useQuery({
+    queryKey: ['groupEditRights', convId ?? ''],
+    queryFn: () => groupEditRights(convId ?? ''),
+    enabled: !!convId,
+  });
 
   const addMember = async (onSuccess?: () => void): Promise<void> => {
     const addr = addDraft.trim();
@@ -136,15 +122,6 @@ export function useGroupDetail(convId: string | undefined) {
     ));
   };
 
-  const onPickedImage = async (file: GroupPickedFile): Promise<void> => {
-    if (busy.image) return;
-    await run('image', 'Image upload failed', async () => {
-      const url = await uploadAvatar(file.uri, file.mime, file.name ?? 'group-avatar');
-      await updateGroupImage(line, url);
-      return { groupImage: url };
-    });
-  };
-
   const leaveGroup = async (onClose: () => void): Promise<void> => {
     onClose();
     const ok = await capabilities.confirm({
@@ -164,11 +141,8 @@ export function useGroupDetail(convId: string | undefined) {
 
   return {
     line, ...directory, busy, removing,
-    name: meta.groupName, description: meta.groupDescription, imageUrl: meta.groupImage,
-    nameDraft, setNameDraft, saveName,
-    descriptionDraft, setDescriptionDraft, saveDescription,
+    name: meta.groupName, description: meta.groupDescription, imageUrl: meta.groupImage, rights,
     addDraft, setAddDraft, addMember, removeMember,
-    pickNonce, pickImage: () => { if (!busy.image) setPickNonce(n => n + 1); }, onPickedImage,
     leaveGroup,
   };
 }

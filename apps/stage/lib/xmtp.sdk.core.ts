@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
+import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
 import type { JsonCodec } from './xmtpJsonCodecs';
 import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
 import { convIdOfLine, type XmtpConsent } from './xmtp.types';
@@ -29,12 +30,6 @@ export interface ConvLike {
   id: string;
   sync: () => Promise<unknown>;
   members: () => Promise<{ inboxId: string }[]>;
-}
-
-export interface GroupOps {
-  updateName: (name: string) => Promise<unknown>;
-  updateImageUrl: (imageUrl: string) => Promise<unknown>;
-  updateDescription: (description: string) => Promise<unknown>;
 }
 
 export interface MessageQuery { limit: number; beforeMs?: number; order?: 'asc' | 'desc' }
@@ -90,7 +85,8 @@ interface ConvPrimitives<C, M> {
   groupName: (conv: C) => Promise<string | undefined>;
   groupInfo: (conv: C) => Promise<GroupInfo>;
   groupAdmins: (conv: C) => Promise<GroupAdmins>;
-  groupOps: (conv: C) => GroupOps | null;
+  groupMetaPolicy: (conv: C) => Promise<GroupMetaPolicy>;
+  groupOps: (conv: C) => GroupMetaWriters | null;
   addMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   removeMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   leaveOp: (conv: C) => (() => Promise<unknown>) | null;

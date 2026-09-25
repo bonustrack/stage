@@ -5,6 +5,7 @@ import {
 import { buildReply, buildStaticAttachment } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
+import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
@@ -69,6 +70,13 @@ async function groupAdminsOf(conv: Conversation): Promise<{ admins: string[]; su
     conv.listSuperAdmins().catch(recover<string[]>('xmtp.groupAdmins', [])),
   ]);
   return { admins, superAdmins };
+}
+
+async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
+  if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
+  const set = await conv.permissionPolicySet().catch(recover('xmtp.groupMetaPolicy', null));
+  if (!set) return UNKNOWN_GROUP_POLICY;
+  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy };
 }
 
 async function streamAllMessages(
@@ -157,6 +165,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   groupName: (conv) => (conv instanceof Group ? conv.name().catch(recover('xmtp.groupName', '')) : Promise.resolve('')),
   groupInfo: groupInfoOf,
   groupAdmins: groupAdminsOf,
+  groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentity(identitiesOf(addresses)),
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentity(identitiesOf(addresses)),

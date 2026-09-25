@@ -1,11 +1,12 @@
 import {
   BackupElementSelectionOption, ConsentEntityType, ConsentState, Dm, Group, IdentifierKind,
-  ReactionAction, ReactionSchema, SortDirection, encodeText,
+  PermissionPolicy, ReactionAction, ReactionSchema, SortDirection, encodeText,
   type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
   type Reaction,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
+import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy, type GroupPolicyOption } from '@stage-labs/client/xmtp/groups';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
@@ -16,7 +17,7 @@ import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
   type GroupMeta, type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
-import { reported, ignore, ignored } from './errorPolicy';
+import { reported, recover, ignore, ignored } from './errorPolicy';
 
 type WebClient = Awaited<ReturnType<typeof xmtpClient>>;
 type WebMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
@@ -52,6 +53,29 @@ function webQuery(q: MessageQuery): WebMessagesOptions {
     limit: BigInt(q.limit),
     ...(q.beforeMs === undefined ? {} : { sentBeforeNs: BigInt(q.beforeMs) * BigInt(1_000_000) }),
     direction: q.order === 'asc' ? SortDirection.Ascending : SortDirection.Descending,
+  };
+}
+
+const POLICY_OPTION: Partial<Record<PermissionPolicy, GroupPolicyOption>> = {
+  [PermissionPolicy.Allow]: 'allow',
+  [PermissionPolicy.Deny]: 'deny',
+  [PermissionPolicy.Admin]: 'admin',
+  [PermissionPolicy.SuperAdmin]: 'superAdmin',
+};
+
+function policyOption(policy: PermissionPolicy): GroupPolicyOption {
+  return POLICY_OPTION[policy] ?? 'unknown';
+}
+
+async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
+  if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
+  const permissions = await conv.permissions().catch(recover('xmtp.groupMetaPolicy', null));
+  if (!permissions) return UNKNOWN_GROUP_POLICY;
+  const set = permissions.policySet;
+  return {
+    name: policyOption(set.updateGroupNamePolicy),
+    description: policyOption(set.updateGroupDescriptionPolicy),
+    image: policyOption(set.updateGroupImageUrlSquarePolicy),
   };
 }
 
@@ -176,6 +200,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   groupAdmins: (conv) => Promise.resolve(conv instanceof Group
     ? { admins: conv.admins, superAdmins: conv.superAdmins }
     : NO_GROUP_ADMINS),
+  groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentifiers(identifiersOf(addresses)),
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentifiers(identifiersOf(addresses)),

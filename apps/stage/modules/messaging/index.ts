@@ -23,7 +23,7 @@ export {
 } from '../../lib/xmtp.conv';
 
 export {
-  createGroup, addGroupMembers, removeGroupMembers, updateGroupMeta, leaveGroupConv,
+  createGroup, addGroupMembers, removeGroupMembers, updateGroupMeta, leaveGroupConv, groupEditRights,
 } from '../../lib/xmtp.groups';
 
 export {
@@ -54,6 +54,6 @@ export { summarizeConversation, type ConversationView } from './conversation';
 export { useConvConsentState } from './useConvConsent';
 export { useGroupWaiting } from './useGroupWaiting';
 
-export { messagingKeys, fetchGroupRoles, useConvMeta } from './queries';
+export { messagingKeys, fetchGroupRoles, useConvMeta, invalidateConvMeta } from './queries';
 export { ensureMessagingStreamSync } from './streamSync';
 export { prefetchFeed } from './feedQuery';

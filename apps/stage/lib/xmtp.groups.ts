@@ -1,5 +1,6 @@
 import {
-  createGroupWith, addGroupMembersWith, requireValidMembers, type CreateGroupResult,
+  createGroupWith, addGroupMembersWith, requireValidMembers, updateGroupMetaWith, groupEditRightsOf, groupRoleOf,
+  type CreateGroupResult, type GroupEditRights, type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup, type GroupAdmins, type GroupInfo, type GroupMeta } from './xmtp.sdk.core';
@@ -44,11 +45,15 @@ export async function removeGroupMembers(convId: string, addresses: string[]): P
   await sdk.removeMembers(group, addresses);
 }
 
-export async function updateGroupMeta(convId: string, patch: GroupMeta & { description?: string }): Promise<void> {
+export async function updateGroupMeta(convId: string, patch: GroupMetaPatch): Promise<void> {
   const ops = sdk.groupOps(requireConv(await convOfLine(lineOfConv(convId)))) ?? notAGroup();
-  if (patch.name !== undefined) await ops.updateName(patch.name);
-  if (patch.imageUrl !== undefined) await ops.updateImageUrl(patch.imageUrl);
-  if (patch.description !== undefined) await ops.updateDescription(patch.description);
+  await updateGroupMetaWith(patch, ops);
+}
+
+export async function groupEditRights(convId: string): Promise<GroupEditRights> {
+  const group = await requireGroup(lineOfConv(convId));
+  const [client, policy, staff] = await Promise.all([sdk.client(), sdk.groupMetaPolicy(group), sdk.groupAdmins(group)]);
+  return groupEditRightsOf(policy, groupRoleOf(client.inboxId ?? '', staff));
 }
 
 export function groupAdminInboxIds(conv: GroupConv): Promise<GroupAdmins> {

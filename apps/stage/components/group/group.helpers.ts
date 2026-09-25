@@ -1,5 +1,5 @@
 import {
-  addGroupMembers, convIdOfLine, convOfLine, memberInboxToAddressMap, removeGroupMembers, updateGroupMeta,
+  addGroupMembers, convIdOfLine, convOfLine, memberInboxToAddressMap, removeGroupMembers,
 } from '../../modules/messaging';
 
 function convIdOf(line: string): string {
@@ -23,16 +23,4 @@ export async function addGroupMember(line: string, addr: string): Promise<string
 export async function removeGroupMember(line: string, addr: string): Promise<string[]> {
   await removeGroupMembers(convIdOf(line), [addr]);
   return sortedMembers(line);
-}
-
-export function updateGroupImage(line: string, url: string): Promise<void> {
-  return updateGroupMeta(convIdOf(line), { imageUrl: url });
-}
-
-export function updateGroupDescription(line: string, next: string): Promise<void> {
-  return updateGroupMeta(convIdOf(line), { description: next });
-}
-
-export function updateGroupName(line: string, next: string): Promise<void> {
-  return updateGroupMeta(convIdOf(line), { name: next });
 }

@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
 import { Box, Col } from '../layout';
 import { FormField } from '../FormField';
+import type { PictureChoice } from '../PictureEditor';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerDescription, getPeerDisplayName } from '../../lib/peerProfiles';
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profileWrite';
 import { changedFields, draftFrom, draftProblem, hasChanges, type ProfileDraft } from './ProfileSettings.edit.model';
 
-export type ProfilePicture = { kind: 'keep' } | { kind: 'new'; file: PickedFile } | { kind: 'remove' };
-
-function pictureChanges(picture: ProfilePicture): Pick<ProfileChanges, 'image' | 'removeImage'> {
+function pictureChanges(picture: PictureChoice): Pick<ProfileChanges, 'image' | 'removeImage'> {
   if (picture.kind === 'new') return { image: picture.file };
   if (picture.kind === 'remove') return { removeImage: true };
   return {};
 }
 
 export function EditProfileSection({ address, name, picture, onSaved }: {
-  address: string; name: string; picture: ProfilePicture; onSaved: () => void;
+  address: string; name: string; picture: PictureChoice; onSaved: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const current = { displayName: getPeerDisplayName(address), description: getPeerDescription(address) };

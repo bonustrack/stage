@@ -126,15 +126,16 @@ export function AddMemberModal({
 }
 
 export function OverflowModal({
-  visible, onClose, anchor, leaving, onLeave,
+  visible, onClose, anchor, leaving, onLeave, onEdit,
 }: {
   visible: boolean; onClose: () => void; anchor?: MenuPoint | null;
-  leaving: boolean; onLeave: () => void;
+  leaving: boolean; onLeave: () => void; onEdit?: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
       <MenuList dark={dark}>
+        {onEdit ? <MenuRow icon="pencil" label="Edit group" dark={dark} onPress={onEdit} /> : null}
         <MenuRow icon="arrowLeft" label={leaving ? 'Leaving…' : 'Leave group'} danger dark={dark}
           onPress={() => { if (!leaving) onLeave(); }} />
       </MenuList>
