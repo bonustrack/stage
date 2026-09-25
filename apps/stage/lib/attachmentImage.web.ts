@@ -1,7 +1,7 @@
 const MAX_EDGE = 1920;
 const SCALE_LADDER = [1, 0.7, 0.5, 0.35];
 const QUALITY_LADDER = [0.82, 0.65, 0.5];
-const RESHAPABLE = /^image\/(jpeg|png|webp|heic|heif|bmp)$/;
+const RESHAPABLE = /^image\/(jpeg|png|webp|avif|heic|heif|bmp)$/;
 const TYPE_EXT: Record<string, string> = { 'image/webp': 'webp', 'image/jpeg': 'jpg' };
 
 export interface FittedImage { bytes: Uint8Array; mimeType: string }
