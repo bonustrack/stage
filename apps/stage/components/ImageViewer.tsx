@@ -16,9 +16,10 @@ import { downloadImage } from '../lib/imageDownload';
 import { describeError } from '../lib/errorPolicy';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { lockDocumentScroll } from '../lib/webLayout';
+import { isCoarsePointer, lockDocumentScroll } from '../lib/webLayout';
+import { ZoomableImage } from './ZoomableImage';
 
-const WEB_FRAME = Platform.OS === 'web' ? { paddingVertical: 104, paddingHorizontal: 18 } : null;
+const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
 function ViewerButton({ icon, label, dark, loading, onPress }: {
   icon: HeroIconName; label: string; dark: boolean; loading?: boolean;
@@ -84,16 +85,20 @@ export function ImageViewer({ uri, visible, onClose }: {
   };
 
   return (
-    <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel>
+    <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
-        <Pressable
-          onPress={onClose}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', ...WEB_FRAME }}
->
-          {uri ? (
-            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
-          ) : null}
-        </Pressable>
+        {uri && isCoarsePointer() ? (
+          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose}/>
+        ) : (
+          <Pressable
+            onPress={onClose}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: FRAME.x, paddingVertical: FRAME.y }}
+          >
+            {uri ? (
+              <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
+            ) : null}
+          </Pressable>
+        )}
 
         <Row gap={8} style={{ position: 'absolute', top: insets.top + PAGE_GUTTER, right: PAGE_GUTTER }}>
           <ViewerMenu dark={dark} saving={saving} onDownload={() => { void onDownload(); }}/>
