@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { Vibration } from 'react-native';
+import { Platform, Vibration } from 'react-native';
 import type { ViewType as View } from '../layout/native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
@@ -32,6 +32,7 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 }
 
 const THRESHOLD = -64;
+const SWIPE_TO_REPLY = Platform.OS !== 'web';
 
 export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const { pending, onReply, onReact, onOpenMenu } = input;
@@ -87,9 +88,10 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
     .onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); }), [onDoubleTap]);
   const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
     .onStart((e) => { runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY }); }), [openMenu]);
-  const tapGestures = useMemo(
-    () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)),
-    [replyPan, longPress, doubleTap]);
+  const tapGestures = useMemo(() => {
+    const menuOrReact = Gesture.Exclusive(longPress, doubleTap);
+    return SWIPE_TO_REPLY ? Gesture.Race(replyPan, menuOrReact) : menuOrReact;
+  }, [replyPan, longPress, doubleTap]);
 
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
   const replyHintStyle = useAnimatedStyle(() => ({
