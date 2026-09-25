@@ -53,8 +53,10 @@ function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
   const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
   if (shown <= 0) return null;
   return (
-    <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
-      <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
+    <Row align="center" height={PREVIEW_LINE_HEIGHT}>
+      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
+        <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
+      </Row>
     </Row>
   );
 }
@@ -86,18 +88,14 @@ function TitleLine({ params, scheme }: {
   );
 }
 
-function MetaColumn({ params, trailing }: {
-  params: ChannelRowParams; trailing: React.ReactNode;
+function TitleRow({ params, scheme }: {
+  params: ChannelRowParams; scheme: Scheme;
 }): React.ReactElement {
   return (
-    <Col gap={LINE_GAP} align="end">
-      <Row align="center" height={TITLE_LINE_HEIGHT}>
-        <Caption value={params.timestamp} color="secondary" />
-      </Row>
-      <Row align="center" height={PREVIEW_LINE_HEIGHT}>
-        {trailing}
-      </Row>
-    </Col>
+    <Row align="center" gap={12} height={TITLE_LINE_HEIGHT}>
+      <TitleLine params={params} scheme={scheme} />
+      {params.timestamp === '' ? null : <Caption value={params.timestamp} color="secondary" />}
+    </Row>
   );
 }
 
@@ -162,7 +160,7 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean;
 }): React.ReactElement {
   return (
-    <Text size="md" role="secondary" maxLines={2} style={{ flexShrink: 1, lineHeight: PREVIEW_LINE_HEIGHT }}>
+    <Text size="md" role="secondary" maxLines={2} style={{ flex: 1, minWidth: 0, lineHeight: PREVIEW_LINE_HEIGHT }}>
       <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
       {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="info" weight="semibold" /> : null}
       {params.preview}
@@ -177,13 +175,13 @@ function ChannelRowBody({ params, trailing }: {
   const { text: fg, inputBg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
-    <Row align="start" gap={12} flex={1}>
-      <Col gap={LINE_GAP} flex={1}>
-        <TitleLine params={params} scheme={scheme} />
+    <Col gap={LINE_GAP} flex={1}>
+      <TitleRow params={params} scheme={scheme} />
+      <Row align="start" gap={12}>
         <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
-      </Col>
-      <MetaColumn params={params} trailing={trailing} />
-    </Row>
+        {trailing}
+      </Row>
+    </Col>
   );
 }
 
