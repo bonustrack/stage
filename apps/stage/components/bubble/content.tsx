@@ -47,8 +47,8 @@ interface BubbleContentProps {
   highlight?: string;
 }
 
-function BubbleMain({ d, entry, fg, dark, selectable, highlight, markdownProps }: {
-  d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; dark: boolean;
+function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
+  d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string;
   selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
   if (d.poll) {
@@ -58,7 +58,7 @@ function BubbleMain({ d, entry, fg, dark, selectable, highlight, markdownProps }
   }
   if (d.txReq || d.txReceipt) return null;
   if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
-  return <BubbleBody text={entry.text} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
+  return <BubbleBody text={entry.text} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
 }
 
 function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleContentProps }): React.ReactElement {
@@ -102,7 +102,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
-      <BubbleMain d={d} entry={entry} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
+      <BubbleMain d={d} entry={entry} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       <BubbleCards d={d} p={props} />
     </>

@@ -26,24 +26,23 @@ function mentionDisplay(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
 }
 
-function MentionLink({ address, dark }: { address: string; dark: boolean }): React.ReactElement {
+function MentionLink({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
-  const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text size="3xl" weight="semibold"
-      onPress={() => { router.push(profileLinkOf(address)); }} color={linkColor}
+      onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionDisplay(address)}
     </Text>
   );
 }
 
-function MentionBody({ text, fg, dark }: { text: string; fg: string; dark: boolean }): React.ReactElement {
+function MentionBody({ text, fg }: { text: string; fg: string }): React.ReactElement {
   return (
     <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
       {parseMentions(text).map((seg, i) => (
-        seg.type === 'text' ? seg.text : <MentionLink key={`m${i}`} address={seg.address} dark={dark} />
+        seg.type === 'text' ? seg.text : <MentionLink key={`m${i}`} address={seg.address} />
       ))}
     </Text>
   );
@@ -118,27 +117,27 @@ function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement
   return <PlainBody body={withMentionLabels(body, mentionDisplay)} fg={fg} query={query} />;
 }
 
-function BubbleBodyText({ body, fg, dark, selectable, highlight, markdownProps }: {
-  body: string; fg: string; dark: boolean; selectable?: boolean;
+function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
+  body: string; fg: string; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const query = highlight?.trim() ? highlight : undefined;
   switch (bodyView(body, query !== undefined || selectable === true)) {
     case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
     case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
-    case 'mention': return <MentionBody text={body} fg={fg} dark={dark} />;
+    case 'mention': return <MentionBody text={body} fg={fg} />;
     case 'markdown': return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
   }
 }
 
-export function BubbleBody({ text, fg, dark, selectable, highlight, markdownProps }: {
-  text: string; fg: string; dark: boolean; selectable?: boolean;
+export function BubbleBody({ text, fg, selectable, highlight, markdownProps }: {
+  text: string; fg: string; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const body = unescapeBody(text);
   return (
     <Box style={{ alignSelf: 'stretch' }}>
-      <BubbleBodyText body={body} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
+      <BubbleBodyText body={body} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
     </Box>
   );
 }
