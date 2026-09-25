@@ -8,6 +8,7 @@ import { Spinner } from '../../components/Spinner';
 import { Box, Col, PANE_LEFT_PAD, pinnedBottom, viewportFill } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -62,9 +63,10 @@ function UnresolvedConversation({ resolved }: {
 
 let measuredFooterHeight = 0;
 
-function FooterDock({ children, onHeight }: {
-  children: React.ReactNode; onHeight: (h: number) => void;
+function FooterDock({ children, height, onHeight }: {
+  children: React.ReactNode; height: number; onHeight: (h: number) => void;
 }): React.ReactElement {
+  useReportBottomChrome(height);
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
     <Box
@@ -139,7 +141,7 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
         <ConversationTopnav c={c} convId={convId}/>
       )}
-      <FooterDock onHeight={setComposerH}><ConversationFooter c={c} convId={convId}/></FooterDock>
+      <FooterDock height={composerH} onHeight={setComposerH}><ConversationFooter c={c} convId={convId}/></FooterDock>
       <ConversationOverlays
         c={c} convId={convId}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}

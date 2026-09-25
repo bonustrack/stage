@@ -10,6 +10,9 @@ import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
+import { useReportBottomChrome } from '../../lib/bottomChrome';
+
+const WEB_TAB_BAR_HEIGHT = 60;
 
 export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['index', 'chatBubble'],
@@ -75,9 +78,10 @@ export function WebTabBar({ pathname, unreadBadge }: {
   unreadBadge: string | undefined;
 }): React.ReactElement {
   const pal = usePalette();
+  useReportBottomChrome(WEB_TAB_BAR_HEIGHT);
   return (
     <Row
-      height={60}
+      height={WEB_TAB_BAR_HEIGHT}
       surface="toolbar"
       style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
 >
