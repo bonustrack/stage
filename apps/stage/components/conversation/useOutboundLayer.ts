@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
+import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
@@ -85,7 +85,8 @@ export function useOutboundLayer(
     }, ...s.optimistic] }));
     scrollToNewest();
     setShowJump(false);
-    const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
+    const preview = text.trim()
+      || attachmentsPreview(attachments.map(a => ({ mimeType: a.mime, filename: a.name })));
     if (convId) patchRowSent(convId, preview);
   }, [activeLine, myUri, convId]);
 

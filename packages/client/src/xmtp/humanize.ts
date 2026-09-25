@@ -84,10 +84,10 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
   reply: previewReply,
-  attachment: decoded => {
-    const a = decoded as { filename?: string; mimeType?: string };
-    return attachmentEmojiPreview(a.mimeType, a.filename);
-  },
+  attachment: decoded => attachmentsPreview([decoded as AttachmentMeta]),
+  remoteStaticAttachment: decoded => attachmentsPreview([decoded as AttachmentMeta]),
+  multiRemoteStaticAttachment: previewMultiRemote,
+  multiRemoteAttachment: previewMultiRemote,
 };
 
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
@@ -97,13 +97,42 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   return handler ? handler(decoded) : `[${typeId}]`;
 }
 
+type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
+
+export interface AttachmentMeta { mimeType?: string | null; filename?: string | null }
+
+function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
+  const ext = a.filename?.split('.').pop()?.toLowerCase() ?? '';
+  const mime = a.mimeType ?? '';
+  if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return 'image';
+  if (matchesKind(mime, ext, 'audio/', AUDIO_EXTS)) return 'audio';
+  if (matchesKind(mime, ext, 'video/', VIDEO_EXTS)) return 'video';
+  return 'file';
+}
+
+const KIND_EMOJI: Record<AttachmentKind, string> = { image: '📷', audio: '🎤', video: '🎥', file: '📎' };
+
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
-  const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
-  const mime = mimeType ?? '';
-  if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return '📷';
-  if (matchesKind(mime, ext, 'audio/', AUDIO_EXTS)) return '🎤';
-  if (matchesKind(mime, ext, 'video/', VIDEO_EXTS)) return '🎥';
-  return '📎';
+  return KIND_EMOJI[attachmentKindOf({ mimeType, filename })];
+}
+
+const KIND_NOUNS: Record<AttachmentKind, { one: string; many: string }> = {
+  image: { one: 'an image', many: 'images' },
+  audio: { one: 'a voice message', many: 'voice messages' },
+  video: { one: 'a video', many: 'videos' },
+  file: { one: 'a file', many: 'files' },
+};
+
+export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
+  const kinds = items.map(attachmentKindOf);
+  const first = kinds[0] ?? 'file';
+  if (kinds.length <= 1) return `Sent ${KIND_NOUNS[first].one}`;
+  const noun = kinds.every(k => k === first) ? KIND_NOUNS[first].many : 'attachments';
+  return `Sent ${kinds.length} ${noun}`;
+}
+
+function previewMultiRemote(decoded: unknown): string {
+  return attachmentsPreview((decoded as { attachments?: AttachmentMeta[] }).attachments ?? []);
 }
 
 function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string[]): boolean {
