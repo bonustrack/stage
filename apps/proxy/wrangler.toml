@@ -10,8 +10,8 @@ compatibility_date = "2026-06-01"
 #
 # bundler.stage.box: /<branch> proxies the EAS Update manifest for that
 # branch's channel so the expo dev client loads previews from a stable
-# per-branch URL; all other paths fall through to the GitHub Pages origin
-# (dev hub + launcher), so its record stays a proxied CNAME to
+# per-branch URL; browsers on other paths fall through to the GitHub Pages
+# origin (dev hub + launcher), so its record stays a proxied CNAME to
 # bonustrack.github.io.
 routes = [
   { pattern = "proxy.stage.box/*", zone_name = "stage.box" },
