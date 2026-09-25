@@ -5,56 +5,23 @@ import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
-import { hasAttachments, isReaction } from './feed-helpers';
+import { isReaction } from './feed-helpers';
+import { localIdsByLiveId, matchConfirmed, mergeConfirmed } from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 
-function matchConfirmed(
-  optimistic: HistoryEntry[], liveBubbles: HistoryEntry[],
-  myUri: string, confirmedIds: Map<string, string>,
-): Set<string> {
-  const confirmed = new Set<string>();
-  if (!optimistic.length) return confirmed;
-  const used = new Set<string>();
-  const ordered = [...optimistic].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
-  for (const o of ordered) {
-    const realId = confirmedIds.get(o.id);
-    if (realId) {
-      const byId = liveBubbles.find(e => e.id === realId && !used.has(e.id));
-      if (byId) { used.add(byId.id); confirmed.add(o.id); continue; }
-    }
-    if (hasAttachments(o)) continue;
-    const oTs = new Date(o.ts).getTime();
-    const match = liveBubbles.find(e =>
-      e.from === myUri && !used.has(e.id)
-      && new Date(e.ts).getTime() >= oTs - 1_000
-      && new Date(e.ts).getTime() - oTs < 30_000
-      && e.text === o.text);
-    if (match) { used.add(match.id); confirmed.add(o.id); }
-  }
-  return confirmed;
-}
-
 function useOptimisticCleanup(
-  optimistic: HistoryEntry[], confirmedOptimisticIds: Set<string>,
+  optimistic: HistoryEntry[], confirmed: Map<string, string>,
   setOptimistic: React.Dispatch<React.SetStateAction<HistoryEntry[]>>,
   setConfirmedIds: React.Dispatch<React.SetStateAction<Map<string, string>>>,
 ): void {
   useEffect(() => {
     if (!optimistic.length) return;
-    const live = optimistic.filter(o => !confirmedOptimisticIds.has(o.id));
+    const live = optimistic.filter(o => !confirmed.has(o.id));
     if (live.length === optimistic.length) return;
     setOptimistic(live);
-    setConfirmedIds(prev => {
-      if (prev.size === 0) return prev;
-      let changed = false;
-      const next = new Map(prev);
-      for (const o of optimistic) {
-        if (confirmedOptimisticIds.has(o.id) && next.delete(o.id)) changed = true;
-      }
-      return changed ? next : prev;
-    });
-  }, [optimistic, confirmedOptimisticIds]);
+    setConfirmedIds(prev => mergeConfirmed(prev, confirmed));
+  }, [optimistic, confirmed]);
 }
 
 function useStickyBottom(
@@ -96,16 +63,16 @@ export function useOutboundLayer(
   const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
 
   const liveBubbles = useMemo(() => events.filter(e => !isReaction(e)), [events]);
-  const confirmedOptimisticIds = useMemo(
+  const confirmed = useMemo(
     () => matchConfirmed(optimistic, liveBubbles, myUri, confirmedIds),
     [liveBubbles, optimistic, myUri, confirmedIds],
   );
   const allBubbles = useMemo(() => {
     if (!optimistic.length) return liveBubbles;
-    return [...optimistic.filter(o => !confirmedOptimisticIds.has(o.id)), ...liveBubbles];
-  }, [liveBubbles, optimistic, confirmedOptimisticIds]);
-  useOptimisticCleanup(optimistic, confirmedOptimisticIds, setOptimistic, setConfirmedIds);
-  const localIdOf = useMemo(() => new Map([...confirmedIds].map(([localId, sentId]) => [sentId, localId])), [confirmedIds]);
+    return [...optimistic.filter(o => !confirmed.has(o.id)), ...liveBubbles];
+  }, [liveBubbles, optimistic, confirmed]);
+  useOptimisticCleanup(optimistic, confirmed, setOptimistic, setConfirmedIds);
+  const localIdOf = useMemo(() => localIdsByLiveId(confirmedIds, confirmed), [confirmedIds, confirmed]);
   const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
   useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
