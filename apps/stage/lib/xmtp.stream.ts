@@ -1,7 +1,7 @@
 import { isControlBody, lineOfConv, type StreamMsg, type StreamStatus } from './xmtp.types';
 import { sdk } from './xmtp.sdk';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
-import { pushToFeedSlice, resyncActiveFeeds } from './xmtp.resync';
+import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
@@ -73,7 +73,7 @@ function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): vo
   const env = sdk.envelopeOf(msg, line);
   if (isControlBody(env.text)) return;
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
-  pushToFeedSlice(line, env);
+  mergeIntoFeed(line, [env]);
   if (activeFeedLines.has(line)) {
     void reconcileOnArrival(line, prevLatestNs, sdk.sentNsOf(msg), env.id);
   }

@@ -2,10 +2,9 @@
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
-import { PAGE_SIZE, prependToFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
+import { PAGE_SIZE, mergeIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache } from '../../lib/xmtp.state.core';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
@@ -34,7 +33,7 @@ function revalidateFeed(line: string): Promise<void> {
       await syncInboxOnce(0);
       const page = await refreshLatestPage(line);
       if (!page) return;
-      prependToFeed(line, page);
+      mergeIntoFeed(line, page);
       await reconcileOnOpen(line);
     } catch (err) {
       report('feed.revalidate', err);
@@ -53,7 +52,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
     await perfTime('feed.revalidate', () => revalidateFeed(line));
     return feedCache.get(line) ?? [];
   }
-  prependToFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
+  mergeIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }
@@ -70,12 +69,6 @@ export function prefetchFeed(line: string): void {
 
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
   const beforeTsMs = new Date(oldest.ts).getTime();
-  const mapped = (await olderConvMessages(line, beforeTsMs, PAGE_SIZE))
-    .filter(e => !isControlBody(e.text));
-  const prev = feedCache.get(line) ?? [];
-  const seen = new Set(prev.map(e => e.id));
-  const additions = mapped.filter(e => !seen.has(e.id));
-  if (additions.length > 0) feedCache.set(line, [...prev, ...additions]);
-  return additions.length >= PAGE_SIZE;
+  return mergeIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE)) >= PAGE_SIZE;
 }
 

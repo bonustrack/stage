@@ -4,7 +4,7 @@ import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
-import { PAGE_SIZE, prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
+import { PAGE_SIZE, mergeIntoFeed, refreshLatestPage } from '../../lib/xmtp.resync';
 import { report } from '../../lib/errorPolicy';
 
 function feedLatest(line: string): HistoryEntry | undefined {
@@ -44,7 +44,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     if (isControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
-    prependToFeed(line, await latestConvMessages(conv, line, PAGE_SIZE));
+    mergeIntoFeed(line, await latestConvMessages(conv, line, PAGE_SIZE));
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
   } catch (err) {
     report('feed.reconcileOnOpen', err);
@@ -65,7 +65,7 @@ async function healArrivalGap(line: string): Promise<void> {
     const page = await refreshLatestPage(line);
     if (!page) return;
     const before = feedLatest(line);
-    prependToFeed(line, page);
+    mergeIntoFeed(line, page);
     const after = feedLatest(line);
     if (before?.id !== after?.id) {
       logReconcileHeal(

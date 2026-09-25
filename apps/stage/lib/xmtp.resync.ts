@@ -4,7 +4,7 @@ import { latestConvMessages } from './xmtp.messages';
 import { PAGE_SIZE, feedResync, throttledInboxSync } from './xmtp.resync.core';
 import { recover, reported } from './errorPolicy';
 
-export { PAGE_SIZE, prependToFeed, pushToFeedSlice } from './xmtp.resync.core';
+export { PAGE_SIZE, mergeIntoFeed } from './xmtp.resync.core';
 
 export const syncInboxOnce = throttledInboxSync(async () => {
   const client = sdk.cachedClient();

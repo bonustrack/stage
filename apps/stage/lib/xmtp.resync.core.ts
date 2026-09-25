@@ -2,24 +2,14 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { report } from './errorPolicy';
+import { mergeFeedEntries } from './feedOrder.model';
 
 export const PAGE_SIZE = 20;
 
-export function pushToFeedSlice(line: string, env: HistoryEntry): void {
-  const prev = feedCache.get(line) ?? [];
-  if (prev.some(e => e.id === env.id)) return;
-  feedCache.set(line, [env, ...prev]);
-}
-
-export function prependToFeed(line: string, entries: HistoryEntry[]): void {
-  const prev = feedCache.get(line) ?? [];
-  const seen = new Set(prev.map(e => e.id));
-  const fresh = entries.filter((e) => {
-    if (isControlBody(e.text) || seen.has(e.id)) return false;
-    seen.add(e.id);
-    return true;
-  });
-  if (fresh.length > 0) feedCache.set(line, [...fresh, ...prev]);
+export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): number {
+  const merged = mergeFeedEntries(feedCache.get(line) ?? [], entries.filter(e => !isControlBody(e.text)));
+  if (merged.added > 0) feedCache.set(line, merged.entries);
+  return merged.added;
 }
 
 export function throttledInboxSync(syncAll: () => Promise<boolean>): (maxAgeMs?: number) => Promise<void> {
@@ -50,7 +40,7 @@ export function feedResync(
     for (const line of activeFeedLines) {
       try {
         const page = await latestPage(line);
-        if (page !== null) prependToFeed(line, page);
+        if (page !== null) mergeIntoFeed(line, page);
       } catch (err) {
         report('xmtp.feedResync', err);
       }
