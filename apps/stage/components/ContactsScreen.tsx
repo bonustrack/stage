@@ -48,7 +48,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
         contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP }}
-        ListHeaderComponent={<SuggestedContacts known={known} />}
+        ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
     </Col>
   );

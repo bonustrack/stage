@@ -7,7 +7,7 @@ import { getPeerDescription, getPeerName, usePeerProfiles } from '../lib/peerPro
 import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
 
-export function SuggestedContacts({ known }: { known: readonly string[] }): React.ReactElement | null {
+export function SuggestedContacts({ known, headingTop = 16 }: { known: readonly string[]; headingTop?: number }): React.ReactElement | null {
   const router = useRouter();
   const self = useActiveAccountRecord()?.address ?? null;
   const addresses = useMemo(() => suggestedContacts(known, self), [known, self]);
@@ -15,7 +15,7 @@ export function SuggestedContacts({ known }: { known: readonly string[] }): Reac
   if (addresses.length === 0) return null;
   return (
     <Box>
-      <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
+      <Box padding={{ x: PAGE_GUTTER, top: headingTop, bottom: 6 }}>
         <Caption value={SUGGESTED_HEADING} color="secondary" weight="semibold" />
       </Box>
       {addresses.map((address) => (
