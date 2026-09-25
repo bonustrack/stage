@@ -44,6 +44,12 @@
         flex-direction: column;
         min-height: 100vh;
       }
+      html.stage-scroll-locked {
+        scrollbar-gutter: auto;
+      }
+      html.stage-scroll-locked body {
+        overflow: hidden;
+      }
     </style>
     <style id="stage-web-overrides">
       *:focus:not(:focus-visible) {

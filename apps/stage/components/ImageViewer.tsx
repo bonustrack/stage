@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Alert, Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -13,6 +13,9 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../lib/capabilities';
+import { lockDocumentScroll } from '../lib/webLayout';
+
+const WEB_FRAME = Platform.OS === 'web' ? { paddingVertical: 104, paddingHorizontal: 18 } : null;
 
 function extOf(uri: string): string {
   const dataMime = /^data:image\/([a-z0-9.+-]+)/i.exec(uri)?.[1];
@@ -50,6 +53,11 @@ export function ImageViewer({ uri, visible, onClose }: {
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!visible) return undefined;
+    return lockDocumentScroll();
+  }, [visible]);
+
   const onDownload = async (): Promise<void> => {
     if (saving || !uri) return;
     setSaving(true);
@@ -75,7 +83,7 @@ export function ImageViewer({ uri, visible, onClose }: {
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
         <Pressable
           onPress={onClose}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', ...WEB_FRAME }}
 >
           {uri ? (
             <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>

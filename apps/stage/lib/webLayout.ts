@@ -39,3 +39,15 @@ export function useTopChromeInset(): number {
   if (desktop > 0) return desktop;
   return wide ? WEB_TOP_BAND : 0;
 }
+
+let scrollLocks = 0;
+
+export function lockDocumentScroll(): () => void {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return () => undefined;
+  scrollLocks += 1;
+  document.documentElement.classList.add('stage-scroll-locked');
+  return () => {
+    scrollLocks -= 1;
+    if (scrollLocks === 0) document.documentElement.classList.remove('stage-scroll-locked');
+  };
+}
