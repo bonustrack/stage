@@ -12,6 +12,7 @@ import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { withMainThreadWasm } from './xmtp.wasm.web';
+import { withNestedReactions } from './nestedReactions.model';
 import type { XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
@@ -208,7 +209,9 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   createdAtNs: (conv) => (conv.createdAtNs === undefined ? 0 : Number(conv.createdAtNs)),
   consentOf: async (conv) => consentStateToString(await conv.consentState()),
   setConsent: (conv, state) => conv.updateConsentState(CONSENT_STATE[state]),
-  messages: (conv, query) => conv.messages(webQuery(query)),
+  messages: async (conv, query) => withNestedReactions(
+    await conv.messages(webQuery(query)), (m) => m.reactions, (m) => Number(m.sentAtNs),
+  ),
   rowOf: (m) => ({
     id: m.id,
     content: m.content,
