@@ -13,6 +13,7 @@ import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
   ROW_PREVIEW_MAX_CHARS, type RowMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
+import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
 export interface ConversationView {
@@ -84,6 +85,20 @@ function rowAvatar(
   return { avatarUri, avatarAddress };
 }
 
+function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRowData): GroupRowMeta {
+  const topic: string | undefined = conv.topic;
+  const title = channelRowTitle({
+    peerAddress, groupName: data.groupMeta.name,
+    memberCount: data.memberAddresses.length,
+    fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
+  });
+  return { title, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), labels: data.labels };
+}
+
+export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
+  return rowMetaOf(conv, null, await gatherGroupRowData(conv, null));
+}
+
 function lastSenderAddressOf(last: RowMessage | undefined, inboxToAddr: Record<string, string>): string | null {
   return last?.senderInboxId ? inboxToAddr[last.senderInboxId] ?? null : null;
 }
@@ -109,16 +124,11 @@ export async function summarizeConversation(
   const last = pickLastMessage(msgs, dm);
   const preview = previewOfMessage(last, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);
-  const { memberAddresses, groupMeta, labels } = await gatherGroupRowData(conv, peerAddress);
-  const topic: string | undefined = conv.topic;
-  const title = channelRowTitle({
-    peerAddress, groupName: groupMeta.name,
-    memberCount: memberAddresses.length,
-    fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
-  });
+  const { title, avatarUri, avatarAddress, labels } = rowMetaOf(
+    conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
+  );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
   const lastReadNs = await getLastReadNs(convId);
   const unreadCount = countUnreadEntries(msgs, lastReadNs, selfInboxId);
   const markedUnread = await resolveMarkedUnread(convId, {

@@ -103,3 +103,31 @@ export function applyInbound<R extends CachedChannelRow & { selfInboxId: string 
     wasUnread,
   };
 }
+
+export interface GroupRowMeta {
+  title: string;
+  avatarUri: string | null;
+  avatarAddress: string | null;
+  labels: string[];
+}
+
+function sameLabels(cur: unknown, next: readonly string[]): boolean {
+  return Array.isArray(cur) && cur.length === next.length && cur.every((l, i) => l === next[i]);
+}
+
+function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
+  return cur.title === meta.title
+    && cur.avatarUri === meta.avatarUri
+    && cur.avatarAddress === meta.avatarAddress
+    && sameLabels(cur.labels, meta.labels);
+}
+
+export function applyGroupMeta<R extends CachedChannelRow>(
+  rows: readonly R[],
+  convId: string,
+  meta: GroupRowMeta,
+): R[] | null {
+  const cur = rows.find(r => r.convId === convId);
+  if (cur === undefined || sameGroupMeta(cur, meta)) return null;
+  return patchRow(rows, convId, (row) => ({ ...row, ...meta }));
+}

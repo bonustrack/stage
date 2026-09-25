@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyInbound, applyRead, applyUnread, applySentPatch,
-  type CachedChannelRow,
+  applyGroupMeta, applyInbound, applyRead, applyUnread, applySentPatch,
+  type CachedChannelRow, type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
 
@@ -66,5 +66,43 @@ describe('applyInbound', () => {
     expect(out?.next[0]?.unreadCount).toBe(0);
     expect(out?.next[0]?.lastPreview).toBe('added label "Blocked"');
     expect(out?.wasUnread).toBe(false);
+  });
+});
+
+describe('applyGroupMeta', () => {
+  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'] };
+  const rows: Row[] = [
+    { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
+    { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
+  ];
+
+  test.each<[string, Partial<GroupRowMeta>]>([
+    ['labels', { labels: ['In progress'] }],
+    ['added label', { labels: ['Todo', 'Blocked'] }],
+    ['cleared labels', { labels: [] }],
+    ['title', { title: 'Renamed' }],
+    ['avatarUri', { avatarUri: 'https://x/y.png' }],
+    ['avatarAddress', { avatarAddress: null }],
+  ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
+    const out = applyGroupMeta(rows, 'a', { ...meta, ...change });
+    expect(out?.[0]).toEqual({ ...rows[0], convId: 'a', ...change });
+    expect(out?.[1]).toBe(rows[1]);
+  });
+
+  test('fills metadata on a row that had none', () => {
+    expect(applyGroupMeta(rows, 'b', meta)?.[1]).toEqual({ ...rows[1], convId: 'b', ...meta });
+  });
+
+  test('returns null when nothing changed', () => {
+    expect(applyGroupMeta(rows, 'a', { ...meta, labels: ['Todo'] })).toBeNull();
+  });
+
+  test('treats a label reorder as a change', () => {
+    const two: Row[] = [{ ...rows[0], convId: 'a', labels: ['A', 'B'] }];
+    expect(applyGroupMeta(two, 'a', { ...meta, labels: ['B', 'A'] })?.[0]?.labels).toEqual(['B', 'A']);
+  });
+
+  test('returns null for a missing row', () => {
+    expect(applyGroupMeta(rows, 'zzz', meta)).toBeNull();
   });
 });

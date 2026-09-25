@@ -22,9 +22,10 @@ export {
   blockRequestConv, unacceptConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
 } from '../../lib/xmtp.conv';
 
+export { createGroup, leaveGroupConv, groupEditRights } from '../../lib/xmtp.groups';
 export {
-  createGroup, addGroupMembers, removeGroupMembers, updateGroupMeta, leaveGroupConv, groupEditRights,
-} from '../../lib/xmtp.groups';
+  addGroupMembers, removeGroupMembers, updateGroupMeta, addGroupLabel, removeGroupLabel,
+} from './groupRow';
 
 export {
   xmtpSendText, xmtpReact, xmtpSendPoll,
@@ -41,7 +42,7 @@ export { useXmtpFeed } from '../../lib/xmtp.feed';
 
 export { conversationIsSyncGroup } from '../../lib/xmtp.readSync';
 export {
-  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, getGroupLabels, addGroupLabel, removeGroupLabel,
+  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, getGroupLabels,
 } from '../../lib/xmtp.labels';
 export { suggestLabels } from '../../lib/xmtp.labels.suggest';
 
