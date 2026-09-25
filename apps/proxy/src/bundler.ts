@@ -1,8 +1,11 @@
 const EAS_PROJECT_ID = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
 const DEFAULT_RUNTIME_VERSION = '1.0.0';
 const DEFAULT_PLATFORM = 'android';
+const DEFAULT_CHANNEL = 'main';
 
 export const BUNDLER_HOST = 'bundler.stage.box';
+
+const NO_BRANCH_MESSAGE = `No branch in this URL. Load https://${BUNDLER_HOST}/<branch>, for example https://${BUNDLER_HOST}/${DEFAULT_CHANNEL}`;
 
 export function channelFromPath(pathname: string): string | null {
   const segments = pathname.split('/').filter((part) => part.length > 0);
@@ -12,8 +15,12 @@ export function channelFromPath(pathname: string): string | null {
   return channel.length > 0 ? channel : null;
 }
 
+function isExpoClient(request: Request): boolean {
+  return request.headers.has('expo-platform');
+}
+
 export function isBrowserRequest(request: Request): boolean {
-  if (request.headers.has('expo-platform')) return false;
+  if (isExpoClient(request)) return false;
   return (request.headers.get('accept') ?? '').includes('text/html');
 }
 
@@ -29,8 +36,10 @@ export function manifestUrl(channel: string, request: Request): string {
 }
 
 export async function handleBundler(request: Request): Promise<Response> {
-  const channel = channelFromPath(new URL(request.url).pathname);
-  if (!channel) return fetch(request);
+  const { pathname } = new URL(request.url);
+  const expoClient = isExpoClient(request);
+  const channel = channelFromPath(pathname) ?? (expoClient && pathname === '/' ? DEFAULT_CHANNEL : null);
+  if (!channel) return expoClient ? new Response(NO_BRANCH_MESSAGE, { status: 404 }) : fetch(request);
   if (isBrowserRequest(request)) {
     const deepTarget = `https://${BUNDLER_HOST}/${channel}`;
     const launcher = `https://${BUNDLER_HOST}/preview-launcher.html?u=${encodeURIComponent(deepTarget)}`;

@@ -78,3 +78,59 @@ test('handleBundler redirects browsers to the launcher', async () => {
       encodeURIComponent('https://bundler.stage.box/feat-foo'),
   );
 });
+
+const EXPO_CLIENT_HEADERS = {
+  'expo-platform': 'android',
+  accept: 'application/expo+json,application/json',
+};
+
+function stubFetch(): { urls: string[]; restore: () => void } {
+  const urls: string[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = (input: RequestInfo | URL): Promise<Response> => {
+    urls.push(input instanceof Request ? input.url : String(input));
+    return Promise.resolve(new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }));
+  };
+  return { urls, restore: () => { globalThis.fetch = original; } };
+}
+
+test('handleBundler loads main for expo clients on the bare domain', async () => {
+  const { urls, restore } = stubFetch();
+  try {
+    await handleBundler(
+      new Request('https://bundler.stage.box/', { method: 'HEAD', headers: EXPO_CLIENT_HEADERS }),
+    );
+    const [target] = urls;
+    assert.ok(target);
+    assert.equal(new URL(target).origin, 'https://u.expo.dev');
+    assert.equal(new URL(target).searchParams.get('channel-name'), 'main');
+  } finally {
+    restore();
+  }
+});
+
+test('handleBundler never answers expo clients with the dev hub html on file paths', async () => {
+  const { urls, restore } = stubFetch();
+  try {
+    const response = await handleBundler(
+      new Request('https://bundler.stage.box/preview-launcher.html?u=x', {
+        method: 'HEAD',
+        headers: EXPO_CLIENT_HEADERS,
+      }),
+    );
+    assert.equal(response.status, 404);
+    assert.equal(urls.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+test('handleBundler passes browsers on the bare domain through to the dev hub', async () => {
+  const { urls, restore } = stubFetch();
+  try {
+    await handleBundler(new Request('https://bundler.stage.box/', { headers: { accept: 'text/html' } }));
+    assert.deepEqual(urls, ['https://bundler.stage.box/']);
+  } finally {
+    restore();
+  }
+});
