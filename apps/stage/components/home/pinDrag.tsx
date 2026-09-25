@@ -38,6 +38,7 @@ export function usePinDrag(order: readonly string[], visible: readonly string[])
 function lift(): void { Vibration.vibrate(10); }
 
 function shiftFor(index: number, from: number, to: number): number {
+  'worklet';
   if (index > from && index <= to) return -CHANNEL_ROW_HEIGHT;
   if (index < from && index >= to) return CHANNEL_ROW_HEIGHT;
   return 0;
