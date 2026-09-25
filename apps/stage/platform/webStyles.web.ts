@@ -15,6 +15,7 @@ const WEB_GLOBAL_CSS = [
   'html.stage-resizing * {',
   '  user-select: none !important;',
   '  -webkit-user-select: none !important;',
+  '  cursor: col-resize !important;',
   '}',
   '@keyframes stage-spin {',
   '  to { transform: rotate(360deg); }',
