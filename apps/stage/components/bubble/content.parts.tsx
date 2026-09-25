@@ -27,7 +27,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   const display = getPeerName(address) ?? shortAddress(address);
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
-    <Text weight="semibold"
+    <Text size="3xl" weight="semibold"
       onPress={() => { router.push(profileLinkOf(address)); }} color={linkColor}
       suppressHighlighting>
       @{display}
