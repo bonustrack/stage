@@ -3,6 +3,7 @@ import {
   validMemberAddresses, isNoInboxError, isPermissionError, requireValidMembers,
   mapCreateGroupError, mapAddMembersError, createGroupWith, addGroupMembersWith,
   groupRoleOf, groupEditRightsOf, canEditGroup, mapUpdateGroupError, updateGroupMetaWith, UNKNOWN_GROUP_POLICY,
+  groupMetaPolicyOfSet,
   type GroupMetaPolicy,
 } from '../src/xmtp/groups';
 
@@ -94,6 +95,16 @@ describe('groupRoleOf', () => {
     expect(groupRoleOf('ownerinbox', staff)).toBe('owner');
     expect(groupRoleOf('ADMININBOX', staff)).toBe('admin');
     expect(groupRoleOf('someone', staff)).toBe('member');
+  });
+});
+
+describe('groupMetaPolicyOfSet', () => {
+  test('reads name, description and image from their own policies', () => {
+    expect(groupMetaPolicyOfSet({
+      updateGroupNamePolicy: 'admin',
+      updateGroupDescriptionPolicy: 'deny',
+      updateGroupImagePolicy: 'superAdmin',
+    })).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin' });
   });
 });
 

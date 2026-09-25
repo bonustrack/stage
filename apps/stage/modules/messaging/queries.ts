@@ -9,6 +9,8 @@ export const messagingKeys = {
   all: ['xmtp'] as const,
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
+  groupEditRights: (convId: string | null | undefined) =>
+    ['xmtp', 'convMeta', convId ?? '', 'editRights'] as const,
   messages: (account: number, line: string) =>
     ['xmtp', 'messages', account, line] as const,
 } as const;

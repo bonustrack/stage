@@ -31,6 +31,7 @@ export function GroupProfileHeader({ imageUrl, channelId, insetTop, onView }: {
 
 export function GroupTitle({ name, description }: { name: string | null; description: string }): React.ReactElement {
   const { link: head, text: fg } = usePalette();
+  const about = description.trim();
   return (
     <>
       <Box padding={{ x: PAGE_GUTTER, top: 12, bottom: 16 }}>
@@ -38,10 +39,10 @@ export function GroupTitle({ name, description }: { name: string | null; descrip
           {name?.trim() ? name : 'Untitled group'}
         </Text>
       </Box>
-      {description.trim() ? (
+      {about ? (
         <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
           <Text size="xs" role="secondary">DESCRIPTION</Text>
-          <Text size="md" color={fg} style={{ marginTop: 6 }}>{description.trim()}</Text>
+          <Text size="md" color={fg} style={{ marginTop: 6 }}>{about}</Text>
         </Box>
       ) : null}
     </>

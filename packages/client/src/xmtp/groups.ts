@@ -90,6 +90,12 @@ const POLICY_RANK: Record<GroupPolicyOption, number> = {
   allow: 0, unknown: 0, admin: 1, superAdmin: 2, deny: Number.POSITIVE_INFINITY,
 };
 
+export function groupMetaPolicyOfSet(set: {
+  updateGroupNamePolicy: GroupPolicyOption; updateGroupDescriptionPolicy: GroupPolicyOption; updateGroupImagePolicy: GroupPolicyOption;
+}): GroupMetaPolicy {
+  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy };
+}
+
 export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdmins: string[] }): GroupRole {
   const id = inboxId.toLowerCase();
   if (staff.superAdmins.some(s => s.toLowerCase() === id)) return 'owner';

@@ -1,18 +1,19 @@
 import {
   BackupElementSelectionOption, ConsentEntityType, ConsentState, Dm, Group, IdentifierKind,
-  PermissionPolicy, ReactionAction, ReactionSchema, SortDirection, encodeText,
+  ReactionAction, ReactionSchema, SortDirection, encodeText,
   type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
   type Reaction,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
-import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy, type GroupPolicyOption } from '@stage-labs/client/xmtp/groups';
+import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { withNestedReactions } from './nestedReactions.model';
+import { webGroupMetaPolicy } from './groupPolicyWeb.model';
 import type { XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
@@ -57,27 +58,10 @@ function webQuery(q: MessageQuery): WebMessagesOptions {
   };
 }
 
-const POLICY_OPTION: Partial<Record<PermissionPolicy, GroupPolicyOption>> = {
-  [PermissionPolicy.Allow]: 'allow',
-  [PermissionPolicy.Deny]: 'deny',
-  [PermissionPolicy.Admin]: 'admin',
-  [PermissionPolicy.SuperAdmin]: 'superAdmin',
-};
-
-function policyOption(policy: PermissionPolicy): GroupPolicyOption {
-  return POLICY_OPTION[policy] ?? 'unknown';
-}
-
 async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
   const permissions = await conv.permissions().catch(recover('xmtp.groupMetaPolicy', null));
-  if (!permissions) return UNKNOWN_GROUP_POLICY;
-  const set = permissions.policySet;
-  return {
-    name: policyOption(set.updateGroupNamePolicy),
-    description: policyOption(set.updateGroupDescriptionPolicy),
-    image: policyOption(set.updateGroupImageUrlSquarePolicy),
-  };
+  return permissions ? webGroupMetaPolicy(permissions.policySet) : UNKNOWN_GROUP_POLICY;
 }
 
 function groupOptions(meta: GroupMeta): { groupName?: string; groupImageUrlSquare?: string } {

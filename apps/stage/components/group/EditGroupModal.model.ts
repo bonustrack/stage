@@ -13,15 +13,6 @@ export function groupDraftFrom(current: GroupCurrent): GroupDraft {
   return { name: current.name ?? '', description: current.description };
 }
 
-export function groupDraftProblem(current: GroupCurrent, draft: GroupDraft): string | null {
-  const name = draft.name.trim();
-  if (name.length > GROUP_NAME_MAX) return `Name is limited to ${GROUP_NAME_MAX} characters.`;
-  if (draft.description.trim().length > GROUP_DESCRIPTION_MAX) return `Description is limited to ${GROUP_DESCRIPTION_MAX} characters.`;
-  if (/[\r\n]/.test(draft.name)) return 'Name cannot span several lines.';
-  if (!name && (current.name ?? '').trim()) return 'A group needs a name.';
-  return null;
-}
-
 export function groupChanges(current: GroupCurrent, draft: GroupDraft): GroupMetaPatch {
   const out: GroupMetaPatch = {};
   const name = draft.name.trim();
@@ -29,6 +20,21 @@ export function groupChanges(current: GroupCurrent, draft: GroupDraft): GroupMet
   if (name !== (current.name ?? '').trim()) out.name = name;
   if (description !== current.description.trim()) out.description = description;
   return out;
+}
+
+function byteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
+export function groupDraftProblem(current: GroupCurrent, draft: GroupDraft): string | null {
+  const { name, description } = groupChanges(current, draft);
+  if (name !== undefined) {
+    if (!name) return 'A group needs a name.';
+    if (/[\r\n]/.test(name)) return 'Name cannot span several lines.';
+    if (byteLength(name) > GROUP_NAME_MAX) return 'Name is too long.';
+  }
+  if (description !== undefined && byteLength(description) > GROUP_DESCRIPTION_MAX) return 'Description is too long.';
+  return null;
 }
 
 export function groupMetaCachePatch(patch: GroupMetaPatch): GroupMetaCachePatch {

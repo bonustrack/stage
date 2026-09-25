@@ -21,14 +21,28 @@ describe('group edit model', () => {
     expect(groupChanges({ name: 'Crew', description: 'Old' }, { name: 'Crew', description: '' })).toEqual({ description: '' });
   });
 
-  test('limits lengths, forbids multi-line names and keeps a named group named', () => {
+  test('limits lengths in bytes, forbids multi-line names and keeps a named group named', () => {
     const named = { name: 'Crew', description: '' };
-    expect(groupDraftProblem(named, { name: 'a'.repeat(GROUP_NAME_MAX + 1), description: '' })).toContain(String(GROUP_NAME_MAX));
+    expect(groupDraftProblem(named, { name: 'a'.repeat(GROUP_NAME_MAX + 1), description: '' })).toBe('Name is too long.');
     expect(groupDraftProblem(named, { name: 'a'.repeat(GROUP_NAME_MAX), description: '' })).toBeNull();
-    expect(groupDraftProblem(named, { name: 'ok', description: 'b'.repeat(GROUP_DESCRIPTION_MAX + 1) })).toContain(String(GROUP_DESCRIPTION_MAX));
-    expect(groupDraftProblem(named, { name: 'two\nlines', description: '' })).toContain('lines');
-    expect(groupDraftProblem(named, { name: '  ', description: '' })).toContain('name');
+    expect(groupDraftProblem(named, { name: `  ${'a'.repeat(GROUP_NAME_MAX)}  `, description: '' })).toBeNull();
+    expect(groupDraftProblem(named, { name: 'Ж'.repeat(GROUP_NAME_MAX / 2 + 1), description: '' })).toBe('Name is too long.');
+    expect(groupDraftProblem(named, { name: 'Ж'.repeat(GROUP_NAME_MAX / 2), description: '' })).toBeNull();
+    expect(groupDraftProblem(named, { name: 'Crew', description: 'b'.repeat(GROUP_DESCRIPTION_MAX + 1) })).toBe('Description is too long.');
+    expect(groupDraftProblem(named, { name: 'Crew', description: 'b'.repeat(GROUP_DESCRIPTION_MAX) })).toBeNull();
+    expect(groupDraftProblem(named, { name: 'Crew', description: ` ${'b'.repeat(GROUP_DESCRIPTION_MAX)} ` })).toBeNull();
+    expect(groupDraftProblem(named, { name: 'Crew', description: 'Ж'.repeat(GROUP_DESCRIPTION_MAX / 2 + 1) })).toBe('Description is too long.');
+    expect(groupDraftProblem(named, { name: 'two\nlines', description: '' })).toBe('Name cannot span several lines.');
+    expect(groupDraftProblem(named, { name: 'two\rlines', description: '' })).toBe('Name cannot span several lines.');
+    expect(groupDraftProblem(named, { name: '  ', description: '' })).toBe('A group needs a name.');
     expect(groupDraftProblem({ name: null, description: '' }, { name: '', description: 'About' })).toBeNull();
+  });
+
+  test('only the fields being changed are checked', () => {
+    const odd = { name: 'Team\nAlpha', description: 'd'.repeat(GROUP_DESCRIPTION_MAX + 1) };
+    expect(groupDraftProblem(odd, { name: odd.name, description: 'New words' })).toBeNull();
+    expect(groupDraftProblem(odd, { name: 'Team', description: odd.description })).toBeNull();
+    expect(groupDraftProblem(odd, { name: 'Team\nBeta', description: odd.description })).toBe('Name cannot span several lines.');
   });
 
   test('maps a written patch onto the cached conversation meta', () => {

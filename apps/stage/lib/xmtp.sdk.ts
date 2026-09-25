@@ -5,7 +5,7 @@ import {
 import { buildReply, buildStaticAttachment } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
-import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
+import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
@@ -75,8 +75,7 @@ async function groupAdminsOf(conv: Conversation): Promise<{ admins: string[]; su
 async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
   const set = await conv.permissionPolicySet().catch(recover('xmtp.groupMetaPolicy', null));
-  if (!set) return UNKNOWN_GROUP_POLICY;
-  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy };
+  return set ? groupMetaPolicyOfSet(set) : UNKNOWN_GROUP_POLICY;
 }
 
 async function streamAllMessages(

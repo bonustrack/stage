@@ -18,7 +18,7 @@ type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
 
-export const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false };
+const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false };
 
 function useMemberDirectory(convId: string | undefined, meta: Meta): {
   members: string[]; memberNames: Names; memberRoles: Roles;
@@ -90,7 +90,7 @@ export function useGroupDetail(convId: string | undefined) {
   const [addDraft, setAddDraft] = useState('');
   const [removing, setRemoving] = useState<string | null>(null);
   const { data: rights = NO_EDIT_RIGHTS } = useQuery({
-    queryKey: ['groupEditRights', convId ?? ''],
+    queryKey: messagingKeys.groupEditRights(convId),
     queryFn: () => groupEditRights(convId ?? ''),
     enabled: !!convId,
   });
