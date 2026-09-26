@@ -10,8 +10,6 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { AppModal } from '../AppModal';
-import { FormField } from '../FormField';
 import { DANGER, usePalette } from '../../lib/theme';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
@@ -90,35 +88,5 @@ export function MemberRow({
         </Row>
       </ListViewItem>
     </Box>
-  );
-}
-
-export function AddMemberModal({
-  visible, onClose, addDraft, setAddDraft, adding, onAdd, dark,
-}: {
-  visible: boolean; onClose: () => void;
-  addDraft: string; setAddDraft: (s: string) => void; adding: boolean; onAdd: () => void;
-  dark: boolean;
-}): React.ReactElement {
-  const { primary, bg } = usePalette();
-  return (
-    <AppModal visible={visible} onClose={onClose}>
-      <Box>
-        <Box margin={{ bottom: 10 }}>
-          <FormField label="Address" placeholder="0x… Ethereum address" value={addDraft} onChangeText={setAddDraft}
-            inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false }} />
-        </Box>
-        <Button
-          size="md"
-          fullWidth
-          dark={dark}
-          disabled={adding || !addDraft.trim()}
-          onPress={onAdd}
-          tintBg={primary}
-          tintFg={bg}
-          label={adding ? 'Adding…' : 'Add member'}
-/>
-      </Box>
-    </AppModal>
   );
 }

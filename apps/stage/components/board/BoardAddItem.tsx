@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import type { Input } from '@stage-labs/kit/react-native/input';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AppModal } from '../AppModal';
 import { ChannelRow } from '../ChannelRow';
-import { FormField } from '../FormField';
+import { FormField, useFocusOnOpen } from '../FormField';
 import { SuggestionCheck } from '../group/ContactSuggestions';
 import { rowAvatarAddress, rowTitle } from '../home/parts';
 import type { Row as ChannelRowData } from '../home/model';
@@ -54,15 +53,6 @@ function ChannelChoice({ item, picked, query, onToggle }: {
       accessory={<SuggestionCheck selected={picked} checkBackground={link} dark={dark}/>}
     />
   );
-}
-
-function useFocusOnOpen(): RefObject<ComponentRef<typeof Input> | null> {
-  const ref = useRef<ComponentRef<typeof Input>>(null);
-  useEffect(() => {
-    const timer = setTimeout(() => { ref.current?.focus(); }, 0);
-    return () => { clearTimeout(timer); };
-  }, []);
-  return ref;
 }
 
 function AddItemForm({ label, rows, onAdd }: {

@@ -7,10 +7,8 @@ import {
   RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient,
 } from '../wallet/recipient.model';
 import { capabilities } from '../../lib/capabilities';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Box, Col } from '../layout';
-import { FormField } from '../FormField';
+import { Col } from '../layout';
+import { FormField, useFocusOnOpen } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 import { pickerRows } from './MemberPicker.model';
@@ -98,6 +96,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
 }): React.ReactElement {
   const { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses } = state;
   const contacts = useContacts(exclude, entry);
+  const input = useFocusOnOpen();
   const rows = useMemo(
     () => pickerRows(members, contacts, (m) => ({ address: m.address, name: m.label })),
     [members, contacts],
@@ -108,23 +107,9 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   return (
     <Col gap={12}>
       <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
-        onSubmit={() => { void addMember(); }} trailing={addButton}
+        onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
         inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
     </Col>
-  );
-}
-
-export function MemberPickerFooter({ count, busy, verb, onPress }: {
-  count: number; busy: boolean; verb: string; onPress: () => void;
-}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, border, primary } = usePalette();
-  const insets = useSafeAreaInsets();
-  return (
-    <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Button size="lg" fullWidth pill dark={dark} loading={busy} disabled={count === 0} onPress={onPress}
-        tintBg={primary} tintFg={bg} label={count > 0 ? `${verb} (${count})` : verb} />
-    </Box>
   );
 }

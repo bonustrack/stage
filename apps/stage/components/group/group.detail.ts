@@ -8,12 +8,12 @@ import {
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
-import { addGroupMember, removeGroupMember } from './group.helpers';
+import { removeGroupMember } from './group.helpers';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 type Meta = ReturnType<typeof useConvMeta>;
-type BusyKey = 'add' | 'leave';
+type BusyKey = 'leave';
 type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
@@ -87,27 +87,12 @@ export function useGroupDetail(convId: string | undefined) {
   const meta = useConvMeta(convId);
   const directory = useMemberDirectory(convId, meta);
   const { busy, run } = useTaskRunner(convId);
-  const [addDraft, setAddDraft] = useState('');
   const [removing, setRemoving] = useState<string | null>(null);
   const { data: rights = NO_EDIT_RIGHTS } = useQuery({
     queryKey: messagingKeys.groupEditRights(convId),
     queryFn: () => groupEditRights(convId ?? ''),
     enabled: !!convId,
   });
-
-  const addMember = async (onSuccess?: () => void): Promise<void> => {
-    const addr = addDraft.trim();
-    if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || busy.add) {
-      Alert.alert('Add member', 'Enter a valid 0x… Ethereum address.');
-      return;
-    }
-    await run('add', 'Add member failed', async () => {
-      const memberAddrs = await addGroupMember(line, addr);
-      setAddDraft('');
-      onSuccess?.();
-      return { memberAddrs };
-    });
-  };
 
   const removeMember = async (addr: string): Promise<void> => {
     const ok = await capabilities.confirm({
@@ -141,7 +126,7 @@ export function useGroupDetail(convId: string | undefined) {
   return {
     line, ...directory, busy, removing,
     name: meta.groupName, description: meta.groupDescription, imageUrl: meta.groupImage, rights,
-    addDraft, setAddDraft, addMember, removeMember,
+    removeMember,
     leaveGroup,
   };
 }

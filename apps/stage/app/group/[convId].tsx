@@ -10,7 +10,6 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
-import { AddMemberModal } from '../../components/group/group.parts';
 import { groupMenuItems } from '../../components/group/group.parts.model';
 import { GroupMembersList } from '../../components/group/group.members';
 import { GroupProfileHeader, GroupTitle } from '../../components/group/group.header';
@@ -19,6 +18,7 @@ import { useGroupDetail } from '../../components/group/group.detail';
 import { GroupLabelsView, useGroupLabels } from '../../components/group/group.labels';
 import { profileLinkOf } from '../../lib/links';
 import { reported } from '../../lib/errorPolicy';
+import { openAddMembers } from '../../lib/addMembersHost';
 
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
@@ -27,7 +27,6 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const g = useGroupDetail(convId);
   const [labels, setLabels] = useGroupLabels(g.line);
-  const [addOpen, setAddOpen] = useState(false);
   const [selfAddress, setSelfAddress] = useState<string>('');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -61,16 +60,9 @@ export default function GroupDetail(): React.ReactElement {
       <GroupMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}
-        onAdd={() => { g.setAddDraft(''); setAddOpen(true); }}
+        onAdd={() => { if (convId) openAddMembers(convId); }}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
-      />
-      <AddMemberModal
-        visible={addOpen}
-        onClose={() => { setAddOpen(false); }}
-        addDraft={g.addDraft} setAddDraft={g.setAddDraft} adding={g.busy.add === true}
-        onAdd={() => { void g.addMember(() => { setAddOpen(false); }); }}
-        dark={dark}
       />
       <EditGroupModal
         visible={editOpen}

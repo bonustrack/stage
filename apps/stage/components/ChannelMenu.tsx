@@ -12,6 +12,7 @@ import { togglePin } from '../lib/pins';
 import { blockRequestConv, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
 import { markChatCleared } from '../lib/clearedChats';
 import { profileLinkOf } from '../lib/links';
+import { openAddMembers } from '../lib/addMembersHost';
 
 interface ChannelMenuProps {
   convId: string;
@@ -92,7 +93,7 @@ export function ChannelMenu({
 
   const handlers: Record<string, () => void> = {
     search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
-    'add-members': () => { run(() => { router.push({ pathname: '/add-members', params: { convId } }); }); },
+    'add-members': () => { onClose(); setTimeout(() => { openAddMembers(convId); }, 0); },
     'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
     info: () => { run(() => {

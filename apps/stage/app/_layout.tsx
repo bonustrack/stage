@@ -28,6 +28,7 @@ import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
+import { AddMembersHost } from '../components/group/AddMembers';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
@@ -134,6 +135,7 @@ function RootLayoutInner(): React.ReactElement {
       <ToastHost />
       <AlertHost />
       <TooltipHost />
+      <AddMembersHost />
       <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
       </KeyboardProvider>
     </GestureHandlerRootView>

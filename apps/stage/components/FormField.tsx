@@ -1,4 +1,4 @@
-import type { ComponentRef, ReactNode, Ref } from 'react';
+import { useEffect, useRef, type ComponentRef, type ReactNode, type Ref, type RefObject } from 'react';
 import type { TextInputProps } from 'react-native';
 import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
@@ -33,6 +33,15 @@ export interface FormFieldProps {
   hint?: string;
   hintColor?: string;
   hintTone?: 'secondary' | 'success' | 'danger';
+}
+
+export function useFocusOnOpen(): RefObject<ComponentRef<typeof Input> | null> {
+  const ref = useRef<ComponentRef<typeof Input>>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => { ref.current?.focus(); }, 0);
+    return () => { clearTimeout(timer); };
+  }, []);
+  return ref;
 }
 
 export function useFieldColors(): { background: string; text: string; placeholder: string } {
