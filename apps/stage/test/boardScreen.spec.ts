@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  addColumnProblem, addedColumnOrder, boardColumns, keptColumnOrder, labelCarriers, movedColumnOrder, namedBoardOrder,
-  orderedColumns, renameProblem, renameTarget, renamedColumnOrder,
+  addColumnProblem, addedColumnOrder, boardColumns, draftEdit, draftNote, keptColumnOrder, labelCarriers,
+  movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote, renameProblem, renameTarget,
+  renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -209,6 +210,60 @@ describe('adding a column', () => {
     const order = addedColumnOrder(keys, [], 'Blocked');
     expect(orderedColumns(boardColumns(rows, [], order), order).map(c => [c.label, c.rows.length]))
       .toEqual([['Done', 1], ['Todo', 1], [null, 1], ['Blocked', 0]]);
+  });
+});
+
+describe('typing a column title in place', () => {
+  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], []);
+  const long = 'x'.repeat(25);
+
+  test('a new column saves its typed name with Enter or on blur', () => {
+    expect(draftEdit(columns, ' Blocked  now ', 'enter')).toEqual({ kind: 'save', name: 'Blocked now' });
+    expect(draftEdit(columns, 'Blocked', 'blur')).toEqual({ kind: 'save', name: 'Blocked' });
+  });
+
+  test('a new column left empty goes away on blur and waits for a name on Enter', () => {
+    expect(draftEdit(columns, '  ', 'blur')).toEqual({ kind: 'close' });
+    expect(draftEdit(columns, '', 'enter')).toEqual({ kind: 'stay' });
+  });
+
+  test('a new column with a taken or long name stays open', () => {
+    expect(draftEdit(columns, 'todo', 'blur')).toEqual({ kind: 'stay' });
+    expect(draftEdit(columns, 'unlabeled', 'enter')).toEqual({ kind: 'stay' });
+    expect(draftEdit(columns, long, 'blur')).toEqual({ kind: 'stay' });
+  });
+
+  test('a new column says what is wrong once there is a name or a try', () => {
+    expect(draftNote(columns, '', false)).toBeNull();
+    expect(draftNote(columns, '', true)).toBe('Enter a name.');
+    expect(draftNote(columns, 'todo', false)).toBe('A column named Todo already exists.');
+    expect(draftNote(columns, 'Doing', true)).toBeNull();
+  });
+
+  test('a rename saves with Enter or on blur, into the spelling of a column it merges with', () => {
+    expect(renameEdit(columns, 'Todo', ' Doing ', 'blur')).toEqual({ kind: 'save', name: 'Doing' });
+    expect(renameEdit(columns, 'Todo', 'done', 'enter')).toEqual({ kind: 'save', name: 'Done' });
+    expect(renameEdit(columns, 'Todo', 'TODO', 'enter')).toEqual({ kind: 'save', name: 'TODO' });
+  });
+
+  test('a rename to the same name closes without saving', () => {
+    expect(renameEdit(columns, 'Todo', ' Todo ', 'enter')).toEqual({ kind: 'close' });
+    expect(renameEdit(columns, 'Todo', 'Todo', 'blur')).toEqual({ kind: 'close' });
+  });
+
+  test('an empty or long rename reverts on blur and waits for a fix on Enter', () => {
+    expect(renameEdit(columns, 'Todo', ' ', 'blur')).toEqual({ kind: 'close' });
+    expect(renameEdit(columns, 'Todo', ' ', 'enter')).toEqual({ kind: 'stay' });
+    expect(renameEdit(columns, 'Todo', long, 'blur')).toEqual({ kind: 'close' });
+    expect(renameEdit(columns, 'Todo', long, 'enter')).toEqual({ kind: 'stay' });
+  });
+
+  test('a rename says what is wrong once there is a name or a try, and where a merge takes the channels', () => {
+    expect(renameNote(columns, 'Todo', '', false)).toBeNull();
+    expect(renameNote(columns, 'Todo', '', true)).toBe('Enter a name.');
+    expect(renameNote(columns, 'Todo', long, false)).toBe('Use at most 24 characters.');
+    expect(renameNote(columns, 'Todo', 'done', false)).toBe('Channels move into the Done column.');
+    expect(renameNote(columns, 'Todo', 'Doing', true)).toBeNull();
   });
 });
 

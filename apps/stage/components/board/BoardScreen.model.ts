@@ -137,6 +137,37 @@ export function renameTarget(
   return existing == null ? { name: typed, merge: false } : { name: existing, merge: true };
 }
 
+export type TitleCommit = 'enter' | 'blur';
+export type TitleEdit = { kind: 'save'; name: string } | { kind: 'close' } | { kind: 'stay' };
+
+const unsaved = (via: TitleCommit): TitleEdit => (via === 'blur' ? { kind: 'close' } : { kind: 'stay' });
+
+export function draftEdit(columns: readonly BoardColumn<unknown>[], name: string, via: TitleCommit): TitleEdit {
+  if (typedName(name) === '') return unsaved(via);
+  return addColumnProblem(columns, name) === null ? { kind: 'save', name: typedName(name) } : { kind: 'stay' };
+}
+
+export function draftNote(columns: readonly BoardColumn<unknown>[], name: string, tried: boolean): string | null {
+  return tried || typedName(name) !== '' ? addColumnProblem(columns, name) : null;
+}
+
+export function renameEdit(
+  columns: readonly BoardColumn<unknown>[], from: string, name: string, via: TitleCommit,
+): TitleEdit {
+  if (renameProblem(name) !== null) return unsaved(via);
+  const target = renameTarget(columns, from, name);
+  return target.name === from ? { kind: 'close' } : { kind: 'save', name: target.name };
+}
+
+export function renameNote(
+  columns: readonly BoardColumn<unknown>[], from: string, name: string, tried: boolean,
+): string | null {
+  const problem = renameProblem(name);
+  if (problem !== null) return tried || typedName(name) !== '' ? problem : null;
+  const target = renameTarget(columns, from, name);
+  return target.merge ? `Channels move into the ${target.name} column.` : null;
+}
+
 export function renamedColumnOrder(
   shown: readonly string[], saved: readonly string[], from: string, to: string,
 ): string[] {
