@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Box, Col, Row } from '../src/react-native/box';
-import { Icon } from '../src/react-native/icon';
+import { Glyph } from '../src/react-native/glyph';
 import { Input } from '../src/react-native/input';
 import { Pressable } from '../src/react-native/pressable';
 import { Text } from '../src/react-native/text';
@@ -8,6 +8,10 @@ import { useKitPalette } from '../src/react-native/theme-context';
 import type { StoryEntry } from './story';
 import { SCROLL_Y } from './styles';
 import { useScheme } from './scheme';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { IconMoon } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMoon';
+import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
 
 const CHEVRON = 14;
 
@@ -34,7 +38,7 @@ function GroupRows({ group, activeId, onSelect }: { group: Group; activeId: stri
     <Col>
       <Pressable onPress={() => { if (first) onSelect(first.id); }}>
         <Row align="center" gap={6} padding={{ x: 12, y: 6 }} radius="sm">
-          {foldable ? <Icon name={open ? 'chevronDown' : 'chevronRight'} size={CHEVRON} color={pal.sub} /> : <Box width={CHEVRON} />}
+          {foldable ? <Glyph icon={open ? IconChevronBottom : IconChevronRight} size={CHEVRON} color={pal.sub} /> : <Box width={CHEVRON} />}
           <Text size="lg" weight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
         </Row>
       </Pressable>
@@ -63,7 +67,7 @@ export function Sidebar({ stories, activeId, onSelect }: { stories: StoryEntry[]
         </Box>
         <Pressable onPress={() => { setScheme(dark ? 'light' : 'dark'); }} accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
           <Box padding={8} radius="sm">
-            <Icon name={dark ? 'sun' : 'moon'} size={20} color={pal.sub} />
+            <Glyph icon={dark ? IconSun : IconMoon} size={20} color={pal.sub} />
           </Box>
         </Pressable>
       </Row>

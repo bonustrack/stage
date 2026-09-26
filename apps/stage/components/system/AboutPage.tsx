@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, Col, PAGE_GUTTER } from '../layout';
@@ -12,6 +12,7 @@ import { timeAgo } from '../../lib/buildInfo.model';
 import { SettingsPage } from '../settings/SettingsPage';
 import { SettingsList, SettingsValueRow } from '../settings/rows';
 import { GithubLogo } from '../GithubLogo';
+import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
 
 function resolveNativeBuild(): string | null {
   if (Application.nativeBuildVersion) return Application.nativeBuildVersion;
@@ -41,7 +42,7 @@ function GitHubLinkRow(): React.ReactElement {
             <Text weight="semibold" size="md" color={head}>View Stage on GitHub</Text>
             <Text role="secondary" variant="caption" weight="medium" style={{ marginTop: 2 }}>bonustrack/stage</Text>
           </Col>
-          <Icon name="externalLink" size={18} color={text}/>
+          <Glyph icon={IconSquareArrowTopRight} size={18} color={text}/>
         </Row>
       </Box>
     </Pressable>

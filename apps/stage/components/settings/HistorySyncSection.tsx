@@ -8,6 +8,9 @@ import { receiveHistoryWithCode } from '../../lib/historyTransfer';
 import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/historySync.model';
 import { ReceiveCodeSheet, SendHistorySheet } from './HistoryTransferSheets';
 import { SettingsButtonRow, SettingsList } from './rows';
+import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
+import { IconArrowOutOfBox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowOutOfBox';
+import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 
 const SYNC_DESC = 'Ask your other devices for the messages this device is missing. Keep Stage open on the other device while it answers.';
 const SEND_DESC = 'Package this device\'s history for another device. You will get a code to enter there.';
@@ -35,19 +38,19 @@ export function HistorySyncSection(): React.ReactElement {
           <SettingsButtonRow
             label={syncing ? 'Syncing history…' : 'Sync history from another device'}
             description={status ?? SYNC_DESC}
-            iconStart="refresh"
+            iconStart={IconArrowRotateClockwise}
             onPress={() => { if (!syncing) void runHistorySync(); }}
           />
           <SettingsButtonRow
             label="Send history to another device"
             description={SEND_DESC}
-            iconStart="upload"
+            iconStart={IconArrowOutOfBox}
             onPress={() => { setSendOpen(true); }}
           />
           <SettingsButtonRow
             label="Receive history with a code"
             description={RECEIVE_DESC}
-            iconStart="download"
+            iconStart={IconArrowInbox}
             onPress={() => { setReceiveOpen(true); }}
           />
         </SettingsList>

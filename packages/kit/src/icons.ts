@@ -2,6 +2,8 @@
 import { HERO_ICON_DATA } from './heroicons.data';
 
 export { isBrandIconName, brandIconPath, type BrandIconName } from './brand-icons.data';
+export type { IconName } from './central-icons';
+export { iconStroke, type CentralIcon, type IconStyle } from './glyph';
 export { HERO_SOLID_ICON_PATHS, HERO_SOLID_VIEW_BOX, isHeroSolidIconName, type HeroSolidIconName, type SolidPath } from './heroicons.solid.data';
 
 export const HERO_ICON_PATHS = HERO_ICON_DATA;
@@ -30,10 +32,6 @@ export const HERO_ICON_DEFAULTS = {
   strokeWidth: 1.8,
   activeStrokeWidth: 1.8,
 } as const;
-
-export function iconStroke(color: string | undefined, dark: boolean | undefined): string {
-  return color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
-}
 
 export function iconStrokeWidth(focused: boolean | undefined): number {
   return focused ? HERO_ICON_DEFAULTS.activeStrokeWidth : HERO_ICON_DEFAULTS.strokeWidth;

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Box } from '../layout';
 import { RailTooltip } from '../tabs/RailTooltip';
 import { pageTopPadding } from '../chrome/PageIntro.model';
@@ -14,6 +14,8 @@ import { ProfileStep } from './Onboarding.profile';
 import { UsernameStep } from './Onboarding.username';
 import { useOnboardingFlow } from './useOnboardingFlow';
 import { safeNextRoute } from './nextRoute.model';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 
 export interface OnboardingProps {
   onDone: () => void;
@@ -22,13 +24,13 @@ export interface OnboardingProps {
 const STEP_ICON_INSET = 16;
 
 function StepIcon({ label, icon, side, onPress, top, color, disabled }: {
-  label: string; icon: HeroIconName; side: 'left' | 'right'; onPress: () => void; top: number; color: string; disabled: boolean;
+  label: string; icon: CentralIcon; side: 'left' | 'right'; onPress: () => void; top: number; color: string; disabled: boolean;
 }): React.ReactElement {
   const edge = side === 'left' ? { left: STEP_ICON_INSET } : { right: STEP_ICON_INSET };
   return (
     <RailTooltip label={label} placement="below" onPress={() => { if (!disabled) onPress(); }}
       style={{ position: 'absolute', top, ...edge, zIndex: 1, opacity: disabled ? 0.5 : 1 }}>
-      <Box padding={4}><Icon name={icon} size={24} color={color} /></Box>
+      <Box padding={4}><Glyph icon={icon} size={24} color={color} /></Box>
     </RailTooltip>
   );
 }
@@ -53,8 +55,8 @@ function StepChrome({ f, top, color }: { f: Flow; top: number; color: string }):
   const skip = stepSkip(f);
   return (
     <>
-      {back === null ? null : <StepIcon label="Back" icon="arrowNarrowLeft" side="left" onPress={back} top={top} color={color} disabled={f.busy} />}
-      {skip === null ? null : <StepIcon label="Skip" icon="arrowNarrowRight" side="right" onPress={skip} top={top} color={color} disabled={f.busy} />}
+      {back === null ? null : <StepIcon label="Back" icon={IconArrowLeft} side="left" onPress={back} top={top} color={color} disabled={f.busy} />}
+      {skip === null ? null : <StepIcon label="Skip" icon={IconArrowRight} side="right" onPress={skip} top={top} color={color} disabled={f.busy} />}
     </>
   );
 }

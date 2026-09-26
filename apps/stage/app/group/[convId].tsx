@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../../components/layout';
 import { OverlayHeader } from '../../components/chrome/OverlayHeader';
@@ -22,6 +22,7 @@ import { useGroupDetail } from '../../components/group/group.detail';
 import { GroupLabelsSection } from '../../components/group/group.labels';
 import { profileLinkOf } from '../../lib/links';
 import { reported } from '../../lib/errorPolicy';
+import { IconDotGrid1x3Horizontal } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Horizontal';
 
 function OverflowTrailing({ color, dark, onPress }: {
   color: string; dark: boolean; onPress: (point: MenuPoint) => void;
@@ -29,7 +30,7 @@ function OverflowTrailing({ color, dark, onPress }: {
   return (
     <GesturePressable onPress={onPress} hitSlop={10}>
       <Box padding={6}>
-        <Icon name="dotsHorizontal" size={24} color={color} dark={dark} />
+        <Glyph icon={IconDotGrid1x3Horizontal} size={24} color={color} dark={dark} />
       </Box>
     </GesturePressable>
   );

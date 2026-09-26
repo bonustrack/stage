@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
@@ -11,6 +11,7 @@ import { OnboardingCard, PROFILE_AVATAR_SIZE } from './OnboardingCard';
 import { usePalette } from '../../lib/theme';
 import { GroupImagePicker } from '../GroupImagePicker';
 import { EMPTY_DETAILS, profileDetailsProblem, type ProfileDetails } from './Onboarding.profile.model';
+import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 
 const PROFILE_TITLE = 'Set up your profile';
 const PROFILE_ABOUT = 'Add a picture, your name and a few words about you.';
@@ -24,7 +25,7 @@ function PicturePicker({ image, busy, onPick }: {
     <Pressable onPress={() => { if (!busy) setPickNonce((n) => n + 1); }} hitSlop={8} accessibilityLabel="Choose a profile picture" style={{ alignSelf: 'center' }}>
       {image === null ? (
         <Col size={PROFILE_AVATAR_SIZE} radius="full" background={pal.border} align="center" justify="center">
-          <Icon name="camera" size={28} color={pal.sub} />
+          <Glyph icon={IconCamera1} size={28} color={pal.sub} />
         </Col>
       ) : (
         <Image src={image.uri} size={PROFILE_AVATAR_SIZE} radius="full" background={pal.border} />

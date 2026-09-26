@@ -1,14 +1,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
-import type { HeroIconName } from '@stage-labs/kit/icons';
 import { Col, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
 import { capabilities } from '../lib/capabilities';
 import { OverlayHeader } from './chrome/OverlayHeader';
+import { IconBubbleDots } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleDots';
+import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 
 export function useSelfAddress(): string {
   const { data } = useQuery({
@@ -34,7 +35,7 @@ export function ProfileHeader({ insetTop, c, menu }: {
 }
 
 function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }: {
-  icon: HeroIconName; label: string; disabled?: boolean;
+  icon: CentralIcon; label: string; disabled?: boolean;
   border: string; fg: string; dark: boolean; onPress: () => void;
 }): React.ReactElement {
   return (
@@ -49,7 +50,7 @@ function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }
         tintFg={fg}
         disabled={disabled}
         dark={dark}
-        iconStart={<Icon name={icon} size={24} color={fg} dark={dark} />}
+        iconStart={<Glyph icon={icon} size={24} color={fg} dark={dark} />}
         onPress={onPress}
       />
       <Text value={label} weight="semibold" size="md" color={fg} truncate />
@@ -63,7 +64,7 @@ export function ProfileActions({ dark, onMessage, onSend, c }: {
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
       <ProfileRoundAction
-        icon="chatRect"
+        icon={IconBubbleDots}
         label="Message"
         border={c.border}
         fg={c.link}
@@ -71,7 +72,7 @@ export function ProfileActions({ dark, onMessage, onSend, c }: {
         onPress={onMessage}
       />
       <ProfileRoundAction
-        icon="send"
+        icon={IconPaperPlane}
         label="Send"
         border={c.border}
         fg={c.link}

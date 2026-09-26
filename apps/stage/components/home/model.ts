@@ -1,5 +1,6 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging';
+import type { AppIconName } from '../appIcons';
 import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
@@ -73,14 +74,14 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
 interface ChannelsOverflowItem {
   id: string;
   label: string;
-  icon: string;
+  icon: AppIconName;
 }
 
 export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
-  { id: 'board', label: 'Board view', icon: 'viewBoards' },
-  { id: 'copy-address', label: 'Copy address', icon: 'copy' },
-  { id: 'profile', label: 'Profile', icon: 'user' },
-  { id: 'settings', label: 'Settings', icon: 'cog' },
+  { id: 'board', label: 'Board view', icon: 'IconColumns3Wide' },
+  { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' },
+  { id: 'profile', label: 'Profile', icon: 'IconPeople' },
+  { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },
 ];
 
 interface SortInputs {

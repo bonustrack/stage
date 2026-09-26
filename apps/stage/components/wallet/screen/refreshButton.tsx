@@ -2,7 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 
 export function RefreshButton({
   refreshing,
@@ -45,7 +46,7 @@ export function RefreshButton({
       })}
     >
       <Animated.View style={{ transform: [{ rotate }] }}>
-        <Icon name="refresh" size={24} color={color} />
+        <Glyph icon={IconArrowRotateClockwise} size={24} color={color} />
       </Animated.View>
     </Pressable>
   );

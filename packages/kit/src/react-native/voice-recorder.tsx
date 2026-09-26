@@ -3,10 +3,14 @@ import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder } from 'react-native';
 import { Box, Row } from './box';
 import { Button } from './button';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
 import { Pressable } from './pressable';
 import { Spacer } from './spacer';
 import { Text } from './text';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 
 export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 
@@ -46,7 +50,7 @@ function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx 
           extrapolate: 'clamp',
         }),
       }}>
-        <Icon name="arrowLeft" size={14} color={sub}/>
+        <Glyph icon={IconArrowLeft} size={14} color={sub}/>
         <Text size="xs" role="secondary">
           Slide to cancel
         </Text>
@@ -71,7 +75,7 @@ function CancelBtn({ onPress, fg, chipBg }: {
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent',
     })}>
-      <Icon name="x" size={22} color={fg}/>
+      <Glyph icon={IconCrossMedium} size={22} color={fg}/>
     </Pressable>
   );
 }
@@ -157,7 +161,7 @@ function MicView({ recording, fg, hoverFg, slideX, panHandlers }: {
         transform: [{ translateX: slideX }],
       }}
     >
-      <Icon name="microphone" size={22} color={recording ? '#ffffff' : hovered ? hoverFg : fg}/>
+      <Glyph icon={IconMicrophone} size={22} color={recording ? '#ffffff' : hovered ? hoverFg : fg}/>
     </Animated.View>
   );
 }
@@ -195,7 +199,7 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
         {mic}
         {recording ? (
           <Button size="md" pill dark={dark} tintBg={primary}
-            onPress={onCompletePress} icon={<Icon name="check" size={20} color={bg} />} />
+            onPress={onCompletePress} icon={<Glyph icon={IconCheckmark1} size={20} color={bg} />} />
         ) : (
           rightAction
         )}

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
@@ -16,6 +16,9 @@ import {
 } from '../../modules/messaging';
 import { suggestLabels } from '../../modules/messaging';
 import { reported } from '../../lib/errorPolicy';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -40,7 +43,7 @@ function SuggestionChip({ label, busy, onAdd }: {
         opacity: busy ? 0.5 : pressed ? 0.7 : 1,
       })}
 >
-      <Icon name="plus" size={12} color={fg}/>
+      <Glyph icon={IconPlusLarge} size={12} color={fg}/>
       <LabelText label={label} size="xs" color={fg} />
     </Pressable>
   );
@@ -68,7 +71,7 @@ function LabelChips({ labels, onRemove }: {
             onPress={() => { onRemove(label); }}
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           >
-            <Icon name="x" size={14} color={fg} dark={dark} />
+            <Glyph icon={IconCrossMedium} size={14} color={fg} dark={dark} />
           </Pressable>
         </Row>
       ))}
@@ -99,7 +102,7 @@ function LabelAddRow({ draft, setDraft, busy, onAdd }: {
           backgroundColor: pressed ? border : 'transparent',
         })}
 >
-        {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
+        {busy ? <Spinner size={14} color={fg} /> : <Glyph icon={IconPlusLarge} size={14} color={fg} />}
         <Text size="xs" color={fg}>Add</Text>
       </Pressable>
     </Row>
@@ -149,7 +152,7 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
   return (
     <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       <Row align="center" gap={6}>
-        <Icon name="tag" size={13} color={sub}/>
+        <Glyph icon={IconTag} size={13} color={sub}/>
         <Text size="xs" role="secondary">LABELS</Text>
       </Row>
 

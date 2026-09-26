@@ -2,10 +2,12 @@
 import { Fragment, forwardRef } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
@@ -33,7 +35,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       align="center" gap={10} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onClose} hitSlop={8}>
-        <Icon name="arrowNarrowLeft" size={24} color={head}/>
+        <Glyph icon={IconArrowLeft} size={24} color={head}/>
       </Pressable>
       <Input
         ref={ref}
@@ -48,7 +50,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
 />
       {props.query.length> 0 ? (
         <Pressable onPress={() => { props.setQuery(''); }} hitSlop={8}>
-          <Icon name="x" size={18} color={sub}/>
+          <Glyph icon={IconCrossMedium} size={18} color={sub}/>
         </Pressable>
       ) : null}
     </Row>

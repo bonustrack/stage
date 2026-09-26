@@ -1,5 +1,5 @@
 
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
@@ -8,6 +8,7 @@ import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';
 import { Box, Row } from '../layout';
 import { ChannelRow } from '../ChannelRow';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
 function SuggestionCheck({ selected, checkBackground, dark }: {
   selected: boolean; checkBackground: string; dark: boolean;
@@ -15,8 +16,8 @@ function SuggestionCheck({ selected, checkBackground, dark }: {
   if (selected) {
     return (
       <Row width={24} height={24} radius="lg" background={checkBackground} align="center" justify="center">
-        <Icon
-          name="check"
+        <Glyph
+          icon={IconCheckmark1}
           size={14}
           color={dark ? ON_PRIMARY_COLOR.dark : ON_PRIMARY_COLOR.light}
           dark={dark}

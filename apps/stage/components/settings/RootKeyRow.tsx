@@ -6,6 +6,7 @@ import { recover } from '../../lib/errorPolicy';
 import { SettingsButtonRow } from './rows';
 import { migrateRootKey } from './rootKeyActions';
 import { ROOT_KEY_CONFIRM, ROOT_KEY_LABEL, rootKeyActionable, rootKeyDescription, type RootKeyMigrationState } from './RootKeyRow.model';
+import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconKey2';
 
 function useMigration(rec: AccountRecord, epoch: number): RootKeyMigrationState {
   const [state, setState] = useState<RootKeyMigrationState>('loading');
@@ -36,6 +37,6 @@ export function RootKeyRow({ rec, epoch, onChanged }: { rec: AccountRecord; epoc
     });
   };
   return (
-    <SettingsButtonRow label={busy ? 'Waiting for approval…' : ROOT_KEY_LABEL} description={rootKeyDescription(state)} iconStart="key" onPress={run} />
+    <SettingsButtonRow label={busy ? 'Waiting for approval…' : ROOT_KEY_LABEL} description={rootKeyDescription(state)} iconStart={IconKey2} onPress={run} />
   );
 }

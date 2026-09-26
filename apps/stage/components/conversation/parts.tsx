@@ -4,7 +4,7 @@ import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/helpers';
@@ -17,6 +17,7 @@ import { MenuList, MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import type { MenuAnchor } from '../bubble/props';
 import { useHover } from '../hover';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
@@ -46,7 +47,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
         {...back.hoverProps}
         style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
 >
-        <Icon name="arrowNarrowLeft" size={24} color={back.hovered ? link : fg}/>
+        <Glyph icon={IconArrowLeft} size={24} color={back.hovered ? link : fg}/>
       </Pressable>
       {children}
     </Row>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -15,6 +15,7 @@ import { usePublicSend } from '../../components/wallet/send.public';
 import { SendReview } from '../../components/wallet/send.review';
 import { Spinner } from '../../components/Spinner';
 import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
+import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 
 const RESOLVING_SPINNER = 24;
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from '../../components/wallet/TokenSelector';
@@ -52,7 +53,7 @@ function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabl
   const controls = (
     <Row align="center" gap={8}>
       <Button label={unitLabel} color="primary" variant="soft" size="sm" pill dark={dark}
-        iconEnd={<Icon name="arrowDown" size={18} dark={dark} />} onPress={onToggleUnit} />
+        iconEnd={<Glyph icon={IconArrowDown} size={18} dark={dark} />} onPress={onToggleUnit} />
       <Button label="MAX" color="primary" variant="ghost" size="sm" disabled={maxDisabled} dark={dark} onPress={onMax} />
     </Row>
   );

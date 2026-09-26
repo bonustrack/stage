@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation/tabs';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
@@ -109,8 +109,8 @@ export default function TabsLayout(): React.ReactElement {
             key={name}
             name={name}
             options={{
-              tabBarIcon: ({ color, focused }) => (
-                <Icon name={icon} size={24} color={color} focused={focused}/>
+              tabBarIcon: ({ color }) => (
+                <Glyph icon={icon} size={24} color={color}/>
               ),
               ...(name === 'index'
                 ? {

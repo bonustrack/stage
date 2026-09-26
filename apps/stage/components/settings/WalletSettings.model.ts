@@ -41,6 +41,6 @@ export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
 
 export const WALLET_SECURITY_LINK = {
   label: 'Passkey, backup and devices',
-  icon: 'key',
+  icon: 'IconKey2',
   href: '/settings/security',
 } as const;

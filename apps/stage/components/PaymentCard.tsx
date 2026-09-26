@@ -1,12 +1,13 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from './layout';
 import { TokenAvatar } from './wallet/screen/tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './bubble/balance';
 import { usePalette, withAlpha } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 interface PaymentBalanceArgs {
   show: boolean;
@@ -50,7 +51,7 @@ function PaymentActionButton({ action, dark, pal }: {
       size="lg" fullWidth radius={24} dark={dark}
       loading={action.loading} disabled={action.disabled} onPress={action.onPress}
       label={action.label}
-      iconStart={action.icon ?? <Icon name="wallet" size={18} color={pal.bg}/>}
+      iconStart={action.icon ?? <Glyph icon={IconWallet4} size={18} color={pal.bg}/>}
       tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
     />
   );

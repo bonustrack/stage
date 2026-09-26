@@ -1,9 +1,12 @@
 import type { Story } from '../gallery/story';
 import { Button, type ButtonProps } from '../src/react-native/button';
-import { Icon } from '../src/react-native/icon';
+import { Glyph } from '../src/react-native/glyph';
 import { Col, Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
+import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
 export default { title: 'Button' };
 
@@ -16,8 +19,8 @@ export const Controls: Story<ButtonProps & { withIconStart: boolean; withIconEnd
   return (
     <Button
       dark={dark} {...args}
-      iconStart={withIconStart ? <Icon name="check" size={16} /> : undefined}
-      iconEnd={withIconEnd ? <Icon name="arrowRight" size={16} /> : undefined}
+      iconStart={withIconStart ? <Glyph icon={IconCheckmark1} size={16} /> : undefined}
+      iconEnd={withIconEnd ? <Glyph icon={IconArrowRight} size={16} /> : undefined}
     />
   );
 };
@@ -49,7 +52,7 @@ export const Matrix: Story = () => {
         <Button dark={dark} label="Disabled" disabled />
         <Button dark={dark} label="Loading" loading />
         <Button dark={dark} label="Pill" pill />
-        <Button dark={dark} uniform icon={<Icon name="plus" size={18} />} />
+        <Button dark={dark} uniform icon={<Glyph icon={IconPlusLarge} size={18} />} />
       </Row>
     </Col>
   );

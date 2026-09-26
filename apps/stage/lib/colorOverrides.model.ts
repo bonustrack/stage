@@ -1,10 +1,12 @@
 
 import {
   DEFAULT_SEED, grayscaleFromHex, grayscaleHex,
-  type ThemeSeed, type Scheme, type AccentLevel, type GrayscaleShade, type GrayscaleTint,
-  type RadiusName, type Density, type BaseSize,
+  type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint,
+} from '@stage-labs/kit/theme-derive';
+import {
   RADIUS_NAME_DEFAULT, DENSITY_DEFAULT, BASE_SIZE_DEFAULT,
-} from '@stage-labs/kit';
+  type Scheme, type RadiusName, type Density, type BaseSize,
+} from '@stage-labs/kit/tokens';
 
 export interface ThemeSeeds {
   light: ThemeSeed;

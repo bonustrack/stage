@@ -2,10 +2,10 @@
 import { createValueStore } from './persistedStore';
 import {
   grayscaleFromHex,
-  type ThemeSeed, type Scheme, type AccentLevel,
+  type ThemeSeed, type AccentLevel,
   type GrayscaleShade, type GrayscaleTint,
-  type RadiusName, type Density, type BaseSize,
-} from '@stage-labs/kit';
+} from '@stage-labs/kit/theme-derive';
+import type { Scheme, RadiusName, Density, BaseSize } from '@stage-labs/kit/tokens';
 import {
   cloneSeed, defaultSeeds, migrateSeeds,
   type SeedColorKey, type ThemeSeeds,

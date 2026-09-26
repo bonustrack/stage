@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
@@ -11,6 +11,7 @@ import { ReactionsRow } from './reactions';
 import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { useBubbleGestures } from './gestures';
+import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 
 function BubbleAvatar({ address, bg, onPress }: {
   address?: string | null; bg: string; onPress?: (address: string) => void;
@@ -76,7 +77,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
           pointerEvents="none"
           style={[g.replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
         >
-          <Icon name="reply" size={20} color={sub}/>
+          <Glyph icon={IconArrowUndoUp} size={20} color={sub}/>
         </Animated.View>
         <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
         <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} />

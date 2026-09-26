@@ -9,6 +9,8 @@ import {
   DEVICE_PASSKEY_DONE, DEVICE_PASSKEY_LABEL, ENABLE_PASSKEY_CONFIRM, ENABLE_PASSKEY_ROW, REMOVE_DEVICE_PASSKEY, devicePasskeyState,
   devicePasskeyValue,
 } from './DevicePasskeyRow.model';
+import { IconFingerPrint1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFingerPrint1';
+import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 function useInstalled(rec: AccountRecord, stored: boolean, epoch: number): boolean | null | undefined {
   const [installed, setInstalled] = useState<boolean | null | undefined>(undefined);
@@ -39,7 +41,7 @@ function ActiveRows({ rec, onRemoved }: { rec: AccountRecord; onRemoved: () => v
   return (
     <>
       <SettingsValueRow label={DEVICE_PASSKEY_LABEL} value={devicePasskeyValue('active')} />
-      <SettingsButtonRow label={busy ? 'Removing…' : REMOVE_DEVICE_PASSKEY.label} iconStart="trash" danger onPress={remove} />
+      <SettingsButtonRow label={busy ? 'Removing…' : REMOVE_DEVICE_PASSKEY.label} iconStart={IconTrashCan} danger onPress={remove} />
     </>
   );
 }
@@ -63,7 +65,7 @@ function EnableRow({ rec, onEnabled }: { rec: AccountRecord; onEnabled: () => vo
   };
   return (
     <SettingsButtonRow label={busy ? ENABLE_PASSKEY_ROW.busy : ENABLE_PASSKEY_ROW.label} description={status ?? ENABLE_PASSKEY_ROW.description}
-      iconStart="fingerPrint" onPress={enable} />
+      iconStart={IconFingerPrint1} onPress={enable} />
   );
 }
 

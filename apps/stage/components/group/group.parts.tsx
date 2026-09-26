@@ -5,7 +5,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Box, Col, Row } from '../layout';
 import { shortAddress } from '../../modules/messaging';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
@@ -16,6 +16,9 @@ import { MenuList, MenuRow } from '../MenuRows';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FormField } from '../FormField';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
@@ -83,7 +86,7 @@ export function MemberRow({
               dark={dark}
               tintFg={DANGER}
               tintPressedBg={dark ? '#3a1820' : '#fbe3e8'}
-              iconStart={<Icon name="trash" size={18} color={DANGER} dark={dark} />}
+              iconStart={<Glyph icon={IconTrashCan} size={18} color={DANGER} dark={dark} />}
               onPress={() => {
                 if (!isRemovingThis) onRemove();
               }}
@@ -135,8 +138,8 @@ export function OverflowModal({
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
       <MenuList dark={dark}>
-        {onEdit ? <MenuRow icon="pencil" label="Edit group" dark={dark} onPress={onEdit} /> : null}
-        <MenuRow icon="arrowLeft" label={leaving ? 'Leaving…' : 'Leave group'} danger dark={dark}
+        {onEdit ? <MenuRow icon={IconPencil} label="Edit group" dark={dark} onPress={onEdit} /> : null}
+        <MenuRow icon={IconArrowLeft} label={leaving ? 'Leaving…' : 'Leave group'} danger dark={dark}
           onPress={() => { if (!leaving) onLeave(); }} />
       </MenuList>
     </AnchoredMenu>

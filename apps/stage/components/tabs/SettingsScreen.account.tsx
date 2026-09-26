@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 
 import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
@@ -24,6 +24,11 @@ import { kernelCustody } from '../../lib/zerodev';
 import { recover, report } from '../../lib/errorPolicy';
 import { errorMessage } from '@stage-labs/client/errors';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
+import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 interface RevealedKey { id: string; pk: string }
 
@@ -80,12 +85,12 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
       onPress={() => { capabilities.copy('Private key', revealed); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
-      <Icon name="wallet" size={24} color={link} />
+      <Glyph icon={IconWallet4} size={24} color={link} />
       <Col flex={1}>
         <Text size="xl" color={text}>Tap to copy private key</Text>
         <Text size="xs" selectable color={text} style={{ marginTop: 4 }}>{revealed}</Text>
       </Col>
-      <Icon name="copy" size={20} color={link} />
+      <Glyph icon={IconSquareBehindSquare1} size={20} color={link} />
     </ListViewItem>
   );
 }
@@ -124,9 +129,9 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
     passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); setEpoch((n) => n + 1); }} />,
     devicePasskey: () => <DevicePasskeyRow key={`${rec.id}:${epoch}`} rec={rec} />,
     recoveryKey: () => <RecoveryKeyRow rec={rec} place={place} />,
-    exportKey: () => <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />,
-    linkDevice: () => <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />,
-    removeAccount: () => <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />,
+    exportKey: () => <SettingsNavRow label="Export private key" iconStart={IconWallet4} iconEnd={IconChevronBottom} onPress={onExport} />,
+    linkDevice: () => <SettingsNavRow label="Link a device" iconStart={IconQrCode} onPress={onMove} />,
+    removeAccount: () => <SettingsButtonRow label="Remove account" iconStart={IconTrashCan} danger onPress={() => { confirmRemove(rec); }} />,
   };
   return (
     <SettingsList>

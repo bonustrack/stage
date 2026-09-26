@@ -10,6 +10,7 @@ import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
 import { SettingsPage } from './SettingsPage';
 import { SettingsList, SettingsThemeRow } from './rows';
+import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 
 export function DisplaySettings(): React.ReactElement {
   const pref = useThemePreference();
@@ -35,7 +36,7 @@ export function DisplaySettings(): React.ReactElement {
         ))}
         <SettingsThemeRow
           label="Custom"
-          iconName="colorSwatch"
+          iconName={IconColorSwatch}
           selected={custom}
           onPress={() => { setCustomTheme(true); }}
         />

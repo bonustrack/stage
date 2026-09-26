@@ -1,10 +1,12 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { MemberRow } from './group.parts';
 import { usePalette } from '../../lib/theme';
+import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
 function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): React.ReactElement {
   const { text: fg, border } = usePalette();
@@ -23,8 +25,8 @@ function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): 
           backgroundColor: pressed ? border : 'transparent',
         })}
 >
-        <Icon name="users" size={16} color={fg}/>
-        <Icon name="plus" size={14} color={fg}/>
+        <Glyph icon={IconGroup1} size={16} color={fg}/>
+        <Glyph icon={IconPlusLarge} size={14} color={fg}/>
       </Pressable>
     </Row>
   );

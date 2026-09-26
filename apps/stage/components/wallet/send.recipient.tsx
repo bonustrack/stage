@@ -1,7 +1,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
 import { Row, Col } from '../layout';
@@ -9,6 +9,7 @@ import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';
+import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 
 export function RecipientRow({ address, label, onPress }: {
   address: string;
@@ -104,7 +105,7 @@ export function ContactsButton({ color, border, onPress }: {
         backgroundColor: pressed ? border : 'transparent',
       })}
 >
-      <Icon name="users" size={20} color={color}/>
+      <Glyph icon={IconGroup1} size={20} color={color}/>
     </Pressable>
   );
 }

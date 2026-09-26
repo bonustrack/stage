@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Avatar } from '../Avatar';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { ethFromWeiHex } from './helpers';
@@ -21,6 +21,10 @@ import { useTxSimulation } from '../../lib/txSimulate';
 import { SimulationBlock } from './sim';
 import { txActionLabel, isTransferRequest } from './txwording';
 import { profileLinkOf } from '../../lib/links';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCodeBrackets';
+import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
+import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
 
 interface TxCardModel {
   target?: string;
@@ -55,7 +59,7 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
   const m = useTxCardModel(req);
   const action = (onPay && !gated) ? {
     label: m.actionLabel, onPress: onPay, loading: paying,
-    icon: <Icon name={m.isTransfer ? 'paperAirplane' : 'check'} size={18} color={pal.bg}/>,
+    icon: <Glyph icon={m.isTransfer ? IconPaperPlane : IconCheckmark1} size={18} color={pal.bg}/>,
   } : undefined;
   return (
     <PaymentCard
@@ -183,7 +187,7 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
   const usd = useUsdValue(chainId, null, eth);
   return (
     <Row align="center" gap={6}>
-      <Icon name="paperAirplane" size={14} color={pal.link}/>
+      <Glyph icon={IconPaperPlane} size={14} color={pal.link}/>
       <Text size="sm" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
     </Row>
   );
@@ -208,7 +212,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
   return (
     <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
-        <Icon name="code" size={14} color={sub}/>
+        <Glyph icon={IconCodeBrackets} size={14} color={sub}/>
         <Text size="xs" role="secondary">This transaction calls</Text>
       </Row>
       <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
@@ -237,7 +241,7 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
     <Box radius="md" background={withAlpha(pal.danger, 0.1)} padding={8} gap={4}
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}>
       <Row align="center" gap={6}>
-        <Icon name="shieldExclamation" size={14} color={pal.danger}/>
+        <Glyph icon={IconShieldBreak} size={14} color={pal.danger}/>
         <Text size="xs" weight="semibold" color={pal.danger}>Check before signing</Text>
       </Row>
       <Text size="xs" color={pal.danger} numberOfLines={4}>{text}</Text>

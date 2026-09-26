@@ -30,7 +30,7 @@ const BASE_SYNTAX = [BOX_STYLE, BOX_LAYOUT];
 
 export function kitEslint() {
   return [
-    { ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/heroicons.data.ts', 'src/heroicons.solid.data.ts'] },
+    { ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/heroicons.data.ts', 'src/heroicons.solid.data.ts', 'src/central-icons.data.ts'] },
     ...recommended,
     {
       files: ['src/**/*.{ts,tsx}'],

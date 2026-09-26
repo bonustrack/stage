@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { FormField } from './FormField';
 import { Spinner } from './Spinner';
 import { RailTooltip } from './tabs/RailTooltip';
@@ -8,6 +8,9 @@ import { randomUsername } from '../lib/randomUsername';
 import { useNameAvailability } from './settings/useNameAvailability';
 import { claimStatusTone, normalizeLabel, sanitizeLabelInput, type ClaimState } from './settings/ProfileSettings.claim.model';
 import { usernameHint, usernameStatus } from './UsernameField.model';
+import { IconArrowLeftRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeftRight';
+import { IconCircleCheck } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleCheck';
+import { IconCircleX } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleX';
 
 type Pal = ReturnType<typeof usePalette>;
 
@@ -37,7 +40,7 @@ export function useUsernameInput(): UsernameInput {
 function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
   return (
     <RailTooltip label="Random username" onPress={() => { if (!disabled) onPick(randomUsername()); }} style={undefined}>
-      <Icon name="switchHorizontal" size={SHUFFLE_ICON} color={pal.sub} />
+      <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={pal.sub} />
     </RailTooltip>
   );
 }
@@ -49,7 +52,7 @@ function StatusMark({ state, label, pal }: { state: ClaimState; label: string; p
   const ok = status.kind === 'ok';
   return (
     <RailTooltip label={status.tip} onPress={NOOP} style={undefined}>
-      <Icon name={ok ? 'checkCircle' : 'xCircle'} variant="solid" size={STATUS_ICON} color={ok ? pal.success : pal.danger} />
+      <Glyph icon={ok ? IconCircleCheck : IconCircleX} size={STATUS_ICON} color={ok ? pal.success : pal.danger} />
     </RailTooltip>
   );
 }

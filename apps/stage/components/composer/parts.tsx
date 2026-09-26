@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { ImageViewer } from '../ImageViewer';
 import { Box, Row, Col } from '../layout';
@@ -13,9 +13,14 @@ import { shortAddress } from '../../modules/messaging';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
 import { usePalette } from '../../lib/theme';
+import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
+import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 
-const kindIcon = (kind: string): HeroIconName => (
-  kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
+const kindIcon = (kind: string): CentralIcon => (
+  kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
 );
 
 export function ReplyBanner({
@@ -31,7 +36,7 @@ export function ReplyBanner({
     <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
-          <Icon name="reply" size={16} color={sub}/>
+          <Glyph icon={IconArrowUndoUp} size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
             <Text size="xl" role="secondary">Replying to </Text>
             <Text size="xl" color={nameColor}>
@@ -39,7 +44,7 @@ export function ReplyBanner({
             </Text>
           </Text>
           <Pressable onPress={onClear} hitSlop={8}>
-            <Icon name="x" size={18} color={sub}/>
+            <Glyph icon={IconCrossMedium} size={18} color={sub}/>
           </Pressable>
         </Row>
       </Pressable>
@@ -110,7 +115,7 @@ function PendingImage({
               backgroundColor: '#000', borderRadius: 999, padding: 2,
             }}
 >
-            <Icon name="x" size={12} color="#ffffff"/>
+            <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
           </Pressable>
         </Box>
         <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
@@ -135,10 +140,10 @@ export function PendingRow({
           <PendingImage key={a.id} image={a} fg={fg} onRemove={() => { onRemove(i); }}/>
         ) : (
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
-            <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
+            <Glyph icon={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
             <Pressable onPress={() => { onRemove(i); }} hitSlop={6}>
-              <Icon name="x" size={14} color={sub}/>
+              <Glyph icon={IconCrossMedium} size={14} color={sub}/>
             </Pressable>
           </Row>
         )

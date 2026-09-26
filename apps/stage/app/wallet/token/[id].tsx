@@ -6,6 +6,8 @@ import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Box, Col, Row } from '../../../components/layout';
 import { WalletHeader } from '../../../components/wallet/WalletHeader';
 import { WalletActionButton } from '../../../components/widgets';
+import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette } from '../../../lib/theme';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
@@ -24,10 +26,10 @@ function parseRow(raw: string | undefined): AssetRow | null {
   }
 }
 
-interface DetailAction { label: string; icon: string; action: string }
+interface DetailAction { label: string; icon: CentralIcon; action: string }
 
 const DETAIL_ACTIONS: DetailAction[] = [
-  { label: 'Send', icon: 'send', action: 'send' },
+  { label: 'Send', icon: IconPaperPlane, action: 'send' },
 ];
 
 function TokenDetailAvatar({ logoSrc, networkLogo, border, bg }: {

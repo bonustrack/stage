@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
 import { styleList } from '../control.styles';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
 export interface CheckboxProps {
   name?: string;
@@ -83,7 +84,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
       ]}
     >
       <View style={box}>
-        {checked ? <Icon name="check" size={size - 4} color={bg} /> : null}
+        {checked ? <Glyph icon={IconCheckmark1} size={size - 4} color={bg} /> : null}
       </View>
       {label ? (
         <RNText style={{ color: head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>{label}</RNText>

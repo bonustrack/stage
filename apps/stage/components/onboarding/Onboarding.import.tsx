@@ -3,7 +3,7 @@ import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row } from '../layout';
 import { FormField } from '../FormField';
 import { OnboardingCard } from './OnboardingCard';
@@ -13,6 +13,7 @@ import { parseImportInput } from '../accounts/ImportAccountPanel.model';
 import {
   replaceWordAt, typePhrase, wordAt, type PhraseTyping, invalidWords, looksLikePhrase, visibleSuggestions,
 } from './RecoveryPhrase.model';
+import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 
 function SuggestionChips({ words, onPick }: {
   words: string[]; onPick: (word: string) => void;
@@ -111,7 +112,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
           <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
             label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
           <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Scan QR code"
-            iconStart={<Icon name="qrcode" size={20} color={pal.primary} />}
+            iconStart={<Glyph icon={IconQrCode} size={20} color={pal.primary} />}
             disabled={busy} onPress={() => { setScanned(false); setScanning(true); }} />
         </>
       )}

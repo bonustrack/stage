@@ -2,7 +2,8 @@ import type { Ref } from 'react';
 import { Modal, Pressable, Text as RNText, type View, type ViewStyle } from 'react-native';
 import { styleList, triggerLabelStyle, triggerRowStyle } from '../control.styles';
 import { FONT_SIZE } from '../tokens';
-import { Icon, type HeroIconName } from './icon';
+import { Glyph, type CentralIcon } from './glyph';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 
 export interface ControlTriggerProps {
   name?: string;
@@ -12,7 +13,7 @@ export interface ControlTriggerProps {
   open: boolean;
   hasValue: boolean;
   label: string;
-  icon: HeroIconName;
+  icon: CentralIcon;
   box: ViewStyle;
   headColor: string;
   placeholderColor: string;
@@ -59,10 +60,10 @@ export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {
       </RNText>
       {clearable && hasValue ? (
         <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={onClear} hitSlop={8}>
-          <Icon name="x" size={16} color={placeholderColor} />
+          <Glyph icon={IconCrossMedium} size={16} color={placeholderColor} />
         </Pressable>
       ) : null}
-      <Icon name={icon} size={16} color={placeholderColor} />
+      <Glyph icon={icon} size={16} color={placeholderColor} />
     </Pressable>
   );
 }

@@ -1,7 +1,7 @@
 
 import type { ReactNode } from 'react';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text, type TextSizeToken, type TextWeight } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
@@ -9,6 +9,7 @@ import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Row, STICKY_TOP, PAGE_GUTTER } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { HoverTint } from '../hover';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 
 type ScreenHeaderTitleStyle =
   | {
@@ -74,8 +75,8 @@ export function BackButton({ onBack, backColor, hitSlop = 8, padding = 4 }: {
     <GesturePressable onPress={onBack} hitSlop={hitSlop}>
       <HoverTint style={{ padding }}>
         {(hovered) => (
-          <Icon
-            name="arrowNarrowLeft"
+          <Glyph
+            icon={IconArrowLeft}
             size={24}
             color={hovered ? link : resolveColorToken(backColor, scheme)}
             dark={scheme === 'dark'}

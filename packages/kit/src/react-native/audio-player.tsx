@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, Text as RNText, View } from 'react-native';
 import { createAudioPlayer, type AudioPlayer as ExpoAudioPlayer, type AudioStatus } from 'expo-audio';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
+import { IconPause } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPause';
+import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
 
 const DEFAULT_BAR_COUNT = 34;
 
@@ -124,7 +126,7 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
           justifyContent: 'center',
         }}
       >
-        <Icon name={playing ? 'pause' : 'play'} size={18} color={accent} />
+        <Glyph icon={playing ? IconPause : IconPlay} size={18} color={accent} />
       </Pressable>
       <Pressable
         style={{ flex: 1, height: WAVE_TRACK_H, justifyContent: 'center' }}
@@ -199,7 +201,7 @@ function BasicPlayer(props: {
           void toggle();
         }}
       >
-        <Icon name={playing ? 'pause' : 'play'} size={22} color={fg} />
+        <Glyph icon={playing ? IconPause : IconPlay} size={22} color={fg} />
       </Pressable>
       <View style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: trackBg }}>
         <View

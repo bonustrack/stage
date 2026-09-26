@@ -7,7 +7,10 @@ import { Switch } from '@stage-labs/kit/react-native/switch';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Col } from '../layout';
-import { AppIcon } from '../widgets';
+import { AppIcon, type AppIconRef } from '../widgets';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 
 export function SettingsList({ children }: { children: ReactNode }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
@@ -17,8 +20,8 @@ export function SettingsList({ children }: { children: ReactNode }): React.React
 export interface SettingsNavRowProps {
   label: string;
   value?: string;
-  iconStart?: string;
-  iconEnd?: string;
+  iconStart?: AppIconRef;
+  iconEnd?: AppIconRef;
   onPress?: () => void;
 }
 
@@ -35,7 +38,7 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
       {props.value === undefined ? null : (
         <Text value={props.value} color="secondary" truncate />
       )}
-      <AppIcon name={props.iconEnd ?? 'chevronRight'} color="secondary" size={24} />
+      <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
     </ListViewItem>
   );
 }
@@ -88,7 +91,7 @@ export function SettingsValueRow(props: SettingsValueRowProps): React.ReactEleme
       </Col>
       <Text value={props.value} size="md" color="text" truncate />
       {props.onPress === undefined ? null : (
-        <AppIcon name="copy" color="secondary" size={16} />
+        <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}
     </ListViewItem>
   );
@@ -97,7 +100,7 @@ export function SettingsValueRow(props: SettingsValueRowProps): React.ReactEleme
 export interface SettingsButtonRowProps {
   label: string;
   description?: string;
-  iconStart?: string;
+  iconStart?: AppIconRef;
   onPress: () => void;
   danger?: boolean;
 }
@@ -127,7 +130,7 @@ export function SettingsButtonRow(props: SettingsButtonRowProps): React.ReactEle
 
 export interface SettingsThemeRowProps {
   label: string;
-  iconName: string;
+  iconName: AppIconRef;
   selected: boolean;
   iconColor?: string;
   onPress: () => void;
@@ -141,7 +144,7 @@ export function SettingsThemeRow(props: SettingsThemeRowProps): React.ReactEleme
       <Col flex={1}>
         <Text value={props.label} size="xl" color="text" truncate />
       </Col>
-      {props.selected ? <AppIcon name="check" color="link" size={24} /> : null}
+      {props.selected ? <AppIcon name={IconCheckmark1} color="link" size={24} /> : null}
     </ListViewItem>
   );
 }

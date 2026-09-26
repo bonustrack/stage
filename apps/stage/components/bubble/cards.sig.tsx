@@ -1,5 +1,5 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
@@ -7,6 +7,8 @@ import { fmtSigValue } from './helpers';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
@@ -91,7 +93,7 @@ function SigAction({ gated, dark, signing, onSign }: {
   return (
     <Button
       size="lg" block dark={dark} loading={signing} onPress={onSign} label="Sign"
-      iconStart={<Icon name="pencil" size={18} color={pal.bg}/>}
+      iconStart={<Glyph icon={IconPencil} size={18} color={pal.bg}/>}
       tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
     />
   );
@@ -110,7 +112,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
   return (
     <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
-        <Icon name="pencil" size={18} color={pal.link}/>
+        <Glyph icon={IconPencil} size={18} color={pal.link}/>
         <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
       </Row>
       {senderNote ? <SenderNote note={senderNote} fill={fill} border={border} /> : null}
@@ -130,7 +132,7 @@ export function ReceiptBox({ dark, title, children }: {
   return (
     <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
-        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
+        <Glyph icon={IconCheckmark1} size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           {title}
         </Text>

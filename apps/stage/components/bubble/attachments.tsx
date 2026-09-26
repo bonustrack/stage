@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { capabilities } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Spinner } from '../Spinner';
 import { VoiceMessage } from '../VoiceMessage';
@@ -16,6 +16,7 @@ import { fileCardModel } from './fileCard.model';
 import { resolveRemoteAttachment } from '../../modules/messaging';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
+import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
@@ -48,7 +49,7 @@ function AttachmentChip({ label, subtitle, fg, onPress }: {
     <Card dark={dark} background={border} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: 320 }}>
       <Row align="center" gap={10}>
         <Box width={40} height={40} radius="md" align="center" justify="center" surface="surface">
-          <Icon name="document" size={22} color={fg}/>
+          <Glyph icon={IconFileBend} size={22} color={fg}/>
         </Box>
         <Col flex={1} minWidth={0} gap={2}>
           <Text weight="semibold" color={fg} numberOfLines={1}>{label}</Text>

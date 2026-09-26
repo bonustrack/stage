@@ -1,11 +1,14 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row, Col, Box } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
 import type { SimulateResult, AssetMove } from '../../lib/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../../lib/txDisplay';
+import { IconCircleCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleCheck';
+import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
+import { IconSparklesThree } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSparklesThree';
 
 function SimOutcome({ sim, chainId }: {
   sim: SimulateResult; chainId: number;
@@ -20,7 +23,7 @@ function SimOutcome({ sim, chainId }: {
     <Box radius="md" padding={10} gap={8} background={withAlpha(accent, 0.1)}
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: accent }}>
       <Row align="center" gap={6}>
-        <Icon name={fail ? 'shieldExclamation' : 'checkCircle'} size={14} color={accent} />
+        <Glyph icon={fail ? IconShieldBreak : IconCircleCheck} size={14} color={accent} />
         <Text size="xs" weight="semibold" color={accent} numberOfLines={3}>{badge}</Text>
       </Row>
       {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" chainId={chainId} />)}
@@ -46,7 +49,7 @@ function SimNote({ text, sub, fill }: { text: string; sub: string; fill: string 
   return (
     <Col radius="md" background={fill} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
-        <Icon name="sparkles" size={14} color={sub} />
+        <Glyph icon={IconSparklesThree} size={14} color={sub} />
         <Text size="xs" role="secondary">{text}</Text>
       </Row>
     </Col>

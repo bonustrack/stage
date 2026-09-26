@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { Row, Box } from './layout';
 import { PaymentCard } from './PaymentCard';
@@ -24,6 +24,10 @@ import { capabilities } from '../lib/capabilities';
 import type { X402Challenge } from '../lib/useLinkPreview';
 import { usePalette, withAlpha } from '../lib/theme';
 import { openInBubbleLink } from '../lib/safeOpenLink';
+import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
+import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
@@ -55,7 +59,7 @@ function X402Detail({ accept, network, endpoint, pal, onOpen }: {
       </Row>
       <Pressable onPress={onOpen}>
         <Row align="center" gap={6}>
-          <Icon name="link" size={13} color={pal.sub}/>
+          <Glyph icon={IconChainLink3} size={13} color={pal.sub}/>
           <Text size="xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
             {domainOf(endpoint)}
           </Text>
@@ -125,10 +129,10 @@ export function X402Card({ challenge, dark }: {
         label: payButtonLabel(phase, insufficient, asset, amountLabel),
         onPress: confirmPay,
         disabled: phase === 'paying' || phase === 'paid' || insufficient,
-        icon: <Icon name={phase === 'paid' ? 'check' : 'wallet'} size={18} color={pal.bg}/>,
+        icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg}/>,
       };
     }
-    return { label: 'Open endpoint', onPress: openEndpoint, icon: <Icon name="externalLink" size={18} color={pal.bg}/> };
+    return { label: 'Open endpoint', onPress: openEndpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
   };
 
   const badge = (

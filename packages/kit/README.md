@@ -4,7 +4,7 @@
 
 ## Overview
 
-`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, the theme-preference contract, and one React Native component family (rendering on web via react-native-web) consumed by the universal app ([`apps/stage`](../../apps/stage)). Screens and chat message content compose the components directly in JSX.
+`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, the Central Icons set, station icon definitions, avatar helpers, the theme-preference contract, and one React Native component family (rendering on web via react-native-web) consumed by the universal app ([`apps/stage`](../../apps/stage)). Screens and chat message content compose the components directly in JSX.
 
 Style logic lives in framework-free core modules (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts`); components target React Native via peer dependencies and render on every platform, web included.
 
@@ -63,6 +63,17 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 ```
 
+Icons are [Central Icons](https://centralicons.com) (round, radius 1, stroke 2) from the licensed `@central-icons-react-native/*` packages, which the kit depends on rather than vendoring. Import each icon on its own, under its Central name, and draw it with `Glyph`:
+
+```tsx
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
+
+<Glyph icon={IconThumbtack} size={16} color={link} />
+```
+
+The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` from `@stage-labs/kit/react-native/icon` still accepts the older HeroIcon names through `CENTRAL_ICON_ALIASES`, with `variant` `'line'` (default) or `'solid'`, but it bundles every aliased icon. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
+
 `AudioPlayer` and `VideoPlayer` play through the `expo-audio` and `expo-video` peers (they replaced `expo-av`). On web those modules expect the Expo runtime global: an Expo app installs it, and a plain react-native-web host must call `installExpoGlobalPolyfill()` from `expo-modules-core/src/polyfill/dangerous-internal` before importing them, as `gallery/expo-runtime.ts` does.
 
 ## Project structure
@@ -72,7 +83,9 @@ src/
   tokens.ts          # colour + spacing tokens, colour helpers (Scheme, resolveColor, ...)
   theme.ts           # theme-preference contract + resolution
   theme-derive.ts    # custom-palette deriver
-  icons.ts           # HeroIcon names + resolveIconName; heroicons.data.ts (v1 outline) + heroicons.solid.data.ts (v1 solid, `Icon variant="solid"`)
+  icons.ts           # icon names + resolveIconName; the HeroIcon path data (heroicons.data.ts, heroicons.solid.data.ts) is still exported but no longer drawn
+  glyph.ts           # CentralIcon type and IconStyle ('line' | 'solid')
+  central-icons.ts   # HeroIcon name -> Central Icons aliases, used by `Icon`
   heroicons.data.ts  # HeroIcon path data
   avatar.ts          # avatar helpers
   layout.ts          # Box layout core (spacing, borders, surfaces)

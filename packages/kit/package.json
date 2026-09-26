@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/kit",
   "version": "0.2.0-beta.0",
-  "description": "Stage design system: colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract, and one React Native component family (renders on web via react-native-web).",
+  "description": "Stage design system: colour/spacing tokens, Central Icons (licensed, installed from npm) with HeroIcon name aliases, station icon definitions, theme-preference contract, and one React Native component family (renders on web via react-native-web).",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +34,7 @@
     "./react-native/text": "./src/react-native/text.tsx",
     "./react-native/title": "./src/react-native/title.tsx",
     "./react-native/icon": "./src/react-native/icon.tsx",
+    "./react-native/glyph": "./src/react-native/glyph.tsx",
     "./react-native/card": "./src/react-native/card.tsx",
     "./react-native/list-view": "./src/react-native/list-view.tsx",
     "./react-native/divider": "./src/react-native/divider.tsx",
@@ -76,6 +77,8 @@
     "./react-native/modal": "./src/react-native/modal.tsx"
   },
   "dependencies": {
+    "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",
+    "@central-icons-react-native/round-outlined-radius-1-stroke-2": "1.2.1",
     "qrcode": "^1.5.4"
   },
   "peerDependencies": {

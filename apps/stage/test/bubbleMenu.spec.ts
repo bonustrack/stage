@@ -4,10 +4,10 @@ import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
 describe('bubbleMenuItems', () => {
   test('native text message offers Reply, Copy, Select and Share link', () => {
     expect(bubbleMenuItems(true, { selectText: true })).toEqual([
-      { id: 'reply', icon: 'reply', label: 'Reply' },
-      { id: 'copy', icon: 'copy', label: 'Copy' },
-      { id: 'select', icon: 'document', label: 'Select' },
-      { id: 'shareLink', icon: 'send', label: 'Share link' },
+      { id: 'reply', icon: 'IconArrowUndoUp', label: 'Reply' },
+      { id: 'copy', icon: 'IconSquareBehindSquare1', label: 'Copy' },
+      { id: 'select', icon: 'IconFileBend', label: 'Select' },
+      { id: 'shareLink', icon: 'IconPaperPlane', label: 'Share link' },
     ]);
   });
 

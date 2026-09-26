@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { AppModal } from '../AppModal';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
@@ -9,6 +9,7 @@ import { Box, Col } from '../layout';
 import { HomeContactResults } from './contacts';
 import { NewGroupForm } from '../group/NewGroupForm';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { IconUserGroup } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconUserGroup';
 
 const ACTION_ICON_SIZE = 40;
 
@@ -19,7 +20,7 @@ function NewGroupRow({ onPress }: { onPress: () => void }): React.ReactElement {
     <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}
       padding={{ paddingTop: 12, paddingBottom: 12, paddingLeft: MODAL.padding, paddingRight: MODAL.padding }}>
       <Box width={ACTION_ICON_SIZE} height={ACTION_ICON_SIZE} radius="full" align="center" justify="center" background={link}>
-        <Icon name="userGroup" size={22} color={bg} />
+        <Glyph icon={IconUserGroup} size={22} color={bg} />
       </Box>
       <Text value="New group" weight="semibold" />
     </ListViewItem>

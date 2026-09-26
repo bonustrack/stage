@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Avatar } from '../Avatar';
@@ -11,6 +11,7 @@ import { usePalette } from '../../lib/theme';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { HEADER_AVATAR_SIZE, accountDisplayName } from './SettingsAccountHeader.model';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 
 export function SettingsAccountHeader(): React.ReactElement | null {
   const { text } = usePalette();
@@ -28,7 +29,7 @@ export function SettingsAccountHeader(): React.ReactElement | null {
         <Col align="center" gap={2}>
           <Row align="center" gap={6}>
             <Text size="6xl" weight="semibold" numberOfLines={1}>{name}</Text>
-            <Icon name="chevronDown" size={20} color={text} />
+            <Glyph icon={IconChevronBottom} size={20} color={text} />
           </Row>
           {name === short ? null : <Text size="sm" color={text}>{short}</Text>}
         </Col>

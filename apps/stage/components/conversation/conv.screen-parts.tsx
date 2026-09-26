@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
 import { MessengerComposer } from '../composer/MessengerComposer';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
@@ -25,6 +25,8 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { conversationSharePath, profileLinkOf } from '../../lib/links';
 import { shareUrlFor } from '@stage-labs/client/routing/handles';
 import { useHover } from '../hover';
+import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
+import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 
 type Conv = ReturnType<typeof useConversationState>;
 
@@ -50,7 +52,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
         {...more.hoverProps}
         style={{ paddingLeft: 14, paddingRight: PAGE_GUTTER, justifyContent: 'center' }}
 >
-        <Icon name="dotsVertical" size={24} color={more.hovered ? head : fg}/>
+        <Glyph icon={IconDotGrid1x3Vertical} size={24} color={more.hovered ? head : fg}/>
       </Pressable>
     </ConvTopnavShell>
   );
@@ -80,7 +82,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
               alignItems: 'center', justifyContent: 'center',
             }}
 >
-            <Icon name="arrowDown" size={18} color="#ffffff"/>
+            <Glyph icon={IconArrowDown} size={18} color="#ffffff"/>
           </Pressable>
         ) : null}
         {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}

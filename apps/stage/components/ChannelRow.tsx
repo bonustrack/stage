@@ -2,7 +2,7 @@ import { Fragment, memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { BrandIcon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -17,6 +17,7 @@ import { contextMenuProps } from '../lib/contextMenu';
 import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
+import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 
 interface ChannelRowProps {
   title: string;
@@ -71,7 +72,7 @@ function TitleLine({ params, scheme }: {
     <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true ? (
         <Box width={PIN_ICON_SIZE} height={PIN_ICON_SIZE} style={{ flexShrink: 0 }}>
-          <BrandIcon name="pin" size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+          <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
         </Box>
       ) : null}
       {segments.map((seg, i) => (

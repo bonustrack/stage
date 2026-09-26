@@ -5,6 +5,7 @@ import {
   describeLinkResult, linkPasskeyForRecord, passkeyPlace, passkeysAvailable, type PasskeyPlace,
 } from '../../lib/zerodev';
 import { SettingsButtonRow, SettingsValueRow } from './rows';
+import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconKey2';
 
 const ELSEWHERE_HINT =
   'If your password manager syncs the passkey that secures this wallet, pick it here. This device can then make your recovery phrase the main key.';
@@ -49,7 +50,7 @@ export function PasskeyLinkRow({ rec, place, onLinked }: {
     <SettingsButtonRow
       label={busy ? 'Waiting for the passkey…' : 'Use my passkey on this device'}
       description={status ?? ELSEWHERE_HINT}
-      iconStart="key"
+      iconStart={IconKey2}
       onPress={link}
     />
   );

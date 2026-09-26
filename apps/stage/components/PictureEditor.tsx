@@ -6,6 +6,8 @@ import type { MenuPoint } from './AnchoredMenu.model';
 import { MenuList, MenuRow } from './MenuRows';
 import { GroupImagePicker } from './GroupImagePicker';
 import { useEffectiveColorScheme } from '../lib/theme';
+import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
+import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 export type PictureChoice = { kind: 'keep' } | { kind: 'new'; file: PickedFile } | { kind: 'remove' };
 
@@ -23,8 +25,8 @@ export function PictureEditor({ avatar, editable, removable, onChange }: {
       <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); setOpen(true); }} hitSlop={8}>{avatar}</Pressable>
       <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
         <MenuList dark={dark}>
-          <MenuRow icon="camera" label="Upload a picture" dark={dark} onPress={() => { close(); setPickNonce(n => n + 1); }} />
-          {removable ? <MenuRow icon="trash" label="Remove picture" danger dark={dark} onPress={() => { close(); onChange({ kind: 'remove' }); }} /> : null}
+          <MenuRow icon={IconCamera1} label="Upload a picture" dark={dark} onPress={() => { close(); setPickNonce(n => n + 1); }} />
+          {removable ? <MenuRow icon={IconTrashCan} label="Remove picture" danger dark={dark} onPress={() => { close(); onChange({ kind: 'remove' }); }} /> : null}
         </MenuList>
       </AnchoredMenu>
       <GroupImagePicker openNonce={pickNonce} onPick={(file) => { onChange({ kind: 'new', file }); }} />

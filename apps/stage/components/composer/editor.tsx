@@ -5,11 +5,21 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
 import { Box, Col, PAGE_GUTTER } from '../layout';
+import { IconArrowUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUp';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
+import { IconChart3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChart3';
+import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
+import { IconMapPin } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMapPin';
+import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
+import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
+import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 const COMPOSER_ICON_INSET = 7;
 import { usePalette } from '../../lib/theme';
@@ -25,13 +35,13 @@ interface EditorProps {
   setSelection: (s: { start: number; end: number }) => void;
   focusNonce: number; blurNonce: number;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
-  quickIcon?: HeroIconName; quickLabel?: string; onQuick?: () => void;
+  quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
 function ComposerBtn({ icon, label, onPress, fg, hoverFg, chipBg, mr }: {
-  icon: HeroIconName; label: string; onPress: () => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
+  icon: CentralIcon; label: string; onPress: () => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
 }): React.ReactElement {
   const { hovered, hoverProps } = useHover();
   return (
@@ -40,7 +50,7 @@ function ComposerBtn({ icon, label, onPress, fg, hoverFg, chipBg, mr }: {
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
-      <Icon name={icon} size={24} color={hovered ? hoverFg : fg}/>
+      <Glyph icon={icon} size={24} color={hovered ? hoverFg : fg}/>
     </Pressable>
     </HoverTooltip>
   );
@@ -106,7 +116,7 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   return (
     <>
       <ComposerBtn
-        icon={p.attachMenuOpen ? 'x' : 'plus'}
+        icon={p.attachMenuOpen ? IconCrossMedium : IconPlusLarge}
         label={p.attachMenuOpen ? 'Close' : 'Attach'}
         onPress={() => { p.setAttachMenuOpen(o => !o); }}
         fg={fg} hoverFg={p.head} chipBg={chipBg}
@@ -124,7 +134,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   if (!p.hasContent) return null;
   return (
     <Button size="md" uniform pill dark={dark} tintBg={primary}
-      onPress={p.onSend} icon={<Icon name="arrowSmUp" size={20} color={bg} />} />
+      onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
   );
 }
 
@@ -151,7 +161,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
   );
 }
 
-type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+type AttachAction = [CentralIcon, string, () => void | Promise<void>];
 
 export function buildAttachActions(a: {
   pickImage: () => void; takePhoto: () => void;
@@ -159,13 +169,13 @@ export function buildAttachActions(a: {
   openPoll: () => void; openSig: () => void; openTx: () => void;
 }): AttachAction[] {
   return [
-    ['photo', 'Image', a.pickImage],
-    ['camera', 'Camera', a.takePhoto],
-    ['paperClip', 'File', a.pickFile],
-    ['mapPin', 'Location', a.pickLocation],
-    ['chartBar', 'Poll', a.openPoll],
-    ['pencil', 'Sign', a.openSig],
-    ['wallet', 'Payment', a.openTx],
+    [IconImages1, 'Image', a.pickImage],
+    [IconCamera1, 'Camera', a.takePhoto],
+    [IconPaperclip3, 'File', a.pickFile],
+    [IconMapPin, 'Location', a.pickLocation],
+    [IconChart3, 'Poll', a.openPoll],
+    [IconPencil, 'Sign', a.openSig],
+    [IconWallet4, 'Payment', a.openTx],
   ];
 }
 
@@ -173,7 +183,7 @@ export function AttachMenu({
   head, dark, actions, onClose,
 }: {
   head: string; dark: boolean;
-  actions: [HeroIconName, string, () => void | Promise<void>][];
+  actions: [CentralIcon, string, () => void | Promise<void>][];
   onClose: () => void;
 }): React.ReactElement {
   return (
@@ -188,7 +198,7 @@ export function AttachMenu({
           <Button
             uniform pill size="xl" color="secondary" variant="solid" dark={dark}
             accessibilityLabel={label}
-            iconStart={<Icon name={icon} size={24} color={head}/>}
+            iconStart={<Glyph icon={icon} size={24} color={head}/>}
             onPress={() => { onClose(); void action(); }}
           />
           <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>

@@ -14,6 +14,9 @@ import type { useWalletModel } from './WalletSettings.parts';
 import { SettingsList } from './rows';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { IconCircleCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleCheck';
+import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
 
@@ -44,7 +47,7 @@ export function WalletCopyRow({ label, value, onCopy }: {
         <Text value={label} size="xs" color="secondary" />
         <Text value={value} size="md" color="text" />
       </Col>
-      <AppIcon name="copy" color="link" size={16} />
+      <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
     </ListViewItem>
   );
 }
@@ -73,7 +76,7 @@ function WalletDeployRow({ deploy }: { deploy: WalletDeployState }): React.React
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
       <AppIcon
-        name={deploy === 'deployed' ? 'checkCircle' : 'clock'}
+        name={deploy === 'deployed' ? IconCircleCheck : IconClock}
         color={deploy === 'deployed' ? 'link' : 'secondary'}
         size={24}
       />

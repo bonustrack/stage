@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { Story } from '../gallery/story';
 import { VoiceRecorder, type VoiceRecorderProps } from '../src/react-native/voice-recorder';
-import { Icon } from '../src/react-native/icon';
+import { Glyph } from '../src/react-native/glyph';
 import { Pressable } from '../src/react-native/pressable';
 import { Box, Col } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { semanticPalette } from '../src/tokens';
 import { number, useDark } from './_controls';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
 export default { title: 'Voice Recorder' };
 
@@ -31,8 +33,8 @@ export const Controls: Story<Pick<VoiceRecorderProps, 'slideThresholdPx'>> = (ar
           recording={recording} levels={levels} recordSecs={secs} dark={dark}
           fg={p.textColor} head={p.textColor} sub={p.subColor} bg={p.bgColor} chipBg={p.inputBgColor} primary={p.primaryColor}
           inputSlot={<Text role="secondary">Message</Text>}
-          leftControls={<Icon name="plus" size={22} dark={dark} />}
-          rightAction={<Pressable><Icon name="microphone" size={22} dark={dark} /></Pressable>}
+          leftControls={<Glyph icon={IconPlusLarge} size={22} dark={dark} />}
+          rightAction={<Pressable><Glyph icon={IconMicrophone} size={22} dark={dark} /></Pressable>}
           onStart={() => { setRecording(true); setLog('recording'); }}
           onCancel={() => { setRecording(false); setLog('cancelled'); }}
           onComplete={() => { setRecording(false); setLog('completed'); }}

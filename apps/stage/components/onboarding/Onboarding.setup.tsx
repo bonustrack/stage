@@ -1,6 +1,6 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
@@ -14,14 +14,16 @@ import {
   setupHint, setupLinks, setupStages, setupTitle, stageLabel, stageState,
   type SetupErr, type SetupLinkKind, type SetupPlan, type StageState,
 } from './Onboarding.setup.model';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleX';
 
 const ROW_HEIGHT = 40;
 const ROW_ICON = 16;
 
 function StageIndicator({ state, failed }: { state: StageState; failed: boolean }): React.ReactElement {
   const pal = usePalette();
-  if (state === 'done') return <Icon name="check" size={ROW_ICON} color={pal.success} />;
-  if (state === 'active' && failed) return <Icon name="xCircle" size={ROW_ICON} color={DANGER} />;
+  if (state === 'done') return <Glyph icon={IconCheckmark1} size={ROW_ICON} color={pal.success} />;
+  if (state === 'active' && failed) return <Glyph icon={IconCircleX} size={ROW_ICON} color={DANGER} />;
   if (state === 'active') return <Spinner size={ROW_ICON} color={pal.link} />;
   return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }

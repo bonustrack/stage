@@ -13,6 +13,8 @@
     "build:web": "node scripts/copy-xmtp-wasm.js && expo export --platform web --output-dir dist"
   },
   "dependencies": {
+    "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",
+    "@central-icons-react-native/round-outlined-radius-1-stroke-2": "1.2.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "7.3.6",
     "@react-navigation/stack": "^7.9.3",

@@ -1,7 +1,7 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter } from 'expo-router';
 import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
@@ -11,26 +11,29 @@ import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
+import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
+import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
+import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
-export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
-  ['index', 'chatBubble'],
-  ['contacts', 'users'],
-  ['wallet', 'wallet'],
+export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
+  ['index', IconBubble3],
+  ['contacts', IconGroup1],
+  ['wallet', IconWallet4],
 ];
 
 const TAB_LABELS: Record<TabName, string> = { index: 'Chats', contacts: 'Contacts', wallet: 'Wallet' };
 
 function TabIcon({ name, icon, active, unreadBadge }: {
-  name: TabName; icon: HeroIconName; active: boolean; unreadBadge: string | undefined;
+  name: TabName; icon: CentralIcon; active: boolean; unreadBadge: string | undefined;
 }): React.ReactElement {
   const pal = usePalette();
   return (
     <HoverTint>
       {(hovered) => (
     <Box>
-      <Icon name={icon} size={24} color={active || hovered ? pal.link : pal.text} focused={active}/>
+      <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text}/>
       {name === 'index' && unreadBadge !== undefined ? (
         <Box
           minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}

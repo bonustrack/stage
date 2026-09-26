@@ -3,9 +3,10 @@ import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
 import { OVERLAY_SHADOW } from '../overlay.styles';
-import { Icon, type HeroIconName } from './icon';
+import { Glyph, type CentralIcon } from './glyph';
 import { Text } from './text';
 import { useKitPalette } from './theme-context';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
 export const DROPDOWN_MENU = {
   radius: 6,
@@ -58,7 +59,7 @@ export function DropdownMenu({ children, dark, background, maxHeight, style }: D
 export interface DropdownMenuItemProps {
   label: string;
   onPress: () => void;
-  iconName?: HeroIconName;
+  iconName?: CentralIcon;
   icon?: ReactNode;
   danger?: boolean;
   dark?: boolean;
@@ -73,7 +74,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
   const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
   const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
   const color = props.color ?? (props.danger === true ? pal.danger : pal.link);
-  const icon = props.icon ?? (props.iconName === undefined ? null : <Icon name={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
+  const icon = props.icon ?? (props.iconName === undefined ? null : <Glyph icon={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
   return (
     <Pressable
       onPress={props.onPress}
@@ -93,7 +94,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
         <Text value={props.label} size="xl" color={color} truncate style={{ lineHeight: DROPDOWN_MENU.lineHeight }} />
       </View>
-      {props.selected === true ? <Icon name="check" size={DROPDOWN_MENU.icon} color={color} /> : null}
+      {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>
   );
 }

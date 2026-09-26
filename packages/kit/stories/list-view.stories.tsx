@@ -1,8 +1,9 @@
 import type { Story } from '../gallery/story';
 import { ListView, ListViewItem, type ListViewItemProps, type ListViewProps } from '../src/react-native/list-view';
-import { Icon } from '../src/react-native/icon';
+import { Glyph } from '../src/react-native/glyph';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
+import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
 
 export default { title: 'List View' };
 
@@ -14,7 +15,7 @@ export const Controls: Story<ListViewProps & Pick<ListViewItemProps, 'gap' | 'al
     <ListView {...args} dark={dark} status={statusText ? { text: statusText } : undefined}>
       {ITEMS.map((label) => (
         <ListViewItem key={label} dark={dark} gap={gap} align={align} showDivider={showDivider} pressedBackground={pressedBackground} onPress={() => undefined}>
-          <Icon name="user" size={20} dark={dark} />
+          <Glyph icon={IconPeople} size={20} dark={dark} />
           <Text>{label}</Text>
         </ListViewItem>
       ))}

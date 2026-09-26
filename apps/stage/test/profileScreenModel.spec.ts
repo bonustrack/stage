@@ -19,7 +19,7 @@ describe('profileDisplayName', () => {
 
 describe('profileMenuItems', () => {
   test('only the own profile offers editing', () => {
-    expect(profileMenuItems(true)).toEqual([{ id: 'edit', label: 'Edit profile', icon: 'pencil' }]);
+    expect(profileMenuItems(true)).toEqual([{ id: 'edit', label: 'Edit profile', icon: 'IconPencil' }]);
     expect(profileMenuItems(false)).toEqual([]);
   });
 });

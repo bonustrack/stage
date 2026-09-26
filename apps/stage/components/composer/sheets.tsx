@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Box, Row, Col } from '../layout';
 import { AppModal } from '../AppModal';
@@ -13,6 +13,8 @@ import {
   sendPoll, sendSignatureRequest, sendTxRequest, type PostCtx,
   type PollDraft, type SignatureDraft, type PaymentDraft,
 } from './builders';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
 const ACCENT = '#c0a06e';
 
@@ -54,12 +56,12 @@ function PollSheet(props: SheetProps): React.ReactElement {
           onChangeText={t => { setOptions(d.options.map((o, j) => (j === i ? t : o))); }}
           trailing={d.options.length > 2 ? (
             <Pressable onPress={() => { setOptions(d.options.filter((_, j) => j !== i)); }} hitSlop={8}>
-              <Icon name="x" size={18} color={fg}/>
+              <Glyph icon={IconCrossMedium} size={18} color={fg}/>
             </Pressable>
           ) : undefined} />
       ))}
       <Button variant="ghost" size="sm" dark={props.dark} onPress={() => { setOptions([...d.options, '']); }}
-        label="Add option" icon={<Icon name="plus" size={16} color={fg} />} />
+        label="Add option" icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />} />
       <Pressable onPress={() => { patch({ multi: !d.multi }); }}
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
         <Text size="md" color={fg}>Allow multiple choices</Text>

@@ -1,8 +1,8 @@
-import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
+import type { AppIconName } from '../appIcons';
 import type { ThemePreference } from '../../lib/theme';
 
-export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [
-  { value: 'system', label: 'System', icon: 'desktop' },
-  { value: 'light', label: 'Light', icon: 'sun' },
-  { value: 'dark', label: 'Dark', icon: 'moon' },
+export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: AppIconName }[] = [
+  { value: 'system', label: 'System', icon: 'IconImac' },
+  { value: 'light', label: 'Light', icon: 'IconSun' },
+  { value: 'dark', label: 'Dark', icon: 'IconMoon' },
 ];

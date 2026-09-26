@@ -1,17 +1,20 @@
-
+import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 import { Path, Svg } from 'react-native-svg';
 import {
-  heroIconPaths, iconStroke, iconStrokeWidth, HERO_ICON_DEFAULTS, HERO_SOLID_ICON_PATHS, HERO_SOLID_VIEW_BOX,
-  isHeroSolidIconName, type HeroIconName, type HeroSolidIconName, type SolidPath,
+  iconStroke, HERO_ICON_DEFAULTS,
+  type CentralIcon, type HeroIconName, type HeroSolidIconName, type IconName, type IconStyle,
 } from '../icons';
 import { brandIconPath, type BrandIconName } from '../brand-icons.data';
+import { centralIcon } from '../central-icons';
+import { Glyph } from './glyph';
 
-export type { HeroIconName, HeroSolidIconName, BrandIconName };
+export type { BrandIconName, CentralIcon, HeroIconName, HeroSolidIconName, IconName };
+export { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
 
-export type IconVariant = 'outline' | 'solid';
+export type IconVariant = IconStyle;
 
 export interface IconProps {
-  name: HeroIconName;
+  name: IconName;
   size?: number;
   color?: string;
   dark?: boolean;
@@ -19,34 +22,8 @@ export interface IconProps {
   variant?: IconVariant;
 }
 
-function SolidIcon({ name, size, fill }: { name: HeroSolidIconName; size: number; fill: string }): React.ReactElement {
-  return (
-    <Svg width={size} height={size} viewBox={HERO_SOLID_VIEW_BOX}>
-      {(HERO_SOLID_ICON_PATHS[name] as readonly SolidPath[]).map((path, i) => (
-        <Path key={i} d={path.d} fill={fill} fillRule={path.evenodd === true ? 'evenodd' : 'nonzero'} clipRule={path.evenodd === true ? 'evenodd' : 'nonzero'} />
-      ))}
-    </Svg>
-  );
-}
-
-export function Icon({ name, size = 22, color, dark, focused, variant = 'outline' }: IconProps): React.ReactElement {
-  const stroke = iconStroke(color, dark);
-  if (variant === 'solid' && isHeroSolidIconName(name)) return <SolidIcon name={name} size={size} fill={stroke} />;
-  return (
-    <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
-      {heroIconPaths(name).map((d, i) => (
-        <Path
-          key={i}
-          d={d}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={iconStrokeWidth(focused)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
-    </Svg>
-  );
+export function Icon({ name, size = 22, color, dark, variant = 'line' }: IconProps): React.ReactElement {
+  return <Glyph icon={centralIcon(name, variant)} size={size} color={color} dark={dark} />;
 }
 
 export interface BrandIconProps {
@@ -57,10 +34,10 @@ export interface BrandIconProps {
 }
 
 export function BrandIcon({ name, size = 22, color, dark }: BrandIconProps): React.ReactElement {
-  const fill = iconStroke(color, dark);
+  if (name === 'pin') return <Glyph icon={IconThumbtack} size={size} color={color} dark={dark} />;
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
-      <Path d={brandIconPath(name)} fill={fill} stroke="none" />
+      <Path d={brandIconPath(name)} fill={iconStroke(color, dark)} stroke="none" />
     </Svg>
   );
 }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
@@ -14,6 +14,7 @@ import {
 import { capabilities } from '../../lib/capabilities';
 import { DANGER, usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { IconTablet } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTablet';
 
 function when(ms: number | undefined): string {
   if (!ms) return 'Unknown date';
@@ -33,7 +34,7 @@ function Session({ inst, busy, onRevoke }: {
       style={{ borderWidth: 1, borderColor: border }}
     >
       <Row align="center" gap={12}>
-        <Icon name="deviceTablet" size={24} color={fg} />
+        <Glyph icon={IconTablet} size={24} color={fg} />
         <Col flex={1} minWidth={0}>
           <Row align="center" gap={8}>
             <Text size="md" color={fg}>{shortAddress(inst.id)}</Text>

@@ -8,12 +8,12 @@ describe('channelMenuItems', () => {
       { search: true },
     );
     expect(items).toEqual([
-      { id: 'search', label: 'Search', icon: 'search' },
-      { id: 'add-members', label: 'Add members', icon: 'plus' },
-      { id: 'toggle-read', label: 'Mark as read', icon: 'check' },
-      { id: 'toggle-pin', label: 'Pin', icon: 'pin' },
-      { id: 'info', label: 'Group info', icon: 'users' },
-      { id: 'leave', label: 'Leave group', icon: 'arrowLeft', danger: true },
+      { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
+      { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
+      { id: 'toggle-read', label: 'Mark as read', icon: 'IconCheckmark1' },
+      { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
+      { id: 'info', label: 'Group info', icon: 'IconGroup1' },
+      { id: 'leave', label: 'Leave group', icon: 'IconArrowLeft', danger: true },
     ]);
   });
 
@@ -25,14 +25,14 @@ describe('channelMenuItems', () => {
     expect(items.map(i => i.id)).toEqual(['toggle-read', 'toggle-pin', 'info', 'delete']);
     expect(items.find(i => i.id === 'info')?.label).toBe('Profile');
     expect(items.find(i => i.id === 'toggle-pin')?.label).toBe('Unpin');
-    expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'trash', danger: true });
+    expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true });
   });
 
   test('a direct chat without a peer only offers read and pin', () => {
     const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false });
     expect(items).toEqual([
-      { id: 'toggle-read', label: 'Mark as unread', icon: 'envelope' },
-      { id: 'toggle-pin', label: 'Pin', icon: 'pin' },
+      { id: 'toggle-read', label: 'Mark as unread', icon: 'IconEmail1' },
+      { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
     ]);
   });
 });

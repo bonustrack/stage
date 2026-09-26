@@ -13,8 +13,11 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
 import { ControlSheet, ControlTrigger } from './control-trigger';
+import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
+import { IconChevronLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronLeft';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS = [
@@ -122,13 +125,13 @@ function MonthHeader(props: {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
       <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { onShift(-1); }} hitSlop={8}>
-        <Icon name="chevronLeft" size={20} color={head} />
+        <Glyph icon={IconChevronLeft} size={20} color={head} />
       </Pressable>
       <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.lg, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
       </RNText>
       <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { onShift(1); }} hitSlop={8}>
-        <Icon name="chevronRight" size={20} color={head} />
+        <Glyph icon={IconChevronRight} size={20} color={head} />
       </Pressable>
     </View>
   );
@@ -249,7 +252,7 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
         open={open}
         hasValue={selDate !== null}
         label={label}
-        icon="calendar"
+        icon={IconCalendar1}
         box={box}
         headColor={sheetColors.head}
         placeholderColor={ctrlColors.placeholder}

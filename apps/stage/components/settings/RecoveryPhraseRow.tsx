@@ -16,6 +16,7 @@ import {
   BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
   phrasePanelActions, phraseRowCopy, type PhraseRowMode,
 } from './SecuritySettings.model';
+import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldCheck';
 
 const BACKED_UP_KEY = ['walletBackedUp'] as const;
 
@@ -101,6 +102,6 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
   const copy = phraseRowCopy(mode);
   if (phrase !== null) return <RevealedPhrase mode={mode} phrase={phrase} onHide={hide} onSaved={saved} />;
   return (
-    <SettingsButtonRow label={copy.label} description={copy.description} iconStart="shieldCheck" onPress={reveal} />
+    <SettingsButtonRow label={copy.label} description={copy.description} iconStart={IconShieldCheck} onPress={reveal} />
   );
 }

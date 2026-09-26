@@ -8,6 +8,7 @@ import { changeColor } from '../../lib/uiColors';
 import { Col, Row } from '../layout';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 
 export interface TokenRowViewParams {
   symbol: string;
@@ -58,7 +59,7 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         </Row>
       </Col>
       {params.trailingChevron !== false ? (
-        <AppIcon name="chevron-right" color={changeColor(params.change24h)[scheme]} size={16} />
+        <AppIcon name={IconChevronRight} color={changeColor(params.change24h)[scheme]} size={16} />
       ) : null}
     </Row>
   );

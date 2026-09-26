@@ -59,6 +59,6 @@ describe('walletAccountRows', () => {
 
 describe('WALLET_SECURITY_LINK', () => {
   test('points wallet settings at the Security page', () => {
-    expect(WALLET_SECURITY_LINK).toEqual({ label: 'Passkey, backup and devices', icon: 'key', href: '/settings/security' });
+    expect(WALLET_SECURITY_LINK).toEqual({ label: 'Passkey, backup and devices', icon: 'IconKey2', href: '/settings/security' });
   });
 });

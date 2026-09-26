@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
@@ -16,6 +16,7 @@ import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
 import { fallbackSendToken, listedSendableRows } from './TokenSelector.model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 
 export interface TokenChoice { symbol: string; chainId: number }
 
@@ -134,7 +135,7 @@ export function TokenSelector({ value, onChange }: {
             {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
         </Col>
-        <Icon name="chevronDown" size={18} color={fg}/>
+        <Glyph icon={IconChevronBottom} size={18} color={fg}/>
       </Pressable>
 
       <AppModal visible={open} onClose={() => { setOpen(false); }}>

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
@@ -20,6 +20,8 @@ import { attempt } from '../../lib/errorPolicy';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { NewChatModal } from './NewChatModal';
+import { IconBubbleWideSparkle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleWideSparkle';
+import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -54,11 +56,11 @@ function HomeTopnavRight({ head, router, onOpenSearch }: {
   return (
     <>
       <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
-        <Icon name="search" size={24} color={search.hovered ? link : head}/>
+        <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
       </Pressable>
       <HoverTooltip label="New chat" placement="below">
         <Pressable onPress={() => { setComposeOpen(true); }} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
-          <Icon name="pencilAlt" size={24} color={compose.hovered ? link : head}/>
+          <Glyph icon={IconBubbleWideSparkle} size={24} color={compose.hovered ? link : head}/>
         </Pressable>
       </HoverTooltip>
       <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />

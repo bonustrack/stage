@@ -13,6 +13,9 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { walletHeroDisplay, walletTotalUsd } from './model';
 import { WalletActionButton } from '../../widgets';
+import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
+import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
@@ -72,9 +75,9 @@ function WalletTokens({ rows, err, nativeChainIds, c }: {
   );
 }
 
-const HERO_ACTIONS: readonly (readonly [string, string, string])[] = [
-  ['Send', 'send', 'send'],
-  ['Receive', 'arrowDown', 'receive'],
+const HERO_ACTIONS: readonly (readonly [string, CentralIcon, string])[] = [
+  ['Send', IconPaperPlane, 'send'],
+  ['Receive', IconArrowDown, 'receive'],
 ];
 
 function HeroTitle({ value, color }: { value: string; color?: string }): React.ReactElement {

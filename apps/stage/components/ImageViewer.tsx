@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Col, PAGE_GUTTER, Row } from './layout';
 import { AnchoredMenu, menuPointBelowEnd } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -18,11 +18,14 @@ import { useSafeAreaInsets } from '../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { isCoarsePointer, lockDocumentScroll } from '../lib/webLayout';
 import { ZoomableImage } from './ZoomableImage';
+import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 
 const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
 function ViewerButton({ icon, label, dark, loading, onPress }: {
-  icon: HeroIconName; label: string; dark: boolean; loading?: boolean;
+  icon: CentralIcon; label: string; dark: boolean; loading?: boolean;
   onPress: (event: GestureResponderEvent) => void;
 }): React.ReactElement {
   const { link: head } = usePalette();
@@ -31,7 +34,7 @@ function ViewerButton({ icon, label, dark, loading, onPress }: {
       <Button
         uniform pill color="secondary" variant="solid" dark={dark} loading={loading}
         accessibilityLabel={label}
-        iconStart={<Icon name={icon} size={20} color={head}/>}
+        iconStart={<Glyph icon={icon} size={20} color={head}/>}
         onPress={onPress}
       />
     </HoverTooltip>
@@ -46,12 +49,12 @@ function ViewerMenu({ dark, saving, onDownload }: {
   return (
     <>
       <ViewerButton
-        icon="dotsVertical" label="More" dark={dark} loading={saving}
+        icon={IconDotGrid1x3Vertical} label="More" dark={dark} loading={saving}
         onPress={(e) => { setAnchor(menuPointBelowEnd(e)); }}
       />
       <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
         <MenuList dark={dark}>
-          <MenuRow icon="arrowDownTray" label="Download" dark={dark} onPress={() => { close(); onDownload(); }}/>
+          <MenuRow icon={IconArrowInbox} label="Download" dark={dark} onPress={() => { close(); onDownload(); }}/>
         </MenuList>
       </AnchoredMenu>
     </>
@@ -102,7 +105,7 @@ export function ImageViewer({ uri, visible, onClose }: {
 
         <Row gap={8} style={{ position: 'absolute', top: insets.top + PAGE_GUTTER, right: PAGE_GUTTER }}>
           <ViewerMenu dark={dark} saving={saving} onDownload={() => { void onDownload(); }}/>
-          <ViewerButton icon="x" label="Close" dark={dark} onPress={onClose}/>
+          <ViewerButton icon={IconCrossMedium} label="Close" dark={dark} onPress={onClose}/>
         </Row>
         <TooltipHost/>
       </Col>

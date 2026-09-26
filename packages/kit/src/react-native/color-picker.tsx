@@ -5,11 +5,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { fontName, fontSize, readableForeground } from '../tokens';
 import { Box, Row, Col } from './box';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
 import { Input } from './input';
 import { Text } from './text';
 import { useKitPalette } from './theme-context';
 import { hexToHsv, hsvToHex, isHexColor } from '../color-math';
+import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
 export type ColorPickerMode = 'swatches' | 'hsv';
 
@@ -180,7 +181,7 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
               justifyContent: 'center',
             }}
           >
-            {selected ? <Icon name="check" size={18} color={readableForeground(hex)} /> : null}
+            {selected ? <Glyph icon={IconCheckmark1} size={18} color={readableForeground(hex)} /> : null}
           </Pressable>
         );
       })}
