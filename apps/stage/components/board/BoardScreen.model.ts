@@ -1,7 +1,7 @@
 import {
   deriveBarLabels, filterChannelRows, sortChannelRows, type ChannelListRow,
 } from '@stage-labs/client/xmtp/channelsFilter';
-import { MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
+import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 
 export const BOARD_GAP = 12;
 export const BOARD_COLUMN_WIDTH = 340;
@@ -112,6 +112,15 @@ export function addItemRows<T extends ChannelListRow>(
   const needle = query.trim().toLowerCase();
   return sortChannelRows(rows.filter(r => !r.peerAddress && !carries(r, key)
     && (picked.includes(r.convId) || r.title.toLowerCase().includes(needle))));
+}
+
+export function labelCapNote(added: readonly (readonly string[])[], label: string): string | null {
+  const key = label.toLowerCase();
+  const full = added.filter(labels => !labels.some(l => l.toLowerCase() === key)).length;
+  if (full === 0) return null;
+  return full === 1
+    ? `1 group already has ${MAX_LABELS} labels.`
+    : `${full} groups already have ${MAX_LABELS} labels.`;
 }
 
 const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');

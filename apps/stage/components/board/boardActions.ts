@@ -6,8 +6,8 @@ import {
 } from '../../modules/messaging';
 import { toastLabelError } from '../group/group.labels';
 import {
-  addedColumnOrder, columnLabel, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCarriers, movedColumnOrder,
-  renamedColumnOrder, type BoardColumn, type BoardDrag,
+  addedColumnOrder, columnLabel, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote, labelCarriers,
+  movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 
 export function addBoardColumn(columns: readonly BoardColumn<unknown>[], saved: readonly string[], name: string): void {
@@ -63,6 +63,8 @@ export async function deleteBoardLabel(
 
 export async function addToBoardLabel(convIds: readonly string[], label: string): Promise<void> {
   const results = await Promise.allSettled(convIds.map(convId => addGroupLabel(lineOfConv(convId), label)));
-  const outcome = labelOutcome(results, 'Could not add the label to every group. Try again.', 'did not get the label');
+  const added = results.filter((r): r is PromiseFulfilledResult<string[]> => r.status === 'fulfilled').map(r => r.value);
+  const outcome = labelOutcome(results, 'Could not add the label to every group. Try again.', 'did not get the label')
+    ?? labelCapNote(added, label);
   if (outcome !== null) capabilities.toast(outcome);
 }

@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
-  addItemRows, keptColumnOrder, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
+  addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
+import { MAX_LABELS } from '@stage-labs/client/xmtp/labels';
 
 interface TestRow {
   convId: string;
@@ -328,5 +329,16 @@ describe('board order saved with label ids', () => {
     expect(namedBoardOrder(order, '{"id":"todo","name":"Doing"}')).toEqual(order);
     expect(namedBoardOrder(['label:1', 'label:todo'], '[{"id":"todo"},{"id":1,"name":"Doing"}]'))
       .toEqual(['label:1', 'label:todo']);
+  });
+});
+
+describe('labelCapNote', () => {
+  test('is silent when every group got the label, whatever its case', () => {
+    expect(labelCapNote([['a', 'Design'], ['design']], 'Design')).toBeNull();
+  });
+
+  test('counts the groups that came back without the label', () => {
+    expect(labelCapNote([['a'], ['Design']], 'Design')).toBe(`1 group already has ${MAX_LABELS} labels.`);
+    expect(labelCapNote([['a'], ['b'], ['Design']], 'Design')).toBe(`2 groups already have ${MAX_LABELS} labels.`);
   });
 });
