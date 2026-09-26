@@ -11,14 +11,9 @@ import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../AppModal';
-import { AnchoredMenu } from '../AnchoredMenu';
-import { MenuList, MenuRow } from '../MenuRows';
-import type { MenuPoint } from '../AnchoredMenu.model';
 import { FormField } from '../FormField';
-import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { DANGER, usePalette } from '../../lib/theme';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
-import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
-import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
@@ -125,23 +120,5 @@ export function AddMemberModal({
 />
       </Box>
     </AppModal>
-  );
-}
-
-export function OverflowModal({
-  visible, onClose, anchor, leaving, onLeave, onEdit,
-}: {
-  visible: boolean; onClose: () => void; anchor?: MenuPoint | null;
-  leaving: boolean; onLeave: () => void; onEdit?: () => void;
-}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  return (
-    <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
-      <MenuList dark={dark}>
-        {onEdit ? <MenuRow icon={IconPencil} label="Edit group" dark={dark} onPress={onEdit} /> : null}
-        <MenuRow icon={IconArrowLeft} label={leaving ? 'Leaving…' : 'Leave group'} danger dark={dark}
-          onPress={() => { if (!leaving) onLeave(); }} />
-      </MenuList>
-    </AnchoredMenu>
   );
 }

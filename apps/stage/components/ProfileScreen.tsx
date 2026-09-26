@@ -80,11 +80,16 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
     router.replace({ pathname: '/[convId]', params: { convId: addr } });
   };
 
+  const onSend = (): void => { router.push({ pathname: '/wallet/send', params: { to: addr } }); };
+  const menuActions: Record<string, () => void> = {
+    message: onMessage, send: onSend, 'copy-address': () => { capabilities.copy('Address', addr); },
+  };
+
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
 
   return (
     <Col flex={1} surface="surface">
-      <ProfileHeader insetTop={insets.top} c={c} menu={<ProfileMenu color={c.link} isSelf={isSelf} />} />
+      <ProfileHeader insetTop={insets.top} c={c} menu={addr ? <ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} /> : undefined} />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
@@ -93,7 +98,7 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
           handle={getPeerHandle(addr)} about={getPeerDescription(addr)}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
           onMessage={onMessage}
-          onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
+          onSend={onSend}
         />
 
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}

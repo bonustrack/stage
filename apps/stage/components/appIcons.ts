@@ -2,6 +2,7 @@ import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { IconBell } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBell';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
+import { IconBubbleDots } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleDots';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
@@ -29,6 +30,7 @@ export const APP_ICONS = {
   IconArrowUndoUp,
   IconBell,
   IconBubble3,
+  IconBubbleDots,
   IconCheckmark1,
   IconColumns3Wide,
   IconEmail1,

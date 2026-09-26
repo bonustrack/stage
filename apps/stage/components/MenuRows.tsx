@@ -5,7 +5,8 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from './layout';
 import { AppIcon, type AppIconRef } from './widgets';
-import { AnchoredMenu, menuPointBelow, useAnchoredMenus } from './AnchoredMenu';
+import { AnchoredMenu, menuPointBelow, menuPointBelowEnd, useAnchoredMenus } from './AnchoredMenu';
+import { RoundIconButton } from './RoundIconButton';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { MENU_ROW } from './menuStyle';
@@ -55,14 +56,28 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron, divider =
 
 interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
 
+function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
+  anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: (id: string) => void;
+}): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return (
+    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
+      <MenuList dark={dark}>
+        {items.map((item, index) => (
+          <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark}
+            divider={item.danger === true && index > 0} onPress={() => { onClose(); onSelect(item.id); }} />
+        ))}
+      </MenuList>
+    </AnchoredMenu>
+  );
+}
+
 const OVERFLOW_TRIGGER_HIT = 40;
 
 export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
   color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void; label?: string; size?: number;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const dark = useEffectiveColorScheme() === 'dark';
-  const close = (): void => { setAnchor(null); };
   const { link } = usePalette();
   const trigger = useHover();
   return (
@@ -70,14 +85,22 @@ export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
       <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={(OVERFLOW_TRIGGER_HIT - size) / 2} accessibilityLabel={label} {...trigger.hoverProps}>
         <Glyph icon={IconDotGrid1x3Vertical} size={size} color={trigger.hovered ? link : color} />
       </Pressable>
-      <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
-        <MenuList dark={dark}>
-          {items.map((item, index) => (
-            <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark}
-              divider={item.danger === true && index > 0} onPress={() => { close(); onSelect(item.id); }} />
-          ))}
-        </MenuList>
-      </AnchoredMenu>
+      <OverflowMenuItems anchor={anchor} onClose={() => { setAnchor(null); }} items={items} onSelect={onSelect} />
+    </>
+  );
+}
+
+export function RoundOverflowMenu({ items, onSelect, loading, background }: {
+  items: OverflowMenuItem[]; onSelect: (id: string) => void; loading?: boolean; background?: string;
+}): React.ReactElement {
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  return (
+    <>
+      <RoundIconButton
+        icon={IconDotGrid1x3Vertical} label="More" loading={loading} background={background}
+        onPress={(e) => { setAnchor(menuPointBelowEnd(e)); }}
+      />
+      <OverflowMenuItems anchor={anchor} onClose={() => { setAnchor(null); }} items={items} onSelect={onSelect} />
     </>
   );
 }

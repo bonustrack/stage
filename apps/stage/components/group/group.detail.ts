@@ -122,8 +122,7 @@ export function useGroupDetail(convId: string | undefined) {
     ));
   };
 
-  const leaveGroup = async (onClose: () => void): Promise<void> => {
-    onClose();
+  const leaveGroup = async (): Promise<void> => {
     const ok = await capabilities.confirm({
       title: 'Leave group',
       message: 'You’ll stop receiving messages from this group. You can be re-added by a member later.',

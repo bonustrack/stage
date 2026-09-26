@@ -1,3 +1,5 @@
+import type { AppIconName } from './appIcons';
+
 export function profileDisplayName(
   address: string,
   resolvedName: string | null | undefined,
@@ -8,8 +10,12 @@ export function profileDisplayName(
   return trimmed !== undefined && trimmed !== '' ? trimmed : shortAddress;
 }
 
-interface ProfileMenuItem { id: 'edit'; label: string; icon: 'IconPencil' }
+type ProfileMenuId = 'message' | 'send' | 'copy-address';
 
-export function profileMenuItems(isSelf: boolean): ProfileMenuItem[] {
-  return isSelf ? [{ id: 'edit', label: 'Edit profile', icon: 'IconPencil' }] : [];
-}
+interface ProfileMenuItem { id: ProfileMenuId; label: string; icon: AppIconName }
+
+export const PEER_PROFILE_MENU: ProfileMenuItem[] = [
+  { id: 'message', label: 'Message', icon: 'IconBubbleDots' },
+  { id: 'send', label: 'Send', icon: 'IconPaperPlane' },
+  { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' },
+];

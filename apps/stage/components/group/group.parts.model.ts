@@ -1,3 +1,5 @@
+import type { AppIconName } from '../appIcons';
+
 export type GroupMemberRole = 'owner' | 'admin' | 'member' | undefined;
 
 export interface MemberRowBadge {
@@ -33,4 +35,12 @@ export function memberRowModel(input: MemberRowInput): MemberRowModel {
     addressLine: named ? input.shortAddress : undefined,
     badge: memberRowBadge(input.role),
   };
+}
+
+interface GroupMenuItem { id: 'edit' | 'leave'; label: string; icon: AppIconName; danger?: boolean }
+
+const LEAVE_GROUP_ITEM: GroupMenuItem = { id: 'leave', label: 'Leave group', icon: 'IconArrowLeft', danger: true };
+
+export function groupMenuItems(canEdit: boolean): GroupMenuItem[] {
+  return canEdit ? [{ id: 'edit', label: 'Edit group', icon: 'IconPencil' }, LEAVE_GROUP_ITEM] : [LEAVE_GROUP_ITEM];
 }
