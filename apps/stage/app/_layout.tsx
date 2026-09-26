@@ -10,10 +10,10 @@ import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Platform } from 'react-native';
+import { LogBox, Platform } from 'react-native';
 import { BOARD_SCREEN_OPTIONS, RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
 import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
@@ -40,6 +40,7 @@ const APP_FONTS = {
   'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
 };
 
+LogBox.ignoreAllLogs();
 applyWebGlobalStyles();
 installAlertShim();
 void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
@@ -110,6 +111,12 @@ function RootLayoutInner(): React.ReactElement {
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
+  const reproRouter = useRouter();
+  useEffect(() => {
+    if (!gatesOpen) return;
+    const t = setTimeout(() => { reproRouter.push('/board'); }, 3000);
+    return () => { clearTimeout(t); };
+  }, [gatesOpen]);
   const routing = shell.showOnboarding && !isOnboardingRoute(pathname) && pathname !== '/';
 
   return (

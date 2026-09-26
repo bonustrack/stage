@@ -32,6 +32,11 @@ import {
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { dropOnBoard } from './boardActions';
 
+const REPRO_LABELS = ['alpha', 'beta', 'gamma', 'delta'];
+const REPRO_ROWS = [...REPRO_LABELS.flatMap((label, li) => Array.from({ length: 5 }, (_, i) => ({
+  convId: `c-${label}-${i}`, title: `${label.toUpperCase()} card ${i + 1}`, lastPreview: 'preview text',
+  lastTs: 1_700_000_000_000 - (li * 10 + i) * 60_000, unreadCount: 0, labels: [label], peerAddress: null,
+}))), { convId: 'c-none-0', title: 'NOLABEL card 1', lastPreview: 'x', lastTs: 1_600_000_000_000, unreadCount: 0, labels: [], peerAddress: null }] as unknown as ChannelRowData[];
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
 const TITLE_SIZE = '2xl';
@@ -152,7 +157,7 @@ function BoardLanes({ columns, pinned, onDrop }: {
 function BoardBody(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
-  const rows = useStoreValue(subscribeCachedRows, homeRows);
+  const rows = REPRO_ROWS;
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
   const order = useBoardOrder();
@@ -164,7 +169,6 @@ function BoardBody(): React.ReactElement {
     () => orderedColumns(boardColumns((rows ?? []).filter(r => !isRowCleared(cleared, r)), pinned), order),
     [rows, cleared, pinned, order],
   );
-  if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   if (columns.length === 0) return <EmptyState title="No channels yet"/>;
   const onDrop: OnBoardDrop = (drag, key) => { dropOnBoard(columns, order, drag, key); };

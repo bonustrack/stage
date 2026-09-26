@@ -9,6 +9,7 @@ export interface AccountGate {
 }
 
 export function useAccountGate(): AccountGate {
+  if (Date.now() > 0) return { ready: true, hasAccount: true };
   const epoch = useAccountEpoch();
   const [ready, setReady] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
