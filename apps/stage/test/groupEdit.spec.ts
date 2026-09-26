@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   GROUP_DESCRIPTION_MAX, GROUP_NAME_MAX, groupChanges, groupDraftFrom, groupDraftProblem, groupMetaCachePatch,
+  hasLabelEdits, labelEdits,
 } from '../components/group/EditGroupModal.model';
 
 describe('group edit model', () => {
@@ -49,5 +50,16 @@ describe('group edit model', () => {
     expect(groupMetaCachePatch({ name: 'Crew', imageUrl: '', description: 'x' }))
       .toEqual({ groupName: 'Crew', groupImage: '', groupDescription: 'x' });
     expect(groupMetaCachePatch({ description: '' })).toEqual({ groupDescription: '' });
+  });
+
+  test('diffs the label draft against the saved labels, ignoring case', () => {
+    const none = labelEdits(['Bug', 'Urgent'], ['urgent', 'bug']);
+    expect(none).toEqual({ added: [], removed: [] });
+    expect(hasLabelEdits(none)).toBe(false);
+    const edits = labelEdits(['Bug', 'Urgent'], ['Bug', 'Design']);
+    expect(edits).toEqual({ added: ['Design'], removed: ['Urgent'] });
+    expect(hasLabelEdits(edits)).toBe(true);
+    expect(hasLabelEdits(labelEdits([], ['Bug']))).toBe(true);
+    expect(hasLabelEdits(labelEdits(['Bug'], []))).toBe(true);
   });
 });

@@ -19,7 +19,7 @@ import { GroupMembersList } from '../../components/group/group.members';
 import { GroupProfileHeader, GroupTitle } from '../../components/group/group.header';
 import { EditGroupModal } from '../../components/group/EditGroupModal';
 import { useGroupDetail } from '../../components/group/group.detail';
-import { GroupLabelsSection } from '../../components/group/group.labels';
+import { GroupLabelsView, useGroupLabels } from '../../components/group/group.labels';
 import { profileLinkOf } from '../../lib/links';
 import { reported } from '../../lib/errorPolicy';
 import { IconDotGrid1x3Horizontal } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Horizontal';
@@ -43,6 +43,7 @@ export default function GroupDetail(): React.ReactElement {
   const { text: fg } = usePalette();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const g = useGroupDetail(convId);
+  const [labels, setLabels] = useGroupLabels(g.line);
   const [addOpen, setAddOpen] = useState(false);
   const [selfAddress, setSelfAddress] = useState<string>('');
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function GroupDetail(): React.ReactElement {
         onView={() => { setViewerOpen(true); }}
       />
       <GroupTitle name={g.name} description={g.description} />
-      <GroupLabelsSection line={g.line}/>
+      <GroupLabelsView labels={labels} />
       <GroupMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}
@@ -98,6 +99,7 @@ export default function GroupDetail(): React.ReactElement {
         visible={editOpen}
         onClose={() => { setEditOpen(false); }}
         convId={convId ?? ''} name={g.name} description={g.description} imageUrl={g.imageUrl} rights={g.rights}
+        labels={labels} onLabelsSaved={setLabels}
       />
       <ImageViewer
         uri={g.imageUrl ? avatarRenderUrl('', g.imageUrl, 1024) : ''}

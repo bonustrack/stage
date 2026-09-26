@@ -1,18 +1,13 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Box, Row, PAGE_GUTTER } from '../layout';
+import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
-import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import {
-  getGroupLabels, addGroupLabel, removeGroupLabel,
-  LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
-} from '../../modules/messaging';
+import { getGroupLabels, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS } from '../../modules/messaging';
 import { suggestLabels } from '../../modules/messaging';
 import { reported } from '../../lib/errorPolicy';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -26,24 +21,34 @@ export function toastLabelError(e: unknown): void {
   else capabilities.toast('Could not update labels. Try again.');
 }
 
-function SuggestionChip({ label, busy, onAdd }: {
-  label: string; busy: boolean; onAdd: () => void;
+export function useGroupLabels(line: string): [string[], (labels: string[]) => void] {
+  const [labels, setLabels] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('group.labels'));
+    return (): void => { cancelled = true; };
+  }, [line]);
+  return [labels, setLabels];
+}
+
+function SuggestionChip({ label, disabled, onAdd }: {
+  label: string; disabled: boolean; onAdd: () => void;
 }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
     <Pressable
       onPress={onAdd}
-      disabled={busy}
+      disabled={disabled}
       hitSlop={6}
-      style={({ pressed }) => ({ opacity: busy ? 0.5 : pressed ? 0.7 : 1 })}
+      style={({ pressed }) => ({ opacity: disabled ? 0.5 : pressed ? 0.7 : 1 })}
     >
       <LabelChip label={label} leading={<Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>} />
     </Pressable>
   );
 }
 
-function LabelChips({ labels, onRemove }: {
-  labels: string[]; onRemove: (label: string) => void;
+function RemovableChips({ labels, disabled, onRemove }: {
+  labels: string[]; disabled: boolean; onRemove: (label: string) => void;
 }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
@@ -55,6 +60,7 @@ function LabelChips({ labels, onRemove }: {
           trailing={(
             <Pressable
               hitSlop={8}
+              disabled={disabled}
               accessibilityLabel={`Remove ${label}`}
               onPress={() => { onRemove(label); }}
               style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
@@ -68,109 +74,58 @@ function LabelChips({ labels, onRemove }: {
   );
 }
 
-function LabelAddRow({ draft, setDraft, busy, onAdd }: {
-  draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void;
-}): React.ReactElement {
-  const { text: fg, border } = usePalette();
-  const disabled = busy || !draft.trim();
+function AddButton({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }): React.ReactElement {
+  const { text: fg, sub } = usePalette();
   return (
-    <Row margin={{ top: 10 }} align="center" gap={8}>
-      <Box flex={1}>
-        <FormField label="Label" placeholder="Add a label" value={draft} onChangeText={setDraft} onSubmit={onAdd} disabled={busy}
-          inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }} />
-      </Box>
-      <Pressable
-        onPress={onAdd}
-        disabled={disabled}
-        hitSlop={8}
-        style={({ pressed }) => ({
-          flexDirection: 'row', alignItems: 'center', gap: 4,
-          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-          borderWidth: 1, borderColor: border,
-          opacity: disabled ? 0.5 : 1,
-          backgroundColor: pressed ? border : 'transparent',
-        })}
->
-        {busy ? <Spinner size={14} color={fg} /> : <Glyph icon={IconPlusLarge} size={14} color={fg} />}
-        <Text size="xs" color={fg}>Add</Text>
-      </Pressable>
-    </Row>
+    <Pressable
+      onPress={onAdd}
+      disabled={disabled}
+      hitSlop={8}
+      accessibilityLabel="Add label"
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: disabled ? 0.5 : pressed ? 0.7 : 1 })}
+    >
+      <Glyph icon={IconPlusLarge} size={14} color={disabled ? sub : fg} />
+      <Text size="md" color={disabled ? sub : fg}>Add</Text>
+    </Pressable>
   );
 }
 
-export function GroupLabelsSection({ line }: { line: string }): React.ReactElement {
-  const { text: sub } = usePalette();
-  const [labels, setLabels] = useState<string[]>([]);
-  const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('group.labels'));
-    return (): void => { cancelled = true; };
-  }, [line]);
-
-  const add = async (value: string): Promise<void> => {
-    const clean = value.trim();
-    if (!clean || busy) return;
-    setBusy(true);
-    try {
-      const next = await addGroupLabel(line, clean);
-      setLabels(next);
-      setDraft('');
-    } catch (e) { toastLabelError(e); } finally { setBusy(false); }
-  };
-
-  const remove = async (label: string): Promise<void> => {
-    if (removing) return;
-    setRemoving(label);
-    try {
-      const next = await removeGroupLabel(line, label);
-      setLabels(next);
-    } catch (e) { toastLabelError(e); } finally { setRemoving(null); }
-  };
-
+export function GroupLabelsEditor({ labels, input, setInput, disabled, onAdd, onRemove }: {
+  labels: string[]; input: string; setInput: (s: string) => void; disabled: boolean;
+  onAdd: (label: string) => void; onRemove: (label: string) => void;
+}): React.ReactElement {
   const atCap = labels.length >= MAX_LABELS;
-
-  const suggestions = useMemo(
-    () => suggestLabels(draft, labels).slice(0, MAX_SUGGESTIONS),
-    [draft, labels],
+  const suggestions = useMemo(() => suggestLabels(input, labels).slice(0, MAX_SUGGESTIONS), [input, labels]);
+  const submit = (): void => { onAdd(input); };
+  return (
+    <Col gap={10}>
+      <FormField label="Labels" placeholder={atCap ? `Limit reached (${MAX_LABELS})` : 'Add a label'} value={input} onChangeText={setInput}
+        onSubmit={submit} disabled={disabled || atCap} inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
+        trailing={<AddButton disabled={disabled || atCap || !input.trim()} onAdd={submit} />} />
+      {labels.length > 0 ? <RemovableChips labels={labels} disabled={disabled} onRemove={onRemove} /> : null}
+      {!atCap && suggestions.length > 0 ? (
+        <Row gap={8} wrap>
+          {suggestions.map((label) => (
+            <SuggestionChip key={label.toLowerCase()} label={label} disabled={disabled} onAdd={() => { onAdd(label); }} />
+          ))}
+        </Row>
+      ) : null}
+    </Col>
   );
+}
 
+export function GroupLabelsView({ labels }: { labels: string[] }): React.ReactElement | null {
+  const { text: sub } = usePalette();
+  if (labels.length === 0) return null;
   return (
     <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconTag} size={13} color={sub}/>
         <Text size="xs" role="secondary">LABELS</Text>
       </Row>
-
-      {labels.length> 0 ? (
-        <Box margin={{ top: 10 }}>
-          <LabelChips labels={labels} onRemove={(label) => { void remove(label); }} />
-        </Box>
-      ) : null}
-
-      {!atCap ? (
-        <LabelAddRow draft={draft} setDraft={setDraft} busy={busy} onAdd={() => { void add(draft); }}/>
-      ) : (
-        <Text size="xs" role="secondary" style={{ marginTop: 8 }}>
-          Label limit reached ({MAX_LABELS}).
-        </Text>
-      )}
-
-      {!atCap && suggestions.length> 0 ? (
-        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
-          {suggestions.map((label) => (
-            <SuggestionChip
-              key={label.toLowerCase()}
-              label={label}
-              busy={busy}
-              onAdd={() => { void add(label); }}
-/>
-          ))}
-        </Row>
-      ) : null}
+      <Row margin={{ top: 10 }} gap={8} wrap align="center">
+        {labels.map((label) => <LabelChip key={label} label={label} />)}
+      </Row>
     </Box>
   );
 }
