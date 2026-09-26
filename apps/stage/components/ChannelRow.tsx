@@ -47,6 +47,7 @@ interface ChannelRowProps {
 export const CHANNEL_ROW_HEIGHT = 67;
 const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
+const WRAPPED_TITLE_LINE_HEIGHT = 22;
 const PREVIEW_LINE_HEIGHT = 18;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
@@ -65,6 +66,10 @@ function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
   );
 }
 
+function titleLineHeight(wrap: boolean): number {
+  return wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT;
+}
+
 function TitleLine({ params, scheme, wrap }: {
   params: ChannelRowParams; scheme: Scheme; wrap: boolean;
 }): React.ReactElement {
@@ -81,15 +86,16 @@ function TitleLine({ params, scheme, wrap }: {
       style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
     />
   ));
+  const lineHeight = titleLineHeight(wrap);
   return (
     <Row align={wrap ? 'start' : 'center'} gap={4} flex={1} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
       {params.pinned === true ? (
-        <Row align="center" height={TITLE_LINE_HEIGHT} style={{ flexShrink: 0 }}>
+        <Row align="center" height={lineHeight} style={{ flexShrink: 0 }}>
           <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
         </Row>
       ) : null}
       {wrap ? (
-        <Text size="2xl" weight="semibold" style={{ flex: 1, minWidth: 0, lineHeight: TITLE_LINE_HEIGHT }}>{texts}</Text>
+        <Text size="2xl" weight="semibold" style={{ flex: 1, minWidth: 0, lineHeight }}>{texts}</Text>
       ) : texts}
     </Row>
   );
@@ -102,7 +108,7 @@ function TitleRow({ params, scheme, wrap }: {
     <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
       <TitleLine params={params} scheme={scheme} wrap={wrap} />
       {params.timestamp === '' ? null : (
-        <Row align="center" height={TITLE_LINE_HEIGHT}>
+        <Row align="center" height={titleLineHeight(wrap)}>
           <Caption value={params.timestamp} color="secondary" />
         </Row>
       )}
