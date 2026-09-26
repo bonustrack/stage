@@ -37,6 +37,7 @@ interface ChannelRowProps {
   onPress?: () => void;
   onPressIn?: () => void;
   onLongPress?: (point?: MenuPoint) => void;
+  onContextMenu?: (point: MenuPoint) => void;
   highlightQuery?: string;
   accessory?: React.ReactNode;
 }
@@ -190,7 +191,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
-  onPress, onPressIn, onLongPress, labels, highlightQuery, accessory,
+  onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
@@ -215,7 +216,7 @@ function ChannelRowBase({
         backgroundColor: pressed || active === true ? border : 'transparent',
         paddingHorizontal: PAGE_GUTTER,
       })}
-      {...contextMenuProps(onLongPress)}
+      {...contextMenuProps(onContextMenu ?? onLongPress)}
 >
       <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar

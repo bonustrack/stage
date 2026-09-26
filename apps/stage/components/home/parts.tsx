@@ -8,6 +8,8 @@ import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
+import { ChannelMenu } from '../ChannelMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import { PinnedDraggable, type PinDrag } from './pinDrag';
 import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
@@ -42,6 +44,30 @@ export function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
   return null;
 }
 
+export function rowMenuOpener(item: RowT, setRowMenu: (m: RowMenu) => void): (anchor?: MenuPoint) => void {
+  return (anchor) => {
+    Vibration.vibrate(10);
+    setRowMenu({
+      convId: item.convId,
+      isUnread: item.unreadCount > 0 || item.markedUnread,
+      isGroup: !item.peerAddress, peerAddress: item.peerAddress, anchor,
+    });
+  };
+}
+
+export function RowChannelMenu({ menu, isPinned, onClose }: {
+  menu: RowMenu | null; isPinned: boolean; onClose: () => void;
+}): React.ReactElement | null {
+  if (!menu) return null;
+  return (
+    <ChannelMenu
+      visible convId={menu.convId} isGroup={menu.isGroup} peerAddress={menu.peerAddress}
+      isUnread={menu.isUnread} isPinned={isPinned} anchor={menu.anchor ?? null}
+      onClose={onClose}
+    />
+  );
+}
+
 interface ChannelRowItemProps {
   item: RowT;
   router: { push: (to: { pathname: string; params: { convId: string } }) => void };
@@ -60,14 +86,7 @@ function ChannelRowItemBase({
   item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active, pinDrag,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
-  const openMenu = (anchor?: { x: number; y: number }): void => {
-    Vibration.vibrate(10);
-    setRowMenu({
-      convId: item.convId,
-      isUnread: item.unreadCount > 0 || item.markedUnread,
-      isGroup, peerAddress: item.peerAddress, anchor,
-    });
-  };
+  const openMenu = rowMenuOpener(item, setRowMenu);
   const dragIndex = pinned ? pinDrag.visible.indexOf(item.convId) : -1;
   const row = (
     <ChannelRow

@@ -9,8 +9,7 @@ import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { SplitPlaceholder } from './SplitPlaceholder';
 import { useWebTabRail } from '../../lib/webLayout';
-import { ChannelMenu } from '../ChannelMenu';
-import { HomeError, HomeSpinner, useChannelRowRenderer } from './parts';
+import { HomeError, HomeSpinner, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveLabels, useHomeFilters } from './labelbar';
@@ -100,13 +99,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
         renderRow={renderRow}
         pane={pane}
       />
-      {rowMenu ? (
-        <ChannelMenu
-          visible convId={rowMenu.convId} isGroup={rowMenu.isGroup} peerAddress={rowMenu.peerAddress}
-          isUnread={rowMenu.isUnread} isPinned={pinned.includes(rowMenu.convId)} anchor={rowMenu.anchor ?? null}
-          onClose={() => { st.setRowMenu(null); }}
-        />
-      ) : null}
+      <RowChannelMenu
+        menu={rowMenu} isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}
+        onClose={() => { st.setRowMenu(null); }}
+      />
     </Col>
   );
 }

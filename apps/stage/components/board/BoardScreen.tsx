@@ -12,8 +12,8 @@ import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
-import { HomeError, HomeSpinner, rowAvatarAddress, rowPreview, rowTitle } from '../home/parts';
-import { homeRows } from '../home/state';
+import { HomeError, HomeSpinner, RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
+import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
 import type { Row as ChannelRowData } from '../home/model';
 import { lineOfConv, prefetchFeed, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
@@ -58,6 +58,8 @@ function BoardCard({ item, pinned, columnKey }: {
   const isGroup = !item.peerAddress;
   const draftText = getDraft(item.convId);
   const source = useBoardDragSource(isGroup ? { kind: 'card', convId: item.convId, from: columnKey } : null);
+  const [menu, setMenu] = useState<RowMenu | null>(null);
+  const openMenu = rowMenuOpener(item, setMenu);
   return (
     <Box
       nativeID={source.nativeID}
@@ -79,7 +81,10 @@ function BoardCard({ item, pinned, columnKey }: {
         draftText={draftText}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
+        onLongPress={source.nativeID === undefined ? openMenu : undefined}
+        onContextMenu={openMenu}
       />
+      <RowChannelMenu menu={menu} isPinned={pinned} onClose={() => { setMenu(null); }}/>
     </Box>
   );
 }
