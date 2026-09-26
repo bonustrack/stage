@@ -2,7 +2,7 @@ import { setBoardOrder } from '../../lib/boardOrder';
 import { lineOfConv, moveGroupLabel } from '../../modules/messaging';
 import { toastLabelError } from '../group/group.labels';
 import {
-  columnLabel, keptColumnOrder, movedColumnOrder, removedColumnOrder, type BoardColumn, type BoardDrag,
+  columnLabel, keptColumnOrder, movedColumnOrder, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 
 export function dropOnBoard(
@@ -17,8 +17,4 @@ export function dropOnBoard(
   if (kept !== null) setBoardOrder(kept);
   const from = columnLabel(columns, drag.from);
   void moveGroupLabel(lineOfConv(drag.convId), from, columnLabel(columns, key)).catch(toastLabelError);
-}
-
-export function removeBoardColumn(saved: readonly string[], key: string): void {
-  setBoardOrder(removedColumnOrder(saved, key));
 }

@@ -13,7 +13,6 @@ export interface BoardColumn<T> {
   key: string;
   label: string | null;
   rows: T[];
-  removable: boolean;
 }
 
 export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label}`;
@@ -33,15 +32,14 @@ export function boardColumns<T extends ChannelListRow>(
 ): BoardColumn<T>[] {
   const chatLabels = deriveBarLabels(rows);
   const sorted = sortChannelRows(rows.filter(row => !row.peerAddress && !hidden(row)), pinned);
-  const labeled = [...chatLabels, ...rememberedLabels(order, chatLabels)].map((label, index) => ({
+  const labeled = [...chatLabels, ...rememberedLabels(order, chatLabels)].map(label => ({
     key: labelColumnKey(label),
     label,
     rows: filterChannelRows(sorted, { enabledLabels: new Set([label.toLowerCase()]) }),
-    removable: index >= chatLabels.length,
   }));
   if (labeled.length === 0 && sorted.length === 0) return [];
   const unlabeled = sorted.filter(r => (r.labels ?? []).length === 0);
-  return [...labeled, { key: UNLABELED_KEY, label: null, rows: unlabeled, removable: false }];
+  return [...labeled, { key: UNLABELED_KEY, label: null, rows: unlabeled }];
 }
 
 export type BoardDrag = { kind: 'column'; key: string } | { kind: 'card'; convId: string; from: string };
@@ -98,10 +96,6 @@ export function keptColumnOrder(
   if (column?.label == null || column.rows.length > 1) return null;
   const next = withShown(saved, columns.map(c => c.key));
   return next.length === saved.length && next.every((key, index) => key === saved[index]) ? null : next;
-}
-
-export function removedColumnOrder(saved: readonly string[], key: string): string[] {
-  return saved.filter(entry => entry.toLowerCase() !== key.toLowerCase());
 }
 
 export function columnLabel(columns: readonly BoardColumn<unknown>[], key: string): string | null {

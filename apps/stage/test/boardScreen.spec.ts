@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  boardColumns, keptColumnOrder, movedColumnOrder, orderedColumns, removedColumnOrder,
+  boardColumns, keptColumnOrder, movedColumnOrder, orderedColumns,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -84,12 +84,11 @@ describe('boardColumns', () => {
     ]);
   });
 
-  test('labels no channel carries any more come back from the saved order and can be removed', () => {
-    const columns = boardColumns([row('a', 1, ['Todo'])], [], ['label:Done', 'unlabeled', 'label:todo', 'label:done']);
-    expect(columns.map(c => [c.label, c.rows.length, c.removable])).toEqual([
-      ['Todo', 1, false],
-      ['Done', 0, true],
-      [null, 0, false],
+  test('labels no channel carries any more come back from the saved order', () => {
+    expect(shape([row('a', 1, ['Todo'])], [], ['label:Done', 'unlabeled', 'label:todo', 'label:done'])).toEqual([
+      ['Todo', ['a']],
+      ['Done', []],
+      [null, []],
     ]);
     expect(shape([], [], ['label:Done'])).toEqual([['Done', []], [null, []]]);
   });
@@ -145,9 +144,5 @@ describe('columns left empty', () => {
     expect(keptColumnOrder(columns, [], 'label:Done')).toBeNull();
     expect(keptColumnOrder(columns, ['label:Done', 'label:Todo', 'unlabeled'], 'label:Todo')).toBeNull();
     expect(keptColumnOrder(boardColumns([row('a', 1)], [], []), [], 'unlabeled')).toBeNull();
-  });
-
-  test('removing a column drops it from the saved order whatever its case', () => {
-    expect(removedColumnOrder(['label:todo', 'unlabeled', 'label:Done'], 'label:Todo')).toEqual(['unlabeled', 'label:Done']);
   });
 });

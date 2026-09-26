@@ -24,6 +24,7 @@ interface ChannelRowProps {
   avatarAddress?: string | null;
   avatarUri?: string | null;
   square?: boolean;
+  hideAvatar?: boolean;
   lastPreview?: string | null;
   timestamp?: string | null;
   subtitle?: string | null;
@@ -188,7 +189,7 @@ function ChannelRowBody({ params, trailing }: {
 }
 
 function ChannelRowBase({
-  title, avatarAddress, avatarUri, square,
+  title, avatarAddress, avatarUri, square, hideAvatar,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
   onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory,
@@ -219,13 +220,15 @@ function ChannelRowBase({
       {...contextMenuProps(onContextMenu ?? onLongPress)}
 >
       <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
-        <Avatar
-          imageUri={avatarUri}
-          address={avatarUri ? null : avatarAddress ?? null}
-          size={44}
-          square={square}
-          style={{ backgroundColor: border }}
-/>
+        {hideAvatar === true ? null : (
+          <Avatar
+            imageUri={avatarUri}
+            address={avatarUri ? null : avatarAddress ?? null}
+            size={44}
+            square={square}
+            style={{ backgroundColor: border }}
+          />
+        )}
         <Col minWidth={0} flex={1}>
           <ChannelRowBody
             params={params}
