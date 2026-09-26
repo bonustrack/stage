@@ -3,10 +3,10 @@ import { PersistentStore } from './cache.shared';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp.client';
 import { notifyReadStateChanged } from './readSyncRegistry';
 import {
-  applyRead, applyUnread, applySentPatch,
+  applyRead, applyUnread, applySentPatch, needsReadMark,
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
-import { attempt } from './errorPolicy';
+import { attempt, recover } from './errorPolicy';
 
 export type CachedRow = CachedChannelRow;
 
@@ -76,22 +76,23 @@ export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () =
   return () => { activeListeners.delete(l); };
 }
 
-export async function markConvRead(convId: string): Promise<void> {
-  const nowNs = Date.now() * 1_000_000;
-  await markConvReadSynced(convId);
-  notifyReadStateChanged({ convId, lastReadNs: nowNs, markedUnread: false });
+export async function markConvRead(convId: string, newestMs: number | null = null): Promise<void> {
+  if (!needsReadMark(getCachedRows()?.find((r) => r.convId === convId), newestMs)) return;
+  const read = await markConvReadSynced(convId).catch(recover('readState.markRead', null));
+  if (read === null) return;
+  notifyReadStateChanged({ convId, ...read });
   const rows = getCachedRows();
   if (!rows) return;
-  const next = applyRead(rows, convId, nowNs);
+  const next = applyRead(rows, convId, read.lastReadNs);
   if (next === null) return;
   setCachedRows(next);
 }
 
 export async function markConvUnread(convId: string): Promise<void> {
-  await markConvUnreadSynced(convId);
+  const read = await markConvUnreadSynced(convId).catch(recover('readState.markUnread', null));
+  if (read === null) return;
+  notifyReadStateChanged({ convId, ...read });
   const rows = getCachedRows();
-  const current = rows?.find((r) => r.convId === convId);
-  notifyReadStateChanged({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
   if (!rows) return;
   const next = applyUnread(rows, convId);
   if (next === null) return;

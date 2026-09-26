@@ -26,6 +26,7 @@ export interface ReadStateChange {
   convId: string;
   lastReadNs: number;
   markedUnread: boolean;
+  at: number;
 }
 
 const readListeners = makeListeners<ReadStateChange>();

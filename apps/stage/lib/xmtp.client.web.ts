@@ -119,4 +119,4 @@ export const {
 });
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
-export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
+export { getLastReadNs, getMarkedUnread, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';

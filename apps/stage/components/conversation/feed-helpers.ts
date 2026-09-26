@@ -143,6 +143,15 @@ export function entriesAfterClear(events: HistoryEntry[], clearedAtMs: number | 
   });
 }
 
+export function newestEntryMs(events: readonly HistoryEntry[]): number | null {
+  let newest: number | null = null;
+  for (const e of events) {
+    const at = sentAtMs(e);
+    if (Number.isFinite(at) && (newest === null || at > newest)) newest = at;
+  }
+  return newest;
+}
+
 export function feedReachedClear(events: HistoryEntry[], clearedAtMs: number | undefined): boolean {
   return clearedAtMs !== undefined && events.some((e) => sentAtMs(e) <= clearedAtMs);
 }

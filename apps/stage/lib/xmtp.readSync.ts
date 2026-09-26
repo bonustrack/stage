@@ -1,4 +1,4 @@
-import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { isSyncGroupName, syncGroupName, type SyncGroupState } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { lineOfConv } from './xmtp.types';
@@ -44,7 +44,10 @@ export async function syncConversation(convId: string): Promise<void> {
   await conv.sync();
 }
 
-export async function recentSyncMessages(convId: string, limit: number): Promise<RowMessage[]> {
+export async function syncMessagesPage(
+  convId: string, limit: number, beforeMs: number | undefined,
+): Promise<StreamedMessage[]> {
   const conv = await requireConv(convId);
-  return (await sdk.messages(conv, { limit, order: 'desc' })).map(sdk.rowOf);
+  const query = beforeMs === undefined ? { limit, order: 'desc' as const } : { limit, order: 'desc' as const, beforeMs };
+  return (await sdk.messages(conv, query)).map(sdk.rowOf);
 }

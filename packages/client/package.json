@@ -26,6 +26,7 @@
     "./xmtp/voice": "./src/xmtp/voice.ts",
     "./xmtp/codecs": "./src/xmtp/codecs.ts",
     "./xmtp/readState": "./src/xmtp/readState.ts",
+    "./xmtp/syncSnapshot": "./src/xmtp/syncSnapshot.ts",
     "./xmtp/pinOrder": "./src/xmtp/pinOrder.ts",
     "./xmtp/pushServer": "./src/xmtp/pushServer.ts",
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",

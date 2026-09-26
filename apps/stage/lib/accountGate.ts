@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { loadAccounts } from './accounts';
+import { hasAccounts, loadAccounts } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
+import { reported } from './errorPolicy';
 import { makeListeners, useStoreValue } from './storeCore';
+import { primeReadStateStore } from './xmtp.unread';
 
 export interface AccountGate {
   ready: boolean;
@@ -12,6 +14,10 @@ export function useAccountGate(): AccountGate {
   const epoch = useAccountEpoch();
   const [ready, setReady] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
+
+  useEffect(() => {
+    void hasAccounts().then(primeReadStateStore).catch(reported('readState.prime'));
+  }, []);
 
   useEffect(() => {
     let alive = true;

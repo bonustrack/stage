@@ -30,6 +30,9 @@ import {
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
   LABEL_STATE_CONTENT_TYPE, labelStateFallbackText, labelStateSchema, type LabelStateContent,
 } from '@stage-labs/client/xmtp/readState';
+import {
+  SYNC_SNAPSHOT_CONTENT_TYPE, syncSnapshotFallbackText, syncSnapshotSchema, type SyncSnapshotContent,
+} from '@stage-labs/client/xmtp/syncSnapshot';
 
 export type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
 
@@ -97,5 +100,10 @@ export const BOARD_STATE_CODEC: JsonCodec<BoardStateContent> = {
 
 export const LABEL_STATE_CODEC: JsonCodec<LabelStateContent> = {
   ...jsonCodec<LabelStateContent>(LABEL_STATE_CONTENT_TYPE, labelStateFallbackText, labelStateSchema),
+  shouldPush: (): boolean => false,
+};
+
+export const SYNC_SNAPSHOT_CODEC: JsonCodec<SyncSnapshotContent> = {
+  ...jsonCodec<SyncSnapshotContent>(SYNC_SNAPSHOT_CONTENT_TYPE, syncSnapshotFallbackText, syncSnapshotSchema),
   shouldPush: (): boolean => false,
 };

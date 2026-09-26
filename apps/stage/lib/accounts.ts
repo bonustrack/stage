@@ -85,6 +85,10 @@ function loadAccountsForWrite(): Promise<AccountRecord[]> {
   return loadList(true);
 }
 
+export async function hasAccounts(): Promise<boolean> {
+  return (await loadAccountsForWrite()).length > 0;
+}
+
 export async function getActiveAccountId(): Promise<string | null> {
   const id = await secureStorage.get(ACTIVE_KEY).catch(recover('accounts.activeId', null));
   if (id) await setActiveAccountForCache(id);

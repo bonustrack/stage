@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { reported, attempt } from './errorPolicy';
 const markConvRead = async (convId: string): Promise<void> => {
   const { markConvRead: fn } = await import('./channelsCache');
-  return fn(convId);
+  return fn(convId, Date.now());
 };
 
 function convIdFromNotificationData(data: unknown): string | null {

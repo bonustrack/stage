@@ -24,7 +24,7 @@ import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 import { useClearedChats } from '../../lib/clearedChats';
 import {
-  entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
+  entriesAfterClear, feedReachedClear, newestEntryMs, reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
 import { reported } from '../../lib/errorPolicy';
@@ -178,10 +178,11 @@ export function useConversationState(convId: string | undefined, focus: string |
   );
   const { loadOlder, loadingOlder } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
+  const newestMs = useMemo(() => newestEntryMs(events), [events]);
   useEffect(() => {
     if (!convId) return;
-    void markConvRead(convId);
-  }, [convId, events.length]);
+    void markConvRead(convId, newestMs);
+  }, [convId, newestMs]);
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
   const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;

@@ -131,3 +131,9 @@ export function applyGroupMeta<R extends CachedChannelRow>(
   if (cur === undefined || sameGroupMeta(cur, meta)) return null;
   return patchRow(rows, convId, (row) => ({ ...row, ...meta }));
 }
+
+export function needsReadMark(row: CachedChannelRow | undefined, newestMs: number | null): boolean {
+  if (row === undefined || row.markedUnread === true || row.unreadCount > 0) return true;
+  const lastTs = typeof row.lastTs === 'number' ? row.lastTs : 0;
+  return Math.max(lastTs, newestMs ?? 0) * 1_000_000 > row.lastReadNs;
+}
