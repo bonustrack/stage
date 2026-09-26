@@ -123,13 +123,11 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions }: {
 }): React.ReactElement {
   const { label } = column;
   const [editing, setEditing] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const zone = useBoardDropZone(column.key, (drag) => { actions.drop(drag, column.key); });
   const handle = useBoardDragSource(editing ? null : { kind: 'column', key: column.key }, zone.nativeID);
   return (
     <ColumnFrame
       nativeID={zone.nativeID} over={zone.over} opacity={handle.dragging ? DRAGGING_OPACITY : 1} maxHeight={maxHeight}
-      onHover={setHovered}
     >
       {editing ? (
         <RenameHeading
@@ -147,7 +145,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions }: {
         </Row>
       )}
       <ColumnCards column={column} pinned={pinned}/>
-      <AddItemButton hovered={hovered} onPress={() => { actions.add(label); }}/>
+      <AddItemButton onPress={() => { actions.add(label); }}/>
     </ColumnFrame>
   );
 }
@@ -220,9 +218,8 @@ function BoardBody(): React.ReactElement {
     add: setAdding,
   };
   const addPicked = (convIds: string[]): void => {
-    const label = adding;
     setAdding(null);
-    if (label !== null) void addToBoardLabel(convIds, label).catch(reported('board.add'));
+    if (adding !== null) void addToBoardLabel(convIds, adding).catch(reported('board.add'));
   };
   return (
     <>

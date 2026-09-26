@@ -126,7 +126,7 @@ export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name:
   const problem = renameProblem(name);
   if (problem !== null) return problem;
   const key = typedName(name).toLowerCase();
-  const taken = columns.map(c => c.label).find(title => title.toLowerCase() === key);
+  const taken = columns.find(c => c.label.toLowerCase() === key)?.label;
   return taken === undefined ? null : `A column named ${taken} already exists.`;
 }
 

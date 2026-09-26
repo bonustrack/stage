@@ -61,9 +61,8 @@ function useTitleEdit(
   return { name, tried, setName, finish, close };
 }
 
-export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, onHover, children }: {
-  nativeID?: string; over?: boolean; opacity?: number; maxHeight?: number | string;
-  onHover?: (on: boolean) => void; children: React.ReactNode;
+export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, children }: {
+  nativeID?: string; over?: boolean; opacity?: number; maxHeight?: number | string; children: React.ReactNode;
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
@@ -76,8 +75,6 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, on
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
       style={{ borderWidth: 1, borderColor: over ? link : border, opacity }}
-      onPointerEnter={() => { onHover?.(true); }}
-      onPointerLeave={() => { onHover?.(false); }}
     >
       {children}
     </Col>
@@ -88,7 +85,7 @@ const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan,
 
 export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
   const { text } = usePalette();
-  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={() => { onDelete(); }}/>;
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete}/>;
 }
 
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {
@@ -186,7 +183,7 @@ function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactEleme
   return (
     <HoverTooltip label="Add column" placement="below">
       <Button
-        uniform pill color="secondary" variant="outline" dark={dark}
+        uniform color="secondary" variant="outline" dark={dark}
         accessibilityLabel="Add column"
         style={hover.hovered ? { borderColor: link } : undefined}
         iconStart={<Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text}/>}
