@@ -2,6 +2,7 @@ import {
   createStackNavigator, TransitionPresets, TransitionSpecs, type StackNavigationOptions,
 } from '@react-navigation/stack';
 import { withLayoutContext } from 'expo-router';
+import { Platform } from 'react-native';
 import { PAGE_GUTTER } from '../../components/layout/gutter';
 
 export const RootStack = withLayoutContext(createStackNavigator().Navigator);
@@ -23,4 +24,6 @@ export function rootStackScreenOptions(bg: string): StackNavigationOptions {
 
 export const TABS_SCREEN_OPTIONS: StackNavigationOptions = { animation: 'none', gestureEnabled: false };
 
-export const BOARD_SCREEN_OPTIONS: StackNavigationOptions = { gestureResponseDistance: PAGE_GUTTER };
+export const BOARD_SCREEN_OPTIONS: StackNavigationOptions = Platform.OS === 'android'
+  ? { gestureEnabled: false }
+  : { gestureResponseDistance: PAGE_GUTTER };
