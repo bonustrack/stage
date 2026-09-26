@@ -16,8 +16,6 @@ export interface SettingsMenuSection {
 
 export const PROFILE_SETTINGS_HREF = '/settings/profile';
 
-export const SETTINGS_MAX_WIDTH = 600;
-
 export const SETTINGS_MENU_SECTIONS: SettingsMenuSection[] = [
   {
     title: 'Preferences',

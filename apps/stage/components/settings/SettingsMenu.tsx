@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import {
-  PROFILE_SETTINGS_HREF, SETTINGS_MAX_WIDTH, SETTINGS_MENU_SECTIONS, menuItemValue,
+  PROFILE_SETTINGS_HREF, SETTINGS_MENU_SECTIONS, menuItemValue,
 } from './SettingsMenu.model';
 import { themeLabel } from './themeOptions.model';
 import { capabilities } from '../../lib/capabilities';
@@ -24,24 +24,22 @@ export function SettingsMenu(): React.ReactElement {
   };
   return (
     <SettingsPage title="Settings" root>
-      <Col align="center" padding={{ x: PAGE_GUTTER, top: 16 }}>
-        <Col width="100%" maxWidth={SETTINGS_MAX_WIDTH} gap={24}>
-          <SettingsAccountHeader onOpenProfile={openProfile} />
-          {SETTINGS_MENU_SECTIONS.map((section) => (
-            <SettingsGroup key={section.title ?? 'more'} title={section.title}>
-              {section.items.map((item) => (
-                <SettingsMenuRow
-                  key={item.href}
-                  label={item.label}
-                  iconStart={item.icon}
-                  value={menuItemValue(item, hints)}
-                  onPress={() => { capabilities.navigate(item.href); }}
-                />
-              ))}
-            </SettingsGroup>
-          ))}
-          <Text size="xs" color="secondary" textAlign="center">{`Stage ${versionLabel()}`}</Text>
-        </Col>
+      <Col gap={24} padding={{ x: PAGE_GUTTER, top: 16 }}>
+        <SettingsAccountHeader onOpenProfile={openProfile} />
+        {SETTINGS_MENU_SECTIONS.map((section) => (
+          <SettingsGroup key={section.title ?? 'more'} title={section.title}>
+            {section.items.map((item) => (
+              <SettingsMenuRow
+                key={item.href}
+                label={item.label}
+                iconStart={item.icon}
+                value={menuItemValue(item, hints)}
+                onPress={() => { capabilities.navigate(item.href); }}
+              />
+            ))}
+          </SettingsGroup>
+        ))}
+        <Text size="xs" color="secondary" textAlign="center">{`Stage ${versionLabel()}`}</Text>
       </Col>
     </SettingsPage>
   );
