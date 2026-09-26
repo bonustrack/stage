@@ -37,6 +37,7 @@ import { IconBubble2 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconBubbleDots } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleDots';
 import { IconBubbleText } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleText';
+import { IconBubbleWideSparkle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleWideSparkle';
 import { IconBubbles } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbles';
 import { IconBuildings } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBuildings';
 import { IconCalculator } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalculator';
@@ -202,6 +203,7 @@ import { IconTablet } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { IconThumbsDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconThumbsDown';
 import { IconThumbsUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconThumbsUp';
+import { IconThumbtack } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconThumbtack';
 import { IconTicket } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTicket';
 import { IconTranslate } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTranslate';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
@@ -256,6 +258,7 @@ import { IconBookmark as IconBookmarkSolid } from '@central-icons-react-native/r
 import { IconBubble2 as IconBubble2Solid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBubble2';
 import { IconBubble3 as IconBubble3Solid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBubble3';
 import { IconBubbleText as IconBubbleTextSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBubbleText';
+import { IconBubbleWideSparkle as IconBubbleWideSparkleSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBubbleWideSparkle';
 import { IconBubbles as IconBubblesSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBubbles';
 import { IconBuildings as IconBuildingsSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconBuildings';
 import { IconCalculator as IconCalculatorSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCalculator';
@@ -419,6 +422,7 @@ import { IconTablet as IconTabletSolid } from '@central-icons-react-native/round
 import { IconTag as IconTagSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconTag';
 import { IconThumbsDown as IconThumbsDownSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbsDown';
 import { IconThumbsUp as IconThumbsUpSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbsUp';
+import { IconThumbtack as IconThumbtackSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 import { IconTicket as IconTicketSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconTicket';
 import { IconTranslate as IconTranslateSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconTranslate';
 import { IconTrashCan as IconTrashCanSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconTrashCan';
@@ -475,6 +479,7 @@ export const CENTRAL_ICONS = {
   IconBubble3: { line: IconBubble3, solid: IconBubble3Solid },
   IconBubbleDots: { line: IconBubbleDots },
   IconBubbleText: { line: IconBubbleText, solid: IconBubbleTextSolid },
+  IconBubbleWideSparkle: { line: IconBubbleWideSparkle, solid: IconBubbleWideSparkleSolid },
   IconBubbles: { line: IconBubbles, solid: IconBubblesSolid },
   IconBuildings: { line: IconBuildings, solid: IconBuildingsSolid },
   IconCalculator: { line: IconCalculator, solid: IconCalculatorSolid },
@@ -640,6 +645,7 @@ export const CENTRAL_ICONS = {
   IconTag: { line: IconTag, solid: IconTagSolid },
   IconThumbsDown: { line: IconThumbsDown, solid: IconThumbsDownSolid },
   IconThumbsUp: { line: IconThumbsUp, solid: IconThumbsUpSolid },
+  IconThumbtack: { line: IconThumbtack, solid: IconThumbtackSolid },
   IconTicket: { line: IconTicket, solid: IconTicketSolid },
   IconTranslate: { line: IconTranslate, solid: IconTranslateSolid },
   IconTrashCan: { line: IconTrashCan, solid: IconTrashCanSolid },

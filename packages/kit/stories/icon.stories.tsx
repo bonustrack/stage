@@ -19,8 +19,8 @@ const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
 const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
 const BRAND_NAMES = ['brandX', 'brandGithub', 'pin', 'brandApple', 'brandAndroid', 'brandWindows', 'brandLinux'] as const;
 
-function aliasesByName(): Map<CentralName, HeroIconName[]> {
-  const out = new Map<CentralName, HeroIconName[]>();
+function aliasesByName(): Map<CentralName, string[]> {
+  const out = new Map<CentralName, string[]>([['IconThumbtack', ['pin']]]);
   for (const alias of ALIAS_NAMES) {
     const name = NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line);
     if (name !== undefined) out.set(name, [...(out.get(name) ?? []), alias]);
