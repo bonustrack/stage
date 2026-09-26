@@ -38,6 +38,10 @@ export function boardColumns<T extends ChannelListRow>(
   }));
 }
 
+export function searchedColumns<T extends ChannelListRow>(columns: BoardColumn<T>[], query: string): BoardColumn<T>[] {
+  return columns.map(column => ({ ...column, rows: filterChannelRows(column.rows, { query }) }));
+}
+
 export type BoardDrag = { kind: 'column'; key: string } | { kind: 'card'; convId: string; from: string };
 
 export interface BoardDragSource {

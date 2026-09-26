@@ -1,27 +1,18 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeContactResults } from './contacts';
-import { HomeOverflowMenu } from './overflow';
+import { HomeTopnavRight } from './topnavRight';
 import { Topnav } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
-import { getActiveAccount } from '../../lib/accounts';
-import { profileLinkOf } from '../../lib/links';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
-import { useHover } from '../hover';
-import { HoverTooltip } from '../HoverTooltip';
-import { NewChatModal } from './NewChatModal';
-import { IconBubbleSparkle } from '../IconBubbleSparkle';
-import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -46,38 +37,6 @@ function knownPeerAddresses(rows: readonly Row[] | null): string[] {
   return (rows ?? []).flatMap(r => (r.peerAddress === null ? [] : [r.peerAddress]));
 }
 
-function HomeTopnavRight({ head, router, onOpenSearch }: {
-  head: string; router: ChannelsListProps['router']; onOpenSearch: () => void;
-}): React.ReactElement {
-  const { link } = usePalette();
-  const search = useHover();
-  const compose = useHover();
-  const [composeOpen, setComposeOpen] = useState(false);
-  return (
-    <>
-      <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
-        <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
-      </Pressable>
-      <HoverTooltip label="New chat" placement="below">
-        <Pressable onPress={() => { setComposeOpen(true); }} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
-          <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>
-        </Pressable>
-      </HoverTooltip>
-      <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />
-      <HomeOverflowMenu
-        color={head}
-        onBoard={() => { router.push('/board'); }}
-        onProfile={() => {
-          void getActiveAccount().then(acct => {
-            if (acct?.address) router.push(profileLinkOf(acct.address));
-          });
-        }}
-        onSettings={() => { router.push('/settings'); }}
-      />
-    </>
-  );
-}
-
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   return (
     <>
@@ -97,7 +56,7 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   const { router, query, setQuery, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} router={router} onOpenSearch={onOpenSearch} />,
+    () => <HomeTopnavRight head={sub} onOpenSearch={onOpenSearch} onBoard={() => { router.push('/board'); }} />,
     [sub, router, onOpenSearch],
   );
   const override = useMemo(

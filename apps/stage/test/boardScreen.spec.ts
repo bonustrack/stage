@@ -4,7 +4,7 @@ import {
   BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
-  renameProblem, renameTarget, renamedColumnOrder,
+  renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -89,6 +89,20 @@ describe('boardColumns', () => {
       ['Done', []],
     ]);
     expect(shape([], [], ['label:Done'])).toEqual([['Done', []]]);
+  });
+});
+
+describe('searching the board', () => {
+  const rows = [row('alpha', 3, ['Todo']), row('beta', 2, ['Todo']), row('gamma', 1, ['Done'])];
+  const searched = (query: string): [string, string[]][] =>
+    searchedColumns(boardColumns(rows, [], []), query).map(c => [c.label, c.rows.map(r => r.convId)]);
+
+  test('keeps every column and only the cards that match, whatever the case', () => {
+    expect(searched('  BET ')).toEqual([['Done', []], ['Todo', ['beta']]]);
+  });
+
+  test('an empty search shows every card', () => {
+    expect(searched('')).toEqual(shape(rows));
   });
 });
 

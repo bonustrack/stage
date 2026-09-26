@@ -8,6 +8,8 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
+import { SearchTopnavBar } from '../SearchTopnavBar';
+import { HomeTopnavRight } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
 import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
@@ -29,7 +31,8 @@ import { useBoardOrder } from '../../lib/boardOrder';
 import { useWebTabRail } from '../../lib/webLayout';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardColumns, orderedColumns, revealScrollX, type BoardColumn, type BoardDrag,
+  BOARD_GAP, activeColumnIndex, boardColumns, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
+  type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
@@ -227,7 +230,7 @@ function BoardLanes({ columns, pinned, saved, actions }: {
   );
 }
 
-function BoardBody(): React.ReactElement {
+function BoardBody({ query }: { query: string }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const rows = useStoreValue(subscribeCachedRows, homeRows);
@@ -243,6 +246,7 @@ function BoardBody(): React.ReactElement {
     () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
     [rows, cleared, pinned, order],
   );
+  const shown = useMemo(() => searchedColumns(columns, query), [columns, query]);
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {
@@ -257,21 +261,47 @@ function BoardBody(): React.ReactElement {
   };
   return (
     <>
-      <BoardLanes columns={columns} pinned={pinned} saved={order} actions={actions}/>
+      <BoardLanes columns={shown} pinned={pinned} saved={order} actions={actions}/>
       <AddItemModal label={adding} rows={rows} onClose={() => { setAdding(null); }} onAdd={addPicked}/>
     </>
   );
 }
 
+function BoardHeader({ inline, query, setQuery }: {
+  inline: boolean; query: string; setQuery: (query: string) => void;
+}): React.ReactElement {
+  const { text, link, border } = usePalette();
+  const safeTop = useSafeAreaInsets().top;
+  const [searchOpen, setSearchOpen] = useState(false);
+  if (searchOpen) {
+    return (
+      <SearchTopnavBar
+        query={query} setQuery={setQuery} onClose={() => { setSearchOpen(false); setQuery(''); }}
+        head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
+      />
+    );
+  }
+  const trailing = (
+    <>
+      <Box flex={1}/>
+      <Row align="center" gap={18}>
+        <HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }}/>
+      </Row>
+    </>
+  );
+  return <StackHeader title="Board" backTo="/" inline={inline} trailing={trailing}/>;
+}
+
 export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactElement | null {
   const { height } = useWindowDimensions();
   const docked = useWebTabRail();
+  const [query, setQuery] = useState('');
   const windowHeight = Platform.OS === 'web' && pane !== true;
   if (docked && pane !== true) return null;
   return (
     <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <StackHeader title="Board" backTo="/" inline={pane === true}/>
-      <BoardBody/>
+      <BoardHeader inline={pane === true} query={query} setQuery={setQuery}/>
+      <BoardBody query={query}/>
     </Col>
   );
 }
