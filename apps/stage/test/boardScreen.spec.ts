@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import {
-  boardColumns, cardLabel, keptColumnOrder, labelCarriers, movedColumnOrder, normalizedOrder, orderLabelNames,
-  orderedColumns, renameProblem,
+  boardColumns, boardEntries, cardLabel, keptColumnOrder, labelCarriers, movedColumnOrder, normalizedOrder,
+  orderLabelNames, orderedColumns, renameProblem,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -175,6 +175,12 @@ describe('renamed columns', () => {
       ['Done', ['a']],
       ['Doing', []],
       [null, []],
+    ]);
+  });
+
+  test('a saved column that no chat carries gets its own entry', () => {
+    expect(boardEntries([row('a', 1, ['Done'])], ['label:Blocked', 'label:todo'], renamed)).toEqual([
+      entry('blocked', 'Blocked'), ...renamed.slice().reverse(),
     ]);
   });
 

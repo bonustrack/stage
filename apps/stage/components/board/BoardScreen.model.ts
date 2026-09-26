@@ -37,10 +37,16 @@ export function orderLabelNames(order: readonly string[], entries: readonly Labe
   return order.map(keyRef).filter(ref => labelKey(ref) !== '' && !ids.has(ref.toLowerCase()));
 }
 
+export function boardLabelNames(
+  rows: readonly ChannelListRow[], order: readonly string[], entries: readonly LabelEntry[],
+): string[] {
+  return [...deriveBarLabels(rows), ...orderLabelNames(order, entries)];
+}
+
 export function boardEntries(
   rows: readonly ChannelListRow[], order: readonly string[], entries: readonly LabelEntry[],
 ): readonly LabelEntry[] {
-  return withLabelNames(entries, [...deriveBarLabels(rows), ...orderLabelNames(order, entries)]);
+  return withLabelNames(entries, boardLabelNames(rows, order, entries));
 }
 
 export function normalizedOrder(order: readonly string[], entries: readonly LabelEntry[]): string[] {

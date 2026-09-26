@@ -7,7 +7,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
@@ -36,7 +35,7 @@ import { useBoardOrder } from '../../lib/boardOrder';
 import { reported } from '../../lib/errorPolicy';
 import { ensureLabelEntries, useLabelEntries } from '../../lib/labelRegistry';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, boardEntries, normalizedOrder, orderLabelNames,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, boardEntries, boardLabelNames, normalizedOrder,
   orderedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
@@ -212,7 +211,7 @@ function BoardBody(): React.ReactElement {
   const [error, setError] = useState<string>('');
   useEffect(() => {
     if (!rows) return;
-    ensureLabelEntries([...deriveBarLabels(rows), ...orderLabelNames(saved, entries)]).catch(reported('board.labels'));
+    ensureLabelEntries(boardLabelNames(rows, saved, entries)).catch(reported('board.labels'));
   }, [rows, saved, entries]);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   usePeerProfiles((rows ?? []).map(r => r.lastSenderAddress));
