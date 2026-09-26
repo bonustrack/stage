@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { VirtualList } from '../layout';
-import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
+import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
 import { SearchTopnavBar } from '../SearchTopnavBar';
@@ -111,6 +111,16 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   return { right, override };
 }
 
+function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsListProps): void {
+  const applied = useRef({ enabledLabels, unreadOnly });
+  useLayoutEffect(() => {
+    if (applied.current.enabledLabels === enabledLabels && applied.current.unreadOnly === unreadOnly) return;
+    applied.current = { enabledLabels, unreadOnly };
+    if ((peekScrollOffset(CHANNELS_SCROLL_KEY) ?? 0) <= 0) return;
+    scroll.listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [enabledLabels, unreadOnly, scroll.listRef]);
+}
+
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
     panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
@@ -122,6 +132,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
   const contentStyle = { paddingBottom: 24 };
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
+  useScrollTopOnFilter(props);
 
   return (
     <>

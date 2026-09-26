@@ -225,7 +225,9 @@ function usePrependAnchor<T>(
 ): () => void {
   const lastAnchor = useRef<ListAnchor | null>(null);
   const firstKey = useRef<string | null>(null);
-  const remember = useCallback(() => { lastAnchor.current = visibleAnchor(props, refs, virtualizer); }, [props, refs, virtualizer]);
+  const remember = useCallback(() => {
+    lastAnchor.current = props.maintainVisibleContentPosition == null ? null : visibleAnchor(props, refs, virtualizer);
+  }, [props, refs, virtualizer]);
   useLayoutEffect(() => {
     const previous = firstKey.current;
     firstKey.current = firstKeyOf(props, virtualizer);
