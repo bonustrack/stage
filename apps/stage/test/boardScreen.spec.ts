@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
+import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
-import { MAX_LABELS } from '@stage-labs/client/xmtp/labels';
 
 interface TestRow {
   convId: string;
@@ -340,5 +340,11 @@ describe('labelCapNote', () => {
   test('counts the groups that came back without the label', () => {
     expect(labelCapNote([['a'], ['Design']], 'Design')).toBe(`1 group already has ${MAX_LABELS} labels.`);
     expect(labelCapNote([['a'], ['b'], ['Design']], 'Design')).toBe(`2 groups already have ${MAX_LABELS} labels.`);
+  });
+
+  test('matches the label the way the group stores it', () => {
+    const long = 'x'.repeat(MAX_LABEL_LEN + 6);
+    expect(labelCapNote([['In review']], '  In   review ')).toBeNull();
+    expect(labelCapNote([[long.slice(0, MAX_LABEL_LEN)]], long)).toBeNull();
   });
 });

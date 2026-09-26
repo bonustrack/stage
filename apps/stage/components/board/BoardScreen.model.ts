@@ -114,16 +114,16 @@ export function addItemRows<T extends ChannelListRow>(
     && (picked.includes(r.convId) || r.title.toLowerCase().includes(needle))));
 }
 
+const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');
+
 export function labelCapNote(added: readonly (readonly string[])[], label: string): string | null {
-  const key = label.toLowerCase();
+  const key = typedName(label).slice(0, MAX_LABEL_LEN).toLowerCase();
   const full = added.filter(labels => !labels.some(l => l.toLowerCase() === key)).length;
   if (full === 0) return null;
   return full === 1
     ? `1 group already has ${MAX_LABELS} labels.`
     : `${full} groups already have ${MAX_LABELS} labels.`;
 }
-
-const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');
 
 export function renameProblem(name: string): string | null {
   const typed = typedName(name);

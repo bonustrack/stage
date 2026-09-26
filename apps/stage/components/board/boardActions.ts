@@ -64,7 +64,9 @@ export async function deleteBoardLabel(
 export async function addToBoardLabel(convIds: readonly string[], label: string): Promise<void> {
   const results = await Promise.allSettled(convIds.map(convId => addGroupLabel(lineOfConv(convId), label)));
   const added = results.filter((r): r is PromiseFulfilledResult<string[]> => r.status === 'fulfilled').map(r => r.value);
-  const outcome = labelOutcome(results, 'Could not add the label to every group. Try again.', 'did not get the label')
-    ?? labelCapNote(added, label);
-  if (outcome !== null) capabilities.toast(outcome);
+  const notes = [
+    labelOutcome(results, 'Could not add the label to every group. Try again.', 'did not get the label'),
+    labelCapNote(added, label),
+  ].filter((note): note is string => note !== null);
+  if (notes.length > 0) capabilities.toast(notes.join(' '));
 }
