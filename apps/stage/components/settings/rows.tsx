@@ -115,10 +115,10 @@ export function SettingsValueRow(props: SettingsValueRowProps): React.ReactEleme
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
+      <Text value={props.label} size="md" color="secondary" />
       <Col flex={1}>
-        <Text value={props.label} size="md" color="secondary" />
+        <Text value={props.value} size="md" color="text" textAlign="end" truncate />
       </Col>
-      <Text value={props.value} size="md" color="text" truncate />
       {props.onPress === undefined ? null : (
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}
