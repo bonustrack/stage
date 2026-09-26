@@ -35,7 +35,7 @@ export function useMentionEditor(s: ComposerState, candidates: MentionCandidate[
 
   const pick = (candidate: MentionCandidate): void => {
     if (!range) return;
-    const r = insertMention(s.text, range, candidate.address, labelOf);
+    const r = insertMention(pieces, range, candidate.address, labelOf);
     s.setText(r.wire);
     s.setSelection({ start: r.caret, end: r.caret });
     s.bumpFocus();
@@ -54,7 +54,7 @@ export function useMentionEditor(s: ComposerState, candidates: MentionCandidate[
   };
 
   const setDisplay = (next: string): void => {
-    const r = applyDisplayEdit(s.text, next, labelOf, s.selection);
+    const r = applyDisplayEdit(pieces, next, labelOf, s.selection);
     setDismissed(null);
     s.setText(r.wire);
     if (r.display !== next) s.setSelection({ start: r.caret, end: r.caret });

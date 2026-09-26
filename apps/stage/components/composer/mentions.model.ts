@@ -70,13 +70,14 @@ function diffRegion(prev: string, next: string): Span {
   return { start: head, end: prev.length - tail };
 }
 
-export function editRegion(prev: string, next: string, hint: Span): Span {
+export function editRegion(prev: string, next: string, hint: Span, clean: (span: Span) => boolean = () => true): Span {
   const a = Math.min(hint.start, hint.end);
   const b = Math.max(hint.start, hint.end);
   const shrink = prev.length - next.length;
   const tries: Span[] = [{ start: a, end: b }];
   if (a === b && shrink > 0) tries.push({ start: a - shrink, end: a }, { start: a, end: a + shrink });
-  return tries.find(t => fits(prev, next, t.start, t.end)) ?? diffRegion(prev, next);
+  const fitting = tries.filter(t => fits(prev, next, t.start, t.end));
+  return fitting.find(clean) ?? fitting[0] ?? diffRegion(prev, next);
 }
 
 function touches(piece: Piece, region: Span): boolean {
@@ -100,23 +101,24 @@ function unglue(parts: Part[]): Part[] {
   return parts.map((p, i) => (p.mention && /^\w/.test(wireOf(parts.slice(i + 1))) ? plain(p.display) : p));
 }
 
-export function applyDisplayEdit(wire: string, next: string, labelOf: LabelOf, hint: Span): DisplayEdit {
-  const before = piecesOf(wire, labelOf);
-  const prev = displayOf(before);
+export function applyDisplayEdit(shown: Piece[], next: string, labelOf: LabelOf, hint: Span): DisplayEdit {
+  const wire = wireOf(shown);
+  const prev = displayOf(shown);
   if (next === prev) return { wire, display: prev, caret: Math.min(hint.end, prev.length) };
-  const region = editRegion(prev, next, hint);
+  const region = editRegion(prev, next, hint, span => !shown.some(p => touches(p, span)));
   const inserted = next.slice(region.start, next.length - (prev.length - region.end));
-  const kept = place(before.map(p => (touches(p, region) ? plain(p.display) : p)));
-  const parts = unglue([...sliceParts(kept, 0, region.start), plain(inserted), ...sliceParts(kept, region.end, prev.length)]);
+  const kept = place(shown.map(p => (touches(p, region) ? plain(p.display) : p)));
+  const head = sliceParts(kept, 0, region.start);
+  const parts = unglue([...head, plain(inserted), ...sliceParts(kept, region.end, prev.length)]);
   const nextWire = wireOf(parts);
   const display = toDisplay(nextWire, labelOf);
-  const caret = Math.max(0, Math.min(display.length, display.length - (prev.length - region.end)));
-  return { wire: nextWire, display, caret };
+  const tail = toDisplay(wireOf(parts.slice(head.length + 1)), labelOf).length;
+  return { wire: nextWire, display, caret: Math.max(0, display.length - tail) };
 }
 
-export function insertMention(wire: string, range: Span, address: string, labelOf: LabelOf): { wire: string; caret: number } {
-  const pieces = piecesOf(wire, labelOf);
-  const wireAt = (pos: number): number => wireOf(sliceParts(pieces, 0, pos)).length;
+export function insertMention(shown: Piece[], range: Span, address: string, labelOf: LabelOf): { wire: string; caret: number } {
+  const wire = wireOf(shown);
+  const wireAt = (pos: number): number => wireOf(sliceParts(shown, 0, pos)).length;
   const { next, cursor } = applyMention(wire, { start: wireAt(range.start), end: wireAt(range.end) }, address);
   return { wire: next, caret: toDisplay(next.slice(0, cursor), labelOf).length };
 }

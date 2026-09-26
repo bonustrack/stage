@@ -7,10 +7,13 @@ const ALICE = `0x${'a'.repeat(40)}`;
 const BOB = `0x${'b'.repeat(40)}`;
 const NAMES: Record<string, string> = { [ALICE]: '@alice', [BOB]: '@bob' };
 const labelOf = (address: string): string => NAMES[address] ?? '@someone';
+const shortOf = (address: string): string => `@${address.slice(0, 6)}`;
+const BANG: Record<string, string> = { [BOB]: '@bob!' };
+const bangOf = (address: string): string => BANG[address] ?? labelOf(address);
 const people = [{ address: ALICE, name: 'alice' }, { address: BOB, name: 'bob' }];
 
 function edit(wire: string, next: string, at: number, end = at): ReturnType<typeof applyDisplayEdit> {
-  return applyDisplayEdit(wire, next, labelOf, { start: at, end });
+  return applyDisplayEdit(piecesOf(wire, labelOf), next, labelOf, { start: at, end });
 }
 
 describe('composer mention display', () => {
@@ -43,6 +46,7 @@ describe('composer mention display', () => {
   test('turns the mention into its text when a letter is glued to it', () => {
     expect(edit(`@${ALICE} hello`, '@alicehello', 7).wire).toBe('@alicehello');
     expect(edit(`@${ALICE}`, '@alicex', 6).wire).toBe('@alicex');
+    expect(edit(`@${ALICE}`, '@alice1', 6).wire).toBe('@alice1');
   });
 
   test('drops a mention removed by a selection', () => {
@@ -70,28 +74,64 @@ describe('composer mention display', () => {
   test('reads backspace and forward delete from the caret', () => {
     expect(editRegion('aab', 'ab', { start: 2, end: 2 })).toEqual({ start: 1, end: 2 });
     expect(editRegion('aab', 'ab', { start: 0, end: 0 })).toEqual({ start: 0, end: 1 });
+    expect(editRegion('abb', 'ab', { start: 2, end: 2 })).toEqual({ start: 1, end: 2 });
+  });
+
+  test('reads a delete that could be either key as the one that keeps the mention', () => {
+    const shown = piecesOf(`@${BOB}!!`, bangOf);
+    expect(applyDisplayEdit(shown, '@bob!!', bangOf, { start: 5, end: 5 }).wire).toBe(`@${BOB}!`);
+    expect(applyDisplayEdit(shown, '@bob!!', bangOf, { start: 7, end: 7 }).wire).toBe(`@${BOB}!`);
+  });
+
+  test('keeps the mention when editing right at its edges', () => {
+    expect(edit(`@${ALICE}`, '(@alice', 0).wire).toBe(`(@${ALICE}`);
+    expect(edit(`hi @${ALICE}`, 'hi@alice', 3).wire).toBe(`hi@${ALICE}`);
+    expect(edit(`@${ALICE}, hi`, '@alice hi', 7).wire).toBe(`@${ALICE} hi`);
+  });
+
+  test('finds the edit when the caret hint is past it', () => {
+    expect(edit(`@${ALICE} hi`, 'X@alice hi', 9).wire).toBe(`X@${ALICE} hi`);
+  });
+
+  test('edits against the labels that were on screen when a name loads', () => {
+    const r = applyDisplayEdit(piecesOf(`hey @${ALICE} `, shortOf), 'hey @0xaaaa x', labelOf, { start: 12, end: 12 });
+    expect(r.wire).toBe(`hey @${ALICE} x`);
+    expect(r.display).toBe('hey @alice x');
+    expect(r.caret).toBe(12);
+  });
+
+  test('keeps the caret in place when a later label changes length', () => {
+    const r = applyDisplayEdit(piecesOf(`hi @${BOB}`, shortOf), 'hi, @0xbbbb', labelOf, { start: 2, end: 2 });
+    expect(r.wire).toBe(`hi, @${BOB}`);
+    expect(r.caret).toBe(3);
   });
 });
 
 describe('composer mention insert', () => {
   test('sends the address and puts the caret after the label', () => {
-    const r = insertMention('hey @al', { start: 4, end: 7 }, ALICE.toUpperCase().replace('0X', '0x'), labelOf);
+    const r = insertMention(piecesOf('hey @al', labelOf), { start: 4, end: 7 }, ALICE.toUpperCase().replace('0X', '0x'), labelOf);
     expect(r.wire).toBe(`hey @${ALICE} `);
     expect(r.caret).toBe('hey @alice '.length);
   });
 
   test('maps the query past earlier mentions', () => {
     const wire = `@${BOB} and @al`;
-    const r = insertMention(wire, { start: 9, end: 12 }, ALICE, labelOf);
+    const r = insertMention(piecesOf(wire, labelOf), { start: 9, end: 12 }, ALICE, labelOf);
     expect(r.wire).toBe(`@${BOB} and @${ALICE} `);
     expect(toDisplay(r.wire, labelOf)).toBe('@bob and @alice ');
     expect(r.caret).toBe('@bob and @alice '.length);
   });
 
   test('keeps the text after the query', () => {
-    const r = insertMention('@b see', { start: 0, end: 2 }, BOB, labelOf);
+    const r = insertMention(piecesOf('@b see', labelOf), { start: 0, end: 2 }, BOB, labelOf);
     expect(r.wire).toBe(`@${BOB}  see`);
     expect(r.caret).toBe(5);
+  });
+
+  test('places the query by the labels that were on screen', () => {
+    const r = insertMention(piecesOf(`@${BOB} and @al`, shortOf), { start: 12, end: 15 }, ALICE, labelOf);
+    expect(r.wire).toBe(`@${BOB} and @${ALICE} `);
+    expect(r.caret).toBe('@bob and @alice '.length);
   });
 });
 
