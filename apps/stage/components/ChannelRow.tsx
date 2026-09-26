@@ -25,6 +25,7 @@ interface ChannelRowProps {
   avatarUri?: string | null;
   square?: boolean;
   hideAvatar?: boolean;
+  wrapTitle?: boolean;
   lastPreview?: string | null;
   timestamp?: string | null;
   subtitle?: string | null;
@@ -64,40 +65,47 @@ function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
   );
 }
 
-function TitleLine({ params, scheme }: {
-  params: ChannelRowParams; scheme: Scheme;
+function TitleLine({ params, scheme, wrap }: {
+  params: ChannelRowParams; scheme: Scheme; wrap: boolean;
 }): React.ReactElement {
   const segments = params.titleSegments && params.titleSegments.length > 0
     ? params.titleSegments
     : [{ text: params.title, emphasized: false }];
+  const texts = segments.map((seg, i) => (
+    <Text
+      key={`${seg.text}-${i}`}
+      value={seg.text}
+      size="2xl"
+      weight="semibold"
+      truncate={!wrap}
+      style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
+    />
+  ));
   return (
-    <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
+    <Row align={wrap ? 'start' : 'center'} gap={4} flex={1} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
       {params.pinned === true ? (
-        <Box width={PIN_ICON_SIZE} height={PIN_ICON_SIZE} style={{ flexShrink: 0 }}>
+        <Row align="center" height={TITLE_LINE_HEIGHT} style={{ flexShrink: 0 }}>
           <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
-        </Box>
+        </Row>
       ) : null}
-      {segments.map((seg, i) => (
-        <Text
-          key={`${seg.text}-${i}`}
-          value={seg.text}
-          size="2xl"
-          weight="semibold"
-          truncate
-          style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
-        />
-      ))}
+      {wrap ? (
+        <Text size="2xl" weight="semibold" style={{ flex: 1, minWidth: 0, lineHeight: TITLE_LINE_HEIGHT }}>{texts}</Text>
+      ) : texts}
     </Row>
   );
 }
 
-function TitleRow({ params, scheme }: {
-  params: ChannelRowParams; scheme: Scheme;
+function TitleRow({ params, scheme, wrap }: {
+  params: ChannelRowParams; scheme: Scheme; wrap: boolean;
 }): React.ReactElement {
   return (
-    <Row align="center" gap={12} height={TITLE_LINE_HEIGHT}>
-      <TitleLine params={params} scheme={scheme} />
-      {params.timestamp === '' ? null : <Caption value={params.timestamp} color="secondary" />}
+    <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
+      <TitleLine params={params} scheme={scheme} wrap={wrap} />
+      {params.timestamp === '' ? null : (
+        <Row align="center" height={TITLE_LINE_HEIGHT}>
+          <Caption value={params.timestamp} color="secondary" />
+        </Row>
+      )}
     </Row>
   );
 }
@@ -171,15 +179,15 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   );
 }
 
-function ChannelRowBody({ params, trailing }: {
-  params: ChannelRowParams; trailing: React.ReactNode;
+function ChannelRowBody({ params, trailing, wrapTitle }: {
+  params: ChannelRowParams; trailing: React.ReactNode; wrapTitle: boolean;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, inputBg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
     <Col gap={LINE_GAP} flex={1}>
-      <TitleRow params={params} scheme={scheme} />
+      <TitleRow params={params} scheme={scheme} wrap={wrapTitle} />
       <Row align="start" gap={12}>
         <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
         {trailing}
@@ -189,7 +197,7 @@ function ChannelRowBody({ params, trailing }: {
 }
 
 function ChannelRowBase({
-  title, avatarAddress, avatarUri, square, hideAvatar,
+  title, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
   onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory,
@@ -232,6 +240,7 @@ function ChannelRowBase({
         <Col minWidth={0} flex={1}>
           <ChannelRowBody
             params={params}
+            wrapTitle={wrapTitle}
             trailing={(
               <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} head={head} bg={bg} />
             )}

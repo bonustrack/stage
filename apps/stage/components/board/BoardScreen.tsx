@@ -71,6 +71,7 @@ function BoardCard({ item, pinned, columnKey }: {
       <ChannelRow
         title={rowTitle(item)}
         hideAvatar
+        wrapTitle
         lastPreview={rowPreview(item)}
         timestamp={channelTimestamp(item.lastTs)}
         unreadCount={item.unreadCount}
