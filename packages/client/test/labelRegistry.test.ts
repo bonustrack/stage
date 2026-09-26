@@ -24,6 +24,13 @@ describe('label ids', () => {
     expect(index.get('todo')?.id).toBe('a');
   });
 
+  test('a name held by two entries goes to the one renamed last, whatever their order', () => {
+    const entries = [entry('todo', 'Doing', ['Todo'], 5), entry('waiting', 'Backlog', ['Waiting', 'Todo'], 7)];
+    const twins = [entry('b', 'Same', [], 3), entry('a', 'Same', [], 3)];
+    for (const list of [entries, [...entries].reverse()]) expect(labelIndex(list).get('todo')?.id).toBe('waiting');
+    for (const list of [twins, [...twins].reverse()]) expect(labelIndex(list).get('same')?.id).toBe('a');
+  });
+
   test('new names are added once and nothing changes when all are known', () => {
     const entries = [entry('todo', 'Todo')];
     expect(withLabelNames(entries, ['todo', 'Todo'])).toBe(entries);
@@ -72,9 +79,33 @@ describe('merging label lists from other devices', () => {
     expect(mergeLabelEntries(fresh, renamed)).toEqual([entry('todo', 'Doing', ['Todo'], 5)]);
   });
 
-  test('an old name that is now another entry\'s name is no longer an old name', () => {
-    const merged = mergeLabelEntries([entry('todo', 'Doing', ['Todo'], 5)], [entry('todo~2', 'Todo')]);
-    expect(merged).toEqual([entry('todo', 'Doing', [], 5), entry('todo~2', 'Todo')]);
+  test('two spellings of a label nobody renamed settle on the same one in either order', () => {
+    const upper = [entry('todo', 'TODO')];
+    const title = [entry('todo', 'Todo')];
+    expect(mergeLabelEntries(upper, title)).toEqual(upper);
+    expect(mergeLabelEntries(title, upper)).toEqual(upper);
+  });
+
+  test('a chat left two renames behind stays in the renamed column', () => {
+    const doing = renamedLabelEntries([entry('todo', 'Todo')], entry('todo', 'Todo'), 'Doing', 5);
+    const next = renamedLabelEntries(doing, entry('todo', 'Doing'), 'Next', 9);
+    const early = withLabelNames([entry('todo', 'Todo')], ['Doing', 'Next']);
+    for (const merged of [mergeLabelEntries(early, next), mergeLabelEntries(next, early)]) {
+      expect(merged).toEqual([entry('todo', 'Next', ['Todo', 'Doing'], 9)]);
+      expect(resolveLabel(merged, 'Doing').id).toBe('todo');
+    }
+  });
+
+  test('renames arriving one by one or replayed together give the same list', () => {
+    const start = [entry('todo', 'Todo'), entry('waiting', 'Waiting')];
+    const first = renamedLabelEntries(start, entry('todo', 'Todo'), 'Doing', 5);
+    const second = renamedLabelEntries(first, entry('waiting', 'Waiting'), 'Todo', 6);
+    const third = renamedLabelEntries(second, entry('waiting', 'Todo'), 'Backlog', 7);
+    const fold = (lists: LabelEntry[][]): LabelEntry[] => lists.reduce((acc, list) => mergeLabelEntries(acc, list), start);
+    const oneByOne = fold([first, second, third]);
+    expect(fold([third, second, first])).toEqual(oneByOne);
+    expect(mergeLabelEntries(start, fold([third, first, second]))).toEqual(oneByOne);
+    expect(resolveLabel(oneByOne, 'Todo').id).toBe('waiting');
   });
 });
 

@@ -30,13 +30,23 @@ function freeId(taken: ReadonlySet<string>, name: string): string {
 
 export type LabelIndex = ReadonlyMap<string, LabelEntry>;
 
+function outranks(a: LabelEntry, b: LabelEntry): boolean {
+  return a.at !== b.at ? a.at > b.at : a.id < b.id;
+}
+
+function claim(index: Map<string, LabelEntry>, key: string, entry: LabelEntry): void {
+  const held = index.get(key);
+  if (held === undefined || outranks(entry, held)) index.set(key, entry);
+}
+
 export function labelIndex(entries: readonly LabelEntry[]): LabelIndex {
-  const index = new Map<string, LabelEntry>();
-  for (const entry of entries) index.set(labelKey(entry.name), entry);
+  const byName = new Map<string, LabelEntry>();
+  const byAlias = new Map<string, LabelEntry>();
   for (const entry of entries) {
-    for (const alias of entry.aliases) if (!index.has(labelKey(alias))) index.set(labelKey(alias), entry);
+    claim(byName, labelKey(entry.name), entry);
+    for (const alias of entry.aliases) claim(byAlias, labelKey(alias), entry);
   }
-  return index;
+  return new Map([...byAlias, ...byName]);
 }
 
 export function resolveLabel(entries: readonly LabelEntry[], name: string, index = labelIndex(entries)): LabelEntry {
@@ -63,8 +73,7 @@ function aliasList(names: readonly string[], name: string): string[] {
 }
 
 function newer(a: LabelEntry, b: LabelEntry): boolean {
-  if (a.at !== b.at) return a.at > b.at;
-  return a.id === b.id ? a.name < b.name : a.id < b.id;
+  return a.at !== b.at ? a.at > b.at : a.name < b.name;
 }
 
 function combine(a: LabelEntry, b: LabelEntry): LabelEntry {
@@ -72,20 +81,16 @@ function combine(a: LabelEntry, b: LabelEntry): LabelEntry {
   return { ...win, aliases: aliasList([...lose.aliases, lose.name, ...win.aliases], win.name) };
 }
 
-function combinedBy(entries: readonly LabelEntry[], keyOf: (entry: LabelEntry) => string): LabelEntry[] {
-  const byKey = new Map<string, LabelEntry>();
-  for (const entry of entries) {
-    const current = byKey.get(keyOf(entry));
-    byKey.set(keyOf(entry), current === undefined ? entry : combine(current, entry));
-  }
-  return [...byKey.values()];
-}
-
 function settled(entries: readonly LabelEntry[]): LabelEntry[] {
-  const unique = combinedBy(combinedBy(entries, e => e.id), e => labelKey(e.name));
-  const names = new Set(unique.map(e => labelKey(e.name)));
+  const byId = new Map<string, LabelEntry>();
+  for (const entry of entries) {
+    const current = byId.get(entry.id);
+    byId.set(entry.id, current === undefined ? entry : combine(current, entry));
+  }
+  const unique = [...byId.values()];
+  const renamed = new Set(unique.filter(e => e.at > 0).flatMap(labelNames).map(labelKey));
   return unique
-    .map(e => ({ ...e, aliases: e.aliases.filter(alias => !names.has(labelKey(alias))) }))
+    .filter(e => e.at > 0 || !renamed.has(labelKey(e.name)))
     .sort((a, b) => (a.id < b.id ? -1 : 1))
     .slice(0, MAX_LABEL_ENTRIES);
 }

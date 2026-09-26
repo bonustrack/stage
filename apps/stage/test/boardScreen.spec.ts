@@ -195,6 +195,7 @@ describe('renamed columns', () => {
     expect(renameProblem(renamed, renamed[0], 'x'.repeat(25))).toBe('Use at most 24 characters.');
     expect(renameProblem(renamed, renamed[0], ' done ')).toBe('Another column already has this name.');
     expect(renameProblem(renamed, renamed[0], 'todo')).toBeNull();
+    expect(renameProblem(renamed, renamed[0], 'DOING')).toBeNull();
     expect(renameProblem(renamed, renamed[0], 'Shipped')).toBeNull();
   });
 });
