@@ -1,4 +1,5 @@
 
+import { forwardRef } from 'react';
 import { Platform, ScrollView, type ScrollViewProps, type ViewStyle } from 'react-native';
 
 export interface ScrollProps extends ScrollViewProps {
@@ -9,7 +10,7 @@ export interface ScrollProps extends ScrollViewProps {
 
 const INDICATORS_BY_DEFAULT = Platform.OS === 'web';
 
-export function Scroll(props: ScrollProps): React.ReactElement {
+export const Scroll = forwardRef<ScrollView, ScrollProps>(function Scroll(props, ref) {
   const { padding, gap, contentContainerStyle, children, ...rest } = props;
 
   const computed: ViewStyle | undefined =
@@ -29,8 +30,9 @@ export function Scroll(props: ScrollProps): React.ReactElement {
       showsVerticalScrollIndicator={INDICATORS_BY_DEFAULT}
       showsHorizontalScrollIndicator={INDICATORS_BY_DEFAULT}
       {...rest}
+      ref={ref}
     >
       {children}
     </ScrollView>
   );
-}
+});
