@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Card } from '@stage-labs/kit/react-native/card';
+import { ListView } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -46,5 +48,27 @@ export function SettingsCard({ children }: { children: ReactNode }): React.React
         {children}
       </Card>
     </Box>
+  );
+}
+
+export function SettingsGroupCard({ children }: { children: ReactNode }): React.ReactElement {
+  return (
+    <Box surface="raised" radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
+      {children}
+    </Box>
+  );
+}
+
+export function SettingsGroup({ title, children }: { title: string | null; children: ReactNode }): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <Col gap={8}>
+      {title === null ? null : (
+        <Text size="xs" color="secondary" style={{ paddingHorizontal: 4 }}>{title}</Text>
+      )}
+      <SettingsGroupCard>
+        <ListView dark={dark}>{children}</ListView>
+      </SettingsGroupCard>
+    </Col>
   );
 }

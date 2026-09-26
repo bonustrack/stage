@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import * as Application from 'expo-application';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Title } from '@stage-labs/kit/react-native/title';
@@ -9,22 +8,11 @@ import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 import { timeAgo } from '../../lib/buildInfo.model';
+import { versionLabel } from '../../lib/appVersion';
 import { SettingsPage } from '../settings/SettingsPage';
 import { SettingsList, SettingsValueRow } from '../settings/rows';
 import { GithubLogo } from '../GithubLogo';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
-
-function resolveNativeBuild(): string | null {
-  if (Application.nativeBuildVersion) return Application.nativeBuildVersion;
-  const code = Constants.expoConfig?.android?.versionCode;
-  return code != null ? String(code) : null;
-}
-
-function versionLabel(): string {
-  const version = Constants.expoConfig?.version ?? 'unknown';
-  const nativeBuild = resolveNativeBuild();
-  return nativeBuild ? `${version} (build ${nativeBuild})` : version;
-}
 
 function GitHubLinkRow(): React.ReactElement {
   const { text, link: head, border } = usePalette();
