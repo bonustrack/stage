@@ -76,7 +76,7 @@ export default function RootLayout(): React.ReactElement {
 
 function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, toolbarBg } = usePalette();
+  const { bg, toolbarBg, sub } = usePalette();
 
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
@@ -86,8 +86,9 @@ function RootLayoutInner(): React.ReactElement {
     const root = document.documentElement;
     root.style.colorScheme = dark ? 'dark' : 'light';
     root.style.backgroundColor = bg;
+    root.style.setProperty('--stage-scrollbar-thumb', sub);
     document.getElementById('stage-boot')?.remove();
-  }, [dark, bg]);
+  }, [dark, bg, sub]);
 
   useDeepLinks();
   useDocumentScrollRestore();

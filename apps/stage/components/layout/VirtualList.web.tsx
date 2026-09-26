@@ -14,6 +14,7 @@ const ESTIMATED_ITEM_SIZE = 72;
 const OVERSCAN = 6;
 const SEPARATORS = { highlight: () => undefined, unhighlight: () => undefined, updateProps: () => undefined };
 const SELF_SCROLL = { overflowY: 'auto' } as unknown as ViewStyle;
+const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 const ITEM_STYLE = { position: 'absolute', top: 0, left: 0, width: '100%' } as const;
 const ANCHOR_SETTLE_FRAMES = 8;
 
@@ -296,6 +297,7 @@ function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }
       ref={asViewRef(refs.root)}
       style={[{ flex: 1 }, props.style, props.scroll === 'self' ? SELF_SCROLL : null]}
       onLayout={props.onLayout}
+      {...(props.scroll === 'self' ? SELF_SCROLLBAR : null)}
     >
       <View ref={asViewRef(refs.content)} style={props.contentContainerStyle}>
         {renderSlot(props.ListHeaderComponent)}
