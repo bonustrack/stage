@@ -6,8 +6,7 @@ import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { channelsLabelChips, selectChannelsFilter } from './model';
 import { Box, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
-import { LabelText } from '../LabelText';
-import { usePalette } from '../../lib/theme';
+import { LabelChip } from '../LabelChip';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
 
@@ -43,7 +42,6 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   onClearAll: () => void;
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
-  const { link, text: fg, bg, border: rowBg } = usePalette();
   const chips = channelsLabelChips({ barLabels: labels, enabledLabels: enabled, unreadOnly });
   const select = (value: string): void => {
     selectChannelsFilter({ onClearAll, onToggleUnread, onToggleLabel: onToggle }, value);
@@ -59,22 +57,11 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       <Box style={{ alignSelf: 'stretch' }}>
         <Scroll horizontal showsHorizontalScrollIndicator={false}>
           <Row gap={8} padding={CHIPS_PADDING}>
-            {chips.map((chip) => {
-              const selected = chip.selected === true;
-              return (
-                <GesturePressable key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
-                  <Row
-                    height={26}
-                    radius="full"
-                    padding={{ x: 9, y: 2 }}
-                    align="center"
-                    background={selected ? link : rowBg}
-                  >
-                    <LabelText label={chip.label} size="md" color={selected ? bg : fg} truncate />
-                  </Row>
-                </GesturePressable>
-              );
-            })}
+            {chips.map((chip) => (
+              <GesturePressable key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
+                <LabelChip label={chip.label} selected={chip.selected === true} />
+              </GesturePressable>
+            ))}
           </Row>
         </Scroll>
       </Box>

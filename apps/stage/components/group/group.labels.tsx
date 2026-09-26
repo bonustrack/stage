@@ -3,10 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
-import { LabelText } from '../LabelText';
+import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
@@ -30,21 +29,15 @@ export function toastLabelError(e: unknown): void {
 function SuggestionChip({ label, busy, onAdd }: {
   label: string; busy: boolean; onAdd: () => void;
 }): React.ReactElement {
-  const { text: fg, border } = usePalette();
+  const { text: fg } = usePalette();
   return (
     <Pressable
       onPress={onAdd}
       disabled={busy}
       hitSlop={6}
-      style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 4,
-        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
-        backgroundColor: border,
-        opacity: busy ? 0.5 : pressed ? 0.7 : 1,
-      })}
->
-      <Glyph icon={IconPlusLarge} size={12} color={fg}/>
-      <LabelText label={label} size="xs" color={fg} />
+      style={({ pressed }) => ({ opacity: busy ? 0.5 : pressed ? 0.7 : 1 })}
+    >
+      <LabelChip label={label} leading={<Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>} />
     </Pressable>
   );
 }
@@ -52,28 +45,24 @@ function SuggestionChip({ label, busy, onAdd }: {
 function LabelChips({ labels, onRemove }: {
   labels: string[]; onRemove: (label: string) => void;
 }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  const { text: fg, border } = usePalette();
+  const { text: fg } = usePalette();
   return (
     <Row gap={8} wrap align="center">
       {labels.map((label) => (
-        <Row
+        <LabelChip
           key={label}
-          align="center"
-          gap={6}
-          radius="full"
-          background={border}
-          padding={{ y: 6, left: 12, right: 10 }}
-        >
-          <LabelText label={label} size="xs" color={fg} />
-          <Pressable
-            hitSlop={8}
-            onPress={() => { onRemove(label); }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Glyph icon={IconCrossMedium} size={14} color={fg} dark={dark} />
-          </Pressable>
-        </Row>
+          label={label}
+          trailing={(
+            <Pressable
+              hitSlop={8}
+              accessibilityLabel={`Remove ${label}`}
+              onPress={() => { onRemove(label); }}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <Glyph icon={IconCrossMedium} size={LABEL_CHIP_ICON_SIZE} color={fg} />
+            </Pressable>
+          )}
+        />
       ))}
     </Row>
   );
