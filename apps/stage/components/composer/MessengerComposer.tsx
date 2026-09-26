@@ -7,11 +7,9 @@ import { useComposerActions } from './actions';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
-import {
-  useComposerDrafts, useComposerFocus, useCaretToEnd,
-  computeMentions, applyMention, useLastAttachment,
-} from './hooks';
-import { ReplyBanner, MentionPopup, PendingRow } from './parts';
+import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
+import { useMentionEditor } from './mentions';
+import { ReplyBanner, MentionMenu, PendingRow } from './parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine } from '../../modules/messaging';
@@ -35,11 +33,8 @@ function loneCandidate(candidates: Props['mentionCandidates']): string | undefin
 }
 
 function ComposerHeader(p: {
-  dark: boolean; fg: string; head: string; sub: string; chipBg: string;
+  dark: boolean; fg: string; sub: string; chipBg: string;
   replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
-  mentionRange: ReturnType<typeof computeMentions>['range'];
-  mentionMatches: ReturnType<typeof computeMentions>['matches'];
-  onPickMention: (c: { address: string; name: string }) => void;
   pending: Attachment[]; onRemovePending: (i: number) => void;
   uploading: boolean; err: string | null;
 }): React.ReactElement {
@@ -51,9 +46,6 @@ function ComposerHeader(p: {
           dark={p.dark} sub={p.sub} sender={replyingTo.sender} onClear={p.onClearReply}
           onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
         />
-      ) : null}
-      {p.mentionRange && p.mentionMatches.length > 0 ? (
-        <MentionPopup dark={p.dark} head={p.head} matches={p.mentionMatches} onPick={p.onPickMention}/>
       ) : null}
       {p.pending.length > 0 ? (
         <PendingRow fg={p.fg} sub={p.sub} chipBg={p.chipBg} pending={p.pending} onRemove={p.onRemovePending} />
@@ -80,19 +72,12 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
-  const caretToEnd = useCaretToEnd(s.text, s.setSelection);
-  useComposerDrafts(convId, s.text, s.setText, s.setSelection);
+  const mention = useMentionEditor(s, mentionCandidates);
+  const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
+  useComposerDrafts(convId, s.text, mention.restore);
   useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
-
-  const { matches: mentionMatches, range: mentionRange } = computeMentions(s.text, s.selection.start, mentionCandidates);
-  const pickMention = (c: { address: string; name: string }): void => {
-    if (!mentionRange) return;
-    const { next, cursor } = applyMention(s.text, mentionRange, c.address);
-    s.setText(next);
-    s.setSelection({ start: cursor, end: cursor });
-  };
 
   const attachActions = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
@@ -104,10 +89,10 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   return (
     <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
+      <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ComposerHeader
-        dark={dark} fg={fg} head={head} sub={sub} chipBg={chipBg}
+        dark={dark} fg={fg} sub={sub} chipBg={chipBg}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
-        mentionRange={mentionRange} mentionMatches={mentionMatches} onPickMention={pickMention}
         pending={s.pending} onRemovePending={(i) => { s.setPending(prev => prev.filter((_, j) => j !== i)); }}
         uploading={s.uploading} err={s.err}
       />
@@ -115,7 +100,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
-        text={s.text} setText={s.setText}
+        text={mention.display} setText={mention.setDisplay}
         selection={s.selection} setSelection={s.setSelection}
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
         attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
@@ -123,6 +108,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
+        onMentionKey={mention.onKey}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}

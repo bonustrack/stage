@@ -8,13 +8,13 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 
 export default { title: 'Dropdown Menu' };
 
-type Args = Pick<DropdownMenuProps, 'background' | 'maxHeight'> & { showDanger: boolean };
+type Args = Pick<DropdownMenuProps, 'background' | 'maxHeight'> & { showDanger: boolean; highlightFirst: boolean };
 
-export const Controls: Story<Args> = ({ showDanger, ...args }) => {
+export const Controls: Story<Args> = ({ showDanger, highlightFirst, ...args }) => {
   const dark = useDark();
   return (
     <DropdownMenu {...args} dark={dark}>
-      <DropdownMenuItem dark={dark} iconName={IconArrowUndoUp} label="Reply" onPress={() => undefined} />
+      <DropdownMenuItem dark={dark} iconName={IconArrowUndoUp} label="Reply" highlighted={highlightFirst} onPress={() => undefined} />
       <DropdownMenuItem dark={dark} iconName={IconSquareBehindSquare2} label="Copy text" onPress={() => undefined} />
       <DropdownMenuItem dark={dark} iconName={IconChainLink3} label="Share link" onPress={() => undefined} />
       {showDanger ? <DropdownMenuSeparator dark={dark} /> : null}
@@ -22,5 +22,5 @@ export const Controls: Story<Args> = ({ showDanger, ...args }) => {
     </DropdownMenu>
   );
 };
-Controls.args = { showDanger: true };
-Controls.argTypes = { showDanger: bool, background: color, maxHeight: number };
+Controls.args = { showDanger: true, highlightFirst: false };
+Controls.argTypes = { showDanger: bool, highlightFirst: bool, background: color, maxHeight: number };

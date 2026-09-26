@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../../lib/drafts';
-import { computeMentionQuery, matchMembers } from '@stage-labs/client/xmtp/mentions';
 
 export { useLastAttachment } from '../../lib/lastAttachment';
 
@@ -21,8 +20,7 @@ export function useCaretToEnd(
 export function useComposerDrafts(
   convId: string,
   text: string,
-  setText: (v: string) => void,
-  setSelection: (range: { start: number; end: number }) => void,
+  restore: (draft: string) => void,
 ): void {
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,10 +28,7 @@ export function useComposerDrafts(
     draftRestored.current = false;
     void loadDrafts().then(() => {
       const d = getDraft(convId);
-      if (d) {
-        setText(d);
-        setSelection({ start: d.length, end: d.length });
-      }
+      if (d) restore(d);
       draftRestored.current = true;
     });
   }, [convId]);
@@ -80,18 +75,3 @@ export function useComposerFocus(
     return () => { showSub.remove(); hideSub.remove(); appSub.remove(); };
   }, []);
 }
-
-interface MentionCandidate { address: string; name: string }
-
-export function computeMentions(
-  text: string,
-  cursor: number,
-  candidates: MentionCandidate[] | undefined,
-): { matches: MentionCandidate[]; range: { start: number; end: number } | null } {
-  const { range } = computeMentionQuery(text, cursor, candidates);
-  if (!range || !candidates) return { matches: [], range: null };
-  const query = text.slice(range.start + 1, range.end);
-  return { matches: matchMembers(candidates, query), range };
-}
-
-export { applyMention } from '@stage-labs/client/xmtp/mentions';

@@ -66,6 +66,7 @@ export interface DropdownMenuItemProps {
   color?: string;
   pressedBackground?: string;
   selected?: boolean;
+  highlighted?: boolean;
 }
 
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
@@ -87,7 +88,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
         gap: DROPDOWN_MENU.itemGap,
         paddingHorizontal: DROPDOWN_MENU.itemPadX,
         paddingVertical: DROPDOWN_MENU.itemPadY,
-        backgroundColor: pressed ? pressedBg : hovered ? hoverBg : 'transparent',
+        backgroundColor: pressed ? pressedBg : hovered || props.highlighted === true ? hoverBg : 'transparent',
       })}
     >
       {icon}

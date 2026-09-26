@@ -37,6 +37,7 @@ interface EditorProps {
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
+  onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
@@ -69,8 +70,12 @@ function makeWebEnterToSend(
   if (Platform.OS !== 'web') return undefined;
   return (event) => {
     const e = event as unknown as WebKeyEvent;
-    if (e.key !== 'Enter' || e.shiftKey) return;
     if (e.nativeEvent.isComposing === true || e.nativeEvent.keyCode === 229) return;
+    if (p.onMentionKey?.(e.key, e.shiftKey) === true) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key !== 'Enter' || e.shiftKey) return;
     e.preventDefault();
     if (p.hasContent) p.onSend();
   };

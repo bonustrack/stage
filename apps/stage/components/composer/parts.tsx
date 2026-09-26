@@ -1,14 +1,17 @@
 
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { ImageViewer } from '../ImageViewer';
-import { Box, Row, Col } from '../layout';
+import { MENU_WIDTH } from '../AnchoredMenu';
+import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
@@ -52,40 +55,28 @@ export function ReplyBanner({
   );
 }
 
-export function MentionPopup({
-  dark, head, matches, onPick,
-}: {
-  dark: boolean; head: string;
-  matches: { address: string; name: string }[];
-  onPick: (c: { address: string; name: string }) => void;
-}): React.ReactElement {
-  const border = usePalette().border;
+const keepInputFocus = Platform.OS === 'web'
+  ? { onMouseDown: (event: { preventDefault: () => void }) => { event.preventDefault(); } }
+  : {};
+
+export function MentionMenu({ matches, active, onPick }: {
+  matches: MentionCandidate[]; active: number; onPick: (candidate: MentionCandidate) => void;
+}): React.ReactElement | null {
+  if (matches.length === 0) return null;
   return (
-    <Col margin={{ x: 6, bottom: 8 }} radius="lg" background={dark ? '#1a1a1c' : '#ffffff'} style={{
-      overflow: 'hidden',
-      borderWidth: 1, borderColor: border,
-    }}>
-      {matches.map((c, i) => (
-        <Pressable
-          key={c.address}
-          onPress={() => { onPick(c); }}
-          style={({ pressed }) => ({
-            flexDirection: 'row', alignItems: 'center', gap: 10,
-            paddingHorizontal: 12, paddingVertical: 8,
-            backgroundColor: pressed ? border : 'transparent',
-            borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
-          })}
->
-          <Avatar address={c.address} size="sm"/>
-          <Text weight="semibold" size="md" color={head} style={{ flex: 1 }} numberOfLines={1}>
-            {c.name}
-          </Text>
-          <Text size="2xs" role="secondary" numberOfLines={1}>
-            {shortAddress(c.address)}
-          </Text>
-        </Pressable>
-      ))}
-    </Col>
+    <Box margin={{ bottom: 8 }} style={{ position: 'absolute', bottom: '100%', left: PAGE_GUTTER, zIndex: 4 }} {...keepInputFocus}>
+      <DropdownMenu style={{ width: MENU_WIDTH }}>
+        {matches.map((c, i) => (
+          <DropdownMenuItem
+            key={c.address}
+            label={c.name}
+            highlighted={i === active}
+            icon={<Avatar address={c.address} size={DROPDOWN_MENU.icon}/>}
+            onPress={() => { onPick(c); }}
+          />
+        ))}
+      </DropdownMenu>
+    </Box>
   );
 }
 
