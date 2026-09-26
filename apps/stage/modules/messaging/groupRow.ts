@@ -54,16 +54,15 @@ const labelWrites = new Map<string, LabelWrites>();
 
 function startLabelWrite(convId: string | null): LabelWrites | null {
   if (convId === null) return null;
-  const known = labelWrites.get(convId);
-  if (known) {
-    known.pending += 1;
-    return known;
+  let writes = labelWrites.get(convId);
+  if (!writes) {
+    const row = getCachedRows()?.find(r => r.convId === convId);
+    if (!row) return null;
+    writes = { base: rowLabels(row.labels), pending: 0, failed: false };
+    labelWrites.set(convId, writes);
   }
-  const row = getCachedRows()?.find(r => r.convId === convId);
-  if (!row) return null;
-  const started = { base: rowLabels(row.labels), pending: 1, failed: false };
-  labelWrites.set(convId, started);
-  return started;
+  writes.pending += 1;
+  return writes;
 }
 
 function settleLabelWrite(convId: string | null, writes: LabelWrites | null): void {
@@ -81,7 +80,9 @@ async function writeRowLabels(
   const writes = startLabelWrite(convId);
   patchRowLabels(convId, next);
   try {
-    return await write();
+    const written = await write();
+    if (writes) writes.base = written;
+    return written;
   } catch (err) {
     if (writes) writes.failed = true;
     throw err;
