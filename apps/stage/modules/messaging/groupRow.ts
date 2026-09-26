@@ -61,10 +61,10 @@ export async function moveGroupLabel(line: string, from: string | null, to: stri
   try { return await moveRemoteLabel(line, from, to); } finally { refreshGroupRow(convId); }
 }
 
-export async function renameGroupLabel(line: string, names: readonly string[], to: string): Promise<string[]> {
+export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {
   const convId = convIdOfLine(line);
-  patchRowLabels(convId, (labels) => renameLabels(labels, names, to));
-  try { return await renameRemoteLabel(line, names, to); } finally { refreshGroupRow(convId); }
+  patchRowLabels(convId, (labels) => renameLabels(labels, from, to));
+  try { return await renameRemoteLabel(line, from, to); } finally { refreshGroupRow(convId); }
 }
 
 export async function updateGroupMeta(convId: string, patch: Parameters<typeof updateMeta>[1]): Promise<void> {

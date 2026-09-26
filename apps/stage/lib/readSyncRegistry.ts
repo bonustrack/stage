@@ -1,4 +1,3 @@
-import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import { makeListeners } from './storeCore';
 
 const hiddenConvs = new Set<string>();
@@ -58,13 +57,3 @@ const boardOrderListeners = makeListeners<BoardOrderChange>();
 
 export const onBoardOrderChanged = boardOrderListeners.subscribe;
 export const notifyBoardOrderChanged = boardOrderListeners.notify;
-
-export interface LabelRegistryChange {
-  accountId: string;
-  labels: readonly LabelEntry[];
-}
-
-const labelListeners = makeListeners<LabelRegistryChange>();
-
-export const onLabelRegistryChanged = labelListeners.subscribe;
-export const notifyLabelRegistryChanged = labelListeners.notify;

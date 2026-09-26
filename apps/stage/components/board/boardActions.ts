@@ -1,16 +1,15 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
-import { labelNames, type LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import { setBoardOrder } from '../../lib/boardOrder';
 import { capabilities } from '../../lib/capabilities';
-import { renameLabelEntry } from '../../lib/labelRegistry';
 import { LabelPermissionError, lineOfConv, moveGroupLabel, renameGroupLabel } from '../../modules/messaging';
 import { toastLabelError } from '../group/group.labels';
 import {
-  cardLabel, columnLabel, keptColumnOrder, labelCarriers, movedColumnOrder, type BoardColumn, type BoardDrag,
+  columnLabel, keptColumnOrder, labelCarriers, movedColumnOrder, renamedColumnOrder, renameTarget,
+  type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 
 export function dropOnBoard(
-  columns: readonly BoardColumn<ChannelListRow>[], saved: readonly string[], drag: BoardDrag, key: string,
+  columns: readonly BoardColumn<unknown>[], saved: readonly string[], drag: BoardDrag, key: string,
 ): void {
   if (drag.kind === 'column') {
     const next = movedColumnOrder(columns.map(column => column.key), saved, drag.key, key);
@@ -19,7 +18,7 @@ export function dropOnBoard(
   }
   const kept = keptColumnOrder(columns, saved, drag.from);
   if (kept !== null) setBoardOrder(kept);
-  const from = cardLabel(columns, drag.convId, drag.from);
+  const from = columnLabel(columns, drag.from);
   void moveGroupLabel(lineOfConv(drag.convId), from, columnLabel(columns, key)).catch(toastLabelError);
 }
 
@@ -33,11 +32,14 @@ function renameOutcome(results: readonly PromiseSettledResult<unknown>[]): strin
     : `${refused} groups kept the old name, no permission to edit their labels.`;
 }
 
-export async function renameBoardLabel(rows: readonly ChannelListRow[], entry: LabelEntry, name: string): Promise<void> {
-  renameLabelEntry(entry, name);
-  const names = labelNames(entry);
+export async function renameBoardLabel(
+  rows: readonly ChannelListRow[], columns: readonly BoardColumn<unknown>[], saved: readonly string[],
+  from: string, name: string,
+): Promise<void> {
+  const to = renameTarget(columns, from, name).name;
+  setBoardOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to));
   const results = await Promise.allSettled(
-    labelCarriers(rows, entry).map(convId => renameGroupLabel(lineOfConv(convId), names, name)),
+    labelCarriers(rows, from).map(convId => renameGroupLabel(lineOfConv(convId), from, to)),
   );
   const outcome = renameOutcome(results);
   if (outcome !== null) capabilities.toast(outcome);

@@ -1,4 +1,5 @@
 import { boardOrderSchema } from '@stage-labs/client/xmtp/readState';
+import { namedBoardOrder } from '../components/board/BoardScreen.model';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
@@ -10,6 +11,7 @@ type BoardOrder = readonly string[];
 
 const KEY_PREFIX = 'board.columnOrder.';
 const LEGACY_KEY = 'board.columnOrder';
+const REGISTRY_PREFIX = 'labels.registry.';
 const EMPTY: BoardOrder = [];
 
 let accountId: string | null = null;
@@ -37,11 +39,26 @@ async function adoptLegacyOrder(id: string): Promise<BoardOrder> {
   return parseOrder(legacy);
 }
 
+function persist(id: string, next: BoardOrder): Promise<void> {
+  return appStorage.set(KEY_PREFIX + id, JSON.stringify(next));
+}
+
+async function namedOrder(id: string, loaded: BoardOrder): Promise<BoardOrder> {
+  const registry = await appStorage.get(REGISTRY_PREFIX + id);
+  if (registry === null) return loaded;
+  const next = namedBoardOrder(loaded, registry);
+  await persist(id, next);
+  await appStorage.delete(REGISTRY_PREFIX + id);
+  if (next.length !== loaded.length || next.some((key, index) => key !== loaded[index])) notifyBoardOrderChanged({ accountId: id, order: next });
+  return next;
+}
+
 async function loadForActiveAccount(): Promise<void> {
   const id = (await getActiveAccount())?.id ?? null;
   if (id === accountId) return;
   const saved = id === null ? null : await appStorage.get(KEY_PREFIX + id);
-  const next = id === null || saved !== null ? parseOrder(saved) : await adoptLegacyOrder(id);
+  const loaded = id === null || saved !== null ? parseOrder(saved) : await adoptLegacyOrder(id);
+  const next = id === null ? loaded : await namedOrder(id, loaded);
   accountId = id;
   order = next;
   listeners.notify();
@@ -56,10 +73,6 @@ function ensureLoaded(): Promise<void> {
 function primeBoardOrder(): void { void ensureLoaded().catch(reported('boardOrder.load')); }
 
 subscribeAccountEpoch(primeBoardOrder);
-
-function persist(id: string, next: BoardOrder): Promise<void> {
-  return appStorage.set(KEY_PREFIX + id, JSON.stringify(next));
-}
 
 export function setBoardOrder(next: BoardOrder): void {
   if (accountId === null) return;

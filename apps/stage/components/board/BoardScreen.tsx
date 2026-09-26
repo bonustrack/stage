@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
@@ -7,7 +7,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
@@ -32,11 +31,8 @@ import { channelTimestamp } from '../../lib/format';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
-import { reported } from '../../lib/errorPolicy';
-import { ensureLabelEntries, useLabelEntries } from '../../lib/labelRegistry';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, boardEntries, boardLabelNames, normalizedOrder,
-  orderedColumns, type BoardColumn, type BoardDrag,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, orderedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { dropOnBoard } from './boardActions';
@@ -48,7 +44,7 @@ const TITLE_SIZE = '2xl';
 const DRAGGING_OPACITY = 0.4;
 
 type OnBoardDrop = (drag: BoardDrag, key: string) => void;
-type OnRename = (entry: LabelEntry) => void;
+type OnRename = (label: string) => void;
 
 function columnMaxHeight(laneHeight: number): number | string | undefined {
   if (Platform.OS === 'web') return '100%';
@@ -142,7 +138,7 @@ function BoardColumnView({ column, maxHeight, pinned, onDrop, onRename }: {
   onDrop: OnBoardDrop;
   onRename: OnRename;
 }): React.ReactElement {
-  const { entry } = column;
+  const { label } = column;
   const { border, link } = usePalette();
   const zone = useBoardDropZone(column.key, (drag) => { onDrop(drag, column.key); });
   const handle = useBoardDragSource({ kind: 'column', key: column.key }, zone.nativeID);
@@ -161,7 +157,7 @@ function BoardColumnView({ column, maxHeight, pinned, onDrop, onRename }: {
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
         <Box flex={1}/>
-        {entry === null ? null : <RenameButton onPress={() => { onRename(entry); }}/>}
+        {label === null ? null : <RenameButton onPress={() => { onRename(label); }}/>}
       </Row>
       <ColumnCards column={column} pinned={pinned}/>
     </Col>
@@ -203,22 +199,15 @@ function BoardBody(): React.ReactElement {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
-  const saved = useBoardOrder();
-  const entries = useLabelEntries();
-  const known = useMemo(() => boardEntries(rows ?? [], saved, entries), [rows, saved, entries]);
-  const order = useMemo(() => normalizedOrder(saved, known), [saved, known]);
-  const [renaming, setRenaming] = useState<LabelEntry | null>(null);
+  const order = useBoardOrder();
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  useEffect(() => {
-    if (!rows) return;
-    ensureLabelEntries(boardLabelNames(rows, saved, entries)).catch(reported('board.labels'));
-  }, [rows, saved, entries]);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   usePeerProfiles((rows ?? []).map(r => r.lastSenderAddress));
   useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, known, r => isRowCleared(cleared, r)), order),
-    [rows, cleared, pinned, order, known],
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
+    [rows, cleared, pinned, order],
   );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
@@ -227,7 +216,13 @@ function BoardBody(): React.ReactElement {
   return (
     <>
       <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop} onRename={setRenaming}/>
-      <RenameColumnModal entry={renaming} entries={known} rows={rows} onClose={() => { setRenaming(null); }}/>
+      <RenameColumnModal
+        label={renaming}
+        columns={columns}
+        rows={rows}
+        saved={order}
+        onClose={() => { setRenaming(null); }}
+      />
     </>
   );
 }

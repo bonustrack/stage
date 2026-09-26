@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import {
-  boardColumns, boardEntries, cardLabel, keptColumnOrder, labelCarriers, movedColumnOrder, normalizedOrder,
-  orderLabelNames, orderedColumns, renameProblem,
+  boardColumns, keptColumnOrder, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameProblem,
+  renameTarget, renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -23,12 +22,8 @@ function dm(convId: string, lastTs: number, labels?: string[]): TestRow {
   return { ...row(convId, lastTs, labels), peerAddress: '0xpeer' };
 }
 
-const entry = (id: string, name: string, aliases: string[] = [], at = 0): LabelEntry => ({ id, name, aliases, at });
-
-function shape(
-  rows: TestRow[], pinned: string[] = [], order: string[] = [], entries: LabelEntry[] = [],
-): [string | null, string[]][] {
-  return boardColumns(rows, pinned, order, entries).map(c => [c.label, c.rows.map(r => r.convId)]);
+function shape(rows: TestRow[], pinned: string[] = [], order: string[] = []): [string | null, string[]][] {
+  return boardColumns(rows, pinned, order).map(c => [c.label, c.rows.map(r => r.convId)]);
 }
 
 describe('boardColumns', () => {
@@ -75,7 +70,7 @@ describe('boardColumns', () => {
 
   test('every label gets a column, even one whose channels are all hidden', () => {
     const rows = [row('a', 2, ['Todo']), row('b', 1, ['Done'])];
-    const columns = boardColumns(rows, [], [], [], r => r.convId === 'a');
+    const columns = boardColumns(rows, [], [], r => r.convId === 'a');
     expect(columns.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
       ['Done', ['b']],
       ['Todo', []],
@@ -142,66 +137,72 @@ describe('columns left empty', () => {
   const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1, ['Done'])], [], []);
 
   test('moving the last card out of a column saves the order so the column stays', () => {
-    expect(keptColumnOrder(columns, [], 'label:todo')).toEqual(['label:done', 'label:todo', 'unlabeled']);
-    expect(keptColumnOrder(columns, ['label:todo'], 'label:todo')).toEqual(['label:todo', 'label:done', 'unlabeled']);
+    expect(keptColumnOrder(columns, [], 'label:Todo')).toEqual(['label:Done', 'label:Todo', 'unlabeled']);
+    expect(keptColumnOrder(columns, ['label:todo'], 'label:Todo')).toEqual(['label:Todo', 'label:Done', 'unlabeled']);
   });
 
   test('leaves the order alone when the column keeps cards or is already saved', () => {
-    expect(keptColumnOrder(columns, [], 'label:done')).toBeNull();
-    expect(keptColumnOrder(columns, ['label:done', 'label:todo', 'unlabeled'], 'label:todo')).toBeNull();
+    expect(keptColumnOrder(columns, [], 'label:Done')).toBeNull();
+    expect(keptColumnOrder(columns, ['label:Done', 'label:Todo', 'unlabeled'], 'label:Todo')).toBeNull();
     expect(keptColumnOrder(boardColumns([row('a', 1)], [], []), [], 'unlabeled')).toBeNull();
   });
 });
 
-describe('renamed columns', () => {
-  const renamed = [entry('todo', 'Doing', ['Todo'], 5), entry('done', 'Done')];
+describe('renaming a column', () => {
+  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], []);
+  const keys = columns.map(c => c.key);
 
-  test('a column shows its new name and keeps groups still carrying the old one', () => {
-    const rows = [row('a', 3, ['Doing']), row('b', 2, ['todo']), row('c', 1, ['Done'])];
-    expect(shape(rows, [], [], renamed)).toEqual([['Doing', ['a', 'b']], ['Done', ['c']], [null, []]]);
-    expect(boardColumns(rows, [], [], renamed).map(c => c.key)).toEqual(['label:todo', 'label:done', 'unlabeled']);
+  test('a rename reaches every group carrying the name whatever its case, direct messages aside', () => {
+    const rows = [row('a', 4, ['Urgent', 'todo']), row('b', 3, ['TODO']), row('c', 2, ['Done']), dm('d', 1, ['Todo'])];
+    expect(labelCarriers(rows, 'Todo')).toEqual(['a', 'b']);
   });
 
-  test('a saved order written with names points at the renamed column', () => {
-    expect(normalizedOrder(['label:Todo', 'unlabeled', 'label:Doing', 'label:Done'], renamed))
-      .toEqual(['label:todo', 'unlabeled', 'label:done']);
-    expect(normalizedOrder(['label:Blocked'], renamed)).toEqual(['label:blocked']);
-    expect(orderLabelNames(['label:todo', 'label:Blocked', 'unlabeled'], renamed)).toEqual(['Blocked']);
-    expect(normalizedOrder(['label:todo'], [entry('todo', 'Doing', [], 5), entry('todo~2', 'Todo')])).toEqual(['label:todo']);
+  test('a new name must be set and short enough', () => {
+    expect(renameProblem('  ')).toBe('Enter a name.');
+    expect(renameProblem('x'.repeat(25))).toBe('Use at most 24 characters.');
+    expect(renameProblem(` ${'x'.repeat(24)} `)).toBeNull();
+    expect(renameProblem('Doing')).toBeNull();
   });
 
-  test('a saved column that no chat carries keeps its new name', () => {
-    expect(shape([row('a', 1, ['Done'])], [], ['label:todo'], renamed)).toEqual([
-      ['Done', ['a']],
-      ['Doing', []],
-      [null, []],
-    ]);
+  test('a name another column has merges into that column with its spelling', () => {
+    expect(renameTarget(columns, 'Todo', ' done ')).toEqual({ name: 'Done', merge: true });
+    expect(renameTarget(columns, 'Todo', 'Doing  now')).toEqual({ name: 'Doing now', merge: false });
+    expect(renameTarget(columns, 'Todo', 'TODO')).toEqual({ name: 'TODO', merge: false });
   });
 
-  test('a saved column that no chat carries gets its own entry', () => {
-    expect(boardEntries([row('a', 1, ['Done'])], ['label:Blocked', 'label:todo'], renamed)).toEqual([
-      entry('blocked', 'Blocked'), ...renamed.slice().reverse(),
-    ]);
+  test('the renamed column keeps its place in the saved order', () => {
+    expect(renamedColumnOrder(keys, [], 'Todo', 'Doing')).toEqual(['label:Done', 'label:Doing', 'unlabeled']);
+    expect(renamedColumnOrder(keys, ['unlabeled', 'label:todo'], 'Todo', 'Doing'))
+      .toEqual(['unlabeled', 'label:Doing', 'label:Done']);
   });
 
-  test('moving a card takes off the label it actually carries', () => {
-    const columns = boardColumns([row('a', 2, ['Urgent', 'todo']), row('b', 1, ['Doing'])], [], [], renamed);
-    expect(cardLabel(columns, 'a', 'label:todo')).toBe('todo');
-    expect(cardLabel(columns, 'b', 'label:todo')).toBe('Doing');
-    expect(cardLabel(columns, 'a', 'unlabeled')).toBeNull();
+  test('a merged column leaves the saved order where the other column already is', () => {
+    expect(renamedColumnOrder(keys, ['label:todo', 'unlabeled', 'label:done'], 'Todo', 'Done'))
+      .toEqual(['unlabeled', 'label:Done']);
+  });
+});
+
+describe('board order saved with label ids', () => {
+  const registry = JSON.stringify([
+    { id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 },
+    { id: 'todo~2', name: 'Todo', aliases: [], at: 6 },
+    { id: 'done', name: 'Done', aliases: [], at: 0 },
+  ]);
+
+  test('turns every id back into the label name', () => {
+    expect(namedBoardOrder(['label:todo~2', 'unlabeled', 'label:todo', 'label:done'], registry))
+      .toEqual(['label:Todo', 'unlabeled', 'label:Doing', 'label:Done']);
   });
 
-  test('a rename reaches every group carrying any of the names, direct messages aside', () => {
-    const rows = [row('a', 4, ['Doing']), row('b', 3, ['TODO']), row('c', 2, ['Done']), dm('d', 1, ['Todo'])];
-    expect(labelCarriers(rows, renamed[0])).toEqual(['a', 'b']);
+  test('keeps keys it does not know and drops the ones that end up twice', () => {
+    expect(namedBoardOrder(['label:Blocked', 'label:done', 'label:Done'], registry)).toEqual(['label:Blocked', 'label:Done']);
   });
 
-  test('a new name must be set, short enough and not another column\'s name', () => {
-    expect(renameProblem(renamed, renamed[0], '  ')).toBe('Enter a name.');
-    expect(renameProblem(renamed, renamed[0], 'x'.repeat(25))).toBe('Use at most 24 characters.');
-    expect(renameProblem(renamed, renamed[0], ' done ')).toBe('Another column already has this name.');
-    expect(renameProblem(renamed, renamed[0], 'todo')).toBeNull();
-    expect(renameProblem(renamed, renamed[0], 'DOING')).toBeNull();
-    expect(renameProblem(renamed, renamed[0], 'Shipped')).toBeNull();
+  test('leaves the order alone when the saved ids cannot be read', () => {
+    const order = ['label:todo', 'unlabeled'];
+    expect(namedBoardOrder(order, '{')).toEqual(order);
+    expect(namedBoardOrder(order, '{"id":"todo","name":"Doing"}')).toEqual(order);
+    expect(namedBoardOrder(['label:1', 'label:todo'], '[{"id":"todo"},{"id":1,"name":"Doing"}]'))
+      .toEqual(['label:1', 'label:todo']);
   });
 });

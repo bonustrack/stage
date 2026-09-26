@@ -38,7 +38,7 @@ async function readAppData(group: Group): Promise<string> {
   return group.appData ?? '';
 }
 
-export function cleanLabel(raw: string): string {
+function cleanLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
 }
 
@@ -105,14 +105,14 @@ export function moveLabel(labels: string[], from: string | null, to: string | nu
   return addLabel(from === null ? labels : removeLabel(labels, from), to);
 }
 
-export function renameLabels(labels: string[], names: readonly string[], to: string): string[] {
+export function renameLabels(labels: string[], from: string, to: string): string[] {
   const clean = cleanLabel(to);
-  const from = new Set([...names, clean].map((name) => cleanLabel(name).toLowerCase()));
-  const at = labels.findIndex((l) => from.has(l.toLowerCase()));
+  const names = new Set([from, clean].map((name) => cleanLabel(name).toLowerCase()));
+  const at = labels.findIndex((l) => names.has(l.toLowerCase()));
   if (!clean || at === -1) return labels;
   return labels.flatMap((l, i) => {
     if (i === at) return [clean];
-    return from.has(l.toLowerCase()) ? [] : [l];
+    return names.has(l.toLowerCase()) ? [] : [l];
   });
 }
 

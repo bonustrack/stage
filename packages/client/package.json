@@ -41,7 +41,6 @@
     "./routing/handles": "./src/routing/handles.ts",
     "./xmtp/mentions": "./src/xmtp/mentions.ts",
     "./xmtp/labels": "./src/xmtp/labels.ts",
-    "./xmtp/labelRegistry": "./src/xmtp/labelRegistry.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./x402": "./src/x402/challenge.ts",
     "./image/stripMetadata": "./src/image/stripMetadata.ts",

@@ -1,9 +1,6 @@
 import {
-  deriveBarLabels, sortChannelRows, type ChannelListRow,
+  deriveBarLabels, filterChannelRows, sortChannelRows, type ChannelListRow,
 } from '@stage-labs/client/xmtp/channelsFilter';
-import {
-  labelIndex, labelKey, labelNames, resolveLabel, withLabelNames, type LabelEntry, type LabelIndex,
-} from '@stage-labs/client/xmtp/labelRegistry';
 import { MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 
 export const UNLABELED_TITLE = 'Unlabeled';
@@ -16,84 +13,34 @@ const UNLABELED_KEY = 'unlabeled';
 export interface BoardColumn<T> {
   key: string;
   label: string | null;
-  entry: LabelEntry | null;
   rows: T[];
 }
 
-export const labelColumnKey = (id: string): string => `${LABEL_PREFIX}${id}`;
+export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label}`;
 
-function keyRef(key: string): string {
-  return key.startsWith(LABEL_PREFIX) ? key.slice(LABEL_PREFIX.length) : '';
-}
-
-function keyedEntry(entries: readonly LabelEntry[], key: string): LabelEntry | null {
-  const ref = keyRef(key);
-  if (labelKey(ref) === '') return null;
-  return entries.find(e => e.id === ref.toLowerCase()) ?? resolveLabel(entries, ref);
-}
-
-export function orderLabelNames(order: readonly string[], entries: readonly LabelEntry[]): string[] {
-  const ids = new Set(entries.map(e => e.id));
-  return order.map(keyRef).filter(ref => labelKey(ref) !== '' && !ids.has(ref.toLowerCase()));
-}
-
-export function boardLabelNames(
-  rows: readonly ChannelListRow[], order: readonly string[], entries: readonly LabelEntry[],
-): string[] {
-  return [...deriveBarLabels(rows), ...orderLabelNames(order, entries)];
-}
-
-export function boardEntries(
-  rows: readonly ChannelListRow[], order: readonly string[], entries: readonly LabelEntry[],
-): readonly LabelEntry[] {
-  return withLabelNames(entries, boardLabelNames(rows, order, entries));
-}
-
-export function normalizedOrder(order: readonly string[], entries: readonly LabelEntry[]): string[] {
-  const seen = new Set<string>();
+function rememberedLabels(order: readonly string[], known: readonly string[]): string[] {
+  const seen = new Set(known.map(label => label.toLowerCase()));
   return order.flatMap((key) => {
-    const entry = keyedEntry(entries, key);
-    const next = entry === null ? key : labelColumnKey(entry.id);
-    if (seen.has(next.toLowerCase())) return [];
-    seen.add(next.toLowerCase());
-    return [next];
+    const label = key.startsWith(LABEL_PREFIX) ? key.slice(LABEL_PREFIX.length) : '';
+    if (label === '' || seen.has(label.toLowerCase())) return [];
+    seen.add(label.toLowerCase());
+    return [label];
   });
-}
-
-function shownEntries(
-  known: readonly LabelEntry[], index: LabelIndex, labels: readonly string[], order: readonly string[],
-): LabelEntry[] {
-  const shown = new Map<string, LabelEntry>();
-  for (const label of labels) {
-    const entry = index.get(labelKey(label));
-    if (entry !== undefined) shown.set(entry.id, entry);
-  }
-  const fromChats = [...shown.values()].sort((a, b) => a.name.localeCompare(b.name));
-  const remembered = order.flatMap((key) => {
-    const entry = keyedEntry(known, key);
-    if (entry === null || shown.has(entry.id)) return [];
-    shown.set(entry.id, entry);
-    return [entry];
-  });
-  return [...fromChats, ...remembered];
 }
 
 export function boardColumns<T extends ChannelListRow>(
-  rows: T[], pinned: readonly string[], order: readonly string[],
-  entries: readonly LabelEntry[] = [], hidden: (row: T) => boolean = () => false,
+  rows: T[], pinned: readonly string[], order: readonly string[], hidden: (row: T) => boolean = () => false,
 ): BoardColumn<T>[] {
-  const known = boardEntries(rows, order, entries);
-  const index = labelIndex(known);
+  const chatLabels = deriveBarLabels(rows);
   const sorted = sortChannelRows(rows.filter(row => !row.peerAddress && !hidden(row)), pinned);
-  const labeled = shownEntries(known, index, deriveBarLabels(rows), order).map(entry => ({
-    key: labelColumnKey(entry.id),
-    label: entry.name,
-    entry,
-    rows: sorted.filter(row => (row.labels ?? []).some(label => index.get(labelKey(label))?.id === entry.id)),
+  const labeled = [...chatLabels, ...rememberedLabels(order, chatLabels)].map(label => ({
+    key: labelColumnKey(label),
+    label,
+    rows: filterChannelRows(sorted, { enabledLabels: new Set([label.toLowerCase()]) }),
   }));
   if (labeled.length === 0 && sorted.length === 0) return [];
   const unlabeled = sorted.filter(r => (r.labels ?? []).length === 0);
-  return [...labeled, { key: UNLABELED_KEY, label: null, entry: null, rows: unlabeled }];
+  return [...labeled, { key: UNLABELED_KEY, label: null, rows: unlabeled }];
 }
 
 export type BoardDrag = { kind: 'column'; key: string } | { kind: 'card'; convId: string; from: string };
@@ -156,23 +103,59 @@ export function columnLabel(columns: readonly BoardColumn<unknown>[], key: strin
   return columns.find(column => column.key === key)?.label ?? null;
 }
 
-export function cardLabel(columns: readonly BoardColumn<ChannelListRow>[], convId: string, key: string): string | null {
-  const column = columns.find(c => c.key === key);
-  if (column?.entry == null) return null;
-  const names = new Set(labelNames(column.entry).map(labelKey));
-  const row = column.rows.find(r => r.convId === convId);
-  return row?.labels?.find(label => names.has(labelKey(label))) ?? column.label;
+export function labelCarriers(rows: readonly ChannelListRow[], label: string): string[] {
+  const key = label.toLowerCase();
+  return rows.filter(r => !r.peerAddress && (r.labels ?? []).some(l => l.toLowerCase() === key)).map(r => r.convId);
 }
 
-export function labelCarriers(rows: readonly ChannelListRow[], entry: LabelEntry): string[] {
-  const names = new Set(labelNames(entry).map(labelKey));
-  return rows.filter(r => !r.peerAddress && (r.labels ?? []).some(label => names.has(labelKey(label)))).map(r => r.convId);
-}
+const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');
 
-export function renameProblem(entries: readonly LabelEntry[], entry: LabelEntry, name: string): string | null {
-  const typed = name.trim().replace(/\s+/g, ' ');
+export function renameProblem(name: string): string | null {
+  const typed = typedName(name);
   if (typed === '') return 'Enter a name.';
-  if (typed.length > MAX_LABEL_LEN) return `Use at most ${MAX_LABEL_LEN} characters.`;
-  const taken = entries.some(e => e.id !== entry.id && labelKey(e.name) === labelKey(typed));
-  return taken ? 'Another column already has this name.' : null;
+  return typed.length > MAX_LABEL_LEN ? `Use at most ${MAX_LABEL_LEN} characters.` : null;
+}
+
+export function renameTarget(
+  columns: readonly BoardColumn<unknown>[], from: string, name: string,
+): { name: string; merge: boolean } {
+  const typed = typedName(name);
+  const key = typed.toLowerCase();
+  const existing = key === from.toLowerCase() ? null : columns.find(c => c.label?.toLowerCase() === key)?.label;
+  return existing == null ? { name: typed, merge: false } : { name: existing, merge: true };
+}
+
+export function renamedColumnOrder(
+  shown: readonly string[], saved: readonly string[], from: string, to: string,
+): string[] {
+  const fromKey = labelColumnKey(from).toLowerCase();
+  const toKey = labelColumnKey(to);
+  const full = withShown(saved, shown);
+  const merging = full.some(key => key.toLowerCase() === toKey.toLowerCase() && key.toLowerCase() !== fromKey);
+  return full.flatMap((key) => {
+    if (key.toLowerCase() !== fromKey) return [key];
+    return merging ? [] : [toKey];
+  });
+}
+
+function labelIds(raw: string): { id: string; name: string }[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((e: unknown) => (
+      typeof e === 'object' && e !== null && 'id' in e && 'name' in e
+        && typeof e.id === 'string' && typeof e.name === 'string' ? [{ id: e.id, name: e.name }] : []
+    ));
+  } catch { return []; }
+}
+
+export function namedBoardOrder(order: readonly string[], registry: string): string[] {
+  const names = new Map(labelIds(registry).map(e => [labelColumnKey(e.id).toLowerCase(), labelColumnKey(e.name)]));
+  const seen = new Set<string>();
+  return order.flatMap((key) => {
+    const next = names.get(key.toLowerCase()) ?? key;
+    if (seen.has(next.toLowerCase())) return [];
+    seen.add(next.toLowerCase());
+    return [next];
+  });
 }

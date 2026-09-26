@@ -30,6 +30,6 @@ export async function moveGroupLabel(line: string, from: string | null, to: stri
   return mutate(line, (labels) => moveLabel(labels, from, to));
 }
 
-export async function renameGroupLabel(line: string, names: readonly string[], to: string): Promise<string[]> {
-  return mutate(line, (labels) => renameLabels(labels, names, to));
+export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {
+  return mutate(line, (labels) => renameLabels(labels, from, to));
 }
