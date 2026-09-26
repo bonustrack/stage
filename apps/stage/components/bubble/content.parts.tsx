@@ -74,7 +74,7 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
-    <Box style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 4 }} style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
         <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} />
       ))}
