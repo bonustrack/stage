@@ -20,7 +20,7 @@ import { attempt } from '../../lib/errorPolicy';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { NewChatModal } from './NewChatModal';
-import { IconBubbleWideSparkle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleWideSparkle';
+import { IconBubbleSparkle } from '../IconBubbleSparkle';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 
 interface ChannelsListProps {
@@ -60,7 +60,7 @@ function HomeTopnavRight({ head, router, onOpenSearch }: {
       </Pressable>
       <HoverTooltip label="New chat" placement="below">
         <Pressable onPress={() => { setComposeOpen(true); }} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
-          <Glyph icon={IconBubbleWideSparkle} size={24} color={compose.hovered ? link : head}/>
+          <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>
         </Pressable>
       </HoverTooltip>
       <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />

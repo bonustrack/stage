@@ -15,7 +15,7 @@ type ProfileMenuId = 'message' | 'send' | 'copy-address';
 interface ProfileMenuItem { id: ProfileMenuId; label: string; icon: AppIconName }
 
 export const PEER_PROFILE_MENU: ProfileMenuItem[] = [
-  { id: 'message', label: 'Message', icon: 'IconBubbleDots' },
+  { id: 'message', label: 'Message', icon: 'IconBubbleAnnotation3' },
   { id: 'send', label: 'Send', icon: 'IconPaperPlane' },
   { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' },
 ];

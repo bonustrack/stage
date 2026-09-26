@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
-import { IconBubbleDots } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleDots';
+import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 
 export function useSelfAddress(): string {
@@ -49,7 +49,7 @@ export function ProfileActions({ dark, onMessage, onSend, c }: {
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
       <ProfileRoundAction
-        icon={IconBubbleDots}
+        icon={IconBubbleAnnotation3}
         label="Message"
         border={c.border}
         fg={c.link}
