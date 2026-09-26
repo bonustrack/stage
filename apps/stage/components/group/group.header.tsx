@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -7,22 +8,27 @@ import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 import { PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
 
-export function GroupProfileHeader({ imageUrl, channelId, insetTop, onView }: {
-  imageUrl: string; channelId: string; insetTop: number; onView: () => void;
+export function GroupProfileHeader({ imageUrl, channelId, insetTop, onView, children }: {
+  imageUrl: string; channelId: string; insetTop: number; onView: () => void; children: ReactNode;
 }): React.ReactElement {
   const { bg, border: rowBg } = usePalette();
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), PROFILE_AVATAR_SIZE) : '';
   return (
-    <ProfileCover insetTop={insetTop}>
-      <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
-        <Image
-          src={imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri}
-          style={{
-            width: PROFILE_AVATAR_SIZE, height: PROFILE_AVATAR_SIZE, borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
-            backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
-          }}
-/>
-      </Pressable>
+    <ProfileCover
+      insetTop={insetTop}
+      avatar={
+        <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
+          <Image
+            src={imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri}
+            style={{
+              width: PROFILE_AVATAR_SIZE, height: PROFILE_AVATAR_SIZE, borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
+              backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
+            }}
+          />
+        </Pressable>
+      }
+    >
+      {children}
     </ProfileCover>
   );
 }

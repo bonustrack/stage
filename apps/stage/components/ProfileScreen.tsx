@@ -27,33 +27,37 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
 }): React.ReactElement {
   return (
     <>
-      <ProfileCover insetTop={insetTop}>
-        <Avatar
-          address={addr || null}
-          size={PROFILE_AVATAR_SIZE}
-          style={{ backgroundColor: c.border, borderWidth: 3, borderColor: c.bg }}
-          onPress={onAvatar}
-/>
-      </ProfileCover>
-      <Box padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
-        <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-          <Col gap={6} align="start">
-            <Text value={displayName} weight="semibold" size="5xl" textAlign="start" />
-            {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="md" color={c.text} /> : null}
-            {about ? <Text value={about} size="4xl" textAlign="start" /> : null}
-          </Col>
-        </Box>
-        {addr ? (
-          <Box margin={{ top: 2 }}>
-            <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
-              <Text value={shortAddress(addr)} size="md" color={c.text} />
-            </GesturePressable>
+      <ProfileCover
+        insetTop={insetTop}
+        avatar={
+          <Avatar
+            address={addr || null}
+            size={PROFILE_AVATAR_SIZE}
+            style={{ backgroundColor: c.border, borderWidth: 3, borderColor: c.bg }}
+            onPress={onAvatar}
+          />
+        }
+      >
+        <Box padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
+          <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
+            <Col gap={6} align="start">
+              <Text value={displayName} weight="semibold" size="5xl" textAlign="start" />
+              {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="md" color={c.text} /> : null}
+              {about ? <Text value={about} size="4xl" textAlign="start" /> : null}
+            </Col>
           </Box>
-        ) : null}
-        {!isSelf && addr ? (
-          <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />
-        ) : null}
-      </Box>
+          {addr ? (
+            <Box margin={{ top: 2 }}>
+              <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
+                <Text value={shortAddress(addr)} size="md" color={c.text} />
+              </GesturePressable>
+            </Box>
+          ) : null}
+          {!isSelf && addr ? (
+            <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />
+          ) : null}
+        </Box>
+      </ProfileCover>
     </>
   );
 }

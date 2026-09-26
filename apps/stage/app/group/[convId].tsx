@@ -54,8 +54,9 @@ export default function GroupDetail(): React.ReactElement {
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={g.imageUrl} channelId={convId ?? ''}
         onView={() => { setViewerOpen(true); }}
-      />
-      <GroupTitle name={g.name} description={g.description} />
+      >
+        <GroupTitle name={g.name} description={g.description} />
+      </GroupProfileHeader>
       <GroupLabelsView labels={labels} />
       <GroupMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
