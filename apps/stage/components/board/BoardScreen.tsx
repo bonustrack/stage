@@ -39,6 +39,7 @@ import {
 } from './BoardColumnEdit';
 
 const DRAGGING_OPACITY = 0.4;
+const BOARD_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 
 interface ColumnActions {
   drop: (drag: BoardDrag, key: string) => void;
@@ -200,6 +201,7 @@ function BoardLanes({ columns, pinned, saved, actions }: {
     <Scroll
       ref={scroll}
       horizontal
+      {...BOARD_SCROLLBAR}
       gap={BOARD_GAP}
       keyboardShouldPersistTaps="handled"
       style={{ flex: 1 }}
