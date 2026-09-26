@@ -12,10 +12,11 @@ const PIN = 'stage.box/pinState:1.0';
 const SNAP = 'stage.box/syncSnapshot:1.0';
 const BOARD = 'stage.box/boardState:1.0';
 const CLEAR = 'stage.box/clearState:1.0';
+const LABELS = 'stage.box/labelState:1.0';
 const TEXT = 'xmtp.org/text:1.0';
 
 function snapshot(over: Partial<SyncSnapshotContent> = {}): SyncSnapshotContent {
-  return { reads: {}, pins: null, cleared: {}, board: null, groups: ['own'], at: 1, ...over };
+  return { reads: {}, pins: null, cleared: {}, board: null, labels: [], groups: ['own'], at: 1, ...over };
 }
 
 function msg(sentNs: number, contentTypeId: string, content: unknown = {}): SyncPageMessage {
@@ -50,6 +51,7 @@ describe('sync snapshot payload', () => {
     expect(parseSyncSnapshot({ ...ok, at: 0 })).toBeNull();
     expect(parseSyncSnapshot({ ...ok, board: { order: ['a'] } })).toBeNull();
     expect(parseSyncSnapshot({ ...ok, groups: [''] })).toBeNull();
+    expect(parseSyncSnapshot({ ...ok, labels: [{ id: '', name: 'x', aliases: [], at: 0 }] })).toBeNull();
     expect(parseSyncSnapshot({ reads: {}, pins: null, cleared: {}, board: null, at: 1 })).toBeNull();
     expect(parseSyncSnapshot('nope')).toBeNull();
   });
@@ -58,7 +60,7 @@ describe('sync snapshot payload', () => {
     expect(isSyncSnapshotType(SNAP)).toBe(true);
     expect(isSyncSnapshotType(READ)).toBe(false);
     expect(isSyncSnapshotType(undefined)).toBe(false);
-    for (const type of [SNAP, READ, PIN, BOARD, CLEAR]) expect(isSyncStateType(type)).toBe(true);
+    for (const type of [SNAP, READ, PIN, BOARD, CLEAR, LABELS]) expect(isSyncStateType(type)).toBe(true);
     expect(isSyncStateType(TEXT)).toBe(false);
   });
 
@@ -71,19 +73,31 @@ describe('sync snapshot payload', () => {
 });
 
 describe('collectSnapshotReplay', () => {
-  test('expands a snapshot into reads, pins, deleted chats and board order', () => {
+  test('expands a snapshot into reads, pins, deleted chats, board order and labels', () => {
     const snap = snapshot({
       reads: { a: { lastReadNs: 7, markedUnread: true, at: 4 } },
       pins: { convId: 'p', pinned: true, order: ['p', 'q'], at: 5 },
       cleared: { '0xpeer': 9 },
       board: { order: ['x'], at: 6 },
+      labels: [{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 }],
     });
     const replay = collectSnapshotReplay([msg(100, SNAP, snap)], 0);
     expect(replay.reads).toEqual([{ convId: 'a', lastReadNs: 7, markedUnread: true, at: 4 }]);
     expect(replay.pins).toEqual([{ convId: 'p', pinned: true, order: ['p', 'q'], at: 5 }]);
     expect(replay.cleared).toEqual({ '0xpeer': 9 });
     expect(replay.board).toEqual({ order: ['x'], at: 6 });
+    expect(replay.labels).toEqual([{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 }]);
     expect(replay.latestNs).toBe(100);
+    expect(collectSnapshotReplay([msg(100, SNAP, snapshot())], 0).labels).toBeNull();
+  });
+
+  test('snapshot labels settle with label changes sent after it', () => {
+    const snap = snapshot({ labels: [{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 }] });
+    const later = { labels: [{ id: 'done', name: 'Done', aliases: [], at: 0 }, { id: 'todo', name: 'Next', aliases: [], at: 9 }] };
+    expect(collectSnapshotReplay([msg(100, SNAP, snap), msg(150, LABELS, later)], 0).labels).toEqual([
+      { id: 'done', name: 'Done', aliases: [], at: 0 },
+      { id: 'todo', name: 'Next', aliases: ['Todo', 'Doing'], at: 9 },
+    ]);
   });
 
   test('a change stamped later than the snapshot entry wins, an older one loses', () => {
@@ -279,7 +293,8 @@ describe('change counter', () => {
 describe('assembleSyncSnapshot', () => {
   const row = (convId: string, over: Partial<CachedChannelRow> = {}): CachedChannelRow => ({ convId, unreadCount: 0, lastReadNs: 0, ...over });
   const base: SnapshotInputs = {
-    rows: [], stored: new Map(), seen: new Set(), pinOrder: [], boardOrder: [], stamps: NO_SYNC_STAMPS, cleared: {}, groups: [], at: 99,
+    rows: [], stored: new Map(), seen: new Set(), pinOrder: [], boardOrder: [], labels: [], stamps: NO_SYNC_STAMPS, cleared: {}, groups: [],
+    at: 99,
   };
 
   test('covers every row with a read and every stored conversation this device has seen', () => {
@@ -318,6 +333,14 @@ describe('assembleSyncSnapshot', () => {
     expect(assembleSyncSnapshot({ ...base, boardOrder: ['x'] }).board).toEqual({ order: ['x'], at: 1 });
     expect(assembleSyncSnapshot({ ...base, boardOrder: ['x'], stamps }).board).toEqual({ order: ['x'], at: 9 });
     expect(assembleSyncSnapshot({ ...base, stamps }).board).toEqual({ order: [], at: 9 });
+  });
+
+  test('records every board label', () => {
+    const labels = [{ id: 'done', name: 'Shipped', aliases: ['Done'], at: 3 }, { id: 'todo', name: 'todo', aliases: [], at: 0 }];
+    const content = assembleSyncSnapshot({ ...base, labels });
+    expect(content.labels).toEqual(labels);
+    expect(parseSyncSnapshot(content)).toEqual(content);
+    expect(assembleSyncSnapshot(base).labels).toEqual([]);
   });
 });
 

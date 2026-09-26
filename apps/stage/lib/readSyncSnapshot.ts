@@ -8,6 +8,7 @@ import { loadBoardOrder } from './boardOrder';
 import { getCachedRows } from './channelsCache';
 import { getClearedChats } from './clearedChats';
 import { ignored, recover } from './errorPolicy';
+import { loadLabelEntries } from './labelRegistry';
 import { loadPinnedOrder } from './pins';
 import { readStateEntries } from './xmtp.unread';
 
@@ -56,8 +57,8 @@ export async function buildSyncSnapshot(
 ): Promise<SyncSnapshotContent | null> {
   const rows = getCachedRows();
   if (rows === null) return null;
-  const [stored, pinOrder, boardOrder] = await Promise.all([
-    readStateEntries(), loadPinnedOrder(), loadBoardOrder(accountId),
+  const [stored, pinOrder, boardOrder, labels] = await Promise.all([
+    readStateEntries(), loadPinnedOrder(), loadBoardOrder(accountId), loadLabelEntries(accountId),
   ]);
   return assembleSyncSnapshot({
     rows,
@@ -65,6 +66,7 @@ export async function buildSyncSnapshot(
     seen,
     pinOrder,
     boardOrder,
+    labels,
     stamps,
     cleared: getClearedChats(),
     groups,

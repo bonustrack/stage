@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import type { CachedChannelRow } from './channelsCache';
 import type { XmtpContentTypeId } from './codecs';
+import { labelEntriesSchema, type LabelEntry } from './labelRegistry';
 import {
-  BOARD_STATE_CONTENT_TYPE, CLEAR_STATE_CONTENT_TYPE, PIN_STATE_CONTENT_TYPE, READ_STATE_CONTENT_TYPE,
-  boardStateSchema, clearStateSchema, collectSyncReplay, isBoardStateType, isClearStateType, isPinStateType,
-  isReadStateType, readStateSchema, type ClearedChats, type SyncMessage, type SyncReplay,
+  BOARD_STATE_CONTENT_TYPE, CLEAR_STATE_CONTENT_TYPE, LABEL_STATE_CONTENT_TYPE, PIN_STATE_CONTENT_TYPE,
+  READ_STATE_CONTENT_TYPE, boardStateSchema, clearStateSchema, collectSyncReplay, isBoardStateType, isClearStateType,
+  isLabelStateType, isPinStateType, isReadStateType, readStateSchema, type ClearedChats, type SyncMessage,
+  type SyncReplay,
 } from './readState';
 
 export const SYNC_SNAPSHOT_CONTENT_TYPE: XmtpContentTypeId = {
@@ -45,6 +47,7 @@ export const syncSnapshotSchema = z.object({
   pins: z.object({ convId: idSchema, pinned: z.boolean(), order: z.array(idSchema), at: atSchema }).nullable(),
   cleared: clearStateSchema.shape.cleared,
   board: boardStateSchema.nullable(),
+  labels: labelEntriesSchema,
   groups: z.array(idSchema),
   at: atSchema,
 });
@@ -64,7 +67,9 @@ export function parseSyncSnapshot(content: unknown): SyncSnapshotContent | null 
   return parsed.success ? parsed.data : null;
 }
 
-const SYNC_STATE_TYPES = [isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isSyncSnapshotType];
+const SYNC_STATE_TYPES = [
+  isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isLabelStateType, isSyncSnapshotType,
+];
 
 export function isSyncStateType(contentTypeId: string | undefined): boolean {
   return SYNC_STATE_TYPES.some((isType) => isType(contentTypeId));
@@ -85,7 +90,8 @@ function expandSnapshot(snapshot: SyncSnapshotContent, sentNs: number): SyncMess
   const reads = Object.entries(snapshot.reads).map(([convId, read]) => message(READ_STATE_CONTENT_TYPE, { convId, ...read }));
   const pins = snapshot.pins === null ? [] : [message(PIN_STATE_CONTENT_TYPE, snapshot.pins)];
   const board = snapshot.board === null ? [] : [message(BOARD_STATE_CONTENT_TYPE, snapshot.board)];
-  return [...reads, ...pins, message(CLEAR_STATE_CONTENT_TYPE, { cleared: snapshot.cleared }), ...board];
+  const labels = snapshot.labels.length === 0 ? [] : [message(LABEL_STATE_CONTENT_TYPE, { labels: snapshot.labels })];
+  return [...reads, ...pins, message(CLEAR_STATE_CONTENT_TYPE, { cleared: snapshot.cleared }), ...board, ...labels];
 }
 
 export function expandSyncSnapshots(messages: readonly SyncMessage[]): SyncMessage[] {
@@ -264,6 +270,7 @@ export interface SnapshotInputs {
   seen: ReadonlySet<string>;
   pinOrder: readonly string[];
   boardOrder: readonly string[];
+  labels: readonly LabelEntry[];
   stamps: SyncStamps;
   cleared: ClearedChats;
   groups: readonly string[];
@@ -306,6 +313,7 @@ export function assembleSyncSnapshot(inputs: SnapshotInputs): SyncSnapshotConten
     pins: snapshotPins(inputs.pinOrder, inputs.stamps.pin),
     cleared: inputs.cleared,
     board: snapshotBoard(inputs.boardOrder, inputs.stamps.boardAt),
+    labels: [...inputs.labels],
     groups: [...inputs.groups],
     at: inputs.at,
   };

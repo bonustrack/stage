@@ -26,9 +26,7 @@ import {
 import { makeSyncStampsStore } from './readSyncStamps.core';
 import { rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
-import {
-  createSyncGroup, isOwnSyncGroup, listSyncGroups, syncConversation, syncMessagesPage,
-} from './xmtp.readSync';
+import { createSyncGroup, isOwnSyncGroup, listSyncGroups, syncConversation, syncMessagesPage } from './xmtp.readSync';
 import { applyRemoteReadStates } from './xmtp.unread';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
@@ -122,10 +120,6 @@ async function applyReplay(accountId: string, replay: SyncReplay): Promise<void>
   if (replay.labels !== null) await applyRemoteLabels(accountId, replay.labels);
 }
 
-function isStateMessage(m: RowMessage): boolean {
-  return isSyncStateType(m.contentTypeId);
-}
-
 async function knownSyncGroups(): Promise<SyncGroupState[]> {
   const groups = await listSyncGroups();
   for (const g of groups) registerHiddenConv(g.id);
@@ -190,7 +184,7 @@ async function readSyncGroups(
     const fresh = freshMessages(b);
     const latest = fresh.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
     if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
-    if (b.group.id !== target && fresh.some(isStateMessage)) nudgeFrom(b.group.id);
+    if (b.group.id !== target && fresh.some((m) => isSyncStateType(m.contentTypeId))) nudgeFrom(b.group.id);
   }
   return batches;
 }
@@ -244,9 +238,7 @@ async function boot(): Promise<void> {
   }
 }
 
-async function withGroup(
-  send: (groupId: string, accountId: string) => Promise<unknown>, onlyFor?: string,
-): Promise<void> {
+async function withGroup(send: (groupId: string, accountId: string) => Promise<unknown>, onlyFor?: string): Promise<void> {
   try {
     const rec = await getActiveAccount();
     if (rec === null || (onlyFor !== undefined && rec.id !== onlyFor)) return;
@@ -388,7 +380,7 @@ async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
 }
 
 function onStreamMessage(m: StreamMsg): void {
-  if (m.convId === null || !isStateMessage(m.msg)) return;
+  if (m.convId === null || !isSyncStateType(m.msg.contentTypeId)) return;
   void onStateMessage(m.convId, m.msg).catch(reported('readSync.stream'));
 }
 
