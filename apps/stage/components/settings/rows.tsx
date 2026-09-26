@@ -7,6 +7,7 @@ import { Switch } from '@stage-labs/kit/react-native/switch';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Col } from '../layout';
+import { usePalette } from '../../lib/theme';
 import { AppIcon, type AppIconRef } from '../widgets';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
@@ -39,6 +40,34 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
         <Text value={props.value} color="secondary" truncate />
       )}
       <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
+    </ListViewItem>
+  );
+}
+
+const MENU_ROW_PADDING = { paddingTop: 14, paddingRight: 14, paddingBottom: 14, paddingLeft: 16 };
+
+export function SettingsMenuRow(props: SettingsNavRowProps): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  const { border } = usePalette();
+  return (
+    <ListViewItem
+      align="center"
+      gap={12}
+      dark={dark}
+      onPress={props.onPress}
+      pressedBackground={border}
+      padding={MENU_ROW_PADDING}
+    >
+      {props.iconStart === undefined ? null : (
+        <AppIcon name={props.iconStart} color="text" size={20} />
+      )}
+      <Col flex={1}>
+        <Text value={props.label} size="lg" color="link" truncate />
+      </Col>
+      {props.value === undefined ? null : (
+        <Text value={props.value} size="md" color="secondary" truncate />
+      )}
+      <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={16} />
     </ListViewItem>
   );
 }
