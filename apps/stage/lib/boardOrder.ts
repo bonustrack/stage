@@ -18,6 +18,7 @@ let accountId: string | null = null;
 let order: BoardOrder = EMPTY;
 let loading: Promise<void> | null = null;
 const listeners = makeListeners();
+const legacyRegistries = new Map<string, string>();
 
 function parseOrder(raw: string | null): BoardOrder {
   if (raw === null) return EMPTY;
@@ -46,10 +47,10 @@ function persist(id: string, next: BoardOrder): Promise<void> {
 async function namedOrder(id: string, loaded: BoardOrder): Promise<BoardOrder> {
   const registry = await appStorage.get(REGISTRY_PREFIX + id);
   if (registry === null) return loaded;
+  legacyRegistries.set(id, registry);
   const next = namedBoardOrder(loaded, registry);
   await persist(id, next);
   await appStorage.delete(REGISTRY_PREFIX + id);
-  if (next.length !== loaded.length || next.some((key, index) => key !== loaded[index])) notifyBoardOrderChanged({ accountId: id, order: next });
   return next;
 }
 
@@ -87,8 +88,10 @@ export async function loadBoardOrder(forAccount: string): Promise<BoardOrder> {
   return forAccount === accountId ? order : storedOrder(forAccount);
 }
 
-export async function applyRemoteBoardOrder(forAccount: string, next: BoardOrder): Promise<void> {
+export async function applyRemoteBoardOrder(forAccount: string, incoming: BoardOrder): Promise<void> {
   await ensureLoaded();
+  const registry = legacyRegistries.get(forAccount);
+  const next = registry === undefined ? incoming : namedBoardOrder(incoming, registry);
   if (forAccount === accountId) {
     order = next;
     listeners.notify();

@@ -176,6 +176,10 @@ describe('renaming a column', () => {
       .toEqual(['unlabeled', 'label:Doing', 'label:Done']);
   });
 
+  test('a rename that only changes the case keeps the column in place', () => {
+    expect(renamedColumnOrder(keys, [], 'Todo', 'TODO')).toEqual(['label:Done', 'label:TODO', 'unlabeled']);
+  });
+
   test('a merged column leaves the saved order where the other column already is', () => {
     expect(renamedColumnOrder(keys, ['label:todo', 'unlabeled', 'label:done'], 'Todo', 'Done'))
       .toEqual(['unlabeled', 'label:Done']);
@@ -187,6 +191,7 @@ describe('board order saved with label ids', () => {
     { id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 },
     { id: 'todo~2', name: 'Todo', aliases: [], at: 6 },
     { id: 'done', name: 'Done', aliases: [], at: 0 },
+    { id: 'backlog', name: 'Later', aliases: ['Backlog'], at: 3 },
   ]);
 
   test('turns every id back into the label name', () => {
@@ -196,6 +201,11 @@ describe('board order saved with label ids', () => {
 
   test('keeps keys it does not know and drops the ones that end up twice', () => {
     expect(namedBoardOrder(['label:Blocked', 'label:done', 'label:Done'], registry)).toEqual(['label:Blocked', 'label:Done']);
+  });
+
+  test('reads a key in another case as a label name first and as an id after', () => {
+    expect(namedBoardOrder(['label:Todo', 'label:Backlog', 'label:DONE', 'label:Doing', 'unlabeled'], registry))
+      .toEqual(['label:Todo', 'label:Later', 'label:Done', 'label:Doing', 'unlabeled']);
   });
 
   test('leaves the order alone when the saved ids cannot be read', () => {

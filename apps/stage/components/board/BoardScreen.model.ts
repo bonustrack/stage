@@ -150,10 +150,15 @@ function labelIds(raw: string): { id: string; name: string }[] {
 }
 
 export function namedBoardOrder(order: readonly string[], registry: string): string[] {
-  const names = new Map(labelIds(registry).map(e => [labelColumnKey(e.id).toLowerCase(), labelColumnKey(e.name)]));
+  const entries = labelIds(registry).map(e => ({ id: labelColumnKey(e.id), name: labelColumnKey(e.name) }));
+  const named = (key: string): string | undefined => {
+    const lower = key.toLowerCase();
+    return (entries.find(e => e.id === key) ?? entries.find(e => e.name.toLowerCase() === lower)
+      ?? entries.find(e => e.id.toLowerCase() === lower))?.name;
+  };
   const seen = new Set<string>();
   return order.flatMap((key) => {
-    const next = names.get(key.toLowerCase()) ?? key;
+    const next = named(key) ?? key;
     if (seen.has(next.toLowerCase())) return [];
     seen.add(next.toLowerCase());
     return [next];
