@@ -21,6 +21,11 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift /usr/local/lib/node_modules || true
+          df -h /
+
       - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
@@ -54,7 +59,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           ram-size: 4096M
-          disk-size: 6000M
+          disk-size: 2048M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
           script: bash ci-repro/run.sh
