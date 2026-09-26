@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
@@ -44,8 +45,6 @@ const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
 const TITLE_SIZE = '2xl';
 const DRAGGING_OPACITY = 0.4;
-const ADD_BUTTON_WIDTH = 40;
-const ADD_BUTTON_HEIGHT = 32;
 
 type OnBoardDrop = (drag: BoardDrag, key: string) => void;
 type OnRename = (label: string) => void;
@@ -111,23 +110,19 @@ function RenameButton({ onPress }: { onPress: () => void }): React.ReactElement 
 }
 
 function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactElement {
-  const { text, link, border } = usePalette();
+  const { text, link } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
   const hover = useHover();
   return (
     <HoverTooltip label="Add column" placement="below">
-      <Pressable onPress={onPress} accessibilityLabel="Add column" {...hover.hoverProps}>
-        <Box
-          surface="toolbar"
-          radius={BLOCK_RADIUS_DEFAULT}
-          width={ADD_BUTTON_WIDTH}
-          height={ADD_BUTTON_HEIGHT}
-          align="center"
-          justify="center"
-          style={{ borderWidth: 1, borderColor: hover.hovered ? link : border }}
-        >
-          <Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text}/>
-        </Box>
-      </Pressable>
+      <Button
+        uniform pill color="secondary" variant="outline" dark={dark}
+        accessibilityLabel="Add column"
+        style={hover.hovered ? { borderColor: link } : undefined}
+        iconStart={<Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text}/>}
+        onPress={onPress}
+        {...hover.hoverProps}
+      />
     </HoverTooltip>
   );
 }
