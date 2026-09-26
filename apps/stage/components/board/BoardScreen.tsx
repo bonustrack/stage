@@ -211,7 +211,8 @@ function BoardBody(): React.ReactElement {
   const [renaming, setRenaming] = useState<LabelEntry | null>(null);
   const [error, setError] = useState<string>('');
   useEffect(() => {
-    ensureLabelEntries([...deriveBarLabels(rows ?? []), ...orderLabelNames(saved, entries)]).catch(reported('board.labels'));
+    if (!rows) return;
+    ensureLabelEntries([...deriveBarLabels(rows), ...orderLabelNames(saved, entries)]).catch(reported('board.labels'));
   }, [rows, saved, entries]);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   usePeerProfiles((rows ?? []).map(r => r.lastSenderAddress));

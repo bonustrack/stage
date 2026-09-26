@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  labelIndex, mergeLabelEntries, renamedLabelEntries, resolveLabel, withLabelNames, type LabelEntry,
+  MAX_LABEL_ENTRIES, labelIndex, mergeLabelEntries, renamedLabelEntries, resolveLabel, withLabelNames, type LabelEntry,
 } from '../src/xmtp/labelRegistry';
 import { renameLabels } from '../src/xmtp/labels';
 
@@ -28,6 +28,21 @@ describe('label ids', () => {
     const entries = [entry('todo', 'Todo')];
     expect(withLabelNames(entries, ['todo', 'Todo'])).toBe(entries);
     expect(withLabelNames(entries, ['Done', 'done', '  ']).map(e => e.id)).toEqual(['done', 'todo']);
+  });
+
+  test('a name known only by its id takes the spelling a chat uses, once', () => {
+    const spelled = withLabelNames([entry('design', 'design')], ['Design', 'design']);
+    expect(spelled).toEqual([entry('design', 'Design')]);
+    expect(withLabelNames(spelled, ['design'])).toBe(spelled);
+    const renamed = [entry('todo', 'todo', ['Doing'], 2)];
+    expect(withLabelNames(renamed, ['Todo'])).toBe(renamed);
+    const merged = [entry('todo', 'todo', ['Later'])];
+    expect(withLabelNames(merged, ['Later'])).toBe(merged);
+  });
+
+  test('no entry is added past the cap', () => {
+    const full = Array.from({ length: MAX_LABEL_ENTRIES }, (_, i) => entry(`l${String(i).padStart(3, '0')}`, `L${i}`));
+    expect(withLabelNames(full, ['Aaa'])).toBe(full);
   });
 });
 

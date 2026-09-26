@@ -98,15 +98,25 @@ export function sameLabelEntries(a: readonly LabelEntry[], b: readonly LabelEntr
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function respelled(entry: LabelEntry, name: string): LabelEntry | null {
+  const clean = cleanLabel(name);
+  const derived = entry.at === 0 && entry.name === entry.id;
+  return derived && clean !== entry.name && labelKey(clean) === entry.id ? { ...entry, name: clean } : null;
+}
+
 export function withLabelNames(entries: readonly LabelEntry[], names: readonly string[]): readonly LabelEntry[] {
-  const added: LabelEntry[] = [];
+  const byId = new Map(entries.map(e => [e.id, e]));
+  let changed = false;
   for (const name of names) {
-    const all = [...entries, ...added];
-    if (labelKey(name) === '' || all.length >= MAX_LABEL_ENTRIES) continue;
-    const entry = resolveLabel(all, name);
-    if (!all.some(e => e.id === entry.id)) added.push(entry);
+    if (labelKey(name) === '') continue;
+    const entry = resolveLabel([...byId.values()], name);
+    const known = byId.get(entry.id);
+    const next = known === undefined ? (byId.size < MAX_LABEL_ENTRIES ? entry : null) : respelled(known, name);
+    if (next === null) continue;
+    byId.set(next.id, next);
+    changed = true;
   }
-  return added.length === 0 ? entries : settled([...entries, ...added]);
+  return changed ? settled([...byId.values()]) : entries;
 }
 
 export function renamedLabelEntries(
