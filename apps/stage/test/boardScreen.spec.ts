@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
+  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder,
@@ -346,5 +347,55 @@ describe('labelCapNote', () => {
     const long = 'x'.repeat(MAX_LABEL_LEN + 6);
     expect(labelCapNote([['In review']], '  In   review ')).toBeNull();
     expect(labelCapNote([[long.slice(0, MAX_LABEL_LEN)]], long)).toBeNull();
+  });
+});
+
+describe('activeColumnIndex', () => {
+  const columns = [
+    { key: 'x', rows: [{ convId: 'a' }] },
+    { key: 'y', rows: [{ convId: 'b' }, { convId: 'a' }] },
+    { key: 'z', rows: [{ convId: 'c' }] },
+  ];
+
+  test('finds the first column holding the open channel', () => {
+    expect(activeColumnIndex(columns, 'a')).toBe(0);
+    expect(activeColumnIndex(columns, 'c')).toBe(2);
+  });
+
+  test('prefers the column the channel was opened from', () => {
+    expect(activeColumnIndex(columns, 'a', 'y')).toBe(1);
+  });
+
+  test('falls back to the first holder when the preferred column lacks the channel', () => {
+    expect(activeColumnIndex(columns, 'a', 'z')).toBe(0);
+    expect(activeColumnIndex(columns, 'a', 'gone')).toBe(0);
+  });
+
+  test('is -1 when no channel is open or it is on no column', () => {
+    expect(activeColumnIndex(columns, null)).toBe(-1);
+    expect(activeColumnIndex(columns, 'z')).toBe(-1);
+  });
+});
+
+describe('revealScrollX', () => {
+  const step = BOARD_COLUMN_WIDTH + BOARD_GAP;
+  const gutter = 18;
+  const wide = BOARD_COLUMN_WIDTH + 2 * gutter + 100;
+
+  test('leaves the lanes alone when the column is already in view', () => {
+    expect(revealScrollX(1, step, wide, gutter)).toBe(step);
+    expect(revealScrollX(1, step - 50, wide, gutter)).toBe(step - 50);
+  });
+
+  test('scrolls back to a column hidden on the left', () => {
+    expect(revealScrollX(1, step * 2, wide, gutter)).toBe(step);
+  });
+
+  test('scrolls just far enough to show a column hidden on the right', () => {
+    expect(revealScrollX(2, 0, wide, gutter)).toBe(2 * step + BOARD_COLUMN_WIDTH + 2 * gutter - wide);
+  });
+
+  test('aligns the column left when the pane is narrower than a column', () => {
+    expect(revealScrollX(2, 0, 300, gutter)).toBe(2 * step);
   });
 });

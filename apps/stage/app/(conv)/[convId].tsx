@@ -22,6 +22,7 @@ import {
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
+import { boardPanelConvId } from '../../components/tabs/splitRoutes';
 
 function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
@@ -95,7 +96,7 @@ export default function XmtpConversation(): React.ReactElement {
   const { bg } = usePalette();
   const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const pathname = usePathname();
-  const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/'));
+  const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/') && boardPanelConvId(pathname) === null);
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;

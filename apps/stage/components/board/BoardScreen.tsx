@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
@@ -26,8 +26,10 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useWebTabRail } from '../../lib/webLayout';
+import { boardPanelConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, boardColumns, orderedColumns, type BoardColumn, type BoardDrag,
+  BOARD_GAP, activeColumnIndex, boardColumns, orderedColumns, revealScrollX, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
@@ -50,11 +52,14 @@ function columnMaxHeight(laneHeight: number): number | string | undefined {
   return laneHeight > 0 ? laneHeight : undefined;
 }
 
-function BoardCard({ item, pinned, columnKey }: {
-  item: ChannelRowData; pinned: boolean; columnKey: string;
+function BoardCard({ item, pinned, columnKey, onOpen }: {
+  item: ChannelRowData; pinned: boolean; columnKey: string; onOpen: () => void;
 }): React.ReactElement {
   const router = useRouter();
-  const { border } = usePalette();
+  const pathname = usePathname();
+  const panel = useWebTabRail();
+  const { border, link } = usePalette();
+  const openConvId = boardPanelConvId(pathname);
   const isGroup = !item.peerAddress;
   const draftText = getDraft(item.convId);
   const source = useBoardDragSource(isGroup ? { kind: 'card', convId: item.convId, from: columnKey } : null);
@@ -65,7 +70,10 @@ function BoardCard({ item, pinned, columnKey }: {
       nativeID={source.nativeID}
       background={border}
       radius={BLOCK_RADIUS_DEFAULT}
-      style={{ overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1 }}
+      style={{
+        overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1,
+        borderWidth: 1, borderColor: panel && openConvId === item.convId ? link : border,
+      }}
     >
       <ChannelRow
         title={rowTitle(item)}
@@ -79,7 +87,16 @@ function BoardCard({ item, pinned, columnKey }: {
         hasDraft={draftText.trim().length > 0}
         draftText={draftText}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-        onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
+        onPress={() => {
+          const panelLink = { pathname: '/board/[convId]', params: { convId: item.convId } } as const;
+          if (!panel) {
+            router.push(conversationLinkOf(item.convId, item.peerAddress));
+            return;
+          }
+          onOpen();
+          if (openConvId === null) router.push(panelLink);
+          else if (openConvId !== item.convId) router.replace(panelLink);
+        }}
         onLongPress={source.nativeID === undefined ? openMenu : undefined}
         onContextMenu={openMenu}
       />
@@ -96,8 +113,8 @@ function ColumnTitle({ label, onPress }: { label: string; onPress: () => void })
   );
 }
 
-function ColumnCards({ column, pinned }: {
-  column: BoardColumn<ChannelRowData>; pinned: readonly string[];
+function ColumnCards({ column, pinned, onOpen }: {
+  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; onOpen: (key: string) => void;
 }): React.ReactElement | null {
   if (column.rows.length === 0) return null;
   return (
@@ -108,18 +125,22 @@ function ColumnCards({ column, pinned }: {
       contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
     >
       {column.rows.map(item => (
-        <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}/>
+        <BoardCard
+          key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}
+          onOpen={() => { onOpen(column.key); }}
+        />
       ))}
     </Scroll>
   );
 }
 
-function BoardColumnView({ column, columns, maxHeight, pinned, actions }: {
+function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }: {
   column: BoardColumn<ChannelRowData>;
   columns: readonly BoardColumn<ChannelRowData>[];
   maxHeight?: number | string;
   pinned: readonly string[];
   actions: ColumnActions;
+  onOpen: (key: string) => void;
 }): React.ReactElement {
   const { label } = column;
   const [editing, setEditing] = useState(false);
@@ -144,7 +165,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions }: {
           <ColumnMenu onDelete={() => { actions.remove(label); }}/>
         </Row>
       )}
-      <ColumnCards column={column} pinned={pinned}/>
+      <ColumnCards column={column} pinned={pinned} onOpen={onOpen}/>
       <AddItemButton onPress={() => { actions.add(label); }}/>
     </ColumnFrame>
   );
@@ -157,11 +178,19 @@ function BoardLanes({ columns, pinned, saved, actions }: {
   actions: ColumnActions;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
-  const [frame, setFrame] = useState(0);
+  const [frame, setFrame] = useState({ width: 0, height: 0 });
   const scroll = useRef<React.ComponentRef<typeof Scroll>>(null);
+  const scrollX = useRef(0);
   const reveal = useRef(false);
   const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
-  const laneHeight = frame - padding.paddingTop - padding.paddingBottom;
+  const laneHeight = frame.height - padding.paddingTop - padding.paddingBottom;
+  const [openedFrom, setOpenedFrom] = useState<string | null>(null);
+  const openIndex = activeColumnIndex(columns, boardPanelConvId(usePathname()), openedFrom);
+  useEffect(() => {
+    if (openIndex === -1 || frame.width === 0) return;
+    const x = revealScrollX(openIndex, scrollX.current, frame.width, PAGE_GUTTER);
+    if (x !== scrollX.current) scroll.current?.scrollTo({ x, animated: true });
+  }, [openIndex, frame.width]);
   const revealEnd = (): void => {
     if (!reveal.current) return;
     reveal.current = false;
@@ -175,7 +204,9 @@ function BoardLanes({ columns, pinned, saved, actions }: {
       keyboardShouldPersistTaps="handled"
       style={{ flex: 1 }}
       contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
-      onLayout={(e) => { setFrame(e.nativeEvent.layout.height); }}
+      onLayout={(e) => { setFrame({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height }); }}
+      onScroll={(e) => { scrollX.current = e.nativeEvent.contentOffset.x; }}
+      scrollEventThrottle={16}
       onContentSizeChange={revealEnd}
     >
       {columns.map(column => (
@@ -186,6 +217,7 @@ function BoardLanes({ columns, pinned, saved, actions }: {
           maxHeight={columnMaxHeight(laneHeight)}
           pinned={pinned}
           actions={actions}
+          onOpen={setOpenedFrom}
         />
       ))}
       <AddColumn columns={columns} saved={saved} onReveal={() => { reveal.current = true; }}/>
@@ -229,12 +261,14 @@ function BoardBody(): React.ReactElement {
   );
 }
 
-export function BoardScreen(): React.ReactElement {
+export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactElement | null {
   const { height } = useWindowDimensions();
-  const web = Platform.OS === 'web';
+  const docked = useWebTabRail();
+  const windowHeight = Platform.OS === 'web' && pane !== true;
+  if (docked && pane !== true) return null;
   return (
-    <Col flex={web ? undefined : 1} height={web ? height : undefined} surface="surface">
-      <StackHeader title="Board" backTo="/"/>
+    <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
+      <StackHeader title="Board" backTo="/" inline={pane === true}/>
       <BoardBody/>
     </Col>
   );

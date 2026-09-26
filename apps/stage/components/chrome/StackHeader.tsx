@@ -6,13 +6,15 @@ import { usePalette } from '../../lib/theme';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { ScreenHeader } from './ScreenHeader';
 
-export function StackHeader({ title, trailing, backTo }: {
+export function StackHeader({ title, trailing, backTo, inline }: {
   title: string;
   trailing?: ReactNode;
   backTo?: string;
+  inline?: boolean;
 }): React.ReactElement {
   const { text: fg, link: head, border, toolbarBg } = usePalette();
-  const insets = useSafeAreaInsets();
+  const safeTop = useSafeAreaInsets().top;
+  const top = inline === true ? 0 : safeTop;
   return (
     <ScreenHeader
       title={title}
@@ -22,10 +24,10 @@ export function StackHeader({ title, trailing, backTo }: {
         else capabilities.backTo(backTo);
       }}
       backColor={fg}
-      safeTop={insets.top}
+      safeTop={top}
       padTop={0}
       padBottom={0}
-      minHeight={TOPNAV_HEIGHT + insets.top}
+      minHeight={TOPNAV_HEIGHT + top}
       surface={toolbarBg}
       borderColor={border}
       trailing={trailing}

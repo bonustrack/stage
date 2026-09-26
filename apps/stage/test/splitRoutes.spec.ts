@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { isRailOnlyRoute, isRailedRoute, isSplitRoute, isTabRoute } from '../components/tabs/splitRoutes';
+import {
+  boardPanelConvId, isBoardRoute, isRailOnlyRoute, isRailedRoute, isSplitRoute, isTabRoute,
+} from '../components/tabs/splitRoutes';
 
 describe('isSplitRoute', () => {
   test('home, conversations, and direct messages split', () => {
@@ -34,6 +36,34 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/user/abc')).toBe(false);
     expect(isSplitRoute('/board')).toBe(false);
   });
+
+  test('a channel opened from the board splits', () => {
+    expect(isSplitRoute('/board/abc')).toBe(true);
+    expect(isSplitRoute('/board/abc/more')).toBe(false);
+  });
+});
+
+describe('boardPanelConvId', () => {
+  test('reads the channel open next to the board', () => {
+    expect(boardPanelConvId('/board/abc')).toBe('abc');
+  });
+
+  test('is null on the board itself and on every other route', () => {
+    expect(boardPanelConvId('/board')).toBeNull();
+    expect(boardPanelConvId('/board/')).toBeNull();
+    expect(boardPanelConvId('/board/abc/more')).toBeNull();
+    expect(boardPanelConvId('/boards/abc')).toBeNull();
+    expect(boardPanelConvId('/channel/abc')).toBeNull();
+  });
+});
+
+describe('isBoardRoute', () => {
+  test('the board and a channel open next to it show the board', () => {
+    expect(isBoardRoute('/board')).toBe(true);
+    expect(isBoardRoute('/board/abc')).toBe(true);
+    expect(isBoardRoute('/channel/abc')).toBe(false);
+    expect(isBoardRoute('/')).toBe(false);
+  });
 });
 
 describe('isTabRoute', () => {
@@ -48,6 +78,7 @@ describe('isTabRoute', () => {
 describe('isRailOnlyRoute', () => {
   test('the board keeps the rail without the channels pane', () => {
     expect(isRailOnlyRoute('/board')).toBe(true);
+    expect(isRailOnlyRoute('/board/abc')).toBe(false);
     expect(isRailOnlyRoute('/')).toBe(false);
     expect(isRailOnlyRoute('/channel/abc')).toBe(false);
   });

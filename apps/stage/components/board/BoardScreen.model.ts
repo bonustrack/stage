@@ -237,3 +237,19 @@ export function namedBoardOrder(order: readonly string[], registry: string): str
     return [next];
   });
 }
+
+export function activeColumnIndex(
+  columns: readonly { key: string; rows: readonly { convId: string }[] }[], convId: string | null, from: string | null = null,
+): number {
+  const holds = (column: (typeof columns)[number]): boolean => column.rows.some(row => row.convId === convId);
+  const preferred = columns.findIndex(column => column.key === from && holds(column));
+  return preferred === -1 ? columns.findIndex(holds) : preferred;
+}
+
+export function revealScrollX(index: number, scrollX: number, viewport: number, gutter: number): number {
+  const left = index * (BOARD_COLUMN_WIDTH + BOARD_GAP);
+  const right = left + BOARD_COLUMN_WIDTH + 2 * gutter - viewport;
+  if (scrollX > left) return left;
+  if (scrollX < right) return Math.min(left, right);
+  return scrollX;
+}

@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, pinnedTop, PAGE_GUTTER } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
 import { MessengerComposer } from '../composer/MessengerComposer';
@@ -15,6 +15,7 @@ import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupWaiting } from '../../modules/messaging';
 import { GroupWaitingNotice } from './GroupWaitingNotice';
 import { capabilities } from '../../lib/capabilities';
+import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
 import { SearchTopnavBar } from '../SearchTopnavBar';
@@ -32,12 +33,14 @@ type Conv = ReturnType<typeof useConversationState>;
 
 export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
   const router = useRouter();
+  const onBoard = boardPanelConvId(usePathname()) !== null;
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
   const more = useHover();
+  const back = (): void => { if (onBoard) capabilities.backTo('/board'); else router.replace('/'); };
   return (
-    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
+    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={back}>
       <ConvTopnavIdentity
         peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup}
         border={border} head={head} title={convTitle(c)}
