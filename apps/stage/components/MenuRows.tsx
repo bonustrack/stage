@@ -54,7 +54,7 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron, divider =
   );
 }
 
-interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
+export interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
 
 function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
   anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: (id: string) => void;

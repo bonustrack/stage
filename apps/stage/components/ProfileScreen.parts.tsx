@@ -6,8 +6,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
-import { capabilities } from '../lib/capabilities';
-import { OverlayHeader } from './chrome/OverlayHeader';
 import { IconBubbleDots } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleDots';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 
@@ -19,19 +17,6 @@ export function useSelfAddress(): string {
     staleTime: Infinity,
   });
   return data ?? '';
-}
-
-export function ProfileHeader({ insetTop, c, menu }: {
-  insetTop: number; c: Palette; menu?: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <OverlayHeader
-      onBack={() => { capabilities.back(); }}
-      backColor={c.link}
-      safeTop={insetTop}
-      trailing={menu}
-    />
-  );
 }
 
 function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }: {

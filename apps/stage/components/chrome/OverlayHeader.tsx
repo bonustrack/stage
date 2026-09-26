@@ -13,8 +13,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
       <Row
         align="center"
         justify="between"
-        height={44 + safeTop}
-        padding={{ x: PAGE_GUTTER, top: safeTop }}
+        padding={{ x: PAGE_GUTTER, top: safeTop + PAGE_GUTTER }}
         style={pinnedTop(2)}
       >
         <BackButton onBack={onBack} backColor={backColor} hitSlop={10} padding={6} />

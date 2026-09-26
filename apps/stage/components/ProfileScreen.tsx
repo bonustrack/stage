@@ -14,9 +14,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { profileDisplayName } from './ProfileScreen.model';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
-import {
-  ProfileActions, ProfileHeader, useSelfAddress,
-} from './ProfileScreen.parts';
+import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
+import { PROFILE_AVATAR_SIZE, ProfileCover, ProfileCoverBar } from './ProfileCover';
 import { CommonChannels } from './CommonChannels';
 import { ProfileMenu } from './ProfileMenu';
 
@@ -28,17 +27,15 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
 }): React.ReactElement {
   return (
     <>
-      <Box height={140 + insetTop} background={c.border}/>
-      <Box surface="surface" padding={{ x: PAGE_GUTTER, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+      <ProfileCover insetTop={insetTop}>
         <Avatar
           address={addr || null}
-          size={88}
-          style={{
-            backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
-            borderWidth: 3, borderColor: c.bg,
-          }}
+          size={PROFILE_AVATAR_SIZE}
+          style={{ backgroundColor: c.border, borderWidth: 3, borderColor: c.bg }}
           onPress={onAvatar}
 />
+      </ProfileCover>
+      <Box padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
           <Col gap={6} align="start">
             <Text value={displayName} weight="semibold" size="5xl" textAlign="start" />
@@ -89,7 +86,7 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
 
   return (
     <Col flex={1} surface="surface">
-      <ProfileHeader insetTop={insets.top} c={c} menu={addr ? <ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} /> : undefined} />
+      <ProfileCoverBar insetTop={insets.top} trailing={addr ? <ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} /> : undefined} />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity

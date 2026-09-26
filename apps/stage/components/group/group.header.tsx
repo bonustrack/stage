@@ -5,27 +5,25 @@ import { Box, PAGE_GUTTER } from '../layout';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
+import { PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
 
 export function GroupProfileHeader({ imageUrl, channelId, insetTop, onView }: {
   imageUrl: string; channelId: string; insetTop: number; onView: () => void;
 }): React.ReactElement {
   const { bg, border: rowBg } = usePalette();
-  const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
+  const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), PROFILE_AVATAR_SIZE) : '';
   return (
-    <>
-      <Box height={140 + insetTop} surface="raised"/>
-      <Box surface="surface" padding={{ x: PAGE_GUTTER }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
-        <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8} style={{ marginTop: -44, zIndex: 1 }}>
-          <Image
-            src={imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri}
-            style={{
-              width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
-              backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
-            }}
+    <ProfileCover insetTop={insetTop}>
+      <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
+        <Image
+          src={imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri}
+          style={{
+            width: PROFILE_AVATAR_SIZE, height: PROFILE_AVATAR_SIZE, borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
+            backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
+          }}
 />
-        </Pressable>
-      </Box>
-    </>
+      </Pressable>
+    </ProfileCover>
   );
 }
 
@@ -34,7 +32,7 @@ export function GroupTitle({ name, description }: { name: string | null; descrip
   const about = description.trim();
   return (
     <>
-      <Box padding={{ x: PAGE_GUTTER, top: 12, bottom: 16 }}>
+      <Box padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
         <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
           {name?.trim() ? name : 'Untitled group'}
         </Text>

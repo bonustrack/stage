@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { RoundOverflowMenu } from './MenuRows';
+import { ProfileCoverMenu } from './ProfileCover';
 import { capabilities } from '../lib/capabilities';
 import { PEER_PROFILE_MENU } from './ProfileScreen.model';
 import { EditProfileModal } from './settings/EditProfileModal';
@@ -32,5 +32,5 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
 export function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: string) => void }): React.ReactElement {
   const { bg } = usePalette();
   if (isSelf) return <EditProfileButton background={bg} />;
-  return <RoundOverflowMenu items={PEER_PROFILE_MENU} onSelect={onSelect} background={bg} />;
+  return <ProfileCoverMenu items={PEER_PROFILE_MENU} onSelect={onSelect} />;
 }

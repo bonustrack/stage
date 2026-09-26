@@ -1,19 +1,17 @@
 
 import { useEffect, useState } from 'react';
 
-import { capabilities } from '../../lib/capabilities';
 import { Col } from '../../components/layout';
-import { OverlayHeader } from '../../components/chrome/OverlayHeader';
+import { ProfileCoverBar, ProfileCoverMenu } from '../../components/ProfileCover';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { cachedSelfEthAddress, selfEthAddress } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AddMemberModal } from '../../components/group/group.parts';
 import { groupMenuItems } from '../../components/group/group.parts.model';
-import { RoundOverflowMenu } from '../../components/MenuRows';
 import { GroupMembersList } from '../../components/group/group.members';
 import { GroupProfileHeader, GroupTitle } from '../../components/group/group.header';
 import { EditGroupModal } from '../../components/group/EditGroupModal';
@@ -26,7 +24,6 @@ export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg } = usePalette();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const g = useGroupDetail(convId);
   const [labels, setLabels] = useGroupLabels(g.line);
@@ -45,12 +42,10 @@ export default function GroupDetail(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <OverlayHeader
-        onBack={() => { capabilities.back(); }}
-        backColor={fg}
-        safeTop={insets.top}
+      <ProfileCoverBar
+        insetTop={insets.top}
         trailing={
-          <RoundOverflowMenu
+          <ProfileCoverMenu
             items={groupMenuItems(canEditGroup(g.rights))} loading={g.busy.leave === true}
             onSelect={(id) => { if (id === 'edit') setEditOpen(true); else void g.leaveGroup(); }}
           />
