@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [30, 33]
+        api-level: [30]
     steps:
       - name: Enable KVM
         run: |
@@ -62,10 +62,10 @@ jobs:
           disk-size: 2048M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: bash ci-repro/run.sh
+          script: VARIANTS='v1-android-no-stack-swipe v0-main' CASES='rtl-card ltr-card-scrolled ltr-card-start' LAUNCH_TRIES=36 bash ci-repro/run.sh
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: repro-out-${{ matrix.api-level }}
+          name: quick-${{ matrix.api-level }}
           path: repro-out

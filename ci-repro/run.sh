@@ -30,7 +30,7 @@ launch_board() {
   adb shell am force-stop "$PKG"
   adb logcat -c
   adb shell am start -a android.intent.action.VIEW -d "$DEEP" "$PKG" >/dev/null
-  for i in $(seq 1 60); do
+  for i in $(seq 1 "${LAUNCH_TRIES:-60}"); do
     sleep 5
     line="$(dump_ui "$tag-wait")"
     on="$(printf '%s' "$line" | ui_field onBoard)"
@@ -85,6 +85,7 @@ run_case() {
 }
 
 cases_for() {
+  if [ -n "${CASES:-}" ]; then echo "$CASES"; return; fi
   case "$1" in
     v2-*) echo "ltr-card-start edge hold-ltr" ;;
     *) echo "rtl-card rtl-empty ltr-card-scrolled ltr-empty-scrolled ltr-card-start edge hold-rtl hold-ltr" ;;
