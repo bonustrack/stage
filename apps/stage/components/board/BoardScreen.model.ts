@@ -12,12 +12,15 @@ export interface BoardColumn<T> {
   rows: T[];
 }
 
+export const labelColumnKey = (label: string): string => `label:${label.toLowerCase()}`;
+
 export function boardColumns<T extends ChannelListRow>(rows: T[], pinned: readonly string[]): BoardColumn<T>[] {
   const sorted = sortChannelRows(rows, pinned);
-  const labeled = deriveBarLabels(sorted).map((label) => {
-    const key = label.toLowerCase();
-    return { key: `label:${key}`, label, rows: filterChannelRows(sorted, { enabledLabels: new Set([key]) }) };
-  });
+  const labeled = deriveBarLabels(sorted).map((label) => ({
+    key: labelColumnKey(label),
+    label,
+    rows: filterChannelRows(sorted, { enabledLabels: new Set([label.toLowerCase()]) }),
+  }));
   const unlabeled = sorted.filter(r => (r.labels ?? []).length === 0);
   if (unlabeled.length === 0) return labeled;
   return [...labeled, { key: 'unlabeled', label: null, rows: unlabeled }];
@@ -52,11 +55,12 @@ export function orderedColumns<C extends { key: string }>(columns: readonly C[],
 export function movedColumnOrder(
   shown: readonly string[], saved: readonly string[], from: string, to: string,
 ): string[] | null {
-  const target = shown.indexOf(to);
-  if (from === to || target === -1 || !shown.includes(from)) return null;
-  const next = shown.filter(key => key !== from);
+  if (from === to || !shown.includes(from) || !shown.includes(to)) return null;
+  const full = [...saved, ...shown.filter(key => !saved.includes(key))];
+  const target = full.indexOf(to);
+  const next = full.filter(key => key !== from);
   next.splice(target, 0, from);
-  return [...next, ...saved.filter(key => !next.includes(key))];
+  return next;
 }
 
 export function columnLabel(columns: readonly BoardColumn<unknown>[], key: string): string | null {

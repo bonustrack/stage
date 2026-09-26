@@ -14,7 +14,7 @@ import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } fr
 import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
 import {
   isHiddenConv, onBoardOrderChanged, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
-  type PinChange, type ReadStateChange,
+  type BoardOrderChange, type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
 import { rowIdOfConv } from './xmtp.conv';
@@ -88,17 +88,17 @@ async function applyPinStates(remote: readonly PinStateContent[]): Promise<void>
   }
 }
 
-async function applyBoardState(state: BoardStateContent): Promise<void> {
+async function applyBoardState(accountId: string, state: BoardStateContent): Promise<void> {
   if (!shouldApplyReadState(localAt.get(BOARD_ORDER_KEY), state.at)) return;
   localAt.set(BOARD_ORDER_KEY, state.at);
-  await applyRemoteBoardOrder(state.order);
+  await applyRemoteBoardOrder(accountId, state.order);
 }
 
-async function applyReplay(replay: SyncReplay): Promise<void> {
+async function applyReplay(accountId: string, replay: SyncReplay): Promise<void> {
   await applyReadStates(replay.reads);
   await applyPinStates(replay.pins);
   if (replay.cleared !== null) await applyRemoteClearedChats(replay.cleared);
-  if (replay.board !== null) await applyBoardState(replay.board);
+  if (replay.board !== null) await applyBoardState(accountId, replay.board);
 }
 
 function isStateMessage(m: RowMessage): boolean {
@@ -137,7 +137,7 @@ async function readGroup(accountId: string, group: SyncGroupState): Promise<Grou
 async function replay(accountId: string, target: string, groups: readonly SyncGroupState[]): Promise<void> {
   const batches: GroupReplay[] = [];
   for (const group of groups) batches.push(await readGroup(accountId, group));
-  await applyReplay(collectSyncReplay(batches.flatMap((b) => b.messages), 0));
+  await applyReplay(accountId, collectSyncReplay(batches.flatMap((b) => b.messages), 0));
   for (const b of batches) {
     const latest = b.messages.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
     if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
@@ -162,32 +162,38 @@ async function boot(): Promise<void> {
   }
 }
 
-async function withGroup(send: (groupId: string) => Promise<unknown>): Promise<void> {
+async function withGroup(
+  send: (groupId: string, accountId: string) => Promise<unknown>, onlyFor?: string,
+): Promise<void> {
   try {
     const rec = await getActiveAccount();
-    if (rec === null) return;
-    await send(await ensureGroup(rec.address));
+    if (rec === null || (onlyFor !== undefined && rec.id !== onlyFor)) return;
+    await send(await ensureGroup(rec.address), rec.id);
   } catch (err) {
     report('readSync.publish', err);
   }
 }
 
-function publish<T>(codec: JsonCodec<T>, content: T): void {
-  void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content));
+function publish<T>(codec: JsonCodec<T>, content: T, onlyFor?: string): void {
+  void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content), onlyFor);
 }
 
-async function publishBoardSnapshot(line: string): Promise<void> {
-  const order = await loadBoardOrder();
-  if (order.length === 0) return;
+function stampBoardState(order: readonly string[]): BoardStateContent {
   const at = Date.now();
   localAt.set(BOARD_ORDER_KEY, at);
-  await xmtpSendJson(line, BOARD_STATE_CODEC, { order: [...order], at });
+  return { order: [...order], at };
 }
 
-async function publishSnapshot(target: string): Promise<void> {
+async function publishBoardSnapshot(line: string, accountId: string): Promise<void> {
+  const order = await loadBoardOrder(accountId);
+  if (order.length === 0) return;
+  await xmtpSendJson(line, BOARD_STATE_CODEC, stampBoardState(order));
+}
+
+async function publishSnapshot(target: string, accountId: string): Promise<void> {
   const line = lineOfConv(target);
   await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: getClearedChats() });
-  await publishBoardSnapshot(line);
+  await publishBoardSnapshot(line, accountId);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
@@ -200,7 +206,7 @@ function nudgeFrom(sourceId: string): void {
   if (nudgedFrom.has(sourceId)) return;
   nudgedFrom.add(sourceId);
   groupId = null;
-  void withGroup((target) => (target === sourceId ? Promise.resolve() : publishSnapshot(target)));
+  void withGroup((target, accountId) => (target === sourceId ? Promise.resolve() : publishSnapshot(target, accountId)));
 }
 
 function debounce(key: string, fn: () => void): void {
@@ -227,28 +233,28 @@ function queuePinPublish(change: PinChange): void {
   debounce(PIN_ORDER_KEY, () => { publish(PIN_STATE_CODEC, content); });
 }
 
-function queueBoardPublish(order: readonly string[]): void {
-  const at = Date.now();
-  localAt.set(BOARD_ORDER_KEY, at);
-  const content: BoardStateContent = { order: [...order], at };
-  debounce(BOARD_ORDER_KEY, () => { publish(BOARD_STATE_CODEC, content); });
+function queueBoardPublish(change: BoardOrderChange): void {
+  const content = stampBoardState(change.order);
+  debounce(BOARD_ORDER_KEY, () => { publish(BOARD_STATE_CODEC, content, change.accountId); });
 }
 
 function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
 
-async function adoptSyncGroup(convId: string): Promise<boolean> {
-  if (isHiddenConv(convId)) return true;
+async function adoptSyncGroup(convId: string): Promise<string | null> {
   const rec = await getActiveAccount().catch(recover('readSync.adopt', null));
-  if (rec === null || !(await isOwnSyncGroup(convId, rec.address).catch(recover('readSync.adopt', false)))) return false;
+  if (rec === null) return null;
+  if (isHiddenConv(convId)) return rec.id;
+  if (!(await isOwnSyncGroup(convId, rec.address).catch(recover('readSync.adopt', false)))) return null;
   registerHiddenConv(convId);
-  return true;
+  return rec.id;
 }
 
 async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
-  if (!(await adoptSyncGroup(convId))) return;
-  await applyReplay(collectSyncReplay([m], 0));
+  const accountId = await adoptSyncGroup(convId);
+  if (accountId === null) return;
+  await applyReplay(accountId, collectSyncReplay([m], 0));
   if (groupId !== null && convId !== groupId) nudgeFrom(convId);
 }
 

@@ -76,11 +76,17 @@ describe('saved column order', () => {
     expect(movedColumnOrder(shown, [], 'label:c', 'label:a')).toEqual(['label:c', 'label:a', 'label:b']);
   });
 
-  test('keeps saved columns that are not on screen and ignores drops that change nothing', () => {
+  test('saved columns that are not on screen keep their place', () => {
+    expect(movedColumnOrder(['label:a', 'label:b'], ['label:x', 'label:a', 'label:b'], 'label:b', 'label:a'))
+      .toEqual(['label:x', 'label:b', 'label:a']);
+    expect(movedColumnOrder(['label:a', 'label:b', 'label:c'], ['label:a', 'label:x', 'label:b'], 'label:a', 'label:b'))
+      .toEqual(['label:x', 'label:b', 'label:a', 'label:c']);
+  });
+
+  test('ignores drops that change nothing or involve a column that is not on screen', () => {
     const shown = ['label:a', 'label:b'];
-    expect(movedColumnOrder(shown, ['label:gone', 'label:a'], 'label:b', 'label:a'))
-      .toEqual(['label:b', 'label:a', 'label:gone']);
     expect(movedColumnOrder(shown, [], 'label:a', 'label:a')).toBeNull();
     expect(movedColumnOrder(shown, [], 'label:a', 'label:x')).toBeNull();
+    expect(movedColumnOrder(shown, ['label:x'], 'label:x', 'label:a')).toBeNull();
   });
 });

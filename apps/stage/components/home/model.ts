@@ -1,5 +1,6 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging';
+import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
@@ -97,8 +98,11 @@ export function deriveSortedRows(i: SortInputs): Row[] {
   return sortChannelRows(filtered, i.pinned);
 }
 
-export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>): string[] {
+export function searchBarLabels(
+  matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[],
+): string[] {
   const keys = new Set(matching.map(l => l.toLowerCase()));
   const kept = [...enabled].filter(l => !keys.has(l.toLowerCase()));
-  return [...matching, ...kept].sort((a, b) => a.localeCompare(b));
+  const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
+  return orderedColumns(labels.map(label => ({ key: labelColumnKey(label), label })), boardOrder).map(c => c.label);
 }
