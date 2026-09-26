@@ -33,7 +33,7 @@ function settle(prev: Pending, keep: (msgId: string, emoji: string) => boolean):
 
 export function useReactionsLayer(
   activeLine: string,
-  reactions: Map<string, Map<string, number>>,
+  reactions: Map<string, Map<string, string[]>>,
   ownReactions: Map<string, Set<string>>,
 ) {
   const [optimisticReactions, setOptimisticReactions] = useState<Pending>(new Map());

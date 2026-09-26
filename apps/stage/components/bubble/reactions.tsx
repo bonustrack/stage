@@ -1,8 +1,9 @@
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
+import { reactorsLabel } from '../conversation/reactors.model';
+import { ReactionTooltip } from './ReactionTooltip';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
@@ -39,7 +40,7 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
 export function ReactionsRow({
   reactions, pendingReactions, pendingRemovals, ownEmojis, pillBg, onReact,
 }: {
-  reactions?: Map<string, number>;
+  reactions?: Map<string, string[]>;
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;
@@ -59,24 +60,17 @@ export function ReactionsRow({
     <Row margin={{ top: 4 }} wrap gap={4}>
       {hasConfirmed ? (
         <Row gap={4} wrap align="center">
-          {confirmedEntries.map(([emoji, count]) => {
-            const pill = (
+          {confirmedEntries.map(([emoji, names]) => (
+            <ReactionTooltip key={emoji} label={reactorsLabel(names)} emoji={emoji} onReact={onReact}>
               <ReactionPill
-                key={emoji}
                 emoji={emoji}
-                count={count}
+                count={names.length}
                 own={!!ownEmojis?.has(emoji)}
                 pillBg={pillBg}
                 ownBorderColor={link}
               />
-            );
-            if (!onReact) return pill;
-            return (
-              <Pressable key={emoji} onPress={() => { onReact(emoji); }}>
-                {pill}
-              </Pressable>
-            );
-          })}
+            </ReactionTooltip>
+          ))}
         </Row>
       ) : null}
       {pendingEmojis.map(emoji => (

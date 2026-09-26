@@ -12,6 +12,7 @@ import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
 import { XMTP_USER_PREFIX } from '../../modules/messaging';
 import { memberNamer, withMemberNames } from './systemNames.model';
+import { useReactorNames } from './useReactorNames';
 
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
@@ -45,10 +46,11 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   const dark = useEffectiveColorScheme() === 'dark';
   const router = useRouter();
   const replyingToId = replyingTo?.id;
+  const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
 
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
-    [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
+    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
+    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
   );
 
   const eventsById = useMemo(() => {
@@ -87,7 +89,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
           onAvatarPress={onAvatarPress}
           pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
           replyTarget={replyingToId === item.id || jumpHighlightId === item.id}
-          reactions={reactions.get(item.id)}
+          reactions={reactorNames.get(item.id)}
           pendingReactions={optimisticReactions.get(item.id)}
           pendingRemovals={optimisticRemovals.get(item.id)}
           ownEmojis={ownReactions.get(item.id)}
@@ -114,7 +116,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     );
   }, [
     dark, myUri, sub, senderEthOf, namedEntry, confirmedIds, replyingToId, jumpHighlightId,
-    reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
+    reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,
     onAvatarPress, jumpToMessage, onVote, onOpenAnswer, onSign, onPay, onReact,

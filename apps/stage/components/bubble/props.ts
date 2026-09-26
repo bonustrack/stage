@@ -15,7 +15,7 @@ export interface MessengerBubbleProps {
   onOpenMenu?: (anchor: MenuAnchor) => void;
   onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;
-  replyPreview?: string; reactions?: Map<string, number>;
+  replyPreview?: string; reactions?: Map<string, string[]>;
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;

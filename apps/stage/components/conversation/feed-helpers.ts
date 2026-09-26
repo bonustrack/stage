@@ -34,30 +34,32 @@ function reactionPayloadOf(e: HistoryEntry, pollOptionCounts: Map<string, number
   return { reactTo: p.reactTo, emoji: p.emoji, removed: !!p.removed };
 }
 
+interface LatestReaction extends ReactionPayload { ts: string; from: string }
+
 function latestReactions(
   events: HistoryEntry[], pollOptionCounts: Map<string, number>,
   keyOf: (e: HistoryEntry, p: ReactionPayload) => string | null,
-): Map<string, { ts: string; removed: boolean; reactTo: string; emoji: string }> {
-  const latest = new Map<string, { ts: string; removed: boolean; reactTo: string; emoji: string }>();
+): Map<string, LatestReaction> {
+  const latest = new Map<string, LatestReaction>();
   for (const e of events) {
     const p = reactionPayloadOf(e, pollOptionCounts);
     if (!p) continue;
     const k = keyOf(e, p);
     if (k === null) continue;
     const cur = latest.get(k);
-    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: p.removed, reactTo: p.reactTo, emoji: p.emoji });
+    if (!cur || cur.ts < e.ts) latest.set(k, { ...p, ts: e.ts, from: e.from });
   }
   return latest;
 }
 
-export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, number>> {
+export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, string[]>> {
   const latest = latestReactions(events, pollOptionCounts, (e, p) => `${p.reactTo} ${p.emoji} ${e.from}`);
-  const out = new Map<string, Map<string, number>>();
+  const out = new Map<string, Map<string, string[]>>();
   for (const v of latest.values()) {
     if (v.removed) continue;
     let m = out.get(v.reactTo);
     if (!m) { m = new Map(); out.set(v.reactTo, m); }
-    m.set(v.emoji, (m.get(v.emoji) ?? 0) + 1);
+    m.set(v.emoji, [...(m.get(v.emoji) ?? []), v.from]);
   }
   return out;
 }
