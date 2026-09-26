@@ -51,6 +51,7 @@ const WRAPPED_TITLE_LINE_HEIGHT = 22;
 const PREVIEW_LINE_HEIGHT = 18;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
+const PIN_GAP = 4;
 
 function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
   unreadCount: number; markedUnread?: boolean; head: string; bg: string;
@@ -70,6 +71,28 @@ function titleLineHeight(wrap: boolean): number {
   return wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT;
 }
 
+function PinGlyph({ scheme }: { scheme: Scheme }): React.ReactElement {
+  return <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />;
+}
+
+function WrappedTitle({ texts, pinned, scheme }: {
+  texts: React.ReactNode; pinned: boolean; scheme: Scheme;
+}): React.ReactElement {
+  return (
+    <Box flex={1} minWidth={0}>
+      <Text size="2xl" weight="semibold" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
+        {pinned ? <Box width={PIN_ICON_SIZE + PIN_GAP} height={1} /> : null}
+        {texts}
+      </Text>
+      {pinned ? (
+        <Row align="center" height={WRAPPED_TITLE_LINE_HEIGHT} style={{ position: 'absolute', top: 0, left: 0 }}>
+          <PinGlyph scheme={scheme} />
+        </Row>
+      ) : null}
+    </Box>
+  );
+}
+
 function TitleLine({ params, scheme, wrap }: {
   params: ChannelRowParams; scheme: Scheme; wrap: boolean;
 }): React.ReactElement {
@@ -86,17 +109,15 @@ function TitleLine({ params, scheme, wrap }: {
       style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
     />
   ));
-  const lineHeight = titleLineHeight(wrap);
+  if (wrap) return <WrappedTitle texts={texts} pinned={params.pinned === true} scheme={scheme} />;
   return (
-    <Row align={wrap ? 'start' : 'center'} gap={4} flex={1} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
+    <Row align="center" gap={PIN_GAP} flex={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true ? (
-        <Row align="center" height={lineHeight} style={{ flexShrink: 0 }}>
-          <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+        <Row align="center" height={TITLE_LINE_HEIGHT} style={{ flexShrink: 0 }}>
+          <PinGlyph scheme={scheme} />
         </Row>
       ) : null}
-      {wrap ? (
-        <Text size="2xl" weight="semibold" style={{ flex: 1, minWidth: 0, lineHeight }}>{texts}</Text>
-      ) : texts}
+      {texts}
     </Row>
   );
 }
