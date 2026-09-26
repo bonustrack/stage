@@ -25,6 +25,7 @@ export {
 export { createGroup, leaveGroupConv, groupEditRights } from '../../lib/xmtp.groups';
 export {
   addGroupMembers, removeGroupMembers, updateGroupMeta, addGroupLabel, removeGroupLabel, moveGroupLabel,
+  renameGroupLabel,
 } from './groupRow';
 
 export {

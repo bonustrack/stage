@@ -13,4 +13,10 @@ describe('filter chips follow the search', () => {
       .toEqual(['Todo', 'Done', 'Alpha', 'Blocked']);
     expect(searchBarLabels(['Todo'], new Set(['done']), order)).toEqual(['Todo', 'done']);
   });
+
+  test('a renamed label keeps the place its column had under the old name', () => {
+    const entries = [{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 }];
+    expect(searchBarLabels(['Alpha', 'Doing', 'Todo'], new Set(), ['label:Todo'], entries)).toEqual(['Doing', 'Todo', 'Alpha']);
+    expect(searchBarLabels(['Alpha', 'Doing'], new Set(), ['label:Doing'], entries)).toEqual(['Doing', 'Alpha']);
+  });
 });

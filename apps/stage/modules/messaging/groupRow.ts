@@ -1,5 +1,5 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
-import { moveLabel } from '@stage-labs/client/xmtp/labels';
+import { moveLabel, renameLabels } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
 import {
@@ -7,6 +7,7 @@ import {
 } from '../../lib/xmtp.groups';
 import {
   addGroupLabel as addLabel, moveGroupLabel as moveRemoteLabel, removeGroupLabel as removeLabel,
+  renameGroupLabel as renameRemoteLabel,
 } from '../../lib/xmtp.labels';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { convIdOfLine, lineOfConv } from '../../lib/xmtp.types';
@@ -58,6 +59,12 @@ export async function moveGroupLabel(line: string, from: string | null, to: stri
   const convId = convIdOfLine(line);
   patchRowLabels(convId, (labels) => moveLabel(labels, from, to));
   try { return await moveRemoteLabel(line, from, to); } finally { refreshGroupRow(convId); }
+}
+
+export async function renameGroupLabel(line: string, names: readonly string[], to: string): Promise<string[]> {
+  const convId = convIdOfLine(line);
+  patchRowLabels(convId, (labels) => renameLabels(labels, names, to));
+  try { return await renameRemoteLabel(line, names, to); } finally { refreshGroupRow(convId); }
 }
 
 export async function updateGroupMeta(convId: string, patch: Parameters<typeof updateMeta>[1]): Promise<void> {

@@ -1,7 +1,7 @@
 
 import {
   MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup,
-  groupLabelsOf, addLabel, removeLabel, moveLabel, writeLabels,
+  groupLabelsOf, addLabel, removeLabel, moveLabel, renameLabels, writeLabels,
 } from '@stage-labs/client/xmtp/labels';
 import { convOfLine } from './xmtp.sdk';
 
@@ -28,4 +28,8 @@ export async function removeGroupLabel(line: string, label: string): Promise<str
 
 export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
   return mutate(line, (labels) => moveLabel(labels, from, to));
+}
+
+export async function renameGroupLabel(line: string, names: readonly string[], to: string): Promise<string[]> {
+  return mutate(line, (labels) => renameLabels(labels, names, to));
 }

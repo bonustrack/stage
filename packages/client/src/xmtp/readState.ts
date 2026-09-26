@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import { labelEntriesSchema, mergeLabelEntries, type LabelEntry } from './labelRegistry';
 
 export const READ_STATE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box', typeId: 'readState', versionMajor: 1, versionMinor: 0,
@@ -104,6 +105,29 @@ export function parseBoardState(content: unknown): BoardStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const LABEL_STATE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'labelState', versionMajor: 1, versionMinor: 0,
+};
+
+export const labelStateSchema = z.object({
+  labels: labelEntriesSchema,
+});
+
+export type LabelStateContent = z.infer<typeof labelStateSchema>;
+
+export function labelStateFallbackText(): string {
+  return 'Stage board labels';
+}
+
+export function isLabelStateType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(LABEL_STATE_CONTENT_TYPE.typeId);
+}
+
+export function parseLabelState(content: unknown): LabelStateContent | null {
+  const parsed = labelStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
   const merged: ClearedChats = {};
   for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
@@ -180,6 +204,7 @@ export interface SyncReplay {
   pins: PinStateContent[];
   cleared: ClearedChats | null;
   board: BoardStateContent | null;
+  labels: LabelEntry[] | null;
   latestNs: number;
 }
 
@@ -220,6 +245,15 @@ function latestBoard(messages: readonly SyncMessage[]): BoardStateContent | null
   return latest;
 }
 
+function mergedLabels(messages: readonly SyncMessage[]): LabelEntry[] | null {
+  let merged: LabelEntry[] | null = null;
+  for (const m of messages) {
+    const state = isLabelStateType(m.contentTypeId) ? parseLabelState(m.content) : null;
+    if (state !== null) merged = mergeLabelEntries(merged ?? [], state.labels);
+  }
+  return merged;
+}
+
 export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number): SyncReplay {
   const fresh = messages.filter((m) => m.sentNs > afterNs);
   return {
@@ -227,6 +261,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     pins: pinsSinceLastOrder(fresh),
     cleared: mergedCleared(fresh),
     board: latestBoard(fresh),
+    labels: mergedLabels(fresh),
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
 }

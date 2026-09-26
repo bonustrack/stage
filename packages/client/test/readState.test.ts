@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
-  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState,
+  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isLabelStateType, parseLabelState,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -73,6 +73,18 @@ describe('board state payload', () => {
     expect(isBoardStateType('stage.box/boardState:1.0')).toBe(true);
     expect(isBoardStateType('stage.box/pinState:1.0')).toBe(false);
     expect(isPinStateType('stage.box/boardState:1.0')).toBe(false);
+  });
+});
+
+describe('label list payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
+    const ok = { labels: [{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 3 }] };
+    expect(parseLabelState(ok)).toEqual(ok);
+    expect(parseLabelState({ labels: [{ id: '', name: 'Doing', aliases: [], at: 3 }] })).toBeNull();
+    expect(parseLabelState({ labels: [{ id: 'todo', name: 'Doing', at: 3 }] })).toBeNull();
+    expect(isLabelStateType('stage.box/labelState:1.0')).toBe(true);
+    expect(isLabelStateType('stage.box/boardState:1.0')).toBe(false);
+    expect(isBoardStateType('stage.box/labelState:1.0')).toBe(false);
   });
 });
 
@@ -182,6 +194,21 @@ describe('restored sync groups', () => {
     ], 0);
     expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
     expect(collectSyncReplay([], 0).board).toBeNull();
+  });
+
+  test('merges every label list in the replay', () => {
+    const LABELS = 'stage.box/labelState:1.0';
+    const replay = collectSyncReplay([
+      { contentTypeId: LABELS, content: { labels: [{ id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 }] }, sentNs: 1 },
+      { contentTypeId: LABELS, content: { labels: [{ id: 'done', name: 'Done', aliases: [], at: 0 }] }, sentNs: 2 },
+      { contentTypeId: LABELS, content: { labels: [{ id: 'todo', name: 'Next', aliases: [], at: 2 }] }, sentNs: 3 },
+      { contentTypeId: LABELS, content: { labels: 'nope' }, sentNs: 4 },
+    ], 0);
+    expect(replay.labels).toEqual([
+      { id: 'done', name: 'Done', aliases: [], at: 0 },
+      { id: 'todo', name: 'Doing', aliases: ['Next', 'Todo'], at: 5 },
+    ]);
+    expect(collectSyncReplay([], 0).labels).toBeNull();
   });
 
   test('skips messages at or before the cursor', () => {

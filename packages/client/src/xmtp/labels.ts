@@ -38,7 +38,7 @@ async function readAppData(group: Group): Promise<string> {
   return group.appData ?? '';
 }
 
-function cleanLabel(raw: string): string {
+export function cleanLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
 }
 
@@ -103,6 +103,17 @@ export function removeLabel(labels: string[], label: string): string[] {
 export function moveLabel(labels: string[], from: string | null, to: string | null): string[] {
   if (to === null) return [];
   return addLabel(from === null ? labels : removeLabel(labels, from), to);
+}
+
+export function renameLabels(labels: string[], names: readonly string[], to: string): string[] {
+  const clean = cleanLabel(to);
+  const from = new Set([...names, clean].map((name) => cleanLabel(name).toLowerCase()));
+  const at = labels.findIndex((l) => from.has(l.toLowerCase()));
+  if (!clean || at === -1) return labels;
+  return labels.flatMap((l, i) => {
+    if (i === at) return [clean];
+    return from.has(l.toLowerCase()) ? [] : [l];
+  });
 }
 
 export async function writeLabels(

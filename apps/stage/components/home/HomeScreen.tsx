@@ -18,6 +18,7 @@ import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useLabelEntries } from '../../lib/labelRegistry';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useHomeState } from './state';
 import { usePinDrag } from './pinDrag';
@@ -43,9 +44,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [rows, pinned, enabledLabels, unreadOnly],
   );
   const boardOrder = useBoardOrder();
+  const labelEntries = useLabelEntries();
   const barLabels = useMemo(
-    () => searchBarLabels(deriveLabels(filterChannelRows(rows ?? [], { query })), enabledLabels, boardOrder),
-    [rows, query, enabledLabels, boardOrder],
+    () => searchBarLabels(deriveLabels(filterChannelRows(rows ?? [], { query })), enabledLabels, boardOrder, labelEntries),
+    [rows, query, enabledLabels, boardOrder, labelEntries],
   );
   const showFilterBar = channelsFilterBarVisible({
     labelCount: barLabels.length,

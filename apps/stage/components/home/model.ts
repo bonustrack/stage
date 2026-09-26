@@ -1,7 +1,8 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
+import { labelIndex, resolveLabel, type LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import type { ConversationView } from '../../modules/messaging';
 import type { AppIconName } from '../appIcons';
-import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
+import { labelColumnKey, normalizedOrder, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
@@ -100,10 +101,12 @@ export function deriveSortedRows(i: SortInputs): Row[] {
 }
 
 export function searchBarLabels(
-  matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[],
+  matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[], entries: readonly LabelEntry[] = [],
 ): string[] {
   const keys = new Set(matching.map(l => l.toLowerCase()));
   const kept = [...enabled].filter(l => !keys.has(l.toLowerCase()));
   const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
-  return orderedColumns(labels.map(label => ({ key: labelColumnKey(label), label })), boardOrder).map(c => c.label);
+  const index = labelIndex(entries);
+  const columns = labels.map(label => ({ key: labelColumnKey(resolveLabel(entries, label, index).id), label }));
+  return orderedColumns(columns, normalizedOrder(boardOrder, entries)).map(c => c.label);
 }

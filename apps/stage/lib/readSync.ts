@@ -1,7 +1,8 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isBoardStateType, isClearStateType, isPinStateType, isReadStateType, pickPublishGroup,
+  collectSyncReplay, isBoardStateType, isClearStateType, isLabelStateType, isPinStateType, isReadStateType,
+  pickPublishGroup,
   shouldApplyReadState, syncGroupName, type BoardStateContent, type PinStateContent, type ReadStateContent,
   type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
@@ -12,9 +13,10 @@ import { getCachedRows, setCachedRows } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder } from './pins';
 import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
 import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
+import { applyRemoteLabels, loadLabelEntries } from './labelRegistry';
 import {
-  isHiddenConv, onBoardOrderChanged, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
-  type BoardOrderChange, type PinChange, type ReadStateChange,
+  isHiddenConv, onBoardOrderChanged, onClearedChatsChanged, onLabelRegistryChanged, onPinChanged, onReadStateChanged,
+  registerHiddenConv, type BoardOrderChange, type LabelRegistryChange, type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
 import { rowIdOfConv } from './xmtp.conv';
@@ -26,7 +28,7 @@ import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import {
-  BOARD_STATE_CODEC, CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec,
+  BOARD_STATE_CODEC, CLEAR_STATE_CODEC, LABEL_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec,
 } from './xmtpJsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
@@ -47,7 +49,8 @@ function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
 const BOARD_ORDER_KEY = 'boardOrder';
-const STATE_TYPES = [isReadStateType, isPinStateType, isClearStateType, isBoardStateType];
+const LABELS_KEY = 'labels';
+const STATE_TYPES = [isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isLabelStateType];
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
   const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
@@ -99,6 +102,7 @@ async function applyReplay(accountId: string, replay: SyncReplay): Promise<void>
   await applyPinStates(replay.pins);
   if (replay.cleared !== null) await applyRemoteClearedChats(replay.cleared);
   if (replay.board !== null) await applyBoardState(accountId, replay.board);
+  if (replay.labels !== null) await applyRemoteLabels(accountId, replay.labels);
 }
 
 function isStateMessage(m: RowMessage): boolean {
@@ -190,10 +194,17 @@ async function publishBoardSnapshot(line: string, accountId: string): Promise<vo
   await xmtpSendJson(line, BOARD_STATE_CODEC, stampBoardState(order));
 }
 
+async function publishLabelSnapshot(line: string, accountId: string): Promise<void> {
+  const labels = await loadLabelEntries(accountId);
+  if (labels.length === 0) return;
+  await xmtpSendJson(line, LABEL_STATE_CODEC, { labels: [...labels] });
+}
+
 async function publishSnapshot(target: string, accountId: string): Promise<void> {
   const line = lineOfConv(target);
   await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: getClearedChats() });
   await publishBoardSnapshot(line, accountId);
+  await publishLabelSnapshot(line, accountId);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
@@ -238,6 +249,11 @@ function queueBoardPublish(change: BoardOrderChange): void {
   debounce(BOARD_ORDER_KEY, () => { publish(BOARD_STATE_CODEC, content, change.accountId); });
 }
 
+function queueLabelPublish(change: LabelRegistryChange): void {
+  const content = { labels: [...change.labels] };
+  debounce(LABELS_KEY, () => { publish(LABEL_STATE_CODEC, content, change.accountId); });
+}
+
 function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
@@ -270,6 +286,7 @@ export function startReadSync(): void {
   onPinChanged(queuePinPublish);
   onClearedChatsChanged(queueClearedPublish);
   onBoardOrderChanged(queueBoardPublish);
+  onLabelRegistryChanged(queueLabelPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
   void boot();

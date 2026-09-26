@@ -1,16 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
+import type { LabelEntry } from '@stage-labs/client/xmtp/labelRegistry';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
+import { HoverTooltip } from '../HoverTooltip';
+import { useHover } from '../hover';
 import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
@@ -26,11 +33,15 @@ import { channelTimestamp } from '../../lib/format';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { reported } from '../../lib/errorPolicy';
+import { ensureLabelEntries, useLabelEntries } from '../../lib/labelRegistry';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, orderedColumns, type BoardColumn, type BoardDrag,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, boardEntries, normalizedOrder, orderLabelNames,
+  orderedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { dropOnBoard } from './boardActions';
+import { RenameColumnModal } from './RenameColumnModal';
 
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
@@ -38,6 +49,7 @@ const TITLE_SIZE = '2xl';
 const DRAGGING_OPACITY = 0.4;
 
 type OnBoardDrop = (drag: BoardDrag, key: string) => void;
+type OnRename = (entry: LabelEntry) => void;
 
 function columnMaxHeight(laneHeight: number): number | string | undefined {
   if (Platform.OS === 'web') return '100%';
@@ -86,6 +98,18 @@ function ColumnTitle({ label }: { label: string | null }): React.ReactElement {
   return <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
 }
 
+function RenameButton({ onPress }: { onPress: () => void }): React.ReactElement {
+  const { text, link } = usePalette();
+  const hover = useHover();
+  return (
+    <HoverTooltip label="Rename" placement="below">
+      <Pressable onPress={onPress} hitSlop={8} accessibilityLabel="Rename column" {...hover.hoverProps}>
+        <Glyph icon={IconPencil} size={20} color={hover.hovered ? link : text}/>
+      </Pressable>
+    </HoverTooltip>
+  );
+}
+
 function EmptyColumn(): React.ReactElement {
   return (
     <Col align="center" padding={{ y: PAGE_GUTTER, right: COLUMN_PADDING }}>
@@ -112,12 +136,14 @@ function ColumnCards({ column, pinned }: {
   );
 }
 
-function BoardColumnView({ column, maxHeight, pinned, onDrop }: {
+function BoardColumnView({ column, maxHeight, pinned, onDrop, onRename }: {
   column: BoardColumn<ChannelRowData>;
   maxHeight?: number | string;
   pinned: readonly string[];
   onDrop: OnBoardDrop;
+  onRename: OnRename;
 }): React.ReactElement {
+  const { entry } = column;
   const { border, link } = usePalette();
   const zone = useBoardDropZone(column.key, (drag) => { onDrop(drag, column.key); });
   const handle = useBoardDragSource({ kind: 'column', key: column.key }, zone.nativeID);
@@ -135,14 +161,16 @@ function BoardColumnView({ column, maxHeight, pinned, onDrop }: {
       <Row nativeID={handle.nativeID} align="center" gap={8} padding={{ left: 4, right: 4 + COLUMN_PADDING, y: 2 }}>
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
+        <Box flex={1}/>
+        {entry === null ? null : <RenameButton onPress={() => { onRename(entry); }}/>}
       </Row>
       <ColumnCards column={column} pinned={pinned}/>
     </Col>
   );
 }
 
-function BoardLanes({ columns, pinned, onDrop }: {
-  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; onDrop: OnBoardDrop;
+function BoardLanes({ columns, pinned, onDrop, onRename }: {
+  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; onDrop: OnBoardDrop; onRename: OnRename;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState(0);
@@ -163,6 +191,7 @@ function BoardLanes({ columns, pinned, onDrop }: {
           maxHeight={columnMaxHeight(laneHeight)}
           pinned={pinned}
           onDrop={onDrop}
+          onRename={onRename}
         />
       ))}
     </Scroll>
@@ -175,20 +204,32 @@ function BoardBody(): React.ReactElement {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
-  const order = useBoardOrder();
+  const saved = useBoardOrder();
+  const entries = useLabelEntries();
+  const known = useMemo(() => boardEntries(rows ?? [], saved, entries), [rows, saved, entries]);
+  const order = useMemo(() => normalizedOrder(saved, known), [saved, known]);
+  const [renaming, setRenaming] = useState<LabelEntry | null>(null);
   const [error, setError] = useState<string>('');
+  useEffect(() => {
+    ensureLabelEntries([...deriveBarLabels(rows ?? []), ...orderLabelNames(saved, entries)]).catch(reported('board.labels'));
+  }, [rows, saved, entries]);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   usePeerProfiles((rows ?? []).map(r => r.lastSenderAddress));
   useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
-    [rows, cleared, pinned, order],
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, known, r => isRowCleared(cleared, r)), order),
+    [rows, cleared, pinned, order, known],
   );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   if (columns.length === 0) return <EmptyState title="No channels yet"/>;
   const onDrop: OnBoardDrop = (drag, key) => { dropOnBoard(columns, order, drag, key); };
-  return <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop}/>;
+  return (
+    <>
+      <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop} onRename={setRenaming}/>
+      <RenameColumnModal entry={renaming} entries={known} rows={rows} onClose={() => { setRenaming(null); }}/>
+    </>
+  );
 }
 
 export function BoardScreen(): React.ReactElement {
