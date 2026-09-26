@@ -2,7 +2,7 @@ import type { ReadStateContent } from '@stage-labs/client/xmtp/readState';
 import { UNSTAMPED_AT } from '@stage-labs/client/xmtp/syncSnapshot';
 import { appStorage, secureStorage } from '../platform/storage';
 import { persistenceBackend } from './cache';
-import { recover, report, reported } from './errorPolicy';
+import { recover, reported } from './errorPolicy';
 import { makeReadStateStore, type StoredRead } from './readStateStore.core';
 
 const STORE_KEY = 'readState.v1';
@@ -52,13 +52,8 @@ const store = makeReadStateStore({
   now: () => Date.now(),
 });
 
-async function readOrReport(convId: string): Promise<StoredRead | null> {
-  try {
-    return await store.get(convId);
-  } catch (err) {
-    report('readState.get', err);
-    return null;
-  }
+function readOrReport(convId: string): Promise<StoredRead | null> {
+  return store.get(convId).catch(recover('readState.get', null));
 }
 
 export async function getLastReadNs(convId: string): Promise<number> {

@@ -1,19 +1,21 @@
 import { describe, expect, test } from 'bun:test';
 import { needsReadMark, type CachedChannelRow } from '../src/xmtp/channelsCache';
 import {
-  SNAPSHOT_EVERY, SNAPSHOT_OVERLAP_NS, SYNC_PAGE_SIZE, SYNC_SCAN_CAP, assembleSyncSnapshot, bootChangeCounter, changesSince,
-  collectSnapshotReplay, countSyncChange, isSyncSnapshotType, isSyncStateType, parseChangeCounter,
-  parseReadStateFile, parseSyncSnapshot, scanSyncGroups, scanSyncHistory, snapshotDue, type SnapshotInputs, type SyncPageMessage,
-  type SyncSnapshotContent,
+  NO_SYNC_STAMPS, SNAPSHOT_EVERY, SNAPSHOT_OVERLAP_NS, SYNC_PAGE_SIZE, SYNC_SCAN_CAP, assembleSyncSnapshot, bootChangeCounter,
+  changesSince, collectSnapshotReplay, countSyncChange, isSyncSnapshotType, isSyncStateType, mergeSyncStamps, parseChangeCounter,
+  parseReadStateFile, parseSyncSnapshot, parseSyncStamps, replayStamps, scanCovers, scanSyncGroups, scanSyncHistory, snapshotDue,
+  type SnapshotInputs, type SyncPageMessage, type SyncSnapshotContent,
 } from '../src/xmtp/syncSnapshot';
 
 const READ = 'stage.box/readState:1.0';
 const PIN = 'stage.box/pinState:1.0';
 const SNAP = 'stage.box/syncSnapshot:1.0';
+const BOARD = 'stage.box/boardState:1.0';
+const CLEAR = 'stage.box/clearState:1.0';
 const TEXT = 'xmtp.org/text:1.0';
 
 function snapshot(over: Partial<SyncSnapshotContent> = {}): SyncSnapshotContent {
-  return { reads: {}, pins: null, cleared: {}, board: null, at: 1, ...over };
+  return { reads: {}, pins: null, cleared: {}, board: null, groups: ['own'], at: 1, ...over };
 }
 
 function msg(sentNs: number, contentTypeId: string, content: unknown = {}): SyncPageMessage {
@@ -28,6 +30,7 @@ function pager(all: readonly SyncPageMessage[]) {
   const sorted = [...all].sort((a, b) => b.sentNs - a.sentNs);
   const calls: (number | undefined)[] = [];
   const fetch = (limit: number, beforeMs: number | undefined): Promise<SyncPageMessage[]> => {
+    if (calls.length >= 100) return Promise.reject(new Error('the scan never stopped'));
     calls.push(beforeMs);
     const page = sorted.filter((m) => beforeMs === undefined || m.sentNs < beforeMs * 1_000_000);
     return Promise.resolve(page.slice(0, limit));
@@ -46,6 +49,8 @@ describe('sync snapshot payload', () => {
     expect(parseSyncSnapshot({ ...ok, reads: { '': { lastReadNs: 5, markedUnread: false, at: 2 } } })).toBeNull();
     expect(parseSyncSnapshot({ ...ok, at: 0 })).toBeNull();
     expect(parseSyncSnapshot({ ...ok, board: { order: ['a'] } })).toBeNull();
+    expect(parseSyncSnapshot({ ...ok, groups: [''] })).toBeNull();
+    expect(parseSyncSnapshot({ reads: {}, pins: null, cleared: {}, board: null, at: 1 })).toBeNull();
     expect(parseSyncSnapshot('nope')).toBeNull();
   });
 
@@ -53,8 +58,7 @@ describe('sync snapshot payload', () => {
     expect(isSyncSnapshotType(SNAP)).toBe(true);
     expect(isSyncSnapshotType(READ)).toBe(false);
     expect(isSyncSnapshotType(undefined)).toBe(false);
-    expect(isSyncStateType(SNAP)).toBe(true);
-    expect(isSyncStateType(PIN)).toBe(true);
+    for (const type of [SNAP, READ, PIN, BOARD, CLEAR]) expect(isSyncStateType(type)).toBe(true);
     expect(isSyncStateType(TEXT)).toBe(false);
   });
 
@@ -105,7 +109,7 @@ describe('collectSnapshotReplay', () => {
 describe('scanSyncHistory', () => {
   test('reads a short history in one page', async () => {
     const { fetch, calls } = pager(seconds(1, 50));
-    const scan = await scanSyncHistory(fetch, 0);
+    const scan = await scanSyncHistory(fetch, 0, 'own');
     expect(scan.messages).toHaveLength(50);
     expect(scan.snapshotNs).toBeNull();
     expect(calls).toHaveLength(1);
@@ -114,7 +118,7 @@ describe('scanSyncHistory', () => {
   test('stops paging at the newest snapshot, keeping one minute of overlap', async () => {
     const all = seconds(1, 1000).map((m) => (m.sentNs === 700_000_000_000 ? msg(m.sentNs, SNAP, snapshot()) : m));
     const { fetch, calls } = pager(all);
-    const scan = await scanSyncHistory(fetch, 0);
+    const scan = await scanSyncHistory(fetch, 0, 'own');
     expect(scan.snapshotNs).toBe(700_000_000_000);
     expect(calls).toHaveLength(2);
     const oldest = Math.min(...scan.messages.map((m) => m.sentNs));
@@ -122,16 +126,24 @@ describe('scanSyncHistory', () => {
     expect(scan.messages).toHaveLength(360);
   });
 
+  test('keeps paging past a snapshot that does not list this group', async () => {
+    const all = seconds(1, 500).map((m) => (m.sentNs === 400_000_000_000 ? msg(m.sentNs, SNAP, snapshot({ groups: ['other'] })) : m));
+    const scan = await scanSyncHistory(pager(all).fetch, 0, 'own');
+    expect(scan.snapshotNs).toBeNull();
+    expect(scan.messages).toHaveLength(500);
+    expect(scan.covers.get('other')).toBe(400_000_000_000);
+  });
+
   test('ignores a malformed snapshot and keeps paging', async () => {
     const all = seconds(1, 500).map((m) => (m.sentNs === 400_000_000_000 ? msg(m.sentNs, SNAP, { bad: true }) : m));
-    const scan = await scanSyncHistory(pager(all).fetch, 0);
+    const scan = await scanSyncHistory(pager(all).fetch, 0, 'own');
     expect(scan.snapshotNs).toBeNull();
     expect(scan.messages).toHaveLength(500);
   });
 
   test('stops at the cursor and returns only newer messages', async () => {
     const { fetch, calls } = pager(seconds(1, 1000));
-    const scan = await scanSyncHistory(fetch, 900_000_000_000);
+    const scan = await scanSyncHistory(fetch, 900_000_000_000, 'own');
     expect(scan.messages).toHaveLength(100);
     expect(scan.messages.every((m) => m.sentNs > 900_000_000_000)).toBe(true);
     expect(calls).toHaveLength(1);
@@ -139,30 +151,55 @@ describe('scanSyncHistory', () => {
 
   test('does not duplicate or lose messages sharing a millisecond across a page edge', async () => {
     const all = Array.from({ length: 300 }, (_, i) => msg(5_000_000_000 + i, READ));
-    const scan = await scanSyncHistory(pager(all).fetch, 0);
+    const scan = await scanSyncHistory(pager(all).fetch, 0, 'own');
     expect(scan.messages).toHaveLength(300);
     expect(new Set(scan.messages.map((m) => m.id)).size).toBe(300);
   });
 
   test('stops at the scan cap on a long history without a snapshot', async () => {
-    const scan = await scanSyncHistory(pager(seconds(1, SYNC_SCAN_CAP + 1000)).fetch, 0);
+    const scan = await scanSyncHistory(pager(seconds(1, SYNC_SCAN_CAP + 1000)).fetch, 0, 'own');
     expect(scan.messages.length).toBeGreaterThanOrEqual(SYNC_SCAN_CAP);
     expect(scan.messages.length).toBeLessThan(SYNC_SCAN_CAP + SYNC_PAGE_SIZE);
+  });
+
+  test('a snapshot read only past the floor sets no floor for the groups it lists', async () => {
+    const all = seconds(1, 1000).map((m) => {
+      if (m.sentNs === 700_000_000_000) return msg(m.sentNs, SNAP, snapshot());
+      return m.sentNs === 620_000_000_000 ? msg(m.sentNs, SNAP, snapshot({ groups: ['own', 'old'] })) : m;
+    });
+    const scan = await scanSyncHistory(pager(all).fetch, 0, 'own');
+    expect(scan.snapshotNs).toBe(700_000_000_000);
+    expect([...scan.covers]).toEqual([['own', 700_000_000_000]]);
+  });
+});
+
+describe('scanCovers', () => {
+  test('a history read to its start or to its floor is covered', async () => {
+    expect(scanCovers(await scanSyncHistory(pager(seconds(1, 50)).fetch, 0, 'own'), 0)).toBe(true);
+    expect(scanCovers(await scanSyncHistory(pager(seconds(1, 1000)).fetch, 900_000_000_000, 'own'), 0)).toBe(true);
+  });
+
+  test('a history cut at the scan cap is covered only down to a cursor already applied', async () => {
+    const scan = await scanSyncHistory(pager(seconds(1, SYNC_SCAN_CAP + 1000)).fetch, 0, 'own');
+    expect(scan.reachedNs).toBeGreaterThan(1_000_000_000);
+    expect(scanCovers(scan, 0)).toBe(false);
+    expect(scanCovers(scan, scan.reachedNs - 1)).toBe(false);
+    expect(scanCovers(scan, scan.reachedNs)).toBe(true);
   });
 });
 
 describe('scanSyncGroups', () => {
-  const withSnapshotAt = (atSeconds: number) => (m: SyncPageMessage): SyncPageMessage =>
-    (m.sentNs === atSeconds * 1_000_000_000 ? msg(m.sentNs, SNAP, snapshot()) : m);
+  const withSnapshotAt = (atSeconds: number, groups: string[]) => (m: SyncPageMessage): SyncPageMessage =>
+    (m.sentNs === atSeconds * 1_000_000_000 ? msg(m.sentNs, SNAP, snapshot({ groups })) : m);
 
-  test('reads the publish group first and stops every other group at its snapshot', async () => {
-    const own = pager(seconds(1, 1000).map(withSnapshotAt(700)));
+  test('reads the publish group first and stops a group its snapshot lists at that snapshot', async () => {
+    const own = pager(seconds(1, 1000).map(withSnapshotAt(700, ['own', 'old'])));
     const old = pager(seconds(1, 900));
     const groups = [{ id: 'old', fetch: old.fetch }, { id: 'own', fetch: own.fetch }];
     const floors: number[] = [];
     const scans = await scanSyncGroups(groups, 'own', async (group, floorNs) => {
       floors.push(floorNs);
-      return { id: group.id, ...(await scanSyncHistory(group.fetch, floorNs)) };
+      return { id: group.id, ...(await scanSyncHistory(group.fetch, floorNs, group.id)) };
     });
     const floor = 700_000_000_000 - SNAPSHOT_OVERLAP_NS;
     expect(scans.map((s) => s.id)).toEqual(['own', 'old']);
@@ -172,13 +209,22 @@ describe('scanSyncGroups', () => {
     expect(old.calls).toHaveLength(2);
   });
 
-  test('reads the other groups by id, so a snapshot in one bounds the groups read after it', async () => {
+  test('reads in full a group the snapshot does not list', async () => {
+    const own = pager(seconds(1, 1000).map(withSnapshotAt(700, ['own'])));
+    const old = pager(seconds(1, 900));
+    const groups = [{ id: 'old', fetch: old.fetch }, { id: 'own', fetch: own.fetch }];
+    const scans = await scanSyncGroups(groups, 'own', (group, floorNs) => scanSyncHistory(group.fetch, floorNs, group.id));
+    expect(scans[1]?.messages).toHaveLength(900);
+  });
+
+  test('reads the other groups by id, so a snapshot in one bounds the groups it lists read after it', async () => {
     const reads: [string, number][] = [];
-    await scanSyncGroups([{ id: 'c' }, { id: 'own' }, { id: 'a' }], 'own', (group, floorNs) => {
+    const listed = new Map([['a', 500_000_000_000]]);
+    await scanSyncGroups([{ id: 'c' }, { id: 'b' }, { id: 'own' }, { id: 'a' }], 'own', (group, floorNs) => {
       reads.push([group.id, floorNs]);
-      return Promise.resolve({ snapshotNs: group.id === 'a' ? 500_000_000_000 : null });
+      return Promise.resolve({ covers: group.id === 'a' ? new Map([...listed, ['c', 400_000_000_000]]) : new Map<string, number>() });
     });
-    expect(reads).toEqual([['own', 0], ['a', 0], ['c', 500_000_000_000 - SNAPSHOT_OVERLAP_NS]]);
+    expect(reads).toEqual([['own', 0], ['a', 0], ['b', 0], ['c', 400_000_000_000 - SNAPSHOT_OVERLAP_NS]]);
   });
 });
 
@@ -233,7 +279,7 @@ describe('change counter', () => {
 describe('assembleSyncSnapshot', () => {
   const row = (convId: string, over: Partial<CachedChannelRow> = {}): CachedChannelRow => ({ convId, unreadCount: 0, lastReadNs: 0, ...over });
   const base: SnapshotInputs = {
-    rows: [], stored: new Map(), seen: new Set(), pinOrder: [], pinStamp: null, boardOrder: [], boardAt: undefined, cleared: {}, at: 99,
+    rows: [], stored: new Map(), seen: new Set(), pinOrder: [], boardOrder: [], stamps: NO_SYNC_STAMPS, cleared: {}, groups: [], at: 99,
   };
 
   test('covers every row with a read and every stored conversation this device has seen', () => {
@@ -252,21 +298,62 @@ describe('assembleSyncSnapshot', () => {
     });
     expect(content.at).toBe(99);
     expect(parseSyncSnapshot(content)).toEqual(content);
+    const listed = assembleSyncSnapshot({ ...base, rows, stored, groups: ['own', 'old'] });
+    expect(listed.groups).toEqual(['own', 'old']);
+    expect(parseSyncSnapshot(listed)).toEqual(listed);
   });
 
   test('records the pin order with its stamp, and an emptied order when pins were removed', () => {
-    const stamp = { convId: 'p2', at: 50 };
-    expect(assembleSyncSnapshot({ ...base, pinOrder: ['p1', 'p2'], pinStamp: stamp }).pins)
+    const stamps = { pin: { convId: 'p2', at: 50 }, boardAt: null };
+    expect(assembleSyncSnapshot({ ...base, pinOrder: ['p1', 'p2'], stamps }).pins)
       .toEqual({ convId: 'p1', pinned: true, order: ['p1', 'p2'], at: 50 });
     expect(assembleSyncSnapshot({ ...base, pinOrder: ['p1'] }).pins?.at).toBe(1);
-    expect(assembleSyncSnapshot({ ...base, pinStamp: stamp }).pins).toEqual({ convId: 'p2', pinned: false, order: [], at: 50 });
+    expect(assembleSyncSnapshot({ ...base, stamps }).pins).toEqual({ convId: 'p2', pinned: false, order: [], at: 50 });
     expect(assembleSyncSnapshot(base).pins).toBeNull();
   });
 
-  test('records the board order only when there is one', () => {
+  test('records the board order when there is one or when it was stamped', () => {
+    const stamps = { pin: null, boardAt: 9 };
     expect(assembleSyncSnapshot(base).board).toBeNull();
     expect(assembleSyncSnapshot({ ...base, boardOrder: ['x'] }).board).toEqual({ order: ['x'], at: 1 });
-    expect(assembleSyncSnapshot({ ...base, boardOrder: ['x'], boardAt: 9 }).board).toEqual({ order: ['x'], at: 9 });
+    expect(assembleSyncSnapshot({ ...base, boardOrder: ['x'], stamps }).board).toEqual({ order: ['x'], at: 9 });
+    expect(assembleSyncSnapshot({ ...base, stamps }).board).toEqual({ order: [], at: 9 });
+  });
+});
+
+describe('sync stamps', () => {
+  const pinAt = (convId: string, at: number) => ({ pin: { convId, at }, boardAt: null });
+
+  test('parses stored stamps and rejects anything else', () => {
+    const ok = { pin: { convId: 'p', at: 5 }, boardAt: 7 };
+    expect(parseSyncStamps(JSON.stringify(ok))).toEqual(ok);
+    expect(parseSyncStamps(JSON.stringify(NO_SYNC_STAMPS))).toEqual(NO_SYNC_STAMPS);
+    expect(parseSyncStamps(null)).toBeNull();
+    expect(parseSyncStamps('{"pin":null}')).toBeNull();
+    expect(parseSyncStamps('{"pin":{"convId":"p","at":0},"boardAt":null}')).toBeNull();
+    expect(parseSyncStamps('{')).toBeNull();
+  });
+
+  test('keeps the newer pin and board stamp from either side', () => {
+    expect(mergeSyncStamps(pinAt('a', 5), pinAt('b', 9)).pin).toEqual({ convId: 'b', at: 9 });
+    expect(mergeSyncStamps(pinAt('b', 9), pinAt('a', 5)).pin).toEqual({ convId: 'b', at: 9 });
+    expect(mergeSyncStamps(NO_SYNC_STAMPS, pinAt('a', 5)).pin).toEqual({ convId: 'a', at: 5 });
+    expect(mergeSyncStamps(pinAt('a', 5), NO_SYNC_STAMPS).pin).toEqual({ convId: 'a', at: 5 });
+    expect(mergeSyncStamps({ pin: null, boardAt: 3 }, { pin: null, boardAt: 8 }).boardAt).toBe(8);
+    expect(mergeSyncStamps({ pin: null, boardAt: 8 }, { pin: null, boardAt: 3 }).boardAt).toBe(8);
+    expect(mergeSyncStamps({ pin: null, boardAt: 8 }, NO_SYNC_STAMPS).boardAt).toBe(8);
+    expect(mergeSyncStamps(NO_SYNC_STAMPS, { pin: null, boardAt: 8 }).boardAt).toBe(8);
+  });
+
+  test('reads the stamps of the newest pin order and board order in a replay', () => {
+    const replay = collectSnapshotReplay([
+      msg(10, PIN, { convId: 'p', pinned: true, order: ['p'], at: 4 }),
+      msg(20, PIN, { convId: 'q', pinned: true, at: 6 }),
+      msg(30, BOARD, { order: ['x'], at: 3 }),
+      msg(40, BOARD, { order: [], at: 5 }),
+    ], 0);
+    expect(replayStamps(replay)).toEqual({ pin: { convId: 'p', at: 4 }, boardAt: 5 });
+    expect(replayStamps(collectSnapshotReplay([msg(20, PIN, { convId: 'q', pinned: true, at: 6 })], 0))).toEqual(NO_SYNC_STAMPS);
   });
 });
 

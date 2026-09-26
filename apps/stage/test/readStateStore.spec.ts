@@ -5,6 +5,7 @@ interface HarnessOptions {
   file?: string | null;
   legacy?: Record<string, StoredRead | null>;
   failedLoads?: number;
+  legacyGate?: Promise<void>;
 }
 
 function harness(opts: HarnessOptions = {}) {
@@ -24,7 +25,8 @@ function harness(opts: HarnessOptions = {}) {
     save: (next) => { saves.push(next); raw = next; },
     legacyRead: (convId) => {
       legacyCalls.push(convId);
-      return Promise.resolve(opts.legacy?.[convId] ?? null);
+      const found = opts.legacy?.[convId] ?? null;
+      return opts.legacyGate === undefined ? Promise.resolve(found) : opts.legacyGate.then(() => found);
     },
     now: () => clock.now,
   });
@@ -44,6 +46,22 @@ describe('read state store, first run after an upgrade', () => {
     expect(await h.store.get('a')).toEqual(OLD);
     expect(h.legacyCalls).toEqual(['a']);
     expect(h.saved()).toEqual({ legacy: true, reads: { a: OLD } });
+  });
+
+  test('keeps a change that lands while the old value is still being read', async () => {
+    let release = (): void => undefined;
+    const legacyGate = new Promise<void>((resolve) => { release = resolve; });
+    const h = harness({ legacy: { a: OLD }, legacyGate });
+    h.store.prime(true);
+    const pending = h.store.get('a');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.legacyCalls).toEqual(['a']);
+    const remote = { lastReadNs: 9, markedUnread: false, at: 50 };
+    await h.store.applyRemote([{ convId: 'a', ...remote }]);
+    release();
+    expect(await pending).toEqual(remote);
+    expect(await h.store.get('a')).toEqual(remote);
+    expect(h.saved()).toEqual({ legacy: true, reads: { a: remote } });
   });
 
   test('treats a store read before the account list as an upgrade', async () => {

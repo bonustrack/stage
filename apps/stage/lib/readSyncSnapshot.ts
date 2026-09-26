@@ -1,7 +1,7 @@
 import type { SyncMessage } from '@stage-labs/client/xmtp/readState';
 import {
   assembleSyncSnapshot, bootChangeCounter, countSyncChange, parseChangeCounter, snapshotDue,
-  type ChangeCounter, type CountedScan, type PinStamp, type SyncSnapshotContent,
+  type ChangeCounter, type CountedScan, type SyncSnapshotContent, type SyncStamps,
 } from '@stage-labs/client/xmtp/syncSnapshot';
 import { appStorage } from '../platform/storage';
 import { loadBoardOrder } from './boardOrder';
@@ -44,20 +44,15 @@ export function countSyncMessage(groupId: string, m: SyncMessage): void {
 }
 
 export function syncSnapshotDue(groupId: string): boolean {
-  return slot !== null && slot.groupId === groupId && snapshotDue(slot.counter.count);
+  return slot?.groupId === groupId && snapshotDue(slot.counter.count);
 }
 
 export function resetChangeCounter(groupId: string): void {
-  if (slot !== null && slot.groupId === groupId) keep({ ...slot, counter: { ...slot.counter, count: 0 } });
-}
-
-export interface SnapshotStamps {
-  pin: PinStamp | null;
-  boardAt: number | undefined;
+  if (slot?.groupId === groupId) keep({ ...slot, counter: { ...slot.counter, count: 0 } });
 }
 
 export async function buildSyncSnapshot(
-  accountId: string, seen: ReadonlySet<string>, stamps: SnapshotStamps,
+  accountId: string, seen: ReadonlySet<string>, stamps: SyncStamps, groups: readonly string[],
 ): Promise<SyncSnapshotContent | null> {
   const rows = getCachedRows();
   if (rows === null) return null;
@@ -69,10 +64,10 @@ export async function buildSyncSnapshot(
     stored: new Map(stored),
     seen,
     pinOrder,
-    pinStamp: stamps.pin,
     boardOrder,
-    boardAt: stamps.boardAt,
+    stamps,
     cleared: getClearedChats(),
+    groups,
     at: Date.now(),
   });
 }

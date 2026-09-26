@@ -5,7 +5,8 @@ import {
   type ReadStateContent, type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  collectSnapshotReplay, isSyncStateType, scanSyncGroups, scanSyncHistory, type PinStamp, type SyncScan,
+  collectSnapshotReplay, isSyncStateType, replayStamps, scanCovers, scanSyncGroups, scanSyncHistory,
+  type SyncScan, type SyncStamps,
 } from '@stage-labs/client/xmtp/syncSnapshot';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
@@ -22,6 +23,7 @@ import {
 import {
   buildSyncSnapshot, clearChangeCounter, countSyncMessage, loadChangeCounter, resetChangeCounter, syncSnapshotDue,
 } from './readSyncSnapshot';
+import { makeSyncStampsStore } from './readSyncStamps.core';
 import { rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import {
@@ -48,7 +50,12 @@ const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
 const nudgedFrom = new Set<string>();
 const seenReads = new Set<string>();
-let lastPin: PinStamp | null = null;
+const stamps = makeSyncStampsStore({
+  get: (key) => appStorage.get(key),
+  save: (key, raw) => { appStorage.set(key, raw).catch(ignored(undefined, 'cache')); },
+});
+let known: SyncGroupRef[] = [];
+let covered: string[] = [];
 let posting = false;
 
 function readKey(convId: string): string { return `read:${convId}`; }
@@ -83,19 +90,27 @@ async function applyReadStates(remote: readonly ReadStateContent[]): Promise<voi
   if (rows !== before) setCachedRows(rows);
 }
 
+function acceptPinState(state: PinStateContent): boolean {
+  if (state.order !== undefined) {
+    if (!shouldApplyReadState(stamps.current().pin?.at, state.at)) return false;
+    stamps.stampPin({ convId: state.convId, at: state.at });
+    return true;
+  }
+  const key = pinKey(state.convId);
+  if (!shouldApplyReadState(localAt.get(key), state.at)) return false;
+  localAt.set(key, state.at);
+  return true;
+}
+
 async function applyPinStates(remote: readonly PinStateContent[]): Promise<void> {
   for (const state of await Promise.all(remote.map(pinStateForRows))) {
-    const key = state.order === undefined ? pinKey(state.convId) : PIN_ORDER_KEY;
-    if (!shouldApplyReadState(localAt.get(key), state.at)) continue;
-    localAt.set(key, state.at);
-    if (state.order !== undefined) lastPin = { convId: state.convId, at: state.at };
-    await applyRemotePinState(state);
+    if (acceptPinState(state)) await applyRemotePinState(state);
   }
 }
 
 async function applyBoardState(accountId: string, state: BoardStateContent): Promise<void> {
-  if (!shouldApplyReadState(localAt.get(BOARD_ORDER_KEY), state.at)) return;
-  localAt.set(BOARD_ORDER_KEY, state.at);
+  if (!shouldApplyReadState(stamps.current().boardAt ?? undefined, state.at)) return;
+  stamps.stampBoard(state.at);
   await applyRemoteBoardOrder(accountId, state.order);
 }
 
@@ -129,32 +144,81 @@ async function ensureGroup(address: string): Promise<string> {
   return groupId ?? chooseGroup(address, await knownSyncGroups());
 }
 
-interface GroupReplay extends SyncScan<StreamedMessage> { id: string; cursorKey: string; cursor: number }
+type SyncGroupRef = Pick<SyncGroupState, 'id' | 'active'>;
 
-const EMPTY_SCAN: SyncScan<StreamedMessage> = { messages: [], snapshotNs: null };
+interface GroupReplay extends SyncScan<StreamedMessage> {
+  group: SyncGroupRef;
+  cursorKey: string;
+  cursor: number;
+  covered: boolean;
+}
 
-async function readGroup(accountId: string, group: SyncGroupState, floorNs: number): Promise<GroupReplay> {
-  if (group.active) await syncConversation(group.id).catch(reported('readSync.sync'));
+const EMPTY_SCAN: SyncScan<StreamedMessage> = {
+  messages: [], snapshotNs: null, covers: new Map(), floorNs: 0, reachedNs: Number.POSITIVE_INFINITY,
+};
+
+async function readGroup(accountId: string, group: SyncGroupRef, floorNs: number, seed: boolean): Promise<GroupReplay> {
+  const synced = group.active && await syncConversation(group.id).then(() => true, recover('readSync.sync', false));
   const cursorKey = `${CURSOR_PREFIX}${accountId}.${group.id}`;
   const cursor = Number(await appStorage.get(cursorKey).catch(recover('readSync.cursor', null))) || 0;
   const fetchPage = (limit: number, beforeMs: number | undefined) => syncMessagesPage(group.id, limit, beforeMs);
-  const scan = await scanSyncHistory(fetchPage, Math.max(cursor, floorNs))
-    .catch(recover('readSync.messages', EMPTY_SCAN));
-  return { id: group.id, cursorKey, cursor, ...scan };
+  const scan = await scanSyncHistory(fetchPage, seed ? floorNs : Math.max(cursor, floorNs), group.id)
+    .catch(recover('readSync.messages', null));
+  if (scan === null) return { group, cursorKey, cursor, ...EMPTY_SCAN, covered: false };
+  return { group, cursorKey, cursor, ...scan, covered: synced && scanCovers(scan, cursor) };
 }
 
-async function replay(accountId: string, target: string, groups: readonly SyncGroupState[]): Promise<void> {
-  const batches = await scanSyncGroups(groups, target, (group, floorNs) => readGroup(accountId, group, floorNs));
-  await applyReplay(accountId, collectSnapshotReplay(batches.flatMap((b) => b.messages), 0));
+function freshMessages(b: GroupReplay): StreamedMessage[] {
+  return b.messages.filter((m) => m.sentNs > b.cursor);
+}
+
+function seenStamps(batches: readonly GroupReplay[]): SyncStamps {
+  const applied = batches.flatMap((b) => b.messages.filter((m) => m.sentNs <= b.cursor));
+  return replayStamps(collectSnapshotReplay(applied, 0));
+}
+
+async function readSyncGroups(
+  accountId: string, target: string, groups: readonly SyncGroupRef[], seed: boolean,
+): Promise<GroupReplay[] | null> {
+  const token = bootToken;
+  const batches = await scanSyncGroups(groups.map((group) => ({ id: group.id, group })), target,
+    ({ group }, floorNs) => readGroup(accountId, group, floorNs, seed));
+  if (token !== bootToken) return null;
+  if (seed) stamps.seed(seenStamps(batches));
+  await applyReplay(accountId, collectSnapshotReplay(batches.flatMap(freshMessages), 0));
   for (const b of batches) {
-    const latest = b.messages.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
+    const fresh = freshMessages(b);
+    const latest = fresh.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
     if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
-    if (b.id !== target && b.messages.some(isStateMessage)) nudgeFrom(b.id);
+    if (b.group.id !== target && fresh.some(isStateMessage)) nudgeFrom(b.group.id);
   }
-  const own = batches.find((b) => b.id === target);
+  return batches;
+}
+
+function coveredIds(batches: readonly GroupReplay[]): string[] {
+  return batches.filter((b) => b.covered).map((b) => b.group.id);
+}
+
+async function replay(accountId: string, target: string, groups: readonly SyncGroupRef[], seed: boolean): Promise<void> {
+  const batches = await readSyncGroups(accountId, target, groups, seed);
+  if (batches === null) return;
+  known = [...groups];
+  covered = coveredIds(batches);
+  const own = batches.find((b) => b.group.id === target);
   if (own === undefined) return;
   await loadChangeCounter(accountId, target, own);
-  await snapshotIfDue(target, accountId);
+  if (syncSnapshotDue(target)) await postSyncSnapshot(target, accountId, true);
+}
+
+async function adoptStamps(accountId: string, token: number): Promise<boolean> {
+  const stored = await stamps.read(accountId).catch(recover<SyncStamps | null | undefined>('readSync.stamps', undefined));
+  if (token !== bootToken) return false;
+  stamps.adopt(accountId, stored ?? null, stored !== undefined);
+  return stored === null || stored === undefined;
+}
+
+function withTarget(groups: readonly SyncGroupRef[], target: string): SyncGroupRef[] {
+  return groups.some((g) => g.id === target) ? [...groups] : [...groups, { id: target, active: true }];
 }
 
 async function boot(): Promise<void> {
@@ -162,16 +226,19 @@ async function boot(): Promise<void> {
   groupId = null;
   localAt.clear();
   seenReads.clear();
-  lastPin = null;
+  stamps.clear();
+  known = [];
+  covered = [];
   clearChangeCounter();
   if (!(await waitForXmtpReady())) return;
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   await ensureClearedChatsLoaded();
   try {
+    const seed = await adoptStamps(rec.id, token);
     const groups = await knownSyncGroups();
     const target = await chooseGroup(rec.address, groups);
-    if (token === bootToken) await replay(rec.id, target, groups);
+    if (token === bootToken) await replay(rec.id, target, withTarget(groups, target), seed);
   } catch (err) {
     report('readSync.boot', err);
   }
@@ -189,13 +256,22 @@ async function withGroup(
   }
 }
 
-async function postSyncSnapshot(target: string, accountId: string): Promise<void> {
-  if (posting) return;
+async function catchUp(accountId: string, target: string): Promise<string[]> {
+  const batches = await readSyncGroups(accountId, target, withTarget(known, target), false);
+  if (batches === null) return [];
+  covered = coveredIds(batches);
+  return covered;
+}
+
+async function postSyncSnapshot(target: string, accountId: string, caughtUp = false): Promise<void> {
+  if (posting || !stamps.persisting()) return;
+  const token = bootToken;
   posting = true;
   try {
-    const stamps = { pin: lastPin, boardAt: localAt.get(BOARD_ORDER_KEY) };
-    const content = await buildSyncSnapshot(accountId, seenReads, stamps);
-    if (content === null) return;
+    const groups = caughtUp ? covered : await catchUp(accountId, target);
+    if (!groups.includes(target)) return;
+    const content = await buildSyncSnapshot(accountId, seenReads, stamps.current(), groups);
+    if (content === null || token !== bootToken) return;
     await xmtpSendJson(lineOfConv(target), SYNC_SNAPSHOT_CODEC, content);
     resetChangeCounter(target);
   } finally {
@@ -216,7 +292,7 @@ function publish<T>(codec: JsonCodec<T>, content: T, onlyFor?: string): void {
 
 function stampBoardState(order: readonly string[]): BoardStateContent {
   const at = Date.now();
-  localAt.set(BOARD_ORDER_KEY, at);
+  stamps.stampBoard(at);
   return { order: [...order], at };
 }
 
@@ -237,8 +313,7 @@ async function publishPinOrder(line: string): Promise<void> {
   const first = order[0];
   if (first === undefined) return;
   const at = Date.now();
-  localAt.set(PIN_ORDER_KEY, at);
-  lastPin = { convId: first, at };
+  stamps.stampPin({ convId: first, at });
   await xmtpSendJson(line, PIN_STATE_CODEC, { convId: first, pinned: true, order: [...order], at });
 }
 
@@ -275,8 +350,7 @@ function queueReadPublish(change: ReadStateChange): void {
 function queuePinPublish(change: PinChange): void {
   const at = Date.now();
   localAt.set(pinKey(change.convId), at);
-  localAt.set(PIN_ORDER_KEY, at);
-  lastPin = { convId: change.convId, at };
+  stamps.stampPin({ convId: change.convId, at });
   const content: PinStateContent = { convId: change.convId, pinned: change.pinned, order: [...change.order], at };
   debounce(PIN_ORDER_KEY, () => { publish(PIN_STATE_CODEC, content); });
 }
@@ -308,6 +382,7 @@ async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
   const accountId = await adoptSyncGroup(convId);
   if (accountId === null) return;
   countSyncMessage(convId, m);
+  if (!stamps.loaded()) return;
   await applyReplay(accountId, collectSnapshotReplay([m], 0));
   if (groupId !== null && convId !== groupId) nudgeFrom(convId);
 }

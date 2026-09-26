@@ -3,8 +3,8 @@ import type { CachedChannelRow } from './channelsCache';
 import type { XmtpContentTypeId } from './codecs';
 import {
   BOARD_STATE_CONTENT_TYPE, CLEAR_STATE_CONTENT_TYPE, PIN_STATE_CONTENT_TYPE, READ_STATE_CONTENT_TYPE,
-  collectSyncReplay, isBoardStateType, isClearStateType, isPinStateType, isReadStateType,
-  type ClearedChats, type SyncMessage, type SyncReplay,
+  boardStateSchema, clearStateSchema, collectSyncReplay, isBoardStateType, isClearStateType, isPinStateType,
+  isReadStateType, readStateSchema, type ClearedChats, type SyncMessage, type SyncReplay,
 } from './readState';
 
 export const SYNC_SNAPSHOT_CONTENT_TYPE: XmtpContentTypeId = {
@@ -16,11 +16,7 @@ export const UNSTAMPED_AT = 1;
 const idSchema = z.string().min(1);
 const atSchema = z.number().positive();
 
-const snapshotReadSchema = z.object({
-  lastReadNs: z.number().nonnegative(),
-  markedUnread: z.boolean(),
-  at: atSchema,
-});
+const snapshotReadSchema = readStateSchema.omit({ convId: true });
 
 export type SnapshotRead = z.infer<typeof snapshotReadSchema>;
 
@@ -47,8 +43,9 @@ export function parseReadStateFile(raw: string): ReadStateFile | null {
 export const syncSnapshotSchema = z.object({
   reads: z.record(idSchema, snapshotReadSchema),
   pins: z.object({ convId: idSchema, pinned: z.boolean(), order: z.array(idSchema), at: atSchema }).nullable(),
-  cleared: z.record(idSchema, z.number().nonnegative()),
-  board: z.object({ order: z.array(idSchema), at: atSchema }).nullable(),
+  cleared: clearStateSchema.shape.cleared,
+  board: boardStateSchema.nullable(),
+  groups: z.array(idSchema),
   at: atSchema,
 });
 
@@ -84,12 +81,11 @@ function typeString(type: XmtpContentTypeId): string {
 }
 
 function expandSnapshot(snapshot: SyncSnapshotContent, sentNs: number): SyncMessage[] {
-  const at = (contentTypeId: string, content: unknown): SyncMessage => ({ contentTypeId, content, sentNs });
-  const reads = Object.entries(snapshot.reads)
-    .map(([convId, read]) => at(typeString(READ_STATE_CONTENT_TYPE), { convId, ...read }));
-  const pins = snapshot.pins === null ? [] : [at(typeString(PIN_STATE_CONTENT_TYPE), snapshot.pins)];
-  const board = snapshot.board === null ? [] : [at(typeString(BOARD_STATE_CONTENT_TYPE), snapshot.board)];
-  return [...reads, ...pins, at(typeString(CLEAR_STATE_CONTENT_TYPE), { cleared: snapshot.cleared }), ...board];
+  const message = (type: XmtpContentTypeId, content: unknown): SyncMessage => ({ contentTypeId: typeString(type), content, sentNs });
+  const reads = Object.entries(snapshot.reads).map(([convId, read]) => message(READ_STATE_CONTENT_TYPE, { convId, ...read }));
+  const pins = snapshot.pins === null ? [] : [message(PIN_STATE_CONTENT_TYPE, snapshot.pins)];
+  const board = snapshot.board === null ? [] : [message(BOARD_STATE_CONTENT_TYPE, snapshot.board)];
+  return [...reads, ...pins, message(CLEAR_STATE_CONTENT_TYPE, { cleared: snapshot.cleared }), ...board];
 }
 
 export function expandSyncSnapshots(messages: readonly SyncMessage[]): SyncMessage[] {
@@ -116,67 +112,78 @@ export type FetchSyncPage<M extends SyncPageMessage> = (limit: number, beforeMs:
 export interface SyncScan<M extends SyncPageMessage> {
   messages: M[];
   snapshotNs: number | null;
+  covers: ReadonlyMap<string, number>;
+  floorNs: number;
+  reachedNs: number;
 }
 
-function newestSnapshotNs(messages: readonly SyncMessage[]): number | null {
-  let newest: number | null = null;
+function addCovers(covers: Map<string, number>, messages: readonly SyncMessage[]): void {
   for (const m of messages) {
-    const valid = isSyncSnapshotType(m.contentTypeId) && parseSyncSnapshot(m.content) !== null;
-    if (valid && (newest === null || m.sentNs > newest)) newest = m.sentNs;
+    const snapshot = isSyncSnapshotType(m.contentTypeId) ? parseSyncSnapshot(m.content) : null;
+    for (const id of snapshot?.groups ?? []) covers.set(id, Math.max(covers.get(id) ?? 0, m.sentNs));
   }
-  return newest;
 }
 
 function oldestNs(messages: readonly SyncMessage[]): number {
   return messages.reduce((min, m) => Math.min(min, m.sentNs), Number.POSITIVE_INFINITY);
 }
 
+function scanFloor(afterNs: number, snapshotNs: number | undefined): number {
+  return snapshotNs === undefined ? afterNs : Math.max(afterNs, snapshotNs - SNAPSHOT_OVERLAP_NS);
+}
+
 interface ScanCursor {
   limit: number;
   beforeMs: number | undefined;
   floor: number;
-  snapshotNs: number | null;
+  reached: number;
 }
 
-function nextCursor<M extends SyncPageMessage>(
-  cursor: ScanCursor, page: readonly M[], fresh: readonly M[], afterNs: number,
-): ScanCursor {
-  const snapshotNs = cursor.snapshotNs ?? newestSnapshotNs(fresh);
-  const floor = snapshotNs === null ? afterNs : Math.max(afterNs, snapshotNs - SNAPSHOT_OVERLAP_NS);
-  if (fresh.length === 0) return { ...cursor, limit: cursor.limit * 2 };
-  return { ...cursor, floor, snapshotNs, beforeMs: Math.floor(oldestNs(page) / 1_000_000) + 1 };
+function scanDone(cursor: ScanCursor, seen: number): boolean {
+  return cursor.reached <= cursor.floor || seen >= SYNC_SCAN_CAP || cursor.limit > SYNC_SCAN_CAP;
 }
 
-function scanDone(page: readonly SyncMessage[], cursor: ScanCursor, seen: number): boolean {
-  return page.length < cursor.limit || oldestNs(page) <= cursor.floor || seen >= SYNC_SCAN_CAP
-    || cursor.limit > SYNC_SCAN_CAP;
+function nextCursor(cursor: ScanCursor, page: readonly SyncMessage[], fresh: number): ScanCursor {
+  if (fresh === 0) return { ...cursor, limit: cursor.limit * 2 };
+  return { ...cursor, beforeMs: Math.floor(oldestNs(page) / 1_000_000) + 1 };
 }
 
 export async function scanSyncHistory<M extends SyncPageMessage>(
-  fetchPage: FetchSyncPage<M>, afterNs: number,
+  fetchPage: FetchSyncPage<M>, afterNs: number, groupId: string,
 ): Promise<SyncScan<M>> {
   const seen = new Map<string, M>();
-  let cursor: ScanCursor = { limit: SYNC_PAGE_SIZE, beforeMs: undefined, floor: afterNs, snapshotNs: null };
+  const covers = new Map<string, number>();
+  let cursor: ScanCursor = { limit: SYNC_PAGE_SIZE, beforeMs: undefined, floor: afterNs, reached: Number.POSITIVE_INFINITY };
   for (;;) {
     const page = await fetchPage(cursor.limit, cursor.beforeMs);
     const fresh = page.filter((m) => !seen.has(m.id));
     for (const m of fresh) seen.set(m.id, m);
-    const limit = cursor.limit;
-    cursor = nextCursor(cursor, page, fresh, afterNs);
-    if (scanDone(page, { ...cursor, limit }, seen.size)) break;
+    addCovers(covers, fresh);
+    const reached = page.length < cursor.limit ? 0 : Math.min(cursor.reached, oldestNs(page));
+    cursor = { ...cursor, floor: scanFloor(afterNs, covers.get(groupId)), reached };
+    if (scanDone(cursor, seen.size)) break;
+    cursor = nextCursor(cursor, page, fresh.length);
   }
-  return { messages: [...seen.values()].filter((m) => m.sentNs > cursor.floor), snapshotNs: cursor.snapshotNs };
+  const { floor, reached } = cursor;
+  const messages = [...seen.values()].filter((m) => m.sentNs > floor);
+  const kept = new Map<string, number>();
+  addCovers(kept, messages);
+  return { messages, snapshotNs: covers.get(groupId) ?? null, covers: kept, floorNs: floor, reachedNs: reached };
 }
 
-export async function scanSyncGroups<G extends { id: string }, S extends { snapshotNs: number | null }>(
+export function scanCovers(scan: Pick<SyncScan<SyncPageMessage>, 'floorNs' | 'reachedNs'>, cursorNs: number): boolean {
+  return scan.reachedNs <= Math.max(scan.floorNs, cursorNs);
+}
+
+export async function scanSyncGroups<G extends { id: string }, S extends { covers: ReadonlyMap<string, number> }>(
   groups: readonly G[], target: string, scan: (group: G, floorNs: number) => Promise<S>,
 ): Promise<S[]> {
   const ordered = [...groups].sort((a, b) => Number(b.id === target) - Number(a.id === target) || a.id.localeCompare(b.id));
+  const floors = new Map<string, number>();
   const scans: S[] = [];
-  let floorNs = 0;
   for (const group of ordered) {
-    const result = await scan(group, floorNs);
-    if (result.snapshotNs !== null) floorNs = Math.max(floorNs, result.snapshotNs - SNAPSHOT_OVERLAP_NS);
+    const result = await scan(group, floors.get(group.id) ?? 0);
+    for (const [id, ns] of result.covers) floors.set(id, Math.max(floors.get(id) ?? 0, ns - SNAPSHOT_OVERLAP_NS));
     scans.push(result);
   }
   return scans;
@@ -220,9 +227,35 @@ export function countSyncChange(counter: ChangeCounter, m: SyncMessage): ChangeC
   return { count: parseSyncSnapshot(m.content) === null ? counter.count : 0, ns: m.sentNs };
 }
 
-export interface PinStamp {
-  convId: string;
-  at: number;
+const pinStampSchema = z.object({ convId: idSchema, at: atSchema });
+
+export type PinStamp = z.infer<typeof pinStampSchema>;
+
+const syncStampsSchema = z.object({ pin: pinStampSchema.nullable(), boardAt: atSchema.nullable() });
+
+export type SyncStamps = z.infer<typeof syncStampsSchema>;
+
+export const NO_SYNC_STAMPS: SyncStamps = { pin: null, boardAt: null };
+
+export function parseSyncStamps(raw: string | null): SyncStamps | null {
+  if (raw === null) return null;
+  const parsed = syncStampsSchema.safeParse(parseJson(raw));
+  return parsed.success ? parsed.data : null;
+}
+
+function newerStamp(a: number | null, b: number | null): number | null {
+  if (a === null) return b;
+  return b === null ? a : Math.max(a, b);
+}
+
+export function mergeSyncStamps(a: SyncStamps, b: SyncStamps): SyncStamps {
+  const pin = a.pin === null || (b.pin !== null && b.pin.at > a.pin.at) ? b.pin : a.pin;
+  return { pin, boardAt: newerStamp(a.boardAt, b.boardAt) };
+}
+
+export function replayStamps(replay: SyncReplay): SyncStamps {
+  const pin = replay.pins.find((p) => p.order !== undefined);
+  return { pin: pin === undefined ? null : { convId: pin.convId, at: pin.at }, boardAt: replay.board?.at ?? null };
 }
 
 export interface SnapshotInputs {
@@ -230,10 +263,10 @@ export interface SnapshotInputs {
   stored: ReadonlyMap<string, SnapshotRead>;
   seen: ReadonlySet<string>;
   pinOrder: readonly string[];
-  pinStamp: PinStamp | null;
   boardOrder: readonly string[];
-  boardAt: number | undefined;
+  stamps: SyncStamps;
   cleared: ClearedChats;
+  groups: readonly string[];
   at: number;
 }
 
@@ -262,13 +295,18 @@ function snapshotPins(order: readonly string[], stamp: PinStamp | null): SyncSna
   return stamp === null ? null : { convId: stamp.convId, pinned: false, order: [], at };
 }
 
+function snapshotBoard(order: readonly string[], boardAt: number | null): SyncSnapshotContent['board'] {
+  if (boardAt === null && order.length === 0) return null;
+  return { order: [...order], at: boardAt ?? UNSTAMPED_AT };
+}
+
 export function assembleSyncSnapshot(inputs: SnapshotInputs): SyncSnapshotContent {
-  const board = inputs.boardOrder.length === 0 ? null : { order: [...inputs.boardOrder], at: inputs.boardAt ?? UNSTAMPED_AT };
   return {
     reads: snapshotReads(inputs),
-    pins: snapshotPins(inputs.pinOrder, inputs.pinStamp),
+    pins: snapshotPins(inputs.pinOrder, inputs.stamps.pin),
     cleared: inputs.cleared,
-    board,
+    board: snapshotBoard(inputs.boardOrder, inputs.stamps.boardAt),
+    groups: [...inputs.groups],
     at: inputs.at,
   };
 }

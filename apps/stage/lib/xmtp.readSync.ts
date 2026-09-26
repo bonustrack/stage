@@ -48,6 +48,5 @@ export async function syncMessagesPage(
   convId: string, limit: number, beforeMs: number | undefined,
 ): Promise<StreamedMessage[]> {
   const conv = await requireConv(convId);
-  const query = beforeMs === undefined ? { limit, order: 'desc' as const } : { limit, order: 'desc' as const, beforeMs };
-  return (await sdk.messages(conv, query)).map(sdk.rowOf);
+  return (await sdk.messages(conv, { limit, order: 'desc', beforeMs })).map(sdk.rowOf);
 }
