@@ -85,7 +85,7 @@ const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan,
 
 export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
   const { text } = usePalette();
-  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete}/>;
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={16}/>;
 }
 
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {

@@ -55,8 +55,10 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron, divider =
 
 interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
 
-export function OverflowMenu({ color, items, onSelect, label }: {
-  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void; label?: string;
+const OVERFLOW_TRIGGER_HIT = 40;
+
+export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
+  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void; label?: string; size?: number;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const dark = useEffectiveColorScheme() === 'dark';
@@ -65,8 +67,8 @@ export function OverflowMenu({ color, items, onSelect, label }: {
   const trigger = useHover();
   return (
     <>
-      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8} accessibilityLabel={label} {...trigger.hoverProps}>
-        <Glyph icon={IconDotGrid1x3Vertical} size={24} color={trigger.hovered ? link : color} />
+      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={(OVERFLOW_TRIGGER_HIT - size) / 2} accessibilityLabel={label} {...trigger.hoverProps}>
+        <Glyph icon={IconDotGrid1x3Vertical} size={size} color={trigger.hovered ? link : color} />
       </Pressable>
       <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
         <MenuList dark={dark}>
