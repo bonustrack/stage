@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
-  collectSyncReplay, pickPublishGroup,
+  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -60,6 +60,19 @@ describe('pin state payload', () => {
     expect(parsePinState({ convId: 'c1', pinned: 'yes', at: 3 })).toBeNull();
     expect(isPinStateType('stage.box/pinState:1.0')).toBe(true);
     expect(isPinStateType('stage.box/readState:1.0')).toBe(false);
+  });
+});
+
+describe('board state payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
+    const ok = { order: ['label:done', 'unlabeled'], at: 3 };
+    expect(parseBoardState(ok)).toEqual(ok);
+    expect(parseBoardState({ order: [''], at: 3 })).toBeNull();
+    expect(parseBoardState({ order: ['label:done'], at: 0 })).toBeNull();
+    expect(parseBoardState({ at: 3 })).toBeNull();
+    expect(isBoardStateType('stage.box/boardState:1.0')).toBe(true);
+    expect(isBoardStateType('stage.box/pinState:1.0')).toBe(false);
+    expect(isPinStateType('stage.box/boardState:1.0')).toBe(false);
   });
 });
 
@@ -157,6 +170,18 @@ describe('restored sync groups', () => {
       { contentTypeId: PIN, content: { convId: 'w', pinned: true, at: 2, order: ['w'] }, sentNs: 4 },
     ], 0);
     expect(replay.pins.map((p) => p.convId)).toEqual(['y', 'z']);
+  });
+
+  test('keeps the newest board order by its own clock, not by arrival', () => {
+    const BOARD = 'stage.box/boardState:1.0';
+    const replay = collectSyncReplay([
+      { contentTypeId: BOARD, content: { order: ['label:a'], at: 5 }, sentNs: 1 },
+      { contentTypeId: BOARD, content: { order: ['label:b'], at: 9 }, sentNs: 2 },
+      { contentTypeId: BOARD, content: { order: ['label:c'], at: 7 }, sentNs: 3 },
+      { contentTypeId: BOARD, content: { order: [''], at: 12 }, sentNs: 4 },
+    ], 0);
+    expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
+    expect(collectSyncReplay([], 0).board).toBeNull();
   });
 
   test('skips messages at or before the cursor', () => {

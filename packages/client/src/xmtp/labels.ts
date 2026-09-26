@@ -100,6 +100,11 @@ export function removeLabel(labels: string[], label: string): string[] {
   return labels.filter((l) => l.toLowerCase() !== target);
 }
 
+export function moveLabel(labels: string[], from: string | null, to: string | null): string[] {
+  if (to === null) return [];
+  return addLabel(from === null ? labels : removeLabel(labels, from), to);
+}
+
 export async function writeLabels(
   group: Group,
   fn: (labels: string[]) => string[],

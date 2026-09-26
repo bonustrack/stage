@@ -1,8 +1,9 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isClearStateType, isPinStateType, isReadStateType, pickPublishGroup, shouldApplyReadState,
-  syncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupState, type SyncReplay,
+  collectSyncReplay, isBoardStateType, isClearStateType, isPinStateType, isReadStateType, pickPublishGroup,
+  shouldApplyReadState, syncGroupName, type BoardStateContent, type PinStateContent, type ReadStateContent,
+  type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
@@ -10,8 +11,9 @@ import { subscribeAccountEpoch } from './accountEpoch';
 import { getCachedRows, setCachedRows } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder } from './pins';
 import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
+import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
 import {
-  isHiddenConv, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
+  isHiddenConv, onBoardOrderChanged, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
   type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
@@ -23,7 +25,9 @@ import {
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
-import { CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec } from './xmtpJsonCodecs';
+import {
+  BOARD_STATE_CODEC, CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec,
+} from './xmtpJsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
 const CURSOR_PREFIX = 'readSync.cursor.';
@@ -42,6 +46,8 @@ const nudgedFrom = new Set<string>();
 function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
+const BOARD_ORDER_KEY = 'boardOrder';
+const STATE_TYPES = [isReadStateType, isPinStateType, isClearStateType, isBoardStateType];
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
   const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
@@ -82,14 +88,21 @@ async function applyPinStates(remote: readonly PinStateContent[]): Promise<void>
   }
 }
 
+async function applyBoardState(state: BoardStateContent): Promise<void> {
+  if (!shouldApplyReadState(localAt.get(BOARD_ORDER_KEY), state.at)) return;
+  localAt.set(BOARD_ORDER_KEY, state.at);
+  await applyRemoteBoardOrder(state.order);
+}
+
 async function applyReplay(replay: SyncReplay): Promise<void> {
   await applyReadStates(replay.reads);
   await applyPinStates(replay.pins);
   if (replay.cleared !== null) await applyRemoteClearedChats(replay.cleared);
+  if (replay.board !== null) await applyBoardState(replay.board);
 }
 
 function isStateMessage(m: RowMessage): boolean {
-  return isReadStateType(m.contentTypeId) || isPinStateType(m.contentTypeId) || isClearStateType(m.contentTypeId);
+  return STATE_TYPES.some((isType) => isType(m.contentTypeId));
 }
 
 async function knownSyncGroups(): Promise<SyncGroupState[]> {
@@ -163,9 +176,18 @@ function publish<T>(codec: JsonCodec<T>, content: T): void {
   void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content));
 }
 
+async function publishBoardSnapshot(line: string): Promise<void> {
+  const order = await loadBoardOrder();
+  if (order.length === 0) return;
+  const at = Date.now();
+  localAt.set(BOARD_ORDER_KEY, at);
+  await xmtpSendJson(line, BOARD_STATE_CODEC, { order: [...order], at });
+}
+
 async function publishSnapshot(target: string): Promise<void> {
   const line = lineOfConv(target);
   await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: getClearedChats() });
+  await publishBoardSnapshot(line);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
@@ -205,6 +227,13 @@ function queuePinPublish(change: PinChange): void {
   debounce(PIN_ORDER_KEY, () => { publish(PIN_STATE_CODEC, content); });
 }
 
+function queueBoardPublish(order: readonly string[]): void {
+  const at = Date.now();
+  localAt.set(BOARD_ORDER_KEY, at);
+  const content: BoardStateContent = { order: [...order], at };
+  debounce(BOARD_ORDER_KEY, () => { publish(BOARD_STATE_CODEC, content); });
+}
+
 function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
@@ -234,6 +263,7 @@ export function startReadSync(): void {
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
   onClearedChatsChanged(queueClearedPublish);
+  onBoardOrderChanged(queueBoardPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
   void boot();

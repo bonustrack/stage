@@ -1,10 +1,13 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
+import { moveLabel } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
 import {
   addGroupMembers as addMembers, removeGroupMembers as removeMembers, updateGroupMeta as updateMeta,
 } from '../../lib/xmtp.groups';
-import { addGroupLabel as addLabel, removeGroupLabel as removeLabel } from '../../lib/xmtp.labels';
+import {
+  addGroupLabel as addLabel, moveGroupLabel as moveRemoteLabel, removeGroupLabel as removeLabel,
+} from '../../lib/xmtp.labels';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { convIdOfLine, lineOfConv } from '../../lib/xmtp.types';
 import { groupRowMeta } from './conversation';
@@ -38,6 +41,23 @@ export async function addGroupLabel(line: string, label: string): Promise<string
 
 export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
   try { return await removeLabel(line, label); } finally { refreshGroupRow(convIdOfLine(line)); }
+}
+
+function rowLabels(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((l): l is string => typeof l === 'string') : [];
+}
+
+function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
+  const rows = getCachedRows();
+  const cur = rows?.find(r => r.convId === convId);
+  if (!rows || !cur) return;
+  setCachedRows(rows.map(r => (r === cur ? { ...r, labels: next(rowLabels(r.labels)) } : r)));
+}
+
+export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
+  const convId = convIdOfLine(line);
+  patchRowLabels(convId, (labels) => moveLabel(labels, from, to));
+  try { return await moveRemoteLabel(line, from, to); } finally { refreshGroupRow(convId); }
 }
 
 export async function updateGroupMeta(convId: string, patch: Parameters<typeof updateMeta>[1]): Promise<void> {

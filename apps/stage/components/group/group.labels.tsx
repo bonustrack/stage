@@ -19,6 +19,11 @@ import { reported } from '../../lib/errorPolicy';
 
 const MAX_SUGGESTIONS = 8;
 
+export function toastLabelError(e: unknown): void {
+  if (e instanceof LabelPermissionError) capabilities.toast(e.message);
+  else capabilities.toast('Could not update labels. Try again.');
+}
+
 function SuggestionChip({ label, busy, onAdd }: {
   label: string; busy: boolean; onAdd: () => void;
 }): React.ReactElement {
@@ -114,11 +119,6 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
     return (): void => { cancelled = true; };
   }, [line]);
 
-  const reportError = (e: unknown): void => {
-    if (e instanceof LabelPermissionError) capabilities.toast(e.message);
-    else capabilities.toast('Could not update labels. Try again.');
-  };
-
   const add = async (value: string): Promise<void> => {
     const clean = value.trim();
     if (!clean || busy) return;
@@ -127,7 +127,7 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
       const next = await addGroupLabel(line, clean);
       setLabels(next);
       setDraft('');
-    } catch (e) { reportError(e); } finally { setBusy(false); }
+    } catch (e) { toastLabelError(e); } finally { setBusy(false); }
   };
 
   const remove = async (label: string): Promise<void> => {
@@ -136,7 +136,7 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
     try {
       const next = await removeGroupLabel(line, label);
       setLabels(next);
-    } catch (e) { reportError(e); } finally { setRemoving(null); }
+    } catch (e) { toastLabelError(e); } finally { setRemoving(null); }
   };
 
   const atCap = labels.length >= MAX_LABELS;

@@ -78,6 +78,32 @@ export function parseClearState(content: unknown): ClearStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const BOARD_STATE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'boardState', versionMajor: 1, versionMinor: 0,
+};
+
+export const boardOrderSchema = z.array(z.string().min(1));
+
+export const boardStateSchema = z.object({
+  order: boardOrderSchema,
+  at: z.number().positive(),
+});
+
+export type BoardStateContent = z.infer<typeof boardStateSchema>;
+
+export function boardStateFallbackText(): string {
+  return 'Stage board layout';
+}
+
+export function isBoardStateType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(BOARD_STATE_CONTENT_TYPE.typeId);
+}
+
+export function parseBoardState(content: unknown): BoardStateContent | null {
+  const parsed = boardStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
   const merged: ClearedChats = {};
   for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
@@ -153,6 +179,7 @@ export interface SyncReplay {
   reads: ReadStateContent[];
   pins: PinStateContent[];
   cleared: ClearedChats | null;
+  board: BoardStateContent | null;
   latestNs: number;
 }
 
@@ -184,12 +211,22 @@ function mergedCleared(messages: readonly SyncMessage[]): ClearedChats | null {
   return merged;
 }
 
+function latestBoard(messages: readonly SyncMessage[]): BoardStateContent | null {
+  let latest: BoardStateContent | null = null;
+  for (const m of messages) {
+    const state = isBoardStateType(m.contentTypeId) ? parseBoardState(m.content) : null;
+    if (state !== null && (latest === null || state.at > latest.at)) latest = state;
+  }
+  return latest;
+}
+
 export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number): SyncReplay {
   const fresh = messages.filter((m) => m.sentNs > afterNs);
   return {
     reads: latestReads(fresh),
     pins: pinsSinceLastOrder(fresh),
     cleared: mergedCleared(fresh),
+    board: latestBoard(fresh),
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
 }

@@ -27,6 +27,7 @@ import {
   READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, type ReadStateContent,
   PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
   CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, type ClearStateContent,
+  BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
 export type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
@@ -85,5 +86,10 @@ export const PIN_STATE_CODEC: JsonCodec<PinStateContent> = {
 
 export const CLEAR_STATE_CODEC: JsonCodec<ClearStateContent> = {
   ...jsonCodec<ClearStateContent>(CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema),
+  shouldPush: (): boolean => false,
+};
+
+export const BOARD_STATE_CODEC: JsonCodec<BoardStateContent> = {
+  ...jsonCodec<BoardStateContent>(BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema),
   shouldPush: (): boolean => false,
 };

@@ -47,3 +47,8 @@ const clearedListeners = makeListeners();
 
 export const onClearedChatsChanged = clearedListeners.subscribe;
 export const notifyClearedChatsChanged = clearedListeners.notify;
+
+const boardOrderListeners = makeListeners<readonly string[]>();
+
+export const onBoardOrderChanged = boardOrderListeners.subscribe;
+export const notifyBoardOrderChanged = boardOrderListeners.notify;

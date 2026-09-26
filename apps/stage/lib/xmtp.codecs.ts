@@ -7,6 +7,7 @@ import {
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, READ_STATE_CODEC, PIN_STATE_CODEC, CLEAR_STATE_CODEC,
+  BOARD_STATE_CODEC,
 } from './xmtpJsonCodecs';
 import type { AccountRecord } from './accounts';
 import { signingKeyForRecord } from './xmtp.signing.core';
@@ -26,6 +27,7 @@ export const XMTP_CODECS = [
   READ_STATE_CODEC,
   PIN_STATE_CODEC,
   CLEAR_STATE_CODEC,
+  BOARD_STATE_CODEC,
 ];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {

@@ -25,26 +25,40 @@ import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useBoardOrder } from '../../lib/boardOrder';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, type BoardColumn,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, orderedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
+import { useBoardDragSource, useBoardDropZone } from './boardDrag';
+import { dropOnBoard } from './boardActions';
 
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
 const TITLE_SIZE = '2xl';
+const DRAGGING_OPACITY = 0.4;
+
+type OnBoardDrop = (drag: BoardDrag, key: string) => void;
 
 function columnMaxHeight(laneHeight: number): number | string | undefined {
   if (Platform.OS === 'web') return '100%';
   return laneHeight > 0 ? laneHeight : undefined;
 }
 
-function BoardCard({ item, pinned }: { item: ChannelRowData; pinned: boolean }): React.ReactElement {
+function BoardCard({ item, pinned, columnKey }: {
+  item: ChannelRowData; pinned: boolean; columnKey: string;
+}): React.ReactElement {
   const router = useRouter();
   const { border } = usePalette();
   const isGroup = !item.peerAddress;
   const draftText = getDraft(item.convId);
+  const source = useBoardDragSource(isGroup ? { kind: 'card', convId: item.convId, from: columnKey } : null);
   return (
-    <Box background={border} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
+    <Box
+      nativeID={source.nativeID}
+      background={border}
+      radius={BLOCK_RADIUS_DEFAULT}
+      style={{ overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1 }}
+    >
       <ChannelRow
         title={rowTitle(item)}
         avatarUri={item.avatarUri}
@@ -69,23 +83,27 @@ function ColumnTitle({ label }: { label: string | null }): React.ReactElement {
   return <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
 }
 
-function BoardColumnView({ column, maxHeight, pinned }: {
+function BoardColumnView({ column, maxHeight, pinned, onDrop }: {
   column: BoardColumn<ChannelRowData>;
   maxHeight?: number | string;
   pinned: readonly string[];
+  onDrop: OnBoardDrop;
 }): React.ReactElement {
-  const { border } = usePalette();
+  const { border, link } = usePalette();
+  const zone = useBoardDropZone(column.key, (drag) => { onDrop(drag, column.key); });
+  const handle = useBoardDragSource({ kind: 'column', key: column.key }, zone.nativeID);
   return (
     <Col
+      nativeID={zone.nativeID}
       surface="toolbar"
       radius={BLOCK_RADIUS_DEFAULT}
       padding={{ top: COLUMN_PADDING, bottom: COLUMN_PADDING, left: COLUMN_PADDING }}
       gap={CARD_GAP}
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
-      style={{ borderWidth: 1, borderColor: border }}
+      style={{ borderWidth: 1, borderColor: zone.over ? link : border, opacity: handle.dragging ? DRAGGING_OPACITY : 1 }}
     >
-      <Row align="center" gap={8} padding={{ left: 4, right: 4 + COLUMN_PADDING, y: 2 }}>
+      <Row nativeID={handle.nativeID} align="center" gap={8} padding={{ left: 4, right: 4 + COLUMN_PADDING, y: 2 }}>
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
       </Row>
@@ -96,15 +114,15 @@ function BoardColumnView({ column, maxHeight, pinned }: {
         contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
       >
         {column.rows.map(item => (
-          <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)}/>
+          <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}/>
         ))}
       </Scroll>
     </Col>
   );
 }
 
-function BoardLanes({ columns, pinned }: {
-  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[];
+function BoardLanes({ columns, pinned, onDrop }: {
+  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; onDrop: OnBoardDrop;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState(0);
@@ -124,6 +142,7 @@ function BoardLanes({ columns, pinned }: {
           column={column}
           maxHeight={columnMaxHeight(laneHeight)}
           pinned={pinned}
+          onDrop={onDrop}
         />
       ))}
     </Scroll>
@@ -136,18 +155,20 @@ function BoardBody(): React.ReactElement {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
+  const order = useBoardOrder();
   const [error, setError] = useState<string>('');
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   usePeerProfiles((rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]));
   useDraftsVersion();
   const columns = useMemo(
-    () => boardColumns((rows ?? []).filter(r => !isRowCleared(cleared, r)), pinned),
-    [rows, cleared, pinned],
+    () => orderedColumns(boardColumns((rows ?? []).filter(r => !isRowCleared(cleared, r)), pinned), order),
+    [rows, cleared, pinned, order],
   );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   if (columns.length === 0) return <EmptyState title="No channels yet"/>;
-  return <BoardLanes columns={columns} pinned={pinned}/>;
+  const onDrop: OnBoardDrop = (drag, key) => { dropOnBoard(columns, order, drag, key); };
+  return <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop}/>;
 }
 
 export function BoardScreen(): React.ReactElement {
