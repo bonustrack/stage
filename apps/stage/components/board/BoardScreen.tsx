@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
@@ -30,7 +31,7 @@ import {
   BOARD_COLUMN_WIDTH, BOARD_GAP, UNLABELED_TITLE, boardColumns, orderedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
-import { dropOnBoard } from './boardActions';
+import { dropOnBoard, removeBoardColumn } from './boardActions';
 
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
@@ -38,6 +39,11 @@ const TITLE_SIZE = '2xl';
 const DRAGGING_OPACITY = 0.4;
 
 type OnBoardDrop = (drag: BoardDrag, key: string) => void;
+
+interface ColumnActions {
+  onDrop: OnBoardDrop;
+  onRemove: (key: string) => void;
+}
 
 function columnMaxHeight(laneHeight: number): number | string | undefined {
   if (Platform.OS === 'web') return '100%';
@@ -83,14 +89,44 @@ function ColumnTitle({ label }: { label: string | null }): React.ReactElement {
   return <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
 }
 
-function BoardColumnView({ column, maxHeight, pinned, onDrop }: {
+function EmptyColumn({ removable, onRemove }: { removable: boolean; onRemove: () => void }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return (
+    <Col align="center" gap={8} padding={{ y: PAGE_GUTTER, right: COLUMN_PADDING }}>
+      <Text value="No channels" size="sm" role="secondary" textAlign="center"/>
+      {removable
+        ? <Button color="secondary" variant="ghost" size="sm" dark={dark} label="Remove column" onPress={onRemove}/>
+        : null}
+    </Col>
+  );
+}
+
+function ColumnCards({ column, pinned, onRemove }: {
+  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; onRemove: () => void;
+}): React.ReactElement {
+  if (column.rows.length === 0) return <EmptyColumn removable={column.removable} onRemove={onRemove}/>;
+  return (
+    <Scroll
+      gap={CARD_GAP}
+      nestedScrollEnabled
+      style={{ flexGrow: 0, flexShrink: 1 }}
+      contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
+    >
+      {column.rows.map(item => (
+        <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}/>
+      ))}
+    </Scroll>
+  );
+}
+
+function BoardColumnView({ column, maxHeight, pinned, actions }: {
   column: BoardColumn<ChannelRowData>;
   maxHeight?: number | string;
   pinned: readonly string[];
-  onDrop: OnBoardDrop;
+  actions: ColumnActions;
 }): React.ReactElement {
   const { border, link } = usePalette();
-  const zone = useBoardDropZone(column.key, (drag) => { onDrop(drag, column.key); });
+  const zone = useBoardDropZone(column.key, (drag) => { actions.onDrop(drag, column.key); });
   const handle = useBoardDragSource({ kind: 'column', key: column.key }, zone.nativeID);
   return (
     <Col
@@ -107,22 +143,13 @@ function BoardColumnView({ column, maxHeight, pinned, onDrop }: {
         <ColumnTitle label={column.label}/>
         <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
       </Row>
-      <Scroll
-        gap={CARD_GAP}
-        nestedScrollEnabled
-        style={{ flexGrow: 0, flexShrink: 1 }}
-        contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
-      >
-        {column.rows.map(item => (
-          <BoardCard key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}/>
-        ))}
-      </Scroll>
+      <ColumnCards column={column} pinned={pinned} onRemove={() => { actions.onRemove(column.key); }}/>
     </Col>
   );
 }
 
-function BoardLanes({ columns, pinned, onDrop }: {
-  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; onDrop: OnBoardDrop;
+function BoardLanes({ columns, pinned, actions }: {
+  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; actions: ColumnActions;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState(0);
@@ -142,7 +169,7 @@ function BoardLanes({ columns, pinned, onDrop }: {
           column={column}
           maxHeight={columnMaxHeight(laneHeight)}
           pinned={pinned}
-          onDrop={onDrop}
+          actions={actions}
         />
       ))}
     </Scroll>
@@ -161,14 +188,17 @@ function BoardBody(): React.ReactElement {
   usePeerProfiles((rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]));
   useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns((rows ?? []).filter(r => !isRowCleared(cleared, r)), pinned), order),
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
     [rows, cleared, pinned, order],
   );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   if (columns.length === 0) return <EmptyState title="No channels yet"/>;
-  const onDrop: OnBoardDrop = (drag, key) => { dropOnBoard(columns, order, drag, key); };
-  return <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop}/>;
+  const actions: ColumnActions = {
+    onDrop: (drag, key) => { dropOnBoard(columns, order, drag, key); },
+    onRemove: (key) => { removeBoardColumn(order, key); },
+  };
+  return <BoardLanes columns={columns} pinned={pinned} actions={actions}/>;
 }
 
 export function BoardScreen(): React.ReactElement {
