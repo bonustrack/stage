@@ -4,8 +4,7 @@ import { capabilities } from '../../lib/capabilities';
 import { LabelPermissionError, lineOfConv, moveGroupLabel, renameGroupLabel } from '../../modules/messaging';
 import { toastLabelError } from '../group/group.labels';
 import {
-  columnLabel, keptColumnOrder, labelCarriers, movedColumnOrder, renamedColumnOrder, renameTarget,
-  type BoardColumn, type BoardDrag,
+  columnLabel, keptColumnOrder, labelCarriers, movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 
 export function dropOnBoard(
@@ -18,8 +17,7 @@ export function dropOnBoard(
   }
   const kept = keptColumnOrder(columns, saved, drag.from);
   if (kept !== null) setBoardOrder(kept);
-  const from = columnLabel(columns, drag.from);
-  void moveGroupLabel(lineOfConv(drag.convId), from, columnLabel(columns, key)).catch(toastLabelError);
+  void moveGroupLabel(lineOfConv(drag.convId), columnLabel(columns, drag.from), columnLabel(columns, key)).catch(toastLabelError);
 }
 
 function renameOutcome(results: readonly PromiseSettledResult<unknown>[]): string | null {
@@ -34,9 +32,8 @@ function renameOutcome(results: readonly PromiseSettledResult<unknown>[]): strin
 
 export async function renameBoardLabel(
   rows: readonly ChannelListRow[], columns: readonly BoardColumn<unknown>[], saved: readonly string[],
-  from: string, name: string,
+  from: string, to: string,
 ): Promise<void> {
-  const to = renameTarget(columns, from, name).name;
   setBoardOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to));
   const results = await Promise.allSettled(
     labelCarriers(rows, from).map(convId => renameGroupLabel(lineOfConv(convId), from, to)),

@@ -27,7 +27,7 @@ function RenameColumnForm({ label, columns, rows, saved, onDone }: RenameProps &
   const disabled = problem !== null || target.name === label;
   const save = (): void => {
     if (disabled) return;
-    void renameBoardLabel(rows, columns, saved, label, name).catch(reported('board.rename'));
+    void renameBoardLabel(rows, columns, saved, label, target.name).catch(reported('board.rename'));
     onDone();
   };
   return (
