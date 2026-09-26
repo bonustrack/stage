@@ -9,7 +9,7 @@ import { AnchoredMenu, menuPointBelow, useAnchoredMenus } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { MENU_ROW } from './menuStyle';
-import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator } from '@stage-labs/kit/react-native/dropdown-menu';
+import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { useHover } from './hover';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';

@@ -16,7 +16,7 @@ import {
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { ControlTrigger } from './control-trigger';
-import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './dropdown-menu';
+import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './menu';
 import { IconChevronGrabberVertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronGrabberVertical';
 
 export interface SelectOption {

@@ -1,4 +1,4 @@
-import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/dropdown-menu';
+import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
 import { TOOLTIP as KIT_TOOLTIP } from '@stage-labs/kit/react-native/tooltip';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 

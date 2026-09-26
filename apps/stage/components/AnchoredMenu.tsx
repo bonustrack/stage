@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent } from 'react-native';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DropdownMenu } from '@stage-labs/kit/react-native/dropdown-menu';
+import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { AppModal } from './AppModal';
 import { Box } from './layout';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';

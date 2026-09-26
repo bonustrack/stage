@@ -1,12 +1,13 @@
 
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
-import { Glyph, type CentralIcon } from './glyph';
+import { centralIcon, type IconName } from '../central-icons';
+import { Glyph } from './glyph';
 import { FONT_SIZE, fontName } from '../tokens';
 
 export interface TabsOptionView {
   value: string;
   label: string;
-  icon?: CentralIcon;
+  icon?: IconName;
 }
 
 export interface TabsProps {
@@ -81,7 +82,7 @@ export function Tabs(props: TabsProps): React.ReactElement {
           >
             {opt.icon ? (
               <Glyph
-                icon={opt.icon}
+                icon={centralIcon(opt.icon)}
                 size={16}
                 color={selected ? p.activeText : p.text}
               />

@@ -11,7 +11,7 @@ import { Glyph } from './glyph';
 export type { BrandIconName, CentralIcon, HeroIconName, HeroSolidIconName, IconName };
 export { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
 
-export type IconVariant = IconStyle;
+export type IconVariant = IconStyle | 'outline';
 
 export interface IconProps {
   name: IconName;
@@ -23,7 +23,7 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 22, color, dark, variant = 'line' }: IconProps): React.ReactElement {
-  return <Glyph icon={centralIcon(name, variant)} size={size} color={color} dark={dark} />;
+  return <Glyph icon={centralIcon(name, variant === 'solid' ? 'solid' : 'line')} size={size} color={color} dark={dark} />;
 }
 
 export interface BrandIconProps {

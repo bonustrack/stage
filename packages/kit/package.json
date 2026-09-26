@@ -72,6 +72,7 @@
     "./react-native/badge": "./src/react-native/badge.tsx",
     "./react-native/transition": "./src/react-native/transition.tsx",
     "./react-native/dropdown-menu": "./src/react-native/dropdown-menu.tsx",
+    "./react-native/menu": "./src/react-native/menu.tsx",
     "./react-native/tooltip": "./src/react-native/tooltip.tsx",
     "./overlay.styles": "./src/overlay.styles.ts",
     "./react-native/modal": "./src/react-native/modal.tsx"

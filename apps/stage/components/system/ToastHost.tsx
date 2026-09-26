@@ -6,7 +6,7 @@ import { usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useToastRequest } from '../../lib/toastHost';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
-import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/dropdown-menu';
+import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
 
 const TOAST_LAYER = 70;
 const NATIVE_BOTTOM_GAP = 96;
