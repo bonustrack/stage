@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentRef, ReactNode, Ref } from 'react';
 import type { TextInputProps } from 'react-native';
 import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
@@ -26,6 +26,7 @@ export interface FormFieldProps {
   disabled?: boolean;
   inputType?: InputProps['inputType'];
   inputProps?: NativeInputProps;
+  inputRef?: Ref<ComponentRef<typeof Input>>;
   onSubmit?: (text: string) => void;
   trailing?: ReactNode;
   labelTrailing?: ReactNode;
@@ -34,9 +35,13 @@ export interface FormFieldProps {
   hintTone?: 'secondary' | 'success' | 'danger';
 }
 
+export function useFieldColors(): { background: string; text: string; placeholder: string } {
+  const { border, link, sub } = usePalette();
+  return { background: border, text: link, placeholder: sub };
+}
+
 function useFieldText(): { color: string; fontFamily: string; fontSize: number } {
-  const { link } = usePalette();
-  return { color: link, fontFamily: fontName.sans, fontSize: fontSize('2xl') };
+  return { color: useFieldColors().text, fontFamily: fontName.sans, fontSize: fontSize('2xl') };
 }
 
 function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
@@ -50,25 +55,25 @@ const BARE_INPUT = {
 } as const;
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, onSubmit, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, onSubmit, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
-  const { sub, border } = pal;
+  const colors = useFieldColors();
   const toneColor = { secondary: 'secondary', success: pal.success, danger: pal.danger }[hintTone];
   const textStyle = useFieldText();
   const field = multiline ? (
-    <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={sub}
+    <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} rows={rows} inputProps={inputProps}
       style={{ ...BARE_INPUT, ...textStyle, textAlignVertical: 'top', height: undefined, minHeight: rows * 26 }} />
   ) : (
-    <Input value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={sub}
+    <Input ref={inputRef} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} inputType={inputType} inputProps={inputProps} onSubmit={onSubmit}
       style={{ ...BARE_INPUT, ...textStyle, flex: 1 }} />
   );
   return (
     <Col gap={hint === undefined ? 0 : 6}>
-      <Col background={border} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
+      <Col background={colors.background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
         style={disabled === true ? { opacity: 0.6 } : undefined}>
         <Row align="center" gap={6}>
           <Text value={label} size="lg" color="secondary" />

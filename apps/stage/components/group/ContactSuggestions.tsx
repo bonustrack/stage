@@ -10,7 +10,7 @@ import { Box, Row } from '../layout';
 import { ChannelRow } from '../ChannelRow';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
-function SuggestionCheck({ selected, checkBackground, dark }: {
+export function SuggestionCheck({ selected, checkBackground, dark }: {
   selected: boolean; checkBackground: string; dark: boolean;
 }): React.ReactElement {
   if (selected) {

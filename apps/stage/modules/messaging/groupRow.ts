@@ -1,5 +1,7 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
-import { moveLabel, renameLabels } from '@stage-labs/client/xmtp/labels';
+import {
+  addLabel as withLabel, moveLabel, removeLabel as withoutLabel, renameLabels,
+} from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
 import {
@@ -36,14 +38,6 @@ export function refreshGroupRow(convId: string | null): void {
   void loadGroupRow(convId, refreshSeq).catch(reported('messaging.refreshGroupRow'));
 }
 
-export async function addGroupLabel(line: string, label: string): Promise<string[]> {
-  try { return await addLabel(line, label); } finally { refreshGroupRow(convIdOfLine(line)); }
-}
-
-export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
-  try { return await removeLabel(line, label); } finally { refreshGroupRow(convIdOfLine(line)); }
-}
-
 function rowLabels(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((l): l is string => typeof l === 'string') : [];
 }
@@ -55,10 +49,22 @@ function patchRowLabels(convId: string | null, next: (labels: string[]) => strin
   setCachedRows(rows.map(r => (r === cur ? { ...r, labels: next(rowLabels(r.labels)) } : r)));
 }
 
+export async function addGroupLabel(line: string, label: string): Promise<string[]> {
+  const convId = convIdOfLine(line);
+  patchRowLabels(convId, (labels) => withLabel(labels, label));
+  try { return await addLabel(line, label); } finally { refreshGroupRow(convId); }
+}
+
 export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
   const convId = convIdOfLine(line);
   patchRowLabels(convId, (labels) => moveLabel(labels, from, to));
   try { return await moveRemoteLabel(line, from, to); } finally { refreshGroupRow(convId); }
+}
+
+export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
+  const convId = convIdOfLine(line);
+  patchRowLabels(convId, (labels) => withoutLabel(labels, label));
+  try { return await removeLabel(line, label); } finally { refreshGroupRow(convId); }
 }
 
 export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {

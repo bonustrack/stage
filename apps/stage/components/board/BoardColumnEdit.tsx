@@ -8,8 +8,11 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { Col, Row } from '../layout';
+import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
+import { OverflowMenu } from '../MenuRows';
 import { useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
@@ -58,8 +61,9 @@ function useTitleEdit(
   return { name, tried, setName, finish, close };
 }
 
-export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, children }: {
-  nativeID?: string; over?: boolean; opacity?: number; maxHeight?: number | string; children: React.ReactNode;
+export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, onHover, children }: {
+  nativeID?: string; over?: boolean; opacity?: number; maxHeight?: number | string;
+  onHover?: (on: boolean) => void; children: React.ReactNode;
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
@@ -72,23 +76,33 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, ch
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
       style={{ borderWidth: 1, borderColor: over ? link : border, opacity }}
+      onPointerEnter={() => { onHover?.(true); }}
+      onPointerLeave={() => { onHover?.(false); }}
     >
       {children}
     </Col>
   );
 }
 
+const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan, danger: true }];
+
+export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
+  const { text } = usePalette();
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={() => { onDelete(); }}/>;
+}
+
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {
-  const { text, link } = usePalette();
+  const colors = useFieldColors();
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <Input
       autoFocus
       autoSelect
-      variant="outline"
       dark={dark}
+      radius={FORM_FIELD_RADIUS}
       value={edit.name}
       placeholder={placeholder}
+      placeholderTextColor={colors.placeholder}
       onChangeText={edit.setName}
       onSubmit={() => { edit.finish('enter'); }}
       inputProps={{
@@ -97,9 +111,9 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
         onKeyPress: (e) => { if (e.nativeEvent.key === 'Escape') edit.close(); },
       }}
       style={{
-        flex: 1, minWidth: 0, minHeight: 0, marginLeft: -4, paddingHorizontal: 3, paddingVertical: 1,
-        color: text, fontSize: fontSize(TITLE_SIZE), fontFamily: fontName.head, borderColor: link,
-        backgroundColor: 'transparent',
+        flex: 1, minWidth: 0, minHeight: 0, marginLeft: -4, paddingHorizontal: 4, paddingVertical: 1,
+        color: colors.text, backgroundColor: colors.background, borderWidth: 0,
+        fontSize: fontSize(TITLE_SIZE), fontFamily: fontName.head,
       }}
     />
   );

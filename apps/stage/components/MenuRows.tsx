@@ -25,15 +25,16 @@ export function MenuList({ dark, children }: { dark: boolean; children: ReactNod
   return <ListView dark={dark}>{children}</ListView>;
 }
 
-export function MenuRow({ icon, label, onPress, dark, danger, chevron }: {
+export function MenuRow({ icon, label, onPress, dark, danger, chevron, divider = danger === true }: {
   icon?: AppIconRef; label: string; onPress: () => void; dark: boolean; danger?: boolean; chevron?: boolean;
+  divider?: boolean;
 }): React.ReactElement {
   const compact = useAnchoredMenus();
   const tone = danger === true ? 'danger' : 'link';
   if (compact) {
     return (
       <>
-        {danger === true ? <DropdownMenuSeparator /> : null}
+        {divider ? <DropdownMenuSeparator /> : null}
         <DropdownMenuItem
           label={label} danger={danger} onPress={onPress}
           icon={icon === undefined ? undefined : <AppIcon name={icon} size={DROPDOWN_MENU.icon} color={tone} />}
@@ -54,8 +55,8 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron }: {
 
 interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
 
-export function OverflowMenu({ color, items, onSelect }: {
-  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void;
+export function OverflowMenu({ color, items, onSelect, label }: {
+  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void; label?: string;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const dark = useEffectiveColorScheme() === 'dark';
@@ -64,14 +65,14 @@ export function OverflowMenu({ color, items, onSelect }: {
   const trigger = useHover();
   return (
     <>
-      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8} {...trigger.hoverProps}>
+      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8} accessibilityLabel={label} {...trigger.hoverProps}>
         <Glyph icon={IconDotGrid1x3Vertical} size={24} color={trigger.hovered ? link : color} />
       </Pressable>
       <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
         <MenuList dark={dark}>
-          {items.map(item => (
+          {items.map((item, index) => (
             <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark}
-              onPress={() => { close(); onSelect(item.id); }} />
+              divider={item.danger === true && index > 0} onPress={() => { close(); onSelect(item.id); }} />
           ))}
         </MenuList>
       </AnchoredMenu>
