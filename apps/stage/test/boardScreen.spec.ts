@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  boardColumns, keptColumnOrder, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameProblem,
-  renameTarget, renamedColumnOrder,
+  addColumnProblem, addedColumnOrder, boardColumns, keptColumnOrder, labelCarriers, movedColumnOrder, namedBoardOrder,
+  orderedColumns, renameProblem, renameTarget, renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -183,6 +183,32 @@ describe('renaming a column', () => {
   test('a merged column leaves the saved order where the other column already is', () => {
     expect(renamedColumnOrder(keys, ['label:todo', 'unlabeled', 'label:done'], 'Todo', 'Done'))
       .toEqual(['unlabeled', 'label:Done']);
+  });
+});
+
+describe('adding a column', () => {
+  const rows = [row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)];
+  const columns = boardColumns(rows, [], []);
+  const keys = columns.map(c => c.key);
+
+  test('a new name must be set, short enough and not taken by any column whatever its case', () => {
+    expect(addColumnProblem(columns, '  ')).toBe('Enter a name.');
+    expect(addColumnProblem(columns, 'x'.repeat(25))).toBe('Use at most 24 characters.');
+    expect(addColumnProblem(columns, ' todo ')).toBe('A column named Todo already exists.');
+    expect(addColumnProblem(columns, 'UNLABELED')).toBe('A column named Unlabeled already exists.');
+    expect(addColumnProblem(columns, 'Doing')).toBeNull();
+  });
+
+  test('the new column goes last in the saved order with the typed spelling', () => {
+    expect(addedColumnOrder(keys, [], ' Blocked  now ')).toEqual(['label:Done', 'label:Todo', 'unlabeled', 'label:Blocked now']);
+    expect(addedColumnOrder(keys, ['unlabeled', 'label:todo'], 'Blocked'))
+      .toEqual(['unlabeled', 'label:Todo', 'label:Done', 'label:Blocked']);
+  });
+
+  test('the added column shows empty at the far right of the board', () => {
+    const order = addedColumnOrder(keys, [], 'Blocked');
+    expect(orderedColumns(boardColumns(rows, [], order), order).map(c => [c.label, c.rows.length]))
+      .toEqual([['Done', 1], ['Todo', 1], [null, 1], ['Blocked', 0]]);
   });
 });
 

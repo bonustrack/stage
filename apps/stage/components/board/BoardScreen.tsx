@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from '@stage-labs/kit/react-native/badge';
@@ -9,6 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
+import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
@@ -37,11 +38,14 @@ import {
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { dropOnBoard } from './boardActions';
 import { RenameColumnModal } from './RenameColumnModal';
+import { AddColumnModal } from './AddColumnModal';
 
 const COLUMN_PADDING = 10;
 const CARD_GAP = 8;
 const TITLE_SIZE = '2xl';
 const DRAGGING_OPACITY = 0.4;
+const ADD_BUTTON_WIDTH = 40;
+const ADD_BUTTON_HEIGHT = 32;
 
 type OnBoardDrop = (drag: BoardDrag, key: string) => void;
 type OnRename = (label: string) => void;
@@ -106,6 +110,28 @@ function RenameButton({ onPress }: { onPress: () => void }): React.ReactElement 
   );
 }
 
+function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactElement {
+  const { text, link, border } = usePalette();
+  const hover = useHover();
+  return (
+    <HoverTooltip label="Add column" placement="below">
+      <Pressable onPress={onPress} accessibilityLabel="Add column" {...hover.hoverProps}>
+        <Box
+          surface="toolbar"
+          radius={BLOCK_RADIUS_DEFAULT}
+          width={ADD_BUTTON_WIDTH}
+          height={ADD_BUTTON_HEIGHT}
+          align="center"
+          justify="center"
+          style={{ borderWidth: 1, borderColor: hover.hovered ? link : border }}
+        >
+          <Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text}/>
+        </Box>
+      </Pressable>
+    </HoverTooltip>
+  );
+}
+
 function EmptyColumn(): React.ReactElement {
   return (
     <Col align="center" padding={{ y: PAGE_GUTTER, right: COLUMN_PADDING }}>
@@ -165,32 +191,56 @@ function BoardColumnView({ column, maxHeight, pinned, onDrop, onRename }: {
   );
 }
 
-function BoardLanes({ columns, pinned, onDrop, onRename }: {
-  columns: BoardColumn<ChannelRowData>[]; pinned: readonly string[]; onDrop: OnBoardDrop; onRename: OnRename;
+function BoardLanes({ columns, pinned, saved, onDrop, onRename }: {
+  columns: BoardColumn<ChannelRowData>[];
+  pinned: readonly string[];
+  saved: readonly string[];
+  onDrop: OnBoardDrop;
+  onRename: OnRename;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const scroll = useRef<React.ComponentRef<typeof Scroll>>(null);
+  const reveal = useRef(false);
   const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
   const laneHeight = frame - padding.paddingTop - padding.paddingBottom;
+  const revealEnd = (): void => {
+    if (!reveal.current) return;
+    reveal.current = false;
+    scroll.current?.scrollToEnd({ animated: true });
+  };
   return (
-    <Scroll
-      horizontal
-      gap={BOARD_GAP}
-      style={{ flex: 1 }}
-      contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
-      onLayout={(e) => { setFrame(e.nativeEvent.layout.height); }}
-    >
-      {columns.map(column => (
-        <BoardColumnView
-          key={column.key}
-          column={column}
-          maxHeight={columnMaxHeight(laneHeight)}
-          pinned={pinned}
-          onDrop={onDrop}
-          onRename={onRename}
-        />
-      ))}
-    </Scroll>
+    <>
+      <Scroll
+        ref={scroll}
+        horizontal
+        gap={BOARD_GAP}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
+        onLayout={(e) => { setFrame(e.nativeEvent.layout.height); }}
+        onContentSizeChange={revealEnd}
+      >
+        {columns.map(column => (
+          <BoardColumnView
+            key={column.key}
+            column={column}
+            maxHeight={columnMaxHeight(laneHeight)}
+            pinned={pinned}
+            onDrop={onDrop}
+            onRename={onRename}
+          />
+        ))}
+        <AddColumnButton onPress={() => { setAdding(true); }}/>
+      </Scroll>
+      <AddColumnModal
+        visible={adding}
+        columns={columns}
+        saved={saved}
+        onAdded={() => { reveal.current = true; }}
+        onClose={() => { setAdding(false); }}
+      />
+    </>
   );
 }
 
@@ -216,7 +266,7 @@ function BoardBody(): React.ReactElement {
   const onDrop: OnBoardDrop = (drag, key) => { dropOnBoard(columns, order, drag, key); };
   return (
     <>
-      <BoardLanes columns={columns} pinned={pinned} onDrop={onDrop} onRename={setRenaming}/>
+      <BoardLanes columns={columns} pinned={pinned} saved={order} onDrop={onDrop} onRename={setRenaming}/>
       <RenameColumnModal
         label={renaming}
         columns={columns}

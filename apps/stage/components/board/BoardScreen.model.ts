@@ -116,6 +116,18 @@ export function renameProblem(name: string): string | null {
   return typed.length > MAX_LABEL_LEN ? `Use at most ${MAX_LABEL_LEN} characters.` : null;
 }
 
+export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name: string): string | null {
+  const problem = renameProblem(name);
+  if (problem !== null) return problem;
+  const key = typedName(name).toLowerCase();
+  const taken = columns.map(c => c.label ?? UNLABELED_TITLE).find(title => title.toLowerCase() === key);
+  return taken === undefined ? null : `A column named ${taken} already exists.`;
+}
+
+export function addedColumnOrder(shown: readonly string[], saved: readonly string[], name: string): string[] {
+  return [...withShown(saved, shown), labelColumnKey(typedName(name))];
+}
+
 export function renameTarget(
   columns: readonly BoardColumn<unknown>[], from: string, name: string,
 ): { name: string; merge: boolean } {
