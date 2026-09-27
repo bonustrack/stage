@@ -17,6 +17,7 @@ export const DROPDOWN_MENU = {
   sheetPadY: 8,
   itemPadX: 16,
   itemPadY: 6,
+  sheetItemPadY: 9,
   itemGap: 8,
   icon: 20,
   lineHeight: 24,
@@ -95,7 +96,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
         alignItems: 'center',
         gap: DROPDOWN_MENU.itemGap,
         paddingHorizontal: DROPDOWN_MENU.itemPadX,
-        paddingVertical: DROPDOWN_MENU.itemPadY,
+        paddingVertical: sheet ? DROPDOWN_MENU.sheetItemPadY : DROPDOWN_MENU.itemPadY,
         backgroundColor: pressed ? pressedBg : hovered || props.highlighted === true ? hoverBg : 'transparent',
       })}
     >
