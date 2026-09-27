@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ViewStyle } from 'react-native';
 import { Box } from '../layout';
-import { usePalette, type Palette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { getPaneWidth, setPaneWidth, resetPaneWidth } from './paneWidth';
 
 const DOUBLE_TAP_MS = 300;
@@ -33,18 +33,13 @@ function isTap(drag: Drag, x: number, y: number): boolean {
   return Math.abs(x - drag.x) < TAP_SLOP_PX && Math.abs(y - drag.y) < TAP_SLOP_PX;
 }
 
-function barColor(palette: Palette, hovered: boolean, dragging: boolean): string | undefined {
-  if (dragging) return palette.text;
-  return hovered ? palette.sub : undefined;
-}
-
-function EdgeBar({ hovered, dragging }: { hovered: boolean; dragging: boolean }): React.ReactElement {
-  const palette = usePalette();
+function EdgeBar({ visible }: { visible: boolean }): React.ReactElement {
+  const { border } = usePalette();
   return (
     <Box
       pointerEvents="none"
       width={BAR_WIDTH}
-      background={barColor(palette, hovered, dragging)}
+      background={visible ? border : undefined}
       style={{ position: 'absolute', top: 0, bottom: 0, right: HANDLE_WIDTH / 2 - 1 }}
 />
   );
@@ -106,7 +101,7 @@ export function PaneResizeHandle(): React.ReactElement {
       width={HANDLE_WIDTH}
       style={HANDLE_STYLE}
     >
-      <EdgeBar hovered={hovered} dragging={dragging}/>
+      <EdgeBar visible={hovered || dragging}/>
     </Box>
   );
 }
