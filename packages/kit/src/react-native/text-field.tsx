@@ -1,6 +1,7 @@
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Platform,
   TextInput,
   type DimensionValue,
   type NativeSyntheticEvent,
@@ -67,6 +68,7 @@ function sizeStyle(input: {
   autoGrow?: boolean;
   maxHeight?: number | string;
   minHeight?: number | string;
+  height?: number;
 }): TextStyle {
   const maxH = input.maxHeight as DimensionValue | undefined;
   const minH = input.minHeight as DimensionValue | undefined;
@@ -74,7 +76,7 @@ function sizeStyle(input: {
     return {
       minHeight: minH ?? (input.autoGrow === true ? 44 : 88),
       maxHeight: maxH,
-      height: undefined,
+      height: input.height,
       textAlignVertical: 'top',
     };
   }
@@ -142,6 +144,36 @@ export function TextField(props: TextFieldProps): React.ReactElement {
   const ref = useRef<TextInput>(null);
   useNonce(focusNonce, () => ref.current?.focus());
   useNonce(blurNonce, () => ref.current?.blur());
+  const webAutoGrow =
+    Platform.OS === 'web' && multiline === true && props.autoGrow === true;
+  const [webHeight, setWebHeight] = useState<number | undefined>(undefined);
+  const minHeight = props.minHeight;
+  const maxHeight = props.maxHeight;
+  const measure = useCallback((): void => {
+    const node = ref.current as unknown as {
+      style: { height: string };
+      scrollHeight: number;
+    } | null;
+    if (!webAutoGrow || node === null) {
+      return;
+    }
+    const min = typeof minHeight === 'number' ? minHeight : 44;
+    const max =
+      typeof maxHeight === 'number' ? maxHeight : Number.POSITIVE_INFINITY;
+    node.style.height = 'auto';
+    const next = Math.min(max, Math.max(min, node.scrollHeight));
+    node.style.height = `${next}px`;
+    setWebHeight(next);
+  }, [webAutoGrow, minHeight, maxHeight]);
+  useEffect(() => {
+    measure();
+  }, [measure, value]);
+  const handleChangeText = webAutoGrow
+    ? (text: string): void => {
+        onChangeText?.(text);
+        measure();
+      }
+    : onChangeText;
 
   const styled = resolveStyled(props);
   const extra = sizeStyle({
@@ -149,6 +181,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     autoGrow: props.autoGrow,
     maxHeight: props.maxHeight,
     minHeight: props.minHeight,
+    height: webAutoGrow ? webHeight : undefined,
   });
   const overrides = overrideStyle({
     paddingTop: props.paddingTop,
@@ -171,7 +204,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       autoCapitalize={autoCapitalize}
       autoCorrect={autoCorrect}
       inputMode={inputMode}
-      onChangeText={onChangeText}
+      onChangeText={handleChangeText}
       onSubmitEditing={onSubmit}
       onKeyPress={onKeyPress}
       selection={selection}
