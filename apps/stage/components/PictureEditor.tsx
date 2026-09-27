@@ -5,6 +5,7 @@ import { AnchoredMenu, menuPointBelow } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { MenuRow } from './MenuRows';
 import { GroupImagePicker } from './GroupImagePicker';
+import { usePastedPicture } from './composer/pastedImages';
 import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
@@ -17,6 +18,7 @@ export function PictureEditor({ avatar, editable, removable, onChange }: {
   const [open, setOpen] = useState(false);
   const [pickNonce, setPickNonce] = useState(0);
   const close = (): void => { setOpen(false); };
+  usePastedPicture(editable, (file) => { onChange({ kind: 'new', file }); });
   if (!editable) return avatar;
   return (
     <>

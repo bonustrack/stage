@@ -8,6 +8,14 @@ export function takesImagePaste(targetTag: string | null, editable: boolean): bo
   return targetTag === 'TEXTAREA';
 }
 
+export function takesPicturePaste(editable: boolean, carriesText: boolean): boolean {
+  return !editable || !carriesText;
+}
+
+export function carriesPlainText(items: readonly PastedFile[]): boolean {
+  return items.some((item) => item.kind === 'string' && item.type === 'text/plain');
+}
+
 export function imageItemIndexes(items: readonly PastedFile[]): number[] {
   return items.flatMap((item, i) => (item.kind === 'file' && item.type.startsWith('image/') ? [i] : []));
 }
