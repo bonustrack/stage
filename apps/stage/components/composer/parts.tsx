@@ -122,7 +122,7 @@ function PendingImage({
             accessibilityRole="button"
             accessibilityLabel="View image"
           >
-            <Image src={image.url} size={72} radius={8} fit="cover"/>
+            <Image src={image.url} size={72} radius={8} fit="contain"/>
           </Pressable>
           <Pressable
             onPress={onRemove}
