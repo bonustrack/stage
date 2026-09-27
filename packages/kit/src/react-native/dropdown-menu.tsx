@@ -1,7 +1,7 @@
 import { centralIcon, type IconName } from '../central-icons';
 import { DropdownMenuItem as MenuItem, type DropdownMenuItemProps as MenuItemProps } from './menu';
 
-export { DROPDOWN_MENU, DropdownMenu, DropdownMenuSeparator, type DropdownMenuProps } from './menu';
+export { DROPDOWN_MENU, DropdownMenu, DropdownMenuSeparator, DropdownMenuSheet, type DropdownMenuProps, type DropdownMenuSheetProps } from './menu';
 
 export interface DropdownMenuItemProps extends Omit<MenuItemProps, 'iconName'> {
   iconName?: IconName;

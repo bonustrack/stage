@@ -3,7 +3,9 @@ import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
 import { OVERLAY_SHADOW } from '../overlay.styles';
+import { Dialog } from './dialog';
 import { Glyph, type CentralIcon } from './glyph';
+import { MODAL } from './modal';
 import { Text } from './text';
 import { useKitPalette } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
@@ -103,4 +105,39 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
   const pal = usePalette(dark);
   return <View style={{ height: DROPDOWN_MENU.separator, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
+}
+
+export interface DropdownMenuSheetProps {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  side?: 'center' | 'bottom';
+  dark?: boolean;
+  background?: string;
+  maxWidth?: number;
+}
+
+export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', dark, background, maxWidth = MODAL.maxWidth }: DropdownMenuSheetProps): React.ReactElement {
+  const pal = usePalette(dark);
+  const centered = side === 'center';
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      side={side}
+      animationType="none"
+      gestureRoot
+      backdropColor={MODAL.backdrop}
+      panelBackground={background ?? pal.border}
+      panelRadius={DROPDOWN_MENU.radius}
+      panelWidth={centered ? '100%' : undefined}
+      panelMaxWidth={centered ? maxWidth : undefined}
+      panelMaxHeight={MODAL.maxHeight}
+      safeAreaBottom={!centered}
+      scroll
+      scrollPadding={{ y: DROPDOWN_MENU.padY }}
+    >
+      {children}
+    </Dialog>
+  );
 }

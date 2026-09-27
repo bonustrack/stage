@@ -2,8 +2,7 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { MenuList, MenuRow } from './MenuRows';
+import { MenuRow } from './MenuRows';
 import { channelMenuItems } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -87,7 +86,6 @@ export function ChannelMenu({
   visible, onClose, anchor, context = 'list', onAfterLeave, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
-  const dark = useKitScheme() === 'dark';
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -108,11 +106,9 @@ export function ChannelMenu({
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
-      <MenuList dark={dark}>
-        {items.map((item) => (
-          <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
-        ))}
-      </MenuList>
+      {items.map((item) => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={() => { handlers[item.id]?.(); }} />
+      ))}
     </AnchoredMenu>
   );
 }

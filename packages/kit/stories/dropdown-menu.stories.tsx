@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { Story } from '../gallery/story';
-import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, type DropdownMenuProps } from '../src/react-native/dropdown-menu';
-import { bool, color, number, useDark } from './_controls';
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSheet, type DropdownMenuProps, type DropdownMenuSheetProps } from '../src/react-native/dropdown-menu';
+import { Button } from '../src/react-native/button';
+import { bool, color, number, select, useDark } from './_controls';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconSquareBehindSquare2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare2';
@@ -24,3 +26,22 @@ export const Controls: Story<Args> = ({ showDanger, highlightFirst, ...args }) =
 };
 Controls.args = { showDanger: true, highlightFirst: false };
 Controls.argTypes = { showDanger: bool, highlightFirst: bool, background: color, maxHeight: number };
+
+export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background'>> = (args) => {
+  const dark = useDark();
+  const [open, setOpen] = useState(false);
+  const close = (): void => { setOpen(false); };
+  return (
+    <>
+      <Button label="Open menu" dark={dark} onPress={() => { setOpen(true); }} />
+      <DropdownMenuSheet {...args} dark={dark} open={open} onClose={close}>
+        <DropdownMenuItem dark={dark} iconName={IconArrowUndoUp} label="Reply" onPress={close} />
+        <DropdownMenuItem dark={dark} iconName={IconSquareBehindSquare2} label="Copy text" onPress={close} />
+        <DropdownMenuSeparator dark={dark} />
+        <DropdownMenuItem dark={dark} iconName={IconTrashCan} label="Delete" danger onPress={close} />
+      </DropdownMenuSheet>
+    </>
+  );
+};
+Sheet.args = { side: 'bottom' };
+Sheet.argTypes = { side: select(['bottom', 'center']), background: color };

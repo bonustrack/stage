@@ -13,7 +13,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { bubbleMenuItems } from './bubbleMenu.model';
 import { AnchoredOverlay, MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
-import { MenuList, MenuRow } from '../MenuRows';
+import { MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import type { MenuAnchor } from '../bubble/props';
 import { useHover } from '../hover';
@@ -90,14 +90,12 @@ interface BubbleActions { reply: () => void; copy: () => void; select: () => voi
 
 const SELECT_TEXT = Platform.OS !== 'web';
 
-function ActionDropdown({ hasText, dark, on }: { hasText: boolean; dark: boolean; on: BubbleActions }): React.ReactElement {
+function ActionDropdown({ hasText, on }: { hasText: boolean; on: BubbleActions }): React.ReactElement {
   return (
     <MenuSurface>
-      <MenuList dark={dark}>
-        {bubbleMenuItems(hasText, { selectText: SELECT_TEXT }).map(item => (
-          <MenuRow key={item.id} icon={item.icon} label={item.label} dark={dark} onPress={on[item.id]} />
-        ))}
-      </MenuList>
+      {bubbleMenuItems(hasText, { selectText: SELECT_TEXT }).map(item => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} onPress={on[item.id]} />
+      ))}
     </MenuSurface>
   );
 }
@@ -129,10 +127,10 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
 }
 
 export function BubbleActionMenu({
-  target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
+  target, anchor, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
   target: HistoryEntry | null; anchor: MenuAnchor;
-  dark: boolean; onClose: () => void;
+  onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onSelect: () => void;
   onShareLink: () => void;
@@ -145,7 +143,7 @@ export function BubbleActionMenu({
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   const dropdown = (
-    <ActionDropdown hasText={!!target?.text} dark={dark} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
+    <ActionDropdown hasText={!!target?.text} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
   );
   const strip = (
     <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />

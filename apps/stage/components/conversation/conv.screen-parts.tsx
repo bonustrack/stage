@@ -136,7 +136,6 @@ export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onCl
 export function ConversationOverlays({ c, convId, onOpenSearch }: {
   c: Conv; convId: string; onOpenSearch: () => void;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
   const {
     overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr,
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
@@ -160,7 +159,6 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}
-        dark={dark}
         onClose={() => { setMenuFor(null); }}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
         onReply={() => {

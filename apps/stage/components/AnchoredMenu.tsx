@@ -2,12 +2,10 @@ import type { ReactNode } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent } from 'react-native';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
-import { AppModal } from './AppModal';
-import { Box } from './layout';
+import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
-import { documentScroll, isCoarsePointer } from '../lib/webLayout';
+import { documentScroll, isCoarsePointer, useWebTabRail } from '../lib/webLayout';
 import { MENU_GAP, MENU_SHADOW } from './menuStyle';
 
 const DESKTOP_MIN_WIDTH = 900;
@@ -75,12 +73,13 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const viewport = useWindowDimensions();
+  const centered = useWebTabRail();
 
   if (!anchored || !anchor) {
     return (
-      <AppModal visible={visible} onClose={onClose}>
-        <Box margin={{ x: -16 }}>{children}</Box>
-      </AppModal>
+      <DropdownMenuSheet open={visible} onClose={onClose} side={centered ? 'center' : 'bottom'} maxWidth={MENU_WIDTH}>
+        {children}
+      </DropdownMenuSheet>
     );
   }
 
