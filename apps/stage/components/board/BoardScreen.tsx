@@ -123,6 +123,7 @@ function ColumnCards({ column, pinned, onOpen }: {
   if (column.rows.length === 0) return null;
   return (
     <Scroll
+      {...BOARD_SCROLLBAR}
       gap={CARD_GAP}
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
