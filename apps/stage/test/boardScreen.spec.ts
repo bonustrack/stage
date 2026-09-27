@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, revealScrollX,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
@@ -411,5 +411,19 @@ describe('revealScrollX', () => {
 
   test('aligns the column left when the pane is narrower than a column', () => {
     expect(revealScrollX(2, 0, 300, gutter)).toBe(2 * step);
+  });
+});
+
+describe('boardCardPress', () => {
+  test('opens the panel when no channel is open', () => {
+    expect(boardCardPress(null, 'a')).toBe('push');
+  });
+
+  test('switches the panel to another channel', () => {
+    expect(boardCardPress('a', 'b')).toBe('replace');
+  });
+
+  test('closes the panel when the open channel is pressed again', () => {
+    expect(boardCardPress('a', 'a')).toBe('close');
   });
 });

@@ -257,3 +257,10 @@ export function revealScrollX(index: number, scrollX: number, viewport: number, 
   if (scrollX < right) return Math.min(left, right);
   return scrollX;
 }
+
+export type BoardCardPress = 'push' | 'replace' | 'close';
+
+export function boardCardPress(openConvId: string | null, convId: string): BoardCardPress {
+  if (openConvId === null) return 'push';
+  return openConvId === convId ? 'close' : 'replace';
+}

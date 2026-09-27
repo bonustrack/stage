@@ -28,11 +28,12 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { capabilities } from '../../lib/capabilities';
 import { useWebTabRail } from '../../lib/webLayout';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardColumns, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
-  type BoardDrag,
+  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, orderedColumns, revealScrollX, searchedColumns,
+  type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
@@ -92,14 +93,19 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
         draftText={draftText}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => {
-          const panelLink = { pathname: '/board/[convId]', params: { convId: item.convId } } as const;
           if (!panel) {
             router.push(conversationLinkOf(item.convId, item.peerAddress));
             return;
           }
+          const press = boardCardPress(openConvId, item.convId);
+          if (press === 'close') {
+            capabilities.backTo('/board');
+            return;
+          }
           onOpen();
-          if (openConvId === null) router.push(panelLink);
-          else if (openConvId !== item.convId) router.replace(panelLink);
+          const panelLink = { pathname: '/board/[convId]', params: { convId: item.convId } } as const;
+          if (press === 'push') router.push(panelLink);
+          else router.replace(panelLink);
         }}
         onLongPress={source.nativeID === undefined ? openMenu : undefined}
         onContextMenu={openMenu}
