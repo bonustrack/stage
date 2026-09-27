@@ -131,7 +131,7 @@ export function QuestionView({ question, dark, onAnswer }: {
   const fg = usePalette().text;
   const needSubmitButton = s.multi || s.otherOpen;
   return (
-    <Box margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
+    <Box margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
         <Text weight="semibold" size="3xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{s.multi ? ' · multi-select' : ''}

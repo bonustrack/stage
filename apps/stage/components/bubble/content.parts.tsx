@@ -81,7 +81,7 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
-    <Box margin={{ top: 4 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
+    <Box margin={{ top: 4 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
         <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} />
       ))}
@@ -165,7 +165,7 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
   return (
     <>
       {cardLinks.map(card => (
-        <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
+        <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
           {embedNode(card, dark)}
         </Box>
       ))}
@@ -182,7 +182,7 @@ export function ReplyPreview({ preview, fg, sub, onPress }: {
       onPress={onPress}
       disabled={!onPress}
       style={({ pressed }) => ({
-        alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
+        alignSelf: 'stretch', maxWidth: ATTACHMENT_MAX_WIDTH, borderLeftWidth: 2, borderLeftColor: sub,
         paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
       })}
     >

@@ -85,7 +85,7 @@ export function PaymentCard({
   const resolvedAction = typeof action === 'function' ? action(bal) : action;
 
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       <Row align="center" justify="between" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
