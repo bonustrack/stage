@@ -49,6 +49,11 @@ function attachPlayer(src: string, onStatus: (status: AudioStatus) => void): Exp
   return player;
 }
 
+function disposePlayer(player: ExpoAudioPlayer): void {
+  player.remove();
+  player.release();
+}
+
 export function useAudioPlayback(src: string, options: AudioPlaybackOptions = {}): AudioPlayback {
   const { onPlay, preload = false } = options;
   const playerRef = useRef<ExpoAudioPlayer | null>(null);
@@ -58,7 +63,7 @@ export function useAudioPlayback(src: string, options: AudioPlaybackOptions = {}
 
   useEffect(() => {
     return () => {
-      playerRef.current?.remove();
+      if (playerRef.current) disposePlayer(playerRef.current);
       playerRef.current = null;
     };
   }, []);
@@ -69,7 +74,7 @@ export function useAudioPlayback(src: string, options: AudioPlaybackOptions = {}
     playerRef.current = player;
     return () => {
       if (playerRef.current !== player) return;
-      player.remove();
+      disposePlayer(player);
       playerRef.current = null;
     };
   }, [src, preload]);
