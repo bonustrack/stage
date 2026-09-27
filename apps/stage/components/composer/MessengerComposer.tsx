@@ -91,11 +91,11 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
   return (
-    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
+    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border}>
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
-        dark={dark} fg={fg} sub={sub} chipBg={chipBg}
+        dark={dark} fg={fg} sub={sub} chipBg={bg}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
         pending={s.pending} onRemovePending={(i) => { s.setPending(prev => prev.filter((_, j) => j !== i)); }}
         uploading={s.uploading} err={s.err}

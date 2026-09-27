@@ -151,7 +151,7 @@ export function PendingRow({
   pending: Attachment[]; onRemove: (index: number) => void;
 }): React.ReactElement {
   return (
-    <Row padding={{ x: 6, bottom: 6 }} wrap gap={8}>
+    <Row padding={{ x: PAGE_GUTTER, top: 10, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
         a.kind === 'image' ? (
           <PendingImage key={a.id} image={a} fg={fg} onRemove={() => { onRemove(i); }}/>
