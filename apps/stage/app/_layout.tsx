@@ -24,7 +24,6 @@ import { ensureActiveAccount, ensureMessagingStreamSync, getOrCreateXmtpClient }
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
-import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
@@ -139,7 +138,6 @@ function RootLayoutInner(): React.ReactElement {
         </Col>
       ) : null}
       <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
-      <BuildInfoDot />
       <ToastHost />
       <AlertHost />
       <TooltipHost />

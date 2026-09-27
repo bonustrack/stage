@@ -6,6 +6,7 @@ import { capabilities } from '../../lib/capabilities';
 import { SettingsPage } from './SettingsPage';
 import { SettingsList, SettingsNavRow } from './rows';
 import { SettingsAccountHeader } from './SettingsAccountHeader';
+import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { profileLinkOf } from '../../lib/links';
 
@@ -31,6 +32,7 @@ export function SettingsMenu(): React.ReactElement {
           />
         ))}
       </SettingsList>
+      <SettingsAboutFooter />
     </SettingsPage>
   );
 }
