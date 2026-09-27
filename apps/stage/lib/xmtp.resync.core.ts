@@ -3,13 +3,27 @@ import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { report } from './errorPolicy';
 import { mergeFeedEntries } from './feedOrder.model';
+import { setReceivedFullPage } from './feedPageInfo';
 
 export const PAGE_SIZE = 20;
 
-export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): number {
-  const merged = mergeFeedEntries(feedCache.get(line) ?? [], entries.filter(e => !isControlBody(e.text)));
+export interface MergeResult {
+  entries: HistoryEntry[];
+  added: number;
+  receivedFullPage: boolean;
+}
+
+export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): MergeResult {
+  const filtered = entries.filter(e => !isControlBody(e.text));
+  const merged = mergeFeedEntries(feedCache.get(line) ?? [], filtered);
   if (merged.added > 0) feedCache.set(line, merged.entries);
-  return merged.added;
+  const receivedFullPage = entries.length >= PAGE_SIZE;
+  setReceivedFullPage(line, receivedFullPage);
+  return {
+    entries: merged.entries,
+    added: merged.added,
+    receivedFullPage,
+  };
 }
 
 export function throttledInboxSync(syncAll: () => Promise<boolean>): (maxAgeMs?: number) => Promise<void> {

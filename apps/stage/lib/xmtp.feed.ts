@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -6,7 +5,6 @@ import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient } from './xmtp.client';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { ensureGlobalStream } from './xmtp.stream';
-import { PAGE_SIZE } from './xmtp.resync';
 import { getQueryClient } from './queryClient';
 import { messagingKeys } from '../modules/messaging/queries';
 import {
@@ -15,6 +13,7 @@ import {
 import { type XmtpFeedStatus } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 import { feedReachedStart, markFeedStart, useFeedReachedStart } from './feedStart';
+import { didReceiveFullPage } from './feedPageInfo';
 
 const EMPTY: HistoryEntry[] = [];
 
@@ -70,12 +69,12 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
 
   useEffect(() => {
     if (query.isFetching || !query.isFetched) return;
-    if (events.length < PAGE_SIZE) {
+    if (!didReceiveFullPage(line ?? '')) {
       hasMoreRef.current = false;
       setHasMore(false);
       if (line) markFeedStart(line);
     }
-  }, [query.isFetching, query.isFetched, events.length, line]);
+  }, [query.isFetching, query.isFetched, line]);
 
   const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
   const error = query.error ? (query.error).message : null;

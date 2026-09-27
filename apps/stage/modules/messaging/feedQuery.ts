@@ -1,4 +1,3 @@
-
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -69,6 +68,6 @@ export function prefetchFeed(line: string): void {
 
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
   const beforeTsMs = new Date(oldest.ts).getTime();
-  return mergeIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE)) >= PAGE_SIZE;
+  const result = mergeIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE));
+  return result.added >= PAGE_SIZE;
 }
-
