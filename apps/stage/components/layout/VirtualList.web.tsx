@@ -111,6 +111,18 @@ function useEdgeCallbacks<T>(props: VirtualListProps<T>, host: ScrollHost, count
   }, [host, count]);
 }
 
+function useEndStick<T>(props: VirtualListProps<T>, host: ScrollHost): () => void {
+  const latest = useRef(props);
+  latest.current = props;
+  const height = useRef(-1);
+  return useCallback(() => {
+    const m = host.metrics();
+    if (m.contentHeight === height.current) return;
+    height.current = m.contentHeight;
+    if (latest.current.stickToEnd?.() === true) host.scrollTo(endOffset(m), false);
+  }, [host]);
+}
+
 function useScrollSubscription<T>(props: VirtualListProps<T>, host: ScrollHost, check: () => void): void {
   const dragged = useRef(false);
   const latest = useRef(props);
@@ -137,15 +149,18 @@ function useContentObserver<T>(
 ): void {
   const latest = useRef(props);
   latest.current = props;
+  const reported = useRef({ width: -1, height: -1 });
   useLayoutEffect(() => {
     const content = refs.content.current;
     if (content === null) return;
     const observer = new ResizeObserver(() => {
       const items = refs.items.current;
       if (items !== null) setScrollMargin(host.itemsOffset(items));
-      if (latest.current.stickToEnd?.() === true) host.scrollTo(endOffset(host.metrics()), false);
+      const size = { width: content.clientWidth, height: host.metrics().contentHeight };
+      const resized = size.width !== reported.current.width || size.height !== reported.current.height;
+      reported.current = size;
       check();
-      latest.current.onContentSizeChange?.(content.clientWidth, host.metrics().contentHeight);
+      if (resized) latest.current.onContentSizeChange?.(size.width, size.height);
     });
     observer.observe(content);
     return () => { observer.disconnect(); };
@@ -284,9 +299,10 @@ function VirtualRows<T>({ props, refs, virtualizer }: {
 
 function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }: BodyProps<T>): React.ReactElement {
   const count = props.data?.length ?? 0;
+  const stick = useEndStick(props, host);
   const edges = useEdgeCallbacks(props, host, count);
   const rememberAnchor = usePrependAnchor(props, refs, host, virtualizer);
-  const check = useCallback(() => { edges(); rememberAnchor(); }, [edges, rememberAnchor]);
+  const check = useCallback(() => { stick(); edges(); rememberAnchor(); }, [stick, edges, rememberAnchor]);
   useScrollSubscription(props, host, check);
   useContentObserver(props, refs, host, setScrollMargin, check);
   useInitialPosition(props, host, virtualizer, count);
