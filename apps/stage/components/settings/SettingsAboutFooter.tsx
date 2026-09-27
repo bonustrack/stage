@@ -45,7 +45,7 @@ export function SettingsAboutFooter(): React.ReactElement {
   const { sub } = usePalette();
   const { gitHash, commitTime, buildProfile } = buildMeta();
   const committed = timeAgo(commitTime, Date.now());
-  const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
+  const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 7);
   const name = Constants.expoConfig?.name ?? 'Stage';
   return (
     <Col padding={{ x: PAGE_GUTTER, y: 18 }} align="center" gap={4}>

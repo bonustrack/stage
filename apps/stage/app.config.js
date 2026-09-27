@@ -6,10 +6,10 @@ function resolveGitHash() {
     process.env.EAS_BUILD_GIT_COMMIT_HASH ||
     process.env.GIT_HASH ||
     process.env.GIT_COMMIT;
-  if (fromEnv && fromEnv.length > 0) return fromEnv.slice(0, 7);
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
   try {
     const { execSync } = require('node:child_process');
-    const sha = execSync('git rev-parse --short=7 HEAD', {
+    const sha = execSync('git rev-parse HEAD', {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
