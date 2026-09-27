@@ -285,6 +285,7 @@ function BoardHeader({ inline, query, setQuery }: {
       <SearchTopnavBar
         query={query} setQuery={setQuery} onClose={() => { setSearchOpen(false); setQuery(''); }}
         head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
+        trailing={<HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }} view="board"/>}
       />
     );
   }

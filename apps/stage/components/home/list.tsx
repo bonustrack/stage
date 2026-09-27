@@ -62,10 +62,10 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
     () => (searchOpen ? (
       <SearchTopnavBar
         query={query} setQuery={setQuery} onClose={onCloseSearch}
-        head={head} sub={sub} border={border} inline={pane}
+        head={head} sub={sub} border={border} inline={pane} trailing={right}
       />
     ) : undefined),
-    [searchOpen, query, setQuery, onCloseSearch, head, sub, border, pane],
+    [searchOpen, query, setQuery, onCloseSearch, head, sub, border, pane, right],
   );
   usePublishTopnavSlot({ right, override }, !pane);
   return { right, override };

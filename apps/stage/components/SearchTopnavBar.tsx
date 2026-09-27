@@ -23,6 +23,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   placeholder?: string;
   topInset?: number;
   inline?: boolean;
+  trailing?: React.ReactNode;
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
@@ -53,6 +54,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
           <Glyph icon={IconCrossMedium} size={18} color={sub}/>
         </Pressable>
       ) : null}
+      {props.trailing !== undefined ? <Row align="center" gap={18}>{props.trailing}</Row> : null}
     </Row>
     </Frame>
   );
