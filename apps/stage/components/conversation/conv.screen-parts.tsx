@@ -95,6 +95,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
             dark={dark}
             xmtpLine={activeLine}
             mentionCandidates={mentionCandidates}
+            suggestContacts={c.peerAddr !== null}
             replyingTo={replyingTo ?? undefined}
             autoFocusNonce={autoFocusNonce}
             onClearReply={() => { setReplyingTo(null); }}

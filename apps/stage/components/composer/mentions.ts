@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { shortAddress } from '../../modules/messaging';
+import { useContactList } from '../../lib/useAllContacts';
+import { getActiveAccountIdSync, shortAddress } from '../../modules/messaging';
 import { mentionAddresses, mentionLabel } from '../bubble/mention.model';
 import {
   applyDisplayEdit, displayOf, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
+  withContactCandidates, type Piece,
 } from './mentions.model';
 import type { ComposerState } from './state';
 
@@ -22,13 +24,25 @@ export interface MentionEditor {
   restore: (wire: string) => void;
 }
 
-export function useMentionEditor(s: ComposerState, candidates: MentionCandidate[] | undefined): MentionEditor {
+function useCandidatePool(
+  pieces: Piece[], cursor: number, candidates: MentionCandidate[] | undefined, suggestContacts: boolean,
+): MentionCandidate[] | undefined {
+  const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
+  const contacts = useContactList(typing);
+  if (!suggestContacts) return candidates;
+  return withContactCandidates(candidates ?? [], contacts, getActiveAccountIdSync());
+}
+
+export function useMentionEditor(
+  s: ComposerState, candidates: MentionCandidate[] | undefined, suggestContacts: boolean,
+): MentionEditor {
   usePeerProfiles(mentionAddresses(s.text));
   const [active, setActive] = useState({ key: '', index: 0 });
   const [dismissed, setDismissed] = useState<string | null>(null);
   const pieces = piecesOf(s.text, labelOf);
   const display = displayOf(pieces);
-  const { matches, range } = mentionQuery(pieces, s.selection.start, candidates);
+  const pool = useCandidatePool(pieces, s.selection.start, candidates, suggestContacts);
+  const { matches, range } = mentionQuery(pieces, s.selection.start, pool);
   const key = range ? `${range.start}:${display.slice(range.start, range.end)}` : '';
   const shown = range && dismissed !== key ? matches : [];
   const index = active.key === key ? Math.min(active.index, shown.length - 1) : 0;

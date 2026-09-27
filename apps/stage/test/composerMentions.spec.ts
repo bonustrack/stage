@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   applyDisplayEdit, editRegion, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
+  withContactCandidates,
 } from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
@@ -165,5 +166,28 @@ describe('composer mention keys', () => {
     expect(mentionKeyAction('Enter', true, 2, 0)).toBeNull();
     expect(mentionKeyAction('a', false, 2, 0)).toBeNull();
     expect(mentionKeyAction('ArrowDown', false, 0, 0)).toBeNull();
+  });
+});
+
+describe('composer mention contacts', () => {
+  const CAROL = `0x${'c'.repeat(40)}`;
+  const SELF = `0x${'d'.repeat(40)}`;
+  const peer = [{ address: BOB, name: 'bob' }];
+  const contacts = [
+    { address: ALICE, name: 'alice' },
+    { address: BOB.toUpperCase().replace('0X', '0x'), name: 'bob' },
+    { address: CAROL, name: 'carol' },
+    { address: SELF, name: 'me' },
+  ];
+
+  test('puts the peer first and adds each other contact once, without self', () => {
+    const pool = withContactCandidates(peer, contacts, SELF.toUpperCase().replace('0X', '0x'));
+    expect(pool.map(c => c.name)).toEqual(['bob', 'alice', 'carol']);
+  });
+
+  test('suggests every contact for a bare @ and narrows as the name is typed', () => {
+    const pool = withContactCandidates(peer, contacts, SELF);
+    expect(mentionQuery(piecesOf('@', labelOf), 1, pool).matches.map(c => c.name)).toEqual(['bob', 'alice', 'carol']);
+    expect(mentionQuery(piecesOf('hi @ca', labelOf), 6, pool).matches.map(c => c.name)).toEqual(['carol']);
   });
 });

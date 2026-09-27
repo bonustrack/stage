@@ -134,6 +134,21 @@ export function mentionQuery(
   return inside ? { matches: [], range: null } : { matches, range };
 }
 
+export function withContactCandidates(
+  first: MentionCandidate[],
+  contacts: MentionCandidate[],
+  self: string,
+): MentionCandidate[] {
+  const seen = new Set([self, ...first.map(c => c.address)].map(a => a.toLowerCase()));
+  const extra = contacts.filter((c) => {
+    const key = c.address.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return [...first, ...extra];
+}
+
 export function mentionKeyAction(key: string, shift: boolean, count: number, active: number): MentionKeyAction | null {
   if (count === 0) return null;
   if (key === 'ArrowDown') return { kind: 'move', index: (active + 1) % count };

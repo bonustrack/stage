@@ -20,6 +20,7 @@ interface Props {
   dark: boolean;
   xmtpLine: string;
   mentionCandidates?: { address: string; name: string }[];
+  suggestContacts?: boolean;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   autoFocusNonce?: number;
   onClearReply?: () => void;
@@ -72,7 +73,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
-  const mention = useMentionEditor(s, mentionCandidates);
+  const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
   useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);

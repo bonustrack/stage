@@ -55,18 +55,20 @@ async function collectAddresses(): Promise<string[]> {
   return [...set];
 }
 
-export function useAllContacts(): { contacts: Contact[] } {
-  const focused = useContactsFocused();
+export function useContactList(enabled: boolean): Contact[] {
   const { data: addresses = NO_ADDRESSES } = useQuery({
     queryKey: ['allContacts', getActiveAccountIdSync()],
     queryFn: collectAddresses,
-    enabled: focused,
+    enabled,
     placeholderData: seedAddresses,
   });
 
   const version = usePeerProfiles(addresses);
 
-  const contacts = useMemo(() => toSortedContacts(addresses), [addresses, version]);
+  return useMemo(() => toSortedContacts(addresses), [addresses, version]);
+}
 
+export function useAllContacts(): { contacts: Contact[] } {
+  const contacts = useContactList(useContactsFocused());
   return { contacts };
 }
