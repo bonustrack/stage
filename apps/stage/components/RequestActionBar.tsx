@@ -1,12 +1,10 @@
 
 import { useCallback, useState } from 'react';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
 import { Box, Row, PAGE_GUTTER } from './layout';
-import { PAGE_INTRO_TYPE } from './chrome/PageIntro.model';
 import { useWebTabRail } from '../lib/webLayout';
 
 const FILL = { flex: 1 } as const;
@@ -47,11 +45,6 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Row width={'100%'} align="center" gap={10} padding={{ x: PAGE_GUTTER, y: 24 }}>
-        {wide ? (
-          <Text style={{ flex: 1, ...PAGE_INTRO_TYPE.about }}>
-            Approve to reply, or reject to block.
-          </Text>
-        ) : null}
         <Button
           color="danger" variant="solid" size="lg" pill dark={dark} style={buttonStyle}
           loading={busy} disabled={busy} label="Reject" onPress={onReject}
