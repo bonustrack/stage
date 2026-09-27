@@ -7,6 +7,7 @@ import { fmtSigValue } from './helpers';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 
@@ -110,7 +111,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
   const { fill, border } = detailColors(dark);
   const pal = usePalette();
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconPencil} size={18} color={pal.link}/>
         <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
@@ -130,7 +131,7 @@ export function ReceiptBox({ dark, title, children }: {
   dark: boolean; title: string; children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconCheckmark1} size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>

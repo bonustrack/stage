@@ -14,6 +14,7 @@ import { Box } from '../layout';
 import { unescapeBody } from './helpers';
 import type { Attachment } from './helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
+import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { HighlightText } from '../HighlightText';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
@@ -74,7 +75,7 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
-    <Box margin={{ top: 4 }} style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 4 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
       {atts.map((a, i) => (
         <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} />
       ))}
@@ -158,7 +159,7 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
   return (
     <>
       {cardLinks.map(card => (
-        <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}>
+        <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
           {embedNode(card, dark)}
         </Box>
       ))}

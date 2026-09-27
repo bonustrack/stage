@@ -4,6 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box } from './layout';
 import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { ATTACHMENT_MAX_WIDTH } from './bubble/imageBox.model';
 
 interface Props {
   onPress?: () => void;
@@ -12,7 +13,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export function MediaCard({ onPress, width, maxWidth = 280, children }: Props): React.ReactElement {
+export function MediaCard({ onPress, width, maxWidth = ATTACHMENT_MAX_WIDTH, children }: Props): React.ReactElement {
   const border = usePalette().border;
   const bg = border;
   const style = {

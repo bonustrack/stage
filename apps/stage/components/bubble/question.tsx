@@ -5,6 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
 import type { Question } from './helpers';
 import { usePalette } from '../../lib/theme';
+import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 
 interface QuestionState {
   selected: Set<string>;
@@ -130,7 +131,7 @@ export function QuestionView({ question, dark, onAnswer }: {
   const fg = usePalette().text;
   const needSubmitButton = s.multi || s.otherOpen;
   return (
-    <Box margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
       {question.header ? (
         <Text weight="semibold" size="3xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{s.multi ? ' · multi-select' : ''}

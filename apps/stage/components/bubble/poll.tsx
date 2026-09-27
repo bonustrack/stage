@@ -6,6 +6,7 @@ import { pollQuestionBlocks, type PollOptionRow, type PollQuestionBlock } from '
 import { Box, Col, Row } from '../layout';
 import type { Poll } from './helpers';
 import { usePalette, withAlpha } from '../../lib/theme';
+import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { OpenAnswerBlock } from './poll.open';
 
 type PollVotes = Map<number, Map<number, Set<string>>>;
@@ -95,7 +96,7 @@ export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onO
   };
   const blocks = pollQuestionBlocks(poll.questions, votes, ownVotes);
   return (
-    <Box margin={{ top: 8 }} gap={12} style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 8 }} gap={12} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
       <Col gap={12}>
         {blocks.map((block, qi) => (
           <PollQuestionView key={`q-${qi}`} block={block} qi={qi} colors={colors} onVote={onVote} />

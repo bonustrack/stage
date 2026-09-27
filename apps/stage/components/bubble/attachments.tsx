@@ -16,12 +16,13 @@ import { fileCardModel } from './fileCard.model';
 import { resolveRemoteAttachment } from '../../modules/messaging';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
+import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
     <Box margin={{ bottom: 6 }}>
-      <Box width={220} radius="md" background="#000">
+      <Box maxWidth={ATTACHMENT_MAX_WIDTH} radius="md" background="#000">
         <VideoPlayer src={uri} controls />
       </Box>
     </Box>
@@ -46,7 +47,7 @@ function AttachmentChip({ label, subtitle, fg, onPress }: {
   const dark = useKitScheme() === 'dark';
   const { border } = usePalette();
   return (
-    <Card dark={dark} background={border} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: 320 }}>
+    <Card dark={dark} background={border} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Row align="center" gap={10}>
         <Box width={40} height={40} radius="md" align="center" justify="center" surface="surface">
           <Glyph icon={IconFileBend} size={22} color={fg}/>

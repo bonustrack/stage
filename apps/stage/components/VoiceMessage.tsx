@@ -6,6 +6,7 @@ import { VOICE_ACCENT, VOICE_ON_ACCENT } from '../lib/uiColors';
 import { VOICE_BAR_COUNT, voiceWaveformBars } from '@stage-labs/client/xmtp/voice';
 import { Box, Row } from './layout';
 import { useDecodedBars } from './VoiceMessage.barsCache';
+import { ATTACHMENT_MAX_WIDTH } from './bubble/imageBox.model';
 
 interface Props { uri: string }
 
@@ -20,7 +21,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
       <Row
         radius="2xl"
         background={VOICE_ACCENT[scheme]}
-        maxWidth={280}
+        maxWidth={ATTACHMENT_MAX_WIDTH}
         minWidth={200}
         padding={{ x: 9, y: 7 }}
         align="center"

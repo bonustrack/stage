@@ -1,4 +1,5 @@
-const IMAGE_BOX_MAX = 300;
+export const ATTACHMENT_MAX_WIDTH = 400;
+const IMAGE_BOX_MAX = ATTACHMENT_MAX_WIDTH;
 
 export interface ImageSize { width: number; height: number }
 

@@ -7,6 +7,7 @@ import { TokenAvatar } from './wallet/screen/tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './bubble/balance';
 import { usePalette, withAlpha } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { ATTACHMENT_MAX_WIDTH } from './bubble/imageBox.model';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 interface PaymentBalanceArgs {
@@ -84,7 +85,7 @@ export function PaymentCard({
   const resolvedAction = typeof action === 'function' ? action(bal) : action;
 
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'flex-start' }}>
       <Row align="center" justify="between" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
