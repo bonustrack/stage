@@ -1,5 +1,6 @@
 import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
+import { withChannelLabels } from './channelRefs';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -57,8 +58,9 @@ export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer
 const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
 export function humanizeMentions(text: string): string {
-  if (!text.includes('@0x')) return text;
-  return text.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
+  const named = withChannelLabels(text);
+  if (!named.includes('@0x')) return named;
+  return named.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
 }
 
 function shortContentType(raw: string | undefined | null): string {

@@ -1,6 +1,7 @@
 import { youtubeIdOf, mapCoordsOf } from '@stage-labs/client/embed/detect';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { stageConvIdOf, stageDmPeerOf } from '@stage-labs/client/xmtp/line';
+import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
 
 export const MAX_CARDS = 5;
 
@@ -116,10 +117,11 @@ function isBracketWrapped(text: string, token: string, start: number): boolean {
 
 export function cardLinksOf(text?: string | null): CardLink[] {
   if (!text) return [];
+  const scanned = withChannelLabels(text);
   const out: CardLink[] = [];
   const seen = new Set<string>();
-  for (const m of text.matchAll(TOKEN_RE)) {
-    if (isBracketWrapped(text, m[0], m.index)) continue;
+  for (const m of scanned.matchAll(TOKEN_RE)) {
+    if (isBracketWrapped(scanned, m[0], m.index)) continue;
     const card = classify(m[0]);
     if (!card) continue;
     if (seen.has(card.url)) continue;

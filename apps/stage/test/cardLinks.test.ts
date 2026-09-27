@@ -1,5 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
+import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { cardLinksOf, MAX_CARDS } from '../lib/cardLinks';
 
 describe('cardLinksOf', () => {
@@ -41,6 +42,12 @@ describe('cardLinksOf', () => {
     const addr = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
     expect(cardLinksOf(`stage://${addr}`)[0]).toMatchObject({ kind: 'dm', peerAddress: addr });
     expect(cardLinksOf(`https://stage.box/#/${addr}`)[0]).toMatchObject({ kind: 'dm' });
+  });
+
+  test('shows no card for a channel shared by typing #', () => {
+    const conv = '47bf58a8f56cad829b2263797a7e25e4';
+    expect(cardLinksOf(`join ${channelRefToken(conv, 'Design')} today`)).toEqual([]);
+    expect(cardLinksOf(`${channelRefToken(conv, 'Design')} https://stage.box/#/channel/${conv}`)).toMatchObject([{ kind: 'channel', convId: conv }]);
   });
 
   test('classifies a channel/ (no xmtp) conv link as channel', () => {

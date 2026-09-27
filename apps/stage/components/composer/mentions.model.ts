@@ -1,4 +1,5 @@
-import { MENTION_RE, applyMention, computeMentionQuery, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
+import { channelRefsOf } from '@stage-labs/client/xmtp/channelRefs';
+import { MENTION_RE, computeMentionQuery, mentionToken, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 export interface Span { start: number; end: number }
 
@@ -30,13 +31,24 @@ function place(parts: Part[]): Piece[] {
   });
 }
 
+interface Token { index: number; wire: string; display: string }
+
+function tokensOf(wire: string, labelOf: LabelOf): Token[] {
+  const refs = channelRefsOf(wire).map(r => ({ index: r.index, wire: r.wire, display: `#${r.label}` }));
+  const mentions = [...wire.matchAll(MENTION_RE)].map(m => ({
+    index: m.index, wire: m[0], display: labelOf((m[1] ?? m[0]).toLowerCase()),
+  }));
+  return [...refs, ...mentions].sort((a, b) => a.index - b.index);
+}
+
 export function piecesOf(wire: string, labelOf: LabelOf): Piece[] {
   const parts: Part[] = [];
   let last = 0;
-  for (const m of wire.matchAll(MENTION_RE)) {
-    if (m.index > last) parts.push(plain(wire.slice(last, m.index)));
-    parts.push({ wire: m[0], display: labelOf((m[1] ?? m[0]).toLowerCase()), mention: true });
-    last = m.index + m[0].length;
+  for (const t of tokensOf(wire, labelOf)) {
+    if (t.index < last) continue;
+    if (t.index > last) parts.push(plain(wire.slice(last, t.index)));
+    parts.push({ wire: t.wire, display: t.display, mention: true });
+    last = t.index + t.wire.length;
   }
   if (last < wire.length) parts.push(plain(wire.slice(last)));
   return place(parts);
@@ -116,11 +128,16 @@ export function applyDisplayEdit(shown: Piece[], next: string, labelOf: LabelOf,
   return { wire: nextWire, display, caret: Math.max(0, display.length - tail) };
 }
 
-export function insertMention(shown: Piece[], range: Span, address: string, labelOf: LabelOf): { wire: string; caret: number } {
+export function insertToken(shown: Piece[], range: Span, token: string, labelOf: LabelOf): { wire: string; caret: number } {
   const wire = wireOf(shown);
   const wireAt = (pos: number): number => wireOf(sliceParts(shown, 0, pos)).length;
-  const { next, cursor } = applyMention(wire, { start: wireAt(range.start), end: wireAt(range.end) }, address);
-  return { wire: next, caret: toDisplay(next.slice(0, cursor), labelOf).length };
+  const head = `${wire.slice(0, wireAt(range.start))}${token} `;
+  const next = head + wire.slice(wireAt(range.end));
+  return { wire: next, caret: toDisplay(head, labelOf).length };
+}
+
+export function insertMention(shown: Piece[], range: Span, address: string, labelOf: LabelOf): { wire: string; caret: number } {
+  return insertToken(shown, range, mentionToken(address), labelOf);
 }
 
 export function mentionQuery(

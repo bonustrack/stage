@@ -10,7 +10,7 @@ import {
 } from './mentions.model';
 import type { ComposerState } from './state';
 
-function labelOf(address: string): string {
+export function labelOf(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
 }
 

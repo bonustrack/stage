@@ -9,7 +9,8 @@ import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
 import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
 import { useMentionEditor } from './mentions';
-import { ReplyBanner, MentionMenu, PendingRow } from './parts';
+import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
+import { useChannelSuggest } from './channels';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine } from '../../modules/messaging';
@@ -77,6 +78,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
   useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
+  const channels = useChannelSuggest(s, convId);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
@@ -91,6 +93,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   return (
     <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
+      <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
         dark={dark} fg={fg} sub={sub} chipBg={chipBg}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
@@ -109,7 +112,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
-        onMentionKey={mention.onKey}
+        onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}

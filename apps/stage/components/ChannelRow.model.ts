@@ -1,4 +1,5 @@
 import type { BadgeColor } from '@stage-labs/kit/badge';
+import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
 import { highlightSegments } from './HighlightText.model';
 
 interface ChannelLabelChip {
@@ -36,7 +37,7 @@ interface ChannelRowDomain {
 }
 
 function resolveDraft(hasDraft?: boolean, draftText?: string | null): string | null {
-  return hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
+  return hasDraft && draftText && draftText.trim().length > 0 ? withChannelLabels(draftText.trim()) : null;
 }
 
 function resolvePreview(

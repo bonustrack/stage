@@ -27,6 +27,14 @@ describe('channelRowModel', () => {
     expect(p.timestamp).toBe('9:15 AM');
   });
 
+  test('a draft sharing a channel shows the channel name, not its link', () => {
+    const p = channelRowModel({
+      title: 'Alice', hasDraft: true, timestampLabel: '',
+      draftText: 'see [#Ops night shift](https://stage.box/#/channel/2e793fb8087052ca59109ca900e53de9) ',
+    });
+    expect(p.preview).toBe('see #Ops night shift');
+  });
+
   test('labels truncate to two with overflow chip', () => {
     const p = channelRowModel({ title: 'Alice', timestampLabel: '', labels: ['a', 'b', 'c', 'd'] });
     expect(p.chips).toEqual([{ label: 'a' }, { label: 'b' }, { label: '+2' }]);

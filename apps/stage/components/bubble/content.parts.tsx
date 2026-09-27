@@ -19,9 +19,8 @@ import { HighlightText } from '../HighlightText';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { parseMentions } from '@stage-labs/client/xmtp/mentions';
-import { profileLinkOf } from '../../lib/links';
-import { bodyView, mentionAddresses, mentionLabel, withMentionLabels } from './mention.model';
+import { conversationLinkOf, profileLinkOf } from '../../lib/links';
+import { bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type BodySegment } from './mention.model';
 
 function mentionDisplay(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
@@ -39,12 +38,27 @@ function MentionLink({ address }: { address: string }): React.ReactElement {
   );
 }
 
+function ChannelRefLink({ convId, label }: { convId: string; label: string }): React.ReactElement {
+  const router = useRouter();
+  return (
+    <Text size="3xl" weight="semibold"
+      onPress={() => { router.push(conversationLinkOf(convId)); }} role="link"
+      suppressHighlighting>
+      {`#${label}`}
+    </Text>
+  );
+}
+
+function segmentNode(seg: BodySegment, i: number): React.ReactNode {
+  if (seg.type === 'text') return seg.text;
+  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} />;
+  return <MentionLink key={`m${i}`} address={seg.address} />;
+}
+
 function MentionBody({ text, fg }: { text: string; fg: string }): React.ReactElement {
   return (
     <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
-      {parseMentions(text).map((seg, i) => (
-        seg.type === 'text' ? seg.text : <MentionLink key={`m${i}`} address={seg.address} />
-      ))}
+      {bodySegments(text).map(segmentNode)}
     </Text>
   );
 }
