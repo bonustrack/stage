@@ -101,6 +101,40 @@ describe('createTabLock', () => {
     expect(lost).toEqual(['a']);
   });
 
+  test('a tab that took over with use here is told when a third tab takes over from it', async () => {
+    const manager = new FakeLockManager();
+    const lost: string[] = [];
+    openTab(manager, 'a', lost);
+    await settle();
+    const second = openTab(manager, 'b', lost);
+    await settle();
+    second.takeOver();
+    await settle();
+    const third = openTab(manager, 'c', lost);
+    await settle();
+    third.takeOver();
+    await settle();
+    expect(third.role()).toBe('active');
+    expect(lost).toEqual(['a', 'b']);
+  });
+
+  test('a tab that took over by itself is told when another tab takes over from it', async () => {
+    const manager = new FakeLockManager();
+    const lost: string[] = [];
+    openTab(manager, 'a', lost);
+    await settle();
+    openTab(manager, 'b', lost);
+    await settle();
+    manager.closeTab('a');
+    await settle();
+    const third = openTab(manager, 'c', lost);
+    await settle();
+    third.takeOver();
+    await settle();
+    expect(third.role()).toBe('active');
+    expect(lost).toEqual(['b']);
+  });
+
   test('pressing use here twice does not make the tab steal Stage from itself', async () => {
     const manager = new FakeLockManager();
     const lost: string[] = [];
