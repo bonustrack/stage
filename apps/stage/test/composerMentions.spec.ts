@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   applyDisplayEdit, editRegion, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
-  withContactCandidates,
+  activeMentionIndex, withContactCandidates,
 } from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
@@ -177,6 +177,7 @@ describe('composer mention contacts', () => {
     { address: ALICE, name: 'alice' },
     { address: BOB.toUpperCase().replace('0X', '0x'), name: 'bob' },
     { address: CAROL, name: 'carol' },
+    { address: CAROL, name: 'carol' },
     { address: SELF, name: 'me' },
   ];
 
@@ -189,5 +190,20 @@ describe('composer mention contacts', () => {
     const pool = withContactCandidates(peer, contacts, SELF);
     expect(mentionQuery(piecesOf('@', labelOf), 1, pool).matches.map(c => c.name)).toEqual(['bob', 'alice', 'carol']);
     expect(mentionQuery(piecesOf('hi @ca', labelOf), 6, pool).matches.map(c => c.name)).toEqual(['carol']);
+  });
+});
+
+describe('composer mention highlight', () => {
+  const alice = { address: ALICE, name: 'alice' };
+  const bob = { address: BOB, name: 'bob' };
+
+  test('follows the highlighted person when the list reorders', () => {
+    expect(activeMentionIndex([alice, bob], '0:@', { key: '0:@', address: BOB })).toBe(1);
+    expect(activeMentionIndex([bob, alice], '0:@', { key: '0:@', address: BOB })).toBe(0);
+  });
+
+  test('starts at the top for a new query or a person no longer listed', () => {
+    expect(activeMentionIndex([alice, bob], '0:@b', { key: '0:@', address: BOB })).toBe(0);
+    expect(activeMentionIndex([alice], '0:@', { key: '0:@', address: BOB })).toBe(0);
   });
 });

@@ -5,8 +5,8 @@ import { useContactList } from '../../lib/useAllContacts';
 import { getActiveAccountIdSync, shortAddress } from '../../modules/messaging';
 import { mentionAddresses, mentionLabel } from '../bubble/mention.model';
 import {
-  applyDisplayEdit, displayOf, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
-  withContactCandidates, type Piece,
+  activeMentionIndex, applyDisplayEdit, displayOf, insertMention, mentionKeyAction, mentionQuery, piecesOf,
+  toDisplay, withContactCandidates, type Piece,
 } from './mentions.model';
 import type { ComposerState } from './state';
 
@@ -37,7 +37,7 @@ export function useMentionEditor(
   s: ComposerState, candidates: MentionCandidate[] | undefined, suggestContacts: boolean,
 ): MentionEditor {
   usePeerProfiles(mentionAddresses(s.text));
-  const [active, setActive] = useState({ key: '', index: 0 });
+  const [active, setActive] = useState({ key: '', address: '' });
   const [dismissed, setDismissed] = useState<string | null>(null);
   const pieces = piecesOf(s.text, labelOf);
   const display = displayOf(pieces);
@@ -45,7 +45,7 @@ export function useMentionEditor(
   const { matches, range } = mentionQuery(pieces, s.selection.start, pool);
   const key = range ? `${range.start}:${display.slice(range.start, range.end)}` : '';
   const shown = range && dismissed !== key ? matches : [];
-  const index = active.key === key ? Math.min(active.index, shown.length - 1) : 0;
+  const index = activeMentionIndex(shown, key, active);
 
   const pick = (candidate: MentionCandidate): void => {
     if (!range) return;
@@ -58,7 +58,7 @@ export function useMentionEditor(
   const onKey = (pressed: string, shift: boolean): boolean => {
     const action = mentionKeyAction(pressed, shift, shown.length, index);
     if (!action) return false;
-    if (action.kind === 'move') setActive({ key, index: action.index });
+    if (action.kind === 'move') setActive({ key, address: shown[action.index]?.address ?? '' });
     else if (action.kind === 'dismiss') setDismissed(key);
     else {
       const candidate = shown[index];

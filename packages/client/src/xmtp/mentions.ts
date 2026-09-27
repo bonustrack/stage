@@ -59,15 +59,23 @@ export function computeMentionQuery(
   return { matches, range: { start, end: cursor } };
 }
 
+function matchTier(candidate: MentionCandidate, q: string): number {
+  const name = candidate.name.toLowerCase();
+  if (name.split(/[\s._@-]+/).some(word => word.startsWith(q))) return 0;
+  if (name.includes(q)) return 1;
+  return candidate.address.toLowerCase().includes(q) ? 2 : -1;
+}
+
 export function matchMembers<T extends MentionCandidate>(
   candidates: T[],
   query: string,
   limit = 6,
 ): T[] {
   const q = query.toLowerCase();
-  return candidates
-    .filter(c => !q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
-    .slice(0, limit);
+  if (!q) return candidates.slice(0, limit);
+  const tiers: T[][] = [[], [], []];
+  for (const c of candidates) tiers[matchTier(c, q)]?.push(c);
+  return tiers.flat().slice(0, limit);
 }
 
 export function applyMention(

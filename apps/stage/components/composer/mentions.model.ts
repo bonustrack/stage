@@ -149,6 +149,15 @@ export function withContactCandidates(
   return [...first, ...extra];
 }
 
+export function activeMentionIndex(
+  shown: MentionCandidate[],
+  key: string,
+  active: { key: string; address: string },
+): number {
+  if (active.key !== key) return 0;
+  return Math.max(0, shown.findIndex(c => c.address === active.address));
+}
+
 export function mentionKeyAction(key: string, shift: boolean, count: number, active: number): MentionKeyAction | null {
   if (count === 0) return null;
   if (key === 'ArrowDown') return { kind: 'move', index: (active + 1) % count };

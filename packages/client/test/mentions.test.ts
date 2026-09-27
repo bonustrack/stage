@@ -74,6 +74,23 @@ describe('matchMembers', () => {
   test('matches on address substring', () => {
     expect(matchMembers(members, 'abc0')).toEqual([members[1]]);
   });
+
+  test('ranks a name that starts with the query before other matches', () => {
+    const hex = (d: string): string => `0x${d.repeat(40)}`;
+    const ranked = [
+      { address: hex('d'), name: '0xdddd…dddd' },
+      { address: hex('e'), name: 'Eddie' },
+      { address: hex('1'), name: 'Ann Dee' },
+      { address: hex('2'), name: 'dana.stage.eth' },
+    ];
+    expect(matchMembers(ranked, 'd').map(m => m.name)).toEqual(['Ann Dee', 'dana.stage.eth', '0xdddd…dddd', 'Eddie']);
+  });
+
+  test('keeps a name match when address matches fill the limit', () => {
+    const crowd = [...'0123456'].map(d => ({ address: `0x${d.repeat(39)}d`, name: `user ${d}` }));
+    const dana = { address: A, name: 'Dana' };
+    expect(matchMembers([...crowd, dana], 'd')[0]).toEqual(dana);
+  });
 });
 
 describe('computeMentionQuery', () => {
