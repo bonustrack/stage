@@ -21,6 +21,7 @@ import { useBoardOrder } from '../../lib/boardOrder';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useHomeState } from './state';
 import { usePinDrag } from './pinDrag';
+import { useRowArrows } from './rowArrows';
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const splitHome = useWebTabRail() && pane !== true;
@@ -79,6 +80,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const visiblePinned = useMemo(() => visibleRows.map(r => r.convId).filter(id => pinned.includes(id)), [visibleRows, pinned]);
   const pinDrag = usePinDrag(pinned, visiblePinned);
+  useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag,
   });

@@ -23,6 +23,7 @@ import { DANGER } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
+import { rowDataSet } from './rowArrows';
 
 export function rowTitle(item: RowT): string {
   return item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
@@ -91,6 +92,7 @@ function ChannelRowItemBase({
   const row = (
     <ChannelRow
       title={title}
+      mark={rowDataSet(item.convId)}
       active={active}
       highlightQuery={query}
       avatarUri={item.avatarUri}

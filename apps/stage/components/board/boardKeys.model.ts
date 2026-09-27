@@ -1,21 +1,4 @@
-import { isEditableTarget } from '../bubble/imageGallery.model';
-
-export type BoardArrow = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
-
-export interface BoardKeyEvent {
-  key: string;
-  altKey: boolean;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  shiftKey: boolean;
-  defaultPrevented: boolean;
-}
-
-export interface BoardKeyTarget {
-  tagName: string | null;
-  contentEditable: boolean;
-  text: string;
-}
+import { stepRow, type Arrow } from '../arrowKeys.model';
 
 interface NavColumn {
   key: string;
@@ -25,16 +8,6 @@ interface NavColumn {
 export interface BoardCardRef {
   key: string;
   convId: string;
-}
-
-const ARROWS: ReadonlySet<string> = new Set<BoardArrow>(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
-
-const isArrow = (key: string): key is BoardArrow => ARROWS.has(key);
-
-export function boardArrowOf(event: BoardKeyEvent, target: BoardKeyTarget | null): BoardArrow | null {
-  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
-  const typing = target !== null && isEditableTarget(target.tagName, target.contentEditable) && target.text !== '';
-  return !typing && isArrow(event.key) ? event.key : null;
 }
 
 function sideways(columns: readonly NavColumn[], from: number, step: number, row: number): BoardCardRef | null {
@@ -47,7 +20,7 @@ function sideways(columns: readonly NavColumn[], from: number, step: number, row
 }
 
 export function boardArrowMove(
-  columns: readonly NavColumn[], columnIndex: number, convId: string | null, arrow: BoardArrow,
+  columns: readonly NavColumn[], columnIndex: number, convId: string | null, arrow: Arrow,
 ): BoardCardRef | null {
   const column = columns[columnIndex];
   const row = column?.rows.findIndex(r => r.convId === convId) ?? -1;
@@ -55,12 +28,6 @@ export function boardArrowMove(
   if (arrow === 'ArrowLeft' || arrow === 'ArrowRight') {
     return sideways(columns, columnIndex, arrow === 'ArrowLeft' ? -1 : 1, row);
   }
-  const card = column.rows[row + (arrow === 'ArrowUp' ? -1 : 1)];
-  return card === undefined ? null : { key: column.key, convId: card.convId };
-}
-
-export function revealScrollDelta(top: number, bottom: number, viewTop: number, viewBottom: number): number {
-  if (top < viewTop) return top - viewTop;
-  if (bottom > viewBottom) return Math.min(bottom - viewBottom, top - viewTop);
-  return 0;
+  const card = stepRow(column.rows, convId, arrow);
+  return card === null ? null : { key: column.key, convId: card.convId };
 }

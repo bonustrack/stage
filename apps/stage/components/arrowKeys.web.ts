@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { boardArrowOf, revealScrollDelta, type BoardArrow, type BoardKeyTarget } from './boardKeys.model';
+import {
+  arrowKeyOf, revealScrollDelta, type Arrow, type ArrowKeyTarget, type MarkedNode,
+} from './arrowKeys.model';
 
-function keyTarget(target: EventTarget | null): BoardKeyTarget | null {
+function keyTarget(target: EventTarget | null): ArrowKeyTarget | null {
   if (!(target instanceof HTMLElement)) return null;
   const value = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement ? target.value : null;
   return { tagName: target.tagName, contentEditable: target.isContentEditable, text: value ?? target.textContent ?? '' };
@@ -9,20 +11,20 @@ function keyTarget(target: EventTarget | null): BoardKeyTarget | null {
 
 const modalOpen = (): boolean => document.querySelector('[aria-modal="true"]') !== null;
 
-export function useBoardArrows(active: boolean, onArrow: (arrow: BoardArrow) => void): void {
+export function useArrowKeys<A extends Arrow>(active: boolean, arrows: ReadonlySet<A>, onArrow: (arrow: A) => void): void {
   const handler = useRef(onArrow);
   handler.current = onArrow;
   useEffect(() => {
     if (!active) return undefined;
     const onKeyDown = (event: KeyboardEvent): void => {
-      const arrow = boardArrowOf(event, keyTarget(event.target));
+      const arrow = arrowKeyOf(event, keyTarget(event.target), arrows);
       if (arrow === null || modalOpen()) return;
       event.preventDefault();
       handler.current(arrow);
     };
     window.addEventListener('keydown', onKeyDown, true);
     return (): void => { window.removeEventListener('keydown', onKeyDown, true); };
-  }, [active]);
+  }, [active, arrows]);
 }
 
 function scrollerOf(node: HTMLElement): HTMLElement | null {
@@ -33,12 +35,14 @@ function scrollerOf(node: HTMLElement): HTMLElement | null {
   return null;
 }
 
-export function revealBoardCard(columnKey: string, convId: string): void {
-  const cards = document.querySelectorAll<HTMLElement>(`[data-boardcard="${CSS.escape(convId)}"]`);
-  const card = Array.from(cards).find(node => node.dataset.boardcolumn === columnKey);
-  const scroller = card === undefined ? null : scrollerOf(card);
-  if (card === undefined || scroller === null) return;
-  const item = card.getBoundingClientRect();
+export function revealMarked({ dataSet }: MarkedNode): boolean {
+  const selector = Object.entries(dataSet).map(([name, value]) => `[data-${name}="${CSS.escape(value)}"]`).join('');
+  const node = document.querySelector<HTMLElement>(selector);
+  if (node === null) return false;
+  const scroller = scrollerOf(node);
+  if (scroller === null) return true;
+  const item = node.getBoundingClientRect();
   const view = scroller.getBoundingClientRect();
   scroller.scrollTop += revealScrollDelta(item.top, item.bottom, view.top, view.bottom);
+  return true;
 }

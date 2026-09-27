@@ -13,6 +13,7 @@ import { Row, Col, Box, PAGE_GUTTER } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
+import type { MarkedNode } from './arrowKeys.model';
 import { contextMenuProps } from '../lib/contextMenu';
 import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
@@ -42,6 +43,7 @@ interface ChannelRowProps {
   onContextMenu?: (point: MenuPoint) => void;
   highlightQuery?: string;
   accessory?: React.ReactNode;
+  mark?: MarkedNode;
 }
 
 export const CHANNEL_ROW_HEIGHT = 67;
@@ -227,7 +229,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
-  onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory,
+  onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
@@ -253,6 +255,7 @@ function ChannelRowBase({
         paddingHorizontal: PAGE_GUTTER,
       })}
       {...contextMenuProps(onContextMenu ?? onLongPress)}
+      {...mark}
 >
       <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         {hideAvatar === true ? null : (

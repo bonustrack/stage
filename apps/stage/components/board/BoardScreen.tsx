@@ -36,7 +36,8 @@ import {
   type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
-import { revealBoardCard, useBoardArrows } from './boardKeys';
+import { revealMarked, useArrowKeys } from '../arrowKeys';
+import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
 import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
 import { AddItemButton, AddItemModal } from './BoardAddItem';
@@ -49,7 +50,7 @@ const BOARD_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 
 type BoardRouter = ReturnType<typeof useRouter>;
 
-const cardDataSet = (columnKey: string, convId: string): { dataSet: Record<string, string> } => (
+const cardDataSet = (columnKey: string, convId: string): MarkedNode => (
   { dataSet: { boardcard: convId, boardcolumn: columnKey } }
 );
 
@@ -202,7 +203,7 @@ function useCardArrows({ columns, openIndex, openConvId, onMove }: {
   onMove: (key: string) => void;
 }): void {
   const router = useRouter();
-  useBoardArrows(useWebTabRail() && openConvId !== null, (arrow) => {
+  useArrowKeys(useWebTabRail() && openConvId !== null, ALL_ARROWS, (arrow) => {
     const card = boardArrowMove(columns, openIndex, openConvId, arrow);
     if (card === null) return;
     onMove(card.key);
@@ -210,7 +211,7 @@ function useCardArrows({ columns, openIndex, openConvId, onMove }: {
       prefetchFeed(lineOfConv(card.convId));
       showInPanel(router, card.convId, 'replace');
     }
-    revealBoardCard(card.key, card.convId);
+    revealMarked(cardDataSet(card.key, card.convId));
   });
 }
 
