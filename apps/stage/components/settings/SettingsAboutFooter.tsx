@@ -1,15 +1,16 @@
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Row, PAGE_GUTTER } from '../layout';
-import { StageMark } from '../landing/StageLogo';
+import { Col, Row, PAGE_GUTTER } from '../layout';
+import { GithubLogo } from '../GithubLogo';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 import { timeAgo } from '../../lib/buildInfo.model';
 
-const FOOTER_LOGO_SIZE = 24;
 const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: 'sm', weight: 'medium' } as const;
+const GITHUB_ICON_SIZE = 14;
 
 function resolveNativeBuild(): string | null {
   if (Application.nativeBuildVersion) return Application.nativeBuildVersion;
@@ -23,29 +24,43 @@ function versionLabel(): string {
   return nativeBuild ? `${version} (build ${nativeBuild})` : version;
 }
 
-function FooterLink({ href, label }: { href: string | undefined; label: string }): React.ReactElement {
+function FooterLink({ href, label, children }: {
+  href: string | undefined; label: string; children?: React.ReactNode;
+}): React.ReactElement {
   return (
-    <Text {...FOOTER_TEXT} onPress={href ? () => { capabilities.openUrl(href); } : undefined}>
-      {label}
-    </Text>
+    <Pressable
+      disabled={!href}
+      accessibilityRole="link"
+      pressedOpacity={0.6}
+      onPress={() => { if (href) capabilities.openUrl(href); }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+    >
+      {children}
+      <Text {...FOOTER_TEXT} style={href ? { textDecorationLine: 'underline' } : undefined}>{label}</Text>
+    </Pressable>
   );
 }
 
 export function SettingsAboutFooter(): React.ReactElement {
-  const { link: head } = usePalette();
+  const { sub } = usePalette();
   const { gitHash, commitTime, buildProfile } = buildMeta();
   const committed = timeAgo(commitTime, Date.now());
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
   const name = Constants.expoConfig?.name ?? 'Stage';
   return (
-    <Row padding={{ x: PAGE_GUTTER, y: 18 }} align="center" justify="center" gap={8}>
-      <StageMark size={FOOTER_LOGO_SIZE} color={head} />
-      <Text {...FOOTER_TEXT} numberOfLines={1} style={{ flexShrink: 1 }}>
-        {`${name} ${versionLabel()} · ${buildProfile} · `}
-        <FooterLink href={commitUrl(gitHash)} label={shortHash} />
-        {` · ${committed.length > 0 ? committed : '-'} · `}
-        <FooterLink href={STAGE_GITHUB_URL} label="bonustrack/stage on GitHub" />
+    <Col padding={{ x: PAGE_GUTTER, y: 18 }} align="center" gap={4}>
+      <Text {...FOOTER_TEXT} style={{ textAlign: 'center' }}>
+        {`${name} ${versionLabel()} · ${buildProfile}`}
       </Text>
-    </Row>
+      <Row align="center" justify="center" gap={4} wrap>
+        <FooterLink href={commitUrl(gitHash)} label={shortHash} />
+        <Text {...FOOTER_TEXT}>·</Text>
+        <Text {...FOOTER_TEXT}>{committed.length > 0 ? committed : '-'}</Text>
+        <Text {...FOOTER_TEXT}>·</Text>
+        <FooterLink href={STAGE_GITHUB_URL} label="bonustrack/stage">
+          <GithubLogo size={GITHUB_ICON_SIZE} color={sub} />
+        </FooterLink>
+      </Row>
+    </Col>
   );
 }

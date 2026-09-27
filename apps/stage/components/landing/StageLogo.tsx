@@ -9,27 +9,16 @@ const CROPPED_VIEW_BOX = '100 100 300 300';
 
 const STAGE_LOGO_SIZE = 64;
 
-interface StageMarkProps {
-  size?: number;
-  color: string;
-}
-
-export function StageMark({ size = STAGE_LOGO_SIZE, color }: StageMarkProps): React.ReactElement {
-  return (
-    <Box width={size} height={size}>
-      <Svg width={size} height={size} viewBox={CROPPED_VIEW_BOX}>
-        {CELLS.map(([x, y]) => (
-          <Rect key={`${x}-${y}`} x={x} y={y} width={CELL} height={CELL} fill={color} />
-        ))}
-      </Svg>
-    </Box>
-  );
-}
-
-export function StageLogo({ size = STAGE_LOGO_SIZE, color }: StageMarkProps): React.ReactElement {
+export function StageLogo({ size = STAGE_LOGO_SIZE, color }: { size?: number; color: string }): React.ReactElement {
   return (
     <Pressable onPress={() => { router.navigate('/'); }} hitSlop={8} accessibilityLabel="Stage home">
-      <StageMark size={size} color={color} />
+      <Box width={size} height={size}>
+        <Svg width={size} height={size} viewBox={CROPPED_VIEW_BOX}>
+          {CELLS.map(([x, y]) => (
+            <Rect key={`${x}-${y}`} x={x} y={y} width={CELL} height={CELL} fill={color} />
+          ))}
+        </Svg>
+      </Box>
     </Pressable>
   );
 }
