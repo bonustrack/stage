@@ -33,6 +33,8 @@ import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset'
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 import { reported } from '../lib/errorPolicy';
+import { useTabRole } from '../lib/tabLock';
+import { TabStandby } from '../components/system/TabStandby';
 
 const queryClient = getQueryClient();
 
@@ -64,31 +66,36 @@ function isDarkBg(hex: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
 
+function useDocumentTheme(ready: boolean, dark: boolean, bg: string, sub: string): void {
+  useEffect(() => {
+    if (!ready || Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.style.colorScheme = dark ? 'dark' : 'light';
+    root.style.backgroundColor = bg;
+    root.style.setProperty('--stage-scrollbar-thumb', sub);
+    document.getElementById('stage-boot')?.remove();
+  }, [ready, dark, bg, sub]);
+}
+
 export default function RootLayout(): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const palette = usePalette();
+  const tab = useTabRole();
+  useDocumentTheme(tab !== 'pending', scheme === 'dark', palette.bg, palette.sub);
   return (
     <KitThemeProvider value={palette} scheme={scheme}>
-      <RootLayoutInner />
+      {tab === 'active' ? <RootLayoutInner /> : null}
+      {tab === 'standby' ? <TabStandby /> : null}
     </KitThemeProvider>
   );
 }
 
 function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, toolbarBg, sub } = usePalette();
+  const { bg, toolbarBg } = usePalette();
 
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
-
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    root.style.colorScheme = dark ? 'dark' : 'light';
-    root.style.backgroundColor = bg;
-    root.style.setProperty('--stage-scrollbar-thumb', sub);
-    document.getElementById('stage-boot')?.remove();
-  }, [dark, bg, sub]);
 
   useDeepLinks();
   useDocumentScrollRestore();
