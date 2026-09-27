@@ -18,7 +18,7 @@ interface BubbleGestureInput {
 
 interface BubbleGestures {
   rowRef: React.RefObject<View | null>;
-  tapGestures: ReturnType<typeof Gesture.Race>;
+  tapGestures: GestureType | ReturnType<typeof Gesture.Race>;
   openMenu: (point?: MenuPoint) => void;
   swipeStyle: ReturnType<typeof useAnimatedStyle>;
   replyHintStyle: ReturnType<typeof useAnimatedStyle>;
@@ -33,6 +33,7 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 
 const THRESHOLD = -64;
 const SWIPE_TO_REPLY = Platform.OS !== 'web';
+const DOUBLE_TAP_TO_REACT = Platform.OS !== 'web';
 
 export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const { pending, onReply, onReact, onOpenMenu } = input;
@@ -89,7 +90,7 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
     .onStart((e) => { runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY }); }), [openMenu]);
   const tapGestures = useMemo(() => {
-    const menuOrReact = Gesture.Exclusive(longPress, doubleTap);
+    const menuOrReact = DOUBLE_TAP_TO_REACT ? Gesture.Exclusive(longPress, doubleTap) : longPress;
     return SWIPE_TO_REPLY ? Gesture.Race(replyPan, menuOrReact) : menuOrReact;
   }, [replyPan, longPress, doubleTap]);
 
