@@ -23,6 +23,9 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
+import {
+  MEMBER_LIST_WIDTH, MemberListSidebar, useMemberListState,
+} from '../../components/conversation/MemberListSidebar';
 
 function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
@@ -64,14 +67,17 @@ function UnresolvedConversation({ resolved }: {
 
 let measuredFooterHeight = 0;
 
-function FooterDock({ children, height, onHeight }: {
-  children: React.ReactNode; height: number; onHeight: (h: number) => void;
+const MEMBER_LIST_GAP = { right: MEMBER_LIST_WIDTH };
+const MEMBER_LIST_PAD = { paddingRight: MEMBER_LIST_WIDTH };
+
+function FooterDock({ children, height, onHeight, memberList }: {
+  children: React.ReactNode; height: number; onHeight: (h: number) => void; memberList: boolean;
 }): React.ReactElement {
   useReportBottomChrome(height);
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
     <Box
-      style={pinnedBottom(2)}
+      style={[pinnedBottom(2), memberList ? MEMBER_LIST_GAP : null]}
       onLayout={(e) => {
         measuredFooterHeight = e.nativeEvent.layout.height;
         onHeight(measuredFooterHeight);
@@ -100,6 +106,7 @@ export default function XmtpConversation(): React.ReactElement {
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;
+  const memberList = useMemberListState(c.isGroup) === 'shown';
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,7 +130,7 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <ConversationShell bg={bg}>
       <Reanimated.View
-        style={[{ flex: 1 }, listWrapperStyle]}
+        style={[{ flex: 1 }, memberList ? MEMBER_LIST_PAD : null, listWrapperStyle]}
 >
       <ConversationFeed
         c={c}
@@ -142,7 +149,10 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
         <ConversationTopnav c={c} convId={convId}/>
       )}
-      <FooterDock height={composerH} onHeight={setComposerH}><ConversationFooter c={c} convId={convId}/></FooterDock>
+      <FooterDock height={composerH} onHeight={setComposerH} memberList={memberList}>
+        <ConversationFooter c={c} convId={convId}/>
+      </FooterDock>
+      {memberList ? <MemberListSidebar convId={convId}/> : null}
       <ConversationOverlays
         c={c} convId={convId}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}

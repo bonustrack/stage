@@ -14,6 +14,8 @@ import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupWaiting } from '../../modules/messaging';
 import { GroupWaitingNotice } from './GroupWaitingNotice';
+import { useMemberListState } from './MemberListSidebar';
+import { toggleMemberList } from '../../lib/memberList';
 import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
@@ -141,6 +143,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
+  const memberList = useMemberListState(isGroup);
   return (
     <>
       <ChannelMenu
@@ -154,6 +157,8 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
         anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
+        memberList={memberList}
+        onToggleMemberList={toggleMemberList}
         onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden'); }}
 />
       <BubbleActionMenu

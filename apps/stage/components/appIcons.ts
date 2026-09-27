@@ -21,6 +21,7 @@ import { IconQuestionmarkCircle } from '@central-icons-react-native/round-outlin
 import { IconSettingsGear2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsGear2';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
+import { IconTeam } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTeam';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
@@ -49,6 +50,7 @@ export const APP_ICONS = {
   IconSettingsGear2,
   IconSquareBehindSquare1,
   IconSun,
+  IconTeam,
   IconThumbtack,
   IconTrashCan,
   IconWallet4,

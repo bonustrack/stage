@@ -20,10 +20,24 @@ function infoItem(state: ChannelMenuState): MenuSheetItem | null {
   return null;
 }
 
-export function channelMenuItems(state: ChannelMenuState, { search }: { search: boolean }): MenuSheetItem[] {
+export type MemberListState = 'shown' | 'hidden';
+
+interface ChannelMenuOptions {
+  search: boolean;
+  memberList?: MemberListState;
+}
+
+function memberListItem(isGroup: boolean, memberList: MemberListState | undefined): MenuSheetItem | null {
+  if (!isGroup || memberList === undefined) return null;
+  const label = memberList === 'shown' ? 'Hide member list' : 'Show member list';
+  return { id: 'toggle-members', label, icon: 'IconTeam' };
+}
+
+export function channelMenuItems(state: ChannelMenuState, { search, memberList }: ChannelMenuOptions): MenuSheetItem[] {
   const { isGroup, isUnread } = state;
   const items: (MenuSheetItem | null | false)[] = [
     search && { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
+    memberListItem(isGroup, memberList),
     isGroup && { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
     { id: 'toggle-read', label: isUnread ? 'Mark as read' : 'Mark as unread', icon: isUnread ? 'IconCheckmark1' : 'IconEmail1' },
     { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'IconThumbtack' },
