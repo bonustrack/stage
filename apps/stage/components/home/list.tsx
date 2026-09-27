@@ -16,7 +16,6 @@ import { attempt } from '../../lib/errorPolicy';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
-  router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
   sortedRows: Row[];
   barLabels: string[];
   showFilterBar: boolean;
@@ -53,11 +52,11 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
 }
 
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
-  const { router, query, setQuery, pane } = p;
+  const { query, setQuery, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} onOpenSearch={onOpenSearch} onBoard={() => { router.push('/board'); }} />,
-    [sub, router, onOpenSearch],
+    () => <HomeTopnavRight head={sub} onOpenSearch={onOpenSearch} view="chats" />,
+    [sub, onOpenSearch],
   );
   const override = useMemo(
     () => (searchOpen ? (

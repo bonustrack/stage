@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
@@ -8,14 +8,27 @@ import { NewChatModal } from './NewChatModal';
 import { IconBubbleSparkle } from '../IconBubbleSparkle';
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
+import { homeRows } from './state';
+import { boardViewHref, chatsViewHref } from './viewSwitch.model';
 import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
+import { getPeerHandle } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 
-export function HomeTopnavRight({ head, onOpenSearch, onBoard }: {
-  head: string; onOpenSearch: () => void; onBoard?: () => void;
+type HomeView = 'chats' | 'board';
+
+function useViewSwitch(view: HomeView): { onBoard?: () => void; onChats?: () => void } {
+  const router = useRouter();
+  const pathname = usePathname();
+  if (view === 'board') return { onChats: () => { router.dismissTo(chatsViewHref(pathname, homeRows() ?? [], getPeerHandle)); } };
+  return { onBoard: () => { router.push(boardViewHref(pathname, homeRows() ?? [], getPeerHandle)); } };
+}
+
+export function HomeTopnavRight({ head, onOpenSearch, view }: {
+  head: string; onOpenSearch: () => void; view: HomeView;
 }): React.ReactElement {
   const router = useRouter();
+  const switchView = useViewSwitch(view);
   const { link } = usePalette();
   const search = useHover();
   const compose = useHover();
@@ -33,7 +46,8 @@ export function HomeTopnavRight({ head, onOpenSearch, onBoard }: {
       <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />
       <HomeOverflowMenu
         color={head}
-        onBoard={onBoard}
+        onBoard={switchView.onBoard}
+        onChats={switchView.onChats}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));

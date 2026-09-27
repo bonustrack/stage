@@ -285,7 +285,7 @@ function BoardHeader({ inline, query, setQuery }: {
     <>
       <Box flex={1}/>
       <Row align="center" gap={18}>
-        <HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }}/>
+        <HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }} view="board"/>
       </Row>
     </>
   );

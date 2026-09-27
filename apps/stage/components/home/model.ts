@@ -79,6 +79,7 @@ interface ChannelsOverflowItem {
 
 export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
   { id: 'board', label: 'Board view', icon: 'IconColumns3Wide' },
+  { id: 'chats', label: 'Chats view', icon: 'IconBubble3' },
   { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' },
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },

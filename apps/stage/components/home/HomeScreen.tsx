@@ -89,7 +89,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   return (
     <Col flex={1} surface="surface">
       <ChannelsList
-        panRef={panRef} router={router} sortedRows={visibleRows}
+        panRef={panRef} sortedRows={visibleRows}
         barLabels={barLabels} showFilterBar={showFilterBar}
         enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
         unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
