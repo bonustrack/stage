@@ -1,6 +1,4 @@
 
-import { useQuery } from '@tanstack/react-query';
-
 import { capabilities } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -13,9 +11,9 @@ import { Card } from '@stage-labs/kit/react-native/card';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
-import { resolveRemoteAttachment } from '../../modules/messaging';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
+import { useRemoteAttachment } from './attachmentUri';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
@@ -29,10 +27,10 @@ function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement 
   );
 }
 
-export function AttachmentView({ att, fullUrl, fg }: {
-  att: Attachment; fullUrl: string; fg: string;
+export function AttachmentView({ att, fullUrl, fg, galleryKey }: {
+  att: Attachment; fullUrl: string; fg: string; galleryKey?: string;
 }): React.ReactElement {
-  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} />;
+  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
   if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
     return <VoiceMessage uri={fullUrl} />;
@@ -61,11 +59,6 @@ function AttachmentChip({ label, subtitle, fg, onPress }: {
   );
 }
 
-function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; mimeType?: string }> {
-  if (!remote) throw new Error('attachment has no remote');
-  return resolveRemoteAttachment(remote);
-}
-
 function AttachmentRetry({ label, fg, onRetry }: {
   label: string; fg: string; onRetry: () => void;
 }): React.ReactElement {
@@ -83,27 +76,9 @@ function AttachmentPending({ label, fg }: { label: string; fg: string }): React.
   );
 }
 
-function useRemoteAttachment(remote: Attachment['remote']): {
-  uri: string | null; mime: string | undefined; isError: boolean; retry: () => void;
-} {
-  const { data, isError, refetch } = useQuery({
-    queryKey: ['remoteAttachment', remote?.url ?? ''],
-    queryFn: () => fetchRemote(remote),
-    enabled: !!remote,
-    staleTime: Infinity,
-    retry: false,
-  });
-  return {
-    uri: data?.fileUri ?? null,
-    mime: data?.mimeType,
-    isError,
-    retry: () => { void refetch(); },
-  };
-}
-
-export function RemoteAttachmentResolver({ att, fg, msgId, index }: {
+export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: {
   att: Attachment; fg: string;
-  msgId?: string; index?: number;
+  msgId?: string; index?: number; galleryKey?: string;
 }): React.ReactElement {
   const local = useLocalAttachment(msgId, index);
   const remote = useRemoteAttachment(att.remote);
@@ -114,5 +89,5 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index }: {
     return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} />;
   }
   if (!uri) return <AttachmentPending label={label} fg={fg} />;
-  return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} />;
+  return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
 }
