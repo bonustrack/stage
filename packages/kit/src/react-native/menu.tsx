@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
@@ -20,11 +20,14 @@ export const DROPDOWN_MENU = {
   itemGap: 8,
   icon: 20,
   lineHeight: 24,
+  sheetLineHeight: 26,
   separator: 1,
   separatorAlpha: 0.2,
   hoverAlpha: 0.08,
   pressedAlpha: 0.14,
 } as const;
+
+const SheetMenuContext = createContext(false);
 
 function usePalette(dark: boolean | undefined): KitPalette {
   const context = useKitPalette();
@@ -75,6 +78,7 @@ export interface DropdownMenuItemProps {
 
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
   const pal = usePalette(props.dark);
+  const sheet = useContext(SheetMenuContext);
   const [hovered, setHovered] = useState(false);
   const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
   const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
@@ -97,7 +101,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     >
       {icon}
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        <Text value={props.label} size="xl" color={color} truncate style={{ lineHeight: DROPDOWN_MENU.lineHeight }} />
+        <Text value={props.label} size={sheet ? '3xl' : 'xl'} color={color} truncate style={{ lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight }} />
       </View>
       {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>
@@ -139,7 +143,7 @@ export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', da
       scroll
       scrollPadding={{ y: centered ? DROPDOWN_MENU.padY : DROPDOWN_MENU.sheetPadY }}
     >
-      {children}
+      <SheetMenuContext.Provider value={!centered}>{children}</SheetMenuContext.Provider>
     </Dialog>
   );
 }
