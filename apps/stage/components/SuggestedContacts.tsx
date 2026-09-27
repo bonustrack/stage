@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Eyebrow } from './Eyebrow';
 import { Box, PAGE_GUTTER } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { getPeerDescription, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
@@ -16,7 +16,7 @@ export function SuggestedContacts({ known, headingTop = 16 }: { known: readonly 
   return (
     <Box>
       <Box padding={{ x: PAGE_GUTTER, top: headingTop, bottom: 6 }}>
-        <Caption value={SUGGESTED_HEADING} color="secondary" weight="semibold" />
+        <Eyebrow value={SUGGESTED_HEADING} color="secondary" weight="semibold"/>
       </Box>
       {addresses.map((address) => (
         <ChannelRow

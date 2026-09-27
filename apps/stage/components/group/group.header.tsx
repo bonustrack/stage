@@ -3,6 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, PAGE_GUTTER } from '../layout';
+import { Eyebrow } from '../Eyebrow';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
@@ -45,7 +46,7 @@ export function GroupTitle({ name, description }: { name: string | null; descrip
       </Box>
       {about ? (
         <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
-          <Text size="xs" role="secondary">DESCRIPTION</Text>
+          <Eyebrow>DESCRIPTION</Eyebrow>
           <Text size="md" color={fg} style={{ marginTop: 6 }}>{about}</Text>
         </Box>
       ) : null}

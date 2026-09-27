@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Eyebrow } from '../Eyebrow';
 import { Box, PAGE_GUTTER } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
@@ -30,9 +30,9 @@ export function HistorySyncSection(): React.ReactElement {
   const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
     <>
-      <Caption color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28, paddingBottom: 8 }}>
+      <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28, paddingBottom: 8 }}>
         HISTORY
-      </Caption>
+      </Eyebrow>
       <Box>
         <SettingsList>
           <SettingsButtonRow

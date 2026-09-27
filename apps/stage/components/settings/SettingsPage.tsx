@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { Card } from '@stage-labs/kit/react-native/card';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { SettingsHeader } from '../chrome/SettingsHeader';
 import { StackHeader } from '../chrome/StackHeader';
+import { Eyebrow } from '../Eyebrow';
 
 export function SettingsPage({ title, root = false, keyboardShouldPersistTaps, children }: {
   title: string;
@@ -31,9 +31,9 @@ export function SettingsPage({ title, root = false, keyboardShouldPersistTaps, c
 export function SettingsSectionLabel({ top = 24, children }: { top?: number; children: string }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <Text size="xs" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: top, paddingBottom: 8 }}>
+    <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: top, paddingBottom: 8 }}>
       {children}
-    </Text>
+    </Eyebrow>
   );
 }
 

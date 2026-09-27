@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
@@ -12,6 +11,7 @@ import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeTopnavRight } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
+import { CountTag } from '../CountTag';
 import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
@@ -183,7 +183,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
         <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
           <Row nativeID={handle.nativeID} flex={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
             <ColumnTitle label={label} onPress={() => { setEditing(true); }}/>
-            <Badge label={String(column.rows.length)} color="secondary" variant="soft" pill/>
+            <CountTag count={column.rows.length}/>
             <Box flex={1}/>
           </Row>
           <ColumnMenu onDelete={() => { actions.remove(label); }}/>

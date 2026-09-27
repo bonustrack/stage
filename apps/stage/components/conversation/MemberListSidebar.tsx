@@ -3,11 +3,14 @@ import { useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
-import { Box, VirtualList, pinnedEdges, PAGE_GUTTER } from '../layout';
+import { Box, Row, VirtualList, pinnedEdges, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
+import { CountTag } from '../CountTag';
+import { Eyebrow } from '../Eyebrow';
 import { TOPNAV_HEIGHT } from '../Topnav';
-import { useHover } from '../hover';
 import { useSelfAddress } from '../ProfileScreen.parts';
+import { createPaneWidth } from '../tabs/paneWidth';
+import { PaneResizeHandle } from '../tabs/PaneResizeHandle';
 import type { MemberListState } from '../ChannelMenu.model';
 import { memberListEntries, type MemberListEntry } from './MemberListSidebar.model';
 import { useConvMeta, shortAddress } from '../../modules/messaging';
@@ -18,7 +21,14 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useWebTabRail } from '../../lib/webLayout';
 import { usePalette, withAlpha } from '../../lib/theme';
 
-export const MEMBER_LIST_WIDTH = 260;
+const memberListWidth = createPaneWidth({
+  key: 'web.memberListWidth',
+  initial: 260,
+  min: 200,
+  max: 400,
+  styleId: 'stage-right-pane',
+  css: (width) => `:root { --stage-right-pane: ${width}px; }`,
+});
 
 const ROW_HEIGHT = 44;
 const ROW_INSET = 8;
@@ -30,28 +40,21 @@ export function useMemberListState(isGroup: boolean): MemberListState | undefine
   return open ? 'shown' : 'hidden';
 }
 
-function rowBackground(link: string, pressed: boolean, hovered: boolean): string {
-  if (pressed) return withAlpha(link, DROPDOWN_MENU.pressedAlpha);
-  return hovered ? withAlpha(link, DROPDOWN_MENU.hoverAlpha) : 'transparent';
-}
-
 function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: () => void }): React.ReactElement {
   const { link, border } = usePalette();
-  const { hovered, hoverProps } = useHover();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={entry.name}
-      {...hoverProps}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW_HEIGHT,
         marginHorizontal: ROW_INSET, paddingHorizontal: PAGE_GUTTER - ROW_INSET, borderRadius: 8,
-        backgroundColor: rowBackground(link, pressed, hovered),
+        backgroundColor: pressed ? withAlpha(link, DROPDOWN_MENU.pressedAlpha) : 'transparent',
       })}
 >
       <Avatar address={entry.address} size="md" style={{ backgroundColor: border }}/>
-      <Text weight="medium" numberOfLines={1} style={{ flex: 1 }}>{entry.name}</Text>
+      <Text size="lg" weight="medium" numberOfLines={1} style={{ flex: 1 }}>{entry.name}</Text>
     </Pressable>
   );
 }
@@ -68,15 +71,17 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
     () => memberListEntries(addresses, getPeerName, shortAddress),
     [addresses, profiles],
   );
+  const width = memberListWidth.use();
   return (
     <Box
       surface="surface"
-      width={MEMBER_LIST_WIDTH}
+      width={width}
       style={[pinnedEdges({ top, bottom: 0, right: 0 }, 2), { borderLeftWidth: 1, borderLeftColor: border }]}
 >
-      <Text size="xs" role="secondary" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: PAGE_GUTTER, paddingBottom: 8 }}>
-        MEMBERS ({entries.length})
-      </Text>
+      <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
+        <Eyebrow>MEMBERS</Eyebrow>
+        <CountTag count={entries.length}/>
+      </Row>
       <VirtualList
         scroll="self"
         data={entries}
@@ -87,6 +92,7 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
           <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>
         )}
       />
+      <PaneResizeHandle pane={memberListWidth} edge="left"/>
     </Box>
   );
 }

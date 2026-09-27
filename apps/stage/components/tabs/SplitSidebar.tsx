@@ -9,7 +9,7 @@ import { HomeScreen } from '../home/HomeScreen';
 import { BoardScreen } from '../board/BoardScreen';
 import { WebTabRail } from './WebTabRail';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
-import { usePaneWidth } from './paneWidth';
+import { channelsPaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
 import { isBoardRoute, isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 
@@ -30,7 +30,7 @@ function paneScopeOf(active: boolean, railOnly: boolean): string | null {
 }
 
 function SidePane({ full, children }: { full: boolean; children: React.ReactNode }): React.ReactElement {
-  const paneWidth = usePaneWidth();
+  const paneWidth = channelsPaneWidth.use();
   const inset = useTopChromeInset();
   const { border } = usePalette();
   return (
@@ -44,7 +44,7 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
       ]}
 >
       {children}
-      {full ? null : <PaneResizeHandle/>}
+      {full ? null : <PaneResizeHandle pane={channelsPaneWidth} edge="right"/>}
     </Box>
   );
 }

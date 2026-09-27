@@ -5,7 +5,9 @@ import { Animated as RNAnimated, Platform } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col, PANE_LEFT_PAD, pinnedBottom, viewportFill } from '../../components/layout';
+import {
+  Box, Col, PANE_LEFT_PAD, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom, viewportFill,
+} from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
@@ -23,9 +25,7 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
-import {
-  MEMBER_LIST_WIDTH, MemberListSidebar, useMemberListState,
-} from '../../components/conversation/MemberListSidebar';
+import { MemberListSidebar, useMemberListState } from '../../components/conversation/MemberListSidebar';
 
 function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
@@ -67,9 +67,6 @@ function UnresolvedConversation({ resolved }: {
 
 let measuredFooterHeight = 0;
 
-const MEMBER_LIST_GAP = { right: MEMBER_LIST_WIDTH };
-const MEMBER_LIST_PAD = { paddingRight: MEMBER_LIST_WIDTH };
-
 function FooterDock({ children, height, onHeight, memberList }: {
   children: React.ReactNode; height: number; onHeight: (h: number) => void; memberList: boolean;
 }): React.ReactElement {
@@ -77,7 +74,7 @@ function FooterDock({ children, height, onHeight, memberList }: {
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
     <Box
-      style={[pinnedBottom(2), memberList ? MEMBER_LIST_GAP : null]}
+      style={[pinnedBottom(2), memberList ? RIGHT_PANE_INSET : null]}
       onLayout={(e) => {
         measuredFooterHeight = e.nativeEvent.layout.height;
         onHeight(measuredFooterHeight);
@@ -130,7 +127,7 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <ConversationShell bg={bg}>
       <Reanimated.View
-        style={[{ flex: 1 }, memberList ? MEMBER_LIST_PAD : null, listWrapperStyle]}
+        style={[{ flex: 1 }, memberList ? RIGHT_PANE_PAD : null, listWrapperStyle]}
 >
       <ConversationFeed
         c={c}

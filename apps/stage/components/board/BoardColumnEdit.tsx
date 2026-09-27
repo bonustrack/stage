@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Input } from '@stage-labs/kit/react-native/input';
@@ -12,6 +11,7 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 import { Col, Row } from '../layout';
 import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
+import { CountTag } from '../CountTag';
 import { OverflowMenu } from '../MenuRows';
 import { useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -131,7 +131,7 @@ export function RenameHeading({ label, columns, count, onRename, onClose }: {
     <>
       <Row align="center" gap={8} padding={HEADER_PADDING}>
         <TitleInput edit={edit}/>
-        <Badge label={String(count)} color="secondary" variant="soft" pill/>
+        <CountTag count={count}/>
       </Row>
       <TitleNote note={renameNote(columns, label, edit.name, edit.tried)}/>
     </>

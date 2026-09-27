@@ -133,7 +133,7 @@ export function QuestionView({ question, dark, onAnswer }: {
   return (
     <Box margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
-        <Text weight="semibold" size="3xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text weight="semibold" size="3xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 1.5 }}>
           {question.header}{s.multi ? ' · multi-select' : ''}
         </Text>
       ) : null}

@@ -2,58 +2,70 @@ import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
 
-const DEFAULT_PANE_WIDTH = 380;
-const MIN_PANE_WIDTH = 280;
-const MAX_PANE_WIDTH = 600;
-const STORAGE_KEY = 'web.channelsPaneWidth';
-const STYLE_ID = 'stage-pane-width';
-
-const listeners = makeListeners();
-
-function clampPaneWidth(w: number): number {
-  return Math.min(MAX_PANE_WIDTH, Math.max(MIN_PANE_WIDTH, w));
+export interface PaneWidth {
+  get: () => number;
+  set: (next: number) => void;
+  reset: () => void;
+  use: () => number;
 }
 
-function readInitial(): number {
-  if (typeof localStorage === 'undefined') return DEFAULT_PANE_WIDTH;
-  const raw = Number(readNamespaced(localStorage, STORAGE_KEY));
-  return Number.isFinite(raw) && raw > 0 ? clampPaneWidth(raw) : DEFAULT_PANE_WIDTH;
+interface PaneWidthOptions {
+  key: string;
+  initial: number;
+  min: number;
+  max: number;
+  styleId: string;
+  css: (width: number) => string;
 }
 
-function syncCssVar(): void {
+function writeStyle(id: string, text: string): void {
   if (typeof document === 'undefined') return;
-  let el = document.getElementById(STYLE_ID);
+  let el = document.getElementById(id);
   if (!el) {
     el = document.createElement('style');
-    el.id = STYLE_ID;
+    el.id = id;
     document.head.appendChild(el);
   }
-  el.textContent = `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }`
-    + ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`;
+  el.textContent = text;
 }
 
-let width = readInitial();
-syncCssVar();
+export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
+  const listeners = makeListeners();
+  const clamp = (w: number): number => Math.min(opts.max, Math.max(opts.min, w));
 
-export function getPaneWidth(): number {
-  return width;
+  const readInitial = (): number => {
+    if (typeof localStorage === 'undefined') return opts.initial;
+    const raw = Number(readNamespaced(localStorage, opts.key));
+    return Number.isFinite(raw) && raw > 0 ? clamp(raw) : opts.initial;
+  };
+
+  let width = readInitial();
+  writeStyle(opts.styleId, opts.css(width));
+
+  const get = (): number => width;
+
+  const set = (next: number): void => {
+    const w = clamp(Math.round(next));
+    if (w === width) return;
+    width = w;
+    writeStyle(opts.styleId, opts.css(width));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(namespacedKey(opts.key), String(w));
+    }
+    listeners.notify();
+  };
+
+  const use = (): number => useStoreValue(listeners.subscribe, get);
+
+  return { get, set, reset: () => { set(opts.initial); }, use };
 }
 
-export function setPaneWidth(next: number): void {
-  const w = clampPaneWidth(Math.round(next));
-  if (w === width) return;
-  width = w;
-  syncCssVar();
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(namespacedKey(STORAGE_KEY), String(w));
-  }
-  listeners.notify();
-}
-
-export function resetPaneWidth(): void {
-  setPaneWidth(DEFAULT_PANE_WIDTH);
-}
-
-export function usePaneWidth(): number {
-  return useStoreValue(listeners.subscribe, getPaneWidth);
-}
+export const channelsPaneWidth = createPaneWidth({
+  key: 'web.channelsPaneWidth',
+  initial: 380,
+  min: 280,
+  max: 600,
+  styleId: 'stage-pane-width',
+  css: (width) => `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }`
+    + ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`,
+});

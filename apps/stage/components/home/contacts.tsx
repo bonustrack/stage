@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
-import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Eyebrow } from '../Eyebrow';
 import { Box, PAGE_GUTTER } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../ChannelRow';
@@ -83,7 +83,7 @@ function ContactRows({ rows, label, onOpen }: { rows: ResultRow[]; label: string
   return (
     <Box>
       <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
-        <Caption value={label} color="secondary" weight="semibold" />
+        <Eyebrow value={label} color="secondary" weight="semibold"/>
       </Box>
       {rows.map((r) => (
         <ChannelRow

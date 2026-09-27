@@ -8,6 +8,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col, ScreenScroll } from '../../components/layout';
+import { Eyebrow } from '../../components/Eyebrow';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { AppIcon } from '../../components/widgets';
 import { getActiveAccount } from '../../lib/accounts';
@@ -29,7 +30,7 @@ function AddressCard({ label, address, hint, onCopy }: {
   const dark = useKitScheme() === 'dark';
   return (
     <Col gap={8}>
-      <Caption value={label.toUpperCase()} color="secondary" size="sm" />
+      <Eyebrow value={label.toUpperCase()} color="secondary" size="2xs"/>
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Col flex={1}>
           <Text value={address || '-'} size="md" truncate />

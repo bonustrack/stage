@@ -1,9 +1,10 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Row, VirtualList, PAGE_GUTTER } from '../layout';
+import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { MemberRow } from './group.parts';
+import { Eyebrow } from '../Eyebrow';
+import { CountTag } from '../CountTag';
 import { usePalette } from '../../lib/theme';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
@@ -11,10 +12,10 @@ import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius
 function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): React.ReactElement {
   const { text: fg, border } = usePalette();
   return (
-    <Row padding={{ x: PAGE_GUTTER, bottom: 8 }} align="center" justify="between">
-      <Text size="xs" role="secondary">
-        MEMBERS ({count})
-      </Text>
+    <Row padding={{ x: PAGE_GUTTER, bottom: 8 }} align="center" gap={8}>
+      <Eyebrow>MEMBERS</Eyebrow>
+      <CountTag count={count}/>
+      <Box flex={1}/>
       <Pressable
         onPress={onAdd}
         hitSlop={8}

@@ -3,6 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
+import { Eyebrow } from '../Eyebrow';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import { capabilities } from '../../lib/capabilities';
@@ -121,7 +122,7 @@ export function GroupLabelsView({ labels }: { labels: string[] }): React.ReactEl
     <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconTag} size={13} color={sub}/>
-        <Text size="xs" role="secondary">LABELS</Text>
+        <Eyebrow>LABELS</Eyebrow>
       </Row>
       <Row margin={{ top: 10 }} gap={8} wrap align="center">
         {labels.map((label) => <LabelChip key={label} label={label} />)}

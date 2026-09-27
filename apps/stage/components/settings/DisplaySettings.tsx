@@ -1,7 +1,7 @@
 
 
 import { Box, PAGE_GUTTER } from '../layout';
-import { Text } from '@stage-labs/kit/react-native/text';
+import { Eyebrow } from '../Eyebrow';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useThemePreference,
@@ -18,9 +18,9 @@ export function DisplaySettings(): React.ReactElement {
 
   return (
     <SettingsPage title="Display" keyboardShouldPersistTaps="handled">
-      <Text size="xs" role="secondary" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 20, paddingBottom: 8 }}>
+      <Eyebrow style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 20, paddingBottom: 8 }}>
         THEME
-      </Text>
+      </Eyebrow>
       <SettingsList>
         {THEME_OPTIONS.map((opt) => (
           <SettingsThemeRow
@@ -44,9 +44,9 @@ export function DisplaySettings(): React.ReactElement {
 
       {custom ? (
         <Box padding={{ x: PAGE_GUTTER, top: 24 }}>
-          <Text size="xs" role="secondary" style={{ paddingBottom: 4 }}>
+          <Eyebrow style={{ paddingBottom: 4 }}>
             CUSTOM COLORS
-          </Text>
+          </Eyebrow>
           <ColorTokens/>
         </Box>
       ) : null}

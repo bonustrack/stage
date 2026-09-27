@@ -8,6 +8,7 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../layout';
+import { Eyebrow } from '../Eyebrow';
 import { AppModal } from '../AppModal';
 import { Spinner } from '../Spinner';
 import { TokenRowBody } from '../wallet/TokenRowView';
@@ -105,7 +106,7 @@ export function TokenSelector({ value, onChange }: {
 
   return (
     <Box gap={6}>
-      <Text size="xs" role="secondary">TOKEN</Text>
+      <Eyebrow>TOKEN</Eyebrow>
       <Pressable
         onPress={() => { setOpen(true); }}
         style={({ pressed }) => ({

@@ -7,6 +7,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
+import { Eyebrow } from '../Eyebrow';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,
   type XmtpInstallation,
@@ -90,9 +91,9 @@ export function MessengerSessions(): React.ReactElement {
 
   return (
     <Col>
-      <Text size="xs" color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28 }}>
+      <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28 }}>
         ACTIVE SESSIONS
-      </Text>
+      </Eyebrow>
       {list === null ? (
         <Row padding={{ x: PAGE_GUTTER, top: 12 }} gap={8} align="center">
           <Spinner size={20} color={fg} />

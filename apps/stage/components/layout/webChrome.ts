@@ -2,6 +2,7 @@ import { Platform, type ViewStyle } from 'react-native';
 
 const WEB = Platform.OS === 'web';
 const PANE_LEFT = 'var(--stage-pane-left, 0px)';
+const RIGHT_PANE = 'var(--stage-right-pane, 0px)';
 
 type WebStyle = Record<string, string | number | undefined>;
 
@@ -10,6 +11,10 @@ function css(style: WebStyle): ViewStyle {
 }
 
 export const PANE_LEFT_PAD: ViewStyle = WEB ? css({ paddingLeft: PANE_LEFT }) : {};
+
+export const RIGHT_PANE_PAD: ViewStyle = WEB ? css({ paddingRight: RIGHT_PANE }) : {};
+
+export const RIGHT_PANE_INSET: ViewStyle = WEB ? css({ right: RIGHT_PANE }) : {};
 
 export const STICKY_TOP: ViewStyle = WEB ? css({ position: 'sticky', top: 0, zIndex: 2 }) : {};
 

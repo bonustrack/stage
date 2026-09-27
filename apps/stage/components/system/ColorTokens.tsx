@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Box, Row, Col } from '../layout';
+import { Eyebrow } from '../Eyebrow';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import {
@@ -167,7 +168,7 @@ export function ColorTokens(): React.ReactElement {
       />
 
       <Box margin={{ top: 20 }}>
-        <Text color={p.sub} variant="caption" weight="medium">DERIVED</Text>
+        <Eyebrow color={p.sub}>DERIVED</Eyebrow>
         <Row margin={{ top: 8 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
           {([
             ['bg', palette.bg], ['border', palette.border], ['text', palette.text],
