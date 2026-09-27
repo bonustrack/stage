@@ -42,6 +42,11 @@ export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
   return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + MENU_GAP };
 }
 
+export function menuPointAbove(event: GestureResponderEvent): MenuPoint {
+  const rect = anchorRect(event);
+  return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.top - MENU_GAP };
+}
+
 export function menuPointBelowEnd(event: GestureResponderEvent): MenuPoint {
   const rect = anchorRect(event);
   return rect === undefined ? menuPointOf(event) : { x: rect.right, y: rect.bottom + MENU_GAP };

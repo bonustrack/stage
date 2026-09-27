@@ -1,17 +1,18 @@
 
-import { Platform, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
+import { useState } from 'react';
+import { Platform, type GestureResponderEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
 import { Box, Col, PAGE_GUTTER } from '../layout';
+import { AnchoredMenu, menuPointAbove } from '../AnchoredMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
+import { MenuRow } from '../MenuRows';
 import { IconArrowUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUp';
-import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 import { IconChart3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChart3';
@@ -35,6 +36,7 @@ interface EditorProps {
   setSelection: (s: { start: number; end: number }) => void;
   focusNonce: number; blurNonce: number;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
@@ -42,7 +44,7 @@ interface EditorProps {
 }
 
 function ComposerBtn({ icon, label, onPress, fg, hoverFg, chipBg, mr }: {
-  icon: CentralIcon; label: string; onPress: () => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
+  icon: CentralIcon; label: string; onPress: (e: GestureResponderEvent) => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
 }): React.ReactElement {
   const { hovered, hoverProps } = useHover();
   return (
@@ -117,19 +119,26 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
 
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const { fg, chipBg } = p;
-  const showQuick = !p.attachMenuOpen && !!p.quickIcon && !!p.onQuick;
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const showQuick = !!p.quickIcon && !!p.onQuick;
+  const close = (): void => { p.setAttachMenuOpen(() => false); };
   return (
     <>
       <ComposerBtn
-        icon={p.attachMenuOpen ? IconCrossMedium : IconPlusLarge}
-        label={p.attachMenuOpen ? 'Close' : 'Attach'}
-        onPress={() => { p.setAttachMenuOpen(o => !o); }}
+        icon={IconPlusLarge}
+        label="Attach"
+        onPress={(e) => { setAnchor(menuPointAbove(e)); p.setAttachMenuOpen(() => true); }}
         fg={fg} hoverFg={p.head} chipBg={chipBg}
         mr={showQuick ? -12 : undefined}
       />
       {showQuick && p.quickIcon && p.onQuick
         ? <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={fg} hoverFg={p.head} chipBg={chipBg} />
         : null}
+      <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
+        {(p.attachActions ?? []).map(([icon, label, action]) => (
+          <MenuRow key={label} icon={icon} label={label} onPress={() => { close(); void action(); }} />
+        ))}
+      </AnchoredMenu>
     </>
   );
 }
@@ -182,33 +191,4 @@ export function buildAttachActions(a: {
     [IconPencil, 'Sign', a.openSig],
     [IconWallet4, 'Payment', a.openTx],
   ];
-}
-
-export function AttachMenu({
-  head, dark, actions, onClose,
-}: {
-  head: string; dark: boolean;
-  actions: [CentralIcon, string, () => void | Promise<void>][];
-  onClose: () => void;
-}): React.ReactElement {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 16, paddingHorizontal: PAGE_GUTTER, paddingTop: 12, paddingBottom: PAGE_GUTTER }}
->
-      {actions.map(([icon, label, action]) => (
-        <Col key={label} align="center" gap={6}>
-          <Button
-            uniform pill size="xl" color="secondary" variant="solid" dark={dark}
-            accessibilityLabel={label}
-            iconStart={<Glyph icon={icon} size={24} color={head}/>}
-            onPress={() => { onClose(); void action(); }}
-          />
-          <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
-        </Col>
-      ))}
-    </ScrollView>
-  );
 }

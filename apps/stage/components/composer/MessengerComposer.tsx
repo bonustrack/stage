@@ -11,7 +11,7 @@ import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment }
 import { useMentionEditor } from './mentions';
 import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
 import { useChannelSuggest } from './channels';
-import { ComposerEditor, AttachMenu, buildAttachActions } from './editor';
+import { ComposerEditor, buildAttachActions } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine } from '../../modules/messaging';
 import { useComposerState } from './state';
@@ -107,7 +107,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         text={mention.display} setText={mention.setDisplay}
         selection={s.selection} setSelection={s.setSelection}
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
-        attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
+        attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen} attachActions={attachActions}
         quickIcon={quick?.[0]}
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
@@ -118,13 +118,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
       />
-      {s.attachMenuOpen ? (
-        <AttachMenu
-          head={head} dark={dark}
-          onClose={() => { s.setAttachMenuOpen(() => false); }}
-          actions={attachActions}
-        />
-      ) : null}
       <ComposerSheets
         s={s} dark={dark} hooks={{ xmtpLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
         initialTo={loneCandidate(mentionCandidates)}
