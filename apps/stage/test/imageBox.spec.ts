@@ -2,16 +2,16 @@ import { describe, expect, test } from 'bun:test';
 import { imageBox, sameSize, validSize } from '../components/bubble/imageBox.model';
 
 describe('image box', () => {
-  test('fits a tall image inside 300 by 300 at its ratio', () => {
-    expect(imageBox({ width: 1170, height: 2532 })).toEqual({ width: 139, height: 300, aspectRatio: 1170 / 2532 });
+  test('fits a tall image inside 400 by 400 at its ratio', () => {
+    expect(imageBox({ width: 1170, height: 2532 })).toEqual({ width: 185, height: 400, aspectRatio: 1170 / 2532 });
   });
 
-  test('fits a wide image inside 300 by 300 at its ratio', () => {
-    expect(imageBox({ width: 1262, height: 896 })).toEqual({ width: 300, height: 213, aspectRatio: 1262 / 896 });
+  test('fits a wide image inside 400 by 400 at its ratio', () => {
+    expect(imageBox({ width: 1262, height: 896 })).toEqual({ width: 400, height: 284, aspectRatio: 1262 / 896 });
   });
 
-  test('shows a large square image at 300 by 300', () => {
-    expect(imageBox({ width: 1024, height: 1024 })).toEqual({ width: 300, height: 300, aspectRatio: 1 });
+  test('shows a large square image at 400 by 400', () => {
+    expect(imageBox({ width: 1024, height: 1024 })).toEqual({ width: 400, height: 400, aspectRatio: 1 });
   });
 
   test('keeps a small image at its own size', () => {
@@ -19,7 +19,7 @@ describe('image box', () => {
   });
 
   test('reserves the full square until the size is known', () => {
-    expect(imageBox(undefined)).toEqual({ width: 300, height: 300, aspectRatio: 1 });
+    expect(imageBox(undefined)).toEqual({ width: 400, height: 400, aspectRatio: 1 });
   });
 
   test('accepts only a positive measured size', () => {
