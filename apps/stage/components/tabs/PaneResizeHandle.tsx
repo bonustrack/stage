@@ -1,10 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ViewStyle } from 'react-native';
 import { Box } from '../layout';
+import { usePalette, type Palette } from '../../lib/theme';
 import { getPaneWidth, setPaneWidth, resetPaneWidth } from './paneWidth';
 
 const DOUBLE_TAP_MS = 300;
 const TAP_SLOP_PX = 3;
+const HANDLE_WIDTH = 8;
+const BAR_WIDTH = 4;
+const HANDLE_STYLE = {
+  position: 'absolute', top: 0, bottom: 0, right: -HANDLE_WIDTH / 2, zIndex: 4,
+  cursor: 'col-resize', touchAction: 'none',
+} as unknown as ViewStyle;
 
 interface Drag {
   pointerId: number;
@@ -26,9 +33,28 @@ function isTap(drag: Drag, x: number, y: number): boolean {
   return Math.abs(x - drag.x) < TAP_SLOP_PX && Math.abs(y - drag.y) < TAP_SLOP_PX;
 }
 
+function barColor(palette: Palette, hovered: boolean, dragging: boolean): string | undefined {
+  if (dragging) return palette.text;
+  return hovered ? palette.sub : undefined;
+}
+
+function EdgeBar({ hovered, dragging }: { hovered: boolean; dragging: boolean }): React.ReactElement {
+  const palette = usePalette();
+  return (
+    <Box
+      pointerEvents="none"
+      width={BAR_WIDTH}
+      background={barColor(palette, hovered, dragging)}
+      style={{ position: 'absolute', top: 0, bottom: 0, right: HANDLE_WIDTH / 2 - 1 }}
+/>
+  );
+}
+
 export function PaneResizeHandle(): React.ReactElement {
   const drag = useRef<Drag | null>(null);
   const lastTapAt = useRef(0);
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => () => { setResizing(false); }, []);
 
@@ -42,6 +68,7 @@ export function PaneResizeHandle(): React.ReactElement {
     if (current === null) return null;
     drag.current = null;
     setResizing(false);
+    setDragging(false);
     return current;
   };
 
@@ -52,6 +79,7 @@ export function PaneResizeHandle(): React.ReactElement {
     capturePointer(event.currentTarget, pointerId);
     drag.current = { pointerId, x: clientX, y: clientY, width: getPaneWidth() };
     setResizing(true);
+    setDragging(true);
   };
 
   const onPointerMove = (event: PointerEvent): void => {
@@ -73,11 +101,12 @@ export function PaneResizeHandle(): React.ReactElement {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={finish}
-      width={8}
-      style={{
-        position: 'absolute', top: 0, bottom: 0, right: -4, zIndex: 4,
-        cursor: 'col-resize', touchAction: 'none',
-      } as unknown as ViewStyle}
-/>
+      onPointerEnter={() => { setHovered(true); }}
+      onPointerLeave={() => { setHovered(false); }}
+      width={HANDLE_WIDTH}
+      style={HANDLE_STYLE}
+    >
+      <EdgeBar hovered={hovered} dragging={dragging}/>
+    </Box>
   );
 }

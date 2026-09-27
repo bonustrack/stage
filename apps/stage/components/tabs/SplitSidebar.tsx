@@ -13,6 +13,8 @@ import { usePaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
 import { isBoardRoute, isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 
+const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
+
 function usePaneScope(scope: string | null): void {
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -33,6 +35,7 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
   const { border } = usePalette();
   return (
     <Box
+      {...(full ? null : SCROLLBAR_ON_HOVER)}
       surface="surface"
       width={full ? undefined : paneWidth}
       style={[
