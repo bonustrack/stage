@@ -12,7 +12,9 @@ import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radiu
 
 export const DROPDOWN_MENU = {
   radius: 6,
+  sheetRadius: 12,
   padY: 4,
+  sheetPadY: 8,
   itemPadX: 16,
   itemPadY: 6,
   itemGap: 8,
@@ -129,13 +131,13 @@ export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', da
       gestureRoot
       backdropColor={MODAL.backdrop}
       panelBackground={background ?? pal.border}
-      panelRadius={DROPDOWN_MENU.radius}
+      panelRadius={centered ? DROPDOWN_MENU.radius : DROPDOWN_MENU.sheetRadius}
       panelWidth={centered ? '100%' : undefined}
       panelMaxWidth={centered ? maxWidth : undefined}
       panelMaxHeight={MODAL.maxHeight}
       safeAreaBottom={!centered}
       scroll
-      scrollPadding={{ y: DROPDOWN_MENU.padY }}
+      scrollPadding={{ y: centered ? DROPDOWN_MENU.padY : DROPDOWN_MENU.sheetPadY }}
     >
       {children}
     </Dialog>
