@@ -3,7 +3,7 @@ import type { ImageLoadEventData, ImageStyle, NativeSyntheticEvent } from 'react
 import { getImageSize, Image } from '@stage-labs/kit/react-native/image';
 import { ignore } from '../../lib/errorPolicy';
 import { MediaCard } from '../MediaCard';
-import { ImageViewer } from '../ImageViewer';
+import { ChatImageViewer } from './ChatGallery';
 import { imageBox, sameSize, validSize, type ImageSize } from './imageBox.model';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
@@ -18,7 +18,7 @@ function rememberSize(uri: string, size: ImageSize): void {
   if (oldest !== undefined) knownSizes.delete(oldest);
 }
 
-export function MessengerImageAttachment({ uri }: { uri: string }): React.ReactElement {
+export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; galleryKey?: string }): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [prevUri, setPrevUri] = useState<string | null>(null);
   const [natural, setNatural] = useState<ImageSize | undefined>(() => knownSizes.get(uri));
@@ -47,7 +47,7 @@ export function MessengerImageAttachment({ uri }: { uri: string }): React.ReactE
         ) : null}
         <Image src={uri} width="100%" aspectRatio={box.aspectRatio} fit="cover" onLoad={onLoad} />
       </MediaCard>
-      <ImageViewer uri={uri} visible={open} onClose={() => { setOpen(false); }} />
+      <ChatImageViewer uri={uri} galleryKey={galleryKey} visible={open} onClose={() => { setOpen(false); }} />
     </>
   );
 }

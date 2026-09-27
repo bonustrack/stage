@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attempt } from '../../lib/errorPolicy';
+import { ChatGalleryProvider } from '../bubble/ChatGallery';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
@@ -234,34 +235,36 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   );
 
   return (
-    <VirtualList
-      key={convId}
-      ref={listRef}
-      data={rows}
-      extraData={extraData}
-      inverted={o.inverted}
-      anchor={UPRIGHT ? 'end' : 'start'}
-      stickToEnd={() => positioned.current && c.isAtBottomRef.current}
-      estimatedItemSize={FEED_ESTIMATED_ROW}
-      showsVerticalScrollIndicator={Platform.OS === 'web'}
-      maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
-      keyExtractor={c.rowKeyOf}
-      windowSize={11}
-      initialNumToRender={firstBatch}
-      maxToRenderPerBatch={10}
-      removeClippedSubviews
-      onEndReached={o.onEndReached}
-      onEndReachedThreshold={0.5}
-      onStartReached={o.onStartReached}
-      onStartReachedThreshold={0.5}
-      contentContainerStyle={o.contentPadding}
-      {...feedScrollEvents(c, convId, refs)}
-      scrollEventThrottle={16}
-      onScrollToIndexFailed={() => undefined}
-      renderItem={renderItem}
-      ListHeaderComponent={o.header}
-      ListFooterComponent={o.footer}
-      keyboardShouldPersistTaps="handled"
-    />
+    <ChatGalleryProvider entries={allBubbles}>
+      <VirtualList
+        key={convId}
+        ref={listRef}
+        data={rows}
+        extraData={extraData}
+        inverted={o.inverted}
+        anchor={UPRIGHT ? 'end' : 'start'}
+        stickToEnd={() => positioned.current && c.isAtBottomRef.current}
+        estimatedItemSize={FEED_ESTIMATED_ROW}
+        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
+        keyExtractor={c.rowKeyOf}
+        windowSize={11}
+        initialNumToRender={firstBatch}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
+        onEndReached={o.onEndReached}
+        onEndReachedThreshold={0.5}
+        onStartReached={o.onStartReached}
+        onStartReachedThreshold={0.5}
+        contentContainerStyle={o.contentPadding}
+        {...feedScrollEvents(c, convId, refs)}
+        scrollEventThrottle={16}
+        onScrollToIndexFailed={() => undefined}
+        renderItem={renderItem}
+        ListHeaderComponent={o.header}
+        ListFooterComponent={o.footer}
+        keyboardShouldPersistTaps="handled"
+      />
+    </ChatGalleryProvider>
   );
 }
