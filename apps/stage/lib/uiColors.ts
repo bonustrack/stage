@@ -14,6 +14,12 @@ export const VOICE_ACCENT: ThemeColor = { dark: '#3b9bff', light: '#0a7cff' };
 
 export const VOICE_ON_ACCENT: ThemeColor = { dark: '#ffffff', light: '#ffffff' };
 
+export const AUDIO_ACCENT: ThemeColor = { dark: '#f07ac4', light: '#c42a8c' };
+
+export const AUDIO_ACCENT_BG: ThemeColor = { dark: 'rgba(240,122,196,0.16)', light: '#fbe9f3' };
+
+export const SEEK_THUMB: ThemeColor = { dark: '#f4f4f5', light: '#ffffff' };
+
 export const ON_PRIMARY_COLOR: ThemeColor = { dark: '#000000', light: '#ffffff' };
 
 export const MEMBER_OWNER_FG: ThemeColor = { dark: '#2dd4bf', light: '#0d9488' };

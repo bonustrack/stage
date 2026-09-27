@@ -30,7 +30,7 @@ function fmt(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-interface AudioState {
+export interface AudioPlayback {
   playing: boolean;
   position: number;
   duration: number;
@@ -38,7 +38,19 @@ interface AudioState {
   seek: (fraction: number) => void;
 }
 
-function useAudio(src: string, onPlay?: () => void): AudioState {
+export interface AudioPlaybackOptions {
+  onPlay?: () => void;
+  preload?: boolean;
+}
+
+function attachPlayer(src: string, onStatus: (status: AudioStatus) => void): ExpoAudioPlayer {
+  const player = createAudioPlayer({ uri: src });
+  player.addListener('playbackStatusUpdate', onStatus);
+  return player;
+}
+
+export function useAudioPlayback(src: string, options: AudioPlaybackOptions = {}): AudioPlayback {
+  const { onPlay, preload = false } = options;
   const playerRef = useRef<ExpoAudioPlayer | null>(null);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -50,6 +62,17 @@ function useAudio(src: string, onPlay?: () => void): AudioState {
       playerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!preload) return undefined;
+    const player = attachPlayer(src, onStatus);
+    playerRef.current = player;
+    return () => {
+      if (playerRef.current !== player) return;
+      player.remove();
+      playerRef.current = null;
+    };
+  }, [src, preload]);
 
   function onStatus(status: AudioStatus): void {
     if (!status.isLoaded) return;
@@ -69,8 +92,7 @@ function useAudio(src: string, onPlay?: () => void): AudioState {
     const current = playerRef.current;
     if (current === null) {
       onPlay?.();
-      const player = createAudioPlayer({ uri: src });
-      player.addListener('playbackStatusUpdate', onStatus);
+      const player = attachPlayer(src, onStatus);
       playerRef.current = player;
       player.play();
       return Promise.resolve();
@@ -86,7 +108,9 @@ function useAudio(src: string, onPlay?: () => void): AudioState {
   function seek(fraction: number): void {
     if (!playerRef.current || duration <= 0) return;
     const clamped = Math.max(0, Math.min(1, fraction));
-    void playerRef.current.seekTo(Math.floor(clamped * duration) / 1000);
+    const target = Math.floor(clamped * duration);
+    setPosition(target);
+    void playerRef.current.seekTo(target / 1000);
   }
 
   return { playing, position, duration, toggle, seek };
@@ -95,7 +119,7 @@ function useAudio(src: string, onPlay?: () => void): AudioState {
 function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
   const { src, onPlay, accent = '#0a7cff', onAccent = '#ffffff' } = props;
   const count = props.barCount ?? DEFAULT_BAR_COUNT;
-  const { playing, position, duration, toggle, seek } = useAudio(src, onPlay);
+  const { playing, position, duration, toggle, seek } = useAudioPlayback(src, { onPlay });
   const [barWidth, setBarWidth] = useState(0);
   const bars = useMemo(
     () =>
@@ -177,7 +201,7 @@ function BasicPlayer(props: {
   dark: boolean;
 }): React.ReactElement {
   const { src, duration, onPlay, dark } = props;
-  const { playing, position, duration: liveDuration, toggle } = useAudio(src, onPlay);
+  const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(src, { onPlay });
   const lengthMs = liveDuration > 0 ? liveDuration : (duration ?? 0) * 1000;
   const progress = lengthMs > 0 ? Math.min(position / lengthMs, 1) : 0;
 

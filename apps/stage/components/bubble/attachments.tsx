@@ -5,6 +5,8 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Spinner } from '../Spinner';
 import { VoiceMessage } from '../VoiceMessage';
+import { AudioCard } from './AudioCard';
+import { isVoiceNote } from './audioCard.model';
 import { MessengerImageAttachment } from './ImageAttachment';
 import { Box, Col, Row } from '../layout';
 import { Card } from '@stage-labs/kit/react-native/card';
@@ -33,7 +35,7 @@ export function AttachmentView({ att, fullUrl, fg, galleryKey }: {
   if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
   if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
-    return <VoiceMessage uri={fullUrl} />;
+    return isVoiceNote(att) ? <VoiceMessage uri={fullUrl} /> : <AudioCard att={att} uri={fullUrl} />;
   }
   const card = fileCardModel(att);
   return <AttachmentChip label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
