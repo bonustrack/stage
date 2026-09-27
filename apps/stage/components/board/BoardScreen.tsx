@@ -36,6 +36,8 @@ import {
   type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
+import { revealBoardCard, useBoardArrows } from './boardKeys';
+import { boardArrowMove } from './boardKeys.model';
 import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
 import { AddItemButton, AddItemModal } from './BoardAddItem';
 import {
@@ -44,6 +46,18 @@ import {
 
 const DRAGGING_OPACITY = 0.4;
 const BOARD_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
+
+type BoardRouter = ReturnType<typeof useRouter>;
+
+const cardDataSet = (columnKey: string, convId: string): { dataSet: Record<string, string> } => (
+  { dataSet: { boardcard: convId, boardcolumn: columnKey } }
+);
+
+function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'replace'): void {
+  const panelLink = { pathname: '/board/[convId]', params: { convId } } as const;
+  if (press === 'push') router.push(panelLink);
+  else router.replace(panelLink);
+}
 
 interface ColumnActions {
   drop: (drag: BoardDrag, key: string) => void;
@@ -72,6 +86,7 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
   const openMenu = rowMenuOpener(item, setMenu);
   return (
     <Box
+      {...cardDataSet(columnKey, item.convId)}
       nativeID={source.nativeID}
       background={border}
       radius={BLOCK_RADIUS_DEFAULT}
@@ -103,9 +118,7 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
             return;
           }
           onOpen();
-          const panelLink = { pathname: '/board/[convId]', params: { convId: item.convId } } as const;
-          if (press === 'push') router.push(panelLink);
-          else router.replace(panelLink);
+          showInPanel(router, item.convId, press);
         }}
         onLongPress={source.nativeID === undefined ? openMenu : undefined}
         onContextMenu={openMenu}
@@ -182,6 +195,25 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   );
 }
 
+function useCardArrows({ columns, openIndex, openConvId, onMove }: {
+  columns: readonly BoardColumn<ChannelRowData>[];
+  openIndex: number;
+  openConvId: string | null;
+  onMove: (key: string) => void;
+}): void {
+  const router = useRouter();
+  useBoardArrows(useWebTabRail() && openConvId !== null, (arrow) => {
+    const card = boardArrowMove(columns, openIndex, openConvId, arrow);
+    if (card === null) return;
+    onMove(card.key);
+    if (card.convId !== openConvId) {
+      prefetchFeed(lineOfConv(card.convId));
+      showInPanel(router, card.convId, 'replace');
+    }
+    revealBoardCard(card.key, card.convId);
+  });
+}
+
 function BoardLanes({ columns, pinned, saved, actions }: {
   columns: BoardColumn<ChannelRowData>[];
   pinned: readonly string[];
@@ -196,12 +228,18 @@ function BoardLanes({ columns, pinned, saved, actions }: {
   const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
   const laneHeight = frame.height - padding.paddingTop - padding.paddingBottom;
   const [openedFrom, setOpenedFrom] = useState<string | null>(null);
-  const openIndex = activeColumnIndex(columns, boardPanelConvId(usePathname()), openedFrom);
-  useEffect(() => {
-    if (openIndex === -1 || frame.width === 0) return;
-    const x = revealScrollX(openIndex, scrollX.current, frame.width, PAGE_GUTTER);
+  const openConvId = boardPanelConvId(usePathname());
+  const openIndex = activeColumnIndex(columns, openConvId, openedFrom);
+  const revealColumn = (index: number): void => {
+    if (index === -1 || frame.width === 0) return;
+    const x = revealScrollX(index, scrollX.current, frame.width, PAGE_GUTTER);
     if (x !== scrollX.current) scroll.current?.scrollTo({ x, animated: true });
-  }, [openIndex, frame.width]);
+  };
+  useEffect(() => { revealColumn(openIndex); }, [openIndex, frame.width]);
+  useCardArrows({
+    columns, openIndex, openConvId,
+    onMove: (key) => { setOpenedFrom(key); revealColumn(columns.findIndex(column => column.key === key)); },
+  });
   const revealEnd = (): void => {
     if (!reveal.current) return;
     reveal.current = false;
