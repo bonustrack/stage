@@ -90,6 +90,18 @@ export function feedDistanceFromNewest(m: FeedScrollMetrics, upright: boolean): 
   return Math.max(0, m.contentHeight - m.viewportHeight - m.offset);
 }
 
+interface FeedPositionHold {
+  minIndexForVisible: number;
+  autoscrollToTopThreshold?: number;
+}
+
+export function feedPositionHold(
+  upright: boolean, awayFromNewest: boolean, followWithinPx: number,
+): FeedPositionHold | undefined {
+  if (upright) return { minIndexForVisible: 0 };
+  return awayFromNewest ? { minIndexForVisible: 0, autoscrollToTopThreshold: followWithinPx } : undefined;
+}
+
 export function uprightScrollOffset(
   distanceFromNewest: number, contentHeight: number, viewportHeight: number,
 ): number {

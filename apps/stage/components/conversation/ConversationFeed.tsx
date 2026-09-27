@@ -6,7 +6,7 @@ import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
 import {
-  FEED_MIN_BATCH, feedDistanceFromNewest, planUprightRestore,
+  FEED_MIN_BATCH, feedDistanceFromNewest, feedPositionHold, planUprightRestore,
   shouldPageOlder, uprightFirstBatch, uprightScrollOffset, type FeedScrollMetrics,
 } from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
@@ -244,7 +244,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
       stickToEnd={() => positioned.current && c.isAtBottomRef.current}
       estimatedItemSize={FEED_ESTIMATED_ROW}
       showsVerticalScrollIndicator={Platform.OS === 'web'}
-      maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+      maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
       keyExtractor={c.rowKeyOf}
       windowSize={11}
       initialNumToRender={firstBatch}
