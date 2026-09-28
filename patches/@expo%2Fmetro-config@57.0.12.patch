@@ -1,0 +1,12 @@
+diff --git a/build/serializer/serializeChunks.js b/build/serializer/serializeChunks.js
+--- a/build/serializer/serializeChunks.js
++++ b/build/serializer/serializeChunks.js
+@@ -563,7 +563,7 @@
+     while (toCompare.length) {
+         const chunk = toCompare.shift();
+         for (const chunk2 of toCompare) {
+-            if (chunk !== chunk2 && chunk.isAsync && chunk2.isAsync) {
++            if (chunk !== chunk2 && chunk.isAsync && chunk2.isAsync && !chunk.isEntry && !chunk2.isEntry) {
+                 for (const dep of chunk.deps) {
+                     if (chunk2.deps.has(dep)) {
+                         chunk.deps.delete(dep);

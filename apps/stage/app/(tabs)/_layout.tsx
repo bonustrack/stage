@@ -109,8 +109,8 @@ export default function TabsLayout(): React.ReactElement {
             key={name}
             name={name}
             options={{
-              tabBarIcon: ({ color }) => (
-                <Glyph icon={icon} size={24} color={color}/>
+              tabBarIcon: ({ focused }) => (
+                <Glyph icon={icon} size={24} color={focused ? active : inactive}/>
               ),
               ...(name === 'index'
                 ? {

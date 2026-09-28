@@ -67,8 +67,7 @@ const config = {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: true,
-  runtimeVersion: '1.0.0',
+  runtimeVersion: { policy: 'fingerprint' },
   updates: {
     enabled: true,
     checkAutomatically: 'NEVER',
@@ -113,7 +112,6 @@ const config = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
     },
-    edgeToEdgeEnabled: true,
     androidStatusBar: {
       barStyle: 'light-content',
       translucent: true,
@@ -207,14 +205,6 @@ const config = {
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     './plugins/withXmtpNotificationService',
-    [
-      'react-native-audio-api',
-      {
-        iosBackgroundMode: false,
-        androidForegroundService: false,
-        androidPermissions: ['android.permission.FOREGROUND_SERVICE'],
-      },
-    ],
   ],
   notification: {
     icon: './assets/notification-icon.png',

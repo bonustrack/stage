@@ -1,6 +1,6 @@
 import {
   createStackNavigator, TransitionPresets, TransitionSpecs, type StackNavigationOptions,
-} from '@react-navigation/stack';
+} from 'expo-router/js-stack';
 import { withLayoutContext } from 'expo-router';
 import { Platform } from 'react-native';
 import { PAGE_GUTTER } from '../../components/layout/gutter';
