@@ -10,13 +10,16 @@ import { TokenRowBody } from '../TokenRowView';
 import { fmtUsd, splitUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 export { fmtUsd, splitUsd, fmtBalance };
 
+const TOKEN_AVATAR_SIZE = 44;
+const TOKEN_BADGE_SIZE = 20;
+
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
 export const TokenRow = memo(function TokenRow({ r, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
       <Row padding={{ y: 14 }} align="center" gap={12}>
-        <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
+        <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} size={TOKEN_AVATAR_SIZE} badgeSize={TOKEN_BADGE_SIZE} />
         <Box flex={1}>
           <TokenRowBody
             {...tokenRowModel(r, { fmtUsd, fmtBalance })}

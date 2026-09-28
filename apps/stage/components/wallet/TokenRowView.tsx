@@ -1,5 +1,4 @@
 
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Spacer } from '@stage-labs/kit/react-native/spacer';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -47,14 +46,14 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         <TokenRowAvatar logoUri={params.logoUri} chainBadgeUri={params.chainBadgeUri} />
       ) : null}
       <Col gap={2}>
-        <Text value={params.symbol} weight="semibold" size="lg" truncate />
-        <Caption value={params.name} color="secondary" size="md" />
+        <Text value={params.symbol} weight="semibold" size="2xl" truncate />
+        <Text value={params.name} color="secondary" size="md" />
       </Col>
       <Spacer />
       <Col gap={2} align="end">
-        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="lg" textAlign="end" />}
+        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="2xl" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
-          <Caption value={params.priceUsd} color="secondary" size="md" />
+          <Text value={params.priceUsd} color="secondary" size="md" />
           {params.change24h === '' ? null : <Badge label={params.change24h} color={badgeColor} />}
         </Row>
       </Col>
