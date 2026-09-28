@@ -25,7 +25,7 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
-import { MemberListSidebar, useMemberListState } from '../../components/conversation/MemberListSidebar';
+import { ConversationSidebar, useConversationSidebarState } from '../../components/conversation/ConversationSidebar';
 
 function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
@@ -103,7 +103,7 @@ export default function XmtpConversation(): React.ReactElement {
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;
-  const memberList = useMemberListState(c.isGroup) === 'shown';
+  const memberList = useConversationSidebarState(c.isGroup, c.peerAddr) === 'shown';
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +149,7 @@ export default function XmtpConversation(): React.ReactElement {
       <FooterDock height={composerH} onHeight={setComposerH} memberList={memberList}>
         <ConversationFooter c={c} convId={convId}/>
       </FooterDock>
-      {memberList ? <MemberListSidebar convId={convId}/> : null}
+      {memberList ? <ConversationSidebar convId={convId} isGroup={c.isGroup} peerAddress={c.peerAddr}/> : null}
       <ConversationOverlays
         c={c} convId={convId}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}

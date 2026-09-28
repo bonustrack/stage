@@ -27,17 +27,18 @@ interface ChannelMenuOptions {
   memberList?: MemberListState;
 }
 
-function memberListItem(isGroup: boolean, memberList: MemberListState | undefined): MenuSheetItem | null {
-  if (!isGroup || memberList === undefined) return null;
-  const label = memberList === 'shown' ? 'Hide member list' : 'Show member list';
-  return { id: 'toggle-members', label, icon: 'IconTeam' };
+function memberListItem(state: ChannelMenuState, memberList: MemberListState | undefined): MenuSheetItem | null {
+  if (memberList === undefined || (!state.isGroup && !state.hasPeer)) return null;
+  const action = memberList === 'shown' ? 'Hide' : 'Show';
+  const subject = state.isGroup ? 'member list' : 'profile panel';
+  return { id: 'toggle-members', label: `${action} ${subject}`, icon: state.isGroup ? 'IconTeam' : 'IconPeople' };
 }
 
 export function channelMenuItems(state: ChannelMenuState, { search, memberList }: ChannelMenuOptions): MenuSheetItem[] {
   const { isGroup, isUnread } = state;
   const items: (MenuSheetItem | null | false)[] = [
     search && { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
-    memberListItem(isGroup, memberList),
+    memberListItem(state, memberList),
     isGroup && { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
     { id: 'toggle-read', label: isUnread ? 'Mark as read' : 'Mark as unread', icon: isUnread ? 'IconCheckmark1' : 'IconEmail1' },
     { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'IconThumbtack' },

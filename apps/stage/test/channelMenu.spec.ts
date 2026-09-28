@@ -45,10 +45,26 @@ describe('channelMenuItems', () => {
     expect(items.find(i => i.id === 'toggle-members')?.label).toBe('Hide member list');
   });
 
-  test('the member list item stays out of direct chats', () => {
+  test('a direct chat offers its profile panel while hidden', () => {
     const items = channelMenuItems(
       { isGroup: false, hasPeer: true, isUnread: false },
       { search: true, memberList: 'hidden' },
+    );
+    expect(items.find(i => i.id === 'toggle-members')).toEqual({ id: 'toggle-members', label: 'Show profile panel', icon: 'IconPeople' });
+  });
+
+  test('a direct chat offers to hide its shown profile panel', () => {
+    const items = channelMenuItems(
+      { isGroup: false, hasPeer: true, isUnread: false },
+      { search: true, memberList: 'shown' },
+    );
+    expect(items.find(i => i.id === 'toggle-members')?.label).toBe('Hide profile panel');
+  });
+
+  test('an unresolved direct chat never offers a profile panel', () => {
+    const items = channelMenuItems(
+      { isGroup: false, hasPeer: false, isUnread: false },
+      { search: true, memberList: 'shown' },
     );
     expect(items.some(i => i.id === 'toggle-members')).toBe(false);
   });

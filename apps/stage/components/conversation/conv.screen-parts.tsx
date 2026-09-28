@@ -14,7 +14,7 @@ import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupAccess } from '../../modules/messaging';
 import { GroupAccessNotice } from './GroupAccessNotice';
-import { useMemberListState } from './MemberListSidebar';
+import { useConversationSidebarState } from './ConversationSidebar';
 import { toggleMemberList } from '../../lib/memberList';
 import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
@@ -143,7 +143,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
-  const memberList = useMemberListState(isGroup);
+  const memberList = useConversationSidebarState(isGroup, peerAddr);
   return (
     <>
       <ChannelMenu
