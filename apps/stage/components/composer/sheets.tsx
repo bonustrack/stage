@@ -3,9 +3,11 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { Switch } from '@stage-labs/kit/react-native/switch';
 import { Box, Row, Col } from '../layout';
 import { AppModal } from '../AppModal';
-import { FormField, FORM_FIELD_RADIUS } from '../FormField';
+import { FormField } from '../FormField';
+import { LabelChip } from '../LabelChip';
 import { usePalette } from '../../lib/theme';
 import type { PostHooks } from './types';
 import type { ComposerState } from './state';
@@ -13,22 +15,24 @@ import {
   sendPoll, sendSignatureRequest, sendTxRequest, type PostCtx,
   type PollDraft, type SignatureDraft, type PaymentDraft,
 } from './builders';
+import { SIGNATURE_KINDS, canSendPayment, canSendPoll, canSendSignature } from './sheets.model';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
-const ACCENT = '#c0a06e';
-
 interface SheetProps { open: boolean; onClose: () => void; dark: boolean; hooks: PostHooks }
 
-function SheetShell({ open, onClose, dark, onSend, submitLabel, children }: {
-  open: boolean; onClose: () => void; dark: boolean; onSend: () => void; submitLabel: string; children: ReactNode;
+function SheetShell({ open, onClose, dark, title, onSend, submitLabel, canSend, children }: {
+  open: boolean; onClose: () => void; dark: boolean; title: string;
+  onSend: () => void; submitLabel: string; canSend: boolean; children: ReactNode;
 }): React.ReactElement {
   const { primary, bg } = usePalette();
   return (
-    <AppModal visible={open} onClose={onClose}>
-      <Col padding={{ bottom: 8 }} gap={12}>
+    <AppModal visible={open} onClose={onClose} title={title}>
+      <Col gap={8}>
         {children}
-        <Button size="lg" fullWidth dark={dark} onPress={onSend} label={submitLabel} tintBg={primary} tintFg={bg} style={{ marginTop: 4 }} />
+        <Box padding={{ top: 8 }}>
+          <Button size="lg" fullWidth dark={dark} disabled={!canSend} onPress={onSend} label={submitLabel} tintBg={primary} tintFg={bg} />
+        </Box>
       </Col>
     </AppModal>
   );
@@ -43,11 +47,11 @@ function useDraft<T>(initial: T, { onClose, hooks }: SheetProps): [T, (patch: Pa
 const EMPTY_POLL: PollDraft = { question: '', header: '', options: ['', ''], multi: false };
 
 function PollSheet(props: SheetProps): React.ReactElement {
-  const { text: fg, inputBg } = usePalette();
+  const { text: fg } = usePalette();
   const [d, patch, post] = useDraft(EMPTY_POLL, props);
   const setOptions = (options: string[]): void => { patch({ options }); };
   return (
-    <SheetShell {...props} onSend={() => { void sendPoll(d, post); }} submitLabel="Send poll">
+    <SheetShell {...props} title="New poll" onSend={() => { void sendPoll(d, post); }} submitLabel="Send poll" canSend={canSendPoll(d)}>
       <FormField label="Question" value={d.question} onChangeText={question => { patch({ question }); }} />
       <FormField label="Header (optional)" placeholder="e.g. LUNCH" value={d.header} onChangeText={header => { patch({ header }); }}
         inputProps={{ maxLength: 12, autoCapitalize: 'characters' }} />
@@ -62,36 +66,37 @@ function PollSheet(props: SheetProps): React.ReactElement {
       ))}
       <Button variant="ghost" size="sm" dark={props.dark} onPress={() => { setOptions([...d.options, '']); }}
         label="Add option" icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />} />
-      <Pressable onPress={() => { patch({ multi: !d.multi }); }}
-        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+      <Row align="center" justify="between" gap={12} padding={{ y: 4 }}>
         <Text size="md" color={fg}>Allow multiple choices</Text>
-        <Box width={44} height={26} radius="full" background={d.multi ? ACCENT : inputBg} padding={3} align={d.multi ? 'end' : 'start'}>
-          <Box width={20} height={20} radius="full" background={'#ffffff'}/>
-        </Box>
-      </Pressable>
+        <Switch name="Allow multiple choices" checked={d.multi} dark={props.dark} onChange={multi => { patch({ multi }); }} />
+      </Row>
     </SheetShell>
   );
 }
 
 const EMPTY_SIGNATURE: SignatureDraft = { kind: 'personal', desc: '', message: '', json: '' };
 
+function SignatureKindPicker({ kind, onChange }: {
+  kind: SignatureDraft['kind']; onChange: (kind: SignatureDraft['kind']) => void;
+}): React.ReactElement {
+  return (
+    <Row gap={8}>
+      {SIGNATURE_KINDS.map(({ value, label }) => (
+        <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: kind === value }}
+          onPress={() => { onChange(value); }}>
+          <LabelChip label={label} selected={kind === value} />
+        </Pressable>
+      ))}
+    </Row>
+  );
+}
+
 function SignatureSheet(props: SheetProps): React.ReactElement {
-  const { text: fg, inputBg, border } = usePalette();
   const [d, patch, post] = useDraft(EMPTY_SIGNATURE, props);
   return (
-    <SheetShell {...props} onSend={() => { void sendSignatureRequest(d, post); }} submitLabel="Send request">
-      <Row gap={8}>
-        {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
-          <Pressable key={k} onPress={() => { patch({ kind: k }); }}
-            style={{
-              flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: FORM_FIELD_RADIUS,
-              borderWidth: 1, borderColor: d.kind === k ? ACCENT : border,
-              backgroundColor: d.kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
-            }}>
-            <Text weight="semibold" size="sm" color={d.kind === k ? ACCENT : fg}>{label}</Text>
-          </Pressable>
-        ))}
-      </Row>
+    <SheetShell {...props} title="Request signature" onSend={() => { void sendSignatureRequest(d, post); }}
+      submitLabel="Send request" canSend={canSendSignature(d)}>
+      <SignatureKindPicker kind={d.kind} onChange={kind => { patch({ kind }); }} />
       <FormField label="Description" placeholder="e.g. Sign in to dapp" value={d.desc} onChangeText={desc => { patch({ desc }); }} />
       {d.kind === 'personal' ? (
         <FormField label="Message to sign" multiline rows={3} value={d.message} onChangeText={message => { patch({ message }); }} />
@@ -114,7 +119,8 @@ function PaymentSheet({ initialTo, ...props }: SheetProps & { initialTo?: string
     if (props.open && !d.to && initialTo !== undefined) patch({ to: initialTo });
   }
   return (
-    <SheetShell {...props} onSend={() => { void sendTxRequest(d, post); }} submitLabel="Send request">
+    <SheetShell {...props} title="Request payment" onSend={() => { void sendTxRequest(d, post); }}
+      submitLabel="Send request" canSend={canSendPayment(d)}>
       <FormField label="Recipient" placeholder="0x…" value={d.to} onChangeText={to => { patch({ to }); }}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
       <FormField label="Amount (ETH)" placeholder="0.0" value={d.amount} onChangeText={amount => { patch({ amount }); }} inputType="number"
