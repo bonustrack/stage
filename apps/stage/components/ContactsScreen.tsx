@@ -7,7 +7,7 @@ import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
-import { getPeerName } from '../lib/peerProfiles';
+import { getPeerDescription, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { SuggestedContacts } from './SuggestedContacts';
 
@@ -26,13 +26,15 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
       resolvedName: getPeerName(item.address) ?? null,
       fallbackName: item.name,
       shortAddress: shortAddress(item.address),
+      description: getPeerDescription(item.address),
     });
     return (
       <ChannelRow
         title={model.name}
         avatarAddress={item.address}
         square={false}
-        subtitle={model.handle ?? null}
+        subtitle={model.subtitle ?? null}
+        previewLines={1}
         onPress={() => { open(item.address); }}
       />
     );

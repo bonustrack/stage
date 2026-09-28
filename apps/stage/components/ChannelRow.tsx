@@ -30,6 +30,7 @@ interface ChannelRowProps {
   lastPreview?: string | null;
   timestamp?: string | null;
   subtitle?: string | null;
+  previewLines?: number;
   unreadCount?: number;
   markedUnread?: boolean;
   pinned?: boolean;
@@ -196,11 +197,11 @@ function InlineLabelChips({ params, fg, chipBg }: {
   );
 }
 
-function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
-  params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean;
+function PreviewParagraph({ params, fg, chipBg, hasPrefix, lines = 2 }: {
+  params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean; lines?: number;
 }): React.ReactElement {
   return (
-    <Text size="md" role="secondary" maxLines={2} style={{ flex: 1, minWidth: 0, lineHeight: PREVIEW_LINE_HEIGHT }}>
+    <Text size="md" role="secondary" maxLines={lines} style={{ flex: 1, minWidth: 0, lineHeight: PREVIEW_LINE_HEIGHT }}>
       <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
       {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="info" weight="semibold" /> : null}
       {params.preview}
@@ -208,8 +209,8 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   );
 }
 
-function ChannelRowBody({ params, trailing, wrapTitle }: {
-  params: ChannelRowParams; trailing: React.ReactNode; wrapTitle: boolean;
+function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
+  params: ChannelRowParams; trailing: React.ReactNode; wrapTitle: boolean; previewLines?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, inputBg } = usePalette();
@@ -218,7 +219,7 @@ function ChannelRowBody({ params, trailing, wrapTitle }: {
     <Col gap={LINE_GAP} flex={1}>
       <TitleRow params={params} scheme={scheme} wrap={wrapTitle} />
       <Row align="start" gap={12}>
-        <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
+        <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} lines={previewLines} />
         {trailing}
       </Row>
     </Col>
@@ -227,7 +228,7 @@ function ChannelRowBody({ params, trailing, wrapTitle }: {
 
 function ChannelRowBase({
   title, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
-  lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
+  lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
   onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
 }: ChannelRowProps): React.ReactElement {
@@ -271,6 +272,7 @@ function ChannelRowBase({
           <ChannelRowBody
             params={params}
             wrapTitle={wrapTitle}
+            previewLines={previewLines}
             trailing={(
               <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} head={head} bg={bg} />
             )}
