@@ -68,6 +68,7 @@ const config = {
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
   runtimeVersion: { policy: 'fingerprint' },
+  experiments: { reactCompiler: true },
   updates: {
     enabled: true,
     checkAutomatically: 'NEVER',
