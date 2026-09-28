@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
-import { humanizeGroupUpdated } from '../src/xmtp/humanize';
+import { groupUpdateInboxIds, humanizeGroupUpdated } from '../src/xmtp/humanize';
 
 const blob = (labels: string[], github?: string): string => JSON.stringify({ v: 1, labels, ...(github ? { github } : {}) });
 
@@ -44,8 +44,18 @@ describe('humanizeGroupUpdated member names', () => {
     expect(humanizeGroupUpdated({ addedInboxes: members }, nameOf)).toBe('added Alice, @bobby1 and 2 others');
   });
 
-  test('falls back to a count when a member is unknown', () => {
-    expect(humanizeGroupUpdated({ addedInboxes: [{ inboxId: 'a' }, { inboxId: 'z' }] }, nameOf)).toBe('added 2 members');
+  test('names the known members and counts the unknown ones', () => {
+    expect(humanizeGroupUpdated({ addedInboxes: [{ inboxId: 'a' }, { inboxId: 'z' }] }, nameOf)).toBe('added Alice and 1 other');
+    const mixed = ['a', 'y', 'b', 'z'].map(inboxId => ({ inboxId }));
+    expect(humanizeGroupUpdated({ membersRemoved: mixed }, nameOf)).toBe('removed Alice, @bobby1 and 2 others');
+    expect(humanizeGroupUpdated({ removedInboxes: [{ inboxId: 'z' }, { inboxId: 'y' }] }, nameOf)).toBe('removed 2 members');
     expect(humanizeGroupUpdated({ addedInboxes: [{ inboxId: 'a' }] })).toBe('added 1 member');
+  });
+
+  test('lists every member an update names, from web and mobile shapes', () => {
+    const web = { addedInboxes: [{ inboxId: 'a' }], removedInboxes: [{ inboxId: 'b' }], leftInboxes: [{ inboxId: 'c' }] };
+    expect(groupUpdateInboxIds(web)).toEqual(['a', 'b', 'c']);
+    expect(groupUpdateInboxIds({ membersAdded: [{ inboxId: 'a' }], membersRemoved: [{ inboxId: 'd' }] })).toEqual(['a', 'd']);
+    expect(groupUpdateInboxIds({ metadataFieldsChanged: [] })).toEqual([]);
   });
 });

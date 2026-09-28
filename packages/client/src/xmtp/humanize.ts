@@ -35,17 +35,18 @@ export type InboxNamer = (inboxId: string) => string | null;
 
 const MAX_NAMED_MEMBERS = 3;
 
-function namedList(names: string[]): string {
-  if (names.length <= MAX_NAMED_MEMBERS) {
-    return names.length === 1 ? names[0] ?? '' : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
+function namedList(names: string[], total: number): string {
+  if (names.length === total && total <= MAX_NAMED_MEMBERS) {
+    return total === 1 ? names[0] ?? '' : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
   }
-  const others = names.length - (MAX_NAMED_MEMBERS - 1);
-  return `${names.slice(0, MAX_NAMED_MEMBERS - 1).join(', ')} and ${others} others`;
+  const shown = names.slice(0, MAX_NAMED_MEMBERS - 1);
+  const others = total - shown.length;
+  return `${shown.join(', ')} and ${others} other${others === 1 ? '' : 's'}`;
 }
 
 function membersPhrase(members: { inboxId: string }[], nameOf?: InboxNamer): string {
-  const names = nameOf ? members.map(m => nameOf(m.inboxId)) : [];
-  if (names.length > 0 && names.every((n): n is string => !!n)) return namedList(names);
+  const names = nameOf ? members.map(m => nameOf(m.inboxId)).filter((n): n is string => !!n) : [];
+  if (names.length > 0) return namedList(names, members.length);
   return `${members.length} member${members.length === 1 ? '' : 's'}`;
 }
 
@@ -57,12 +58,24 @@ function leftClause(members: { inboxId: string }[], nameOf?: InboxNamer): string
   return members.length === 0 ? '' : `${membersPhrase(members, nameOf)} ${LEFT_GROUP_TEXT}`;
 }
 
+function addedOf(g: GroupUpdatedContent): { inboxId: string }[] {
+  return g.membersAdded ?? g.addedInboxes ?? [];
+}
+
+function removedOf(g: GroupUpdatedContent): { inboxId: string }[] {
+  return g.membersRemoved ?? g.removedInboxes ?? [];
+}
+
+export function groupUpdateInboxIds(g: GroupUpdatedContent): string[] {
+  return [...addedOf(g), ...removedOf(g), ...(g.leftInboxes ?? [])].map(m => m.inboxId);
+}
+
 function changeClauses(g: GroupUpdatedContent, nameOf?: InboxNamer): string[] {
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
   return [
     ...fields.map(describeFieldChange),
-    memberClause('added', g.membersAdded ?? g.addedInboxes ?? [], nameOf),
-    memberClause('removed', g.membersRemoved ?? g.removedInboxes ?? [], nameOf),
+    memberClause('added', addedOf(g), nameOf),
+    memberClause('removed', removedOf(g), nameOf),
   ].filter(Boolean);
 }
 

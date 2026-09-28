@@ -13,7 +13,7 @@ export { convOfLine } from '../../lib/xmtp.sdk';
 
 export {
   primeConversationMembers, isGroupConv,
-  peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
+  peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses, inboxEthAddresses,
 } from '../../lib/xmtp.identity';
 
 export {

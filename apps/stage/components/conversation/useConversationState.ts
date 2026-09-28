@@ -22,6 +22,7 @@ import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
+import { useSystemLineAddresses } from './useSystemLineAddresses';
 import { useClearedChats } from '../../lib/clearedChats';
 import {
   entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
@@ -196,11 +197,12 @@ export function useConversationState(convId: string | undefined, focus: string |
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
 
+  const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback((from: string): string | null => {
     if (!from.startsWith(XMTP_USER_PREFIX)) return null;
     const inboxId = from.slice(XMTP_USER_PREFIX.length);
-    return inboxToAddr[inboxId] ?? null;
-  }, [inboxToAddr]);
+    return knownAddrs[inboxId] ?? null;
+  }, [knownAddrs]);
 
   const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);

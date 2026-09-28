@@ -46,6 +46,10 @@ export async function peerEthAddressOfDm(conv: IdentityConv): Promise<string | n
   } catch { return null; }
 }
 
+export async function inboxEthAddresses(inboxIds: string[]): Promise<InboxEthMap> {
+  return resolve(await sdk.client(), inboxIds);
+}
+
 export async function memberInboxToAddressMap(conv: IdentityConv): Promise<InboxEthMap> {
   try {
     const members = await conv.members();

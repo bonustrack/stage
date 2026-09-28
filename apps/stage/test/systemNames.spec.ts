@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
-import { isLeftOnlyUpdate, memberNamer, withMemberNames } from '../components/conversation/systemNames.model';
+import {
+  isLeftOnlyUpdate, memberNamer, unknownSystemLineInboxIds, withMemberNames,
+} from '../components/conversation/systemNames.model';
 
 const PEER = '0x59445094F08D01213bd6ba7215a6ab7a4bc29a4a';
 const OTHER = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
@@ -28,9 +30,24 @@ describe('member names in group event lines', () => {
     ]);
   });
 
-  test('falls back to a count when a member has no address', () => {
+  test('names removed members, and counts only the members with no address', () => {
+    const removed = entry({ system: true, groupUpdate: { membersRemoved: [{ inboxId: 'other' }] } });
+    expect(withMemberNames(removed, nameOf).text).toBe(`removed @${OTHER}`);
     const e = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'ghost' }] } });
-    expect(withMemberNames(e, nameOf).text).toBe('added 2 members');
+    expect(withMemberNames(e, nameOf).text).toBe(`added @${PEER.toLowerCase()} and 1 other`);
+    const ghost = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'ghost' }] } });
+    expect(withMemberNames(ghost, nameOf).text).toBe('added 1 member');
+  });
+
+  test('finds the inbox ids of system lines that have no known address yet', () => {
+    const events = [
+      entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'gone' }, { inboxId: 'peer' }] } }),
+      { ...entry({ system: true, groupUpdate: { membersRemoved: [{ inboxId: 'gone' }] } }), from: 'stage://xmtp/user/admin' },
+      { ...entry({ contentType: 'leave_request', system: true }), from: 'stage://xmtp/user/leaver' },
+      { ...entry({ contentType: 'text' }, 'hi'), from: 'stage://xmtp/user/stranger' },
+    ];
+    expect(unknownSystemLineInboxIds(events, addresses)).toEqual(['admin', 'gone', 'leaver']);
+    expect(unknownSystemLineInboxIds(events, { ...addresses, admin: OTHER, gone: PEER, leaver: PEER })).toEqual([]);
   });
 
   test('names members who left, and hides an update that only repeats a leave', () => {
