@@ -78,7 +78,7 @@ export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
     title: d.title,
     titleSegments: resolveTitleSegments(d.title, d.highlightQuery),
     preview: resolvePreview(draft, d),
-    previewPrefix: draft ? 'You:' : undefined,
+    previewPrefix: draft ? 'Draft:' : undefined,
     timestamp: d.timestampLabel,
     chips: resolveChips(draft, d.labels),
     pinned: d.pinned,

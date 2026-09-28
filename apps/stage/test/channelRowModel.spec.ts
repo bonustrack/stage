@@ -15,14 +15,14 @@ describe('channelRowModel', () => {
     });
   });
 
-  test('draft wins over preview and adds You: prefix, suppressing chips', () => {
+  test('draft wins over preview and adds Draft: prefix, suppressing chips', () => {
     const p = channelRowModel({
       title: 'Alice',
       lastPreview: 'hello', hasDraft: true, draftText: '  wip  ',
       labels: ['a', 'b', 'c'], timestampLabel: '9:15 AM',
     });
     expect(p.preview).toBe('wip');
-    expect(p.previewPrefix).toBe('You:');
+    expect(p.previewPrefix).toBe('Draft:');
     expect(p.chips).toBeUndefined();
     expect(p.timestamp).toBe('9:15 AM');
   });
