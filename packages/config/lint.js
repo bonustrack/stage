@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import tseslint from 'typescript-eslint';
 import {
   ignores as baseIgnores,
@@ -10,6 +11,15 @@ import {
 } from './eslint/base.js';
 
 const DEFAULT_TEST_FILES = ['**/test/**', '**/*.{test,spec}.{ts,tsx}', '**/*.test.*'];
+
+function gitIgnored(rootDir) {
+  const res = spawnSync('git', ['ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--directory'], {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+  if (res.status !== 0) return [];
+  return res.stdout.split('\0').filter(Boolean).map((path) => path.replace(/[*?[\]{}()!+@\\]/g, '\\$&'));
+}
 
 function prefixGlob(dir, glob) {
   if (dir === '.') return glob;
@@ -68,7 +78,7 @@ export async function buildLintConfig(stageConfig, cwd) {
   const needsVue = entries.some(([, w]) => w.type === 'vue');
   const vueToolchain = needsVue ? await loadVueToolchain() : null;
 
-  const config = [{ ignores: ['**/node_modules/**', '**/dist/**', '**/.expo/**', '**/.vite/**'] }];
+  const config = [{ ignores: ['**/node_modules/**', '**/dist/**', '**/.expo/**', '**/.vite/**', ...gitIgnored(rootDir)] }];
 
   const repoEslint = stageConfig.eslint ?? {};
   if (Array.isArray(repoEslint.ignores) && repoEslint.ignores.length > 0) {

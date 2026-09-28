@@ -25,7 +25,8 @@ Run quality commands **from the repo root**; lint/knip/madge/typecheck are centr
 | Command | What |
 |---|---|
 | `bun install` | Install workspace (CI uses `--frozen-lockfile`) |
-| `bun run lint` / `lint:fix` | `stage lint` over the whole repo |
+| `bun run lint` / `lint:fix` | `stage lint` over the whole repo: one ESLint process per TS project (workspace with a `tsconfig.json`), 2 at a time (`STAGE_LINT_JOBS=1` for one), one merged report; git-ignored files are skipped |
+| `bun run lint:changed` | `stage lint --changed`: only files changed since the upstream branch, plus untracked ones (local use; CI stays full). `stage lint <paths>` lints only those paths |
 | `bun run typecheck` | `tsc --noEmit` per workspace |
 | `bun run check` | lint + turbo typecheck |
 | `bun run build` / `test` | turbo pipelines (test dependsOn build) |

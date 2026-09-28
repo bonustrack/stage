@@ -55,10 +55,17 @@ bun run test        # turbo run test
 bun run typecheck   # turbo run typecheck
 bun run lint        # stage lint (eslint over the whole repo)
 bun run lint:fix    # stage lint --fix
+bun run lint:changed  # lint only the files changed since the upstream branch
 bun run check       # lint + typecheck
 bun run knip        # unused files / deps / exports
 bun run madge       # circular-dependency check
 ```
+
+`stage lint` runs one ESLint process per TypeScript project (a workspace with a
+`tsconfig.json`), two at a time, and prints one merged report. Set
+`STAGE_LINT_JOBS=1` to run them one by one on a small machine. It skips
+git-ignored files. `stage lint <paths>` lints only those paths. CI always runs the
+full lint, because a type change in one file can create findings in another.
 
 Tasks are orchestrated by [Turbo](https://turbo.build); see `turbo.json` for the
 pipeline (`build`, `test`, `typecheck`).

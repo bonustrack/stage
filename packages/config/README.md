@@ -57,6 +57,14 @@ export default [
 - No comments: all `//` and `/* */` comments are banned (only functional `eslint`/`@ts-*`/triple-slash directive comments are allowed) — express intent in code (names, types)
 - Size caps: ≤ 400 lines/file, ≤ 100 lines/function, cyclomatic complexity ≤ 10
 
+## `stage lint`
+
+Lints the repo described by `stage.config.js`. It runs one ESLint process per TypeScript project (a workspace with a `tsconfig.json`) plus one for the rest, two at a time (`STAGE_LINT_JOBS` changes that), and prints one merged report. Each process holds only its own type information, so the peak memory of one process is the largest project, not the sum. Git-ignored files are never linted.
+
+- `stage lint` / `stage lint --fix`: the whole repo.
+- `stage lint --changed`: only files changed since the upstream branch, plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.
+- `stage lint <paths>`: only those paths, in one process.
+
 ## madge
 
 Shared options for the circular-dependency check:

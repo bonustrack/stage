@@ -20,6 +20,7 @@
     "typecheck": "stage typecheck",
     "lint": "stage lint",
     "lint:fix": "stage lint --fix",
+    "lint:changed": "stage lint --changed",
     "madge": "stage madge",
     "knip": "stage knip",
     "check": "bun run lint && turbo run typecheck",
