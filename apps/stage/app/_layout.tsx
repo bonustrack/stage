@@ -124,7 +124,7 @@ function RootLayoutInner(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
-      <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
+      <StatusBar style={barStyle}/>
       <WebContentFrame>
       <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
         <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS}/>

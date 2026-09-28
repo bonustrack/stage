@@ -3,7 +3,7 @@ import {
   type DefaultNavigatorOptions, type Descriptor, type EventMapBase, type NavigationProp,
   type NavigationState, type ParamListBase, type StackActionHelpers, type StackNavigationState,
   type StackRouterOptions, type TabActionHelpers, type TabNavigationState, type TabRouterOptions,
-} from '@react-navigation/native';
+} from 'expo-router/react-navigation';
 import { Box } from '@stage-labs/kit/react-native/box';
 
 export type FlowScreenOptions = Record<string, unknown>;

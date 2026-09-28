@@ -61,7 +61,7 @@ export function AnchoredOverlay({ open, onClose, children }: {
     <Dialog open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
       <Pressable
         onPress={onClose}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         {...dismissContextMenuProps(onClose)}
       >
         {children}

@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { Platform, Vibration } from 'react-native';
 import type { ViewType as View } from '../layout/native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
-import { useGestureHandlerRef } from '@react-navigation/stack';
+import { useGestureHandlerRef } from 'expo-router/js-stack';
 import { initialMenuAnchor, type MenuAnchor } from './props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import {

@@ -38,7 +38,7 @@ export function stashLocalAttachment(srcUri: string): string {
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
     if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
-    src.copy(dest);
+    src.copySync(dest);
     return asFileUri(dest.uri);
   } catch {
     return srcUri;

@@ -2,6 +2,14 @@
 
 `.github/workflows/release-mobile.yml` releases the Stage app for Android and iOS whenever the `version` value in `apps/stage/app.config.js` changes on `main`. A merge that does not change the version does nothing. `Actions -> Release Mobile -> Run workflow` releases the current `main` on demand, for one platform or both.
 
+## Native runtime compatibility
+
+The app uses Expo's fingerprint runtime policy. An OTA update can only load in a binary with the same native fingerprint. SDK upgrades and native dependency changes require fresh store and development-client builds; SDK 54 clients using runtime `1.0.0` cannot load the SDK 57 updates. Do not reuse that fixed runtime for new native builds.
+
+Bun uses hoisted installation to keep a single copy of each Expo native module. When upgrading an existing isolated installation, remove the root and workspace `node_modules` directories before running `bun install --frozen-lockfile`, then regenerate the native projects. New checkouts and CI installs need no special cleanup.
+
+Before a native release, verify XMTP messages and history sync, passkey creation and signing, attachment recording and playback, and foreground/background notifications on a device. A JavaScript export or TypeScript check does not exercise native modules.
+
 ## What runs
 
 | Job | What it does |

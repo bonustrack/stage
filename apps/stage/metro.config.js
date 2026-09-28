@@ -16,8 +16,6 @@ config.resolver.blockList = config.resolver.blockList
   ? [].concat(config.resolver.blockList, desktopShellBlock)
   : desktopShellBlock;
 
-const appNodeModules = path.resolve(projectRoot, 'node_modules');
-
 const nodeCorePolyfills = {
   buffer: 'buffer',
   events: 'events',
@@ -25,9 +23,9 @@ const nodeCorePolyfills = {
 
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules ?? {}),
-  react: path.join(appNodeModules, 'react'),
-  'react-native': path.join(appNodeModules, 'react-native'),
-  'react-native-svg': path.join(appNodeModules, 'react-native-svg'),
+  react: path.dirname(require.resolve('react/package.json')),
+  'react-native': path.dirname(require.resolve('react-native/package.json')),
+  'react-native-svg': path.dirname(require.resolve('react-native-svg/package.json')),
   ...Object.fromEntries(
     Object.entries(nodeCorePolyfills).map(([name, target]) => [
       name,
