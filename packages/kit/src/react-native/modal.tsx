@@ -44,7 +44,7 @@ export function Modal({ open, onClose, children, title, side = 'center', dark, b
       gestureRoot
       backdropColor={MODAL.backdrop}
       panelBackground={background ?? pal.bg}
-      panelBorderColor={borderColor ?? pal.border}
+      panelBorderColor={borderColor}
       panelBorderSides={centered ? 'all' : 'top'}
       panelRadius={MODAL.radius}
       panelWidth={centered ? '100%' : undefined}
