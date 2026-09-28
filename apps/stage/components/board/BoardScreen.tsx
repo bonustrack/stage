@@ -7,7 +7,8 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
-import { SearchTopnavBar } from '../SearchTopnavBar';
+import { BoardSearch, memberNamesOf } from './BoardSearch';
+import { boardFilterSources, parseBoardFilter } from './boardFilter.model';
 import { HomeTopnavRight } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
@@ -196,14 +197,15 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   );
 }
 
-function useCardArrows({ columns, openIndex, openConvId, onMove }: {
+function useCardArrows({ columns, openIndex, openConvId, paused, onMove }: {
   columns: readonly BoardColumn<ChannelRowData>[];
   openIndex: number;
   openConvId: string | null;
+  paused: boolean;
   onMove: (key: string) => void;
 }): void {
   const router = useRouter();
-  useArrowKeys(useWebTabRail() && openConvId !== null, ALL_ARROWS, (arrow) => {
+  useArrowKeys(useWebTabRail() && openConvId !== null && !paused, ALL_ARROWS, (arrow) => {
     const card = boardArrowMove(columns, openIndex, openConvId, arrow);
     if (card === null) return;
     onMove(card.key);
@@ -215,11 +217,12 @@ function useCardArrows({ columns, openIndex, openConvId, onMove }: {
   });
 }
 
-function BoardLanes({ columns, pinned, saved, actions }: {
+function BoardLanes({ columns, pinned, saved, actions, filtering }: {
   columns: BoardColumn<ChannelRowData>[];
   pinned: readonly string[];
   saved: readonly string[];
   actions: ColumnActions;
+  filtering: boolean;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState({ width: 0, height: 0 });
@@ -238,7 +241,7 @@ function BoardLanes({ columns, pinned, saved, actions }: {
   };
   useEffect(() => { revealColumn(openIndex); }, [openIndex, frame.width]);
   useCardArrows({
-    columns, openIndex, openConvId,
+    columns, openIndex, openConvId, paused: filtering,
     onMove: (key) => { setOpenedFrom(key); revealColumn(columns.findIndex(column => column.key === key)); },
   });
   const revealEnd = (): void => {
@@ -276,7 +279,12 @@ function BoardLanes({ columns, pinned, saved, actions }: {
   );
 }
 
-function BoardBody({ query }: { query: string }): React.ReactElement {
+function useMemberProfiles(rows: ChannelRowData[] | null, query: string): number {
+  const members = parseBoardFilter(query).members.length > 0 ? boardFilterSources(rows ?? []).members : [];
+  return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members]);
+}
+
+function BoardBody({ query, filtering }: { query: string; filtering: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const rows = useStoreValue(subscribeCachedRows, homeRows);
@@ -286,13 +294,13 @@ function BoardBody({ query }: { query: string }): React.ReactElement {
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
-  usePeerProfiles((rows ?? []).map(r => r.lastSenderAddress));
+  const profiles = useMemberProfiles(rows, query);
   useDraftsVersion();
   const columns = useMemo(
     () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
     [rows, cleared, pinned, order],
   );
-  const shown = useMemo(() => searchedColumns(columns, query), [columns, query]);
+  const shown = useMemo(() => searchedColumns(columns, query, memberNamesOf), [columns, query, profiles]);
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {
@@ -307,21 +315,23 @@ function BoardBody({ query }: { query: string }): React.ReactElement {
   };
   return (
     <>
-      <BoardLanes columns={shown} pinned={pinned} saved={order} actions={actions}/>
+      <BoardLanes columns={shown} pinned={pinned} saved={order} actions={actions} filtering={filtering}/>
       <AddItemModal label={adding} rows={rows} onClose={() => { setAdding(null); }} onAdd={addPicked}/>
     </>
   );
 }
 
-function BoardHeader({ inline, query, setQuery }: {
-  inline: boolean; query: string; setQuery: (query: string) => void;
+function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
+  inline: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const safeTop = useSafeAreaInsets().top;
+  const wide = useWebTabRail();
   const [searchOpen, setSearchOpen] = useState(false);
   if (searchOpen) {
     return (
-      <SearchTopnavBar
+      <BoardSearch
+        wide={wide} onMenu={onFilterMenu}
         query={query} setQuery={setQuery} onClose={() => { setSearchOpen(false); setQuery(''); }}
         head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
         trailing={<HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }} view="board"/>}
@@ -343,12 +353,13 @@ export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactEleme
   const { height } = useWindowDimensions();
   const docked = useWebTabRail();
   const [query, setQuery] = useState('');
+  const [filtering, setFiltering] = useState(false);
   const windowHeight = Platform.OS === 'web' && pane !== true;
   if (docked && pane !== true) return null;
   return (
     <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <BoardHeader inline={pane === true} query={query} setQuery={setQuery}/>
-      <BoardBody query={query}/>
+      <BoardHeader inline={pane === true} query={query} setQuery={setQuery} onFilterMenu={setFiltering}/>
+      <BoardBody query={query} filtering={filtering}/>
     </Col>
   );
 }

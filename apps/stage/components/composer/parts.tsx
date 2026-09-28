@@ -56,7 +56,7 @@ export function ReplyBanner({
   );
 }
 
-const keepInputFocus = Platform.OS === 'web'
+export const keepInputFocus = Platform.OS === 'web'
   ? { onMouseDown: (event: { preventDefault: () => void }) => { event.preventDefault(); } }
   : {};
 

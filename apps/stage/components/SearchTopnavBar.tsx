@@ -3,11 +3,16 @@ import { Fragment, forwardRef } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Input } from '@stage-labs/kit/react-native/input';
+import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
 import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+
+const BACK_ICON_SIZE = 24;
+const BAR_GAP = 10;
+
+export const SEARCH_TEXT_INSET = PAGE_GUTTER + BACK_ICON_SIZE + BAR_GAP;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
@@ -24,6 +29,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   topInset?: number;
   inline?: boolean;
   trailing?: React.ReactNode;
+  inputProps?: InputProps['inputProps'];
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
@@ -33,10 +39,10 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
     <Row
       height={TOPNAV_HEIGHT + topInset}
       padding={{ x: PAGE_GUTTER, top: topInset }}
-      align="center" gap={10} surface="toolbar"
+      align="center" gap={BAR_GAP} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onClose} hitSlop={8}>
-        <Glyph icon={IconArrowLeft} size={24} color={head}/>
+        <Glyph icon={IconArrowLeft} size={BACK_ICON_SIZE} color={head}/>
       </Pressable>
       <Input
         ref={ref}
@@ -45,7 +51,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         onChangeText={props.setQuery}
         placeholder={props.placeholder ?? 'Search'}
         placeholderTextColor={sub}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search' }}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps }}
         style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('4xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />
