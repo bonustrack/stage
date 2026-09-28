@@ -1,6 +1,6 @@
 
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveColor, resolveOptionalColor, type Color, type Scheme } from '../tokens';
@@ -12,6 +12,7 @@ export interface DialogProps {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  header?: ReactNode;
   backdrop?: boolean;
   backdropColor?: Color;
   side?: 'center' | 'bottom';
@@ -126,6 +127,7 @@ function Panel(panelProps: {
       style={props.fullBleedPanel ? { flex: 1 } : panelStyle(props, scheme, insetBottom)}
     >
       {props.handle ? <Handle color={handleColor} /> : null}
+      {props.header}
       <PanelBody props={props} content={content} />
     </Pressable>
   );
@@ -147,15 +149,18 @@ export function Dialog(props: DialogProps): ReactNode {
   );
 
   const overlay = (
-    <Pressable
-      onPress={props.backdrop === false ? undefined : close}
+    <View
+      pointerEvents="box-none"
       style={[
         overlayStyle(props),
         props.backdrop === false ? null : { backgroundColor: backdropColor },
       ]}
     >
+      {props.backdrop === false ? null : (
+        <Pressable accessible={false} focusable={false} onPress={close} style={StyleSheet.absoluteFillObject} />
+      )}
       {inner}
-    </Pressable>
+    </View>
   );
 
   const body = props.gestureRoot

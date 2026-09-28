@@ -3,11 +3,11 @@ import type { Story } from '../gallery/story';
 import { Modal, type ModalProps } from '../src/react-native/modal';
 import { Button } from '../src/react-native/button';
 import { Text } from '../src/react-native/text';
-import { select, text, useDark } from './_controls';
+import { bool, select, text, useDark } from './_controls';
 
 export default { title: 'Modal' };
 
-export const Controls: Story<Pick<ModalProps, 'title' | 'side'>> = (args) => {
+export const Controls: Story<Pick<ModalProps, 'title' | 'side' | 'dismissable'>> = (args) => {
   const dark = useDark();
   const [open, setOpen] = useState(false);
   return (
@@ -19,5 +19,5 @@ export const Controls: Story<Pick<ModalProps, 'title' | 'side'>> = (args) => {
     </>
   );
 };
-Controls.args = { title: 'New chat', side: 'center' };
-Controls.argTypes = { title: text, side: select(['center', 'bottom']) };
+Controls.args = { title: 'New chat', side: 'center', dismissable: true };
+Controls.argTypes = { title: text, side: select(['center', 'bottom']), dismissable: bool };

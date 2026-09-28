@@ -139,10 +139,7 @@ export function TokenSelector({ value, onChange }: {
         <Glyph icon={IconChevronBottom} size={18} color={fg}/>
       </Pressable>
 
-      <AppModal visible={open} onClose={() => { setOpen(false); }}>
-        <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
-          Select token
-        </Text>
+      <AppModal visible={open} onClose={() => { setOpen(false); }} title="Select token">
         {loading ? (
           <Row padding={{ y: 24 }} align="center" justify="center">
             <Spinner size={28} color={fg}/>

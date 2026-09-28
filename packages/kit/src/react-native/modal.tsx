@@ -1,8 +1,15 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { BLOCK_RADIUS_DEFAULT, kitPalette, type KitPalette } from '../tokens';
+import { SIZES } from '../button.styles';
+import { Button } from './button';
 import { Dialog } from './dialog';
+import { Glyph } from './glyph';
 import { Text } from './text';
-import { useKitPalette } from './theme-context';
+import { Tooltip } from './tooltip';
+import { useKitPalette, useKitScheme } from './theme-context';
 
 export const MODAL = {
   maxWidth: 480,
@@ -24,6 +31,7 @@ export interface ModalProps {
   dark?: boolean;
   background?: string;
   borderColor?: string;
+  dismissable?: boolean;
 }
 
 function usePalette(dark: boolean | undefined): KitPalette {
@@ -32,14 +40,49 @@ function usePalette(dark: boolean | undefined): KitPalette {
   return kitPalette(dark ? 'dark' : 'light');
 }
 
-export function Modal({ open, onClose, children, title, side = 'center', dark, background, borderColor }: ModalProps): React.ReactElement {
+function ModalHeader({ title, onClose, pal, dark, dismissable }: {
+  title: string | undefined; onClose: () => void; pal: KitPalette; dark: boolean; dismissable: boolean;
+}): React.ReactElement {
+  const [hovered, setHovered] = useState(false);
+  const [tooltipWidth, setTooltipWidth] = useState(0);
+  const insets = useSafeAreaInsets();
+  const tooltipHalfWidth = MODAL.padding + SIZES.md.height / 2 - 8;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: MODAL.padding + insets.left, marginRight: MODAL.padding + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0, minHeight: SIZES.md.height, justifyContent: 'center' }}>
+        {title === undefined ? null : <Text accessibilityRole="header" value={title} size="5xl" weight="semibold" color={pal.link} />}
+      </View>
+      {dismissable ? (
+        <View>
+          <Button
+            accessibilityRole="button" accessibilityLabel="Close modal"
+            color="secondary" variant="ghost" uniform pill dark={dark} hitSlop={4}
+            onPress={onClose} onHoverIn={() => { setHovered(true); }} onHoverOut={() => { setHovered(false); }}
+          >
+            <Glyph icon={IconCrossMedium} size={22} color={hovered ? pal.link : pal.text} />
+          </Button>
+          {hovered ? (
+            <View pointerEvents="none" style={{ position: 'absolute', top: '100%', right: 0, width: SIZES.md.height, alignItems: 'center', paddingTop: 4 }}>
+              <Tooltip label="Close" arrow="up" dark={dark} onBubbleWidth={setTooltipWidth} bubbleOffset={-Math.max(0, tooltipWidth / 2 - tooltipHalfWidth)} />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+export function Modal({ open, onClose, children, title, side = 'center', dark, background, borderColor, dismissable = true }: ModalProps): React.ReactElement {
   const pal = usePalette(dark);
+  const scheme = useKitScheme();
   const centered = side === 'center';
   return (
     <Dialog
       open={open}
       onClose={onClose}
       side={side}
+      dismissable={dismissable}
+      header={<ModalHeader title={title} onClose={onClose} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} />}
       animationType="none"
       gestureRoot
       backdropColor={MODAL.backdrop}
@@ -56,9 +99,6 @@ export function Modal({ open, onClose, children, title, side = 'center', dark, b
       keyboardPersistTaps
       scrollPadding={{ x: MODAL.padding, top: 0 }}
     >
-      {title === undefined ? null : (
-        <Text value={title} size="3xl" weight="semibold" style={{ marginBottom: MODAL.titleGap }} />
-      )}
       {children}
     </Dialog>
   );

@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { fontName } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
@@ -79,9 +78,8 @@ export function SendHistorySheet({ visible, onClose }: { visible: boolean; onClo
   const [attempt, setAttempt] = useState(0);
   const state = useSendTransfer(visible, attempt);
   return (
-    <AppModal visible={visible} onClose={onClose}>
+    <AppModal visible={visible} onClose={onClose} title={SEND_COPY.title}>
       <Col gap={14}>
-        <Title level={3}>{SEND_COPY.title}</Title>
         {state.kind === 'preparing' ? <Preparing /> : null}
         {state.kind === 'ready' ? <ReadyCode dark={dark} code={state.code} expiresAt={state.expiresAt} /> : null}
         {state.kind === 'failed' ? <Failed dark={dark} message={state.message} onRetry={() => { setAttempt((n) => n + 1); }} /> : null}
@@ -141,9 +139,8 @@ export function ReceiveCodeSheet({ visible, onClose, onReceive }: {
     form.submit(scanned);
   };
   return (
-    <AppModal visible={visible} onClose={() => { if (!form.busy) onClose(); }}>
+    <AppModal visible={visible} onClose={() => { if (!form.busy) onClose(); }} title={RECEIVE_COPY.title} dismissable={!form.busy}>
       <Col gap={12}>
-        <Title level={3}>{RECEIVE_COPY.title}</Title>
         <Text size="sm" role="secondary">{RECEIVE_COPY.about}</Text>
         {scanning ? <QrScanner dark={dark} onScan={onScan} /> : (
           <FormField label="Code" placeholder={RECEIVE_COPY.placeholder} value={form.code} onChangeText={form.setCode}

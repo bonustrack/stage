@@ -67,14 +67,10 @@ export function ContactsModal({ visible, onClose, onPick }: {
   onClose: () => void;
   onPick: (address: string) => void;
 }): React.ReactElement {
-  const { link: head } = usePalette();
   const contacts = useContacts([], '');
 
   return (
-    <AppModal visible={visible} onClose={onClose}>
-      <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
-        Contacts
-      </Text>
+    <AppModal visible={visible} onClose={onClose} title="Contacts">
       {contacts.length === 0 ? (
         <Text size="md" role="secondary" style={{ paddingVertical: 16 }}>
           No contacts yet. Start a DM to build your list.

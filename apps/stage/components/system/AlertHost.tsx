@@ -1,7 +1,6 @@
 import type { AlertButton } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { Box, Col, Row } from '../layout';
 import { AppModal } from '../AppModal';
 import { dismissAlert, useAlertRequest, type AlertRequest } from '../../lib/alertHost';
@@ -57,9 +56,8 @@ export function AlertHost(): React.ReactElement | null {
     cancel?.onPress?.();
   };
   return (
-    <AppModal visible onClose={onClose}>
+    <AppModal visible onClose={onClose} title={request.title}>
       <Col gap={8}>
-        <Title level={2}>{request.title}</Title>
         {request.message !== undefined && request.message !== '' ? (
           <Text size="4xl" style={{ paddingVertical: 12 }}>{request.message}</Text>
         ) : null}

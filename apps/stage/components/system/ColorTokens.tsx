@@ -70,7 +70,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           }}
 />
       </Col>
-      <AppModal visible={picking} onClose={closePicker}>
+      <AppModal visible={picking} onClose={closePicker} title={`Pick ${name} color`}>
         <ColorPicker
           value={pending ?? value}
           mode="hsv"

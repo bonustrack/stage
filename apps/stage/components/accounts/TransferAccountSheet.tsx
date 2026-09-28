@@ -3,7 +3,6 @@ import { Alert } from 'react-native';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { Spinner } from '../Spinner';
@@ -62,9 +61,8 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
     capabilities.copy('Link code', payload);
   };
   return (
-    <AppModal visible={rec !== null} onClose={onClose}>
+    <AppModal visible={rec !== null} onClose={onClose} title="Link a device">
       <Col gap={14} align="center">
-        <Title level={3}>Link a device</Title>
         {kind !== null ? <Text size="xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
         <QrPanel payload={payload} />
         <Text size="sm" role="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
