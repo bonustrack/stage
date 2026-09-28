@@ -122,10 +122,10 @@ export function useChannelRowRenderer(
   setRowMenu: (m: RowMenu) => void,
   deps: {
     channelProfilesVersion: number; draftsVersion: number;
-    pinned: readonly string[]; query?: string; activePath: string; pinDrag: PinDrag;
+    pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: PinDrag;
   },
 ): ({ item }: { item: RowT }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag } = deps;
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
     <ChannelRowItem
       item={item}
@@ -137,10 +137,10 @@ export function useChannelRowRenderer(
       avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
       pinned={pinned.includes(item.convId)}
       draftText={getDraft(item.convId)}
-      active={isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
+      active={menuConvId === item.convId || isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
       pinDrag={pinDrag}
     />
-  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag]);
+  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag]);
 }
 
 const RESET_TITLE = 'Reset local database';

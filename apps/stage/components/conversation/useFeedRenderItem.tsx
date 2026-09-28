@@ -34,7 +34,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   extraData: readonly unknown[];
 } {
   const {
-    events, myUri, replyingTo, jumpHighlightId,
+    events, myUri, replyingTo, jumpHighlightId, menuFor,
     confirmedIds, optimisticReactions, optimisticRemovals,
     groupDescription, groupLabels, senderEthOf, profilesVersion,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, jumpToMessage,
@@ -46,11 +46,12 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   const dark = useEffectiveColorScheme() === 'dark';
   const router = useRouter();
   const replyingToId = replyingTo?.id;
+  const menuForId = menuFor?.id;
   const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
 
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
-    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
+    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId],
+    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId],
   );
 
   const eventsById = useMemo(() => {
@@ -88,7 +89,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
           senderEthAddress={senderEthAddress}
           onAvatarPress={onAvatarPress}
           pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
-          replyTarget={replyingToId === item.id || jumpHighlightId === item.id}
+          replyTarget={replyingToId === item.id || jumpHighlightId === item.id || menuForId === item.id}
           reactions={reactorNames.get(item.id)}
           pendingReactions={optimisticReactions.get(item.id)}
           pendingRemovals={optimisticRemovals.get(item.id)}
@@ -115,7 +116,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       </BubbleErrorBoundary>
     );
   }, [
-    dark, myUri, sub, senderEthOf, namedEntry, confirmedIds, replyingToId, jumpHighlightId,
+    dark, myUri, sub, senderEthOf, namedEntry, confirmedIds, replyingToId, jumpHighlightId, menuForId,
     reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,

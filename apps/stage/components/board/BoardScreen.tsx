@@ -93,7 +93,7 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
       radius={BLOCK_RADIUS_DEFAULT}
       style={{
         overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1,
-        borderWidth: 1, borderColor: panel && openConvId === item.convId ? link : border,
+        borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : border,
       }}
     >
       <ChannelRow

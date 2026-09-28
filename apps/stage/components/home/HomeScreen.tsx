@@ -68,9 +68,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   useChannelsSync({ accountEpoch, setError: st.setError });
 
   const activePath = pane ? pathname : '';
+  const menuConvId = rowMenu?.convId;
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath] as const,
-    [channelProfilesVersion, draftsVersion, pinned, query, activePath],
+    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId],
   );
   const navRouter = useMemo(
     () => (pane
@@ -82,7 +83,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const pinDrag = usePinDrag(pinned, visiblePinned);
   useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag,
+    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
