@@ -5,6 +5,7 @@ import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
+import { isLeftOnlyUpdate } from './systemNames.model';
 import {
   optimisticRowPreview, outboundView, recordSent, settleOutbound, type OutboundState,
 } from './outboundRows.model';
@@ -48,7 +49,7 @@ export function useOutboundLayer(
 
   const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
-  const liveBubbles = useMemo(() => events.filter(e => !isReaction(e)), [events]);
+  const liveBubbles = useMemo(() => events.filter(e => !isReaction(e) && !isLeftOnlyUpdate(e)), [events]);
   const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
   const allBubbles = useMemo(
     () => (view.pending.length ? [...view.pending, ...liveBubbles] : liveBubbles),

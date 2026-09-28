@@ -9,6 +9,7 @@ export interface GroupUpdatedContent {
   metadataFieldsChanged?: FieldChange[];
   addedInboxes?: { inboxId: string }[];
   removedInboxes?: { inboxId: string }[];
+  leftInboxes?: { inboxId: string }[];
   metadataFieldChanges?: FieldChange[];
 }
 
@@ -26,6 +27,10 @@ export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
   return typeId !== undefined && GROUP_UPDATE_TYPE_IDS.includes(typeId);
 }
 
+export const LEAVE_REQUEST_TYPE_ID = 'leave_request';
+
+export const LEFT_GROUP_TEXT = 'left the group';
+
 export type InboxNamer = (inboxId: string) => string | null;
 
 const MAX_NAMED_MEMBERS = 3;
@@ -38,20 +43,35 @@ function namedList(names: string[]): string {
   return `${names.slice(0, MAX_NAMED_MEMBERS - 1).join(', ')} and ${others} others`;
 }
 
-function memberClause(verb: string, members: { inboxId: string }[], nameOf?: InboxNamer): string {
-  if (members.length === 0) return '';
+function membersPhrase(members: { inboxId: string }[], nameOf?: InboxNamer): string {
   const names = nameOf ? members.map(m => nameOf(m.inboxId)) : [];
-  if (names.length > 0 && names.every((n): n is string => !!n)) return `${verb} ${namedList(names)}`;
-  return `${verb} ${members.length} member${members.length === 1 ? '' : 's'}`;
+  if (names.length > 0 && names.every((n): n is string => !!n)) return namedList(names);
+  return `${members.length} member${members.length === 1 ? '' : 's'}`;
 }
 
-export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer): string {
+function memberClause(verb: string, members: { inboxId: string }[], nameOf?: InboxNamer): string {
+  return members.length === 0 ? '' : `${verb} ${membersPhrase(members, nameOf)}`;
+}
+
+function leftClause(members: { inboxId: string }[], nameOf?: InboxNamer): string {
+  return members.length === 0 ? '' : `${membersPhrase(members, nameOf)} ${LEFT_GROUP_TEXT}`;
+}
+
+function changeClauses(g: GroupUpdatedContent, nameOf?: InboxNamer): string[] {
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
-  const parts = [
+  return [
     ...fields.map(describeFieldChange),
     memberClause('added', g.membersAdded ?? g.addedInboxes ?? [], nameOf),
     memberClause('removed', g.membersRemoved ?? g.removedInboxes ?? [], nameOf),
   ].filter(Boolean);
+}
+
+export function onlyMembersLeft(g: GroupUpdatedContent): boolean {
+  return (g.leftInboxes ?? []).length > 0 && changeClauses(g).length === 0;
+}
+
+export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer): string {
+  const parts = [...changeClauses(g, nameOf), leftClause(g.leftInboxes ?? [], nameOf)].filter(Boolean);
   return parts.length ? parts.join(' • ') : 'updated the group';
 }
 
@@ -83,6 +103,7 @@ function previewPoll(decoded: unknown): string {
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  [LEAVE_REQUEST_TYPE_ID]: () => LEFT_GROUP_TEXT,
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
   reply: previewReply,

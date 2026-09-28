@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
-import { memberNamer, withMemberNames } from '../components/conversation/systemNames.model';
+import { isLeftOnlyUpdate, memberNamer, withMemberNames } from '../components/conversation/systemNames.model';
 
 const PEER = '0x59445094F08D01213bd6ba7215a6ab7a4bc29a4a';
 const OTHER = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
@@ -31,6 +31,15 @@ describe('member names in group event lines', () => {
   test('falls back to a count when a member has no address', () => {
     const e = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'ghost' }] } });
     expect(withMemberNames(e, nameOf).text).toBe('added 2 members');
+  });
+
+  test('names members who left, and hides an update that only repeats a leave', () => {
+    const left = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }] } });
+    expect(withMemberNames(left, nameOf).text).toBe(`@${PEER.toLowerCase()} left the group`);
+    expect(isLeftOnlyUpdate(left)).toBe(true);
+    const kicked = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }], removedInboxes: [{ inboxId: 'other' }] } });
+    expect(withMemberNames(kicked, nameOf).text).toBe(`removed @${OTHER} • @${PEER.toLowerCase()} left the group`);
+    expect(isLeftOnlyUpdate(kicked)).toBe(false);
   });
 
   test('keeps other entries untouched', () => {

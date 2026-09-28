@@ -1,10 +1,17 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { humanizeGroupUpdated, type GroupUpdatedContent, type InboxNamer } from '@stage-labs/client/xmtp/humanize';
+import {
+  humanizeGroupUpdated, onlyMembersLeft, type GroupUpdatedContent, type InboxNamer,
+} from '@stage-labs/client/xmtp/humanize';
 import { mentionToken } from '@stage-labs/client/xmtp/mentions';
 
 function groupUpdateOf(entry: HistoryEntry): GroupUpdatedContent | null {
   const payload = entry.payload as { system?: boolean; groupUpdate?: GroupUpdatedContent } | undefined;
   return payload?.system === true && payload.groupUpdate ? payload.groupUpdate : null;
+}
+
+export function isLeftOnlyUpdate(entry: HistoryEntry): boolean {
+  const update = groupUpdateOf(entry);
+  return update !== null && onlyMembersLeft(update);
 }
 
 export function withMemberNames<E extends HistoryEntry>(entry: E, nameOf: InboxNamer): E {
