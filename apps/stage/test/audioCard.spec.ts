@@ -9,7 +9,7 @@ import {
 } from '../components/bubble/audioCard.model';
 
 describe('audio card', () => {
-  test('keeps recorded voice notes on the waveform pill', () => {
+  test('recognises recorded voice notes by their file name', () => {
     expect(isVoiceNote({ name: 'voice-1727450000000.m4a' })).toBe(true);
     expect(isVoiceNote({ name: 'voice.m4a' })).toBe(true);
     expect(isVoiceNote({ name: 'Voice_memo.m4a' })).toBe(true);
@@ -49,16 +49,32 @@ describe('audio card', () => {
   test('shows length and size once the duration is known', () => {
     const att = { name: 'designing-grok-bot-with-grok-bot.mp3', size: 1_258_291 };
     expect(audioCardModel(att, { position: 1_000, duration: 188_000 })).toEqual({
+      voice: false,
       title: 'designing-grok-bot-with-grok-bot.mp3',
+      fileName: 'designing-grok-bot-with-grok-bot.mp3',
       subtitle: '3:08 · 1.2 MB',
       time: '0:01 / 3:08',
       progress: 1_000 / 188_000,
     });
   });
 
+  test('titles a recorded voice note and keeps its file name for downloads', () => {
+    const att = { name: 'voice-1727450000000.m4a', size: 184_320 };
+    expect(audioCardModel(att, { position: 0, duration: 12_000 })).toEqual({
+      voice: true,
+      title: 'Voice message',
+      fileName: 'voice-1727450000000.m4a',
+      subtitle: '0:12 · 180 KB',
+      time: '0:00 / 0:12',
+      progress: 0,
+    });
+  });
+
   test('falls back to the size and a bare clock before the duration loads', () => {
     expect(audioCardModel({ name: ' ', size: 2_048 }, { position: 0, duration: 0 })).toEqual({
-      title: 'Audio',
+      voice: true,
+      title: 'Voice message',
+      fileName: 'Voice message',
       subtitle: '2 KB',
       time: '0:00',
       progress: 0,

@@ -7,6 +7,7 @@ import { useAudioPlayback } from '@stage-labs/kit/react-native/audio-player';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { IconAudio } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAudio';
 import { IconCloudDownload } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCloudDownload';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPause } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlay';
 import { Box, Col, Row } from '../layout';
@@ -54,14 +55,14 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
   const [scrub, setScrub] = useState<number | null>(null);
   const shown = scrub === null ? position : scrub * duration;
   const model = audioCardModel(att, { position: shown, duration });
-  const download = useDownload(uri, model.title, att.mime);
+  const download = useDownload(uri, model.fileName, att.mime);
 
   return (
     <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ marginBottom: 6, width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Col testID="audio-card" gap={8}>
         <Row align="center" gap={12}>
           <Box width={44} height={44} radius="md" align="center" justify="center" background={AUDIO_ACCENT_BG[scheme]}>
-            <Glyph icon={IconAudio} size={24} color={AUDIO_ACCENT[scheme]}/>
+            <Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={AUDIO_ACCENT[scheme]}/>
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
             <Text weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>

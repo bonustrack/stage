@@ -32,7 +32,9 @@ export function seekFraction(offset: number, width: number): number {
 }
 
 export interface AudioCardModel {
+  voice: boolean;
   title: string;
+  fileName: string;
   subtitle: string;
   time: string;
   progress: number;
@@ -44,10 +46,11 @@ export function audioCardModel(
 ): AudioCardModel {
   const { position, duration } = playback;
   const name = att.name?.trim() ?? '';
-  const title = name === '' ? 'Audio' : name;
+  const voice = isVoiceNote(att);
+  const title = voice ? 'Voice message' : name;
   const length = duration > 0 ? clockLabel(duration) : '';
   const subtitle = [length, fileSizeLabel(audioByteSize(att))].filter(Boolean).join(' · ');
   const progress = duration > 0 ? seekFraction(position, duration) : 0;
   const time = length === '' ? clockLabel(position) : `${clockLabel(position)} / ${length}`;
-  return { title, subtitle, time, progress };
+  return { voice, title, fileName: name === '' ? title : name, subtitle, time, progress };
 }
