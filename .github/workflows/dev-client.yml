@@ -45,9 +45,8 @@ jobs:
         working-directory: apps/stage
         run: |
           set -euo pipefail
-          OUT=$(eas build -p android --profile development --non-interactive --json --wait)
-          echo "$OUT"
-          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          eas build -p android --profile development --non-interactive --json --wait | tee "$RUNNER_TEMP/dev-client-build.json"
+          URL=$(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl' "$RUNNER_TEMP/dev-client-build.json")
           if [ -z "$URL" ] || [ "$URL" = "null" ]; then
             echo "No Android artifact URL from EAS"; exit 1
           fi

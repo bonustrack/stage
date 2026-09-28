@@ -13,6 +13,7 @@
     },
     "development": {
       "extends": "base",
+      "bun": "1.4.0",
       "autoIncrement": false,
       "developmentClient": true,
       "distribution": "internal",
