@@ -18,7 +18,7 @@ function gitIgnored(rootDir) {
     encoding: 'utf8',
   });
   if (res.status !== 0) return [];
-  return res.stdout.split('\0').filter(Boolean).map((path) => path.replace(/[*?[\]{}()!+@\\]/g, '\\$&'));
+  return res.stdout.split('\0').filter(Boolean).map((path) => path.replace(/[*?[\]{}()!+@#\\]/g, '\\$&'));
 }
 
 function prefixGlob(dir, glob) {

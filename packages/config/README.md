@@ -59,10 +59,10 @@ export default [
 
 ## `stage lint`
 
-Lints the repo described by `stage.config.js`. It runs one ESLint process per TypeScript project (a workspace with a `tsconfig.json`) plus one for the rest, two at a time (`STAGE_LINT_JOBS` changes that), and prints one merged report. Each process holds only its own type information, so the peak memory of one process is the largest project, not the sum. Git-ignored files are never linted.
+Lints the repo described by `stage.config.js`. It runs one ESLint process per TypeScript project (a workspace with a `tsconfig.json`) plus one for the rest, two at a time (`STAGE_LINT_JOBS` changes that), and prints one merged report. Each process holds only the type information of its own project, so the peak memory of one process is the largest project, not the sum. Untracked git-ignored files (build output, generated files) are not linted.
 
 - `stage lint` / `stage lint --fix`: the whole repo.
-- `stage lint --changed`: only files changed since the upstream branch, plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.
+- `stage lint --changed`: only files changed since the upstream branch (or since HEAD when there is none), plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.
 - `stage lint <paths>`: only those paths, in one process.
 
 ## madge

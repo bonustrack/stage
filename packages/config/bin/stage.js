@@ -82,6 +82,7 @@ const LINT_VALUE_FLAGS = new Set([
 const LANE_FORWARDED_FLAGS = new Set(['--fix', '--fix-dry-run', '--fix-type', '--stats']);
 const LANE_REPORT_FLAGS = new Set(['-f', '--format', '-o', '--output-file', '--max-warnings', '--color', '--no-color']);
 const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue)$/;
+const FORMATS_WITHOUT_RULES_META = new Set(['stylish', 'json']);
 
 function parseLintArgs(argv) {
   const paths = [];
@@ -134,7 +135,7 @@ function lintProjects(temp) {
   writeFileSync(script, `import cfg from ${JSON.stringify(configUrl())};\nprocess.stdout.write(JSON.stringify(Object.keys(cfg.workspaces)));\n`);
   const res = spawnSync(process.execPath, [script], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
   if (res.status !== 0) return null;
-  return JSON.parse(res.stdout)
+  return JSON.parse(res.stdout.trim().split('\n').pop() ?? '[]')
     .filter((path) => path !== '.' && existsSync(resolve(cwd, path, 'tsconfig.json')))
     .map((path) => ({ path, size: lintableCount(path) }))
     .sort((a, b) => b.size - a.size)
@@ -179,7 +180,11 @@ function spawnLane(args) {
 async function reportLint(temp, results, flags) {
   const { ESLint } = await import(resolvePkg('eslint'));
   const engine = new ESLint({ cwd, overrideConfigFile: temp });
-  const formatter = await engine.loadFormatter(flagValue(flags, ['-f', '--format']) ?? 'stylish');
+  const format = flagValue(flags, ['-f', '--format']) ?? 'stylish';
+  const formatter = await engine.loadFormatter(format);
+  for (const result of FORMATS_WITHOUT_RULES_META.has(format) ? [] : results) {
+    if (result.messages.length + result.suppressedMessages.length > 0) await engine.calculateConfigForFile(result.filePath);
+  }
   const errors = results.reduce((sum, result) => sum + result.errorCount, 0);
   const warnings = results.reduce((sum, result) => sum + result.warningCount, 0);
   const maxWarnings = Number(flagValue(flags, ['--max-warnings']) ?? -1);
@@ -194,7 +199,7 @@ async function reportLint(temp, results, flags) {
     mkdirSync(dirname(resolve(cwd, outputFile)), { recursive: true });
     writeFileSync(resolve(cwd, outputFile), output);
   } else if (output) {
-    console.log(output);
+    await new Promise((done) => process.stdout.write(`${output}\n`, done));
   }
   if (!errors && tooManyWarnings) console.error('ESLint found too many warnings (maximum: %s).', maxWarnings);
   return errors || tooManyWarnings ? 1 : 0;
@@ -213,8 +218,12 @@ async function runLintLanes(temp, tasks, flags) {
   if (failed !== undefined) return failed;
   if (!outputs.every((file) => existsSync(file))) return 2;
   const results = outputs.flatMap((file) => JSON.parse(readFileSync(file, 'utf8')));
-  results.sort((a, b) => (a.filePath < b.filePath ? -1 : Number(a.filePath > b.filePath)));
-  return reportLint(temp, results, flags);
+  try {
+    return await reportLint(temp, results, flags);
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return 2;
+  }
 }
 
 function lintTargets(paths, files) {
@@ -245,15 +254,14 @@ async function cmdLint(argv) {
   ].join('\n'));
   const laned = paths.length === 0 && flags.every((flag) =>
     flag.name === '--changed' || LANE_FORWARDED_FLAGS.has(flag.name) || LANE_REPORT_FLAGS.has(flag.name));
-  let status = 2;
-  const projects = laned ? lintProjects(temp) : null;
-  if (projects) {
-    status = await runLintLanes(temp, files ? changedTasks(projects, files) : repoTasks(projects), flags);
-  } else if (!laned) {
-    status = run(localBin('eslint'), ['--config', temp, ...lintTargets(paths, files), ...rest]);
+  try {
+    if (!laned) return run(localBin('eslint'), ['--config', temp, ...lintTargets(paths, files), ...rest]);
+    const projects = lintProjects(temp);
+    if (!projects) return 2;
+    return await runLintLanes(temp, files ? changedTasks(projects, files) : repoTasks(projects), flags);
+  } finally {
+    rmSync(dirname(temp), { recursive: true, force: true });
   }
-  rmSync(dirname(temp), { recursive: true, force: true });
-  return status;
 }
 
 function cmdKnip(argv) {
