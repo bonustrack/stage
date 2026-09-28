@@ -17,7 +17,7 @@ import { usePalette } from '../../lib/theme';
 import { report } from '../../lib/errorPolicy';
 import { capabilities } from '../../lib/capabilities';
 import { downloadFile } from '../../lib/fileDownload';
-import { AUDIO_ACCENT, AUDIO_ACCENT_BG, SEEK_THUMB } from '../../lib/uiColors';
+import { SEEK_THUMB } from '../../lib/uiColors';
 import { AudioSeekBar } from './AudioSeekBar';
 import { audioCardModel } from './audioCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
@@ -61,8 +61,8 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
     <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ marginBottom: 6, width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Col testID="audio-card" gap={8}>
         <Row align="center" gap={12}>
-          <Box width={44} height={44} radius="md" align="center" justify="center" background={AUDIO_ACCENT_BG[scheme]}>
-            <Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={AUDIO_ACCENT[scheme]}/>
+          <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
+            <Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
             <Text weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>

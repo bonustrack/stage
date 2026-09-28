@@ -10,10 +10,6 @@ export function changeColor(change: string): ThemeColor {
 
 export const HIGHLIGHT_BG: ThemeColor = { dark: '#fde047', light: '#FFF200' };
 
-export const AUDIO_ACCENT: ThemeColor = { dark: '#f07ac4', light: '#c42a8c' };
-
-export const AUDIO_ACCENT_BG: ThemeColor = { dark: 'rgba(240,122,196,0.16)', light: '#fbe9f3' };
-
 export const SEEK_THUMB: ThemeColor = { dark: '#f4f4f5', light: '#ffffff' };
 
 export const ON_PRIMARY_COLOR: ThemeColor = { dark: '#000000', light: '#ffffff' };
