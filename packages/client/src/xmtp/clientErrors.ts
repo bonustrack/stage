@@ -59,6 +59,8 @@ export const GROUP_WAITING_NOTICE =
   'This device is waiting to be added to this group. That happens automatically when someone in the group sends a ' +
   'message, or when a member opens Stage (it checks for new devices every 30 minutes).';
 
+export const OUTSIDE_GROUP_NOTICE = 'You’re not in this channel';
+
 export const INACTIVE_SEND_MESSAGE =
   'This device is not in this conversation yet, so the message was not sent. It is added automatically when ' +
   'someone in the conversation sends a message.';

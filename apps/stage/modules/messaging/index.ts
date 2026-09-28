@@ -54,7 +54,7 @@ export {
 } from './cache';
 export { summarizeConversation, type ConversationView } from './conversation';
 export { useConvConsentState } from './useConvConsent';
-export { useGroupWaiting } from './useGroupWaiting';
+export { useGroupAccess } from './useGroupAccess';
 
 export { messagingKeys, fetchGroupRoles, useConvMeta, invalidateConvMeta } from './queries';
 export { ensureMessagingStreamSync } from './streamSync';

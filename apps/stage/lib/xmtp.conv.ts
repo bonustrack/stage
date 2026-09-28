@@ -6,7 +6,7 @@ import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
-import { report, reported, recover } from './errorPolicy';
+import { ignored, report, reported, recover } from './errorPolicy';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -95,10 +95,15 @@ export async function syncConversationsFromNetwork(): Promise<void> {
   }
 }
 
-export async function isGroupWaitingToJoin(convId: string): Promise<boolean> {
+export type GroupAccess = 'member' | 'waiting' | 'outside';
+
+export async function groupAccessOf(convId: string): Promise<GroupAccess> {
   const conv = await convOfLine(lineOfConv(convId));
-  if (!conv || !sdk.isGroup(conv)) return false;
-  return !(await sdk.isActive(conv));
+  if (!conv || !sdk.isGroup(conv) || await sdk.isActive(conv)) return 'member';
+  const [client, members] = await Promise.all([
+    sdk.client(), conv.members().catch(ignored(null, 'probe')),
+  ]);
+  return members?.some(m => m.inboxId === client.inboxId) === false ? 'outside' : 'waiting';
 }
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {

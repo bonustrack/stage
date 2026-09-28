@@ -12,8 +12,8 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
-import { getCachedRows, useGroupWaiting } from '../../modules/messaging';
-import { GroupWaitingNotice } from './GroupWaitingNotice';
+import { getCachedRows, useGroupAccess } from '../../modules/messaging';
+import { GroupAccessNotice } from './GroupAccessNotice';
 import { useMemberListState } from './MemberListSidebar';
 import { toggleMemberList } from '../../lib/memberList';
 import { capabilities } from '../../lib/capabilities';
@@ -72,8 +72,8 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, consentKnown, markConsentAllowed,
   } = c;
   const requestPending = consent === 'unknown';
-  const waiting = useGroupWaiting(convId, c.isGroup);
-  const composerShown = consentKnown && !requestPending && !waiting;
+  const access = useGroupAccess(convId, c.isGroup);
+  const composerShown = consentKnown && !requestPending && access === 'member';
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
@@ -91,7 +91,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           </Pressable>
         ) : null}
         {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-        {waiting && !requestPending ? <GroupWaitingNotice/> : null}
+        {access !== 'member' && !requestPending ? <GroupAccessNotice outside={access === 'outside'}/> : null}
         {composerShown ? (
           <MessengerComposer
             dark={dark}
