@@ -17,6 +17,7 @@ export function PeerProfileSidebar({ address }: { address: string }): React.Reac
   return (
     <ProfileCover
       insetTop={0}
+      centered
       avatar={
         <Avatar
           key={address}
@@ -28,8 +29,8 @@ export function PeerProfileSidebar({ address }: { address: string }): React.Reac
     >
       <Box padding={{ x: PAGE_GUTTER, bottom: PAGE_GUTTER }}>
         <Col gap={6} margin={{ top: 14 }}>
-          <Text value={name} weight="semibold" size="5xl" textAlign="start" numberOfLines={2}/>
-          {identity !== name ? <Text value={identity} size="md" color={text} numberOfLines={1}/> : null}
+          <Text value={name} weight="semibold" size="5xl" textAlign="center" numberOfLines={2}/>
+          {identity !== name ? <Text value={identity} size="md" color={text} textAlign="center" numberOfLines={1}/> : null}
         </Col>
       </Box>
     </ProfileCover>

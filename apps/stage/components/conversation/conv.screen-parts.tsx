@@ -1,7 +1,7 @@
 
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, pinnedTop, PAGE_GUTTER } from '../layout';
+import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { usePathname, useRouter } from 'expo-router';
@@ -14,8 +14,8 @@ import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupAccess } from '../../modules/messaging';
 import { GroupAccessNotice } from './GroupAccessNotice';
-import { useConversationSidebarState } from './ConversationSidebar';
-import { toggleMemberList } from '../../lib/memberList';
+import { ConversationSidebarToggle } from './ConversationSidebarToggle';
+import { HoverTooltip } from '../HoverTooltip';
 import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
@@ -51,14 +51,20 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
         }}
       />
-      <Pressable
-        onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
-        hitSlop={8}
-        {...more.hoverProps}
-        style={{ paddingLeft: 14, paddingRight: PAGE_GUTTER, justifyContent: 'center' }}
->
-        <Glyph icon={IconDotGrid1x3Vertical} size={24} color={more.hovered ? head : fg}/>
-      </Pressable>
+      <Row align="center" gap={18} padding={{ right: PAGE_GUTTER }}>
+        <ConversationSidebarToggle isGroup={isGroup} peerAddress={peerAddr}/>
+        <HoverTooltip label="More" placement="below">
+          <Pressable
+            onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
+            accessibilityRole="button"
+            accessibilityLabel="More"
+            hitSlop={8}
+            {...more.hoverProps}
+          >
+            <Glyph icon={IconDotGrid1x3Vertical} size={24} color={more.hovered ? head : fg}/>
+          </Pressable>
+        </HoverTooltip>
+      </Row>
     </ConvTopnavShell>
   );
 }
@@ -143,7 +149,6 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
-  const memberList = useConversationSidebarState(isGroup, peerAddr);
   return (
     <>
       <ChannelMenu
@@ -157,8 +162,6 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
         anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
-        memberList={memberList}
-        onToggleMemberList={toggleMemberList}
         onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden'); }}
 />
       <BubbleActionMenu

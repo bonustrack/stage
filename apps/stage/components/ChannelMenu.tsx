@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { MenuRow } from './MenuRows';
-import { channelMenuItems, type MemberListState } from './ChannelMenu.model';
+import { channelMenuItems } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
@@ -25,8 +25,6 @@ interface ChannelMenuProps {
   context?: 'list' | 'view';
   onAfterLeave?: (result: 'left' | 'hidden') => void;
   onSearch?: () => void;
-  memberList?: MemberListState;
-  onToggleMemberList?: () => void;
 }
 
 function confirmLeaveGroup(
@@ -85,7 +83,7 @@ function confirmDeleteChat(
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch, memberList, onToggleMemberList,
+  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
 
@@ -93,7 +91,6 @@ export function ChannelMenu({
 
   const handlers: Record<string, () => void> = {
     search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
-    'toggle-members': () => { run(() => { onToggleMemberList?.(); }); },
     'add-members': () => { onClose(); setTimeout(() => { openAddMembers(convId); }, 0); },
     'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
@@ -105,7 +102,7 @@ export function ChannelMenu({
     delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
   };
 
-  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch, memberList });
+  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch });
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>

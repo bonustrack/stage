@@ -28,47 +28,6 @@ describe('channelMenuItems', () => {
     expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true });
   });
 
-  test('a group offers Show member list while the list is hidden', () => {
-    const items = channelMenuItems(
-      { isGroup: true, hasPeer: false, isUnread: false },
-      { search: true, memberList: 'hidden' },
-    );
-    expect(items.map(i => i.id).slice(0, 3)).toEqual(['search', 'toggle-members', 'add-members']);
-    expect(items[1]).toEqual({ id: 'toggle-members', label: 'Show member list', icon: 'IconTeam' });
-  });
-
-  test('a group offers Hide member list while the list is shown', () => {
-    const items = channelMenuItems(
-      { isGroup: true, hasPeer: false, isUnread: false },
-      { search: false, memberList: 'shown' },
-    );
-    expect(items.find(i => i.id === 'toggle-members')?.label).toBe('Hide member list');
-  });
-
-  test('a direct chat offers its profile panel while hidden', () => {
-    const items = channelMenuItems(
-      { isGroup: false, hasPeer: true, isUnread: false },
-      { search: true, memberList: 'hidden' },
-    );
-    expect(items.find(i => i.id === 'toggle-members')).toEqual({ id: 'toggle-members', label: 'Show profile panel', icon: 'IconPeople' });
-  });
-
-  test('a direct chat offers to hide its shown profile panel', () => {
-    const items = channelMenuItems(
-      { isGroup: false, hasPeer: true, isUnread: false },
-      { search: true, memberList: 'shown' },
-    );
-    expect(items.find(i => i.id === 'toggle-members')?.label).toBe('Hide profile panel');
-  });
-
-  test('an unresolved direct chat never offers a profile panel', () => {
-    const items = channelMenuItems(
-      { isGroup: false, hasPeer: false, isUnread: false },
-      { search: true, memberList: 'shown' },
-    );
-    expect(items.some(i => i.id === 'toggle-members')).toBe(false);
-  });
-
   test('a direct chat without a peer only offers read and pin', () => {
     const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false });
     expect(items).toEqual([

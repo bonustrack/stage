@@ -4,7 +4,6 @@ import { Box, pinnedEdges } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../tabs/paneWidth';
 import { PaneResizeHandle } from '../tabs/PaneResizeHandle';
-import type { MemberListState } from '../ChannelMenu.model';
 import { useMemberListOpen } from '../../lib/memberList';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -19,7 +18,7 @@ const sidebarWidth = createPaneWidth({
   css: (width) => `:root { --stage-right-pane: ${width}px; }`,
 });
 
-export function useConversationSidebarState(isGroup: boolean, peerAddress?: string | null): MemberListState | undefined {
+export function useConversationSidebarState(isGroup: boolean, peerAddress?: string | null): 'shown' | 'hidden' | undefined {
   const open = useMemberListOpen();
   const wide = useWebTabRail();
   if (!wide || (!isGroup && !peerAddress)) return undefined;

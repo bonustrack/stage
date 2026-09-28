@@ -17,15 +17,15 @@ export function ProfileCoverBar({ insetTop, trailing }: { insetTop: number; trai
   return <OverlayHeader onBack={() => { capabilities.back(); }} backColor={link} safeTop={insetTop} trailing={trailing} />;
 }
 
-export function ProfileCover({ insetTop, avatar, children }: {
-  insetTop: number; avatar: ReactNode; children: ReactNode;
+export function ProfileCover({ insetTop, avatar, children, centered = false }: {
+  insetTop: number; avatar: ReactNode; children: ReactNode; centered?: boolean;
 }): React.ReactElement {
   const { border } = usePalette();
   return (
     <>
       <Box height={COVER_HEIGHT + insetTop} background={border}/>
       <Box surface="surface" margin={{ top: -SHEET_RADIUS }} style={SHEET}>
-        <Box padding={{ x: PAGE_GUTTER }} align="start">
+        <Box padding={{ x: PAGE_GUTTER }} align={centered ? 'center' : 'start'}>
           <Box style={AVATAR_SLOT}>{avatar}</Box>
         </Box>
         {children}
