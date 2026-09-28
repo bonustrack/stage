@@ -157,7 +157,7 @@ export function Dialog(props: DialogProps): ReactNode {
       ]}
     >
       {props.backdrop === false ? null : (
-        <Pressable accessible={false} focusable={false} onPress={close} style={StyleSheet.absoluteFillObject} />
+        <Pressable accessible={false} focusable={false} onPress={close} style={StyleSheet.absoluteFill} />
       )}
       {inner}
     </View>
