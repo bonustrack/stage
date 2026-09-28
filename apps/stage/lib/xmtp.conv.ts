@@ -101,9 +101,10 @@ export async function groupAccessOf(convId: string): Promise<GroupAccess> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv || !sdk.isGroup(conv) || await sdk.isActive(conv)) return 'member';
   const [client, members] = await Promise.all([
-    sdk.client(), conv.members().catch(ignored(null, 'probe')),
+    sdk.client(), conv.members().catch(ignored([], 'probe')),
   ]);
-  return members?.some(m => m.inboxId === client.inboxId) === false ? 'outside' : 'waiting';
+  const memberListKnown = members.length > 0;
+  return memberListKnown && !members.some(m => m.inboxId === client.inboxId) ? 'outside' : 'waiting';
 }
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
