@@ -10,7 +10,7 @@ import { LinkPreviewCard } from '../LinkPreviewCard';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import { Box } from '../layout';
-import { MESSAGE_LINK_STYLE, unescapeBody } from './helpers';
+import { MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
 import type { Attachment } from './helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
 import { inlineAttachmentUrl } from './attachmentUri';
@@ -21,7 +21,9 @@ import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { conversationLinkOf, profileLinkOf } from '../../lib/links';
-import { bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type BodySegment } from './mention.model';
+import {
+  bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type BodySegment, type LinkFinder,
+} from './mention.model';
 
 function mentionDisplay(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
@@ -50,21 +52,37 @@ function ChannelRefLink({ convId, label }: { convId: string; label: string }): R
   );
 }
 
-function segmentNode(seg: BodySegment, i: number): React.ReactNode {
-  if (seg.type === 'text') return seg.text;
-  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} />;
-  return <MentionLink key={`m${i}`} address={seg.address} />;
-}
+export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
 
-function MentionBody({ text, fg }: { text: string; fg: string }): React.ReactElement {
+type LinkPress = MarkdownProps['onLinkPress'];
+
+const findLinks: LinkFinder = text => mdParser.linkify.match(text);
+
+function WebLink({ url, text, fg, onLinkPress }: {
+  url: string; text: string; fg: string; onLinkPress: LinkPress;
+}): React.ReactElement {
   return (
-    <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
-      {bodySegments(text).map(segmentNode)}
+    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE}
+      onPress={() => { onLinkPress?.(url); }} suppressHighlighting>
+      {text}
     </Text>
   );
 }
 
-export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
+function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkPress): React.ReactNode {
+  if (seg.type === 'text') return seg.text;
+  if (seg.type === 'link') return <WebLink key={`l${i}`} url={seg.url} text={seg.text} fg={fg} onLinkPress={onLinkPress} />;
+  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} />;
+  return <MentionLink key={`m${i}`} address={seg.address} />;
+}
+
+function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
+  return (
+    <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
+      {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, fg, onLinkPress))}
+    </Text>
+  );
+}
 
 function BubbleAttachment({ att, index, entryId, fg }: {
   att: Attachment; index: number; entryId: string; fg: string;
@@ -132,7 +150,7 @@ function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
   switch (bodyView(body, query !== undefined || selectable === true)) {
     case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
     case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
-    case 'mention': return <MentionBody text={body} fg={fg} />;
+    case 'mention': return <MentionBody text={body} fg={fg} onLinkPress={markdownProps.onLinkPress} />;
     case 'markdown': return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
   }
 }
