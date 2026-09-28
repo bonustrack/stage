@@ -203,7 +203,7 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix, lines = 2 }: {
   return (
     <Text size="md" role="secondary" maxLines={lines} style={{ flex: 1, minWidth: 0, lineHeight: PREVIEW_LINE_HEIGHT }}>
       <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
-      {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="danger" weight="semibold" /> : null}
+      {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="danger" /> : null}
       {params.preview}
     </Text>
   );
