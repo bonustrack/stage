@@ -11,7 +11,7 @@ export default defineConfig({
       eslint: { preset: 'none' },
       knip: {
         kind: 'scripts',
-        entry: ['scripts/**/*.{mjs,js,sh}'],
+        entry: ['stage.config.js', 'scripts/**/*.{mjs,js,sh}'],
         project: ['scripts/**/*.{mjs,js}'],
       },
     },
@@ -26,6 +26,7 @@ export default defineConfig({
           'eslint.js',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
+          'fingerprint.config.js',
           'lib/**/*.web.{ts,tsx}',
           'lib/xmtp.stripGuard.ts',
           'components/**/*.web.{ts,tsx}',

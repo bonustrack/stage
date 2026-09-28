@@ -1,5 +1,5 @@
 import { Alert, Platform } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import { Directory, File, Paths } from 'expo-file-system';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { capabilities } from './capabilities';

@@ -1,8 +1,41 @@
 diff --git a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt b/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
-index 53a935341dc4753a1f4a46046ed13b07cf0914f1..4089cef8555353060a86062ea57c09cea2191fbf 100644
+index 53a935341dc4753a1f4a46046ed13b07cf0914f1..62c88803c2d06c5504d45b579a4f0669c4d75420 100644
 --- a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
 +++ b/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
-@@ -1430,11 +1430,12 @@ class XMTPModule : Module() {
+@@ -12,6 +12,7 @@
+ import expo.modules.kotlin.functions.Coroutine
+ import expo.modules.kotlin.modules.Module
+ import expo.modules.kotlin.modules.ModuleDefinition
++import expo.modules.kotlin.modules.ModuleDefinitionBuilder
+ import expo.modules.xmtpreactnativesdk.wrappers.ArchiveMetadataWrapper
+ import expo.modules.xmtpreactnativesdk.wrappers.AvailableArchiveWrapper
+ import expo.modules.xmtpreactnativesdk.wrappers.AuthParamsWrapper
+@@ -283,6 +284,13 @@
+             "messageDeletionClosed"
+         )
+ 
++        registerClientFunctions()
++        registerConversationFunctions()
++        registerGroupFunctions()
++        registerStreamAndArchiveFunctions()
++    }
++
++    private fun ModuleDefinitionBuilder.registerClientFunctions() {
+         Function("inboxId") { installationId: String ->
+             logV("inboxId")
+             val client = clients[installationId]
+@@ -923,7 +931,9 @@
+                 filename = attachment.filename
+             ).toJson()
+         }
+-
++    }
++
++    private fun ModuleDefinitionBuilder.registerConversationFunctions() {
+         AsyncFunction("listGroups") Coroutine { installationId: String, groupParams: String?, queryParamsJson: String? ->
+             withContext(Dispatchers.IO) {
+                 logV("listGroups")
+@@ -1430,11 +1440,12 @@
              }
          }
  
@@ -16,6 +49,28 @@ index 53a935341dc4753a1f4a46046ed13b07cf0914f1..4089cef8555353060a86062ea57c09ce
 +                client.sendSyncRequest(serverUrl = url)
              }
          }
+ 
+@@ -1457,7 +1468,9 @@
+                 conversation.sync()
+             }
+         }
+-
++    }
++
++    private fun ModuleDefinitionBuilder.registerGroupFunctions() {
+         AsyncFunction("addGroupMembers") Coroutine { installationId: String, groupId: String, peerInboxIds: List<String> ->
+             withContext(Dispatchers.IO) {
+                 logV("addGroupMembers")
+@@ -1982,7 +1995,9 @@
+                 conversation.deleteMessage(messageId)
+             }
+         }
+-
++    }
++
++    private fun ModuleDefinitionBuilder.registerStreamAndArchiveFunctions() {
+         Function("subscribeToPreferenceUpdates") { installationId: String ->
+             logV("subscribeToPreferenceUpdates")
  
 diff --git a/build/index.d.ts b/build/index.d.ts
 index 241efe8976af428ae1e89be15f34921438c7ec63..cdd84217d830f75a9f0f7ae4a91d6cbf887bc607 100644

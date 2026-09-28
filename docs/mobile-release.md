@@ -4,7 +4,7 @@
 
 ## Native runtime compatibility
 
-The app uses Expo's fingerprint runtime policy. An OTA update can only load in a binary with the same native fingerprint. SDK upgrades and native dependency changes require fresh store and development-client builds; SDK 54 clients using runtime `1.0.0` cannot load the SDK 57 updates. Do not reuse that fixed runtime for new native builds.
+The app uses Expo's fingerprint runtime policy. An OTA update can only load in a binary with the same native fingerprint. The fingerprint hook excludes only the JavaScript build metadata (`extra.gitHash`, `extra.commitTime` and `extra.buildProfile`), so a new commit or EAS build profile does not invalidate an otherwise compatible native runtime; native dependencies, plugins and configuration remain fingerprinted. SDK upgrades and native dependency changes require fresh store and development-client builds; SDK 54 clients using runtime `1.0.0` cannot load the SDK 57 updates. Do not reuse that fixed runtime for new native builds.
 
 Bun uses hoisted installation to keep a single copy of each Expo native module. When upgrading an existing isolated installation, remove the root and workspace `node_modules` directories before running `bun install --frozen-lockfile`, then regenerate the native projects. New checkouts and CI installs need no special cleanup.
 
