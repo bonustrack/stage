@@ -228,8 +228,6 @@ jobs:
           # <branch> proxies exactly that lookup. Idempotent: exists -> no-op.
           bunx eas-cli@20.1.0 channel:create "$BRANCH" --non-interactive > /dev/null 2>&1 \
             || true
-          node ../../node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform android --workflow managed > "$RUNNER_TEMP/stage-runtime-fingerprint.json"
-          node -e 'const fs=require("node:fs");const d=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log("STAGE_FP_ENV "+JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,fingerprint:require("@expo/fingerprint/package.json").version,expo:require("expo/package.json").version,updates:require("expo-updates/package.json").version}));console.log("STAGE_FP_RUNTIME "+JSON.stringify({runtimeVersion:d.runtimeVersion,workflow:d.workflow}));for(const s of d.fingerprintSources??[])console.log("STAGE_FP_SOURCE "+JSON.stringify({type:s.type,id:s.id??s.filePath,overrideHashKey:s.overrideHashKey,hash:s.hash??null,reasons:s.reasons}));' "$RUNNER_TEMP/stage-runtime-fingerprint.json"
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
             --platform android \
