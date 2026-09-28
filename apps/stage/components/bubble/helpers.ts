@@ -46,8 +46,11 @@ export function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
+export const MESSAGE_LINK_STYLE = { textDecorationLine: 'underline' } as const;
+
 export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
-  return kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
+  const styles = kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
+  return { ...styles, link: { ...styles.link, ...MESSAGE_LINK_STYLE } };
 }
 
 interface QuestionOption { label: string; description?: string }

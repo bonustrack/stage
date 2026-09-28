@@ -10,7 +10,7 @@ import { LinkPreviewCard } from '../LinkPreviewCard';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import { Box } from '../layout';
-import { unescapeBody } from './helpers';
+import { MESSAGE_LINK_STYLE, unescapeBody } from './helpers';
 import type { Attachment } from './helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
 import { inlineAttachmentUrl } from './attachmentUri';
@@ -31,7 +31,7 @@ function MentionLink({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="3xl" weight="semibold"
+    <Text size="3xl" weight="semibold" style={MESSAGE_LINK_STYLE}
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionDisplay(address)}
@@ -42,7 +42,7 @@ function MentionLink({ address }: { address: string }): React.ReactElement {
 function ChannelRefLink({ convId, label }: { convId: string; label: string }): React.ReactElement {
   const router = useRouter();
   return (
-    <Text size="3xl" weight="semibold"
+    <Text size="3xl" weight="semibold" style={MESSAGE_LINK_STYLE}
       onPress={() => { router.push(conversationLinkOf(convId)); }} role="link"
       suppressHighlighting>
       {`#${label}`}
