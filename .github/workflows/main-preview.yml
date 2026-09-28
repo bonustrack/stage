@@ -51,9 +51,9 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
-          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: bun-deps-hoisted-${{ runner.os }}-${{ hashFiles('bun.lock', 'bunfig.toml') }}
           restore-keys: |
-            bun-deps-${{ runner.os }}-
+            bun-deps-hoisted-${{ runner.os }}-
 
       - run: bun install --frozen-lockfile
 
