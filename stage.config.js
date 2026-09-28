@@ -1,4 +1,6 @@
 import { defineConfig } from '@stage-labs/config';
+import reactHooks from 'eslint-plugin-react-hooks';
+import compilerSources from './apps/stage/react-compiler-sources.cjs';
 import { reactNative } from './apps/stage/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
 
@@ -15,7 +17,10 @@ export default defineConfig({
     },
     'apps/stage': {
       type: 'react-native',
-      eslint: { preset: 'none', extends: reactNative() },
+      eslint: {
+        preset: 'none',
+        extends: [...reactNative(), { ...reactHooks.configs.flat.recommended, files: compilerSources }],
+      },
       knip: {
         entry: [
           'eslint.js',

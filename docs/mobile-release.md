@@ -10,6 +10,12 @@ Bun uses hoisted installation to keep a single copy of each Expo native module. 
 
 Before a native release, verify XMTP messages and history sync, passkey creation and signing, attachment recording and playback, and foreground/background notifications on a device. A JavaScript export or TypeScript check does not exercise native modules.
 
+## React Compiler rollout
+
+Expo enables React Compiler for the chat presentation files listed in `apps/stage/react-compiler-sources.cjs`. Babel and the recommended React Hooks lint rules share that list, so expanding the rollout also expands its diagnostics. The initial scope covers attachment, poll, reaction and home navigation presentation on web and native, not the Kit package, wallet, messaging orchestration or imperative feed and gesture code. Existing manual memoization is retained.
+
+The compiler generates memoization during the build, not a persistent message or attachment cache. Validate interactions on both platforms before expanding the list; build output alone does not establish a performance improvement.
+
 ## What runs
 
 | Job | What it does |
