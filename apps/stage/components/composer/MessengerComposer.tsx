@@ -77,7 +77,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
-  useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
+  useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;

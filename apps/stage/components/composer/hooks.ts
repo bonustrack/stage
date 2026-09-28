@@ -43,23 +43,26 @@ export function useComposerDrafts(
 export function useComposerFocus(
   bumpFocus: () => void,
   bumpBlur: () => void,
+  blurNonce: number,
   replyTargetId: string | undefined,
   replyNonce: number | undefined,
   autoFocusNonce: number | undefined,
   caretToEnd: () => void,
 ): void {
-  const innerRaf = useRef<number | null>(null);
+  const refocusAfterBlur = useRef(false);
   useEffect(() => {
     if (!replyTargetId) return;
     const raf = requestAnimationFrame(() => {
+      refocusAfterBlur.current = true;
       bumpBlur();
-      innerRaf.current = requestAnimationFrame(() => { bumpFocus(); });
     });
-    return () => {
-      cancelAnimationFrame(raf);
-      if (innerRaf.current !== null) cancelAnimationFrame(innerRaf.current);
-    };
+    return () => { cancelAnimationFrame(raf); };
   }, [replyTargetId, replyNonce]);
+  useEffect(() => {
+    if (!refocusAfterBlur.current) return;
+    refocusAfterBlur.current = false;
+    bumpFocus();
+  }, [blurNonce]);
   useEffect(() => {
     if (!autoFocusNonce) return;
     const t = setTimeout(() => { caretToEnd(); bumpFocus(); }, 0);
