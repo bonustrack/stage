@@ -1,10 +1,10 @@
-import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
+import { SecuritySection } from './SecuritySection';
 import { SettingsPage } from './SettingsPage';
 
 export function SecuritySettings(): React.ReactElement {
   return (
     <SettingsPage title="Security">
-      <AccountSecuritySection/>
+      <SecuritySection/>
     </SettingsPage>
   );
 }

@@ -6,36 +6,36 @@ import {
 
 const SMART: SecurityRowsInput = {
   isSmart: true, backedUp: true, custody: 'ecdsa-root', devicePasskeyStored: false,
-  canExportKey: false, keyRevealed: false, canLinkDevice: true,
+  canExportKey: false, keyRevealed: false,
 };
 
 describe('securityRows', () => {
   test('a fresh recovery-phrase account offers a passkey for this device and nothing about migration', () => {
-    expect(securityRows(SMART)).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
-    expect(securityRows({ ...SMART, custody: 'undeployed' })).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
+    expect(securityRows(SMART)).toEqual(['devicePasskey', 'showPhrase']);
+    expect(securityRows({ ...SMART, custody: 'undeployed' })).toEqual(['devicePasskey', 'showPhrase']);
   });
 
   test('a recovery-phrase account with a device passkey keeps the same single passkey row', () => {
-    expect(securityRows({ ...SMART, devicePasskeyStored: true })).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
+    expect(securityRows({ ...SMART, devicePasskeyStored: true })).toEqual(['devicePasskey', 'showPhrase']);
   });
 
   test('a legacy passkey-rooted account leads with the migration and keeps the legacy rows', () => {
     expect(securityRows({ ...SMART, custody: 'passkey-root' })).toEqual([
-      'rootKey', 'passkeyLink', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
+      'rootKey', 'passkeyLink', 'recoveryKey', 'showPhrase',
     ]);
     expect(securityRows({ ...SMART, custody: 'passkey-root', devicePasskeyStored: true })).toEqual([
-      'rootKey', 'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
+      'rootKey', 'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase',
     ]);
   });
 
   test('no key rows while custody is loading or when another signer controls the account', () => {
     for (const custody of [null, 'other-root'] as const) {
-      expect(securityRows({ ...SMART, custody })).toEqual(['showPhrase', 'linkDevice', 'removeAccount']);
+      expect(securityRows({ ...SMART, custody })).toEqual(['showPhrase']);
     }
   });
 
   test('a device that still needs a backup leads with it', () => {
-    expect(securityRows({ ...SMART, backedUp: false })).toEqual(['backupPhrase', 'devicePasskey', 'linkDevice', 'removeAccount']);
+    expect(securityRows({ ...SMART, backedUp: false })).toEqual(['backupPhrase', 'devicePasskey']);
   });
 
   test('backup row waits for the stored flag', () => {
@@ -44,10 +44,10 @@ describe('securityRows', () => {
   });
 
   test('legacy key account offers key export until revealed, no passkey rows', () => {
-    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, custody: null, backedUp: false, canExportKey: true, canLinkDevice: false };
-    expect(securityRows(legacy)).toEqual(['exportKey', 'removeAccount']);
-    expect(securityRows({ ...legacy, backedUp: true })).toEqual(['exportKey', 'removeAccount']);
-    expect(securityRows({ ...legacy, keyRevealed: true })).toEqual(['removeAccount']);
+    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, custody: null, backedUp: false, canExportKey: true };
+    expect(securityRows(legacy)).toEqual(['exportKey']);
+    expect(securityRows({ ...legacy, backedUp: true })).toEqual(['exportKey']);
+    expect(securityRows({ ...legacy, keyRevealed: true })).toEqual([]);
   });
 });
 

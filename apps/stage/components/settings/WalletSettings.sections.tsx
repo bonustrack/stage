@@ -2,20 +2,12 @@
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import {
-  WALLET_ROLE_BADGE,
-  walletDeployLabel,
-  type WalletDeployState,
-  type WalletModuleRole,
-} from './WalletSettings.model';
+import { WALLET_ROLE_BADGE, type WalletModuleRole } from './WalletSettings.model';
 import { Col, Row } from '../layout';
-import { SettingsCard, SettingsSectionLabel } from './SettingsPage';
+import { SettingsGroup } from './SettingsPage';
 import type { useWalletModel } from './WalletSettings.parts';
-import { SettingsList } from './rows';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
-import { IconCircleCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleCheck';
-import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
@@ -71,73 +63,29 @@ function WalletModuleRow({ name, role, status }: {
   );
 }
 
-function WalletDeployRow({ deploy }: { deploy: WalletDeployState }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  return (
-    <ListViewItem align="center" gap={12} dark={dark}>
-      <AppIcon
-        name={deploy === 'deployed' ? IconCircleCheck : IconClock}
-        color={deploy === 'deployed' ? 'link' : 'secondary'}
-        size={24}
-      />
-      <Col flex={1}>
-        <Text value={walletDeployLabel(deploy)} size="md" color="text" />
-      </Col>
-    </ListViewItem>
-  );
-}
-
-export function SmartAccountSections({ model, deploy, onCopy }: {
+export function SmartAccountSections({ model, onCopy }: {
   model: WalletModel;
-  deploy: WalletDeployState;
   onCopy: (label: string, value: string) => void;
 }): React.ReactElement {
+  const owner = model.ownerAddress;
   return (
     <>
-      <SettingsSectionLabel>DEPLOY STATUS</SettingsSectionLabel>
-      <SettingsCard>
-        <SettingsList>
-          <WalletDeployRow deploy={deploy} />
-        </SettingsList>
-      </SettingsCard>
+      <SettingsGroup title="Validators">
+        {model.modules.map((m) => (
+          <WalletModuleRow key={m.name} name={m.name} role={m.role} status={m.status} />
+        ))}
+      </SettingsGroup>
 
-      <SettingsSectionLabel>MODULES / VALIDATORS</SettingsSectionLabel>
-      <SettingsCard>
-        <SettingsList>
-          {model.modules.map((m) => (
-            <WalletModuleRow key={m.name} name={m.name} role={m.role} status={m.status} />
-          ))}
-        </SettingsList>
-      </SettingsCard>
+      <SettingsGroup title="Identity">
+        <WalletCopyRow label="XMTP identity" value={model.xmtpAddress} onCopy={() => { onCopy('XMTP identity', model.xmtpAddress); }} />
+        {owner ? <WalletCopyRow label="Owner key" value={owner} onCopy={() => { onCopy('Owner key', owner); }} /> : null}
+      </SettingsGroup>
 
-      <SettingsSectionLabel>IDENTITY</SettingsSectionLabel>
-      <SettingsCard>
-        <SettingsList>
-          <WalletCopyRow
-            label="XMTP identity"
-            value={model.xmtpAddress}
-            onCopy={() => { onCopy('XMTP identity', model.xmtpAddress); }}
-          />
-          {model.ownerAddress ? (
-            <WalletCopyRow
-              label="Owner / recovery key (EOA)"
-              value={model.ownerAddress}
-              onCopy={() => {
-                if (model.ownerAddress) onCopy('Owner / recovery key (EOA)', model.ownerAddress);
-              }}
-            />
-          ) : null}
-        </SettingsList>
-      </SettingsCard>
-
-      <SettingsSectionLabel>NETWORK</SettingsSectionLabel>
-      <SettingsCard>
-        <SettingsList>
-          <WalletInfoRow label="Chain" value={`Base (${model.chainId})`} />
-          <WalletInfoRow label="Kernel" value={`v${model.kernelVersion}`} />
-          <WalletInfoRow label="EntryPoint" value={`v${model.entryPointVersion}`} />
-        </SettingsList>
-      </SettingsCard>
+      <SettingsGroup title="Network">
+        <WalletInfoRow label="Chain" value={`Base (${model.chainId})`} />
+        <WalletInfoRow label="Kernel" value={`v${model.kernelVersion}`} />
+        <WalletInfoRow label="EntryPoint" value={`v${model.entryPointVersion}`} />
+      </SettingsGroup>
     </>
   );
 }

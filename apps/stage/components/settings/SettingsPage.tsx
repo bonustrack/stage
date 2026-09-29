@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Platform } from 'react-native';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Card } from '@stage-labs/kit/react-native/card';
+import { Caption } from '@stage-labs/kit/react-native/caption';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -9,6 +10,7 @@ import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { SettingsHeader } from '../chrome/SettingsHeader';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
+import { SettingsList } from './rows';
 
 export function SettingsPage({ title, root = false, panRef, keyboardShouldPersistTaps, children }: {
   title: string;
@@ -35,7 +37,7 @@ export function SettingsPage({ title, root = false, panRef, keyboardShouldPersis
 export function SettingsSectionLabel({ top = 24, children }: { top?: number; children: string }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: top, paddingBottom: 8 }}>
+    <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: top, paddingBottom: 8, textTransform: 'uppercase' }}>
       {children}
     </Eyebrow>
   );
@@ -50,5 +52,23 @@ export function SettingsCard({ children }: { children: ReactNode }): React.React
         {children}
       </Card>
     </Box>
+  );
+}
+
+export function SettingsGroup({ title, footnote, children }: {
+  title?: string;
+  footnote?: string;
+  children: ReactNode;
+}): React.ReactElement {
+  return (
+    <Col>
+      {title === undefined ? <Box height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
+      <SettingsCard>
+        <SettingsList>{children}</SettingsList>
+      </SettingsCard>
+      {footnote === undefined ? null : (
+        <Caption value={footnote} color="secondary" style={{ paddingHorizontal: PAGE_GUTTER + 16, paddingTop: 8 }} />
+      )}
+    </Col>
   );
 }

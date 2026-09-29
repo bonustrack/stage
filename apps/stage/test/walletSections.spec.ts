@@ -3,7 +3,6 @@ import {
   WALLET_ROLE_BADGE,
   walletAccountRows,
   walletDeployLabel,
-  WALLET_SECURITY_LINK,
 } from '../components/settings/WalletSettings.model';
 
 describe('walletDeployLabel', () => {
@@ -54,11 +53,5 @@ describe('walletAccountRows', () => {
       { label: 'Type', value: 'Smart account (ZeroDev Kernel)' },
       { label: 'Active signer', value: 'passkey' },
     ]);
-  });
-});
-
-describe('WALLET_SECURITY_LINK', () => {
-  test('points wallet settings at the Security page', () => {
-    expect(WALLET_SECURITY_LINK).toEqual({ label: 'Passkey, backup and devices', icon: 'IconKey2', href: '/settings/security' });
   });
 });

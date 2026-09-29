@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Eyebrow } from '../Eyebrow';
-import { Box, PAGE_GUTTER } from '../layout';
 import { capabilities } from '../../lib/capabilities';
-import { usePalette } from '../../lib/theme';
 import { historySyncProblem, runHistorySync, useHistorySyncPhase } from '../../lib/historySync';
 import { receiveHistoryWithCode } from '../../lib/historyTransfer';
 import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/historySync.model';
 import { ReceiveCodeSheet, SendHistorySheet } from './HistoryTransferSheets';
-import { SettingsButtonRow, SettingsList } from './rows';
+import { SettingsButtonRow } from './rows';
+import { SettingsGroup } from './SettingsPage';
 import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
 import { IconArrowOutOfBox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowOutOfBox';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
@@ -22,7 +20,6 @@ async function receiveFromSettings(code: string): Promise<void> {
 }
 
 export function HistorySyncSection(): React.ReactElement {
-  const { text: fg } = usePalette();
   const phase = useHistorySyncPhase();
   const [sendOpen, setSendOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
@@ -30,31 +27,26 @@ export function HistorySyncSection(): React.ReactElement {
   const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
     <>
-      <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 28, paddingBottom: 8 }}>
-        HISTORY
-      </Eyebrow>
-      <Box>
-        <SettingsList>
-          <SettingsButtonRow
-            label={syncing ? 'Syncing history…' : 'Sync history from another device'}
-            description={status ?? SYNC_DESC}
-            iconStart={IconArrowRotateClockwise}
-            onPress={() => { if (!syncing) void runHistorySync(); }}
-          />
-          <SettingsButtonRow
-            label="Send history to another device"
-            description={SEND_DESC}
-            iconStart={IconArrowOutOfBox}
-            onPress={() => { setSendOpen(true); }}
-          />
-          <SettingsButtonRow
-            label="Receive history with a code"
-            description={RECEIVE_DESC}
-            iconStart={IconArrowInbox}
-            onPress={() => { setReceiveOpen(true); }}
-          />
-        </SettingsList>
-      </Box>
+      <SettingsGroup title="Chat history">
+        <SettingsButtonRow
+          label={syncing ? 'Syncing history…' : 'Sync history from another device'}
+          description={status ?? SYNC_DESC}
+          iconStart={IconArrowRotateClockwise}
+          onPress={() => { if (!syncing) void runHistorySync(); }}
+        />
+        <SettingsButtonRow
+          label="Send history to another device"
+          description={SEND_DESC}
+          iconStart={IconArrowOutOfBox}
+          onPress={() => { setSendOpen(true); }}
+        />
+        <SettingsButtonRow
+          label="Receive history with a code"
+          description={RECEIVE_DESC}
+          iconStart={IconArrowInbox}
+          onPress={() => { setReceiveOpen(true); }}
+        />
+      </SettingsGroup>
       <SendHistorySheet visible={sendOpen} onClose={() => { setSendOpen(false); }} />
       <ReceiveCodeSheet visible={receiveOpen} onClose={() => { setReceiveOpen(false); }} onReceive={receiveFromSettings} />
     </>

@@ -38,9 +38,3 @@ export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
   if (model.isSmart) rows.push({ label: 'Active signer', value: model.activeSigner });
   return rows;
 }
-
-export const WALLET_SECURITY_LINK = {
-  label: 'Passkey, backup and devices',
-  icon: 'IconKey2',
-  href: '/settings/security',
-} as const;
