@@ -77,7 +77,7 @@ function NewChatBody({ mode, setMode, picker, name, setName, image, setImage, ph
   return (
     <Col gap={12}>
       <Box style={{ pointerEvents: phase === 'idle' ? 'auto' : 'none' }}>
-        <Tabs value={mode} options={MODE_TABS} dark={dark} onChange={(v) => { if (isNewChatMode(v)) setMode(v); }} />
+        <Tabs value={mode} options={MODE_TABS} onChange={(v) => { if (isNewChatMode(v)) setMode(v); }} />
       </Box>
       {mode === 'group' ? (
         <NewGroupDetails name={name} setName={setName} image={image} setImage={setImage} creating={phase === 'creating'} />
