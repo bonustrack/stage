@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2';
+import type { CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
 
 export type CentralIcon = ComponentType<CentralIconBaseProps>;
 
