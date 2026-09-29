@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  isSearchFilterOn, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter, searchFilterMenu, searchFilterSources,
-  searchFilterValues, searchRowMatcher, toggleSearchFilter, type FilterMenu, type FilterOptions, type FilterRow,
+  ME_OPTION, isFilterOptionPicked, isSearchFilterOn, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
+  searchFilterMenu, searchFilterSources, searchFilterValues, searchRowMatcher, toggleSearchFilter,
+  type FilterMenu, type FilterOptions, type FilterRow,
 } from '../components/searchFilter.model';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
 
@@ -47,6 +48,12 @@ describe('parsing the search filter', () => {
   test('an unfinished quote keeps the rest of the words in the value', () => {
     expect(parseSearchFilter('label:"🚧 In').labels).toEqual(['🚧 In']);
   });
+
+  test('member:@me is a member token like any other', () => {
+    expect(parseSearchFilter('member:@me ship member:alice123')).toEqual({
+      labels: [], members: ['@me', 'alice123'], text: 'ship',
+    });
+  });
 });
 
 describe('matching board cards', () => {
@@ -63,7 +70,7 @@ describe('matching board cards', () => {
     expect(matching('member:0xB0B0')).toEqual(['ship', 'plan']);
   });
 
-  test('you are not a member you can filter on', () => {
+  test('you are not a member you can filter on by name or address', () => {
     expect(matching(`member:${SELF}`)).toEqual([]);
   });
 
@@ -77,6 +84,34 @@ describe('matching board cards', () => {
     expect(shown.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
       ['🚧 In progress', ['ship']], ['Bug', ['ship']], ['Todo', ['plan']],
     ]);
+  });
+});
+
+describe('member:@me', () => {
+  const left: FilterRow = { ...group('left', ['Todo'], [ALICE]), inboxToAddr: { 'inbox-0': ALICE } };
+  const unknown: FilterRow = { ...group('unknown', ['Todo'], [BOB]), selfInboxId: undefined };
+  const all = [...rows, left, unknown];
+  const found = (query: string): string[] => all.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map(row => row.convId);
+
+  test('matches the channels you are a member of, whatever the case', () => {
+    expect(found('member:@me')).toEqual(['build', 'ship', 'plan']);
+    expect(found('member:@ME')).toEqual(['build', 'ship', 'plan']);
+  });
+
+  test('works with other tokens and free text', () => {
+    expect(found('member:@me label:Todo')).toEqual(['plan']);
+    expect(found('member:@me member:alice123')).toEqual(['build', 'ship', 'plan', 'left']);
+    expect(found('member:@me shi')).toEqual(['ship']);
+  });
+
+  test('needs the @, a plain me is a name', () => {
+    expect(found('member:me')).toEqual([]);
+  });
+
+  test('is picked once and toggles like the other values', () => {
+    expect(isSearchFilterOn('member:@ME', 'member', ME_OPTION.value)).toBe(true);
+    expect(isSearchFilterOn('member:me', 'member', ME_OPTION.value)).toBe(false);
+    expect(toggleSearchFilter('ship', 'member', ME_OPTION.value)).toBe('ship member:@me ');
   });
 });
 
@@ -102,7 +137,7 @@ describe('the filter menu', () => {
       { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
       { key: 'Todo', label: 'Todo', value: 'Todo' },
     ],
-    member: [{ key: ALICE, label: '@alice123', value: 'alice123' }],
+    member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }],
   };
   const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
 
@@ -116,7 +151,7 @@ describe('the filter menu', () => {
   test('a field lists its values, narrowed by what follows the colon', () => {
     expect(menu('label:')).toMatchObject({ kind: 'values', field: 'label', options: options.label });
     expect(menu('label:"🚧 in')).toMatchObject({ kind: 'values', options: [options.label[0]] });
-    expect(menu('member:@ali')).toMatchObject({ kind: 'values', field: 'member', options: options.member });
+    expect(menu('member:@ali')).toMatchObject({ kind: 'values', field: 'member', options: [options.member[1]] });
     expect(menu('label:nope')).toBeNull();
   });
 
@@ -131,6 +166,14 @@ describe('the filter menu', () => {
     expect(pickSearchFilter('bug me', fields, 0)).toEqual({ query: 'bug member:', caret: 11 });
     expect(pickSearchFilter('label:"🚧 in', values, 0)).toEqual({ query: 'label:"🚧 In progress" ', caret: 23 });
     expect(pickSearchFilter('label:"🚧 in', values, 5)).toBeNull();
+  });
+
+  test('@me comes first among the members and narrows like the others', () => {
+    expect(menu('member:')).toMatchObject({ kind: 'values', options: options.member });
+    expect(menu('member:@m')).toMatchObject({ kind: 'values', options: [ME_OPTION] });
+    const values = menu('ship member:@');
+    if (values === null) throw new Error('menu expected');
+    expect(pickSearchFilter('ship member:@', values, 0)).toEqual({ query: 'ship member:@me ', caret: 16 });
   });
 
   test('picking inside the search keeps the words after it', () => {
@@ -166,26 +209,44 @@ describe('the search filter on the chats page', () => {
   });
 });
 
-describe('the filter chips on narrow screens', () => {
-  test('a picked value is added as a token after what is already typed', () => {
-    expect(toggleSearchFilter('', 'label', '🚧 In progress')).toBe('label:"🚧 In progress" ');
-    expect(toggleSearchFilter('ship label:Todo', 'member', 'alice123')).toBe('ship label:Todo member:alice123 ');
+describe('picked values in the menu', () => {
+  const options: FilterOptions = {
+    label: [{ key: 'Todo', label: 'Todo', value: 'Todo' }, { key: 'Bug', label: 'Bug', value: 'Bug' }],
+    member: [ME_OPTION],
+  };
+  const picked = (query: string): string[] => {
+    const menu = searchFilterMenu(query, query.length, options);
+    if (menu === null) throw new Error('menu expected');
+    return menu.kind === 'values' ? menu.options.filter(option => isFilterOptionPicked(query, menu, option)).map(o => o.value) : [];
+  };
+
+  test('a value is checked when its token is already in the search', () => {
+    expect(picked('label:todo label:')).toEqual(['Todo']);
+    expect(picked('member:@me member:')).toEqual(['@me']);
+    expect(picked('label:')).toEqual([]);
   });
 
-  test('picking a value again removes its token and keeps the rest', () => {
-    expect(toggleSearchFilter('ship label:todo member:alice123 ', 'label', 'Todo')).toBe('ship member:alice123 ');
-    expect(toggleSearchFilter('member:@alice123', 'member', 'alice123')).toBe('');
+  test('the word being typed does not check its own value', () => {
+    expect(picked('label:Todo')).toEqual([]);
   });
 
-  test('a chip is on when its field has a value, a value is on when its token is there', () => {
+  test('picking a checked value removes its token and keeps the rest', () => {
+    const query = 'ship label:Todo member:@me label:';
+    const menu = searchFilterMenu(query, query.length, options);
+    if (menu === null) throw new Error('menu expected');
+    expect(pickSearchFilter(query, menu, 0)).toEqual({ query: 'ship member:@me ', caret: 16 });
+    expect(pickSearchFilter(query, menu, 1)).toEqual({ query: 'ship label:Todo member:@me label:Bug ', caret: 37 });
+  });
+
+  test('a value is on when its token is there, in any case or with an @', () => {
     expect(searchFilterValues('ship label:Todo label:Bug', 'label')).toEqual(['Todo', 'Bug']);
-    expect(searchFilterValues('ship label:Todo', 'member')).toEqual([]);
     expect(isSearchFilterOn('label:"🚧 in progress"', 'label', '🚧 In progress')).toBe(true);
     expect(isSearchFilterOn('member:@alice123', 'member', 'alice123')).toBe(true);
     expect(isSearchFilterOn('label:Todo', 'member', 'Todo')).toBe(false);
   });
 
   test('a toggled search parses back to the same filter', () => {
+    expect(toggleSearchFilter('member:@alice123', 'member', 'alice123')).toBe('');
     expect(parseSearchFilter(toggleSearchFilter('ship', 'label', '🚧 In progress'))).toEqual({
       labels: ['🚧 In progress'], members: [], text: 'ship',
     });

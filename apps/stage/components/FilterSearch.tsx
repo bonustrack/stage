@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Keyboard, type GestureResponderEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData, type TextInputSelectionChangeEventData } from 'react-native';
+import {
+  Platform, useWindowDimensions,
+  type NativeSyntheticEvent, type TextInputKeyPressEventData, type TextInputSelectionChangeEventData,
+} from 'react-native';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
-import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { Scroll } from '@stage-labs/kit/react-native/scroll';
+import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
-import { Box, LIST_TOP_GAP, PAGE_GUTTER, Row, STICKY_UNDER_CHROME } from './layout';
+import { Box, STICKY_UNDER_CHROME } from './layout';
 import { Avatar } from './Avatar';
-import { AnchoredMenu, MENU_WIDTH, menuPointBelow } from './AnchoredMenu';
-import type { MenuPoint } from './AnchoredMenu.model';
-import { LABEL_CHIP_ICON_SIZE, LabelChip } from './LabelChip';
+import { AccountAvatar } from './AccountAvatarButton';
+import { MENU_WIDTH } from './AnchoredMenu';
 import { MENU_GAP } from './menuStyle';
 import { SEARCH_TEXT_INSET, SearchTopnavBar } from './SearchTopnavBar';
+import { TOPNAV_HEIGHT } from './Topnav';
 import { keepInputFocus } from './composer/parts';
 import { mentionKeyAction } from './composer/mentions.model';
 import { revealMarked } from './arrowKeys';
@@ -21,18 +24,20 @@ import type { MarkedNode } from './arrowKeys.model';
 import { homeRows } from './home/state';
 import { shortAddress, subscribeCachedRows } from '../modules/messaging';
 import { useStoreValue } from '../lib/storeCore';
-import { usePalette } from '../lib/theme';
 import { useClearedChats } from '../lib/clearedChats';
+import { useSafeAreaInsets } from '../lib/safeArea';
 import { useWebTabRail } from '../lib/webLayout';
 import { getPeerDisplayName, getPeerHandle, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import {
-  FILTER_FIELDS, filterMenuKey, filterMenuSize, isSearchFilterOn, memberNames, memberTokenValue, pickSearchFilter,
-  searchFilterMenu, searchFilterSources, searchFilterValues, toggleSearchFilter,
+  ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, isFilterOptionPicked, memberNames, memberTokenValue, pickSearchFilter,
+  searchFilterMenu, searchFilterSources,
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
 
 const FILTER_PLACEHOLDER = 'Filter by keyword or by field';
 const MENU_MAX_HEIGHT = 360;
+const FILTER_LAYER = 5;
+const NATIVE = Platform.OS !== 'web';
 const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member' };
 const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople };
 
@@ -54,11 +59,11 @@ function useFilterOptions(scope: FilterScope): FilterOptions {
   usePeerProfiles(sources.members);
   return {
     label: sources.labels.map(label => ({ key: label, label, value: label })),
-    member: sources.members.map(address => ({
+    member: [ME_OPTION, ...sources.members.map(address => ({
       key: address,
       label: getPeerName(address) ?? shortAddress(address),
       value: memberTokenValue(address, getPeerHandle(address)),
-    })).sort(byLabel),
+    })).sort(byLabel)],
   };
 }
 
@@ -78,7 +83,9 @@ interface FilterInput {
   inputProps: NonNullable<React.ComponentProps<typeof SearchTopnavBar>['inputProps']>;
 }
 
-function useFilterInput(query: string, setQuery: (query: string) => void, options: FilterOptions, enabled: boolean): FilterInput {
+function useFilterInput(
+  query: string, setQuery: (query: string) => void, options: FilterOptions, { enabled, resting }: { enabled: boolean; resting: number },
+): FilterInput {
   const [focused, setFocused] = useState(false);
   const [caret, setCaret] = useState(query.length);
   const [selection, setSelection] = useState<FilterSpan | undefined>(undefined);
@@ -87,7 +94,7 @@ function useFilterInput(query: string, setQuery: (query: string) => void, option
   const found = enabled && focused ? searchFilterMenu(query, Math.min(caret, query.length), options) : null;
   const menu = dismissed ? null : found;
   const menuKey = `${filterMenuKey(menu)}|${query}`;
-  const index = active.key === menuKey ? Math.min(active.index, filterMenuSize(menu) - 1) : 0;
+  const index = active.key === menuKey ? Math.min(active.index, filterMenuSize(menu) - 1) : resting;
   const pick = (at: number): void => {
     const next = menu === null ? null : pickSearchFilter(query, menu, at);
     if (next === null) return;
@@ -97,8 +104,10 @@ function useFilterInput(query: string, setQuery: (query: string) => void, option
   };
   const onKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
     if (composing(event.nativeEvent)) return;
-    const action = mentionKeyAction(event.nativeEvent.key, shiftHeld(event.nativeEvent), filterMenuSize(menu), index);
-    if (action === null) return;
+    const { key } = event.nativeEvent;
+    const from = index < 0 && key === 'ArrowUp' ? 0 : index;
+    const action = mentionKeyAction(key, shiftHeld(event.nativeEvent), filterMenuSize(menu), from);
+    if (action === null || (action.kind === 'pick' && index < 0)) return;
     event.preventDefault();
     if (action.kind === 'move') {
       setActive({ key: menuKey, index: action.index });
@@ -108,29 +117,33 @@ function useFilterInput(query: string, setQuery: (query: string) => void, option
   };
   const onSelectionChange = (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>): void => {
     setCaret(event.nativeEvent.selection.end);
+    setSelection(undefined);
   };
   const onChangeText = (next: string): void => {
     setCaret(Math.max(0, Math.min(next.length, caret + next.length - query.length)));
     setDismissed(false);
     setQuery(next);
   };
-  const inputProps = enabled ? {
+  const inputProps = {
     selection, onKeyPress, onSelectionChange,
     onFocus: () => { setFocused(true); setDismissed(false); },
     onBlur: () => { setFocused(false); },
-  } : {};
+  };
   return { menu, active: index, pick, onChangeText, inputProps };
 }
 
 function FilterOptionItem({ field, option, highlighted, selected, onPress }: {
-  field: FilterField; option: FilterOption; highlighted?: boolean; selected?: boolean; onPress: () => void;
+  field: FilterField; option: FilterOption; highlighted: boolean; selected: boolean; onPress: () => void;
 }): React.ReactElement {
   const member = field === 'member';
+  const avatar = option.key === ME_VALUE
+    ? <AccountAvatar size={DROPDOWN_MENU.icon}/>
+    : <Avatar address={option.key} size={DROPDOWN_MENU.icon}/>;
   return (
     <DropdownMenuItem
       label={option.label}
       iconName={member ? undefined : IconTag}
-      icon={member ? <Avatar address={option.key} size={DROPDOWN_MENU.icon}/> : undefined}
+      icon={member ? avatar : undefined}
       highlighted={highlighted}
       selected={selected}
       onPress={onPress}
@@ -138,8 +151,8 @@ function FilterOptionItem({ field, option, highlighted, selected, onPress }: {
   );
 }
 
-function FilterMenuItems({ menu, active, onPick }: {
-  menu: FilterMenu; active: number; onPick: (index: number) => void;
+function FilterMenuItems({ menu, query, active, onPick }: {
+  menu: FilterMenu; query: string; active: number; onPick: (index: number) => void;
 }): React.ReactElement {
   if (menu.kind === 'fields') {
     return <>{menu.fields.map((field, i) => (
@@ -154,57 +167,39 @@ function FilterMenuItems({ menu, active, onPick }: {
   const { field } = menu;
   return <>{menu.options.map((option, i) => (
     <Box key={option.key} {...optionMark(i)}>
-      <FilterOptionItem field={field} option={option} highlighted={i === active} onPress={() => { onPick(i); }}/>
+      <FilterOptionItem
+        field={field} option={option} highlighted={i === active} selected={isFilterOptionPicked(query, menu, option)}
+        onPress={() => { onPick(i); }}
+      />
     </Box>
   ))}</>;
 }
 
-function FilterChip({ field, active, onPress }: {
-  field: FilterField; active: boolean; onPress: (event: GestureResponderEvent) => void;
-}): React.ReactElement {
-  const { text, bg } = usePalette();
-  const color = active ? bg : text;
+function useTouchMenuHeight(): number {
+  const { height } = useWindowDimensions();
+  const keyboard = useKeyboardState(state => (state.isVisible ? state.height : 0));
+  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
+  return Math.max(0, height - keyboard - top - MENU_GAP - DROPDOWN_MENU.padY * 2);
+}
+
+function TouchFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
+  const maxHeight = useTouchMenuHeight();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Filter by ${field}`}>
-      <LabelChip
-        label={FIELD_NAMES[field]} selected={active}
-        leading={<Glyph icon={FIELD_ICONS[field]} size={LABEL_CHIP_ICON_SIZE} color={color}/>}
-        trailing={<Glyph icon={IconChevronBottom} size={LABEL_CHIP_ICON_SIZE} color={color}/>}
-      />
-    </Pressable>
+    <Box style={{ position: 'absolute', top: '100%', left: 0, right: 0 }} {...keepInputFocus}>
+      <DropdownMenu style={{ alignSelf: 'stretch', borderRadius: 0 }}>
+        <Scroll style={{ maxHeight }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {children}
+        </Scroll>
+      </DropdownMenu>
+    </Box>
   );
 }
 
-function FilterChips({ options, query, setQuery }: {
-  options: FilterOptions; query: string; setQuery: (query: string) => void;
-}): React.ReactElement | null {
-  const [open, setOpen] = useState<{ field: FilterField; anchor: MenuPoint } | null>(null);
-  const fields = FILTER_FIELDS.filter(field => options[field].length > 0);
-  if (fields.length === 0) return null;
-  const close = (): void => { setOpen(null); };
-  const toggle = (field: FilterField, value: string): void => {
-    close();
-    setQuery(toggleSearchFilter(query, field, value));
-  };
+function WideFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
-    <>
-      <Row gap={8} padding={{ x: PAGE_GUTTER, top: LIST_TOP_GAP }} surface="surface">
-        {fields.map(field => (
-          <FilterChip
-            key={field} field={field} active={searchFilterValues(query, field).length > 0}
-            onPress={(event) => { Keyboard.dismiss(); setOpen({ field, anchor: menuPointBelow(event) }); }}
-          />
-        ))}
-      </Row>
-      <AnchoredMenu visible={open !== null} onClose={close} anchor={open?.anchor}>
-        {open === null ? null : options[open.field].map(option => (
-          <FilterOptionItem
-            key={option.key} field={open.field} option={option} selected={isSearchFilterOn(query, open.field, option.value)}
-            onPress={() => { toggle(open.field, option.value); }}
-          />
-        ))}
-      </AnchoredMenu>
-    </>
+    <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: SEARCH_TEXT_INSET }} {...keepInputFocus}>
+      <DropdownMenu maxHeight={MENU_MAX_HEIGHT} style={{ width: MENU_WIDTH }}>{children}</DropdownMenu>
+    </Box>
   );
 }
 
@@ -215,30 +210,23 @@ export function FilterSearch({ query, setQuery, scope, onMenu, ...bar }: {
   onMenu: (open: boolean) => void;
 } & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder'>): React.ReactElement {
   const wide = useWebTabRail();
+  const keyboardUp = useKeyboardState(state => state.isVisible);
   const options = useFilterOptions(scope);
-  const filter = useFilterInput(query, setQuery, options, wide);
+  const filter = useFilterInput(query, setQuery, options, { enabled: !NATIVE || keyboardUp, resting: wide ? 0 : -1 });
   const open = filter.menu !== null;
   useEffect(() => { onMenu(open); }, [open]);
   useEffect(() => () => { onMenu(false); }, []);
-  if (!wide) {
-    return (
-      <Box style={bar.inline === true ? undefined : STICKY_UNDER_CHROME}>
-        <SearchTopnavBar {...bar} inline query={query} setQuery={setQuery}/>
-        <FilterChips options={options} query={query} setQuery={setQuery}/>
-      </Box>
-    );
-  }
+  const Menu = wide ? WideFilterMenu : TouchFilterMenu;
   return (
-    <Box style={{ position: 'relative', zIndex: 5 }}>
+    <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: FILTER_LAYER }]}>
       <SearchTopnavBar
-        {...bar} query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps} placeholder={FILTER_PLACEHOLDER}
+        {...bar} inline query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
+        placeholder={wide ? FILTER_PLACEHOLDER : undefined}
       />
       {filter.menu === null ? null : (
-        <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: SEARCH_TEXT_INSET }} {...keepInputFocus}>
-          <DropdownMenu maxHeight={MENU_MAX_HEIGHT} style={{ width: MENU_WIDTH }}>
-            <FilterMenuItems menu={filter.menu} active={filter.active} onPick={filter.pick}/>
-          </DropdownMenu>
-        </Box>
+        <Menu>
+          <FilterMenuItems menu={filter.menu} query={query} active={filter.active} onPick={filter.pick}/>
+        </Menu>
       )}
     </Box>
   );

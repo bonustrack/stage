@@ -7,6 +7,8 @@ export type FilterScope = 'board' | 'chats';
 
 export const FILTER_FIELDS: readonly FilterField[] = ['label', 'member'];
 
+export const ME_VALUE = '@me';
+
 interface SearchFilter {
   labels: string[];
   members: string[];
@@ -36,6 +38,8 @@ export type FilterMenu =
   | { kind: 'values'; word: FilterSpan; field: FilterField; options: FilterOption[] };
 
 export type MemberNames = (address: string) => readonly string[];
+
+export const ME_OPTION: FilterOption = { key: ME_VALUE, label: ME_VALUE, value: ME_VALUE };
 
 const FIELD_RE = /^(label|member):(.*)$/i;
 
@@ -86,10 +90,23 @@ function rowMembers(row: FilterRow): string[] {
 
 const bare = (value: string): string => value.trim().replace(/^@/, '').toLowerCase();
 
-function memberMatches(address: string, value: string, namesOf: MemberNames): boolean {
+const isMe = (value: string): boolean => value.trim().toLowerCase() === ME_VALUE;
+
+const memberKey = (value: string): string => (isMe(value) ? ME_VALUE : bare(value));
+
+function hasSelf(row: FilterRow): boolean {
+  return row.selfInboxId !== undefined && Object.keys(row.inboxToAddr ?? {}).includes(row.selfInboxId);
+}
+
+function addressMatches(address: string, value: string, namesOf: MemberNames): boolean {
   const wanted = bare(value);
   if (wanted.startsWith('0x')) return address.startsWith(wanted);
   return namesOf(address).some(name => bare(name) === wanted);
+}
+
+function memberMatches(row: FilterRow, value: string, namesOf: MemberNames): boolean {
+  if (isMe(value)) return hasSelf(row);
+  return rowMembers(row).some(address => addressMatches(address, value, namesOf));
 }
 
 export function searchRowMatcher(filter: SearchFilter, namesOf: MemberNames): (row: FilterRow) => boolean {
@@ -99,8 +116,7 @@ export function searchRowMatcher(filter: SearchFilter, namesOf: MemberNames): (r
     labels.size === 0 || (row.labels ?? []).some(label => labels.has(label.toLowerCase()))
   );
   const joined = (row: FilterRow): boolean => (
-    filter.members.length === 0
-    || rowMembers(row).some(address => filter.members.some(value => memberMatches(address, value, namesOf)))
+    filter.members.length === 0 || filter.members.some(value => memberMatches(row, value, namesOf))
   );
   return row => labelled(row) && joined(row) && rowMatchesQuery(row, text);
 }
@@ -169,25 +185,13 @@ function replaceWord(query: string, word: FilterSpan, text: string): { query: st
   return { query: `${head}${query.slice(word.end)}`, caret: head.length };
 }
 
-export function pickSearchFilter(query: string, menu: FilterMenu, index: number): { query: string; caret: number } | null {
-  if (menu.kind === 'fields') {
-    const field = menu.fields[index];
-    return field === undefined ? null : replaceWord(query, menu.word, `${field}:`);
-  }
-  const option = menu.options[index];
-  if (option === undefined) return null;
-  const tail = query.slice(menu.word.end).replace(/^\s+/, '');
-  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, `${menu.field}:${quoted(option.value)}`);
-  return { query: picked.query, caret: picked.caret + 1 };
-}
-
 export function searchFilterValues(query: string, field: FilterField): string[] {
   const filter = parseSearchFilter(query);
   return field === 'label' ? filter.labels : filter.members;
 }
 
 const sameValue = (field: FilterField, a: string, b: string): boolean => (
-  field === 'label' ? a.trim().toLowerCase() === b.trim().toLowerCase() : bare(a) === bare(b)
+  field === 'label' ? a.trim().toLowerCase() === b.trim().toLowerCase() : memberKey(a) === memberKey(b)
 );
 
 export function isSearchFilterOn(query: string, field: FilterField, value: string): boolean {
@@ -202,4 +206,26 @@ export function toggleSearchFilter(query: string, field: FilterField, value: str
   });
   if (kept.length === words.length) kept.push(`${field}:${quoted(value)}`);
   return kept.length === 0 ? '' : `${kept.join(' ')} `;
+}
+
+const withoutWord = (query: string, word: FilterSpan): string => `${query.slice(0, word.start)}${query.slice(word.end)}`;
+
+export function isFilterOptionPicked(query: string, menu: FilterMenu, option: FilterOption): boolean {
+  return menu.kind === 'values' && isSearchFilterOn(withoutWord(query, menu.word), menu.field, option.value);
+}
+
+export function pickSearchFilter(query: string, menu: FilterMenu, index: number): { query: string; caret: number } | null {
+  if (menu.kind === 'fields') {
+    const field = menu.fields[index];
+    return field === undefined ? null : replaceWord(query, menu.word, `${field}:`);
+  }
+  const option = menu.options[index];
+  if (option === undefined) return null;
+  if (isFilterOptionPicked(query, menu, option)) {
+    const next = toggleSearchFilter(withoutWord(query, menu.word), menu.field, option.value);
+    return { query: next, caret: next.length };
+  }
+  const tail = query.slice(menu.word.end).replace(/^\s+/, '');
+  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, `${menu.field}:${quoted(option.value)}`);
+  return { query: picked.query, caret: picked.caret + 1 };
 }
