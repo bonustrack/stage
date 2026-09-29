@@ -51,7 +51,7 @@ test/           # pure-model tests (bun test)
 assets/         # fonts + images
 app.config.js   # Expo app config (variants: prod = stage.box, dev = dev.stage.box)
 eas.json        # EAS build profiles (no account identifiers — injected at build time)
-eslint.js       # app lint preset incl. the keyring, device-bound storage and CSPRNG rules
+oxlint-plugin.mjs # app lint rules (stage/*): keyring guard, native-only seams, silent catch, theme roles
 ```
 
 ## Scripts

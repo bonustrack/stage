@@ -231,6 +231,11 @@ function lintTargets(paths, files) {
   return paths.length > 0 ? [] : ['.'];
 }
 
+function oxlintTargets(paths, files) {
+  if (files) return [...files, '--no-error-on-unmatched-pattern'];
+  return paths.length > 0 ? [] : ['.'];
+}
+
 async function cmdLint(argv) {
   const { paths, flags } = parseLintArgs(argv);
   const changed = flags.some((flag) => flag.name === '--changed');
@@ -240,6 +245,9 @@ async function cmdLint(argv) {
   if (files?.length === 0) {
     process.stdout.write('stage lint: no changed files to lint\n');
     return 0;
+  }
+  if (existsSync(resolve(cwd, '.oxlintrc.json'))) {
+    return run(localBin('oxlint'), ['--type-aware', ...oxlintTargets(paths, files), ...rest]);
   }
   const native = firstExisting(['eslint.config.js', 'eslint.config.mjs', 'eslint.config.cjs', 'eslint.config.ts']);
   if (native) {

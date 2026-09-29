@@ -2,7 +2,7 @@
  * Full Heroicons v1 (tailwindlabs/heroicons@v1.0.6) "solid" 20x20 set, one entry per
  * icon with its path `d` strings and whether the path uses the evenodd fill rule.
  * Regenerate with the scratchpad heroicons generator against the npm tarball.
- * Exempt from the kit's max-lines rule (eslint.js) as generated data. */
+ * Exempt from the kit's max-lines rule (.oxlintrc.json) as generated data. */
 
 export interface SolidPath { d: string; evenodd?: true }
 

@@ -1,14 +1,9 @@
 import { defineConfig } from '@stage-labs/config';
-import reactHooks from 'eslint-plugin-react-hooks';
-import compilerSources from './apps/stage/react-compiler-sources.cjs';
-import { reactNative } from './apps/stage/eslint.js';
-import { kitEslint } from './packages/kit/eslint.js';
 
 export default defineConfig({
   workspaces: {
     '.': {
       type: 'library',
-      eslint: { preset: 'none' },
       knip: {
         kind: 'scripts',
         entry: ['stage.config.js', 'scripts/**/*.{mjs,js,sh}'],
@@ -17,13 +12,9 @@ export default defineConfig({
     },
     'apps/stage': {
       type: 'react-native',
-      eslint: {
-        preset: 'none',
-        extends: [...reactNative(), { ...reactHooks.configs.flat.recommended, files: compilerSources }],
-      },
       knip: {
         entry: [
-          'eslint.js',
+          'oxlint-plugin.mjs',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
           'fingerprint.config.js',
@@ -51,7 +42,6 @@ export default defineConfig({
     },
     'apps/stage/desktop': {
       type: 'library',
-      eslint: { ignores: ['web/**', 'release/**'] },
       knip: { entry: ['src/preload.ts', 'scripts/*.mjs'], ignoreBinaries: ['codesign'] },
     },
     'packages/client': {
@@ -60,18 +50,16 @@ export default defineConfig({
     },
     'packages/kit': {
       type: 'library',
-      eslint: { preset: 'none', extends: kitEslint() },
       knip: {
-        entry: ['eslint.js', 'stories/*.stories.tsx'],
+        entry: ['stories/*.stories.tsx'],
         project: ['src/**', 'stories/**', 'gallery/**'],
         ignoreDependencies: ['react-native-web'],
       },
     },
     'packages/config': {
       type: 'library',
-      eslint: { preset: 'none' },
       knip: {
-        entry: ['eslint/*.js', 'knip/*.js', 'bin/*.js'],
+        entry: ['eslint/*.js', 'knip/*.js', 'oxlint/*.js', 'bin/*.js'],
         project: ['**/*.js'],
         ignoreDependencies: ['madge', 'eslint-plugin-vue', 'vue-eslint-parser'],
       },

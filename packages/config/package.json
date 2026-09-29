@@ -14,6 +14,7 @@
     "eslint",
     "knip",
     "madge",
+    "oxlint",
     "tsconfig",
     "define.js",
     "lint.js",
@@ -35,6 +36,9 @@
     "./eslint/single": "./eslint/single.js",
     "./knip": "./knip/index.js",
     "./madge": "./madge/index.js",
+    "./oxlint/comments": "./oxlint/comments.js",
+    "./oxlint/core": "./oxlint/core.js",
+    "./oxlint/text": "./oxlint/text.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
     "./tsconfig/vue.json": "./tsconfig/vue.json"
@@ -43,6 +47,8 @@
     "eslint": "*",
     "knip": "*",
     "madge": "*",
+    "oxlint": "*",
+    "oxlint-tsgolint": "*",
     "typescript": "*",
     "typescript-eslint": "*"
   },
@@ -54,6 +60,12 @@
       "optional": true
     },
     "madge": {
+      "optional": true
+    },
+    "oxlint": {
+      "optional": true
+    },
+    "oxlint-tsgolint": {
       "optional": true
     },
     "vue-eslint-parser": {

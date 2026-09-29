@@ -1,0 +1,634 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react"
+  ],
+  "jsPlugins": [
+    "@stage-labs/config/oxlint/comments",
+    "@stage-labs/config/oxlint/text",
+    "@stage-labs/config/oxlint/core",
+    "./apps/stage/oxlint-plugin.mjs"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": [
+    "**/.vite/**",
+    "packages/kit/src/heroicons.data.ts",
+    "packages/kit/src/heroicons.solid.data.ts",
+    "packages/kit/src/central-icons.data.ts"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "apps/stage/**",
+        "apps/proxy/**",
+        "packages/client/**",
+        "packages/kit/**"
+      ],
+      "rules": {
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": "error",
+        "typescript/ban-ts-comment": [
+          "error",
+          {
+            "minimumDescriptionLength": 10
+          }
+        ],
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-indexed-object-style": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/consistent-type-definitions": "error",
+        "no-array-constructor": "error",
+        "typescript/no-confusing-non-null-assertion": "error",
+        "typescript/no-duplicate-enum-values": "error",
+        "typescript/no-dynamic-delete": "error",
+        "no-empty-function": "error",
+        "typescript/no-empty-object-type": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/no-extra-non-null-assertion": "error",
+        "typescript/no-extraneous-class": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/no-invalid-void-type": "error",
+        "typescript/no-misused-new": "error",
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-asserted-nullish-coalescing": "error",
+        "typescript/no-non-null-asserted-optional-chain": "error",
+        "typescript/no-non-null-assertion": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-this-alias": "error",
+        "typescript/no-unnecessary-type-constraint": "error",
+        "typescript/no-unsafe-declaration-merging": "error",
+        "typescript/no-unsafe-function-type": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": "error",
+        "no-useless-constructor": "error",
+        "typescript/no-wrapper-object-types": "error",
+        "typescript/prefer-as-const": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/prefer-literal-enum-member": "error",
+        "typescript/prefer-namespace-keyword": "error",
+        "typescript/triple-slash-reference": "error",
+        "typescript/unified-signatures": "error",
+        "core/quotes": [
+          "error",
+          "single",
+          {
+            "avoidEscape": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/stage/**/*.{ts,tsx,mts,cts}",
+        "apps/proxy/**/*.{ts,tsx,mts,cts}",
+        "packages/client/**/*.{ts,tsx,mts,cts}",
+        "packages/kit/**/*.{ts,tsx,mts,cts}"
+      ],
+      "rules": {
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/**/*.{ts,tsx,mts,cts}",
+        "apps/proxy/**/*.{ts,tsx,mts,cts}",
+        "packages/client/**/*.{ts,tsx,mts,cts}",
+        "packages/kit/**/*.{ts,tsx,mts,cts}"
+      ],
+      "excludeFiles": [
+        "**/test/**",
+        "**/*.{test,spec}.{ts,tsx}",
+        "**/*.test.*",
+        "**/*.config.{ts,mts,cts}"
+      ],
+      "rules": {
+        "typescript/await-thenable": "error",
+        "typescript/dot-notation": "error",
+        "typescript/no-array-delete": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-confusing-void-expression": "error",
+        "typescript/no-duplicate-type-constituents": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-for-in-array": "error",
+        "typescript/no-implied-eval": "error",
+        "typescript/no-meaningless-void-operator": "error",
+        "typescript/no-misused-promises": "error",
+        "typescript/no-misused-spread": "error",
+        "typescript/no-mixed-enums": "error",
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-unnecessary-boolean-literal-compare": "error",
+        "typescript/no-unnecessary-template-expression": "error",
+        "typescript/no-unnecessary-type-arguments": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-unnecessary-type-conversion": "error",
+        "typescript/no-unnecessary-type-parameters": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/no-unsafe-unary-minus": "error",
+        "typescript/no-useless-default-assignment": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/only-throw-error": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-includes": "error",
+        "typescript/prefer-nullish-coalescing": "error",
+        "typescript/prefer-promise-reject-errors": "error",
+        "typescript/prefer-reduce-type-parameter": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-return-this-type": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+        "typescript/related-getter-setter-pairs": "error",
+        "typescript/require-await": "error",
+        "typescript/restrict-plus-operands": [
+          "error",
+          {
+            "allowAny": false,
+            "allowBoolean": false,
+            "allowNullish": false,
+            "allowNumberAndString": false,
+            "allowRegExp": false
+          }
+        ],
+        "typescript/return-await": [
+          "error",
+          "error-handling-correctness-only"
+        ],
+        "typescript/unbound-method": "error",
+        "typescript/use-unknown-in-catch-callback-variable": "error"
+      }
+    },
+    {
+      "files": [
+        "apps/proxy/src/**/*.{ts,tsx}",
+        "apps/stage/desktop/src/**/*.{ts,tsx}",
+        "packages/client/src/**/*.{ts,tsx}",
+        "packages/kit/src/**/*.{ts,tsx}",
+        "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "typescript/ban-ts-comment": [
+          "error",
+          {
+            "ts-ignore": true,
+            "ts-nocheck": true,
+            "ts-expect-error": {
+              "descriptionFormat": "^: .{10,}$"
+            },
+            "minimumDescriptionLength": 10
+          }
+        ],
+        "max-lines": [
+          "error",
+          {
+            "max": 400,
+            "skipBlankLines": false,
+            "skipComments": false
+          }
+        ],
+        "max-lines-per-function": [
+          "error",
+          {
+            "max": 100,
+            "skipBlankLines": true,
+            "skipComments": true,
+            "IIFEs": true
+          }
+        ],
+        "complexity": [
+          "error",
+          10
+        ],
+        "comments/no-comments": "error",
+        "text/no-em-dash": "error"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "stage/prefer-role-variant": "warn",
+        "stage/no-keyring-bypass": "error",
+        "stage/native-only-in-seams": "error",
+        "stage/no-silent-catch": "error",
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
+            "message": "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@stage-labs/kit/tokens') instead of a raw fontSize number."
+          },
+          {
+            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
+            "message": "Kit Text/Title/Caption must size via the `size` prop (size=\"sm|md|lg|...\"), not a fontSize in style. Remove fontSize from the style and pass size= instead."
+          },
+          {
+            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
+            "message": "Kit Text/Title/Caption apply Calibre internally - do not set fontFamily in style. Use the `weight` prop (normal/medium/semibold/bold) for the face, or variant=\"mono\" for monospace."
+          },
+          {
+            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
+            "message": "Kit Text/Title/Caption must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
+            "message": "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts)."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
+            "message": "Box/Row/Col: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style."
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-native-safe-area-context",
+                "importNames": [
+                  "useSafeAreaInsets"
+                ],
+                "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "View"
+                ],
+                "message": "Use Box/Row/Col from '@/components/layout' instead of View for layout containers."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Image"
+                ],
+                "message": "Import Image from '@stage-labs/kit/react-native/image' instead of react-native."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "TextInput"
+                ],
+                "message": "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "ScrollView"
+                ],
+                "message": "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Pressable"
+                ],
+                "message": "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "FlatList"
+                ],
+                "message": "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Text"
+                ],
+                "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
+              }
+            ]
+          }
+        ],
+        "typescript/no-require-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/components/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-native-safe-area-context",
+                "importNames": [
+                  "useSafeAreaInsets"
+                ],
+                "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "View"
+                ],
+                "message": "Use Box/Row/Col from '@/components/layout' instead of View for layout containers."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Image"
+                ],
+                "message": "Import Image from '@stage-labs/kit/react-native/image' instead of react-native."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "TextInput"
+                ],
+                "message": "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "ScrollView"
+                ],
+                "message": "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Pressable"
+                ],
+                "message": "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "FlatList"
+                ],
+                "message": "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList."
+              },
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Text"
+                ],
+                "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/lib/xmtp",
+                  "**/lib/xmtp.*"
+                ],
+                "message": "Import messaging via the '@/modules/messaging' facade barrel, not the lib/xmtp.* internals."
+              },
+              {
+                "group": [
+                  "**/lib/accountEpoch"
+                ],
+                "message": "Use useActiveAccount() / AccountManager from '@/modules/messaging', not lib/accountEpoch."
+              },
+              {
+                "group": [
+                  "**/lib/channelsCache"
+                ],
+                "message": "Import the channels cache via the '@/modules/messaging' facade barrel, not lib/channelsCache."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/stage/components/layout/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/components/landing/**",
+        "apps/stage/components/chrome/PageIntro.tsx",
+        "apps/stage/components/chrome/PageIntro.model.ts"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/lib/safeArea.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-native",
+                "importNames": [
+                  "Text"
+                ],
+                "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/stage/lib/zerodev/keyring.ts",
+        "apps/stage/lib/xmtp.dbkey.ts"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.object.name='secureStorage'][callee.property.name='set']:not([arguments.2.name=/^(STORE_OPTS|SENTINEL_OPTS)$/])",
+            "message": "Secrets are device-bound: every secureStorage.set here must pass STORE_OPTS or SENTINEL_OPTS."
+          },
+          {
+            "selector": "CallExpression[callee.object.name='secureStorage'][callee.property.name='get']:not([arguments.1.name=/^(STORE_OPTS|SENTINEL_OPTS)$/])",
+            "message": "Secrets are device-bound: every secureStorage.get here must pass STORE_OPTS or SENTINEL_OPTS."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/stage/lib/cryptoShim.ts"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "MemberExpression[object.name='Math'][property.name='random']",
+            "message": "The crypto shim must never fall back to Math.random; require a CSPRNG or throw."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/stage/**/*.js"
+      ],
+      "rules": {
+        "typescript/no-require-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/stage/components/bubble/AudioCard.tsx",
+        "apps/stage/components/bubble/ChatGallery.tsx",
+        "apps/stage/components/bubble/ImageAttachment.tsx",
+        "apps/stage/components/bubble/attachments.tsx",
+        "apps/stage/components/bubble/content.parts.tsx",
+        "apps/stage/components/bubble/poll.open.tsx",
+        "apps/stage/components/bubble/poll.tsx",
+        "apps/stage/components/bubble/question.tsx",
+        "apps/stage/components/bubble/reactions.tsx",
+        "apps/stage/components/home/SplitPlaceholder.tsx",
+        "apps/stage/components/home/labelbar.tsx",
+        "apps/stage/components/home/overflow.tsx",
+        "apps/stage/components/home/topnavRight.tsx"
+      ],
+      "rules": {
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/static-components": "error",
+        "react/use-memo": "error",
+        "react/preserve-manual-memoization": "error",
+        "react/incompatible-library": "warn",
+        "react/immutability": "error",
+        "react/globals": "error",
+        "react/refs": "error",
+        "react/set-state-in-effect": "error",
+        "react/error-boundaries": "error",
+        "react/purity": "error",
+        "react/set-state-in-render": "error",
+        "react/unsupported-syntax": "warn"
+      }
+    },
+    {
+      "files": [
+        "packages/kit/src/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/kit/src/button.styles.ts",
+        "packages/kit/src/control.styles.ts",
+        "packages/kit/src/react-native/select.tsx"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+          },
+          {
+            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
+            "message": "Use a named Kit size token (FONT_SIZE.md / fontSize('md') from './tokens') instead of a raw fontSize number."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/kit/src/react-native/card.tsx",
+        "packages/kit/src/react-native/list-view.tsx"
+      ],
+      "rules": {
+        "core/no-restricted-syntax": [
+          "error",
+          {
+            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+          },
+          {
+            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
+            "message": "Use a named Kit size token (FONT_SIZE.md / fontSize('md') from './tokens') instead of a raw fontSize number."
+          },
+          {
+            "selector": "Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/]",
+            "message": "Use a token from './tokens' (schemePalette()/colors/resolveColorToken) instead of a raw hex colour."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/*.{js,jsx,cjs,mjs}"
+      ],
+      "rules": {
+        "comments/no-comments": "error",
+        "text/no-em-dash": "error",
+        "core/quotes": [
+          "error",
+          "single",
+          {
+            "avoidEscape": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/test/**",
+        "**/*.{test,spec}.{ts,tsx}",
+        "**/*.test.*"
+      ],
+      "rules": {
+        "comments/no-comments": "error",
+        "text/no-em-dash": "error",
+        "core/quotes": [
+          "error",
+          "single",
+          {
+            "avoidEscape": true
+          }
+        ]
+      }
+    }
+  ]
+}

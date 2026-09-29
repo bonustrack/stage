@@ -11,7 +11,7 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web a
 | `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Classic RN structure: `app/` (file routes ONLY — every file under it is a route, so helpers live in `components/`), `components/` (kit-JSX screens + colocated `*.model.ts` pure models, one folder per screen family: `bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`), `lib/` (state + SDK orchestration; the XMTP seams live here as `xmtp.*.ts` / `.web.ts` / `.core.ts`), `modules/` (`messaging/` facade barrel + the `stage-pill` Android module), `platform/` (storage seams via Metro `.ts`/`.web.ts` resolution), `test/` (pure-model tests). |
 | `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, wallet, read-only APIs, identity (Basenames + stage names), avatar URLs. No React/RN imports, no build step. |
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. Published to npm (`publish-kit.yml`) and consumed by other codebases: never delete components, tokens or style setup because the app stopped using them. The component gallery is the Vite storybook in `packages/kit/gallery/` (deployed at kit.stage.box); the old in-app Kit page under Settings → Experimental was removed in Sept 2026. |
-| `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
+| `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets, the oxlint JS plugins (`oxlint/*`) + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js` and `.oxlintrc.json`. |
 | `apps/proxy` | — | Cloudflare Worker on proxy.stage.box: link previews, `/img` resize, x402 challenge + settle, the `/names/*` stage-names service (operator key, claims serialized in the `NamesClaims` Durable Object with KV as the read mirror, server-side label validation), the `/xmtp-history/*` history-sync archive store (`HistoryArchives` Durable Object, 3-day alarm; XMTP's own history server no longer serves downloads), the `/xmtp-history/*/transfer/<id>` code-based history transfer (`HistoryTransfers` Durable Object, 24-hour alarm, deleted after import, lookups rate limited by the `TRANSFER_LOOKUPS` binding) and the `/xmtp-push/*` relay, plus the bundler.stage.box per-branch manifest proxy. Deployed by Cloudflare Workers Builds (Git integration on `main`, root `apps/proxy`, build runs `bun install --frozen-lockfile && bun run typecheck && bun run test`, then `bunx wrangler deploy`; watch paths `apps/proxy/*`, `packages/client/*`, `bun.lock`, `package.json`). |
 | `apps/push` | — | XMTP's reference notification server built from a pinned upstream commit, deployed to Fly as `stage-push` (`deploy-push-server.yml`). Not a Bun workspace — Dockerfile + fly.toml only; see its README. |
 | `apps/stage/desktop` | `stage-desktop` | The Electron shell for macOS, Linux and Windows — a nested workspace inside the app (like `modules/stage-pill` is the Android shell), kept as its own package only because electron-builder reads the package.json it packs. Bundles the `expo export --platform web` output (`scripts/export-ui.mjs` -> `web/`, prod variant, rpId stage.box) and serves it from the privileged `stage-app://stage.box` scheme with the same COOP/COEP headers as Netlify, so it works with stage.box down. Adds the native window, menus, `stage://` deep links and macOS camera/mic prompts. `STAGE_DESKTOP_URL=http://localhost:8080` points it at a Metro dev server instead. Self-updates via electron-updater from the GitHub Release `v<version>`; `release-desktop.yml` builds the installers on the same `app.config.js` version bump as the mobile release (see `docs/desktop-release.md`). |
@@ -20,12 +20,12 @@ There is no separate web app: the Vue client (`apps/ui`) and the kit Vue rendere
 
 ## Commands
 
-Run quality commands **from the repo root**; lint/knip/madge/typecheck are centralized in `stage.config.js` + the `stage` CLI.
+Run quality commands **from the repo root**; lint is configured in the root `.oxlintrc.json`, knip/madge/typecheck in `stage.config.js`, and the `stage` CLI runs them all.
 
 | Command | What |
 |---|---|
 | `bun install` | Install workspace (CI uses `--frozen-lockfile`) |
-| `bun run lint` / `lint:fix` | `stage lint` over the whole repo: one ESLint process per TS project (workspace with a `tsconfig.json`), 2 at a time (`STAGE_LINT_JOBS=1` for one), one merged report; untracked git-ignored files are skipped |
+| `bun run lint` / `lint:fix` | `stage lint` over the whole repo: `oxlint --type-aware` with the root `.oxlintrc.json`, one process (type-aware rules through `oxlint-tsgolint`; no-comments, no-em-dash, `stage/*`, `no-restricted-syntax` and `quotes` as JS plugins); git-ignored files are skipped |
 | `bun run lint:changed` | `stage lint --changed`: only files changed since the upstream branch, plus untracked ones (local use; CI stays full). `stage lint <paths>` lints only those paths |
 | `bun run typecheck` | `tsc --noEmit` per workspace |
 | `bun run check` | lint + turbo typecheck |
@@ -39,7 +39,7 @@ Per-app:
 |---|---|
 | `bun --cwd apps/stage start` | Expo bundler (Metro) |
 | `bun --cwd apps/stage android` / `ios` / `web` | build + run per platform |
-| `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — ESLint OOMs on bundles; use a temp dir |
+| `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — lint would scan the bundles; use a temp dir |
 | `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
 | `bun run --cwd packages/kit storybook` / `storybook:build` | Kit component gallery (hand-rolled Vite page in `packages/kit/gallery/`, stories in `packages/kit/stories/`, one per component with every prop as a control) / static build into `packages/kit/build` |
@@ -73,17 +73,17 @@ Per-app:
 ## Conventions
 
 - **Commits:** Conventional Commits `type(scope): subject (#NNN)`, lowercase imperative. Trailer required: `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`. Commit/push only when asked; branch first if on `main`.
-- **NO COMMENTS IN CODE** — `comments/no-comments` bans non-directive comments across `.ts/.tsx/.js` including config files AND test files (the built config spreads COMMENT_RULES into the test block). Express intent in names/types. Markdown is exempt.
-- **NO EM DASH (`—`) anywhere in source or copy** — `text/no-em-dash` (same COMMENT_RULES block) fails lint on any string literal, template or JSX text containing it. Write two sentences, or use a comma or colon; empty-value placeholders use a plain `-`.
+- **NO COMMENTS IN CODE** — `comments/no-comments` bans non-directive comments across `.ts/.tsx/.js` including config files AND test files (the JS-file and test overrides in `.oxlintrc.json` enable it too). Express intent in names/types. Markdown is exempt.
+- **NO EM DASH (`—`) anywhere in source or copy** — `text/no-em-dash` (same overrides) fails lint on any string literal, template or JSX text containing it. Write two sentences, or use a comma or colon; empty-value placeholders use a plain `-`.
 - **No TS escape hatches:** no-explicit-any, no-non-null-assertion, ban-ts-comment are errors; `noUncheckedIndexedAccess` is on — null-guard, never assert.
 - **Single quotes**; max 400 lines/file, 100 lines/function, cyclomatic complexity <= 10.
 - **Errors:** no empty `catch {}` and no `.catch(() => undefined/null/false/[]/{})` in `apps/stage` (`stage/no-silent-catch`). Use `lib/errorPolicy`: `ignore`/`ignored`/`attempt` with a `BestEffort` reason for true best-effort work (cleanup, cache, probe, ui, optional), `report`/`reported`/`recover` to log and continue (redacts key material). Never map a failed storage READ to "absent" when a write may follow; let it throw. `capabilities.toast` works on every platform (`ToastAndroid` on Android, `ToastHost` elsewhere). `@xmtp/react-native-sdk` may only be value-imported by a native seam `x.ts` with an `x.web.ts` sibling (`stage/native-only-in-seams`).
 - **Page gutter:** horizontal page padding is `PAGE_GUTTER` (18px, `components/layout/gutter.ts`); never hard-code 12/16/24 for a screen edge. `LIST_TOP_GAP` (14px, same file) is the vertical padding of the sidebar filter chips and the top padding of the Contacts list, so Contacts starts as far under its topnav as the chat list starts under the chips. Dropdown menus, tooltips and modals render the kit `DropdownMenu`/`Tooltip`/`Modal` (the app only positions them; `AppModal` picks centered vs bottom sheet; where a menu cannot anchor, `AnchoredMenu` shows the same rows in the kit `DropdownMenuSheet`; forms such as New chat, New group and Edit profile are modals, not routes); icon buttons tint to the link colour on hover via `components/hover.tsx`, and web tooltips on arbitrary controls go through `HoverTooltip`.
 - **Forms:** every text input except the message composer goes through `components/FormField` (filled with the border colour, no border, radius 4, label inside above the value). Never style a kit `Input` inline in a screen.
-- **Security invariants:** the keyring (`lib/zerodev/keyring.ts`) is the only importer of private-key/mnemonic primitives (`stage/no-keyring-bypass`), every `secureStorage` get/set in the keyring and `xmtp.dbkey.ts` passes a `DeviceBoundAccessOptions` const, and `lib/cryptoShim.ts` never touches `Math.random` — all lint rules in `apps/stage/eslint.js`. Never print operator or private keys; secrets reach CI only as GitHub secrets and the Worker only via `wrangler secret`.
+- **Security invariants:** the keyring (`lib/zerodev/keyring.ts`) is the only importer of private-key/mnemonic primitives (`stage/no-keyring-bypass`), every `secureStorage` get/set in the keyring and `xmtp.dbkey.ts` passes a `DeviceBoundAccessOptions` const, and `lib/cryptoShim.ts` never touches `Math.random` — all lint rules: `stage/*` in `apps/stage/oxlint-plugin.mjs`, the storage and CSPRNG selectors in the root `.oxlintrc.json`. Never print operator or private keys; secrets reach CI only as GitHub secrets and the Worker only via `wrangler secret`.
 - **Kit-only UI:** build screens from kit primitives in JSX fed by colocated `*.model.ts` models, not raw RN style objects; `usePalette`/`useEffectiveColorScheme` for the few native-styled shells.
 - **No circular deps** (madge) and **no unused files/deps/exports** (knip). New workspace => `stage.config.js` entry + `madge.roots`.
-- Invariants about source shape (which module may import a secret primitive, that every secure write is device-bound, no `Math.random` in the crypto shim) are ESLint rules in `apps/stage/eslint.js`, never tests that `readFileSync` a source file and `toContain` a line — those break on every refactor and catch nothing.
+- Invariants about source shape (which module may import a secret primitive, that every secure write is device-bound, no `Math.random` in the crypto shim) are lint rules (`apps/stage/oxlint-plugin.mjs`, the root `.oxlintrc.json`), never tests that `readFileSync` a source file and `toContain` a line — those break on every refactor and catch nothing.
 - Snapshot-bearing test files are `*.spec.ts` (bun writes `*.test.ts.snap` files that the `**/*.test.*` lint glob would pick up and always fail). The remaining snapshot suites live in `packages/kit/test/` (button/layout/theme-derive); `apps/stage/test/` is pure-model tests only.
 
 ## CI gates (strict order)
@@ -100,6 +100,7 @@ Per-app:
 - The passkey tests that build a validator (`passkeyCallbackContract`, `passkeyKernelDerivation`) hit live Base RPC and can time out in sandboxes; they pass in CI.
 - Button taxonomy: `color` x `solid/soft/outline/ghost` only. The legacy `primary/secondary/danger` variant union is gone entirely (it died with the JSON widget boundary) — don't reintroduce it.
 - `theme.ts` setters call the persist helper; don't mutate display state directly.
+- **Lint is oxlint**, pinned exactly (`oxlint`, `oxlint-tsgolint`). The type-aware rules run in the platform binary that `oxlint-tsgolint` pulls in as an optional dependency, so keep those entries in `bun.lock` (CI needs `@oxlint-tsgolint/linux-x64`). `eslint` stays only because the `core` JS plugin wraps its `no-restricted-syntax` and `quotes` rules. Not enabled on purpose: `prefer-optional-chain` and the react-hooks `config`/`gating` rules. The React Hooks rules cover only the React Compiler files, listed in `apps/stage/react-compiler-sources.cjs` and again in the react override of `.oxlintrc.json`: change both together.
 
 ## Key paths
 
@@ -114,7 +115,7 @@ Per-app:
 | `apps/stage/components/*` | kit-JSX screens/UI + colocated `*.model.ts` pure models, one folder per family (`bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`) |
 | `apps/stage/components/FormField.tsx` | THE text input wrapper |
 | `apps/stage/components/UsernameField.tsx` | THE username form (field, shuffle, availability, status marks), shared by sign-up and Settings -> Profile |
-| `apps/stage/eslint.js` | app lint preset incl. the keyring / device-bound storage / CSPRNG rules and the facade import restriction |
+| `.oxlintrc.json` + `apps/stage/oxlint-plugin.mjs` | THE lint config (every rule and per-path override, incl. the device-bound storage / CSPRNG selectors and the facade import restriction) + the `stage/*` rules (keyring guard, native-only seams, silent catch, theme roles) |
 | `apps/stage/components/chrome/*` | shared JSX screen chrome (headers incl. `SettingsHeader` which backs out to `/settings`, empty state) |
 | `apps/stage/lib/capabilities.ts` | platform-effects contract (navigate/copy/toast/share/...) |
 | `apps/stage/app/_layout.tsx` | root providers, polyfill order, font patch |

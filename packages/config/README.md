@@ -59,7 +59,17 @@ export default [
 
 ## `stage lint`
 
-Lints the repo described by `stage.config.js`. It runs one ESLint process per TypeScript project (a workspace with a `tsconfig.json`) plus one for the rest, two at a time (`STAGE_LINT_JOBS` changes that), and prints one merged report. Each process holds only the type information of its own project, so the peak memory of one process is the largest project, not the sum. Untracked git-ignored files (build output, generated files) are not linted.
+When the repo has a root `.oxlintrc.json`, `stage lint` runs `oxlint --type-aware` on the whole repo, on the given paths, or on the `--changed` files, and passes the other flags (`--fix`, `-f`, ...) to oxlint. Install `oxlint` and `oxlint-tsgolint` for it. Three JS plugins bring the rules oxlint does not have natively:
+
+- `@stage-labs/config/oxlint/comments`: `comments/no-comments`
+- `@stage-labs/config/oxlint/text`: `text/no-em-dash`
+- `@stage-labs/config/oxlint/core`: ESLint's own `no-restricted-syntax` and `quotes`, as `core/no-restricted-syntax` and `core/quotes`
+
+```json
+{ "jsPlugins": ["@stage-labs/config/oxlint/comments", "@stage-labs/config/oxlint/text", "@stage-labs/config/oxlint/core"] }
+```
+
+Without `.oxlintrc.json`, it lints the repo described by `stage.config.js` with ESLint. It runs one ESLint process per TypeScript project (a workspace with a `tsconfig.json`) plus one for the rest, two at a time (`STAGE_LINT_JOBS` changes that), and prints one merged report. Each process holds only the type information of its own project, so the peak memory of one process is the largest project, not the sum. Untracked git-ignored files (build output, generated files) are not linted.
 
 - `stage lint` / `stage lint --fix`: the whole repo.
 - `stage lint --changed`: only files changed since the upstream branch (or since HEAD when there is none), plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.

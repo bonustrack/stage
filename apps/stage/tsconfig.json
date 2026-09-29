@@ -4,7 +4,6 @@
     "@stage-labs/config/tsconfig/react-native.json"
   ],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "react-native-svg": [
         "./node_modules/react-native-svg"
