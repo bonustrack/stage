@@ -154,8 +154,8 @@ jobs:
       # speed-up: each run cold-bundles into the ephemeral TMPDIR, so a poisoned
       # entry can never survive a run or ship to a device.
 
-      - name: Publish EAS Update for this branch
-        id: update
+      - name: Export and validate Android preview
+        id: export
         working-directory: apps/stage
         # Stamp the preview bundle with the pushed commit so the About page shows
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
@@ -165,48 +165,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"
-          # EAS channel/branch names allow [a-zA-Z0-9._-]; git refs can contain
-          # '/' (e.g. feat/foo). Sanitise to a safe, stable per-branch channel.
-          RAW_BRANCH='${{ github.ref_name }}'
-          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          # Git short-hash: the unambiguous identity of the previewed commit. We
-          # keep a per-BRANCH EAS channel (the update groupId already makes each
-          # publish a unique, immutable deep link, so the manifest URL maps 1:1 to
-          # a commit) and surface the short-sha prominently in the update message,
-          # job summary and Preview status so the running version is never in
-          # doubt. A per-commit channel was rejected: it would create an unbounded
-          # set of stale, never-cleaned channels (one per push, forever).
-          SHORT_SHA="$(git rev-parse --short HEAD)"
-          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
-          # Two-step export instead of letting `eas update` bundle implicitly, so
-          # we can pass preview-only Metro flags that `eas update` does NOT expose:
-          #
-          #   1. `expo export` builds dist/ with:
-          #      --platform android  : the preview is consumed ONLY by the Android
-          #                            dev-client APK, so bundling iOS (and the web
-          #                            byproduct) is pure waste. (eas update defaults
-          #                            to --platform all = 2-3x the bundle work.)
-          #      --no-minify         : a dev-client preview swaps in this JS at
-          #                            runtime; it does not ship to users, so the
-          #                            terser/minify pass is wasted CPU. Skipping it
-          #                            cuts the export and leaves a larger-but-fine
-          #                            bundle that downloads over the same manifest.
-          #      --no-bytecode       : skip Hermes bytecode compilation (hermesc over
-          #                            the whole bundle). The dev-client loads plain
-          #                            JS for OTA updates; bytecode is a build-time
-          #                            cost with no preview benefit.
-          #      (source maps are OFF by default — we never pass -s — so no extra
-          #       sourcemap emit/upload either.)
-          #
-          #   2. `eas update --skip-bundler --input-dir dist` uploads the dist/ we
-          #      just built and auto-generates the expo-updates manifest the
-          #      dev-client consumes, WITHOUT re-bundling. --non-interactive needs
-          #      EXPO_TOKEN (set above). eas-cli is pinned (not @latest) so bunx
-          #      resolves one cached version instead of re-checking the registry.
-          #
-          # The deep link rides the shared update groupId, unchanged by these flags,
-          # so the launcher still resolves (eas-deeplink.mjs).
           bunx expo export \
             --platform android \
             --no-minify \
@@ -222,6 +180,17 @@ jobs:
             echo "::error::expo export produced no Android JS bundle" && exit 1
           fi
           node --check "$BUNDLE"
+
+      - name: Publish EAS Update for this branch
+        id: update
+        working-directory: apps/stage
+        run: |
+          set -euo pipefail
+          RAW_BRANCH='${{ github.ref_name }}'
+          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           # Ensure a channel with the branch's name exists and points at the
           # branch (EAS links same-named channel->branch on create). Channels
           # are what u.expo.dev resolves manifests by, and bundler.stage.box/
@@ -294,6 +263,32 @@ jobs:
               target_url: target,
               description,
             });
+
+      - name: Publish EAS Update to main-preview
+        id: main-update
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.export.outcome == 'success' }}
+        working-directory: apps/stage
+        run: |
+          set -euo pipefail
+          bunx eas-cli@20.1.0 update \
+            --branch main-preview \
+            --platform android \
+            --skip-bundler \
+            --input-dir dist \
+            --message "main ${{ github.sha }}" \
+            --non-interactive --json > eas-main-update.json
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-main-update.json >> "$GITHUB_OUTPUT"
+
+      - name: Summarise the main preview link
+        if: ${{ !cancelled() && steps.main-update.outcome == 'success' }}
+        run: |
+          {
+            echo "### Main preview published"
+            echo ""
+            echo "EAS branch: \`main-preview\`"
+            echo "Commit: \`${{ github.sha }}\`"
+            echo "Manifest: ${{ steps.main-update.outputs.manifest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # When a git branch is deleted, tear down its per-branch EAS preview so stale
   # channels/branches don't accumulate forever. Gated on the `delete` event and
