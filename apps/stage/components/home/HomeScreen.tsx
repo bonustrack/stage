@@ -23,6 +23,7 @@ import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useHomeState } from './state';
 import { usePinDrag } from './pinDrag';
 import { useRowArrows } from './rowArrows';
+import { channelsPaneWidth } from '../tabs/paneWidth';
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const splitHome = useWebTabRail() && pane !== true;
@@ -69,14 +70,16 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [sortedRows, matches, cleared],
   );
   const accountEpoch = useActiveAccount();
+  const paneAtMin = channelsPaneWidth.useAtMin();
+  const hideAvatar = pane && paneAtMin;
 
   useChannelsSync({ accountEpoch, setError: st.setError });
 
   const activePath = pane ? pathname : '';
   const menuConvId = rowMenu?.convId;
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId] as const,
-    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId],
+    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar],
   );
   const navRouter = useMemo(
     () => (pane
@@ -88,7 +91,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const pinDrag = usePinDrag(pinned, visiblePinned);
   useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag,
+    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, hideAvatar,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;

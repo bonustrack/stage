@@ -81,10 +81,11 @@ interface ChannelRowItemProps {
   draftText: string;
   active: boolean;
   pinDrag: PinDrag;
+  hideAvatar: boolean;
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active, pinDrag,
+  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   const openMenu = rowMenuOpener(item, setRowMenu);
@@ -97,6 +98,7 @@ function ChannelRowItemBase({
       highlightQuery={query}
       avatarUri={item.avatarUri}
       avatarAddress={avatarAddress}
+      hideAvatar={hideAvatar}
       square={isGroup}
       lastPreview={preview}
       timestamp={channelTimestamp(item.lastTs)}
@@ -123,9 +125,10 @@ export function useChannelRowRenderer(
   deps: {
     channelProfilesVersion: number; draftsVersion: number;
     pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: PinDrag;
+    hideAvatar: boolean;
   },
 ): ({ item }: { item: RowT }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar } = deps;
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
     <ChannelRowItem
       item={item}
@@ -139,8 +142,9 @@ export function useChannelRowRenderer(
       draftText={getDraft(item.convId)}
       active={menuConvId === item.convId || isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
       pinDrag={pinDrag}
+      hideAvatar={hideAvatar}
     />
-  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag]);
+  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar]);
 }
 
 const RESET_TITLE = 'Reset local database';

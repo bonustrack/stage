@@ -1,12 +1,14 @@
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
+import { isMinWidth } from './paneWidth.model';
 
 export interface PaneWidth {
   get: () => number;
   set: (next: number) => void;
   reset: () => void;
   use: () => number;
+  useAtMin: () => boolean;
 }
 
 interface PaneWidthOptions {
@@ -56,8 +58,10 @@ export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
   };
 
   const use = (): number => useStoreValue(listeners.subscribe, get);
+  const atMin = (): boolean => isMinWidth(width, opts.min);
+  const useAtMin = (): boolean => useStoreValue(listeners.subscribe, atMin);
 
-  return { get, set, reset: () => { set(opts.initial); }, use };
+  return { get, set, reset: () => { set(opts.initial); }, use, useAtMin };
 }
 
 export const channelsPaneWidth = createPaneWidth({
