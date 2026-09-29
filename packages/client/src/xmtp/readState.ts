@@ -104,6 +104,32 @@ export function parseBoardState(content: unknown): BoardStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const SEARCH_STATE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'searchState', versionMajor: 1, versionMinor: 0,
+};
+
+export const searchStateSchema = z.object({
+  query: z.string(),
+  labels: z.array(z.string().min(1)),
+  unreadOnly: z.boolean(),
+  at: z.number().positive(),
+});
+
+export type SearchStateContent = z.infer<typeof searchStateSchema>;
+
+export function searchStateFallbackText(): string {
+  return 'Stage search';
+}
+
+export function isSearchStateType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(SEARCH_STATE_CONTENT_TYPE.typeId);
+}
+
+export function parseSearchState(content: unknown): SearchStateContent | null {
+  const parsed = searchStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
   const merged: ClearedChats = {};
   for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
@@ -180,6 +206,7 @@ export interface SyncReplay {
   pins: PinStateContent[];
   cleared: ClearedChats | null;
   board: BoardStateContent | null;
+  search: SearchStateContent | null;
   latestNs: number;
 }
 
@@ -211,10 +238,12 @@ function mergedCleared(messages: readonly SyncMessage[]): ClearedChats | null {
   return merged;
 }
 
-function latestBoard(messages: readonly SyncMessage[]): BoardStateContent | null {
-  let latest: BoardStateContent | null = null;
+function latestState<T extends { at: number }>(
+  messages: readonly SyncMessage[], isType: (contentTypeId: string | undefined) => boolean, parse: (content: unknown) => T | null,
+): T | null {
+  let latest: T | null = null;
   for (const m of messages) {
-    const state = isBoardStateType(m.contentTypeId) ? parseBoardState(m.content) : null;
+    const state = isType(m.contentTypeId) ? parse(m.content) : null;
     if (state !== null && (latest === null || state.at > latest.at)) latest = state;
   }
   return latest;
@@ -226,7 +255,8 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     reads: latestReads(fresh),
     pins: pinsSinceLastOrder(fresh),
     cleared: mergedCleared(fresh),
-    board: latestBoard(fresh),
+    board: latestState(fresh, isBoardStateType, parseBoardState),
+    search: latestState(fresh, isSearchStateType, parseSearchState),
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
 }

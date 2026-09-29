@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
@@ -14,6 +14,7 @@ import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
+import { isSearchFocused, setSearchFocused } from '../../lib/searchState';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -61,22 +62,44 @@ function ListFooter({ query, noChannels, knownPeers }: {
   return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
 }
 
-function useHomeTopnav(p: ChannelsListProps, searchKey: number, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
+interface SearchOpen {
+  key: number;
+  shown: boolean;
+  open: () => void;
+  close: () => void;
+  onFocusChange: (focused: boolean) => void;
+}
+
+function useSearchOpen(query: string, setQuery: (query: string) => void): SearchOpen {
+  const [key, setKey] = useState(0);
+  const [held, setHeld] = useState(false);
+  const reset = (): void => { setKey(0); setHeld(false); };
+  useEffect(() => { if (query === '' && !isSearchFocused()) reset(); }, [query]);
+  return {
+    key,
+    shown: held || query !== '',
+    open: () => { setKey(k => k + 1); setHeld(true); },
+    close: () => { reset(); setQuery(''); },
+    onFocusChange: (focused) => { setSearchFocused(focused); if (focused) setHeld(true); },
+  };
+}
+
+function useHomeTopnav(p: ChannelsListProps, search: SearchOpen): TopnavSlot {
   const { query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} onOpenSearch={onOpenSearch} view="chats" />,
-    [sub, onOpenSearch],
+    () => <HomeTopnavRight head={sub} onOpenSearch={search.open} view="chats" />,
+    [sub, search.open],
   );
   const override = useMemo(
-    () => (searchKey > 0 ? (
+    () => (search.shown ? (
       <FilterSearch
-        key={searchKey} scope="chats" onMenu={onFilterMenu}
-        query={query} setQuery={setQuery} onClose={onCloseSearch}
+        key={search.key} scope="chats" onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
+        query={query} setQuery={setQuery} onClose={search.close}
         head={head} sub={sub} border={border} inline={pane} trailing={right}
       />
     ) : undefined),
-    [searchKey, query, setQuery, onFilterMenu, onCloseSearch, head, sub, border, pane, right],
+    [search, query, setQuery, onFilterMenu, head, sub, border, pane, right],
   );
   usePublishTopnavSlot({ right, override }, !pane);
   return { right, override };
@@ -97,10 +120,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
   } = props;
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
-  const [searchKey, setSearchKey] = useState(0);
-  const openSearch = (): void => { setSearchKey(key => key + 1); };
-  const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
-  const slot = useHomeTopnav(props, searchKey, openSearch, closeSearch);
+  const slot = useHomeTopnav(props, useSearchOpen(query, setQuery));
   const contentStyle = { paddingBottom: 24 };
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
   useScrollTopOnFilter(props);

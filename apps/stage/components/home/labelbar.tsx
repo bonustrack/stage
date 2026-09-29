@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
@@ -8,6 +8,9 @@ import { channelsLabelChips, selectChannelsFilter } from './model';
 import { Box, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
 import { LabelChip } from '../LabelChip';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
+import {
+  clearSearchFilters, setSearchQuery, toggleSearchLabel, toggleSearchUnread, useSearchState,
+} from '../../lib/searchState';
 
 
 export function useHomeFilters(): {
@@ -16,17 +19,15 @@ export function useHomeFilters(): {
   unreadOnly: boolean;
   toggleUnread: () => void;
   clearAllFilters: () => void;
+  query: string;
+  setQuery: (query: string) => void;
 } {
-  const [enabledLabels, setEnabledLabels] = useState<Set<string>>(new Set());
-  const toggleLabel = (label: string): void => { setEnabledLabels(prev => {
-    const next = new Set(prev), key = label.toLowerCase();
-    if (next.has(key)) next.delete(key); else next.add(key);
-    return next;
-  }); };
-  const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
-  const toggleUnread = (): void => { setUnreadOnly(v => !v); };
-  const clearAllFilters = (): void => { setEnabledLabels(new Set()); setUnreadOnly(false); };
-  return { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters };
+  const search = useSearchState();
+  const enabledLabels = useMemo(() => new Set(search.labels), [search.labels]);
+  return {
+    enabledLabels, toggleLabel: toggleSearchLabel, unreadOnly: search.unreadOnly, toggleUnread: toggleSearchUnread,
+    clearAllFilters: clearSearchFilters, query: search.query, setQuery: setSearchQuery,
+  };
 }
 
 export { deriveBarLabels as deriveLabels } from '@stage-labs/client/xmtp/channelsFilter';

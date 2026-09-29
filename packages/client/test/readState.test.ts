@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
-  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState,
+  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isSearchStateType, parseSearchState,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -73,6 +73,21 @@ describe('board state payload', () => {
     expect(isBoardStateType('stage.box/boardState:1.0')).toBe(true);
     expect(isBoardStateType('stage.box/pinState:1.0')).toBe(false);
     expect(isPinStateType('stage.box/boardState:1.0')).toBe(false);
+  });
+});
+
+describe('search state payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
+    const ok = { query: 'label:"to do" bob', labels: ['work'], unreadOnly: true, at: 3 };
+    expect(parseSearchState(ok)).toEqual(ok);
+    expect(parseSearchState({ ...ok, query: '' })?.query).toBe('');
+    expect(parseSearchState({ ...ok, labels: [''] })).toBeNull();
+    expect(parseSearchState({ ...ok, at: 0 })).toBeNull();
+    expect(parseSearchState({ query: 'x', at: 3 })).toBeNull();
+    expect(isSearchStateType('stage.box/searchState:1.0')).toBe(true);
+    expect(isSearchStateType('stage.box/readState:1.0')).toBe(false);
+    expect(isReadStateType('stage.box/searchState:1.0')).toBe(false);
+    expect(isBoardStateType('stage.box/searchState:1.0')).toBe(false);
   });
 });
 
@@ -182,6 +197,22 @@ describe('restored sync groups', () => {
     ], 0);
     expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
     expect(collectSyncReplay([], 0).board).toBeNull();
+  });
+
+  test('keeps the newest search by its own clock, not by arrival', () => {
+    const SEARCH = 'stage.box/searchState:1.0';
+    const search = (query: string, at: number): { query: string; labels: string[]; unreadOnly: boolean; at: number } => (
+      { query, labels: [], unreadOnly: false, at }
+    );
+    const replay = collectSyncReplay([
+      { contentTypeId: SEARCH, content: search('a', 5), sentNs: 1 },
+      { contentTypeId: SEARCH, content: search('b', 9), sentNs: 2 },
+      { contentTypeId: SEARCH, content: search('c', 7), sentNs: 3 },
+      { contentTypeId: SEARCH, content: { query: 'd', at: 12 }, sentNs: 4 },
+    ], 0);
+    expect(replay.search).toEqual(search('b', 9));
+    expect(replay.board).toBeNull();
+    expect(collectSyncReplay([], 0).search).toBeNull();
   });
 
   test('skips messages at or before the cursor', () => {

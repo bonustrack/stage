@@ -1,3 +1,4 @@
+import type { SearchStateContent } from '@stage-labs/client/xmtp/readState';
 import { makeListeners } from './storeCore';
 
 const hiddenConvs = new Set<string>();
@@ -57,3 +58,13 @@ const boardOrderListeners = makeListeners<BoardOrderChange>();
 
 export const onBoardOrderChanged = boardOrderListeners.subscribe;
 export const notifyBoardOrderChanged = boardOrderListeners.notify;
+
+export interface SearchStateChange {
+  accountId: string;
+  state: SearchStateContent;
+}
+
+const searchStateListeners = makeListeners<SearchStateChange>();
+
+export const onSearchStateChanged = searchStateListeners.subscribe;
+export const notifySearchStateChanged = searchStateListeners.notify;

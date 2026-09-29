@@ -37,8 +37,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const { text: fg, link: head } = usePalette();
   const st = useHomeState();
   const { rows, pinned, rowMenu } = st;
-  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
-  const [query, setQuery] = useState<string>('');
+  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),

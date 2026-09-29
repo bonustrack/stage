@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Platform, useWindowDimensions,
   type NativeSyntheticEvent, type TextInputKeyPressEventData, type TextInputSelectionChangeEventData,
@@ -13,12 +13,12 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
-import { Box, STICKY_UNDER_CHROME } from './layout';
+import { Box, PAGE_GUTTER, STICKY_UNDER_CHROME } from './layout';
 import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
 import { MENU_WIDTH } from './AnchoredMenu';
 import { MENU_GAP } from './menuStyle';
-import { SEARCH_TEXT_INSET, SearchTopnavBar } from './SearchTopnavBar';
+import { SearchTopnavBar } from './SearchTopnavBar';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { keepInputFocus } from './composer/parts';
 import { mentionKeyAction } from './composer/mentions.model';
@@ -86,8 +86,14 @@ interface FilterInput {
   inputProps: NonNullable<React.ComponentProps<typeof SearchTopnavBar>['inputProps']>;
 }
 
+interface FilterInputOptions {
+  enabled: boolean;
+  resting: number;
+  onFocusChange?: (focused: boolean) => void;
+}
+
 function useFilterInput(
-  query: string, setQuery: (query: string) => void, options: FilterOptions, { enabled, resting }: { enabled: boolean; resting: number },
+  query: string, setQuery: (query: string) => void, options: FilterOptions, { enabled, resting, onFocusChange }: FilterInputOptions,
 ): FilterInput {
   const [focused, setFocused] = useState(false);
   const [caret, setCaret] = useState(query.length);
@@ -129,8 +135,8 @@ function useFilterInput(
   };
   const inputProps = {
     selection, onKeyPress, onSelectionChange,
-    onFocus: () => { setFocused(true); setDismissed(false); },
-    onBlur: () => { setFocused(false); },
+    onFocus: () => { setFocused(true); setDismissed(false); onFocusChange?.(true); },
+    onBlur: () => { setFocused(false); onFocusChange?.(false); },
   };
   return { menu, active: index, pick, onChangeText, inputProps };
 }
@@ -220,25 +226,28 @@ function TouchFilterMenu({ children }: { children: React.ReactNode }): React.Rea
 
 function WideFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
-    <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: SEARCH_TEXT_INSET }} {...keepInputFocus}>
+    <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: PAGE_GUTTER }} {...keepInputFocus}>
       <DropdownMenu maxHeight={MENU_MAX_HEIGHT} style={{ width: MENU_WIDTH }}>{children}</DropdownMenu>
     </Box>
   );
 }
 
-export function FilterSearch({ query, setQuery, scope, onMenu, ...bar }: {
+export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ...bar }: {
   query: string;
   setQuery: (query: string) => void;
   scope: FilterScope;
   onMenu: (open: boolean) => void;
+  onFocusChange?: (focused: boolean) => void;
 } & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder'>): React.ReactElement {
   const wide = useWebTabRail();
   const keyboardUp = useKeyboardState(state => state.isVisible);
   const options = useFilterOptions(scope);
-  const filter = useFilterInput(query, setQuery, options, { enabled: !NATIVE || keyboardUp, resting: wide ? 0 : -1 });
+  const focused = useRef(false);
+  const reportFocus = (next: boolean): void => { focused.current = next; onFocusChange?.(next); };
+  const filter = useFilterInput(query, setQuery, options, { enabled: !NATIVE || keyboardUp, resting: wide ? 0 : -1, onFocusChange: reportFocus });
   const open = filter.menu !== null;
   useEffect(() => { onMenu(open); }, [open]);
-  useEffect(() => () => { onMenu(false); }, []);
+  useEffect(() => () => { onMenu(false); if (focused.current) onFocusChange?.(false); }, []);
   const Menu = wide ? WideFilterMenu : TouchFilterMenu;
   return (
     <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: FILTER_LAYER }]}>
