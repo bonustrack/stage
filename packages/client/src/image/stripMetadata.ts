@@ -144,9 +144,9 @@ function stripWebp(b: Uint8Array): Uint8Array {
     const total = 8 + padded;
     if (i + total > b.length) break;
     if (fourcc !== 'EXIF' && fourcc !== 'XMP ') {
-      const chunk = Array.from(b.slice(i, i + total));
+      const chunk = b.slice(i, i + total);
       if (fourcc === 'VP8X') chunk[8] = (chunk[8] ?? 0) & ~0b00001100;
-      body.push(...chunk);
+      for (const value of chunk) body.push(value);
     }
     i += total;
   }

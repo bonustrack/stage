@@ -15,6 +15,7 @@ import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
 import { useRemoteAttachment } from './attachmentUri';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { resolvedAttachmentKind } from './attachmentKind.model';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
@@ -30,9 +31,10 @@ function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement 
 export function AttachmentView({ att, fullUrl, fg, galleryKey }: {
   att: Attachment; fullUrl: string; fg: string; galleryKey?: string;
 }): React.ReactElement {
-  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
-  if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
-  if (att.kind === 'audio' || att.mime?.startsWith('audio/')) return <AudioCard att={att} uri={fullUrl} />;
+  const kind = resolvedAttachmentKind(att);
+  if (kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
+  if (kind === 'video') return <MessengerVideoAttachment uri={fullUrl} />;
+  if (kind === 'audio') return <AudioCard att={att} uri={fullUrl} />;
   const card = fileCardModel(att);
   return <AttachmentChip label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
 }

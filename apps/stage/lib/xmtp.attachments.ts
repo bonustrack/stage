@@ -46,7 +46,9 @@ export async function xmtpSendMultiRemoteAttachment(
       fileUri: cleanUri, mimeType, filename: f.filename,
     });
     const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
-    infos.push(MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, encrypted.metadata));
+    infos.push(MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, {
+      ...encrypted.metadata, filename: f.filename,
+    }));
   }
 
   const payload: MultiRemoteAttachmentContent = { attachments: infos };

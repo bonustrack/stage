@@ -96,7 +96,7 @@ function makePngWithText(): Uint8Array {
   ]);
 }
 
-function makeWebpWithExif(): Uint8Array {
+function makeWebpWithExif(dataSize = 3): Uint8Array {
   const fourcc = (s: string): number[] => Array.from(s).map((c) => c.charCodeAt(0));
   const chunk = (cc: string, data: number[]): number[] => {
     const sz = data.length;
@@ -105,7 +105,7 @@ function makeWebpWithExif(): Uint8Array {
   };
   const vp8x = chunk('VP8X', [0b00001100, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const exif = chunk('EXIF', fourcc('GPSLatitude secret'));
-  const vp8 = chunk('VP8 ', [0x00, 0x01, 0x02]);
+  const vp8 = chunk('VP8 ', Array.from({ length: dataSize }, (_, i) => i % 256));
   const body = [...vp8x, ...exif, ...vp8];
   const riffSize = 4 + body.length;
   return Uint8Array.from([
@@ -191,6 +191,17 @@ describe('stripMetadataBytes - WebP', () => {
     expect(contains(bytes, 'VP8 ')).toBe(true);
     const newSize = bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24);
     expect(newSize).toBe(bytes.length - 8);
+  });
+
+  test('strips metadata from large WebP chunks without changing image data', () => {
+    const dataSize = 2_000_000;
+    const input = makeWebpWithExif(dataSize);
+    const { bytes, stripped, format } = stripMetadataBytes(input);
+    expect(format).toBe('webp');
+    expect(stripped).toBe(true);
+    expect(contains(bytes, 'GPSLatitude secret')).toBe(false);
+    expect(bytes.subarray(bytes.length - dataSize)).toEqual(input.subarray(input.length - dataSize));
+    expect(bytes[20]).toBe(0);
   });
 });
 
