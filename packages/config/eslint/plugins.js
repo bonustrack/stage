@@ -1,5 +1,5 @@
 const DIRECTIVE_COMMENT =
-  /^(eslint\b|eslint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<|globals?\b|exported\b)/;
+  /^(eslint\b|eslint-|oxlint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<|globals?\b|exported\b)/;
 
 export const COMMENT_PLUGIN = {
   rules: {

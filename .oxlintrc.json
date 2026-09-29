@@ -67,7 +67,12 @@
         "typescript/no-unsafe-declaration-merging": "error",
         "typescript/no-unsafe-function-type": "error",
         "no-unused-expressions": "error",
-        "no-unused-vars": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "reportVarsOnlyUsedAsTypes": true
+          }
+        ],
         "no-useless-constructor": "error",
         "typescript/no-wrapper-object-types": "error",
         "typescript/prefer-as-const": "error",

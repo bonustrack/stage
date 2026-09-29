@@ -59,7 +59,7 @@ export default [
 
 ## `stage lint`
 
-When the repo has a root `.oxlintrc.json`, `stage lint` runs `oxlint --type-aware` on the whole repo, on the given paths, or on the `--changed` files, and passes the other flags (`--fix`, `-f`, ...) to oxlint. Install `oxlint` and `oxlint-tsgolint` for it. Three JS plugins bring the rules oxlint does not have natively:
+When the repo has a root `.oxlintrc.json`, `stage lint` runs `oxlint --type-aware` on the whole repo, on the given paths, or on the `--changed` files, and passes the other flags (`--fix`, `-f`, ...) to oxlint. Install `oxlint` and `oxlint-tsgolint` for it, and `eslint` for the `core` plugin. Three JS plugins bring the rules oxlint does not have natively:
 
 - `@stage-labs/config/oxlint/comments`: `comments/no-comments`
 - `@stage-labs/config/oxlint/text`: `text/no-em-dash`

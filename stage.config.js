@@ -14,7 +14,6 @@ export default defineConfig({
       type: 'react-native',
       knip: {
         entry: [
-          'oxlint-plugin.mjs',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
           'fingerprint.config.js',

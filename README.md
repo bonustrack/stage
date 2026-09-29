@@ -28,7 +28,7 @@ packages/
               #   identity/names, wallet, accounts + zerodev, read-only APIs, x402)
   kit/        # @stage-labs/kit — design system: tokens, icons, theme contracts,
               #   and one React Native component family (renders on web via RNW)
-  config/     # @stage-labs/config — shared ESLint/TS/knip/madge presets + the stage CLI
+  config/     # @stage-labs/config — shared ESLint/TS/knip/madge presets, oxlint JS plugins + the stage CLI
 ```
 
 Each workspace has its own README with details; `CLAUDE.md` is the
