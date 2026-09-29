@@ -31,10 +31,12 @@ function pick(query: string, value: string): ReturnType<typeof pickSearchFilter>
 describe('has channel filters', () => {
   test('parses has alongside the existing fields and free text', () => {
     expect(parseSearchFilter('HAS:Label,draft has: label:Todo member:@me hello')).toEqual({
-      labels: ['Todo'], members: ['@me'], has: ['Label', 'draft'], text: 'hello',
+      labels: ['Todo'], members: ['@me'], has: ['Label', 'draft'], exclude: { labels: [], members: [], has: [] }, text: 'hello',
     });
     expect(searchFilterValues('has:label has:draft', 'has')).toEqual(['label', 'draft']);
-    expect(parseSearchFilter('has:"draft"')).toEqual({ labels: [], members: [], has: ['draft'], text: '' });
+    expect(parseSearchFilter('has:"draft"')).toEqual({
+      labels: [], members: [], has: ['draft'], exclude: { labels: [], members: [], has: [] }, text: '',
+    });
   });
 
   test('requires at least one label, not a label with a specific name', () => {

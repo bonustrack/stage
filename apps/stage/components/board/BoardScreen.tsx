@@ -8,7 +8,7 @@ import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
-import { parseSearchFilter, searchFilterSources } from '../searchFilter.model';
+import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
 import { HomeTopnavRight } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
@@ -283,7 +283,7 @@ function BoardLanes({ columns, pinned, saved, actions, filtering }: {
 }
 
 function useMemberProfiles(rows: ChannelRowData[] | null, query: string): number {
-  const members = parseSearchFilter(query).members.length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
+  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
   return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members]);
 }
 

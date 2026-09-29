@@ -8,6 +8,7 @@ import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { IconCircleMinus } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleMinus';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
 import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
@@ -134,22 +135,44 @@ function useFilterInput(
   return { menu, active: index, pick, onChangeText, inputProps };
 }
 
-function FilterOptionItem({ field, option, highlighted, onPress }: {
-  field: FilterField; option: FilterOption; highlighted: boolean; onPress: () => void;
+function optionIcon(field: FilterField, option: FilterOption, excluded: boolean): CentralIcon {
+  if (excluded) return IconCircleMinus;
+  return field === 'has' && option.value === 'draft' ? IconPencil : IconTag;
+}
+
+function FilterOptionItem({ field, option, excluded, highlighted, onPress }: {
+  field: FilterField; option: FilterOption; excluded: boolean; highlighted: boolean; onPress: () => void;
 }): React.ReactElement {
   const member = field === 'member';
-  const iconName = field === 'has' && option.value === 'draft' ? IconPencil : IconTag;
   const avatar = option.key === ME_VALUE
     ? <AccountAvatar size={DROPDOWN_MENU.icon}/>
     : <Avatar address={option.key} size={DROPDOWN_MENU.icon}/>;
   return (
     <DropdownMenuItem
       label={option.label}
-      iconName={member ? undefined : iconName}
+      iconName={member ? undefined : optionIcon(field, option, excluded)}
       icon={member ? avatar : undefined}
+      danger={excluded}
       highlighted={highlighted}
       onPress={onPress}
     />
+  );
+}
+
+const excludeName = (field: FilterField): string => `Exclude ${FIELD_NAMES[field].toLowerCase()}`;
+
+function FieldItem({ field, negated, index, active, onPick }: {
+  field: FilterField; negated: boolean; index: number; active: number; onPick: (index: number) => void;
+}): React.ReactElement {
+  return (
+    <Box {...optionMark(index)}>
+      <DropdownMenuItem
+        label={negated ? excludeName(field) : FIELD_NAMES[field]}
+        iconName={negated ? IconCircleMinus : FIELD_ICONS[field]}
+        highlighted={index === active}
+        onPress={() => { onPick(index); }}
+      />
+    </Box>
   );
 }
 
@@ -158,22 +181,22 @@ function FilterMenuItems({ menu, active, onPick }: {
 }): React.ReactElement {
   if (menu.kind === 'fields') {
     return <>{menu.fields.map((field, i) => (
-      <Box key={field} {...optionMark(i)}>
-        <DropdownMenuItem
-          label={FIELD_NAMES[field]} iconName={FIELD_ICONS[field]} highlighted={i === active}
-          onPress={() => { onPick(i); }}
-        />
-      </Box>
+      <FieldItem key={field} field={field} negated={menu.negated} index={i} active={active} onPick={onPick}/>
     ))}</>;
   }
-  const { field } = menu;
-  return <>{menu.options.map((option, i) => (
-    <Box key={option.key} {...optionMark(i)}>
-      <FilterOptionItem
-        field={field} option={option} highlighted={i === active} onPress={() => { onPick(i); }}
-      />
-    </Box>
-  ))}</>;
+  const { field, negated, excludeRow } = menu;
+  const first = excludeRow ? 1 : 0;
+  return <>
+    {excludeRow ? <FieldItem field={field} negated index={0} active={active} onPick={onPick}/> : null}
+    {menu.options.map((option, i) => (
+      <Box key={option.key} {...optionMark(first + i)}>
+        <FilterOptionItem
+          field={field} option={option} excluded={negated}
+          highlighted={first + i === active} onPress={() => { onPick(first + i); }}
+        />
+      </Box>
+    ))}
+  </>;
 }
 
 function useTouchMenuHeight(): number {

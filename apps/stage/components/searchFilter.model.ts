@@ -7,12 +7,18 @@ export type FilterScope = 'board' | 'chats';
 
 export const FILTER_FIELDS: readonly FilterField[] = ['label', 'member', 'has'];
 
+const EXCLUDE_FIELDS: readonly FilterField[] = ['label', 'member'];
+
 export const ME_VALUE = '@me';
 
-interface SearchFilter {
+interface FilterValues {
   labels: string[];
   members: string[];
   has: string[];
+}
+
+interface SearchFilter extends FilterValues {
+  exclude: FilterValues;
   text: string;
 }
 
@@ -35,8 +41,8 @@ export interface FilterOption {
 export type FilterOptions = Record<FilterField, readonly FilterOption[]>;
 
 export type FilterMenu =
-  | { kind: 'fields'; word: FilterSpan; fields: FilterField[] }
-  | { kind: 'values'; word: FilterSpan; field: FilterField; options: FilterOption[] };
+  | { kind: 'fields'; word: FilterSpan; negated: boolean; fields: FilterField[] }
+  | { kind: 'values'; word: FilterSpan; field: FilterField; negated: boolean; excludeRow: boolean; options: FilterOption[] };
 
 export type MemberNames = (address: string) => readonly string[];
 
@@ -47,7 +53,7 @@ export const HAS_OPTIONS: readonly FilterOption[] = [
   { key: 'draft', label: 'Draft', value: 'draft' },
 ];
 
-const FIELD_RE = /^(label|member|has):(.*)$/i;
+const FIELD_RE = /^(-?)(label|member|has):(.*)$/i;
 const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has' } as const;
 
 function wordsOf(query: string): FilterSpan[] {
@@ -86,23 +92,25 @@ function valuesOf(raw: string): string[] {
   return values;
 }
 
-function fieldWord(word: string): { field: FilterField; values: string[] } | null {
+function fieldWord(word: string): { field: FilterField; negated: boolean; values: string[] } | null {
   const match = FIELD_RE.exec(word);
   if (match === null) return null;
-  const field = FILTER_FIELDS.find(value => value === match[1]?.toLowerCase());
-  return field === undefined ? null : { field, values: valuesOf(match[2] ?? '') };
+  const field = FILTER_FIELDS.find(value => value === match[2]?.toLowerCase());
+  return field === undefined ? null : { field, negated: match[1] === '-', values: valuesOf(match[3] ?? '') };
 }
 
 const filled = (values: readonly string[]): string[] => values.filter(value => value !== '');
 
+const noValues = (): FilterValues => ({ labels: [], members: [], has: [] });
+
 export function parseSearchFilter(query: string): SearchFilter {
-  const filter: SearchFilter = { labels: [], members: [], has: [], text: '' };
+  const filter: SearchFilter = { ...noValues(), exclude: noValues(), text: '' };
   const free: string[] = [];
   for (const span of wordsOf(query)) {
     const word = query.slice(span.start, span.end);
     const token = fieldWord(word);
     if (token === null) free.push(word);
-    else filter[FILTER_KEYS[token.field]].push(...filled(token.values));
+    else (token.negated ? filter.exclude : filter)[FILTER_KEYS[token.field]].push(...filled(token.values));
   }
   filter.text = free.join(' ');
   return filter;
@@ -141,21 +149,25 @@ function hasMatches(row: FilterRow, value: string, draftOf: (convId: string) => 
   return false;
 }
 
+const labelMatches = (row: FilterRow, value: string): boolean => (
+  (row.labels ?? []).some(label => label.toLowerCase() === value.toLowerCase())
+);
+
 export function searchRowMatcher(
   filter: SearchFilter, namesOf: MemberNames, draftOf: (convId: string) => string = () => '',
 ): (row: FilterRow) => boolean {
-  const labels = new Set(filter.labels.map(label => label.toLowerCase()));
   const text = filter.text.toLowerCase();
-  const labelled = (row: FilterRow): boolean => (
-    labels.size === 0 || (row.labels ?? []).some(label => labels.has(label.toLowerCase()))
-  );
-  const joined = (row: FilterRow): boolean => (
-    filter.members.length === 0 || filter.members.some(value => memberMatches(row, value, namesOf))
-  );
-  const present = (row: FilterRow): boolean => (
-    filter.has.length === 0 || filter.has.some(value => hasMatches(row, value, draftOf))
-  );
-  return row => labelled(row) && joined(row) && present(row) && rowMatchesQuery(row, text);
+  const tests: Record<FilterField, (row: FilterRow, value: string) => boolean> = {
+    label: labelMatches,
+    member: (row, value) => memberMatches(row, value, namesOf),
+    has: (row, value) => hasMatches(row, value, draftOf),
+  };
+  const kept = (row: FilterRow, field: FilterField): boolean => {
+    const key = FILTER_KEYS[field];
+    const hit = (value: string): boolean => tests[field](row, value);
+    return (filter[key].length === 0 || filter[key].some(hit)) && !filter.exclude[key].some(hit);
+  };
+  return row => FILTER_FIELDS.every(field => kept(row, field)) && rowMatchesQuery(row, text);
 }
 
 const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = {
@@ -195,7 +207,7 @@ const withoutWord = (query: string, word: FilterSpan): string => `${query.slice(
 
 export function searchFilterValues(query: string, field: FilterField): string[] {
   const filter = parseSearchFilter(query);
-  return filter[FILTER_KEYS[field]];
+  return [...filter[FILTER_KEYS[field]], ...filter.exclude[FILTER_KEYS[field]]];
 }
 
 const sameValue = (field: FilterField, a: string, b: string): boolean => (
@@ -207,17 +219,19 @@ export function searchFilterMenu(query: string, caret: number, options: FilterOp
   const text = query.slice(word.start, word.end);
   const token = fieldWord(text);
   if (token !== null) {
-    const { field } = token;
+    const { field, negated } = token;
     const needle = bare(token.values.at(-1) ?? '');
     const picked = [...searchFilterValues(withoutWord(query, word), field), ...filled(token.values.slice(0, -1))];
     const matching = options[field].filter(option => (
       !picked.some(value => sameValue(field, value, option.value)) && optionMatches(option, needle)
     ));
-    return matching.length === 0 ? null : { kind: 'values', word, field, options: matching };
+    const excludeRow = !negated && EXCLUDE_FIELDS.includes(field) && token.values.length === 1 && token.values[0] === '';
+    return matching.length === 0 ? null : { kind: 'values', word, field, negated, excludeRow, options: matching };
   }
-  const typed = text.toLowerCase();
-  const fields = FILTER_FIELDS.filter(field => field.startsWith(typed));
-  return fields.length === 0 ? null : { kind: 'fields', word, fields };
+  const negated = text.startsWith('-');
+  const typed = text.slice(negated ? 1 : 0).toLowerCase();
+  const fields = (negated ? EXCLUDE_FIELDS : FILTER_FIELDS).filter(field => field.startsWith(typed));
+  return fields.length === 0 ? null : { kind: 'fields', word, negated, fields };
 }
 
 export function filterMenuKey(menu: FilterMenu | null): string {
@@ -227,13 +241,15 @@ export function filterMenuKey(menu: FilterMenu | null): string {
 
 export function filterMenuSize(menu: FilterMenu | null): number {
   if (menu === null) return 0;
-  return menu.kind === 'fields' ? menu.fields.length : menu.options.length;
+  return menu.kind === 'fields' ? menu.fields.length : menu.options.length + (menu.excludeRow ? 1 : 0);
 }
 
 const quoted = (value: string): string => (/[\s",]/.test(value) ? `"${value.replace(/"/g, '')}"` : value);
 
-export function searchFilterToken(field: FilterField, values: readonly string[]): string {
-  return `${field}:${values.map(quoted).join(',')}`;
+const fieldPrefix = (field: FilterField, negated: boolean): string => `${negated ? '-' : ''}${field}:`;
+
+export function searchFilterToken(field: FilterField, values: readonly string[], negated = false): string {
+  return `${fieldPrefix(field, negated)}${values.map(quoted).join(',')}`;
 }
 
 function replaceWord(query: string, word: FilterSpan, text: string): { query: string; caret: number } {
@@ -241,28 +257,35 @@ function replaceWord(query: string, word: FilterSpan, text: string): { query: st
   return { query: `${head}${query.slice(word.end)}`, caret: head.length };
 }
 
-function appendToToken(query: string, word: FilterSpan, field: FilterField, value: string): { query: string; caret: number } | null {
+function appendToToken(
+  query: string, word: FilterSpan, { field, negated }: { field: FilterField; negated: boolean }, value: string,
+): { query: string; caret: number } | null {
   const rest = `${query.slice(0, word.start)}${query.slice(word.end).replace(/^\s+/, '')}`;
   for (const span of wordsOf(rest)) {
     const token = fieldWord(rest.slice(span.start, span.end));
-    if (token?.field !== field) continue;
-    const next = replaceWord(rest, span, searchFilterToken(field, [...filled(token.values), value]));
+    if (token?.field !== field || token.negated !== negated) continue;
+    const next = replaceWord(rest, span, searchFilterToken(field, [...filled(token.values), value], negated));
     return { query: next.query, caret: span.start < word.start ? word.start + next.query.length - rest.length : word.start };
   }
   return null;
 }
 
+function pickValue(query: string, menu: Extract<FilterMenu, { kind: 'values' }>, value: string): { query: string; caret: number } {
+  const earlier = filled(fieldWord(query.slice(menu.word.start, menu.word.end))?.values.slice(0, -1) ?? []);
+  const appended = earlier.length === 0 ? appendToToken(query, menu.word, menu, value) : null;
+  if (appended !== null) return appended;
+  const tail = query.slice(menu.word.end).replace(/^\s+/, '');
+  const token = searchFilterToken(menu.field, [...earlier, value], menu.negated);
+  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, token);
+  return { query: picked.query, caret: picked.caret + 1 };
+}
+
 export function pickSearchFilter(query: string, menu: FilterMenu, index: number): { query: string; caret: number } | null {
   if (menu.kind === 'fields') {
     const field = menu.fields[index];
-    return field === undefined ? null : replaceWord(query, menu.word, `${field}:`);
+    return field === undefined ? null : replaceWord(query, menu.word, fieldPrefix(field, menu.negated));
   }
-  const option = menu.options[index];
-  if (option === undefined) return null;
-  const earlier = filled(fieldWord(query.slice(menu.word.start, menu.word.end))?.values.slice(0, -1) ?? []);
-  const appended = earlier.length === 0 ? appendToToken(query, menu.word, menu.field, option.value) : null;
-  if (appended !== null) return appended;
-  const tail = query.slice(menu.word.end).replace(/^\s+/, '');
-  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, searchFilterToken(menu.field, [...earlier, option.value]));
-  return { query: picked.query, caret: picked.caret + 1 };
+  if (menu.excludeRow && index === 0) return replaceWord(query, menu.word, fieldPrefix(menu.field, true));
+  const option = menu.options[index - (menu.excludeRow ? 1 : 0)];
+  return option === undefined ? null : pickValue(query, menu, option.value);
 }
