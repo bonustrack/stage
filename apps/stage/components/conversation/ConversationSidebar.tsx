@@ -18,15 +18,14 @@ const sidebarWidth = createPaneWidth({
   css: (width) => `:root { --stage-right-pane: ${width}px; }`,
 });
 
-export function useConversationSidebarState(isGroup: boolean, peerAddress?: string | null): 'shown' | 'hidden' | undefined {
+export function useConversationSidebarShown(): boolean {
   const open = useMemberListOpen();
   const wide = useWebTabRail();
-  if (!wide || (!isGroup && !peerAddress)) return undefined;
-  return open ? 'shown' : 'hidden';
+  return wide && open;
 }
 
-export function ConversationSidebar({ convId, isGroup, peerAddress }: {
-  convId: string; isGroup: boolean; peerAddress: string | null;
+export function ConversationSidebar({ convId, isGroup = false, peerAddress = null }: {
+  convId?: string; isGroup?: boolean; peerAddress?: string | null;
 }): React.ReactElement {
   const { border } = usePalette();
   const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
@@ -37,7 +36,7 @@ export function ConversationSidebar({ convId, isGroup, peerAddress }: {
       width={width}
       style={[pinnedEdges({ top, bottom: 0, right: 0 }, 2), { borderLeftWidth: 1, borderLeftColor: border }]}
 >
-      {isGroup ? <MemberListSidebar convId={convId}/> : peerAddress ? <PeerProfileSidebar key={peerAddress} address={peerAddress}/> : null}
+      {isGroup && convId ? <MemberListSidebar convId={convId}/> : peerAddress ? <PeerProfileSidebar key={peerAddress} address={peerAddress}/> : null}
       <PaneResizeHandle pane={sidebarWidth} edge="left"/>
     </Box>
   );

@@ -25,17 +25,21 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
-import { ConversationSidebar, useConversationSidebarState } from '../../components/conversation/ConversationSidebar';
+import { ConversationSidebar, useConversationSidebarShown } from '../../components/conversation/ConversationSidebar';
 
 function UnresolvedConversation({ resolved }: {
   resolved: ReturnType<typeof useResolvedConvId>;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+  const sidebar = useConversationSidebarShown();
   if (resolved.resolving) {
     return (
-      <Col surface="surface" flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD]}>
-        <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
-      </Col>
+      <>
+        <Col surface="surface" flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD, sidebar ? RIGHT_PANE_PAD : null]}>
+          <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
+        </Col>
+        {sidebar ? <ConversationSidebar/> : null}
+      </>
     );
   }
   if (resolved.pendingAddress && resolved.error) {
@@ -96,7 +100,7 @@ export default function XmtpConversation(): React.ReactElement {
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;
-  const memberList = useConversationSidebarState(c.isGroup, c.peerAddr) === 'shown';
+  const memberList = useConversationSidebarShown();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

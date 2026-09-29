@@ -5,17 +5,17 @@ import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { toggleMemberList } from '../../lib/memberList';
-import { useConversationSidebarState } from './ConversationSidebar';
+import { toggleMemberList, useMemberListOpen } from '../../lib/memberList';
+import { useWebTabRail } from '../../lib/webLayout';
 
 export function ConversationSidebarToggle({ isGroup, peerAddress }: {
   isGroup: boolean; peerAddress: string | null;
 }): React.ReactElement | null {
-  const state = useConversationSidebarState(isGroup, peerAddress);
+  const open = useMemberListOpen();
+  const wide = useWebTabRail();
   const { text, link } = usePalette();
   const hover = useHover();
-  if (state === undefined) return null;
-  const open = state === 'shown';
+  if (!wide || (!isGroup && !peerAddress)) return null;
   const label = `${open ? 'Hide' : 'Show'} ${isGroup ? 'member list' : 'user profile'}`;
   return (
     <HoverTooltip label={label} placement="below">
