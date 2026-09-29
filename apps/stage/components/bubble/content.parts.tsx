@@ -35,7 +35,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="3xl" weight="semibold" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionDisplay(address)}
@@ -46,7 +46,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
 function ChannelRefLink({ convId, label, fg }: { convId: string; label: string; fg: string }): React.ReactElement {
   const router = useRouter();
   return (
-    <Text size="3xl" weight="semibold" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(conversationLinkOf(convId)); }} role="link"
       suppressHighlighting>
       {`#${label}`}
