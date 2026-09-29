@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "lib": [
+      "ES2024",
+      "ESNext.Array",
+      "ESNext.Decorators",
+      "ESNext.Disposable",
+      "ESNext.Error",
+      "ESNext.Float16",
+      "ESNext.Iterator",
+      "ESNext.Promise",
+      "ESNext.SharedMemory",
+      "DOM",
+      "DOM.Iterable",
+      "DOM.AsyncIterable"
+    ]
+  }
+}
