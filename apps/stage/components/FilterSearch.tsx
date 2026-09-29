@@ -152,7 +152,6 @@ function FilterOptionItem({ field, option, excluded, highlighted, onPress }: {
       label={option.label}
       iconName={member ? undefined : optionIcon(field, option, excluded)}
       icon={member ? avatar : undefined}
-      danger={excluded}
       highlighted={highlighted}
       onPress={onPress}
     />
