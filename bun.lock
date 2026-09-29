@@ -142,7 +142,7 @@
         "madge": "*",
         "oxlint": "*",
         "oxlint-tsgolint": "*",
-        "typescript": "*",
+        "typescript": ">=5.9",
         "typescript-eslint": "*",
         "vue-eslint-parser": "*",
       },

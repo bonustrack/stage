@@ -339,6 +339,8 @@ function spawnCaptured(bin, args) {
   return new Promise((done) => {
     const child = spawn(bin, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let output = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => { output += chunk; });
     child.stderr.on('data', (chunk) => { output += chunk; });
     child.on('error', (error) => done({ status: 2, output: `${error.message}\n` }));

@@ -95,8 +95,8 @@ Extend the matching `tsconfig` base:
 { "extends": "@stage-labs/config/tsconfig/base.json" }
 ```
 
-- `tsconfig/base.json` — strict base for pure-TS packages, with `types: []` (list the global types a project needs)
+- `tsconfig/base.json`: strict base for pure-TS packages, with `types: []` (list the global types a project needs)
 - `tsconfig/react-native.json` — layer on top of `expo/tsconfig.base`
 - `tsconfig/vue.json` — layer on top of `@vue/tsconfig/tsconfig.dom.json`
 
-`base.json` and `react-native.json` take `lib` from `tsconfig/lib.json`: ES2024, the ESNext parts that TypeScript 5.9 and 7 declare the same way (array, decorators, disposable, error, float16, iterator, promise, shared memory) and the DOM. Plain `ESNext` means more in TypeScript 7 (Temporal, `RegExp.escape`, `Uint8Array` hex and base64, `Map.getOrInsert`, Set methods), so the explicit list keeps `tsc` and `tsgo` on the same APIs.
+`base.json` and `react-native.json` take `lib` from `tsconfig/lib.json`: ES2024, the ESNext parts that TypeScript 5.9 and 7 declare the same way (array, decorators, disposable, error, float16, iterator, promise, shared memory) and the DOM. Plain `ESNext` means more in TypeScript 7 (Temporal, `RegExp.escape`, `Uint8Array` hex and base64, `Map.getOrInsert`, Set methods), so the explicit list keeps `tsc` and `tsgo` on the same APIs. These lib names need TypeScript 5.9 or later.
