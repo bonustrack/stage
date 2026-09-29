@@ -1,8 +1,19 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, jest, test } from 'bun:test';
 import {
   historyProblemMessage, historySyncIsActive, historySyncPhaseLabel, isMissingArchive, settleBy, timeLeftLabel, within,
   HISTORY_COPY, HistoryProblem,
 } from '../lib/historySync.model';
+
+async function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
+  jest.useFakeTimers();
+  try {
+    const pending = start();
+    jest.advanceTimersByTime(ms);
+    return await pending;
+  } finally {
+    jest.useRealTimers();
+  }
+}
 
 describe('history sync phases', () => {
   test('idle has no label and only the two pending phases are active', () => {
@@ -47,7 +58,7 @@ describe('historyProblemMessage', () => {
 describe('within', () => {
   test('rejects with the given message when a step never answers', async () => {
     const hung = new Promise<string>(() => undefined);
-    const outcome = await within(hung, 20, HISTORY_COPY.importSlow).catch((e: unknown) => e);
+    const outcome = await afterFakeTime(20, () => within(hung, 20, HISTORY_COPY.importSlow).catch((e: unknown) => e));
     expect(outcome).toBeInstanceOf(HistoryProblem);
     expect(historyProblemMessage(outcome, 'fallback')).toBe(HISTORY_COPY.importSlow);
   });
@@ -63,7 +74,7 @@ describe('within', () => {
 describe('settleBy', () => {
   test('a step that never answers settles with the fallback at the deadline', async () => {
     const hung = new Promise<string>(() => undefined);
-    expect(await settleBy(hung, Date.now() + 20, 'timeout')).toBe('timeout');
+    expect(await afterFakeTime(20, () => settleBy(hung, Date.now() + 20, 'timeout'))).toBe('timeout');
   });
 
   test('a step that answers in time keeps its result', async () => {
