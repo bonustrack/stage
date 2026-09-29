@@ -16,7 +16,7 @@ import { PollView } from './poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
 import { bubbleTimestamp } from '../../lib/format';
 import {
-  BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, type MarkdownProps,
+  BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, markdownRules, type MarkdownProps,
 } from './content.parts';
 
 function descriptorsOf(entry: HistoryEntry): {
@@ -93,6 +93,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const markdownProps: MarkdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),
+    rules: markdownRules,
     style: mdStyle,
   };
   return (

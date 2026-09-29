@@ -1,7 +1,7 @@
-import { Component } from 'react';
+import { Component, cloneElement, isValidElement } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import Markdown from 'react-native-markdown-display';
+import Markdown, { renderRules, type RenderRules } from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from '../MediaEmbeds';
 import { ChannelCard } from '../ChannelCard';
 import { GitHubLinkCard } from '../GitHubLinkCard';
@@ -11,7 +11,8 @@ import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import { Box } from '../layout';
 import { MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
-import type { Attachment } from './helpers';
+import type { Attachment, LinkPress } from './helpers';
+import { bubbleLinkProps } from './linkProps';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
 import { inlineAttachmentUrl } from './attachmentUri';
 import { galleryKeyOf } from './imageGallery.model';
@@ -54,9 +55,16 @@ function ChannelRefLink({ convId, label, fg }: { convId: string; label: string; 
   );
 }
 
-export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
+export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'rules' | 'style'>;
 
-type LinkPress = MarkdownProps['onLinkPress'];
+export const markdownRules: RenderRules = {
+  link: (node, children, parents, styles, onLinkPress) => {
+    const link = renderRules.link?.(node, children, parents, styles, onLinkPress);
+    const href: unknown = node.attributes.href;
+    if (!isValidElement(link) || typeof href !== 'string') return link;
+    return cloneElement(link, bubbleLinkProps(href, onLinkPress));
+  },
+};
 
 const findLinks: LinkFinder = text => mdParser.linkify.match(text);
 
@@ -65,7 +73,7 @@ function WebLink({ url, text, fg, onLinkPress }: {
 }): React.ReactElement {
   return (
     <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      onPress={() => { onLinkPress?.(url); }} suppressHighlighting>
+      {...bubbleLinkProps(url, onLinkPress)} suppressHighlighting>
       {text}
     </Text>
   );

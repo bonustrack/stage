@@ -49,6 +49,15 @@ export function attachmentsOf(entry: HistoryEntry): Attachment[] {
 
 export const MESSAGE_LINK_STYLE = { textDecorationLine: 'none' } as const;
 
+export type LinkPress = ((url: string) => boolean) | undefined;
+
+export interface BubbleLinkProps {
+  onPress?: () => void;
+  href?: string;
+  hrefAttrs?: { target: string; rel: string };
+  ref?: (node: unknown) => void;
+}
+
 export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
   const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
