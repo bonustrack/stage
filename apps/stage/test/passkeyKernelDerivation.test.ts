@@ -1,28 +1,13 @@
 
-import { beforeAll, describe, expect, test } from 'bun:test';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { describe, expect, test } from 'bun:test';
 import { createKernelAccount } from '@zerodev/sdk';
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { PasskeyValidatorContractVersion, toPasskeyValidator } from '@zerodev/passkey-validator';
 import { mnemonicToAccount } from 'viem/accounts';
+import { recordedBaseClient as publicClient } from './recordedBaseRpc';
 
 const ENTRY_POINT = getEntryPoint('0.7');
-const RPC_ENV: unknown = process.env.EXPO_PUBLIC_ZERODEV_RPC;
-const RPC = typeof RPC_ENV === 'string' && RPC_ENV.trim() !== '' ? RPC_ENV.trim() : 'https://mainnet.base.org';
-const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
-
-let online = false;
-beforeAll(async () => {
-  try {
-    await publicClient.getChainId();
-    await publicClient.getBytecode({ address: '0x0000000000000000000000000000000000000000' });
-    online = true;
-  } catch {
-    online = false;
-  }
-});
 
 const MNEMONIC = 'test test test test test test test test test test test junk';
 
@@ -75,50 +60,30 @@ async function ecdsaKernel(index: bigint) {
   });
 }
 
-async function tryAddress(build: () => Promise<{ address: string }>): Promise<string | null> {
-  try {
-    return (await build()).address;
-  } catch {
-    return null;
-  }
-}
-
 describe('passkey-sudo Kernel address derivation', () => {
   test('is deterministic for the same stored pubkey + index', async () => {
-    if (!online) return;
-    const a = await tryAddress(() => passkeyKernel(0n));
-    const b = await tryAddress(() => passkeyKernel(0n));
-    if (a == null || b == null) return;
+    const a = (await passkeyKernel(0n)).address;
+    const b = (await passkeyKernel(0n)).address;
     expect(a).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(a).toBe(b);
   });
 
   test('changes with the HD index (distinct accounts off one mnemonic)', async () => {
-    if (!online) return;
-    const a0 = await tryAddress(() => passkeyKernel(0n));
-    const a1 = await tryAddress(() => passkeyKernel(1n));
-    if (a0 == null || a1 == null) return;
+    const a0 = (await passkeyKernel(0n)).address;
+    const a1 = (await passkeyKernel(1n)).address;
     expect(a0.toLowerCase()).not.toBe(a1.toLowerCase());
   });
 
   test('DIFFERS from the ECDSA-sudo address at the same index (sudo is in the CREATE2 salt)', async () => {
-    if (!online) return;
-    const passkey = await tryAddress(() => passkeyKernel(0n));
-    const ecdsa = await tryAddress(() => ecdsaKernel(0n));
-    if (passkey == null || ecdsa == null) return;
+    const passkey = (await passkeyKernel(0n)).address;
+    const ecdsa = (await ecdsaKernel(0n)).address;
     expect(passkey.toLowerCase()).not.toBe(ecdsa.toLowerCase());
   });
 });
 
 describe('deploy initCode matches the counterfactual address at CREATE (no override)', () => {
   test('a passkey-sudo Kernel built with `index` emits factory + factoryData (deploys at its own address)', async () => {
-    if (!online) return;
-    let account: Awaited<ReturnType<typeof passkeyKernel>>;
-    try {
-      account = await passkeyKernel(0n);
-    } catch {
-      return;
-    }
+    const account = await passkeyKernel(0n);
     const fa = await account.getFactoryArgs();
     expect(fa.factory).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(fa.factoryData).toMatch(/^0x[0-9a-fA-F]+$/);
@@ -128,12 +93,7 @@ describe('deploy initCode matches the counterfactual address at CREATE (no overr
 describe('address-override is unsatisfiable for a passkey-sudo deploy (why enable swaps on-chain)', () => {
   test('pinning a passkey-sudo Kernel to a foreign address still emits passkey initCode', async () => {
     const foreign = '0x00000000000000000000000000000000DeaDBeef' as `0x${string}`;
-    let pinned: Awaited<ReturnType<typeof passkeyKernel>>;
-    try {
-      pinned = await passkeyKernel(0n, foreign);
-    } catch {
-      return;
-    }
+    const pinned = await passkeyKernel(0n, foreign);
     expect(pinned.address.toLowerCase()).toBe(foreign.toLowerCase());
     const fa = await pinned.getFactoryArgs();
     expect(fa.factoryData).toMatch(/^0x[0-9a-fA-F]+$/);
@@ -142,10 +102,8 @@ describe('address-override is unsatisfiable for a passkey-sudo deploy (why enabl
 
 describe('ECDSA-sudo Kernel (key-only account, no passkey)', () => {
   test('derives a deterministic address and works without any passkey dep', async () => {
-    if (!online) return;
-    const a = await tryAddress(() => ecdsaKernel(3n));
-    const b = await tryAddress(() => ecdsaKernel(3n));
-    if (a == null || b == null) return;
+    const a = (await ecdsaKernel(3n)).address;
+    const b = (await ecdsaKernel(3n)).address;
     expect(a).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(a).toBe(b);
   });

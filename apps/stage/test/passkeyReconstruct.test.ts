@@ -1,12 +1,11 @@
 
 import { describe, expect, test } from 'bun:test';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
 import {
   PasskeyValidatorContractVersion,
   toPasskeyValidator,
 } from '@zerodev/passkey-validator';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
+import { recordedBaseClient as publicClient } from './recordedBaseRpc';
 
 const ENTRY_POINT = getEntryPoint('0.7');
 
@@ -28,7 +27,6 @@ describe('passkey contract version resolves to a real enum member', () => {
 
 describe('reconstruct a passkey validator from stored material (rebuild path)', () => {
   test('toPasskeyValidator builds a validator with a resolvable address (no throw)', async () => {
-    const publicClient = createPublicClient({ chain: base, transport: http() });
     const webAuthnKey = {
       pubX: BigInt(STORED.pubX),
       pubY: BigInt(STORED.pubY),

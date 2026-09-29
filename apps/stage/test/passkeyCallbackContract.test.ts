@@ -2,15 +2,12 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'fs';
 import { createRequire } from 'module';
-import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { PasskeyValidatorContractVersion, toPasskeyValidator } from '@zerodev/passkey-validator';
+import { recordedBaseClient as publicClient } from './recordedBaseRpc';
 
 const ENTRY_POINT = getEntryPoint('0.7');
-const RPC_ENV: unknown = process.env.EXPO_PUBLIC_ZERODEV_RPC;
-const RPC = typeof RPC_ENV === 'string' && RPC_ENV.trim() !== '' ? RPC_ENV.trim() : 'https://mainnet.base.org';
-const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
 
 const STORED = {
   pubX: '0x' + 'a3'.repeat(32),
@@ -22,13 +19,6 @@ const STORED = {
 
 describe('passkey sign callback contract', () => {
   test('toPasskeyValidator invokes signMessageCallback with (message, rpID, chainId, allowCredentials)', async () => {
-    let online = true;
-    try {
-      await publicClient.getChainId();
-    } catch {
-      online = false;
-    }
-    if (!online) return;
     const calls: unknown[][] = [];
     const validator = await toPasskeyValidator(publicClient, {
       webAuthnKey: {
