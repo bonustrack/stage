@@ -14,7 +14,7 @@ export async function getGroupLabels(line: string): Promise<string[]> {
 async function mutate(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
-  if (!group) throw new Error('Not a group conversation');
+  if (!group) throw new Error('Not a channel');
   return writeLabels(group, fn);
 }
 

@@ -46,7 +46,7 @@ describe('mapDecodedToEnvelope', () => {
   test('a leave request reads as a system line even when its codec is missing', () => {
     const leave = { ...throwingCodec, contentTypeId: 'xmtp.org/leave_request:1.0', fallback: undefined };
     const e = mapDecodedToEnvelope(leave, LINE);
-    expect(e.text).toBe('left the group');
+    expect(e.text).toBe('left the channel');
     expect(e.payload).toEqual({ contentType: 'leave_request', system: true });
   });
 });
@@ -98,9 +98,9 @@ describe('envelopeFromContent ui-parity options', () => {
   });
 
   test('a leave request and a left member read as plain words', () => {
-    expect(envelopeFromContent(base, 'leave_request', {}, undefined, uiOptions).text).toBe('left the group');
+    expect(envelopeFromContent(base, 'leave_request', {}, undefined, uiOptions).text).toBe('left the channel');
     const update = { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], leftInboxes: [{ inboxId: 'y' }] };
-    expect(envelopeFromContent(base, 'group_updated', update, undefined, uiOptions).text).toBe('1 member left the group');
+    expect(envelopeFromContent(base, 'group_updated', update, undefined, uiOptions).text).toBe('1 member left the channel');
   });
 
   test('reply whose inner content fails to decode falls back instead of throwing', () => {

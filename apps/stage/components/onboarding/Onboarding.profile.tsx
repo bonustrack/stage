@@ -9,7 +9,7 @@ import { Col } from '../layout';
 import { FormField } from '../FormField';
 import { OnboardingCard, PROFILE_AVATAR_SIZE } from './OnboardingCard';
 import { usePalette } from '../../lib/theme';
-import { GroupImagePicker } from '../GroupImagePicker';
+import { SquareImagePicker } from '../SquareImagePicker';
 import { EMPTY_DETAILS, profileDetailsProblem, type ProfileDetails } from './Onboarding.profile.model';
 import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 
@@ -30,7 +30,7 @@ function PicturePicker({ image, busy, onPick }: {
       ) : (
         <Image src={image.uri} size={PROFILE_AVATAR_SIZE} radius="full" background={pal.border} />
       )}
-      <GroupImagePicker openNonce={pickNonce} onPick={onPick} />
+      <SquareImagePicker openNonce={pickNonce} onPick={onPick} />
     </Pressable>
   );
 }

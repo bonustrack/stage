@@ -32,7 +32,7 @@ export function mapCreateGroupError(err: unknown): Error {
   if (isNoInboxError(msg)) {
     return new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
   }
-  return new Error(`Couldn't create the group: ${msg}`);
+  return new Error(`Couldn't create the channel: ${msg}`);
 }
 
 export function mapAddMembersError(err: unknown): Error {
@@ -41,7 +41,7 @@ export function mapAddMembersError(err: unknown): Error {
     return new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
   }
   if (isPermissionError(msg)) {
-    return new Error('Only a group admin can add members.');
+    return new Error('Only a channel admin can add members.');
   }
   return new Error(`Couldn't add members: ${msg}`);
 }
@@ -121,7 +121,7 @@ export function canEditGroup(rights: GroupEditRights): boolean {
 
 export function mapUpdateGroupError(err: unknown): Error {
   const msg = errorMessage(err);
-  return new Error(isPermissionError(msg) ? "You don't have permission to edit this group." : msg);
+  return new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
 }
 
 export interface GroupMetaPatch { name?: string; imageUrl?: string; description?: string }

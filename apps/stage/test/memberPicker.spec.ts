@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { pickerRows, shownMembers, togglePick } from '../components/group/MemberPicker.model';
+import { pickerRows, shownMembers, togglePick } from '../components/channel/MemberPicker.model';
 
 const toContact = (m: { address: string; label: string }): { address: string; name: string } => ({ address: m.address, name: m.label });
 

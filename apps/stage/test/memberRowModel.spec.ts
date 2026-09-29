@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { memberRowModel } from '../components/group/group.parts.model';
+import { memberRowModel } from '../components/channel/channel.parts.model';
 
 const SHORT = '0xabc0…0001';
 

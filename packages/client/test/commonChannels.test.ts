@@ -12,7 +12,7 @@ describe('commonChannelFromRow', () => {
     const row: CommonChannelRow = { convId: 'c1' };
     const ch = commonChannelFromRow(row, ['0xA', '0xB']);
     expect(ch.convId).toBe('c1');
-    expect(ch.title).toBe('Group');
+    expect(ch.title).toBe('Channel');
     expect(ch.avatarUri).toBeNull();
     expect(ch.memberCount).toBe(3);
     expect(ch.lastPreview).toBe('');

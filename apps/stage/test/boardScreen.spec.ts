@@ -353,8 +353,8 @@ describe('labelCapNote', () => {
   });
 
   test('counts the groups that came back without the label', () => {
-    expect(labelCapNote([['a'], ['Design']], 'Design')).toBe(`1 group already has ${MAX_LABELS} labels.`);
-    expect(labelCapNote([['a'], ['b'], ['Design']], 'Design')).toBe(`2 groups already have ${MAX_LABELS} labels.`);
+    expect(labelCapNote([['a'], ['Design']], 'Design')).toBe(`1 channel already has ${MAX_LABELS} labels.`);
+    expect(labelCapNote([['a'], ['b'], ['Design']], 'Design')).toBe(`2 channels already have ${MAX_LABELS} labels.`);
   });
 
   test('matches the label the way the group stores it', () => {

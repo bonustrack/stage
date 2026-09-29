@@ -36,7 +36,7 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
     <Col gap={16}>
       <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       <Button size="lg" fullWidth pill dark={dark} loading={submitting} disabled={count === 0}
-        tintBg={primary} tintFg={bg} label={count > 0 ? `Add to group (${count})` : 'Add to group'}
+        tintBg={primary} tintFg={bg} label={count > 0 ? `Add to channel (${count})` : 'Add to channel'}
         onPress={() => { void submit(); }}/>
     </Col>
   );

@@ -4,7 +4,7 @@ import { capabilities } from '../../lib/capabilities';
 import {
   LabelPermissionError, addGroupLabel, lineOfConv, moveGroupLabel, removeGroupLabel, renameGroupLabel,
 } from '../../modules/messaging';
-import { toastLabelError } from '../group/group.labels';
+import { toastLabelError } from '../channel/channel.labels';
 import {
   addedColumnOrder, columnLabel, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote, labelCarriers,
   movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag,
@@ -33,8 +33,8 @@ function labelOutcome(results: readonly PromiseSettledResult<unknown>[], failure
   if (failed.length > refused) return failure;
   if (refused === 0) return null;
   return refused === 1
-    ? `1 group ${refusal}, no permission to edit its labels.`
-    : `${refused} groups ${refusal}, no permission to edit their labels.`;
+    ? `1 channel ${refusal}, no permission to edit its labels.`
+    : `${refused} channels ${refusal}, no permission to edit their labels.`;
 }
 
 export async function renameBoardLabel(
@@ -45,7 +45,7 @@ export async function renameBoardLabel(
   const results = await Promise.allSettled(
     labelCarriers(rows, from).map(convId => renameGroupLabel(lineOfConv(convId), from, to)),
   );
-  const outcome = labelOutcome(results, 'Could not rename the label in every group. Try again.', 'kept the old name');
+  const outcome = labelOutcome(results, 'Could not rename the label in every channel. Try again.', 'kept the old name');
   if (outcome !== null) capabilities.toast(outcome);
 }
 
@@ -57,7 +57,7 @@ export async function deleteBoardLabel(
   if (!await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true })) return;
   setBoardOrder(deletedColumnOrder(columns.map(c => c.key), saved, label));
   const results = await Promise.allSettled(carriers.map(convId => removeGroupLabel(lineOfConv(convId), label)));
-  const outcome = labelOutcome(results, 'Could not remove the label from every group. Try again.', 'kept the label');
+  const outcome = labelOutcome(results, 'Could not remove the label from every channel. Try again.', 'kept the label');
   if (outcome !== null) capabilities.toast(outcome);
 }
 
@@ -65,7 +65,7 @@ export async function addToBoardLabel(convIds: readonly string[], label: string)
   const results = await Promise.allSettled(convIds.map(convId => addGroupLabel(lineOfConv(convId), label)));
   const added = results.filter((r): r is PromiseFulfilledResult<string[]> => r.status === 'fulfilled').map(r => r.value);
   const notes = [
-    labelOutcome(results, 'Could not add the label to every group. Try again.', 'did not get the label'),
+    labelOutcome(results, 'Could not add the label to every channel. Try again.', 'did not get the label'),
     labelCapNote(added, label),
   ].filter((note): note is string => note !== null);
   if (notes.length > 0) capabilities.toast(notes.join(' '));

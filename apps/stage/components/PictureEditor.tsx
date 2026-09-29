@@ -4,7 +4,7 @@ import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
 import { AnchoredMenu, menuPointBelow } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { MenuRow } from './MenuRows';
-import { GroupImagePicker } from './GroupImagePicker';
+import { SquareImagePicker } from './SquareImagePicker';
 import { usePastedPicture } from './composer/pastedImages';
 import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
@@ -27,7 +27,7 @@ export function PictureEditor({ avatar, editable, removable, onChange }: {
         <MenuRow icon={IconCamera1} label="Upload a picture" onPress={() => { close(); setPickNonce(n => n + 1); }} />
         {removable ? <MenuRow icon={IconTrashCan} label="Remove picture" danger onPress={() => { close(); onChange({ kind: 'remove' }); }} /> : null}
       </AnchoredMenu>
-      <GroupImagePicker openNonce={pickNonce} onPick={(file) => { onChange({ kind: 'new', file }); }} />
+      <SquareImagePicker openNonce={pickNonce} onPick={(file) => { onChange({ kind: 'new', file }); }} />
     </>
   );
 }

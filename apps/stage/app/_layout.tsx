@@ -27,7 +27,7 @@ import { applyWebGlobalStyles } from '../platform/webStyles';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
-import { AddMembersHost } from '../components/group/AddMembers';
+import { AddMembersHost } from '../components/channel/AddMembers';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';

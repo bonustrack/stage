@@ -1,7 +1,7 @@
 
 import type { HistoryEntry } from '../types';
 import {
-  humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_GROUP_TEXT, type GroupUpdatedContent,
+  humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT, type GroupUpdatedContent,
 } from './humanize';
 import { type PollContent, pollFallbackText } from './poll';
 import {
@@ -179,7 +179,7 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
 };
 
 function leaveEnvelope(base: HistoryEntry, typeId: string): HistoryEntry {
-  return { ...base, text: LEFT_GROUP_TEXT, payload: { contentType: typeId, system: true } };
+  return { ...base, text: LEFT_CHANNEL_TEXT, payload: { contentType: typeId, system: true } };
 }
 
 export function isSystemEntry(entry: HistoryEntry): boolean {

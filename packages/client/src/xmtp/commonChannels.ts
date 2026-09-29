@@ -43,7 +43,7 @@ export function commonChannelFromRow(
   const title = str(row.title);
   return {
     convId: row.convId,
-    title: title?.trim() ? title.trim() : 'Group',
+    title: title?.trim() ? title.trim() : 'Channel',
     avatarUri,
     avatarAddress: avatarUri ? null : avatarSeedOf(row),
     memberCount: members.length + 1,

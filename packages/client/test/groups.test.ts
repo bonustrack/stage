@@ -46,14 +46,14 @@ describe('error mappers', () => {
       .toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
   });
   test('create generic', () => {
-    expect(mapCreateGroupError(new Error('boom')).message).toBe("Couldn't create the group: boom");
+    expect(mapCreateGroupError(new Error('boom')).message).toBe("Couldn't create the channel: boom");
   });
   test('add no-inbox', () => {
     expect(mapAddMembersError(new Error('not registered')).message)
       .toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
   });
   test('add permission', () => {
-    expect(mapAddMembersError(new Error('admin only')).message).toBe('Only a group admin can add members.');
+    expect(mapAddMembersError(new Error('admin only')).message).toBe('Only a channel admin can add members.');
   });
   test('add generic', () => {
     expect(mapAddMembersError(new Error('boom')).message).toBe("Couldn't add members: boom");
@@ -85,7 +85,7 @@ describe('addGroupMembersWith', () => {
   });
   test('maps add permission error', async () => {
     await expect(addGroupMembersWith([ADDR_A], async () => { throw new Error('admin only'); }))
-      .rejects.toThrow('Only a group admin can add members.');
+      .rejects.toThrow('Only a channel admin can add members.');
   });
 });
 
@@ -160,7 +160,7 @@ describe('updateGroupMetaWith', () => {
   test('maps a rejected update to the permission message', async () => {
     const { ops } = recorder('image');
     await expect(updateGroupMetaWith({ imageUrl: 'https://x/y.png' }, ops))
-      .rejects.toThrow("You don't have permission to edit this group.");
+      .rejects.toThrow("You don't have permission to edit this channel.");
   });
   test('keeps other errors as they are', () => {
     expect(mapUpdateGroupError(new Error('network down')).message).toBe('network down');

@@ -9,7 +9,7 @@ export const MAX_LABEL_LEN = 24;
 
 export class LabelPermissionError extends Error {
   constructor() {
-    super("You don't have permission to edit labels in this group.");
+    super("You don't have permission to edit labels in this channel.");
     this.name = 'LabelPermissionError';
   }
 }

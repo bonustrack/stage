@@ -8,8 +8,8 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { AppModal } from '../AppModal';
 import { FORM_FIELD_RADIUS } from '../FormField';
 import { Box, Col, PAGE_GUTTER } from '../layout';
-import { MemberPicker, useMemberPicker, type Member } from '../group/MemberPicker';
-import { NewGroupDetails, createGroupLine, type PickedImage } from '../group/NewGroupForm';
+import { MemberPicker, useMemberPicker, type Member } from '../channel/MemberPicker';
+import { NewChannelDetails, createChannelLine, type PickedImage } from '../channel/NewChannelForm';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { sendDraft } from '../composer/actions';
@@ -26,7 +26,7 @@ type Picker = ReturnType<typeof useMemberPicker>;
 
 async function openConversation(mode: NewChatMode, members: Member[], name: string, image: PickedImage | null): Promise<string> {
   const only = members[0];
-  if (mode === 'group' || only === undefined) return createGroupLine(members.map(m => m.address), name, image);
+  if (mode === 'channel' || only === undefined) return createChannelLine(members.map(m => m.address), name, image);
   const res = await resolveDmConvId(only.address);
   if ('convId' in res) return lineOfConv(res.convId);
   throw new Error(resolveErrorMessage(res.error, res.detail));
@@ -79,8 +79,8 @@ function NewChatBody({ mode, setMode, picker, name, setName, image, setImage, ph
       <Box style={{ pointerEvents: phase === 'idle' ? 'auto' : 'none' }}>
         <Tabs value={mode} options={MODE_TABS} onChange={(v) => { if (isNewChatMode(v)) setMode(v); }} />
       </Box>
-      {mode === 'group' ? (
-        <NewGroupDetails name={name} setName={setName} image={image} setImage={setImage} creating={phase === 'creating'} />
+      {mode === 'channel' ? (
+        <NewChannelDetails name={name} setName={setName} image={image} setImage={setImage} creating={phase === 'creating'} />
       ) : null}
       <MemberPicker state={picker} dark={dark} />
     </Col>

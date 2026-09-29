@@ -11,6 +11,7 @@ import { togglePin } from '../lib/pins';
 import { blockRequestConv, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
 import { markChatCleared } from '../lib/clearedChats';
 import { profileLinkOf } from '../lib/links';
+import { channelProfileLinkOf } from '../lib/conversationLink';
 import { openAddMembers } from '../lib/addMembersHost';
 
 interface ChannelMenuProps {
@@ -25,17 +26,18 @@ interface ChannelMenuProps {
   context?: 'list' | 'view';
   onAfterLeave?: (result: 'left' | 'hidden') => void;
   onSearch?: () => void;
+  onEdit?: () => void;
 }
 
-function confirmLeaveGroup(
+function confirmLeaveChannel(
   convId: string, context: 'list' | 'view',
   router: ReturnType<typeof useRouter>,
   onClose: () => void, onAfterLeave?: (result: 'left' | 'hidden') => void,
 ): void {
   onClose();
   Alert.alert(
-    'Leave group',
-    'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+    'Leave channel',
+    'You’ll stop receiving messages from this channel. You can be re-added by a member later.',
     [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -83,7 +85,7 @@ function confirmDeleteChat(
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch,
+  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch, onEdit,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
 
@@ -95,14 +97,15 @@ export function ChannelMenu({
     'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
     info: () => { run(() => {
-      if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
+      if (isGroup) router.push(channelProfileLinkOf(convId));
       else if (peerAddress) router.push(profileLinkOf(peerAddress));
     }); },
-    leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
+    edit: () => { onClose(); setTimeout(() => onEdit?.(), 0); },
+    leave: () => { confirmLeaveChannel(convId, context, router, onClose, onAfterLeave); },
     delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
   };
 
-  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch });
+  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch, edit: !!onEdit });
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>

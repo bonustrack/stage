@@ -22,11 +22,11 @@ export function toastLabelError(e: unknown): void {
   else capabilities.toast('Could not update labels. Try again.');
 }
 
-export function useGroupLabels(line: string): [string[], (labels: string[]) => void] {
+export function useChannelLabels(line: string): [string[], (labels: string[]) => void] {
   const [labels, setLabels] = useState<string[]>([]);
   useEffect(() => {
     let cancelled = false;
-    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('group.labels'));
+    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('channel.labels'));
     return (): void => { cancelled = true; };
   }, [line]);
   return [labels, setLabels];
@@ -91,7 +91,7 @@ function AddButton({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }
   );
 }
 
-export function GroupLabelsEditor({ labels, input, setInput, disabled, onAdd, onRemove }: {
+export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, onRemove }: {
   labels: string[]; input: string; setInput: (s: string) => void; disabled: boolean;
   onAdd: (label: string) => void; onRemove: (label: string) => void;
 }): React.ReactElement {
@@ -115,7 +115,7 @@ export function GroupLabelsEditor({ labels, input, setInput, disabled, onAdd, on
   );
 }
 
-export function GroupLabelsView({ labels }: { labels: string[] }): React.ReactElement | null {
+export function ChannelLabelsView({ labels }: { labels: string[] }): React.ReactElement | null {
   const { text: sub } = usePalette();
   if (labels.length === 0) return null;
   return (

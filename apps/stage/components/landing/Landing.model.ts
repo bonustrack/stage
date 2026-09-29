@@ -6,7 +6,7 @@ export const HERO_COPY = {
   eyebrow: 'Private by default',
   title: 'Your agent is the product',
   paragraph:
-    'Stage is a private, end-to-end encrypted messenger with a built-in wallet, free usernames and avatars. Groups, multiple accounts, and agents as contacts.',
+    'Stage is a private, end-to-end encrypted messenger with a built-in wallet, free usernames and avatars. Channels, multiple accounts, and agents as contacts.',
   cta: 'Get started →',
 } as const;
 

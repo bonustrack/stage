@@ -3,8 +3,7 @@ import { isPeerHandleSegment } from './handles';
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
   | { pathname: '/channel/[convId]'; params: { convId: string; m?: string; focus?: string } }
-  | { pathname: '/group/[convId]'; params: { convId: string } }
-  | { pathname: '/user/[address]'; params: { address: string } }
+  | { pathname: '/profile/[id]'; params: { id: string } }
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
   | { pathname: '/(tabs)/contacts'; params?: undefined }
@@ -61,14 +60,11 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);
 
+const PROFILE_HEADS = new Set(['profile', 'group', 'user']);
+
 function entityRoute(head: string, second: string | undefined): ParsedRoute | null | undefined {
-  if (head === 'group') {
-    return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
-  }
-  if (head === 'user' || head === 'profile') {
-    return second ? { pathname: '/user/[address]', params: { address: second } } : null;
-  }
-  return undefined;
+  if (!PROFILE_HEADS.has(head)) return undefined;
+  return second ? { pathname: '/profile/[id]', params: { id: second } } : null;
 }
 
 function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | null {

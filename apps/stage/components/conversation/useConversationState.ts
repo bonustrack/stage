@@ -70,7 +70,7 @@ function cachedLabels(cid?: string): string[] {
   return Array.isArray(v) ? v.filter((l): l is string => typeof l === 'string') : [];
 }
 
-function useGroupLabels(convId: string | undefined, activeLine: string, isGroup: boolean): string[] {
+function useConvLabels(convId: string | undefined, activeLine: string, isGroup: boolean): [string[], (labels: string[]) => void] {
   const [groupLabels, setGroupLabels] = useState<string[]>(() => cachedLabels(convId));
   useEffect(() => {
     if (!isGroup) { setGroupLabels([]); return; }
@@ -79,7 +79,7 @@ function useGroupLabels(convId: string | undefined, activeLine: string, isGroup:
     void getGroupLabels(activeLine).then(v => { if (!cancelled) setGroupLabels(v); }).catch(reported('conversation.labels'));
     return () => { cancelled = true; };
   }, [convId, activeLine, isGroup]);
-  return groupLabels;
+  return [groupLabels, setGroupLabels];
 }
 
 interface ScrollPersistence {
@@ -195,7 +195,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
   const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
-  const groupLabels = useGroupLabels(convId, activeLine, isGroup);
+  const [groupLabels, setGroupLabels] = useConvLabels(convId, activeLine, isGroup);
 
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback((from: string): string | null => {
@@ -240,7 +240,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     overflowAnchor, setOverflowAnchor,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
+    peerAddr, groupName, groupImage, groupDescription, groupLabels, setGroupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,

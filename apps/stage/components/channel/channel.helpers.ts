@@ -15,7 +15,7 @@ async function sortedMembers(line: string): Promise<string[]> {
   return Object.values(map).sort((a, b) => a.localeCompare(b));
 }
 
-export async function removeGroupMember(line: string, addr: string): Promise<string[]> {
+export async function removeChannelMember(line: string, addr: string): Promise<string[]> {
   await removeGroupMembers(convIdOf(line), [addr]);
   return sortedMembers(line);
 }

@@ -52,10 +52,10 @@ describe('member names in group event lines', () => {
 
   test('names members who left, and hides an update that only repeats a leave', () => {
     const left = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }] } });
-    expect(withMemberNames(left, nameOf).text).toBe(`@${PEER.toLowerCase()} left the group`);
+    expect(withMemberNames(left, nameOf).text).toBe(`@${PEER.toLowerCase()} left the channel`);
     expect(isLeftOnlyUpdate(left)).toBe(true);
     const kicked = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }], removedInboxes: [{ inboxId: 'other' }] } });
-    expect(withMemberNames(kicked, nameOf).text).toBe(`removed @${OTHER} • @${PEER.toLowerCase()} left the group`);
+    expect(withMemberNames(kicked, nameOf).text).toBe(`removed @${OTHER} • @${PEER.toLowerCase()} left the channel`);
     expect(isLeftOnlyUpdate(kicked)).toBe(false);
   });
 

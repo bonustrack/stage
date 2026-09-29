@@ -1,6 +1,6 @@
 export type NewChatPhase = 'idle' | 'creating' | 'sending';
 
-export type NewChatMode = 'dm' | 'group';
+export type NewChatMode = 'dm' | 'channel';
 
 export interface FooterAction {
   label: string;
@@ -9,11 +9,11 @@ export interface FooterAction {
 
 export const MODE_TABS: { value: NewChatMode; label: string }[] = [
   { value: 'dm', label: 'Direct message' },
-  { value: 'group', label: 'Group' },
+  { value: 'channel', label: 'Channel' },
 ];
 
 export function isNewChatMode(value: string): value is NewChatMode {
-  return value === 'dm' || value === 'group';
+  return value === 'dm' || value === 'channel';
 }
 
 function recipientsKey(addresses: readonly string[]): string {
@@ -23,7 +23,7 @@ function recipientsKey(addresses: readonly string[]): string {
 export function footerAction(mode: NewChatMode, count: number): FooterAction {
   const enabled = count > 0;
   if (mode === 'dm') return { label: 'Open chat', enabled };
-  return { label: enabled ? `Create group (${count})` : 'Create group', enabled };
+  return { label: enabled ? `Create channel (${count})` : 'Create channel', enabled };
 }
 
 export function chatKey(mode: NewChatMode, addresses: readonly string[]): string {

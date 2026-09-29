@@ -8,7 +8,7 @@ import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius
 import { AppModal } from '../AppModal';
 import { ChannelRow } from '../ChannelRow';
 import { FormField, useFocusOnOpen } from '../FormField';
-import { SuggestionCheck } from '../group/ContactSuggestions';
+import { SuggestionCheck } from '../channel/ContactSuggestions';
 import { rowAvatarAddress, rowTitle } from '../home/parts';
 import type { Row as ChannelRowData } from '../home/model';
 import { useHover } from '../hover';

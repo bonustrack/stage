@@ -14,9 +14,9 @@ export interface GroupUpdatedContent {
 }
 
 function describeFieldChange(f: FieldChange): string {
-  if (f.fieldName === 'group_name') return `renamed the group to "${f.newValue}"`;
-  if (f.fieldName === 'group_image_url_square') return 'updated the group image';
-  if (f.fieldName === 'description') return 'updated the group description';
+  if (f.fieldName === 'group_name') return `renamed the channel to "${f.newValue}"`;
+  if (f.fieldName === 'group_image_url_square') return 'updated the channel image';
+  if (f.fieldName === 'description') return 'updated the channel description';
   if (f.fieldName === 'app_data') return describeAppDataChange(f.oldValue, f.newValue);
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }
@@ -29,7 +29,7 @@ export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
 
 export const LEAVE_REQUEST_TYPE_ID = 'leave_request';
 
-export const LEFT_GROUP_TEXT = 'left the group';
+export const LEFT_CHANNEL_TEXT = 'left the channel';
 
 export type InboxNamer = (inboxId: string) => string | null;
 
@@ -55,7 +55,7 @@ function memberClause(verb: string, members: { inboxId: string }[], nameOf?: Inb
 }
 
 function leftClause(members: { inboxId: string }[], nameOf?: InboxNamer): string {
-  return members.length === 0 ? '' : `${membersPhrase(members, nameOf)} ${LEFT_GROUP_TEXT}`;
+  return members.length === 0 ? '' : `${membersPhrase(members, nameOf)} ${LEFT_CHANNEL_TEXT}`;
 }
 
 function addedOf(g: GroupUpdatedContent): { inboxId: string }[] {
@@ -85,7 +85,7 @@ export function onlyMembersLeft(g: GroupUpdatedContent): boolean {
 
 export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer): string {
   const parts = [...changeClauses(g, nameOf), leftClause(g.leftInboxes ?? [], nameOf)].filter(Boolean);
-  return parts.length ? parts.join(' • ') : 'updated the group';
+  return parts.length ? parts.join(' • ') : 'updated the channel';
 }
 
 const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
@@ -116,7 +116,7 @@ function previewPoll(decoded: unknown): string {
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
-  [LEAVE_REQUEST_TYPE_ID]: () => LEFT_GROUP_TEXT,
+  [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
   reply: previewReply,

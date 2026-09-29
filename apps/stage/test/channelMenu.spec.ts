@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { channelMenuItems } from '../components/ChannelMenu.model';
 
 describe('channelMenuItems', () => {
-  test('a group with search matches the legacy item list', () => {
+  test('a channel with search matches the legacy item list', () => {
     const items = channelMenuItems(
       { isGroup: true, hasPeer: false, isUnread: true, isPinned: false },
       { search: true },
@@ -12,12 +12,26 @@ describe('channelMenuItems', () => {
       { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
       { id: 'toggle-read', label: 'Mark as read', icon: 'IconCheckmark1' },
       { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
-      { id: 'info', label: 'Group info', icon: 'IconGroup1' },
-      { id: 'leave', label: 'Leave group', icon: 'IconArrowLeft', danger: true },
+      { id: 'info', label: 'Channel info', icon: 'IconGroup1' },
+      { id: 'leave', label: 'Leave channel', icon: 'IconArrowLeft', danger: true },
     ]);
   });
 
-  test('dm with peer shows Profile info, Delete chat and no group items', () => {
+  test('a channel the user can edit offers Edit channel after Channel info', () => {
+    const items = channelMenuItems(
+      { isGroup: true, hasPeer: false, isUnread: false, isPinned: false },
+      { search: true, edit: true },
+    );
+    expect(items.map(i => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'edit', 'leave']);
+    expect(items.find(i => i.id === 'edit')).toEqual({ id: 'edit', label: 'Edit channel', icon: 'IconPencil' });
+  });
+
+  test('a direct chat never offers Edit channel', () => {
+    const items = channelMenuItems({ isGroup: false, hasPeer: true, isUnread: false }, { search: true, edit: true });
+    expect(items.some(i => i.id === 'edit')).toBe(false);
+  });
+
+  test('dm with peer shows Profile info, Delete chat and no channel items', () => {
     const items = channelMenuItems(
       { isGroup: false, hasPeer: true, isUnread: false, isPinned: true },
       { search: false },

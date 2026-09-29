@@ -4,7 +4,15 @@ export type ConversationLink =
   | { pathname: '/[convId]'; params: { convId: string } }
   | { pathname: '/channel/[convId]'; params: { convId: string } };
 
-export interface ProfileLink { pathname: '/profile/[address]'; params: { address: string } }
+export interface ProfileLink { pathname: '/profile/[id]'; params: { id: string } }
+
+type ProfileKind = 'channel' | 'user';
+
+const CHANNEL_ID_RE = /^[0-9a-f]{32}$/i;
+
+export function profileKindOf(id: string | null | undefined): ProfileKind {
+  return CHANNEL_ID_RE.test((id ?? '').trim()) ? 'channel' : 'user';
+}
 
 export function conversationLinkOf(convId: string, peerAddress?: string | null, handle?: string | null): ConversationLink {
   if (peerAddress) return { pathname: '/[convId]', params: { convId: profileSlugFor(peerAddress, handle) } };
@@ -12,7 +20,11 @@ export function conversationLinkOf(convId: string, peerAddress?: string | null, 
 }
 
 export function profileLinkOf(address: string, handle?: string | null): ProfileLink {
-  return { pathname: '/profile/[address]', params: { address: profileSlugFor(address, handle) } };
+  return { pathname: '/profile/[id]', params: { id: profileSlugFor(address, handle) } };
+}
+
+export function channelProfileLinkOf(convId: string): ProfileLink {
+  return { pathname: '/profile/[id]', params: { id: convId } };
 }
 
 export function conversationSharePath(convId: string, peerAddress?: string | null, handle?: string | null): string {

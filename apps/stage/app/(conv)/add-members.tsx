@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { Col, ScreenScroll } from '../../components/layout';
-import { AddMembersForm } from '../../components/group/AddMembers';
+import { AddMembersForm } from '../../components/channel/AddMembers';
 
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();

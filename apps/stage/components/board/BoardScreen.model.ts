@@ -129,8 +129,8 @@ export function labelCapNote(added: readonly (readonly string[])[], label: strin
   const full = added.filter(labels => !labels.some(l => l.toLowerCase() === key)).length;
   if (full === 0) return null;
   return full === 1
-    ? `1 group already has ${MAX_LABELS} labels.`
-    : `${full} groups already have ${MAX_LABELS} labels.`;
+    ? `1 channel already has ${MAX_LABELS} labels.`
+    : `${full} channels already have ${MAX_LABELS} labels.`;
 }
 
 export function renameProblem(name: string): string | null {

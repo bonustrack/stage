@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  GROUP_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, readableSendError,
+  CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, readableSendError,
 } from '../src/xmtp/clientErrors';
 
 const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
@@ -23,7 +23,7 @@ describe('inactive conversations', () => {
   });
 
   test('the waiting notice says how the device gets added', () => {
-    expect(GROUP_WAITING_NOTICE).toContain('sends a message');
+    expect(CHANNEL_WAITING_NOTICE).toContain('sends a message');
   });
 });
 

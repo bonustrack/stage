@@ -17,24 +17,24 @@ import {
   addGroupLabel, getGroupLabels, invalidateConvMeta, lineOfConv, removeGroupLabel, updateGroupMeta,
 } from '../../modules/messaging';
 import { reported } from '../../lib/errorPolicy';
-import { useConvMetaPatch } from './group.detail';
-import { GroupLabelsEditor } from './group.labels';
+import { useConvMetaPatch } from './channel.detail';
+import { ChannelLabelsEditor } from './channel.labels';
 import {
-  groupChanges, groupDraftFrom, groupDraftProblem, groupMetaCachePatch, hasLabelEdits, labelEdits,
-  type GroupCurrent, type GroupDraft, type LabelEdits,
-} from './EditGroupModal.model';
+  channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch, hasLabelEdits, labelEdits,
+  type ChannelCurrent, type ChannelDraft, type LabelEdits,
+} from './EditChannelModal.model';
 
 const AVATAR_PX = 96;
 
-function groupAvatarSrc(convId: string, imageUrl: string, picture: PictureChoice): string {
+function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoice): string {
   if (picture.kind === 'new') return picture.file.uri;
   if (picture.kind === 'keep' && imageUrl.trim()) return avatarRenderUrl('', imageUrl, AVATAR_PX * 2);
   return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
 }
 
-async function writeGroup(convId: string, patch: GroupMetaPatch, picture: PictureChoice): Promise<GroupMetaPatch> {
+async function writeChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice): Promise<GroupMetaPatch> {
   const full = { ...patch };
-  if (picture.kind === 'new') full.imageUrl = await uploadAvatar(picture.file.uri, picture.file.mime, picture.file.name ?? 'group-avatar');
+  if (picture.kind === 'new') full.imageUrl = await uploadAvatar(picture.file.uri, picture.file.mime, picture.file.name ?? 'channel-avatar');
   if (picture.kind === 'remove') full.imageUrl = '';
   if (Object.keys(full).length > 0) await updateGroupMeta(convId, full);
   return full;
@@ -68,29 +68,29 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
 }
 
-async function saveGroup(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: LabelEdits): Promise<{
+async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: LabelEdits): Promise<{
   written: GroupMetaPatch; labels: string[] | null;
 }> {
-  const written = await writeGroup(convId, patch, picture);
+  const written = await writeChannel(convId, patch, picture);
   const labels = await writeLabels(lineOfConv(convId), edits);
   return { written, labels };
 }
 
-function EditGroupSection({ convId, current, rights, picture, labels, onLabelsSaved, onSaved }: {
-  convId: string; current: GroupCurrent; rights: GroupEditRights; picture: PictureChoice;
+function EditChannelSection({ convId, current, rights, picture, labels, onLabelsSaved, onSaved }: {
+  convId: string; current: ChannelCurrent; rights: GroupEditRights; picture: PictureChoice;
   labels: string[]; onLabelsSaved: (labels: string[]) => void; onSaved: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const patchMeta = useConvMetaPatch(convId);
-  const [draft, setDraft] = useState<GroupDraft>(() => groupDraftFrom(current));
+  const [draft, setDraft] = useState<ChannelDraft>(() => channelDraftFrom(current));
   const labelDraft = useLabelDraft(labels);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  useEffect(() => { setDraft(groupDraftFrom(current)); }, [current.name, current.description]);
+  useEffect(() => { setDraft(channelDraftFrom(current)); }, [current.name, current.description]);
 
-  const problem = groupDraftProblem(current, draft);
-  const changes = groupChanges(current, draft);
+  const problem = channelDraftProblem(current, draft);
+  const changes = channelChanges(current, draft);
 
   const save = (): void => {
     if (busy || problem) return;
@@ -98,16 +98,16 @@ function EditGroupSection({ convId, current, rights, picture, labels, onLabelsSa
     if (Object.keys(changes).length === 0 && picture.kind === 'keep' && !hasLabelEdits(edits)) { setStatus('Nothing changed yet.'); return; }
     setBusy(true);
     setStatus(null);
-    void saveGroup(convId, changes, picture, edits)
+    void saveChannel(convId, changes, picture, edits)
       .then(({ written, labels: saved }) => {
-        patchMeta(groupMetaCachePatch(written));
+        patchMeta(channelMetaCachePatch(written));
         if (saved) onLabelsSaved(saved);
         onSaved();
-        capabilities.toast('Group saved.');
+        capabilities.toast('Channel saved.');
       })
       .catch((err: unknown) => {
         invalidateConvMeta(convId);
-        void getGroupLabels(lineOfConv(convId)).then(onLabelsSaved).catch(reported('group.labels'));
+        void getGroupLabels(lineOfConv(convId)).then(onLabelsSaved).catch(reported('channel.labels'));
         setStatus(`Could not save: ${errorText(err)}`);
       })
       .finally(() => { setBusy(false); });
@@ -116,9 +116,9 @@ function EditGroupSection({ convId, current, rights, picture, labels, onLabelsSa
   return (
     <Col gap={8}>
       <Col gap={8}>
-        <FormField label="Name" placeholder="Group name" value={draft.name} onChangeText={(v) => { setDraft({ ...draft, name: v }); }} disabled={busy || !rights.name} />
-        <FormField label="Description" placeholder="What is this group about?" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy || !rights.description} />
-        <GroupLabelsEditor labels={labelDraft.draft} input={labelDraft.input} setInput={labelDraft.setInput} disabled={busy}
+        <FormField label="Name" placeholder="Channel name" value={draft.name} onChangeText={(v) => { setDraft({ ...draft, name: v }); }} disabled={busy || !rights.name} />
+        <FormField label="Description" placeholder="What is this channel about?" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy || !rights.description} />
+        <ChannelLabelsEditor labels={labelDraft.draft} input={labelDraft.input} setInput={labelDraft.setInput} disabled={busy}
           onAdd={labelDraft.add} onRemove={labelDraft.remove} />
       </Col>
       {problem ?? status ? <Text value={problem ?? status ?? ''} size="md" color="secondary" /> : null}
@@ -130,7 +130,7 @@ function EditGroupSection({ convId, current, rights, picture, labels, onLabelsSa
   );
 }
 
-export function EditGroupModal({ visible, onClose, convId, name, description, imageUrl, rights, labels, onLabelsSaved }: {
+export function EditChannelModal({ visible, onClose, convId, name, description, imageUrl, rights, labels, onLabelsSaved }: {
   visible: boolean; onClose: () => void; convId: string;
   name: string | null; description: string; imageUrl: string; rights: GroupEditRights;
   labels: string[]; onLabelsSaved: (labels: string[]) => void;
@@ -138,13 +138,13 @@ export function EditGroupModal({ visible, onClose, convId, name, description, im
   const [picture, setPicture] = useState<PictureChoice>({ kind: 'keep' });
   const close = (): void => { setPicture({ kind: 'keep' }); onClose(); };
   const removable = picture.kind === 'new' || (picture.kind === 'keep' && imageUrl.trim() !== '');
-  const avatar = <AvatarView src={groupAvatarSrc(convId, imageUrl, picture)} size={AVATAR_PX} square />;
+  const avatar = <AvatarView src={channelAvatarSrc(convId, imageUrl, picture)} size={AVATAR_PX} square />;
   return (
-    <AppModal visible={visible} onClose={close} title="Edit group">
+    <AppModal visible={visible} onClose={close} title="Edit channel">
       <Col align="center" padding={{ bottom: 16 }}>
         <PictureEditor avatar={avatar} editable={rights.image} removable={removable} onChange={setPicture} />
       </Col>
-      <EditGroupSection convId={convId} current={{ name, description }} rights={rights} picture={picture}
+      <EditChannelSection convId={convId} current={{ name, description }} rights={rights} picture={picture}
         labels={labels} onLabelsSaved={onLabelsSaved} onSaved={close} />
     </AppModal>
   );

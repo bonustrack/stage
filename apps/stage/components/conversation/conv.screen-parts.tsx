@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
@@ -13,7 +14,7 @@ import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupAccess } from '../../modules/messaging';
-import { GroupAccessNotice } from './GroupAccessNotice';
+import { ChannelAccessNotice } from './ChannelAccessNotice';
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
 import { HoverTooltip } from '../HoverTooltip';
 import { capabilities } from '../../lib/capabilities';
@@ -26,6 +27,10 @@ import type { useConversationState } from './useConversationState';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { conversationSharePath, profileLinkOf } from '../../lib/links';
+import { channelProfileLinkOf } from '../../lib/conversationLink';
+import { canEditGroup } from '@stage-labs/client/xmtp/groups';
+import { EditChannelModal } from '../channel/EditChannelModal';
+import { useChannelEditRights } from '../channel/channel.detail';
 import { shareUrlFor } from '@stage-labs/client/routing/handles';
 import { useHover } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
@@ -47,7 +52,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
         peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup}
         border={border} head={head} title={convTitle(c)}
         onPress={() => {
-          if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
+          if (isGroup) router.push(channelProfileLinkOf(convId));
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
         }}
       />
@@ -97,7 +102,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           </Pressable>
         ) : null}
         {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-        {access !== 'member' && !requestPending ? <GroupAccessNotice outside={access === 'outside'}/> : null}
+        {access !== 'member' && !requestPending ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
         {composerShown ? (
           <MessengerComposer
             dark={dark}
@@ -149,6 +154,9 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
+  const rights = useChannelEditRights(convId, isGroup);
+  const [editOpen, setEditOpen] = useState(false);
+  const canEdit = isGroup && canEditGroup(rights);
   return (
     <>
       <ChannelMenu
@@ -162,8 +170,17 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
         anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
-        onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden'); }}
+        onEdit={canEdit ? () => { setEditOpen(true); } : undefined}
+        onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden'); }}
 />
+      {canEdit ? (
+        <EditChannelModal
+          visible={editOpen}
+          onClose={() => { setEditOpen(false); }}
+          convId={convId} name={c.groupName} description={c.groupDescription} imageUrl={c.groupImage} rights={rights}
+          labels={c.groupLabels} onLabelsSaved={c.setGroupLabels}
+        />
+      ) : null}
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}

@@ -21,7 +21,7 @@ export const NO_GROUP_INFO: GroupInfo = { name: '', imageUrl: '', description: '
 export const VISIBLE_CONSENT: XmtpConsent[] = ['allowed', 'unknown'];
 
 export function notAGroup(): never {
-  throw new Error('Not a group conversation');
+  throw new Error('Not a channel');
 }
 
 export interface ClientLike { inboxId: string | undefined }

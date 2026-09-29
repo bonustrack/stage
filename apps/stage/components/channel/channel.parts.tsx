@@ -8,7 +8,7 @@ import { shortAddress } from '../../modules/messaging';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
-import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
+import { memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './channel.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { DANGER, usePalette } from '../../lib/theme';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
@@ -40,7 +40,7 @@ export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, onPress, onRemove,
 }: {
   item: string; isSelf: boolean; isRemovingThis: boolean;
-  role: GroupMemberRole; name: string | null | undefined;
+  role: ChannelMemberRole; name: string | null | undefined;
   dark: boolean; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
   const { text: sub, border } = usePalette();

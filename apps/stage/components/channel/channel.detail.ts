@@ -8,7 +8,7 @@ import {
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
-import { removeGroupMember } from './group.helpers';
+import { removeChannelMember } from './channel.helpers';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
@@ -81,43 +81,48 @@ function useTaskRunner(convId: string | undefined): {
   return { busy, run };
 }
 
-export function useGroupDetail(convId: string | undefined) {
+export function useChannelEditRights(convId: string | undefined, enabled = true): GroupEditRights {
+  const { data = NO_EDIT_RIGHTS } = useQuery({
+    queryKey: messagingKeys.groupEditRights(convId),
+    queryFn: () => groupEditRights(convId ?? ''),
+    enabled: enabled && !!convId,
+  });
+  return data;
+}
+
+export function useChannelDetail(convId: string | undefined) {
   const router = useRouter();
   const line = lineOfConv(convId ?? '');
   const meta = useConvMeta(convId);
   const directory = useMemberDirectory(convId, meta);
   const { busy, run } = useTaskRunner(convId);
   const [removing, setRemoving] = useState<string | null>(null);
-  const { data: rights = NO_EDIT_RIGHTS } = useQuery({
-    queryKey: messagingKeys.groupEditRights(convId),
-    queryFn: () => groupEditRights(convId ?? ''),
-    enabled: !!convId,
-  });
+  const rights = useChannelEditRights(convId);
 
   const removeMember = async (addr: string): Promise<void> => {
     const ok = await capabilities.confirm({
       title: 'Remove member',
-      message: `Remove ${shortAddress(addr)} from this group? They'll lose access to past + future messages.`,
+      message: `Remove ${shortAddress(addr)} from this channel? They'll lose access to past + future messages.`,
       confirmLabel: 'Remove',
       destructive: true,
     });
     if (!ok) return;
     await run((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => (
-      { memberAddrs: await removeGroupMember(line, addr) }
+      { memberAddrs: await removeChannelMember(line, addr) }
     ));
   };
 
-  const leaveGroup = async (): Promise<void> => {
+  const leaveChannel = async (): Promise<void> => {
     const ok = await capabilities.confirm({
-      title: 'Leave group',
-      message: 'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+      title: 'Leave channel',
+      message: 'You’ll stop receiving messages from this channel. You can be re-added by a member later.',
       confirmLabel: 'Leave',
       destructive: true,
     });
     if (!ok) return;
     await run('leave', 'Couldn’t leave', async () => {
       const result = await leaveGroupConv(line);
-      capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden');
+      capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
       router.replace('/');
       return undefined;
     });
@@ -127,6 +132,6 @@ export function useGroupDetail(convId: string | undefined) {
     line, ...directory, busy, removing,
     name: meta.groupName, description: meta.groupDescription, imageUrl: meta.groupImage, rights,
     removeMember,
-    leaveGroup,
+    leaveChannel,
   };
 }

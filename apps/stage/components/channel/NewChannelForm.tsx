@@ -6,7 +6,7 @@ import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { GroupImagePicker } from '../GroupImagePicker';
+import { SquareImagePicker } from '../SquareImagePicker';
 import { Box, Row } from '../layout';
 import { FORM_FIELD_RADIUS, FormField, useFieldColors } from '../FormField';
 import { Spinner } from '../Spinner';
@@ -16,14 +16,14 @@ export interface PickedImage { uri: string; mime: string; name: string }
 
 const IMAGE_TILE = 65;
 
-function GroupImageField({ image, creating, onPick }: {
+function ChannelImageField({ image, creating, onPick }: {
   image: PickedImage | null; creating: boolean; onPick: () => void;
 }): React.ReactElement {
   const { text: fg, sub } = usePalette();
   const { background } = useFieldColors();
   return (
     <Pressable onPress={onPick} disabled={creating} accessibilityRole="button"
-      accessibilityLabel={image ? 'Change group image' : 'Add a group image'}
+      accessibilityLabel={image ? 'Change channel image' : 'Add a channel image'}
       style={{ width: IMAGE_TILE, borderRadius: FORM_FIELD_RADIUS, overflow: 'hidden', backgroundColor: background }}>
       {image ? (
         <Image src={image.uri} style={{ width: '100%', height: '100%', opacity: creating ? 0.5 : 1 }} />
@@ -39,37 +39,37 @@ function GroupImageField({ image, creating, onPick }: {
   );
 }
 
-function GroupNameField({ name, setName }: { name: string; setName: (s: string) => void }): React.ReactElement {
-  return <FormField label="Group name (optional)" placeholder="e.g. Stage builders" value={name} onChangeText={setName} />;
+function ChannelNameField({ name, setName }: { name: string; setName: (s: string) => void }): React.ReactElement {
+  return <FormField label="Channel name (optional)" placeholder="e.g. Stage builders" value={name} onChangeText={setName} />;
 }
 
-async function uploadGroupImage(image: PickedImage | null): Promise<string | undefined> {
+async function uploadChannelImage(image: PickedImage | null): Promise<string | undefined> {
   if (image === null) return undefined;
   try {
     return await uploadAvatar(image.uri, image.mime, image.name);
   } catch {
-    capabilities.toast("Couldn't upload the group image. Creating without it.");
+    capabilities.toast("Couldn't upload the channel image. Creating without it.");
     return undefined;
   }
 }
 
-export async function createGroupLine(addresses: string[], name: string, image: PickedImage | null): Promise<string> {
-  return (await createGroup(addresses, name, await uploadGroupImage(image))).line;
+export async function createChannelLine(addresses: string[], name: string, image: PickedImage | null): Promise<string> {
+  return (await createGroup(addresses, name, await uploadChannelImage(image))).line;
 }
 
-export function NewGroupDetails({ name, setName, image, setImage, creating }: {
+export function NewChannelDetails({ name, setName, image, setImage, creating }: {
   name: string; setName: (name: string) => void;
   image: PickedImage | null; setImage: (image: PickedImage) => void; creating: boolean;
 }): React.ReactElement {
   const [pickNonce, setPickNonce] = useState(0);
   return (
     <Row gap={8}>
-      <GroupImageField image={image} creating={creating} onPick={() => { if (!creating) setPickNonce(n => n + 1); }}/>
-      <GroupImagePicker
+      <ChannelImageField image={image} creating={creating} onPick={() => { if (!creating) setPickNonce(n => n + 1); }}/>
+      <SquareImagePicker
         openNonce={pickNonce}
-        onPick={(file) => { setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' }); }}
+        onPick={(file) => { setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'channel-avatar' }); }}
       />
-      <Box flex={1}><GroupNameField name={name} setName={setName} /></Box>
+      <Box flex={1}><ChannelNameField name={name} setName={setName} /></Box>
     </Row>
   );
 }

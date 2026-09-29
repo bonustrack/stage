@@ -2,7 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
-import { MemberRow } from './group.parts';
+import { MemberRow } from './channel.parts';
 import { Eyebrow } from '../Eyebrow';
 import { CountTag } from '../CountTag';
 import { usePalette } from '../../lib/theme';
@@ -33,7 +33,7 @@ function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): 
   );
 }
 
-export function GroupMembersList({
+export function ChannelMembersList({
   members, memberNames, memberRoles, selfAddress, removing, dark,
   onAdd, onOpenMember, onRemoveMember,
 }: {
