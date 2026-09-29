@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { memberListEntries } from '../components/conversation/MemberListSidebar.model';
+import { memberAdminMark, memberListEntries } from '../components/conversation/MemberListSidebar.model';
 
 const names: Record<string, string> = {
   '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',
@@ -35,5 +35,31 @@ describe('memberListEntries', () => {
     expect(entries).toEqual([
       { address: '0xeeee000000000000000000000000000000000005', name: '0xeeee…0005', named: false },
     ]);
+  });
+
+  test('admins and super admins get a mark, matched in any address case', () => {
+    const entries = memberListEntries([
+      '0xAAAA000000000000000000000000000000000001',
+      '0xbbbb000000000000000000000000000000000002',
+      '0xcccc000000000000000000000000000000000003',
+    ], nameOf, shortOf, {
+      '0xaaaa000000000000000000000000000000000001': 'owner',
+      '0xBBBB000000000000000000000000000000000002': 'admin',
+      '0xcccc000000000000000000000000000000000003': 'member',
+    });
+    expect(entries.map(e => [e.name, e.admin?.label])).toEqual([
+      ['Alice', undefined],
+      ['zoe.base.eth', 'Admin'],
+      ['0xAAAA…0001', 'Super admin'],
+    ]);
+  });
+});
+
+describe('memberAdminMark', () => {
+  test('maps channel roles to the admin mark', () => {
+    expect(memberAdminMark('owner')).toEqual({ role: 'superAdmin', label: 'Super admin' });
+    expect(memberAdminMark('admin')).toEqual({ role: 'admin', label: 'Admin' });
+    expect(memberAdminMark('member')).toBeUndefined();
+    expect(memberAdminMark(undefined)).toBeUndefined();
   });
 });

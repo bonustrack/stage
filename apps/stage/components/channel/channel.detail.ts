@@ -20,20 +20,23 @@ const NO_ROLES: Roles = {};
 
 const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false };
 
+export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
+  const inboxIds = Object.keys(inboxToAddr);
+  const { data = NO_ROLES } = useQuery({
+    queryKey: ['groupRoles', convId ?? '', inboxIds.sort().join(',')],
+    queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
+    enabled: !!convId && inboxIds.length > 0,
+  });
+  return data;
+}
+
 function useMemberDirectory(convId: string | undefined, meta: Meta): {
   members: string[]; memberNames: Names; memberRoles: Roles;
 } {
   const [memberNames, setMemberNames] = useState<Names>({});
   const metaMembers = meta.memberAddrs;
   const members = useMemo(() => [...metaMembers].sort((x, y) => x.localeCompare(y)), [metaMembers]);
-
-  const inboxToAddr = meta.inboxToAddr;
-  const inboxIds = Object.keys(inboxToAddr);
-  const { data: memberRoles = NO_ROLES } = useQuery({
-    queryKey: ['groupRoles', convId ?? '', inboxIds.sort().join(',')],
-    queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
-    enabled: !!convId && inboxIds.length > 0,
-  });
+  const memberRoles = useChannelRoles(convId, meta.inboxToAddr);
 
   useEffect(() => {
     if (members.length === 0) return;
