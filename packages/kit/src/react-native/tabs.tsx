@@ -1,8 +1,10 @@
-
-import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
+import { Pressable, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native';
 import { centralIcon, type IconName } from '../central-icons';
 import { Glyph } from './glyph';
-import { FONT_SIZE, fontName } from '../tokens';
+import { surfaceColor } from '../layout';
+import { textRoleColor } from '../text.styles';
+import { FONT_SIZE, RADIUS_SCALE, fontName, kitPalette, type Scheme } from '../tokens';
+import { useKitPalette, useKitScheme } from './theme-context';
 
 export interface TabsOptionView {
   value: string;
@@ -18,84 +20,76 @@ export interface TabsProps {
   dark?: boolean;
 }
 
-function palette(dark: boolean): {
-  bg: string;
-  active: string;
+interface TabsColors {
+  track: string | undefined;
+  thumb: string | undefined;
   text: string;
   activeText: string;
-} {
+}
+
+function schemeOf(dark: boolean | undefined, fallback: Scheme): Scheme {
+  if (dark === undefined) return fallback;
+  return dark ? 'dark' : 'light';
+}
+
+function useTabsColors(dark: boolean | undefined): TabsColors {
+  const context = useKitPalette();
+  const contextScheme = useKitScheme();
+  const scheme = schemeOf(dark, contextScheme);
+  const palette = scheme === contextScheme ? context : kitPalette(scheme);
   return {
-    bg: dark ? '#1c1c1e' : '#f0f0f2',
-    active: dark ? '#000000' : '#ffffff',
-    text: dark ? '#9a9ca0' : '#6b6d72',
-    activeText: dark ? '#ffffff' : '#000000',
+    track: surfaceColor('raised', palette),
+    thumb: surfaceColor('surface', palette),
+    text: textRoleColor('secondary', palette),
+    activeText: textRoleColor('default', palette),
   };
 }
 
-function segmentStyle(selected: boolean, p: ReturnType<typeof palette>): ViewStyle {
+function trackStyle(underline: boolean, c: TabsColors): ViewStyle {
+  if (underline) return { flexDirection: 'row', gap: 16 };
+  return { flexDirection: 'row', gap: 2, padding: 3, borderRadius: RADIUS_SCALE.pill, backgroundColor: c.track };
+}
+
+function segmentStyle(underline: boolean, selected: boolean, c: TabsColors): ViewStyle {
+  const base: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 6 };
+  if (underline) {
+    return { ...base, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: selected ? c.activeText : 'transparent' };
+  }
   return {
+    ...base,
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: selected ? p.active : 'transparent',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS_SCALE.pill,
+    backgroundColor: selected ? c.thumb : 'transparent',
   };
+}
+
+function labelStyle(underline: boolean, color: string): TextStyle {
+  if (underline) return { color, fontSize: FONT_SIZE['3xl'], fontFamily: fontName.head };
+  return { color, fontSize: FONT_SIZE.xl, fontFamily: fontName.sans };
 }
 
 export function Tabs(props: TabsProps): React.ReactElement {
-  const { value, options, variant = 'segmented', onChange, dark = false } = props;
-  const p = palette(dark);
+  const { value, options, variant = 'segmented', onChange, dark } = props;
+  const c = useTabsColors(dark);
   const underline = variant === 'underline';
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        gap: underline ? 16 : 4,
-        padding: underline ? 0 : 3,
-        borderRadius: 11,
-        backgroundColor: underline ? 'transparent' : p.bg,
-      }}
-    >
+    <View style={trackStyle(underline, c)}>
       {options.map((opt) => {
         const selected = opt.value === value;
+        const color = selected ? c.activeText : c.text;
         return (
           <Pressable
             key={opt.value}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange?.(opt.value)}
-            style={
-              underline
-                ? {
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    paddingVertical: 8,
-                    borderBottomWidth: 2,
-                    borderBottomColor: selected ? p.activeText : 'transparent',
-                  }
-                : segmentStyle(selected, p)
-            }
+            style={segmentStyle(underline, selected, c)}
           >
-            {opt.icon ? (
-              <Glyph
-                icon={centralIcon(opt.icon)}
-                size={16}
-                color={selected ? p.activeText : p.text}
-              />
-            ) : null}
-            <RNText
-              style={{
-                color: selected ? p.activeText : p.text,
-                fontSize: underline ? FONT_SIZE['3xl'] : FONT_SIZE.sm,
-                fontFamily: fontName.head,
-              }}
-            >
-              {opt.label}
-            </RNText>
+            {opt.icon ? <Glyph icon={centralIcon(opt.icon)} size={16} color={color} /> : null}
+            <RNText numberOfLines={1} style={labelStyle(underline, color)}>{opt.label}</RNText>
           </Pressable>
         );
       })}
