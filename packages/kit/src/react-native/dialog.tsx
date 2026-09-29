@@ -36,6 +36,8 @@ export interface DialogProps {
   fullBleedPanel?: boolean;
 }
 
+const NO_FOCUS_RING: ViewStyle = { outlineWidth: 0, outlineStyle: 'solid' };
+
 function overlayStyle(props: DialogProps): ViewStyle {
   const stretch = props.side === 'bottom' || props.fullBleedPanel === true;
   return {
@@ -124,7 +126,7 @@ function Panel(panelProps: {
     <Pressable
       onPress={props.fullBleedPanel ? undefined : (e) => { e.stopPropagation(); }}
       pointerEvents={props.fullBleedPanel ? 'box-none' : undefined}
-      style={props.fullBleedPanel ? { flex: 1 } : panelStyle(props, scheme, insetBottom)}
+      style={[props.fullBleedPanel ? { flex: 1 } : panelStyle(props, scheme, insetBottom), NO_FOCUS_RING]}
     >
       {props.handle ? <Handle color={handleColor} /> : null}
       {props.header}
@@ -157,7 +159,7 @@ export function Dialog(props: DialogProps): ReactNode {
       ]}
     >
       {props.backdrop === false ? null : (
-        <Pressable accessible={false} focusable={false} onPress={close} style={StyleSheet.absoluteFill} />
+        <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} />
       )}
       {inner}
     </View>

@@ -4,7 +4,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { AppModal } from '../AppModal';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
-import { FormField } from '../FormField';
+import { FormField, useFocusOnOpen } from '../FormField';
 import { Box, Col } from '../layout';
 import { HomeContactResults } from './contacts';
 import { NewGroupForm } from '../group/NewGroupForm';
@@ -29,9 +29,10 @@ function NewGroupRow({ onPress }: { onPress: () => void }): React.ReactElement {
 
 function NewChatForm({ onGroup, onDone }: { onGroup: () => void; onDone: () => void }): React.ReactElement {
   const [query, setQuery] = useState('');
+  const input = useFocusOnOpen();
   return (
     <Col gap={12}>
-      <FormField label="Search" placeholder="Name, address or @username" value={query} onChangeText={setQuery}
+      <FormField label="Search" placeholder="Name, address or @username" value={query} onChangeText={setQuery} inputRef={input}
         inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false }} />
       <Box margin={{ x: -MODAL.padding }}>
         {query.trim() === '' ? <NewGroupRow onPress={onGroup} /> : null}
