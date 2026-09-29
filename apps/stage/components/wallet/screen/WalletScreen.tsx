@@ -8,14 +8,13 @@ import { useBalanceCurrency } from './currency';
 import { type AssetRow } from '@stage-labs/client/wallet/assets';
 
 import { usePullToRefresh } from '../../tabs/PullToRefresh';
-import { RefreshButton } from './refreshButton';
 import type { SimultaneousRefs } from '../../SwipeTabs.types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletTotalUsd } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { Box, Col, Row, ScreenScroll, PAGE_GUTTER } from '../../layout';
+import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../../layout';
 import { TokensList } from './tokens';
 import { listedNativeChains } from '../TokenSelector.model';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
@@ -108,9 +107,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       onScrollEndDrag={pull.onScrollEndDrag}
       scrollEventThrottle={pull.scrollEventThrottle}
 >
-      <Row margin={{ x: PAGE_GUTTER, top: 8 }} justify="end" align="center" gap={18}>
-        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
-      </Row>
       <WalletBalanceCard
         balance={{
           totalUsd, currency, prices,
