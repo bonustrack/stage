@@ -1,15 +1,6 @@
 import { useEffect, useRef } from 'react';
-import {
-  arrowKeyOf, revealScrollDelta, type Arrow, type ArrowKeyTarget, type MarkedNode,
-} from './arrowKeys.model';
-
-function keyTarget(target: EventTarget | null): ArrowKeyTarget | null {
-  if (!(target instanceof HTMLElement)) return null;
-  const value = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement ? target.value : null;
-  return { tagName: target.tagName, contentEditable: target.isContentEditable, text: value ?? target.textContent ?? '' };
-}
-
-const modalOpen = (): boolean => document.querySelector('[aria-modal="true"]') !== null;
+import { arrowKeyOf, revealScrollDelta, type Arrow, type MarkedNode } from './arrowKeys.model';
+import { keyTarget, modalOpen } from './keyEvents.web';
 
 export function useArrowKeys<A extends Arrow>(active: boolean, arrows: ReadonlySet<A>, onArrow: (arrow: A) => void): void {
   const handler = useRef(onArrow);

@@ -326,14 +326,15 @@ function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const safeTop = useSafeAreaInsets().top;
-  const [searchOpen, setSearchOpen] = useState(false);
-  if (searchOpen) {
+  const [searchKey, setSearchKey] = useState(0);
+  const openSearch = (): void => { setSearchKey(key => key + 1); };
+  if (searchKey > 0) {
     return (
       <FilterSearch
-        scope="board" onMenu={onFilterMenu}
-        query={query} setQuery={setQuery} onClose={() => { setSearchOpen(false); setQuery(''); }}
+        key={searchKey} scope="board" onMenu={onFilterMenu}
+        query={query} setQuery={setQuery} onClose={() => { setSearchKey(0); setQuery(''); }}
         head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
-        trailing={<HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }} view="board"/>}
+        trailing={<HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>}
       />
     );
   }
@@ -341,7 +342,7 @@ function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
     <>
       <Box flex={1}/>
       <Row align="center" gap={18}>
-        <HomeTopnavRight head={text} onOpenSearch={() => { setSearchOpen(true); }} view="board"/>
+        <HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>
       </Row>
     </>
   );

@@ -33,13 +33,16 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
   const search = useHover();
   const compose = useHover();
   const [composeOpen, setComposeOpen] = useState(false);
+  const openCompose = (): void => { setComposeOpen(true); };
   return (
     <>
-      <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
-        <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
-      </Pressable>
-      <HoverTooltip label="New chat" placement="below">
-        <Pressable onPress={() => { setComposeOpen(true); }} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
+      <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
+        <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
+          <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
+        </Pressable>
+      </HoverTooltip>
+      <HoverTooltip label="New chat" placement="below" shortcut="c" onShortcut={openCompose}>
+        <Pressable onPress={openCompose} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
           <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>
         </Pressable>
       </HoverTooltip>

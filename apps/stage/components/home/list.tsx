@@ -61,7 +61,7 @@ function ListFooter({ query, noChannels, knownPeers }: {
   return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
 }
 
-function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
+function useHomeTopnav(p: ChannelsListProps, searchKey: number, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
   const { query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
@@ -69,14 +69,14 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
     [sub, onOpenSearch],
   );
   const override = useMemo(
-    () => (searchOpen ? (
+    () => (searchKey > 0 ? (
       <FilterSearch
-        scope="chats" onMenu={onFilterMenu}
+        key={searchKey} scope="chats" onMenu={onFilterMenu}
         query={query} setQuery={setQuery} onClose={onCloseSearch}
         head={head} sub={sub} border={border} inline={pane} trailing={right}
       />
     ) : undefined),
-    [searchOpen, query, setQuery, onFilterMenu, onCloseSearch, head, sub, border, pane, right],
+    [searchKey, query, setQuery, onFilterMenu, onCloseSearch, head, sub, border, pane, right],
   );
   usePublishTopnavSlot({ right, override }, !pane);
   return { right, override };
@@ -97,10 +97,10 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
   } = props;
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
-  const [searchOpen, setSearchOpen] = useState(false);
-  const openSearch = (): void => { setSearchOpen(true); };
-  const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
-  const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
+  const [searchKey, setSearchKey] = useState(0);
+  const openSearch = (): void => { setSearchKey(key => key + 1); };
+  const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
+  const slot = useHomeTopnav(props, searchKey, openSearch, closeSearch);
   const contentStyle = { paddingBottom: 24 };
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
   useScrollTopOnFilter(props);
