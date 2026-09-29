@@ -44,7 +44,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
 
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Row width={'100%'} align="center" gap={10} padding={{ x: PAGE_GUTTER, y: 24 }}>
+      <Row width={'100%'} align="center" gap={10} padding={{ x: PAGE_GUTTER, y: 14 }}>
         <Button
           color="danger" variant="solid" size="lg" pill dark={dark} style={buttonStyle}
           loading={busy} disabled={busy} label="Reject" onPress={onReject}

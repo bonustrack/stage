@@ -79,7 +79,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
   } = c;
   const requestPending = consent === 'unknown';
   const access = useGroupAccess(convId, c.isGroup);
-  const composerShown = consentKnown && !requestPending && access === 'member';
+  const composerShown = consentKnown && access === 'member';
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
