@@ -36,10 +36,10 @@ export interface BalanceDisplayInput {
 
 function balanceStatus(input: BalanceDisplayInput, value: number | null): string | undefined {
   if (input.error) return input.loading ? 'Couldn’t load balances' : 'Couldn’t refresh balances';
-  if (input.loading) return 'Loading balances…';
+  if (input.loading) return 'Loading balances';
   if (input.totalUsd === null) return 'Some token prices are unavailable';
-  if (value === null) return input.pricesLoading ? 'Loading price…' : `${input.currency} price unavailable`;
-  if (input.refreshing) return 'Updating balances…';
+  if (value === null) return input.pricesLoading ? 'Loading price' : `${input.currency} price unavailable`;
+  if (input.refreshing) return 'Updating balances';
   return undefined;
 }
 
@@ -55,7 +55,7 @@ export function walletBalanceDisplay(input: BalanceDisplayInput): {
   total: string; decimals: string; unit: string; subtitle?: string;
 } {
   const value = balanceValue(input.totalUsd, input.currency, input.prices);
-  const parts = value === null ? { int: '…', dec: '' } : balanceParts(value, input.currency);
+  const parts = value === null ? { int: '-', dec: '' } : balanceParts(value, input.currency);
   return {
     total: parts.int,
     decimals: parts.dec,

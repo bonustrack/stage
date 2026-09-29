@@ -9,12 +9,25 @@ export interface FetchAssetRowsOptions {
   tokenLogo: TokenLogoResolver;
 }
 
+export interface WalletPortfolio {
+  rows: AssetRow[];
+  prices: Partial<Record<'ethereum' | 'bitcoin', UsdQuote>>;
+}
+
 function assetPriceId(asset: Asset): string | null {
   if (asset.address === null) return asset.cgId ? `coingecko:${asset.cgId}` : null;
   return asset.cgPlatform ? `${asset.cgPlatform}:${(asset.priceAddress ?? asset.address).toLowerCase()}` : null;
 }
 
 export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions): Promise<AssetRow[]> {
+  return (await fetchPortfolio(addr, opts, false)).rows;
+}
+
+export function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions): Promise<WalletPortfolio> {
+  return fetchPortfolio(addr, opts, true);
+}
+
+async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices: boolean): Promise<WalletPortfolio> {
   const chainIds = [...new Set(ASSETS.map(a => a.chainId))];
   const balancesByChain = new Map<number, bigint[]>();
   await Promise.all(chainIds.map(async cid => {
@@ -27,13 +40,18 @@ export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions):
     balancesByChain.set(cid, results);
   }));
 
-  const ids = [...new Set(ASSETS.map(assetPriceId).filter((id): id is string => id !== null))];
+  const ids = [...new Set([...ASSETS.map(assetPriceId).filter((id): id is string => id !== null), 'coingecko:bitcoin'])];
+  const emptyPrices = (): Record<string, UsdQuote> => ({});
   const emptyChanges = (): Record<string, number> => ({});
+  const currentPrices = getCurrentPrices(ids);
   const [prices, changes] = await Promise.all([
-    getCurrentPrices(ids),
+    requirePrices ? currentPrices : currentPrices.catch(emptyPrices),
     getPriceChanges(ids).catch(emptyChanges),
   ]);
-  return ASSETS.map(a => buildAssetRow(a, balancesByChain, prices, changes, opts.tokenLogo));
+  return {
+    rows: ASSETS.map(a => buildAssetRow(a, balancesByChain, prices, changes, opts.tokenLogo)),
+    prices: { ethereum: prices['coingecko:ethereum'], bitcoin: prices['coingecko:bitcoin'] },
+  };
 }
 
 function buildAssetRow(

@@ -77,20 +77,20 @@ describe('wallet display currency', () => {
 
   test.each([undefined, {}, { ethereum: { usd: 0 } }, { ethereum: { usd: -1 } }, { ethereum: { usd: NaN } }, { ethereum: { usd: Infinity } }])('hides invalid conversion prices %p', (prices) => {
     const result = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices });
-    expect(result.total).toBe('…');
+    expect(result.total).toBe('-');
     expect(result.subtitle).toBe('ETH price unavailable');
   });
 
   test('BTC does not fall back to ETH or a held wrapped token price', () => {
-    expect(text({ ...loaded, currency: 'BTC', prices: { ethereum: { usd: 4000 } } })).toBe('… BTC');
+    expect(text({ ...loaded, currency: 'BTC', prices: { ethereum: { usd: 4000 } } })).toBe('- BTC');
   });
 
   test.each([null, NaN, Infinity, -1])('hides unavailable or invalid total %p', (totalUsd) => {
-    expect(walletBalanceDisplay({ ...loaded, totalUsd }).total).toBe('…');
+    expect(walletBalanceDisplay({ ...loaded, totalUsd }).total).toBe('-');
   });
 
   test('rejects overflowing conversion', () => {
-    expect(walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: { ethereum: { usd: Number.MIN_VALUE } } }).total).toBe('…');
+    expect(walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: { ethereum: { usd: Number.MIN_VALUE } } }).total).toBe('-');
   });
 
   test('formats zero, grouping, and small crypto amounts without rounding to zero', () => {
@@ -107,13 +107,13 @@ describe('wallet display currency', () => {
 describe('wallet loading and refresh display', () => {
   test('initial loading is not a false zero', () => {
     const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true });
-    expect(display.total).toBe('…');
-    expect(display.subtitle).toBe('Loading balances…');
+    expect(display.total).toBe('-');
+    expect(display.subtitle).toBe('Loading balances');
   });
 
   test('initial error is explicit without a numeric balance', () => {
     const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true, error: true });
-    expect(display.total).toBe('…');
+    expect(display.total).toBe('-');
     expect(display.subtitle).toBe('Couldn’t load balances');
   });
 
@@ -126,7 +126,7 @@ describe('wallet loading and refresh display', () => {
   test('refetch keeps cached total while quietly indicating progress', () => {
     const display = walletBalanceDisplay({ ...loaded, refreshing: true });
     expect(display.total).toBe('$8,000');
-    expect(display.subtitle).toBe('Updating balances…');
+    expect(display.subtitle).toBe('Updating balances');
   });
 
   test('missing held-token prices do not display an incomplete total', () => {
@@ -135,8 +135,8 @@ describe('wallet loading and refresh display', () => {
 
   test('missing conversion quotes indicate loading only while fetching', () => {
     const display = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: undefined, pricesLoading: true });
-    expect(display.total).toBe('…');
-    expect(display.subtitle).toBe('Loading price…');
+    expect(display.total).toBe('-');
+    expect(display.subtitle).toBe('Loading price');
   });
 
   test('successful loaded balance has no status text', () => {

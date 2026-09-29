@@ -1,7 +1,8 @@
 
 import { useCallback, useMemo } from 'react';
 import { useActiveAccountRecord } from '../../../modules/messaging';
-import { useAssetRows, useBalancePrices } from './data';
+import { useWalletPortfolio } from './data';
+import type { BalancePrices } from './balance.model';
 import { WalletBalanceCard } from './BalanceCard';
 import { useBalanceCurrency } from './currency';
 import { type AssetRow } from '@stage-labs/client/wallet/assets';
@@ -22,6 +23,7 @@ import { useWalletFocused } from '../../tabs/useWalletFocused';
 interface WalletBalances {
   address: string;
   rows: AssetRow[] | null;
+  prices: BalancePrices | undefined;
   err: string;
   refreshing: boolean;
   onRefresh: () => void;
@@ -29,7 +31,7 @@ interface WalletBalances {
 
 export function useWalletBalances(focused: boolean): WalletBalances {
   const address = useActiveAccountRecord()?.address ?? '';
-  const rows = useAssetRows(address, focused);
+  const rows = useWalletPortfolio(address, focused);
   const refetch = rows.refetch;
 
   const onRefresh = useCallback((): void => {
@@ -39,7 +41,8 @@ export function useWalletBalances(focused: boolean): WalletBalances {
 
   return {
     address,
-    rows: rows.data ?? null,
+    rows: rows.data?.rows ?? null,
+    prices: rows.data?.prices,
     err: rows.error ? rows.error.message : '',
     refreshing: rows.isRefetching,
     onRefresh,
@@ -59,7 +62,7 @@ function WalletTokens({ rows, err, nativeChainIds, c }: {
   }
   if (rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Text size="md" color="secondary">Loading tokens…</Text></Col>
+      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Text size="md" color="secondary">Loading tokens</Text></Col>
     );
   }
   return (
@@ -74,14 +77,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { link: head, text: sub, bg, border } = usePalette();
   const focused = useWalletFocused();
 
-  const { address, rows, err, refreshing, onRefresh: refreshBalances } = useWalletBalances(focused);
+  const { address, rows, prices, err, refreshing, onRefresh } = useWalletBalances(focused);
   const currency = useBalanceCurrency();
-  const quotes = useBalancePrices(focused && currency !== 'USD');
-  const refreshQuotes = quotes.refetch;
-  const onRefresh = useCallback((): void => {
-    refreshBalances();
-    if (currency !== 'USD') void refreshQuotes();
-  }, [refreshBalances, refreshQuotes, currency]);
   usePeerProfiles([address]);
   const pull = usePullToRefresh(refreshing, onRefresh, head);
 
@@ -112,14 +109,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       <Row margin={{ x: PAGE_GUTTER, top: 8 }} justify="end" align="center" gap={18}>
-        <RefreshButton refreshing={refreshing || quotes.isFetching} onRefresh={onRefresh} color={head}/>
+        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       <WalletBalanceCard
         balance={{
-          totalUsd, currency,
-          prices: quotes.isError || quotes.isStale ? undefined : quotes.data,
+          totalUsd, currency, prices,
           loading: rows === null, error: !!err, refreshing,
-          pricesLoading: quotes.isFetching,
+          pricesLoading: refreshing,
         }}
         border={border} onAction={onWalletAction}
       />
