@@ -34,7 +34,6 @@ import {
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
 
-const FILTER_PLACEHOLDER = 'Filter by keyword or by field';
 const MENU_MAX_HEIGHT = 360;
 const FILTER_LAYER = 5;
 const NATIVE = Platform.OS !== 'web';
@@ -219,7 +218,6 @@ export function FilterSearch({ query, setQuery, scope, onMenu, ...bar }: {
     <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: FILTER_LAYER }]}>
       <SearchTopnavBar
         {...bar} inline query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
-        placeholder={wide ? FILTER_PLACEHOLDER : undefined}
       />
       {filter.menu === null ? null : (
         <Menu>
