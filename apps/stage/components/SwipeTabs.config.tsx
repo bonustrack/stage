@@ -4,29 +4,33 @@ import type { Href } from 'expo-router';
 import { HomeScreen } from './home/HomeScreen';
 import { ContactsScreen } from './ContactsScreen';
 import { WalletScreen } from './wallet/screen/WalletScreen';
+import { SettingsMenu } from './settings/SettingsMenu';
 
 export type { SimultaneousRefs } from './SwipeTabs.types';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 
-export const TAB_ORDER = ['index', 'contacts', 'wallet'] as const;
+export const TAB_ORDER = ['index', 'contacts', 'wallet', 'settings'] as const;
 export type TabName = (typeof TAB_ORDER)[number];
 
 export const TAB_HREF: Record<TabName, Href> = {
   index: '/',
   contacts: '/contacts',
   wallet: '/wallet',
+  settings: '/settings',
 };
 
 export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
   index: HomeScreen,
   contacts: ContactsScreen,
   wallet: WalletScreen,
+  settings: SettingsMenu,
 };
 
 export function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
   if (pathname.startsWith('/contacts')) return 1;
   if (pathname.startsWith('/wallet')) return 2;
+  if (pathname.startsWith('/settings')) return 3;
   return 0;
 }
 

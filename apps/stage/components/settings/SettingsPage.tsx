@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Platform } from 'react-native';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -8,17 +10,19 @@ import { SettingsHeader } from '../chrome/SettingsHeader';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
 
-export function SettingsPage({ title, root = false, keyboardShouldPersistTaps, children }: {
+export function SettingsPage({ title, root = false, panRef, keyboardShouldPersistTaps, children }: {
   title: string;
   root?: boolean;
+  panRef?: SimultaneousRefs;
   keyboardShouldPersistTaps?: 'handled';
   children: ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
     <Col surface="surface" flex={1}>
-      {root ? <StackHeader title={title}/> : <SettingsHeader title={title}/>}
+      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <SettingsHeader title={title}/>}
       <ScreenScroll
+        simultaneousHandlers={panRef}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >

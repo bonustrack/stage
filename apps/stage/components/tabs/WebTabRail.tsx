@@ -23,7 +23,7 @@ export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
   ['wallet', IconWallet4],
 ];
 
-const TAB_LABELS: Record<TabName, string> = { index: 'Chats', contacts: 'Contacts', wallet: 'Wallet' };
+const TAB_LABELS: Record<TabName, string> = { index: 'Chats', contacts: 'Contacts', wallet: 'Wallet', settings: 'Settings' };
 
 function TabIcon({ name, icon, active, unreadBadge }: {
   name: TabName; icon: CentralIcon; active: boolean; unreadBadge: string | undefined;

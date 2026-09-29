@@ -32,8 +32,9 @@ function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }):
 
 function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: {
   insetTop: number; tabBarHeight: number; topnavHidden: boolean; rail: boolean; pathname: string;
-}): React.ReactElement {
+}): React.ReactElement | null {
   if (Platform.OS === 'web') {
+    if (pathname.startsWith('/settings')) return null;
     return (
       <Col flex={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}
@@ -72,7 +73,6 @@ export default function TabsLayout(): React.ReactElement {
   const router = useRouter();
   const unread = useTotalUnread();
   const unreadBadge = unreadBadgeLabel(unread);
-  const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const active = pal.link;
@@ -139,15 +139,13 @@ export default function TabsLayout(): React.ReactElement {
 />
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
-      {pagerVisible ? (
-        <PagerOverlay
-          insetTop={insets.top}
-          tabBarHeight={tabBarHeight}
-          topnavHidden={rail && pathname === '/'}
-          rail={rail}
-          pathname={pathname}
-        />
-      ) : null}
+      <PagerOverlay
+        insetTop={insets.top}
+        tabBarHeight={tabBarHeight}
+        topnavHidden={rail && pathname === '/'}
+        rail={rail}
+        pathname={pathname}
+      />
       {web ? (rail
         ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
         : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>

@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 
 
 import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
@@ -12,7 +13,7 @@ import { profileLinkOf } from '../../lib/links';
 
 const PROFILE_SETTINGS_HREF = '/settings/profile';
 
-export function SettingsMenu(): React.ReactElement {
+export function SettingsMenu({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const address = useActiveAccountRecord()?.address ?? null;
   const open = (href: string): void => {
@@ -20,7 +21,7 @@ export function SettingsMenu(): React.ReactElement {
     else capabilities.navigate(href);
   };
   return (
-    <SettingsPage title="Settings" root>
+    <SettingsPage title="Settings" root panRef={panRef}>
       <SettingsAccountHeader />
       <SettingsList>
         {SETTINGS_MENU_ITEMS.map((item) => (
