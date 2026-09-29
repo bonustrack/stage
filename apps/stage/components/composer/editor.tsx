@@ -39,7 +39,7 @@ interface EditorProps {
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
-  sendDisabled?: boolean;
+  draftOnly?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -78,9 +78,9 @@ function makeWebEnterToSend(
       e.preventDefault();
       return;
     }
-    if (e.key !== 'Enter' || e.shiftKey) return;
+    if (e.key !== 'Enter' || e.shiftKey || p.draftOnly === true) return;
     e.preventDefault();
-    if (p.hasContent && p.sendDisabled !== true) p.onSend();
+    if (p.hasContent) p.onSend();
   };
 }
 
@@ -146,9 +146,9 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
 
 function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }): React.ReactElement | null {
   const { dark, bg } = p;
-  if (!p.hasContent) return null;
+  if (!p.hasContent || p.draftOnly === true) return null;
   return (
-    <Button size="md" uniform pill dark={dark} tintBg={primary} disabled={p.sendDisabled}
+    <Button size="md" uniform pill dark={dark} tintBg={primary}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
   );
 }

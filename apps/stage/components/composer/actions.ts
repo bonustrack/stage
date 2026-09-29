@@ -10,14 +10,17 @@ import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './send';
+import { unsentDraft } from './draft.model';
 import { ignored } from '../../lib/errorPolicy';
 
-type ComposerActionsArgs = PostHooks & Pick<ComposerState,
-  'text' | 'pending' | 'setPending' | 'setText' | 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'
-> & {
+type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
+  & Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {
   replyingTo?: { id: string };
   onClearReply?: () => void;
 };
+
+type ComposerActionsArgs = DraftArgs & PostHooks
+  & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
 function kindOf(mime: string): 'image' | 'audio' | 'video' | 'file' {
   if (mime.startsWith('image/')) return 'image';
@@ -87,11 +90,10 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
     if (line === null) return;
     await xmtpSendText(line, `📍 ${url}`);
     setLastAttachment('Location');
-    a.onPosted?.(line);
   } catch (e) { a.setErr((e as Error).message); }
 }
 
-async function runStep(a: ComposerActionsArgs, s: SendStep): Promise<string | undefined> {
+async function runStep(a: DraftArgs, s: SendStep): Promise<string | undefined> {
   try {
     const id = await s.run();
     const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
@@ -106,16 +108,18 @@ async function runStep(a: ComposerActionsArgs, s: SendStep): Promise<string | un
   }
 }
 
-async function runSendSteps(a: ComposerActionsArgs, steps: SendStep[]): Promise<string | undefined> {
+async function runSendSteps(a: DraftArgs, steps: SendStep[]): Promise<SendStep[]> {
+  const unsent: SendStep[] = [];
   let sendErr: string | undefined;
   for (const s of steps) {
-    if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
+    if (sendErr) { a.onSent?.(s.localId, sendErr); unsent.push(s); continue; }
     sendErr = await runStep(a, s);
+    if (sendErr) unsent.push(s);
   }
-  return sendErr;
+  return unsent;
 }
 
-function beginSend(a: ComposerActionsArgs, line: string, body: string): SendStep[] {
+function beginSend(a: DraftArgs, line: string, body: string): SendStep[] {
   const sendingAttachments = a.pending.map((at) =>
     at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
   const sendingReplyTo = a.replyingTo?.id;
@@ -137,12 +141,21 @@ async function performSend(a: ComposerActionsArgs): Promise<void> {
   const originalText = a.text;
   const originalPending = a.pending;
   const steps = beginSend(a, line, body);
-  const sendErr = await runSendSteps(a, steps);
-  if (!sendErr) a.onPosted?.(line);
-  else if (a.text.trim().length === 0 && a.pending.length === 0) {
+  const unsent = await runSendSteps(a, steps);
+  if (unsent.length > 0 && a.text.trim().length === 0 && a.pending.length === 0) {
     a.setText(originalText);
     a.setPending(originalPending);
   }
+}
+
+export async function sendDraft(a: DraftArgs, line: string): Promise<boolean> {
+  const { text, pending } = a;
+  const unsent = await runSendSteps(a, beginSend(a, line, text.trim()));
+  if (unsent.length === 0) return true;
+  const kept = unsentDraft(text, pending, unsent);
+  a.setText(kept.text);
+  a.setPending(kept.pending);
+  return false;
 }
 
 export function useComposerActions(a: ComposerActionsArgs) {

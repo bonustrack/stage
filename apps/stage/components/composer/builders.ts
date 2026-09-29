@@ -32,7 +32,6 @@ async function postStructured(
   try { sentId = await send(line); }
   catch (e) { sendErr = (e as Error).message; post.setErr(sendErr); }
   finally { post.onSent?.(localId, sendErr, sentId); }
-  if (sendErr === undefined) post.onPosted?.(line);
 }
 
 function buildSignatureContent(d: SignatureDraft): SignatureRequestContent | null {

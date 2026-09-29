@@ -14,15 +14,15 @@ import { useChannelSuggest } from './channels';
 import { ComposerEditor, buildAttachActions } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine } from '../../modules/messaging';
-import { useComposerState } from './state';
+import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
+
+const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
 
 interface Props {
   dark: boolean;
   xmtpLine?: string;
-  openLine?: () => Promise<string | null>;
-  canSend?: boolean;
-  onPosted?: (line: string) => void;
+  state?: ComposerState;
   mentionCandidates?: { address: string; name: string }[];
   suggestContacts?: boolean;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
@@ -37,10 +37,25 @@ function loneCandidate(candidates: Props['mentionCandidates']): string | undefin
   return candidates?.length === 1 ? candidates[0]?.address : undefined;
 }
 
-function composerTarget({ xmtpLine, openLine }: Props): { convId: string | null; openLine: () => Promise<string | null> } {
-  if (openLine) return { convId: null, openLine };
+function composerTarget(xmtpLine: string | undefined): { convId: string | null; openLine: () => Promise<string | null> } {
   const line = xmtpLine ?? null;
   return { convId: line === null ? null : convIdOfLine(line) ?? line, openLine: () => Promise.resolve(line) };
+}
+
+function useDraftState(shared: ComposerState | undefined): ComposerState {
+  const own = useComposerState();
+  return shared ?? own;
+}
+
+function composerAttachActions(
+  actions: ReturnType<typeof useComposerActions>, s: ComposerState, draftOnly: boolean,
+): ReturnType<typeof buildAttachActions> {
+  const all = buildAttachActions({
+    pickImage: actions.pickImage, takePhoto: actions.takePhoto,
+    pickFile: actions.pickFile, pickLocation: actions.pickLocation,
+    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
+  });
+  return draftOnly ? all.filter(([, label]) => DRAFT_ATTACH_LABELS.has(label)) : all;
 }
 
 function ComposerHeader(p: {
@@ -76,8 +91,9 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const fg = pal.text, head = pal.link, chipBg = pal.border, bg = pal.bg;
   const sub = pal.text;
 
-  const s = useComposerState();
-  const { convId, openLine } = composerTarget(props);
+  const s = useDraftState(props.state);
+  const draftOnly = props.xmtpLine === undefined;
+  const { convId, openLine } = composerTarget(props.xmtpLine);
   const actions = useComposerActions({ ...props, ...s, openLine });
   usePastedImages((files) => { void actions.onPickedImages(files); });
   const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
@@ -91,11 +107,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
-  const attachActions = buildAttachActions({
-    pickImage: actions.pickImage, takePhoto: actions.takePhoto,
-    pickFile: actions.pickFile, pickLocation: actions.pickLocation,
-    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
-  });
+  const attachActions = composerAttachActions(actions, s, draftOnly);
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
@@ -121,17 +133,19 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
-        sendDisabled={props.canSend === false}
+        draftOnly={draftOnly}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
       />
-      <ComposerSheets
-        s={s} dark={dark} hooks={{ openLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent, onPosted: props.onPosted }}
-        initialTo={loneCandidate(mentionCandidates)}
-      />
+      {draftOnly ? null : (
+        <ComposerSheets
+          s={s} dark={dark} hooks={{ openLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
+          initialTo={loneCandidate(mentionCandidates)}
+        />
+      )}
       <FilePicker
         openNonce={actions.imageNonce}
         source="library"

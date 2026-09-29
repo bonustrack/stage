@@ -7,27 +7,25 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { errorMessage } from '@stage-labs/client/errors';
 import { AppModal } from '../AppModal';
-import { Box, Col, PAGE_GUTTER } from '../layout';
+import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { MemberPicker, useMemberPicker, type Member } from '../group/MemberPicker';
-import { GroupNameField, NewGroupForm } from '../group/NewGroupForm';
+import { GroupNameField, NewGroupDetails, createGroupLine, type PickedImage } from '../group/NewGroupForm';
 import { MessengerComposer } from '../composer/MessengerComposer';
+import { useComposerState, type ComposerState } from '../composer/state';
+import { sendDraft } from '../composer/actions';
 import { resolveErrorMessage } from '../conversation/conv.hooks';
 import { resolveDmConvId } from '../../lib/dmResolve';
 import { capabilities } from '../../lib/capabilities';
-import { convIdOfLine, createGroup, lineOfConv } from '../../modules/messaging';
+import { convIdOfLine, lineOfConv } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { openChatLabel, phaseNote, recipientsKey, type NewChatPhase } from './NewChatModal.model';
+import {
+  chatKey, footerAction, isDirectChat, phaseNote, stepTitle, type FooterAction, type NewChatPhase, type NewChatStep,
+} from './NewChatModal.model';
 import { IconUserGroup } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconUserGroup';
 
 const ACTION_ICON_SIZE = 40;
 
 type Picker = ReturnType<typeof useMemberPicker>;
-
-interface ChatTarget {
-  phase: NewChatPhase;
-  openLine: () => Promise<string | null>;
-  settle: () => void;
-}
 
 function NewGroupRow({ onPress }: { onPress: () => void }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -45,106 +43,132 @@ function NewGroupRow({ onPress }: { onPress: () => void }): React.ReactElement {
 
 async function openConversation(members: Member[], name: string): Promise<string> {
   const only = members.length === 1 ? members[0] : undefined;
-  if (only === undefined) return (await createGroup(members.map(m => m.address), name)).line;
+  if (only === undefined) return createGroupLine(members.map(m => m.address), name, null);
   const res = await resolveDmConvId(only.address);
   if ('convId' in res) return lineOfConv(res.convId);
   throw new Error(resolveErrorMessage(res.error, res.detail));
 }
 
-function useChatTarget(members: Member[], name: string): ChatTarget {
+function useStartChat(draft: ComposerState, onOpened: (line: string) => void): {
+  phase: NewChatPhase; start: (key: string, open: () => Promise<string>) => Promise<void>;
+} {
   const [phase, setPhase] = useState<NewChatPhase>('idle');
   const opened = useRef<{ key: string; line: string } | null>(null);
   const busy = useRef(false);
-  const openLine = async (): Promise<string | null> => {
-    if (members.length === 0) { capabilities.toast('Pick who to send it to first'); return null; }
-    if (busy.current) return null;
-    const key = recipientsKey(members.map(m => m.address));
-    if (opened.current?.key === key) { setPhase('sending'); return opened.current.line; }
-    busy.current = true;
+  const latest = useRef(draft);
+  latest.current = draft;
+  const lineFor = async (key: string, open: () => Promise<string>): Promise<string | null> => {
+    if (opened.current?.key === key) return opened.current.line;
     setPhase('creating');
     try {
-      const line = await openConversation(members, name);
+      const line = await open();
       opened.current = { key, line };
-      setPhase('sending');
       return line;
     } catch (err) {
-      setPhase('idle');
       capabilities.toast(errorMessage(err));
       return null;
-    } finally {
-      busy.current = false;
     }
   };
-  return { phase, openLine, settle: () => { setPhase('idle'); } };
+  const start = async (key: string, open: () => Promise<string>): Promise<void> => {
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      const line = await lineFor(key, open);
+      if (line === null) return;
+      setPhase('sending');
+      if (await sendDraft(latest.current, line)) onOpened(line);
+    } finally {
+      busy.current = false;
+      setPhase('idle');
+    }
+  };
+  return { phase, start };
 }
 
-function NewChatFields({ picker, name, setName, busy, onGroup, onOpen }: {
-  picker: Picker; name: string; setName: (name: string) => void; busy: boolean; onGroup: () => void; onOpen: () => void;
+function NewChatBody({ step, picker, name, setName, image, setImage, creating, onGroup }: {
+  step: NewChatStep; picker: Picker; name: string; setName: (name: string) => void;
+  image: PickedImage | null; setImage: (image: PickedImage) => void; creating: boolean; onGroup: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+  if (step === 'details') {
+    return <NewGroupDetails name={name} setName={setName} image={image} setImage={setImage} creating={creating} />;
+  }
   const count = picker.members.length;
+  const chat = step === 'chat';
   return (
-    <MemberPicker state={picker} dark={dark}>
-      {count > 1 ? <GroupNameField name={name} setName={setName} /> : null}
-      {count > 0 ? (
-        <Button size="lg" fullWidth pill dark={dark} color="secondary" variant="soft" loading={busy}
-          label={openChatLabel(count)} onPress={onOpen} />
-      ) : null}
-      {count === 0 && picker.entry.trim() === '' ? (
+    <MemberPicker key={step} state={picker} dark={dark}>
+      {chat && count > 1 ? <GroupNameField name={name} setName={setName} /> : null}
+      {chat && count === 0 && picker.entry.trim() === '' ? (
         <Box margin={{ x: -MODAL.padding }}><NewGroupRow onPress={onGroup} /></Box>
       ) : null}
     </MemberPicker>
   );
 }
 
-function NewChatComposer({ members, target, onPosted }: {
-  members: Member[]; target: ChatTarget; onPosted: (line: string) => void;
+function NewChatFooter({ draft, members, action, phase, onPrimary, onBack }: {
+  draft: ComposerState; members: Member[]; action: FooterAction; phase: NewChatPhase;
+  onPrimary: () => void; onBack: (step: NewChatStep) => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const note = phaseNote(target.phase);
+  const { primary, bg } = usePalette();
+  const note = phaseNote(phase);
+  const busy = phase !== 'idle';
+  const { back } = action;
   return (
     <Col>
       {note === null ? null : (
         <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text value={note} size="sm" role="secondary" /></Box>
       )}
-      <MessengerComposer
-        dark={dark}
-        openLine={target.openLine}
-        canSend={members.length > 0}
-        mentionCandidates={members.map(m => ({ address: m.address, name: m.label }))}
-        suggestContacts
-        onPosted={onPosted}
-        onSent={(_localId, error) => { if (error !== undefined) target.settle(); }}
-      />
+      <MessengerComposer dark={dark} state={draft} suggestContacts
+        mentionCandidates={members.map(m => ({ address: m.address, name: m.label }))} />
+      <Row gap={8} padding={{ x: MODAL.padding, top: 12 }}>
+        {back === null ? null : (
+          <Button size="lg" pill dark={dark} color="secondary" variant="ghost" disabled={busy} label="Back"
+            onPress={() => { onBack(back); }} />
+        )}
+        <Box flex={1}>
+          <Button size="lg" fullWidth pill dark={dark} tintBg={primary} tintFg={bg} label={action.label}
+            disabled={!action.enabled || draft.uploading} loading={busy} onPress={onPrimary} />
+        </Box>
+      </Row>
     </Col>
   );
 }
 
 function NewChatSheet({ onClose }: { onClose: () => void }): React.ReactElement {
   const router = useRouter();
-  const [step, setStep] = useState<'chat' | 'group'>('chat');
+  const [step, setStep] = useState<NewChatStep>('chat');
   const picker = useMemberPicker();
   const [name, setName] = useState('');
-  const target = useChatTarget(picker.members, name);
+  const [image, setImage] = useState<PickedImage | null>(null);
+  const draft = useComposerState();
   const openChat = (line: string): void => {
     const convId = convIdOfLine(line);
     onClose();
     if (convId !== null) router.push({ pathname: '/channel/[convId]', params: { convId } });
   };
-  const openWithoutMessage = (): void => {
-    const only = picker.members.length === 1 ? picker.members[0] : undefined;
-    if (only === undefined) { void target.openLine().then(line => { if (line !== null) openChat(line); }); return; }
-    onClose();
-    router.push({ pathname: '/[convId]', params: { convId: only.address } });
+  const { phase, start } = useStartChat(draft, openChat);
+  const { members } = picker;
+  const action = footerAction(step, members.length);
+  const onPrimary = (): void => {
+    if (action.next !== null) { setStep(action.next); return; }
+    const only = isDirectChat(step, members.length) ? members[0] : undefined;
+    if (only !== undefined && draft.text.trim() === '' && draft.pending.length === 0) {
+      onClose();
+      router.push({ pathname: '/[convId]', params: { convId: only.address } });
+      return;
+    }
+    const addresses = members.map(m => m.address);
+    const open = step === 'chat' ? () => openConversation(members, name) : () => createGroupLine(addresses, name, image);
+    void start(chatKey(step, addresses), open);
   };
-  const chat = step === 'chat';
   return (
-    <AppModal visible onClose={onClose} title={chat ? 'New chat' : 'New group'}
-      footer={chat ? <NewChatComposer members={picker.members} target={target} onPosted={openChat} /> : undefined}>
-      {chat ? (
-        <NewChatFields picker={picker} name={name} setName={setName} busy={target.phase === 'creating'}
-          onGroup={() => { setStep('group'); }} onOpen={openWithoutMessage} />
-      ) : <NewGroupForm onDone={onClose} />}
+    <AppModal visible onClose={onClose} title={stepTitle(step)}
+      footer={<NewChatFooter draft={draft} members={members} action={action} phase={phase} onPrimary={onPrimary} onBack={setStep} />}>
+      <Box padding={{ bottom: MODAL.padding }}>
+        <NewChatBody step={step} picker={picker} name={name} setName={setName} image={image} setImage={setImage}
+          creating={phase === 'creating'} onGroup={() => { setStep('members'); }} />
+      </Box>
     </AppModal>
   );
 }
