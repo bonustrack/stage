@@ -124,24 +124,6 @@ jobs:
           fi
           echo "native=$NATIVE" >> "$GITHUB_OUTPUT"
 
-      # Warm the bun install: the global module cache (~/.bun/install/cache) AND
-      # the materialised node_modules trees (root + every workspace). bun.lock is
-      # the exact-dependency key, so a hit means `bun install --frozen-lockfile`
-      # below is a near-instant verify instead of a cold multi-minute download +
-      # link of the RN / Expo dependency graph. restore-keys lets a
-      # stale-but-close cache still seed most packages when the lock changes.
-      - name: Cache bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-          key: bun-deps-hoisted-${{ runner.os }}-${{ hashFiles('bun.lock', 'bunfig.toml') }}
-          restore-keys: |
-            bun-deps-hoisted-${{ runner.os }}-
-
       - run: bun install --frozen-lockfile
 
       # NOTE (#437): we deliberately do NOT persist/restore the Metro transform
