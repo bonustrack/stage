@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  ME_OPTION, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
+  HAS_OPTIONS, ME_OPTION, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
   searchFilterMenu, searchFilterSources, searchFilterToken, searchFilterValues, searchRowMatcher,
   type FilterMenu, type FilterOptions, type FilterRow,
 } from '../components/searchFilter.model';
@@ -37,12 +37,12 @@ const matching = (query: string): string[] => {
 describe('parsing the search filter', () => {
   test('splits label and member tokens from the free text', () => {
     expect(parseSearchFilter('label:"🚧 In progress" member:alice123 ship it')).toEqual({
-      labels: ['🚧 In progress'], members: ['alice123'], text: 'ship it',
+      labels: ['🚧 In progress'], members: ['alice123'], has: [], text: 'ship it',
     });
   });
 
   test('field names ignore case, empty values filter nothing and extra spaces go away', () => {
-    expect(parseSearchFilter('  LABEL:Todo   Member:  label:""  ')).toEqual({ labels: ['Todo'], members: [], text: '' });
+    expect(parseSearchFilter('  LABEL:Todo   Member:  label:""  ')).toEqual({ labels: ['Todo'], members: [], has: [], text: '' });
   });
 
   test('an unfinished quote keeps the rest of the words in the value', () => {
@@ -51,7 +51,7 @@ describe('parsing the search filter', () => {
 
   test('member:@me is a member token like any other', () => {
     expect(parseSearchFilter('member:@me ship member:alice123')).toEqual({
-      labels: [], members: ['@me', 'alice123'], text: 'ship',
+      labels: [], members: ['@me', 'alice123'], has: [], text: 'ship',
     });
   });
 });
@@ -131,6 +131,7 @@ describe('filter values on the board', () => {
 
 describe('the filter menu', () => {
   const options: FilterOptions = {
+    has: HAS_OPTIONS,
     label: [
       { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
       { key: 'Todo', label: 'Todo', value: 'Todo' },
@@ -140,8 +141,8 @@ describe('the filter menu', () => {
   const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
 
   test('an empty search or a new word lists the fields, a typed prefix narrows them', () => {
-    expect(menu('')).toEqual({ kind: 'fields', word: { start: 0, end: 0 }, fields: ['label', 'member'] });
-    expect(menu('bug ')).toEqual({ kind: 'fields', word: { start: 4, end: 4 }, fields: ['label', 'member'] });
+    expect(menu('')).toEqual({ kind: 'fields', word: { start: 0, end: 0 }, fields: ['label', 'member', 'has'] });
+    expect(menu('bug ')).toEqual({ kind: 'fields', word: { start: 4, end: 4 }, fields: ['label', 'member', 'has'] });
     expect(menu('ME')).toMatchObject({ kind: 'fields', fields: ['member'] });
     expect(menu('bug')).toBeNull();
   });
@@ -210,7 +211,7 @@ describe('the search filter on the chats page', () => {
 describe('values grouped per field', () => {
   test('a comma joins values of one field, in any order next to the old repeated form', () => {
     expect(parseSearchFilter('member:@me,chen123 ship label:Todo,Bug')).toEqual({
-      labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], text: 'ship',
+      labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], has: [], text: 'ship',
     });
     expect(parseSearchFilter('member:@me member:chen123,,')).toEqual(parseSearchFilter('member:@me,chen123'));
   });
@@ -224,13 +225,14 @@ describe('values grouped per field', () => {
     const labels = ['🚧 In progress', '🔍 In review', 'a,b', 'Todo'];
     const token = searchFilterToken('label', labels);
     expect(token).toBe('label:"🚧 In progress","🔍 In review","a,b",Todo');
-    expect(parseSearchFilter(`${token} ship`)).toEqual({ labels, members: [], text: 'ship' });
+    expect(parseSearchFilter(`${token} ship`)).toEqual({ labels, members: [], has: [], text: 'ship' });
     expect(searchFilterToken('member', ['@me', 'chen123'])).toBe('member:@me,chen123');
   });
 });
 
 describe('picked values in the menu', () => {
   const options: FilterOptions = {
+    has: HAS_OPTIONS,
     label: [
       { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
       { key: '🔍 In review', label: '🔍 In review', value: '🔍 In review' },

@@ -295,12 +295,15 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const [adding, setAdding] = useState<string | null>(null);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
   const profiles = useMemberProfiles(rows, query);
-  useDraftsVersion();
+  const draftsVersion = useDraftsVersion();
   const columns = useMemo(
     () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
     [rows, cleared, pinned, order],
   );
-  const shown = useMemo(() => searchedColumns(columns, query, memberNamesOf), [columns, query, profiles]);
+  const shown = useMemo(
+    () => searchedColumns(columns, query, memberNamesOf, getDraft),
+    [columns, query, profiles, draftsVersion],
+  );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {

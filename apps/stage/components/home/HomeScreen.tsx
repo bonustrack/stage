@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { useDraftsVersion } from '../../lib/drafts';
+import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { SplitPlaceholder } from './SplitPlaceholder';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -43,8 +43,12 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
+  const draftsVersion = useDraftsVersion();
   const search = useMemo(() => parseSearchFilter(query), [query]);
-  const matches = useMemo(() => searchRowMatcher(search, memberNamesOf), [search, channelProfilesVersion]);
+  const matches = useMemo(
+    () => searchRowMatcher(search, memberNamesOf, getDraft),
+    [search, channelProfilesVersion, draftsVersion],
+  );
 
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),
@@ -65,7 +69,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
     [sortedRows, matches, cleared],
   );
-  const draftsVersion = useDraftsVersion();
   const accountEpoch = useActiveAccount();
 
   useChannelsSync({ accountEpoch, setError: st.setError });

@@ -1,17 +1,18 @@
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 
-export type FilterField = 'label' | 'member';
+export type FilterField = 'label' | 'member' | 'has';
 
 export type FilterScope = 'board' | 'chats';
 
-export const FILTER_FIELDS: readonly FilterField[] = ['label', 'member'];
+export const FILTER_FIELDS: readonly FilterField[] = ['label', 'member', 'has'];
 
 export const ME_VALUE = '@me';
 
 interface SearchFilter {
   labels: string[];
   members: string[];
+  has: string[];
   text: string;
 }
 
@@ -41,7 +42,13 @@ export type MemberNames = (address: string) => readonly string[];
 
 export const ME_OPTION: FilterOption = { key: ME_VALUE, label: ME_VALUE, value: ME_VALUE };
 
-const FIELD_RE = /^(label|member):(.*)$/i;
+export const HAS_OPTIONS: readonly FilterOption[] = [
+  { key: 'label', label: 'Label', value: 'label' },
+  { key: 'draft', label: 'Draft', value: 'draft' },
+];
+
+const FIELD_RE = /^(label|member|has):(.*)$/i;
+const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has' } as const;
 
 function wordsOf(query: string): FilterSpan[] {
   const words: FilterSpan[] = [];
@@ -82,19 +89,20 @@ function valuesOf(raw: string): string[] {
 function fieldWord(word: string): { field: FilterField; values: string[] } | null {
   const match = FIELD_RE.exec(word);
   if (match === null) return null;
-  return { field: match[1]?.toLowerCase() === 'member' ? 'member' : 'label', values: valuesOf(match[2] ?? '') };
+  const field = FILTER_FIELDS.find(value => value === match[1]?.toLowerCase());
+  return field === undefined ? null : { field, values: valuesOf(match[2] ?? '') };
 }
 
 const filled = (values: readonly string[]): string[] => values.filter(value => value !== '');
 
 export function parseSearchFilter(query: string): SearchFilter {
-  const filter: SearchFilter = { labels: [], members: [], text: '' };
+  const filter: SearchFilter = { labels: [], members: [], has: [], text: '' };
   const free: string[] = [];
   for (const span of wordsOf(query)) {
     const word = query.slice(span.start, span.end);
     const token = fieldWord(word);
     if (token === null) free.push(word);
-    else (token.field === 'label' ? filter.labels : filter.members).push(...filled(token.values));
+    else filter[FILTER_KEYS[token.field]].push(...filled(token.values));
   }
   filter.text = free.join(' ');
   return filter;
@@ -127,7 +135,15 @@ function memberMatches(row: FilterRow, value: string, namesOf: MemberNames): boo
   return rowMembers(row).some(address => addressMatches(address, value, namesOf));
 }
 
-export function searchRowMatcher(filter: SearchFilter, namesOf: MemberNames): (row: FilterRow) => boolean {
+function hasMatches(row: FilterRow, value: string, draftOf: (convId: string) => string): boolean {
+  if (value.toLowerCase() === 'label') return (row.labels ?? []).length > 0;
+  if (value.toLowerCase() === 'draft') return draftOf(row.convId).trim() !== '';
+  return false;
+}
+
+export function searchRowMatcher(
+  filter: SearchFilter, namesOf: MemberNames, draftOf: (convId: string) => string = () => '',
+): (row: FilterRow) => boolean {
   const labels = new Set(filter.labels.map(label => label.toLowerCase()));
   const text = filter.text.toLowerCase();
   const labelled = (row: FilterRow): boolean => (
@@ -136,7 +152,10 @@ export function searchRowMatcher(filter: SearchFilter, namesOf: MemberNames): (r
   const joined = (row: FilterRow): boolean => (
     filter.members.length === 0 || filter.members.some(value => memberMatches(row, value, namesOf))
   );
-  return row => labelled(row) && joined(row) && rowMatchesQuery(row, text);
+  const present = (row: FilterRow): boolean => (
+    filter.has.length === 0 || filter.has.some(value => hasMatches(row, value, draftOf))
+  );
+  return row => labelled(row) && joined(row) && present(row) && rowMatchesQuery(row, text);
 }
 
 const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = {
@@ -176,11 +195,11 @@ const withoutWord = (query: string, word: FilterSpan): string => `${query.slice(
 
 export function searchFilterValues(query: string, field: FilterField): string[] {
   const filter = parseSearchFilter(query);
-  return field === 'label' ? filter.labels : filter.members;
+  return filter[FILTER_KEYS[field]];
 }
 
 const sameValue = (field: FilterField, a: string, b: string): boolean => (
-  field === 'label' ? a.trim().toLowerCase() === b.trim().toLowerCase() : memberKey(a) === memberKey(b)
+  field === 'member' ? memberKey(a) === memberKey(b) : a.trim().toLowerCase() === b.trim().toLowerCase()
 );
 
 export function searchFilterMenu(query: string, caret: number, options: FilterOptions): FilterMenu | null {

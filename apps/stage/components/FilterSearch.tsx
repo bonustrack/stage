@@ -9,6 +9,8 @@ import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/r
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
+import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
+import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { Box, STICKY_UNDER_CHROME } from './layout';
 import { Avatar } from './Avatar';
@@ -29,7 +31,7 @@ import { useSafeAreaInsets } from '../lib/safeArea';
 import { useWebTabRail } from '../lib/webLayout';
 import { getPeerDisplayName, getPeerHandle, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import {
-  ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
+  HAS_OPTIONS, ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
   searchFilterMenu, searchFilterSources,
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
@@ -37,8 +39,8 @@ import {
 const MENU_MAX_HEIGHT = 360;
 const FILTER_LAYER = 5;
 const NATIVE = Platform.OS !== 'web';
-const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member' };
-const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople };
+const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member', has: 'Has' };
+const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople, has: IconFilter1 };
 
 const optionMark = (index: number): MarkedNode => ({ dataSet: { filteroption: String(index) } });
 
@@ -57,6 +59,7 @@ function useFilterOptions(scope: FilterScope): FilterOptions {
   );
   usePeerProfiles(sources.members);
   return {
+    has: HAS_OPTIONS,
     label: sources.labels.map(label => ({ key: label, label, value: label })),
     member: [ME_OPTION, ...sources.members.map(address => ({
       key: address,
@@ -135,13 +138,14 @@ function FilterOptionItem({ field, option, highlighted, onPress }: {
   field: FilterField; option: FilterOption; highlighted: boolean; onPress: () => void;
 }): React.ReactElement {
   const member = field === 'member';
+  const iconName = field === 'has' && option.value === 'draft' ? IconPencil : IconTag;
   const avatar = option.key === ME_VALUE
     ? <AccountAvatar size={DROPDOWN_MENU.icon}/>
     : <Avatar address={option.key} size={DROPDOWN_MENU.icon}/>;
   return (
     <DropdownMenuItem
       label={option.label}
-      iconName={member ? undefined : IconTag}
+      iconName={member ? undefined : iconName}
       icon={member ? avatar : undefined}
       highlighted={highlighted}
       onPress={onPress}

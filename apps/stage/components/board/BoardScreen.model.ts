@@ -40,9 +40,9 @@ export function boardColumns<T extends ChannelListRow>(
 }
 
 export function searchedColumns<T extends FilterRow>(
-  columns: BoardColumn<T>[], query: string, namesOf: MemberNames = () => [],
+  columns: BoardColumn<T>[], query: string, namesOf: MemberNames = () => [], draftOf: (convId: string) => string = () => '',
 ): BoardColumn<T>[] {
-  const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
+  const matches = searchRowMatcher(parseSearchFilter(query), namesOf, draftOf);
   return columns.map(column => ({ ...column, rows: column.rows.filter(matches) }));
 }
 
