@@ -5,9 +5,7 @@ import { Animated as RNAnimated, Platform } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import {
-  Box, Col, PANE_LEFT_PAD, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom, viewportFill,
-} from '../../components/layout';
+import { Box, Col, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
@@ -25,17 +23,20 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
-import { ConversationSidebar, useConversationSidebarShown } from '../../components/conversation/ConversationSidebar';
+import {
+  ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
+} from '../../components/conversation/ConversationSidebar';
 
 function UnresolvedConversation({ resolved }: {
   resolved: ReturnType<typeof useResolvedConvId>;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const sidebar = useConversationSidebarShown();
+  const loaderFill = useChatColumnFill(measuredFooterHeight);
   if (resolved.resolving) {
     return (
       <>
-        <Col surface="surface" flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD, sidebar ? RIGHT_PANE_PAD : null]}>
+        <Col surface="surface" flex={1} align="center" justify="center" style={loaderFill}>
           <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
         </Col>
         {sidebar ? <ConversationSidebar/> : null}

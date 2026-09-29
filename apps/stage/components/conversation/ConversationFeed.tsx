@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { Box, Col, PANE_LEFT_PAD, VirtualList, viewportFill } from '../layout';
+import { Box, Col, VirtualList } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
@@ -17,6 +17,7 @@ import { TOPNAV_HEIGHT } from '../Topnav';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attempt } from '../../lib/errorPolicy';
 import { ChatGalleryProvider } from '../bubble/ChatGallery';
+import { useChatColumnFill } from './ConversationSidebar';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
@@ -212,6 +213,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
   const empty = rows.length === 0 && (status !== 'open' || hasMore);
   const slowOpen = useSlowOpen(empty);
+  const loaderFill = useChatColumnFill(bottomInset);
 
   if (searchSlot !== undefined) {
     return <Box flex={1} padding={{ top: topPad }}>{searchSlot}</Box>;
@@ -219,7 +221,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
 
   if (empty) {
     return (
-      <Col flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD]}>
+      <Col flex={1} align="center" justify="center" style={loaderFill}>
         {slowOpen ? <Spinner size={28} color={head} /> : null}
       </Col>
     );
