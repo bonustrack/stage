@@ -123,10 +123,10 @@ describe('wallet loading and refresh display', () => {
     expect(display.subtitle).toBe('Couldn’t refresh balances');
   });
 
-  test('refetch keeps cached total while quietly indicating progress', () => {
+  test('refetch keeps cached total without a progress caption', () => {
     const display = walletBalanceDisplay({ ...loaded, refreshing: true });
     expect(display.total).toBe('$8,000');
-    expect(display.subtitle).toBe('Updating balances');
+    expect(display.subtitle).toBeUndefined();
   });
 
   test('missing held-token prices do not display an incomplete total', () => {

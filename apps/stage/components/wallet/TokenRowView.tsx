@@ -6,7 +6,6 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { changeColor } from '../../lib/uiColors';
 import { Col, Row } from '../layout';
 import { AppIcon } from '../widgets';
-import { Badge } from '@stage-labs/kit/react-native/badge';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 
 export interface TokenRowViewParams {
@@ -39,7 +38,7 @@ function TokenRowAvatar({ logoUri, chainBadgeUri }: {
 export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
   const scheme = useKitScheme();
   const showAvatar = params.showAvatar !== false;
-  const badgeColor = params.change24h.trim().startsWith('-') ? 'danger' : 'success';
+  const color = changeColor(params.change24h)[scheme];
   return (
     <Row align="center" gap={12} flex={1}>
       {showAvatar ? (
@@ -54,11 +53,11 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="2xl" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
           <Text value={params.priceUsd} color="secondary" size="md" />
-          {params.change24h === '' ? null : <Badge label={params.change24h} color={badgeColor} />}
+          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="md" />}
         </Row>
       </Col>
       {params.trailingChevron !== false ? (
-        <AppIcon name={IconChevronRight} color={changeColor(params.change24h)[scheme]} size={16} />
+        <AppIcon name={IconChevronRight} color={color} size={16} />
       ) : null}
     </Row>
   );

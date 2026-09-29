@@ -39,7 +39,6 @@ function balanceStatus(input: BalanceDisplayInput, value: number | null): string
   if (input.loading) return 'Loading balances';
   if (input.totalUsd === null) return 'Some token prices are unavailable';
   if (value === null) return input.pricesLoading ? 'Loading price' : `${input.currency} price unavailable`;
-  if (input.refreshing) return 'Updating balances';
   return undefined;
 }
 

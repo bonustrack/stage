@@ -47,7 +47,7 @@ export function WalletBalanceCard({ balance, border, onAction }: {
             accessibilityRole="button"
             accessibilityLabel={`${amount}. ${label}`}
             accessibilityHint="Changes the display currency only"
-            accessibilityState={{ busy: pending }}
+            aria-busy={pending}
             onPress={cycleBalanceCurrency}
             {...hoverProps}
             style={({ pressed }) => ({ alignSelf: 'flex-start', maxWidth: '100%', opacity: pressed || hovered ? 0.7 : 1 })}
