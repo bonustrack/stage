@@ -1,0 +1,91 @@
+name: Main preview
+
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: main-preview
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
+      EXPO_PUBLIC_SWARMY_KEY: ${{ secrets.EXPO_PUBLIC_SWARMY_KEY }}
+      EXPO_NO_TELEMETRY: '1'
+      TMPDIR: ${{ github.workspace }}/.metro-tmp
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Prepare temp dir
+        run: mkdir -p "$TMPDIR"
+
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: bun-deps-hoisted-${{ runner.os }}-${{ hashFiles('bun.lock', 'bunfig.toml') }}
+          restore-keys: |
+            bun-deps-hoisted-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - name: Cache Metro transform cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.metro-tmp/metro-cache
+          key: metro-cache-v1-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            metro-cache-v1-${{ runner.os }}-
+
+      - name: Publish EAS Update to main-preview
+        id: update
+        working-directory: apps/stage
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+          GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$TMPDIR"
+          bunx expo export \
+            --platform android \
+            --no-minify \
+            --no-bytecode \
+            --output-dir dist
+          BUNDLE="$(find dist -name '*.hbc' -o -name '*.js' | grep -E '/(_expo/static/js/android|bundles)/' | head -n1)"
+          if [ -z "$BUNDLE" ]; then
+            echo "::error::expo export produced no Android JS bundle" && exit 1
+          fi
+          node --check "$BUNDLE"
+          bunx eas-cli@20.1.0 update \
+            --branch main-preview \
+            --platform android \
+            --skip-bundler \
+            --input-dir dist \
+            --message "main ${{ github.sha }}" \
+            --non-interactive --json > eas-update.json
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
+
+      - name: Summarise the preview link
+        run: |
+          {
+            echo "### Main preview published"
+            echo ""
+            echo "EAS branch: \`main-preview\`"
+            echo "Commit: \`${{ github.sha }}\`"
+            echo "Manifest: ${{ steps.update.outputs.manifest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
