@@ -9,6 +9,7 @@ import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage
 import { formatEther } from 'viem';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
+import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
@@ -46,10 +47,11 @@ export function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
-export const MESSAGE_LINK_STYLE = { textDecorationLine: 'underline' } as const;
+export const MESSAGE_LINK_STYLE = { textDecorationLine: 'none' } as const;
 
 export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
-  const styles = kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
+  const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
+  const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
   return { ...styles, link: { ...styles.link, ...MESSAGE_LINK_STYLE } };
 }
 

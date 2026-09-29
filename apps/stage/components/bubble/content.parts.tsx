@@ -21,6 +21,8 @@ import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { conversationLinkOf, profileLinkOf } from '../../lib/links';
+import { useEffectiveColorScheme } from '../../lib/theme';
+import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
   bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type BodySegment, type LinkFinder,
 } from './mention.model';
@@ -29,11 +31,11 @@ function mentionDisplay(address: string): string {
   return mentionLabel(getPeerName(address) ?? shortAddress(address));
 }
 
-function MentionLink({ address }: { address: string }): React.ReactElement {
+function MentionLink({ address, fg }: { address: string; fg: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="3xl" weight="semibold" style={MESSAGE_LINK_STYLE}
+    <Text size="3xl" weight="semibold" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionDisplay(address)}
@@ -41,10 +43,10 @@ function MentionLink({ address }: { address: string }): React.ReactElement {
   );
 }
 
-function ChannelRefLink({ convId, label }: { convId: string; label: string }): React.ReactElement {
+function ChannelRefLink({ convId, label, fg }: { convId: string; label: string; fg: string }): React.ReactElement {
   const router = useRouter();
   return (
-    <Text size="3xl" weight="semibold" style={MESSAGE_LINK_STYLE}
+    <Text size="3xl" weight="semibold" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(conversationLinkOf(convId)); }} role="link"
       suppressHighlighting>
       {`#${label}`}
@@ -62,7 +64,7 @@ function WebLink({ url, text, fg, onLinkPress }: {
   url: string; text: string; fg: string; onLinkPress: LinkPress;
 }): React.ReactElement {
   return (
-    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE}
+    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { onLinkPress?.(url); }} suppressHighlighting>
       {text}
     </Text>
@@ -72,14 +74,15 @@ function WebLink({ url, text, fg, onLinkPress }: {
 function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkPress): React.ReactNode {
   if (seg.type === 'text') return seg.text;
   if (seg.type === 'link') return <WebLink key={`l${i}`} url={seg.url} text={seg.text} fg={fg} onLinkPress={onLinkPress} />;
-  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} />;
-  return <MentionLink key={`m${i}`} address={seg.address} />;
+  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} fg={fg} />;
+  return <MentionLink key={`m${i}`} address={seg.address} fg={fg} />;
 }
 
 function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
+  const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
   return (
     <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
-      {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, fg, onLinkPress))}
+      {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}
     </Text>
   );
 }

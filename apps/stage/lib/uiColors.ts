@@ -10,6 +10,8 @@ export function changeColor(change: string): ThemeColor {
 
 export const HIGHLIGHT_BG: ThemeColor = { dark: '#fde047', light: '#FFF200' };
 
+export const MESSAGE_LINK_COLOR: ThemeColor = { dark: '#4493f8', light: '#0969da' };
+
 export const SEEK_THUMB: ThemeColor = { dark: '#f4f4f5', light: '#ffffff' };
 
 export const ON_PRIMARY_COLOR: ThemeColor = { dark: '#000000', light: '#ffffff' };
