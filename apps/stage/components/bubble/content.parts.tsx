@@ -9,8 +9,9 @@ import { PreviewLinkCard } from '../PreviewLinkCard';
 import { LinkPreviewCard } from '../LinkPreviewCard';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
+import type { ViewStyle } from 'react-native';
 import { Box } from '../layout';
-import { MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
+import { BLOCK_GAP, MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
 import type { Attachment, LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
@@ -20,6 +21,8 @@ import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { HighlightText } from '../HighlightText';
 import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from './codeBlock.model';
+import { taskStateOf } from './markdown.model';
+import { TaskMark } from './TaskMark';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
@@ -59,12 +62,31 @@ function ChannelRefLink({ convId, label, fg }: { convId: string; label: string; 
 
 export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'rules' | 'style'>;
 
+type MarkdownViewStyles = Readonly<Record<string, ViewStyle | undefined>>;
+
+const LAST_ROW = { borderBottomWidth: 0 } as const;
+
 export const markdownRules: RenderRules = {
   link: (node, children, parents, styles, onLinkPress) => {
     const link = renderRules.link?.(node, children, parents, styles, onLinkPress);
     const href: unknown = node.attributes.href;
     if (!isValidElement(link) || typeof href !== 'string') return link;
     return cloneElement(link, bubbleLinkProps(href, onLinkPress));
+  },
+  list_item: (node, children, parents, styles: MarkdownViewStyles, inheritedStyles) => {
+    const task = taskStateOf(node.attributes);
+    if (!task) return renderRules.list_item?.(node, children, parents, styles, inheritedStyles);
+    return (
+      <Box key={node.key} style={styles._VIEW_SAFE_list_item}>
+        <TaskMark task={task}/>
+        <Box style={styles._VIEW_SAFE_bullet_list_content}>{children}</Box>
+      </Box>
+    );
+  },
+  tr: (node, children, parents, styles: MarkdownViewStyles) => {
+    const body = parents[0];
+    const last = body?.type === 'tbody' && node.index === body.children.length - 1;
+    return <Box key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>{children}</Box>;
   },
 };
 
@@ -174,7 +196,7 @@ export function BubbleBody({ text, fg, selectable, highlight, markdownProps }: {
 }): React.ReactElement {
   const parts = useMemo(() => splitCodeBlocks(unescapeBody(text)), [text]);
   return (
-    <Box style={{ alignSelf: 'stretch' }}>
+    <Box gap={BLOCK_GAP} style={{ alignSelf: 'stretch' }}>
       {parts.map((part, index) => (part.type === 'code' ? (
         <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} selectable={selectable} highlight={highlight} />
       ) : (

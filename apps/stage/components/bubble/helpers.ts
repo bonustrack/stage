@@ -11,10 +11,11 @@ import { formatEther } from 'viem';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
+import { literalStars, taskLists } from './markdown.model';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
-export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
+export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists);
 
 registerDeepLinkSchemas(mdParser.linkify);
 
@@ -59,6 +60,8 @@ export interface BubbleLinkProps {
   ref?: (node: unknown) => void;
 }
 
+export const BLOCK_GAP = 8;
+
 export const MONO_FONT = Platform.select({
   ios: fontFamily.mono[0],
   android: 'monospace',
@@ -70,6 +73,8 @@ export function markdownStyles(fg: string, dark: boolean): Record<string, object
   const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
   return {
     ...styles,
+    body: { ...styles.body, gap: BLOCK_GAP },
+    hr: { ...styles.hr, marginVertical: BLOCK_GAP / 2 },
     link: { ...styles.link, ...MESSAGE_LINK_STYLE },
     code_inline: { ...styles.code_inline, fontFamily: MONO_FONT },
     code_block: { ...styles.code_block, fontFamily: MONO_FONT },

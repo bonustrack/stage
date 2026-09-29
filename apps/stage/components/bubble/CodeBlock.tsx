@@ -69,7 +69,7 @@ export function CodeBlock({ code, lang, fg, selectable, highlight }: {
   const scrollGesture = useMemo(() => Gesture.Native().disallowInterruption(true), []);
   return (
     <Box
-      surface="raised" radius="md" margin={{ y: 4 }}
+      surface="raised" radius="md"
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}
     >
       <Row align="center" justify="between" padding={{ left: CODE_PAD, right: 4, top: 2 }}>
