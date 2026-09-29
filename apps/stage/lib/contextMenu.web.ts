@@ -8,6 +8,7 @@ export function contextMenuProps(open: ((point: MenuPoint) => void) | undefined)
   if (!open) return {};
   return {
     onContextMenu: (event) => {
+      if (!event.currentTarget.contains(event.target)) return;
       event.preventDefault();
       open({ x: event.clientX, y: event.clientY });
     },
