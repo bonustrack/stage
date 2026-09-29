@@ -17,7 +17,6 @@ import { attachmentMimeType } from './attachmentFiles';
 import { attempt } from './errorPolicy';
 
 export { swarmToHttp } from './xmtp.swarm';
-export { fileUriToBase64 } from './attachmentFiles';
 
 interface AttachmentEncryptor {
   encryptAttachment: (file: {

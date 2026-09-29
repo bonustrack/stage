@@ -1,7 +1,7 @@
 import { asFileUri } from './localAttachmentCache';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
-import { SWARM_UPLOAD_MAX_BYTES, tooLargeError, uploadFormToSwarmy } from './swarmy';
+import { uploadFormToSwarmy } from './swarmy';
 import { attempt } from './errorPolicy';
 
 export { swarmToHttp } from './swarmy';
@@ -61,7 +61,6 @@ export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: 
     throw new Error(`Couldn't send "${filename}": the encrypted file could not be read. Try attaching it again.`);
   }
   const blob = await response.blob();
-  if (blob.size > SWARM_UPLOAD_MAX_BYTES) throw tooLargeError(filename);
   const form = new FormData();
   form.append('file', blob.slice(0, blob.size, 'application/octet-stream'), 'a.bin');
   return await uploadFormToSwarmy(form, filename);

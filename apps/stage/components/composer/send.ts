@@ -1,20 +1,12 @@
+import { xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../../modules/messaging';
+import { planSendSteps as plan, type SendStep } from './send.model';
+import type { Attachment } from './types';
 
-import {
-  fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
-} from '../../modules/messaging';
-import { outgoingFileMeta } from '../../lib/attachmentFiles';
-import { type Attachment, INLINE_ATTACHMENT_MAX_BYTES } from './types';
+export type { SendStep } from './send.model';
 
 let seq = 0;
 export const mintLocalId = (): string =>
   `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-
-export interface SendStep {
-  localId: string;
-  text: string;
-  attachments: Attachment[];
-  run: () => Promise<string>;
-}
 
 export function planSendSteps(
   xmtpLine: string,
@@ -22,44 +14,9 @@ export function planSendSteps(
   attachments: Attachment[],
   replyTo: string | undefined,
 ): SendStep[] {
-  const steps: SendStep[] = [];
-  const multiAtts = attachments.filter((at) => at.kind !== 'audio');
-  const audioAtts = attachments.filter((at) => at.kind === 'audio');
-
-  if (body) {
-    steps.push({
-      localId: mintLocalId(), text: body, attachments: [],
-      run: () => (replyTo ? xmtpReply(xmtpLine, replyTo, body) : xmtpSendText(xmtpLine, body)),
-    });
-  }
-  if (multiAtts.length > 0) {
-    steps.push({
-      localId: mintLocalId(), text: '', attachments: multiAtts,
-      run: () => xmtpSendMultiRemoteAttachment(
-        xmtpLine,
-        multiAtts.map((at) => ({ fileUri: at.url, ...outgoingFileMeta(at) })),
-      ),
-    });
-  }
-  for (const at of audioAtts) {
-    steps.push({
-      localId: mintLocalId(), text: '', attachments: [at],
-      run: () => sendAudio(xmtpLine, at),
-    });
-  }
-  return steps;
-}
-
-async function sendAudio(xmtpLine: string, at: Attachment): Promise<string> {
-  const { mimeType, filename } = outgoingFileMeta(at);
-  const dataB64 = await fileUriToBase64(at.url);
-  const padding = dataB64.endsWith('==') ? 2 : dataB64.endsWith('=') ? 1 : 0;
-  const byteLen = Math.floor((dataB64.length * 3) / 4) - padding;
-  if (byteLen > INLINE_ATTACHMENT_MAX_BYTES) {
-    throw new Error(
-      `"${filename}" is too large to send (${(byteLen / (1024 * 1024)).toFixed(1)} MB). `
-      + `Attachments must be under ${Math.round(INLINE_ATTACHMENT_MAX_BYTES / 1024)} KB.`,
-    );
-  }
-  return xmtpSendAttachment(xmtpLine, filename, mimeType, dataB64);
+  return plan(xmtpLine, body, attachments, replyTo, {
+    text: xmtpSendText,
+    reply: xmtpReply,
+    attachments: xmtpSendMultiRemoteAttachment,
+  }, mintLocalId);
 }

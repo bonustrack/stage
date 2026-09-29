@@ -96,7 +96,7 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
 async function runStep(a: DraftArgs, s: SendStep): Promise<string | undefined> {
   try {
     const id = await s.run();
-    const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
+    const localUris = s.attachments.map((at) => at.url);
     if (localUris.length > 0) rememberLocalAttachments(id, localUris);
     a.onSent?.(s.localId, undefined, id);
     return undefined;
@@ -120,8 +120,7 @@ async function runSendSteps(a: DraftArgs, steps: SendStep[]): Promise<SendStep[]
 }
 
 function beginSend(a: DraftArgs, line: string, body: string): SendStep[] {
-  const sendingAttachments = a.pending.map((at) =>
-    at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
+  const sendingAttachments = a.pending.map((at) => ({ ...at, url: stashLocalAttachment(at.url) }));
   const sendingReplyTo = a.replyingTo?.id;
   const steps = planSendSteps(line, body, sendingAttachments, sendingReplyTo);
   steps.forEach((s, i) => a.onOptimistic?.({

@@ -5,11 +5,13 @@ import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
+import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { ImageViewer } from '../ImageViewer';
+import { HoverTooltip } from '../HoverTooltip';
 import { MENU_WIDTH } from '../AnchoredMenu';
 import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { shortAddress } from '../../modules/messaging';
@@ -144,6 +146,36 @@ function PendingImage({
   );
 }
 
+function PendingVideo({
+  video, fg, onRemove,
+}: {
+  video: Attachment; fg: string; onRemove: () => void;
+}): React.ReactElement {
+  return (
+    <Col width={128} align="center" gap={4}>
+      <Box width={128} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
+        <VideoPlayer src={video.url} controls={false}/>
+        <Box style={{ position: 'absolute', top: -4, right: -4 }}>
+          <HoverTooltip label="Remove video">
+            <Pressable
+              onPress={onRemove}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Remove video"
+              style={{ backgroundColor: '#000', borderRadius: 999, padding: 2 }}
+            >
+              <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
+            </Pressable>
+          </HoverTooltip>
+        </Box>
+      </Box>
+      <Text size="3xs" color={fg} style={{ width: 128, textAlign: 'center' }} numberOfLines={1}>
+        {video.name ?? video.id}
+      </Text>
+    </Col>
+  );
+}
+
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -155,6 +187,8 @@ export function PendingRow({
       {pending.map((a, i) => (
         a.kind === 'image' ? (
           <PendingImage key={a.id} image={a} fg={fg} onRemove={() => { onRemove(i); }}/>
+        ) : a.kind === 'video' ? (
+          <PendingVideo key={a.id} video={a} fg={fg} onRemove={() => { onRemove(i); }}/>
         ) : (
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Glyph icon={kindIcon(a.kind)} size={14} color={fg}/>

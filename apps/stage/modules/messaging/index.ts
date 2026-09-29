@@ -1,6 +1,7 @@
 export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, shortAddress, isControlBody,
 } from '../../lib/xmtp.types';
+export type { LocalAttachmentInput } from '../../lib/xmtp.types';
 
 export {
   getOrCreateXmtpClient, xmtpClient, deleteAccount,
@@ -31,11 +32,11 @@ export {
 export {
   xmtpSendText, xmtpReact, xmtpSendPoll,
   xmtpSendSignatureRequest, xmtpSendSignatureReference, xmtpSendTxRequest,
-  xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
+  xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply,
 } from '../../lib/xmtp.messages';
 
 export {
-  xmtpSendMultiRemoteAttachment, resolveRemoteAttachment, fileUriToBase64,
+  xmtpSendMultiRemoteAttachment, resolveRemoteAttachment,
 } from '../../lib/xmtp.attachments';
 
 export { subscribeAllMessages } from '../../lib/xmtp.stream';

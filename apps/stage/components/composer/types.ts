@@ -2,8 +2,6 @@ export interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
 }
 
-export const INLINE_ATTACHMENT_MAX_BYTES = 900 * 1024;
-
 export interface OptimisticEntry {
   localId: string;
   text: string;

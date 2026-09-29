@@ -32,19 +32,3 @@ function withExtension(name: string, mimeType: string): string {
   const ext = Object.keys(EXT_MIME).find(k => EXT_MIME[k] === mimeType);
   return ext ? `${name}.${ext}` : name;
 }
-
-export async function fileUriToBase64(uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (): void => {
-      const result = reader.result;
-      if (typeof result !== 'string') { reject(new Error('FileReader returned non-string')); return; }
-      const comma = result.indexOf(',');
-      resolve(comma === -1 ? result : result.slice(comma + 1));
-    };
-    reader.onerror = (): void => { reject(reader.error ?? new Error('FileReader failed')); };
-    reader.readAsDataURL(blob);
-  });
-}

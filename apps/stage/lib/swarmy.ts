@@ -15,7 +15,6 @@ const SWARMY_UPLOAD_URL = 'https://api.swarmy.cloud/api/files';
 const SWARMY_UPLOAD_TIMEOUT_MS = 60_000;
 
 export const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
-export const SWARM_UPLOAD_MAX_BYTES = 1_000_000;
 
 export function swarmToHttp(url: string): string {
   if (!url.startsWith('swarm://')) return url;
@@ -27,16 +26,11 @@ function swarmyKey(): string | undefined {
   return envString('EXPO_PUBLIC_SWARMY_KEY');
 }
 
-export function tooLargeError(filename: string): Error {
-  const mb = (SWARM_UPLOAD_MAX_BYTES / (1024 * 1024)).toFixed(0);
-  return new Error(`"${filename}" is too large to send (max ~${mb}MB). Try a smaller file.`);
-}
-
 export function resolveSwarmyResponse(
   status: number, body: { swarmReference?: string } | null, filename: string,
 ): string {
   if (status === 413) {
-    throw new Error(`"${filename}" is too large to send (server max ~1MB). Try a smaller file.`);
+    throw new Error(`Couldn't send "${filename}": the upload service rejected the file size (413). Try a smaller file.`);
   }
   if (status === 401 || status === 403) {
     throw new Error(`Couldn't send "${filename}": the upload service rejected the request.`);
