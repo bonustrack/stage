@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, revealScrollX,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardsRightPadding, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
@@ -388,6 +388,21 @@ describe('activeColumnIndex', () => {
   test('is -1 when no channel is open or it is on no column', () => {
     expect(activeColumnIndex(columns, null)).toBe(-1);
     expect(activeColumnIndex(columns, 'z')).toBe(-1);
+  });
+});
+
+describe('cardsRightPadding', () => {
+  test('keeps the padding when no scrollbar takes room', () => {
+    expect(cardsRightPadding(10, 330, 330)).toBe(10);
+  });
+
+  test('lets the scrollbar take the place of the padding', () => {
+    expect(cardsRightPadding(10, 330, 314)).toBe(0);
+    expect(cardsRightPadding(10, 330, 324)).toBe(4);
+  });
+
+  test('keeps the padding until the cards are measured', () => {
+    expect(cardsRightPadding(10, 330, 0)).toBe(10);
   });
 });
 

@@ -262,6 +262,11 @@ export function revealScrollX(index: number, scrollX: number, viewport: number, 
   return scrollX;
 }
 
+export function cardsRightPadding(padding: number, scrollWidth: number, contentWidth: number): number {
+  if (contentWidth <= 0) return padding;
+  return Math.max(0, padding - Math.max(0, scrollWidth - contentWidth));
+}
+
 export type BoardCardPress = 'push' | 'replace' | 'close';
 
 export function boardCardPress(openConvId: string | null, convId: string): BoardCardPress {

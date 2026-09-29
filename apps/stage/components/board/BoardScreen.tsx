@@ -33,8 +33,8 @@ import { capabilities } from '../../lib/capabilities';
 import { useWebTabRail } from '../../lib/webLayout';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, orderedColumns, revealScrollX, searchedColumns,
-  type BoardColumn, type BoardDrag,
+  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, orderedColumns, revealScrollX,
+  searchedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
@@ -141,6 +141,7 @@ function ColumnTitle({ label, onPress }: { label: string; onPress: () => void })
 function ColumnCards({ column, pinned, onOpen }: {
   column: BoardColumn<ChannelRowData>; pinned: readonly string[]; onOpen: (key: string) => void;
 }): React.ReactElement | null {
+  const [width, setWidth] = useState({ scroll: 0, content: 0 });
   if (column.rows.length === 0) return null;
   return (
     <Scroll
@@ -148,7 +149,9 @@ function ColumnCards({ column, pinned, onOpen }: {
       gap={CARD_GAP}
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
-      contentContainerStyle={{ paddingRight: COLUMN_PADDING }}
+      contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, width.scroll, width.content) }}
+      onLayout={(e) => { const scroll = e.nativeEvent.layout.width; setWidth(w => (w.scroll === scroll ? w : { ...w, scroll })); }}
+      onContentSizeChange={(content) => { setWidth(w => (w.content === content ? w : { ...w, content })); }}
     >
       {column.rows.map(item => (
         <BoardCard
