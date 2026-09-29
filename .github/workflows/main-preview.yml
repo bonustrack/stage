@@ -29,6 +29,18 @@ jobs:
       - name: Prepare temp dir
         run: mkdir -p "$TMPDIR"
 
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: bun-deps-hoisted-${{ runner.os }}-${{ hashFiles('bun.lock', 'bunfig.toml') }}
+          restore-keys: |
+            bun-deps-hoisted-${{ runner.os }}-
+
       - run: bun install --frozen-lockfile
 
       - name: Cache Metro transform cache
