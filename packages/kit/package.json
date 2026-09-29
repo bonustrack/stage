@@ -96,7 +96,7 @@
     "expo-image-picker": "*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "bun test test/",
     "storybook": "vite",
     "storybook:build": "vite build"

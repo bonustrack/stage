@@ -27,7 +27,8 @@ Run quality commands **from the repo root**; lint is configured in the root `.ox
 | `bun install` | Install workspace (CI uses `--frozen-lockfile`) |
 | `bun run lint` / `lint:fix` | `stage lint` over the whole repo: `oxlint --type-aware` with the root `.oxlintrc.json`, one process (type-aware rules through `oxlint-tsgolint`; no-comments, no-em-dash, `stage/*`, `no-restricted-syntax` and `quotes` as JS plugins); git-ignored files are skipped |
 | `bun run lint:changed` | `stage lint --changed`: only files changed since the upstream branch, plus untracked ones (local use; CI stays full). `stage lint <paths>` lints only those paths |
-| `bun run typecheck` | `tsc --noEmit` per workspace |
+| `bun run typecheck` | `stage typecheck`: `tsgo --noEmit` (TypeScript 7, `@typescript/native-preview`) per workspace, two at a time |
+| `bun run typecheck:tsc` | the same with `tsc` from TypeScript 5.9, the fallback when tsgo misbehaves |
 | `bun run check` | lint + turbo typecheck |
 | `bun run build` / `test` | turbo pipelines (test dependsOn build) |
 | `bun run test:changed` | `turbo run test --affected` against `origin/main`: only the packages with committed, uncommitted or untracked changes since `origin/main`, plus the packages that depend on them (local use; CI stays full) |
@@ -41,7 +42,7 @@ Per-app:
 | `bun --cwd apps/stage start` | Expo bundler (Metro) |
 | `bun --cwd apps/stage android` / `ios` / `web` | build + run per platform |
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — lint would scan the bundles; use a temp dir |
-| `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
+| `bun --cwd apps/stage run typecheck` / `test` | `tsgo --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
 | `bun run --cwd packages/kit storybook` / `storybook:build` | Kit component gallery (hand-rolled Vite page in `packages/kit/gallery/`, stories in `packages/kit/stories/`, one per component with every prop as a control) / static build into `packages/kit/build` |
 | `bun run --cwd apps/stage/desktop start` / `dist` | Export the web UI into `apps/stage/desktop/web` and run Electron / build installers into `apps/stage/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
@@ -101,6 +102,7 @@ Per-app:
 - The passkey tests that build a validator (`passkeyCallbackContract`, `passkeyKernelDerivation`, `passkeyReconstruct`) never touch the network: `apps/stage/test/recordedBaseRpc.ts` replays the Base RPC answers stored in `apps/stage/test/fixtures/base-rpc.json`. A request with no stored answer fails the test. After a ZeroDev or viem upgrade changes a request, record the new answers from `apps/stage` with `STAGE_RPC_RECORD=1 bun test test/passkey` (not through turbo, which drops the variable): missing answers are fetched from Base (`EXPO_PUBLIC_ZERODEV_RPC` if set, else mainnet.base.org, which rate limits) and written to the fixture. Only results and `execution reverted` errors are stored, never a transient RPC error. Commit the fixture.
 - Button taxonomy: `color` x `solid/soft/outline/ghost` only. The legacy `primary/secondary/danger` variant union is gone entirely (it died with the JSON widget boundary) — don't reintroduce it.
 - `theme.ts` setters call the persist helper; don't mutate display state directly.
+- **Typecheck is tsgo** (`@typescript/native-preview`, pinned exactly), about 8x faster than `tsc`. `typescript` 5.9 stays for the tools that load its API (typescript-eslint, knip, Expo) and for `bun run typecheck:tsc`. TypeScript 7 changed two defaults, so the shared presets pin them for both compilers: `lib` comes from `packages/config/tsconfig/lib.json` (ES2024 plus the ESNext parts both compilers declare the same way, so no Temporal, `RegExp.escape`, `Uint8Array` hex/base64, `Map.getOrInsert` or Set methods) and `base.json` sets `types: []`. List any global types a project needs in its own `types`.
 - **Lint is oxlint**, pinned exactly (`oxlint`, `oxlint-tsgolint`). The type-aware rules run in the platform binary that `oxlint-tsgolint` pulls in as an optional dependency, so keep those entries in `bun.lock` (CI needs `@oxlint/binding-linux-x64-gnu` and `@oxlint-tsgolint/linux-x64`). `eslint` and `typescript-eslint` stay: the `core` JS plugin wraps ESLint's `no-restricted-syntax` and `quotes`, and `@stage-labs/config` still publishes its ESLint presets. Not enabled on purpose: `prefer-optional-chain` and the react-hooks `config`/`gating` rules. The React Hooks rules cover only the React Compiler files, listed in `apps/stage/react-compiler-sources.cjs` and again in the react override of `.oxlintrc.json`: change both together.
 
 ## Key paths

@@ -37,16 +37,19 @@ async function loadStageConfig() {
   return mod.default ?? mod.config ?? mod;
 }
 
-function localBin(name) {
+function findLocalBin(name) {
   let dir = cwd;
   for (;;) {
     const candidate = resolve(dir, 'node_modules', '.bin', name);
     if (existsSync(candidate)) return candidate;
     const parent = resolve(dir, '..');
-    if (parent === dir) break;
+    if (parent === dir) return null;
     dir = parent;
   }
-  return name;
+}
+
+function localBin(name) {
+  return findLocalBin(name) ?? name;
 }
 
 function run(bin, args) {
@@ -330,17 +333,39 @@ function prefixed(path, dir) {
   return `${path}/${dir}`;
 }
 
-function cmdTypecheck(stageConfig, argv) {
-  let failures = [];
-  for (const [path, workspace] of Object.entries(stageConfig.workspaces)) {
-    const project = path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`;
-    if (!existsSync(resolve(cwd, project))) continue;
-    const useVue = workspace.vue === true || workspace.type === 'vue';
-    const bin = localBin(useVue ? 'vue-tsc' : 'tsc');
-    process.stdout.write(`stage typecheck: ${path} (${useVue ? 'vue-tsc' : 'tsc'})\n`);
-    const status = run(bin, ['--noEmit', '-p', project, ...argv]);
-    if (status !== 0) failures.push(path);
-  }
+const TYPECHECK_JOBS = 2;
+
+function spawnCaptured(bin, args) {
+  return new Promise((done) => {
+    const child = spawn(bin, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = '';
+    child.stdout.on('data', (chunk) => { output += chunk; });
+    child.stderr.on('data', (chunk) => { output += chunk; });
+    child.on('error', (error) => done({ status: 2, output: `${error.message}\n` }));
+    child.on('close', (code) => done({ status: code ?? 2, output }));
+  });
+}
+
+function typecheckCompiler(workspace, useTsc) {
+  if (workspace.vue === true || workspace.type === 'vue') return 'vue-tsc';
+  return !useTsc && findLocalBin('tsgo') ? 'tsgo' : 'tsc';
+}
+
+async function cmdTypecheck(stageConfig, argv) {
+  const useTsc = argv.includes('--tsc');
+  const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv.filter((arg) => arg !== '--tsc')];
+  const queue = Object.entries(stageConfig.workspaces)
+    .map(([path, workspace]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`, compiler: typecheckCompiler(workspace, useTsc) }))
+    .filter(({ project }) => existsSync(resolve(cwd, project)));
+  const failures = [];
+  const lane = async () => {
+    for (let job = queue.shift(); job; job = queue.shift()) {
+      const { status, output } = await spawnCaptured(localBin(job.compiler), ['--noEmit', '-p', job.project, ...flags]);
+      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${job.compiler})\n${output}`, done));
+      if (status !== 0) failures.push(job.path);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(TYPECHECK_JOBS, queue.length) }, lane));
   if (failures.length > 0) {
     process.stderr.write(`stage typecheck: failed in ${failures.join(', ')}\n`);
     return 1;
@@ -363,7 +388,7 @@ async function main() {
   } else if (sub === 'madge') {
     status = await cmdMadge(await loadStageConfig(), argv);
   } else if (sub === 'typecheck') {
-    status = cmdTypecheck(await loadStageConfig(), argv);
+    status = await cmdTypecheck(await loadStageConfig(), argv);
   }
   process.exit(status);
 }

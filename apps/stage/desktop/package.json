@@ -11,7 +11,7 @@
     "build:ui": "node scripts/export-ui.mjs",
     "start": "bun run build && bun run build:ui && electron .",
     "dist": "bun run build && bun run build:ui && electron-builder --publish never",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "bun test test/"
   },
   "devDependencies": {

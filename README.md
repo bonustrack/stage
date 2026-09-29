@@ -53,7 +53,8 @@ Run from the repo root:
 bun run build       # turbo run build
 bun run test        # turbo run test
 bun run test:changed  # test only the packages changed since origin/main and their dependents
-bun run typecheck   # turbo run typecheck
+bun run typecheck   # stage typecheck (tsgo, TypeScript 7, per workspace)
+bun run typecheck:tsc  # the same with tsc from TypeScript 5.9 (fallback)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
 bun run lint:changed  # lint only the files changed since the upstream branch

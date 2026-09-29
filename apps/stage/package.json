@@ -8,7 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "node scripts/copy-xmtp-wasm.js && expo start --web --port 8080",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "bun test test/",
     "build:web": "node scripts/copy-xmtp-wasm.js && expo export --platform web --output-dir dist"
   },

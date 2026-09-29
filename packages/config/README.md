@@ -75,6 +75,10 @@ Without `.oxlintrc.json`, it lints the repo described by `stage.config.js` with 
 - `stage lint --changed`: only files changed since the upstream branch (or since HEAD when there is none), plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.
 - `stage lint <paths>`: only those paths, in one process.
 
+## `stage typecheck`
+
+Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It uses `tsgo` (TypeScript 7, from `@typescript/native-preview`) when that is installed, else `tsc`, and `vue-tsc` for Vue workspaces. `stage typecheck --tsc` forces `tsc`. Other flags go to the compiler.
+
 ## madge
 
 Shared options for the circular-dependency check:
@@ -91,6 +95,8 @@ Extend the matching `tsconfig` base:
 { "extends": "@stage-labs/config/tsconfig/base.json" }
 ```
 
-- `tsconfig/base.json` — strict base for pure-TS packages
+- `tsconfig/base.json` — strict base for pure-TS packages, with `types: []` (list the global types a project needs)
 - `tsconfig/react-native.json` — layer on top of `expo/tsconfig.base`
 - `tsconfig/vue.json` — layer on top of `@vue/tsconfig/tsconfig.dom.json`
+
+`base.json` and `react-native.json` take `lib` from `tsconfig/lib.json`: ES2024, the ESNext parts that TypeScript 5.9 and 7 declare the same way (array, decorators, disposable, error, float16, iterator, promise, shared memory) and the DOM. Plain `ESNext` means more in TypeScript 7 (Temporal, `RegExp.escape`, `Uint8Array` hex and base64, `Map.getOrInsert`, Set methods), so the explicit list keeps `tsc` and `tsgo` on the same APIs.

@@ -82,7 +82,7 @@
     "./zerodev/rootKey": "./src/zerodev/rootKey.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "bun test test/"
   },
   "dependencies": {

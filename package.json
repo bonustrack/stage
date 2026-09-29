@@ -19,6 +19,7 @@
     "test": "turbo run test",
     "test:changed": "TURBO_SCM_BASE=origin/main turbo run test --affected",
     "typecheck": "stage typecheck",
+    "typecheck:tsc": "stage typecheck --tsc",
     "lint": "stage lint",
     "lint:fix": "stage lint --fix",
     "lint:changed": "stage lint --changed",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "eslint": "^10.3.0",
     "knip": "^6.15.0",
     "madge": "^8.0.0",

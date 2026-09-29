@@ -63,7 +63,7 @@ oxlint-plugin.mjs # app lint rules (stage/*): keyring guard, native-only seams, 
 | `bun run ios`       | Build and run on iOS.                              |
 | `bun run web`       | Run in the browser.                               |
 | `bun run build:web` | Export the web bundle to `dist/`.                 |
-| `bun run typecheck` | Type-check with `tsc --noEmit`.                   |
+| `bun run typecheck` | Type-check with `tsgo --noEmit`.                  |
 | `bun run test`      | Run the pure-model tests in `test/`.              |
 
 Linting is centralised at the repo root (`bun run lint`).
