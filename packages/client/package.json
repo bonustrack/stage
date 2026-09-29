@@ -48,6 +48,7 @@
     "./api/ens": "./src/api/ens.ts",
     "./api/github": "./src/api/github.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
+    "./api/defillama": "./src/api/defillama.ts",
     "./text/markdown": "./src/text/markdown.ts",
     "./text/base64": "./src/text/base64.ts",
     "./identity/format": "./src/identity/format.ts",

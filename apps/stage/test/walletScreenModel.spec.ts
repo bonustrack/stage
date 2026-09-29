@@ -1,45 +1,145 @@
 import { describe, expect, test } from 'bun:test';
+import { walletTotalUsd } from '../components/wallet/screen/model';
 import {
-  walletHeroDisplay,
-  walletTotalUsd,
-} from '../components/wallet/screen/model';
+  balanceCurrency, nextBalanceCurrency, walletBalanceDisplay,
+  type BalanceDisplayInput,
+} from '../components/wallet/screen/balance.model';
+
+const loaded: BalanceDisplayInput = {
+  totalUsd: 8000, currency: 'USD',
+  prices: { ethereum: { usd: 4000 }, bitcoin: { usd: 80000 } },
+  loading: false, error: false, refreshing: false, pricesLoading: false,
+};
+
+function text(input: BalanceDisplayInput): string {
+  const display = walletBalanceDisplay(input);
+  return `${display.total}${display.decimals}${display.unit}`;
+}
 
 describe('walletTotalUsd', () => {
   test('null rows stay null', () => {
     expect(walletTotalUsd(null)).toBeNull();
   });
 
-  test('sums priceUsd * balance treating null prices as zero', () => {
+  test('sums the same portfolio across all token rows', () => {
     expect(walletTotalUsd([
       { priceUsd: 2, balance: '3' },
-      { priceUsd: null, balance: '10' },
       { priceUsd: 0.5, balance: '4' },
     ])).toBe(8);
   });
+
+  test('zero holdings need no price, including an empty portfolio', () => {
+    expect(walletTotalUsd([{ priceUsd: null, balance: '0' }])).toBe(0);
+    expect(walletTotalUsd([])).toBe(0);
+  });
+
+  test.each([null, 0, -1, NaN, Infinity])('does not understate holdings with invalid price %p', (priceUsd) => {
+    expect(walletTotalUsd([{ priceUsd: 2, balance: '3' }, { priceUsd, balance: '10' }])).toBeNull();
+  });
+
+  test.each(['', ' ', 'invalid', '-1', 'Infinity'])('rejects invalid balance %p', (balance) => {
+    expect(walletTotalUsd([{ priceUsd: 1, balance }])).toBeNull();
+  });
+
+  test('rejects overflowing totals', () => {
+    expect(walletTotalUsd([{ priceUsd: Number.MAX_VALUE, balance: '2' }])).toBeNull();
+  });
 });
 
-describe('walletHeroDisplay', () => {
-  test('splits totals when loaded without error', () => {
-    expect(walletHeroDisplay({ parts: { int: '$12', dec: '.34' }, error: false })).toEqual({
-      total: '$12',
-      totalDecimals: '.34',
-      subtitle: undefined,
-    });
+describe('wallet display currency', () => {
+  test('cycles USD to ETH to BTC to USD without changing the total', () => {
+    const input = { ...loaded };
+    expect(text(input)).toBe('$8,000.00');
+    input.currency = nextBalanceCurrency(input.currency);
+    expect(input.currency).toBe('ETH');
+    expect(text(input)).toBe('2 ETH');
+    input.currency = nextBalanceCurrency(input.currency);
+    expect(input.currency).toBe('BTC');
+    expect(text(input)).toBe('0.1 BTC');
+    input.currency = nextBalanceCurrency(input.currency);
+    expect(input.currency).toBe('USD');
+    expect(text(input)).toBe('$8,000.00');
+    expect(input.totalUsd).toBe(8000);
   });
 
-  test('null parts collapse to an ellipsis', () => {
-    expect(walletHeroDisplay({ parts: null, error: false })).toEqual({
-      total: '…',
-      totalDecimals: undefined,
-      subtitle: undefined,
-    });
+  test('accepts only supported saved currencies', () => {
+    expect(['USD', 'ETH', 'BTC', 'EUR', '', 'eth'].map(balanceCurrency)).toEqual(['USD', 'ETH', 'BTC', undefined, undefined, undefined]);
   });
 
-  test('error collapses the total and adds the subtitle', () => {
-    expect(walletHeroDisplay({ parts: { int: '$1', dec: '.00' }, error: true })).toEqual({
-      total: '…',
-      totalDecimals: undefined,
-      subtitle: 'Couldn’t load balances',
-    });
+  test('USD never depends on conversion quotes', () => {
+    expect(text({ ...loaded, prices: undefined })).toBe('$8,000.00');
+  });
+
+  test.each(['ETH', 'BTC'] as const)('does not need a held %s token to convert', (currency) => {
+    const totalUsd = walletTotalUsd([{ priceUsd: 1, balance: '8000' }]);
+    expect(text({ ...loaded, totalUsd, currency })).toBe(currency === 'ETH' ? '2 ETH' : '0.1 BTC');
+  });
+
+  test.each([undefined, {}, { ethereum: { usd: 0 } }, { ethereum: { usd: -1 } }, { ethereum: { usd: NaN } }, { ethereum: { usd: Infinity } }])('hides invalid conversion prices %p', (prices) => {
+    const result = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices });
+    expect(result.total).toBe('…');
+    expect(result.subtitle).toBe('ETH price unavailable');
+  });
+
+  test('BTC does not fall back to ETH or a held wrapped token price', () => {
+    expect(text({ ...loaded, currency: 'BTC', prices: { ethereum: { usd: 4000 } } })).toBe('… BTC');
+  });
+
+  test.each([null, NaN, Infinity, -1])('hides unavailable or invalid total %p', (totalUsd) => {
+    expect(walletBalanceDisplay({ ...loaded, totalUsd }).total).toBe('…');
+  });
+
+  test('rejects overflowing conversion', () => {
+    expect(walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: { ethereum: { usd: Number.MIN_VALUE } } }).total).toBe('…');
+  });
+
+  test('formats zero, grouping, and small crypto amounts without rounding to zero', () => {
+    expect(text({ ...loaded, totalUsd: 0 })).toBe('$0.00');
+    expect(text({ ...loaded, totalUsd: 0, currency: 'ETH' })).toBe('0 ETH');
+    expect(text({ ...loaded, totalUsd: 0, currency: 'BTC' })).toBe('0 BTC');
+    expect(text({ ...loaded, totalUsd: 4_938_271.56, currency: 'ETH' })).toBe('1,234.56789 ETH');
+    expect(text({ ...loaded, totalUsd: 0.0001, currency: 'ETH' })).toBe('<0.000001 ETH');
+    expect(text({ ...loaded, totalUsd: 0.0001, currency: 'BTC' })).toBe('<0.00000001 BTC');
+    expect(text({ ...loaded, totalUsd: 1, currency: 'BTC' })).toBe('0.0000125 BTC');
+  });
+});
+
+describe('wallet loading and refresh display', () => {
+  test('initial loading is not a false zero', () => {
+    const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true });
+    expect(display.total).toBe('…');
+    expect(display.subtitle).toBe('Loading balances…');
+  });
+
+  test('initial error is explicit without a numeric balance', () => {
+    const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true, error: true });
+    expect(display.total).toBe('…');
+    expect(display.subtitle).toBe('Couldn’t load balances');
+  });
+
+  test('failed refetch preserves the last balance and labels it', () => {
+    const display = walletBalanceDisplay({ ...loaded, error: true });
+    expect(display.total).toBe('$8,000');
+    expect(display.subtitle).toBe('Couldn’t refresh balances');
+  });
+
+  test('refetch keeps cached total while quietly indicating progress', () => {
+    const display = walletBalanceDisplay({ ...loaded, refreshing: true });
+    expect(display.total).toBe('$8,000');
+    expect(display.subtitle).toBe('Updating balances…');
+  });
+
+  test('missing held-token prices do not display an incomplete total', () => {
+    expect(walletBalanceDisplay({ ...loaded, totalUsd: null }).subtitle).toBe('Some token prices are unavailable');
+  });
+
+  test('missing conversion quotes indicate loading only while fetching', () => {
+    const display = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: undefined, pricesLoading: true });
+    expect(display.total).toBe('…');
+    expect(display.subtitle).toBe('Loading price…');
+  });
+
+  test('successful loaded balance has no status text', () => {
+    expect(walletBalanceDisplay(loaded).subtitle).toBeUndefined();
   });
 });

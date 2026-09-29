@@ -1,3 +1,5 @@
+import { isValidUsdPrice } from './balance.model';
+
 export interface WalletTotalRow {
   priceUsd: number | null;
   balance: string;
@@ -5,27 +7,15 @@ export interface WalletTotalRow {
 
 export function walletTotalUsd(rows: readonly WalletTotalRow[] | null): number | null {
   if (rows === null) return null;
-  return rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0);
-}
-
-export interface WalletBalanceHeroModel {
-  parts: { int: string; dec: string } | null;
-  error: boolean;
-}
-
-export interface WalletHeroDisplay {
-  total: string;
-  totalDecimals?: string;
-  subtitle?: string;
-}
-
-export function walletHeroDisplay(m: WalletBalanceHeroModel): WalletHeroDisplay {
-  const parts = m.error ? null : m.parts;
-  return {
-    total: parts ? parts.int : '…',
-    totalDecimals: parts ? parts.dec : undefined,
-    subtitle: m.error ? 'Couldn’t load balances' : undefined,
-  };
+  let total = 0;
+  for (const row of rows) {
+    const balance = Number(row.balance);
+    if (!row.balance.trim() || !Number.isFinite(balance) || balance < 0) return null;
+    if (balance === 0) continue;
+    if (!isValidUsdPrice(row.priceUsd)) return null;
+    total += row.priceUsd * balance;
+  }
+  return Number.isFinite(total) ? total : null;
 }
 
 export interface TokenRowAsset {

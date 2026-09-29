@@ -1,53 +1,27 @@
-
-import { useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
+import { HoverTooltip } from '../../HoverTooltip';
 
-export function RefreshButton({
-  refreshing,
-  onRefresh,
-  color,
-}: {
+export function RefreshButton({ refreshing, onRefresh, color }: {
   refreshing: boolean;
   onRefresh: () => void;
   color: string;
 }): React.ReactElement {
-  const spin = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!refreshing) {
-      spin.stopAnimation();
-      spin.setValue(0);
-      return;
-    }
-    const loop = Animated.loop(
-      Animated.timing(spin, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    );
-    loop.start();
-    return () => { loop.stop(); };
-  }, [refreshing, spin]);
-
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
+  const label = refreshing ? 'Refreshing balances' : 'Refresh balances';
   return (
-    <Pressable
-      onPress={onRefresh}
-      disabled={refreshing}
-      hitSlop={10}
-      style={({ pressed }) => ({
-        opacity: refreshing ? 0.5 : pressed ? 0.5 : 1,
-      })}
-    >
-      <Animated.View style={{ transform: [{ rotate }] }}>
+    <HoverTooltip label={label}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ busy: refreshing, disabled: refreshing }}
+        onPress={onRefresh}
+        disabled={refreshing}
+        hitSlop={10}
+        style={({ pressed }) => ({ opacity: refreshing || pressed ? 0.5 : 1 })}
+      >
         <Glyph icon={IconArrowRotateClockwise} size={24} color={color} />
-      </Animated.View>
-    </Pressable>
+      </Pressable>
+    </HoverTooltip>
   );
 }
