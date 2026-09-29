@@ -84,6 +84,7 @@ export function markdownStyles(options: MarkdownStyleOptions): Record<string, ob
   return {
     body: { color: fg, fontSize: base, lineHeight, fontFamily: fontName.sans },
     paragraph: { marginTop: 0, marginBottom: gap },
+    textgroup: { minWidth: 0 },
     heading1: heading(fg, base, HEADING_SCALE[0], gap),
     heading2: heading(fg, base, HEADING_SCALE[1], gap),
     heading3: heading(fg, base, HEADING_SCALE[2], gap),

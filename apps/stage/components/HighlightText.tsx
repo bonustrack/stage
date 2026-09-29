@@ -22,6 +22,7 @@ export function HighlightText({ text, query, fg }: {
           size="3xl"
           style={{
             lineHeight: 23,
+            minWidth: 0,
             ...(segment.match ? { backgroundColor: HIGHLIGHT_BG[scheme] } : {}),
           }}
         />
