@@ -48,17 +48,16 @@ on:
   # that branch's per-branch EAS preview so stale channels/branches don't pile up.
   delete:
 
-concurrency:
-  # One preview build per branch at a time; a newer push cancels the in-flight
-  # superseded run. Keyed on the ref so different branches never cancel each
-  # other.
-  group: app-preview-${{ github.ref }}
-  # Cancel superseded runs on PR branches (latest commit wins), but NEVER on main
-  # (#437): every push to main must publish a preview for its exact sha.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 jobs:
   build:
+    concurrency:
+      # One preview build per branch at a time; a newer push cancels the in-flight
+      # superseded run. Keyed on the ref so different branches never cancel each
+      # other.
+      group: app-preview-${{ github.ref }}
+      # Cancel superseded runs on PR branches (latest commit wins), but NEVER on main
+      # (#437): every push to main must publish a preview for its exact sha.
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     # Only publish on push. The `delete` event handled below must not build.
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -164,6 +163,9 @@ jobs:
           GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
         run: |
           set -euo pipefail
+          if [ "$GITHUB_REF" = 'refs/heads/main' ]; then
+            echo 'main=true' >> "$GITHUB_OUTPUT"
+          fi
           mkdir -p "$TMPDIR"
           bunx expo export \
             --platform android \
@@ -266,7 +268,7 @@ jobs:
 
       - name: Publish EAS Update to main-preview
         id: main-update
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.export.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.export.outputs.main == 'true' && steps.export.outcome == 'success' }}
         working-directory: apps/stage
         run: |
           set -euo pipefail
