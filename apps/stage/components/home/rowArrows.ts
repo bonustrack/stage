@@ -11,14 +11,15 @@ interface RowRouter {
 
 export const rowDataSet = (convId: string): MarkedNode => ({ dataSet: { channelrow: convId } });
 
-export function useRowArrows({ rows, activePath, router, listRef }: {
+export function useRowArrows({ rows, activePath, router, listRef, paused }: {
   rows: readonly Row[];
   activePath: string;
   router: RowRouter;
   listRef: React.RefObject<VirtualListHandle | null>;
+  paused: boolean;
 }): void {
   const open = rows.find(row => isActiveConversationPathFor(activePath, row.convId, row.peerAddress)) ?? null;
-  useArrowKeys(open !== null, VERTICAL_ARROWS, (arrow) => {
+  useArrowKeys(open !== null && !paused, VERTICAL_ARROWS, (arrow) => {
     const next = stepRow(rows, open?.convId ?? null, arrow);
     if (next === null) return;
     prefetchFeed(lineOfConv(next.convId));

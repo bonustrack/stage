@@ -3,7 +3,8 @@ import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
-import { SearchTopnavBar } from '../SearchTopnavBar';
+import { FilterSearch } from '../FilterSearch';
+import { parseSearchFilter } from '../searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight } from './topnavRight';
 import { Topnav } from '../Topnav';
@@ -26,6 +27,7 @@ interface ChannelsListProps {
   onClearAll: () => void;
   query: string;
   setQuery: (v: string) => void;
+  onFilterMenu: (open: boolean) => void;
   listExtraData: readonly unknown[];
   scroll: ScrollRefs;
   renderRow: ({ item }: { item: Row }) => React.ReactElement;
@@ -51,8 +53,16 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
   );
 }
 
+function ListFooter({ query, noChannels, knownPeers }: {
+  query: string; noChannels: boolean; knownPeers: string[];
+}): React.ReactElement | null {
+  const text = parseSearchFilter(query).text;
+  if (text !== '') return <HomeContactResults query={text} noChannels={noChannels}/>;
+  return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
+}
+
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
-  const { query, setQuery, pane } = p;
+  const { query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
     () => <HomeTopnavRight head={sub} onOpenSearch={onOpenSearch} view="chats" />,
@@ -60,12 +70,13 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   );
   const override = useMemo(
     () => (searchOpen ? (
-      <SearchTopnavBar
+      <FilterSearch
+        scope="chats" onMenu={onFilterMenu}
         query={query} setQuery={setQuery} onClose={onCloseSearch}
         head={head} sub={sub} border={border} inline={pane} trailing={right}
       />
     ) : undefined),
-    [searchOpen, query, setQuery, onCloseSearch, head, sub, border, pane, right],
+    [searchOpen, query, setQuery, onFilterMenu, onCloseSearch, head, sub, border, pane, right],
   );
   usePublishTopnavSlot({ right, override }, !pane);
   return { right, override };
@@ -123,11 +134,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         removeClippedSubviews
         contentContainerStyle={contentStyle}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
-        ListFooterComponent={
-          query.trim()
-            ? <HomeContactResults query={query} noChannels={sortedRows.length === 0}/>
-            : <SuggestedContacts known={knownPeers} />
-        }
+        ListFooterComponent={<ListFooter query={query} noChannels={sortedRows.length === 0} knownPeers={knownPeers}/>}
         renderItem={renderRow}
 />
     </>

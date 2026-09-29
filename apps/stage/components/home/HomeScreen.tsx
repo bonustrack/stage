@@ -14,8 +14,9 @@ import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveLabels, useHomeFilters } from './labelbar';
 import { searchBarLabels } from './model';
-import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
+import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
@@ -38,6 +39,12 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const { rows, pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
+  const [filtering, setFiltering] = useState(false);
+  const channelProfilesVersion = usePeerProfiles(
+    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+  );
+  const search = useMemo(() => parseSearchFilter(query), [query]);
+  const matches = useMemo(() => searchRowMatcher(search, memberNamesOf), [search, channelProfilesVersion]);
 
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),
@@ -45,8 +52,8 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const boardOrder = useBoardOrder();
   const barLabels = useMemo(
-    () => searchBarLabels(deriveLabels(filterChannelRows(rows ?? [], { query })), enabledLabels, boardOrder),
-    [rows, query, enabledLabels, boardOrder],
+    () => searchBarLabels(deriveLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
+    [rows, matches, enabledLabels, boardOrder],
   );
   const showFilterBar = channelsFilterBarVisible({
     labelCount: barLabels.length,
@@ -55,12 +62,8 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   });
   const cleared = useClearedChats();
   const visibleRows = useMemo(
-    () => filterChannelRows(sortedRows, { query }).filter(r => !isRowCleared(cleared, r)),
-    [sortedRows, query, cleared],
-  );
-
-  const channelProfilesVersion = usePeerProfiles(
-    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+    () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
+    [sortedRows, matches, cleared],
   );
   const draftsVersion = useDraftsVersion();
   const accountEpoch = useActiveAccount();
@@ -81,9 +84,9 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const visiblePinned = useMemo(() => visibleRows.map(r => r.convId).filter(id => pinned.includes(id)), [visibleRows, pinned]);
   const pinDrag = usePinDrag(pinned, visiblePinned);
-  useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef });
+  useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag,
+    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
@@ -96,7 +99,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
         barLabels={barLabels} showFilterBar={showFilterBar}
         enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
         unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
-        query={query} setQuery={setQuery}
+        query={query} setQuery={setQuery} onFilterMenu={setFiltering}
         listExtraData={listExtraData}
         scroll={st.scroll}
         renderRow={renderRow}

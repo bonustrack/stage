@@ -2,7 +2,7 @@ import {
   deriveBarLabels, filterChannelRows, sortChannelRows, type ChannelListRow,
 } from '@stage-labs/client/xmtp/channelsFilter';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
-import { boardRowMatcher, parseBoardFilter, type BoardFilterRow, type MemberNames } from './boardFilter.model';
+import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
 export const BOARD_GAP = 12;
 export const BOARD_COLUMN_WIDTH = 340;
@@ -39,10 +39,10 @@ export function boardColumns<T extends ChannelListRow>(
   }));
 }
 
-export function searchedColumns<T extends BoardFilterRow>(
+export function searchedColumns<T extends FilterRow>(
   columns: BoardColumn<T>[], query: string, namesOf: MemberNames = () => [],
 ): BoardColumn<T>[] {
-  const matches = boardRowMatcher(parseBoardFilter(query), namesOf);
+  const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
   return columns.map(column => ({ ...column, rows: column.rows.filter(matches) }));
 }
 
