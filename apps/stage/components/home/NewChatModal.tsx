@@ -41,9 +41,9 @@ function NewGroupRow({ onPress }: { onPress: () => void }): React.ReactElement {
   );
 }
 
-async function openConversation(members: Member[], name: string): Promise<string> {
+async function openConversation(members: Member[], name: string, image: PickedImage | null): Promise<string> {
   const only = members.length === 1 ? members[0] : undefined;
-  if (only === undefined) return createGroupLine(members.map(m => m.address), name, null);
+  if (only === undefined) return createGroupLine(members.map(m => m.address), name, image);
   const res = await resolveDmConvId(only.address);
   if ('convId' in res) return lineOfConv(res.convId);
   throw new Error(resolveErrorMessage(res.error, res.detail));
@@ -72,6 +72,7 @@ function useStartChat(draft: ComposerState, onOpened: (line: string) => void): {
   const start = async (key: string, open: () => Promise<string>): Promise<void> => {
     if (busy.current) return;
     busy.current = true;
+    latest.current.bumpBlur();
     try {
       const line = await lineFor(key, open);
       if (line === null) return;
@@ -119,8 +120,10 @@ function NewChatFooter({ draft, members, action, phase, onPrimary, onBack }: {
       {note === null ? null : (
         <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text value={note} size="sm" role="secondary" /></Box>
       )}
-      <MessengerComposer dark={dark} state={draft} suggestContacts
-        mentionCandidates={members.map(m => ({ address: m.address, name: m.label }))} />
+      <Box style={{ pointerEvents: busy ? 'none' : 'auto' }}>
+        <MessengerComposer dark={dark} state={draft} suggestContacts
+          mentionCandidates={members.map(m => ({ address: m.address, name: m.label }))} />
+      </Box>
       <Row gap={8} padding={{ x: MODAL.padding, top: 12 }}>
         {back === null ? null : (
           <Button size="lg" pill dark={dark} color="secondary" variant="ghost" disabled={busy} label="Back"
@@ -159,11 +162,11 @@ function NewChatSheet({ onClose }: { onClose: () => void }): React.ReactElement 
       return;
     }
     const addresses = members.map(m => m.address);
-    const open = step === 'chat' ? () => openConversation(members, name) : () => createGroupLine(addresses, name, image);
+    const open = step === 'chat' ? () => openConversation(members, name, image) : () => createGroupLine(addresses, name, image);
     void start(chatKey(step, addresses), open);
   };
   return (
-    <AppModal visible onClose={onClose} title={stepTitle(step)}
+    <AppModal visible onClose={onClose} title={stepTitle(step)} dismissable={phase === 'idle'}
       footer={<NewChatFooter draft={draft} members={members} action={action} phase={phase} onPrimary={onPrimary} onBack={setStep} />}>
       <Box padding={{ bottom: MODAL.padding }}>
         <NewChatBody step={step} picker={picker} name={name} setName={setName} image={image} setImage={setImage}
