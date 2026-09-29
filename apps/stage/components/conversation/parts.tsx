@@ -9,6 +9,7 @@ import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
+import { useWebTabRail } from '../../lib/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { bubbleMenuItems } from './bubbleMenu.model';
@@ -39,16 +40,19 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
 }): React.ReactElement {
   const { link } = usePalette();
   const back = useHover();
+  const wide = useWebTabRail();
   return (
     <Box style={pinnedTop(2)}>
-    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Pressable
-        onPress={onBack}
-        {...back.hoverProps}
-        style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
+    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      {!wide ? (
+        <Pressable
+          onPress={onBack}
+          {...back.hoverProps}
+          style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
 >
-        <Glyph icon={IconArrowLeft} size={24} color={back.hovered ? link : fg}/>
-      </Pressable>
+          <Glyph icon={IconArrowLeft} size={24} color={back.hovered ? link : fg}/>
+        </Pressable>
+      ) : null}
       {children}
     </Row>
     </Box>
