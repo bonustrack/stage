@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWindowDimensions, type ViewStyle } from 'react-native';
 import { Tooltip } from '@stage-labs/kit/react-native/tooltip';
 import { Box, viewportFill } from '../layout';
+import { Kbd } from '../Kbd';
 import { bubbleShift, useRailTooltip, type RailTooltipState } from '../../lib/railTooltip';
 import { TOOLTIP } from '../menuStyle';
 
@@ -36,7 +37,7 @@ function Tip({ tip }: { tip: RailTooltipState }): React.ReactElement {
   const [width, setWidth] = useState(0);
   const centerX = tip.placement === 'beside' ? null : tip.centerX;
   const shift = centerX === null || width === 0 ? 0 : bubbleShift(centerX, width, viewport.width, VIEWPORT_MARGIN);
-  return <Tooltip label={tip.label} arrow={arrow} bubbleOffset={shift} onBubbleWidth={setWidth} style={style} />;
+  return <Tooltip label={tip.label} trailing={tip.shortcut === undefined ? undefined : <Kbd label={tip.shortcut} />} arrow={arrow} bubbleOffset={shift} onBubbleWidth={setWidth} style={style} />;
 }
 
 export function TooltipHost(): React.ReactElement | null {

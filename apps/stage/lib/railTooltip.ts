@@ -1,9 +1,9 @@
 import { makeListeners, useStoreValue } from './storeCore';
 
 export type RailTooltipState =
-  | { placement: 'beside'; label: string; anchorRight: number; centerY: number }
-  | { placement: 'above'; label: string; centerX: number; anchorTop: number }
-  | { placement: 'below'; label: string; centerX: number; anchorBottom: number };
+  | { placement: 'beside'; label: string; shortcut?: string; anchorRight: number; centerY: number }
+  | { placement: 'above'; label: string; shortcut?: string; centerX: number; anchorTop: number }
+  | { placement: 'below'; label: string; shortcut?: string; centerX: number; anchorBottom: number };
 
 const ICON_HALF = 12;
 
@@ -16,12 +16,12 @@ export function hoverRect(event: { currentTarget: unknown }): DomRectLike | unde
 
 export type TooltipPlacement = RailTooltipState['placement'];
 
-export function tooltipState(placement: TooltipPlacement, label: string, rect: DomRectLike): RailTooltipState {
+export function tooltipState(placement: TooltipPlacement, label: string, rect: DomRectLike, shortcut?: string): RailTooltipState {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-  if (placement === 'below') return { placement, label, centerX, anchorBottom: centerY + ICON_HALF };
-  if (placement === 'above') return { placement, label, centerX, anchorTop: centerY - ICON_HALF };
-  return { placement, label, anchorRight: centerX + ICON_HALF, centerY };
+  if (placement === 'below') return { placement, label, shortcut, centerX, anchorBottom: centerY + ICON_HALF };
+  if (placement === 'above') return { placement, label, shortcut, centerX, anchorTop: centerY - ICON_HALF };
+  return { placement, label, shortcut, anchorRight: centerX + ICON_HALF, centerY };
 }
 
 export function bubbleShift(centerX: number, width: number, viewportWidth: number, margin: number): number {

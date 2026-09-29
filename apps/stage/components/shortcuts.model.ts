@@ -18,8 +18,6 @@ export interface ShortcutTarget {
 
 const SHORTCUT_KEYS: ReadonlyMap<string, Shortcut> = new Map<string, Shortcut>([['/', '/'], ['c', 'c'], ['C', 'c']]);
 
-const SHORTCUT_GAP = '\u00a0\u00a0';
-
 export function shortcutOf(event: ShortcutKeyEvent, target: ShortcutTarget | null, dialogOpen: boolean): Shortcut | null {
   if (dialogOpen || event.defaultPrevented || event.isComposing) return null;
   if (event.altKey || event.ctrlKey || event.metaKey) return null;
@@ -27,6 +25,6 @@ export function shortcutOf(event: ShortcutKeyEvent, target: ShortcutTarget | nul
   return SHORTCUT_KEYS.get(event.key) ?? null;
 }
 
-export function shortcutHint(label: string, shortcut: Shortcut): string {
-  return `${label}${SHORTCUT_GAP}${shortcut.toUpperCase()}`;
+export function shortcutKey(shortcut: Shortcut): string {
+  return shortcut.toUpperCase();
 }

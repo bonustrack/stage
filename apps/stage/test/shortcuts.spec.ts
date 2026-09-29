@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { shortcutHint, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/shortcuts.model';
+import { shortcutKey, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/shortcuts.model';
 
 const press = (key: string, extra: Partial<ShortcutKeyEvent> = {}): ShortcutKeyEvent => ({
   key, altKey: false, ctrlKey: false, metaKey: false, defaultPrevented: false, isComposing: false, ...extra,
@@ -47,9 +47,9 @@ describe('shortcutOf', () => {
   });
 });
 
-describe('shortcutHint', () => {
-  test('puts the key after the label with a gap that survives one-line text', () => {
-    expect(shortcutHint('Search', '/')).toBe('Search\u00a0\u00a0/');
-    expect(shortcutHint('New chat', 'c')).toBe('New chat\u00a0\u00a0C');
+describe('shortcutKey', () => {
+  test('shows the key as printed on the keyboard', () => {
+    expect(shortcutKey('/')).toBe('/');
+    expect(shortcutKey('c')).toBe('C');
   });
 });

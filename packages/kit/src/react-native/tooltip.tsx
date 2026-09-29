@@ -1,15 +1,17 @@
+import type { ReactNode } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
 import { kitPalette, type KitPalette } from '../tokens';
 import { OVERLAY_DROP_SHADOW, OVERLAY_SHADOW } from '../overlay.styles';
 import { Text } from './text';
 import { useKitPalette } from './theme-context';
 
-export const TOOLTIP = { padX: 14, padY: 8, radius: 4, lineHeight: 20, arrow: 8 } as const;
+export const TOOLTIP = { padX: 14, padY: 8, radius: 4, lineHeight: 20, arrow: 8, gap: 8 } as const;
 
 export type TooltipArrow = 'left' | 'up' | 'down' | 'none';
 
 export interface TooltipProps {
   label: string;
+  trailing?: ReactNode;
   arrow?: TooltipArrow;
   dark?: boolean;
   background?: string;
@@ -43,7 +45,7 @@ const ARROW_FIRST: readonly TooltipArrow[] = ['left', 'up'];
 
 const SHAPE_SHADOW: ViewStyle = Platform.OS === 'web' ? { filter: OVERLAY_DROP_SHADOW } : OVERLAY_SHADOW;
 
-export function Tooltip({ label, arrow = 'down', dark, background, color, bubbleOffset = 0, onBubbleWidth, style }: TooltipProps): React.ReactElement {
+export function Tooltip({ label, trailing, arrow = 'down', dark, background, color, bubbleOffset = 0, onBubbleWidth, style }: TooltipProps): React.ReactElement {
   const pal = usePalette(dark);
   const fill = background ?? pal.border;
   const arrowBox = arrow === 'none' ? null : <View style={{ width: 0, height: 0, ...arrowStyle(arrow, fill) }} />;
@@ -53,6 +55,7 @@ export function Tooltip({ label, arrow = 'down', dark, background, color, bubble
       {arrowFirst ? arrowBox : null}
       <View
         style={{
+          flexDirection: 'row', alignItems: 'center', gap: TOOLTIP.gap,
           backgroundColor: fill, borderRadius: TOOLTIP.radius,
           paddingHorizontal: TOOLTIP.padX, paddingVertical: TOOLTIP.padY,
           transform: [{ translateX: bubbleOffset }],
@@ -60,6 +63,7 @@ export function Tooltip({ label, arrow = 'down', dark, background, color, bubble
         onLayout={(e) => { onBubbleWidth?.(e.nativeEvent.layout.width); }}
       >
         <Text size="xl" color={color ?? pal.link} numberOfLines={1} style={{ lineHeight: TOOLTIP.lineHeight }}>{label}</Text>
+        {trailing}
       </View>
       {arrowFirst ? null : arrowBox}
     </View>
