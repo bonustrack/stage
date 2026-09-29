@@ -18,7 +18,7 @@ export function useCaretToEnd(
 }
 
 export function useComposerDrafts(
-  convId: string,
+  convId: string | null,
   text: string,
   restore: (draft: string) => void,
 ): void {
@@ -26,6 +26,7 @@ export function useComposerDrafts(
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     draftRestored.current = false;
+    if (convId === null) return;
     void loadDrafts().then(() => {
       const d = getDraft(convId);
       if (d) restore(d);
@@ -33,7 +34,7 @@ export function useComposerDrafts(
     });
   }, [convId]);
   useEffect(() => {
-    if (!draftRestored.current) return;
+    if (convId === null || !draftRestored.current) return;
     if (draftTimer.current) clearTimeout(draftTimer.current);
     draftTimer.current = setTimeout(() => { setDraft(convId, text); }, 300);
     return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };

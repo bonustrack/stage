@@ -13,6 +13,8 @@ export interface DialogProps {
   onClose: () => void;
   children: ReactNode;
   header?: ReactNode;
+  footer?: ReactNode;
+  bottomInset?: number;
   backdrop?: boolean;
   backdropColor?: Color;
   side?: 'center' | 'bottom';
@@ -46,6 +48,7 @@ function overlayStyle(props: DialogProps): ViewStyle {
       ? 'flex-start'
       : props.side === 'bottom' ? 'flex-end' : 'center',
     alignItems: stretch ? 'stretch' : 'center',
+    paddingBottom: props.bottomInset,
   };
 }
 
@@ -131,6 +134,7 @@ function Panel(panelProps: {
       {props.handle ? <Handle color={handleColor} /> : null}
       {props.header}
       <PanelBody props={props} content={content} />
+      {props.footer}
     </Pressable>
   );
 }

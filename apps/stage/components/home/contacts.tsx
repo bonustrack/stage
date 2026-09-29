@@ -52,9 +52,9 @@ interface Peer { address: string; convId: string }
 
 interface ResultRow { address: string; convId: string | undefined; title: string; subtitle: string | undefined }
 
-function filterPeers(existing: Peer[], q: string, showAllWhenEmpty: boolean): Peer[] {
+function filterPeers(existing: Peer[], q: string): Peer[] {
   const needle = q.toLowerCase();
-  if (!needle) return showAllWhenEmpty ? existing : [];
+  if (!needle) return [];
   return existing.filter(p => {
     if (p.address.toLowerCase().includes(needle)) return true;
     const n = getPeerName(p.address);
@@ -79,7 +79,7 @@ function openPeer(address: string, convId?: string): void {
   });
 }
 
-function ContactRows({ rows, label, onOpen }: { rows: ResultRow[]; label: string; onOpen?: () => void }): React.ReactElement {
+function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): React.ReactElement {
   return (
     <Box>
       <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
@@ -92,27 +92,23 @@ function ContactRows({ rows, label, onOpen }: { rows: ResultRow[]; label: string
           avatarAddress={r.address}
           square={false}
           subtitle={r.subtitle ?? null}
-          onPress={() => { onOpen?.(); openPeer(r.address, r.convId); }}
+          onPress={() => { openPeer(r.address, r.convId); }}
         />
       ))}
     </Box>
   );
 }
 
-export function HomeContactResults(
-  { query, noChannels, showAllWhenEmpty = false, onOpen }: {
-    query: string; noChannels: boolean; showAllWhenEmpty?: boolean; onOpen?: () => void;
-  },
-): React.ReactElement | null {
+export function HomeContactResults({ query, noChannels }: { query: string; noChannels: boolean }): React.ReactElement | null {
   const q = query.trim();
   const existing = useMemo(() => getExistingPeers(), []);
-  const filtered = useMemo(() => filterPeers(existing, q, showAllWhenEmpty), [existing, q, showAllWhenEmpty]);
+  const filtered = useMemo(() => filterPeers(existing, q), [existing, q]);
   const resolved = useResolvedPeer(q, filtered.length === 0);
   usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
 
   const extra = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address) ? [resolvedRow(resolved)] : [];
   const rows = [...extra, ...filtered.map(peerRow)];
-  if (!q && !showAllWhenEmpty) return null;
+  if (!q) return null;
   if (rows.length === 0) return noChannels ? <EmptyState title={NO_MATCH_HINT} /> : null;
-  return <ContactRows rows={rows} label={q ? 'PEOPLE' : 'CONTACTS'} onOpen={onOpen} />;
+  return <ContactRows rows={rows} label="PEOPLE" />;
 }

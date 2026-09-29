@@ -19,20 +19,13 @@ import { ConversationFeed } from '../../components/conversation/ConversationFeed
 import { ConversationSearch } from '../../components/conversation/ConversationSearch';
 import { useConversationState } from '../../components/conversation/useConversationState';
 import {
-  useSearchKeyboardFocus, useResolvedConvId, type ResolveConvError,
+  useSearchKeyboardFocus, useResolvedConvId, resolveErrorMessage,
 } from '../../components/conversation/conv.hooks';
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
 import { ConversationSidebar, useConversationSidebarState } from '../../components/conversation/ConversationSidebar';
-
-function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
-  if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
-  if (error === 'stale-installations') return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
-  if (error === 'failed') return detail ? `Could not open this conversation. ${detail}` : 'Could not open this conversation.';
-  return 'Missing conversation id.';
-}
 
 function UnresolvedConversation({ resolved }: {
   resolved: ReturnType<typeof useResolvedConvId>;

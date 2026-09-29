@@ -83,8 +83,11 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const { latitude: lat, longitude: lng } = pos.coords;
     const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
-    await xmtpSendText(a.xmtpLine, `📍 ${url}`);
+    const line = await a.openLine();
+    if (line === null) return;
+    await xmtpSendText(line, `📍 ${url}`);
     setLastAttachment('Location');
+    a.onPosted?.(line);
   } catch (e) { a.setErr((e as Error).message); }
 }
 
@@ -112,11 +115,11 @@ async function runSendSteps(a: ComposerActionsArgs, steps: SendStep[]): Promise<
   return sendErr;
 }
 
-function beginSend(a: ComposerActionsArgs, body: string): SendStep[] {
+function beginSend(a: ComposerActionsArgs, line: string, body: string): SendStep[] {
   const sendingAttachments = a.pending.map((at) =>
     at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
   const sendingReplyTo = a.replyingTo?.id;
-  const steps = planSendSteps(a.xmtpLine, body, sendingAttachments, sendingReplyTo);
+  const steps = planSendSteps(line, body, sendingAttachments, sendingReplyTo);
   steps.forEach((s, i) => a.onOptimistic?.({
     localId: s.localId, text: s.text, attachments: s.attachments,
     replyTo: i === 0 ? sendingReplyTo : undefined,
@@ -129,11 +132,14 @@ function beginSend(a: ComposerActionsArgs, body: string): SendStep[] {
 async function performSend(a: ComposerActionsArgs): Promise<void> {
   const body = a.text.trim();
   if (!body && a.pending.length === 0) return;
+  const line = await a.openLine();
+  if (line === null) return;
   const originalText = a.text;
   const originalPending = a.pending;
-  const steps = beginSend(a, body);
+  const steps = beginSend(a, line, body);
   const sendErr = await runSendSteps(a, steps);
-  if (sendErr && a.text.trim().length === 0 && a.pending.length === 0) {
+  if (!sendErr) a.onPosted?.(line);
+  else if (a.text.trim().length === 0 && a.pending.length === 0) {
     a.setText(originalText);
     a.setPending(originalPending);
   }

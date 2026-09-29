@@ -3,6 +3,7 @@ import type { ComposerImageFile } from './pastedImages.types';
 import { carriesPlainText, imageItemIndexes, pastedImageName, takesImagePaste, takesPicturePaste } from './pastedImages.model';
 
 let openPictureTargets = 0;
+const imageTargets: symbol[] = [];
 
 function clipboardItems(event: ClipboardEvent): DataTransferItem[] {
   return Array.from(event.clipboardData?.items ?? []);
@@ -26,8 +27,10 @@ export function usePastedImages(onImages: (files: ComposerImageFile[]) => void):
   const handler = useRef(onImages);
   handler.current = onImages;
   useEffect(() => {
+    const owner = Symbol('composer');
+    imageTargets.push(owner);
     const onPaste = (event: ClipboardEvent): void => {
-      if (openPictureTargets > 0) return;
+      if (openPictureTargets > 0 || imageTargets[imageTargets.length - 1] !== owner) return;
       const { tag, editable } = pasteTarget(event);
       if (!takesImagePaste(tag, editable)) return;
       const files = imagesFrom(clipboardItems(event), Infinity);
@@ -36,7 +39,10 @@ export function usePastedImages(onImages: (files: ComposerImageFile[]) => void):
       handler.current(files);
     };
     document.addEventListener('paste', onPaste);
-    return (): void => { document.removeEventListener('paste', onPaste); };
+    return (): void => {
+      imageTargets.splice(imageTargets.indexOf(owner), 1);
+      document.removeEventListener('paste', onPaste);
+    };
   }, []);
 }
 

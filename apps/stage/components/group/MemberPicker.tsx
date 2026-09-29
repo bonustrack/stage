@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
@@ -89,10 +89,11 @@ export function useMemberPicker(): MemberPickerState {
   };
 }
 
-export function MemberPicker({ state, dark, exclude = [] }: {
+export function MemberPicker({ state, dark, exclude = [], children }: {
   state: MemberPickerState;
   dark: boolean;
   exclude?: string[];
+  children?: ReactNode;
 }): React.ReactElement {
   const { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses } = state;
   const contacts = useContacts(exclude, entry);
@@ -109,6 +110,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
       <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
         onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
         inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
+      {children}
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
     </Col>
   );

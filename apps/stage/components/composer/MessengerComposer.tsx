@@ -19,7 +19,10 @@ import { ComposerSheets } from './sheets';
 
 interface Props {
   dark: boolean;
-  xmtpLine: string;
+  xmtpLine?: string;
+  openLine?: () => Promise<string | null>;
+  canSend?: boolean;
+  onPosted?: (line: string) => void;
   mentionCandidates?: { address: string; name: string }[];
   suggestContacts?: boolean;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
@@ -32,6 +35,12 @@ interface Props {
 
 function loneCandidate(candidates: Props['mentionCandidates']): string | undefined {
   return candidates?.length === 1 ? candidates[0]?.address : undefined;
+}
+
+function composerTarget({ xmtpLine, openLine }: Props): { convId: string | null; openLine: () => Promise<string | null> } {
+  if (openLine) return { convId: null, openLine };
+  const line = xmtpLine ?? null;
+  return { convId: line === null ? null : convIdOfLine(line) ?? line, openLine: () => Promise.resolve(line) };
 }
 
 function ComposerHeader(p: {
@@ -62,23 +71,23 @@ function ComposerHeader(p: {
 }
 
 export function MessengerComposer(props: Props): React.ReactElement {
-  const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
+  const { dark, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette();
   const fg = pal.text, head = pal.link, chipBg = pal.border, bg = pal.bg;
   const sub = pal.text;
 
   const s = useComposerState();
-  const actions = useComposerActions({ ...props, ...s });
+  const { convId, openLine } = composerTarget(props);
+  const actions = useComposerActions({ ...props, ...s, openLine });
   usePastedImages((files) => { void actions.onPickedImages(files); });
   const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
-  const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
-  const channels = useChannelSuggest(s, convId);
+  const channels = useChannelSuggest(s, convId ?? '');
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
@@ -112,6 +121,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
+        sendDisabled={props.canSend === false}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
@@ -119,7 +129,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onSend={() => void actions.send()}
       />
       <ComposerSheets
-        s={s} dark={dark} hooks={{ xmtpLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
+        s={s} dark={dark} hooks={{ openLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent, onPosted: props.onPosted }}
         initialTo={loneCandidate(mentionCandidates)}
       />
       <FilePicker

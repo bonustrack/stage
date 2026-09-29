@@ -49,7 +49,7 @@ function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   );
 }
 
-function GroupNameField({ name, setName }: { name: string; setName: (s: string) => void }): React.ReactElement {
+export function GroupNameField({ name, setName }: { name: string; setName: (s: string) => void }): React.ReactElement {
   return <FormField label="Group name (optional)" placeholder="e.g. Stage builders" value={name} onChangeText={setName} />;
 }
 

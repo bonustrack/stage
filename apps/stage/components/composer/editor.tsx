@@ -39,6 +39,7 @@ interface EditorProps {
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
+  sendDisabled?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -79,7 +80,7 @@ function makeWebEnterToSend(
     }
     if (e.key !== 'Enter' || e.shiftKey) return;
     e.preventDefault();
-    if (p.hasContent) p.onSend();
+    if (p.hasContent && p.sendDisabled !== true) p.onSend();
   };
 }
 
@@ -147,7 +148,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button size="md" uniform pill dark={dark} tintBg={primary}
+    <Button size="md" uniform pill dark={dark} tintBg={primary} disabled={p.sendDisabled}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
   );
 }

@@ -27,6 +27,8 @@ export interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   title?: string;
+  footer?: ReactNode;
+  bottomInset?: number;
   side?: 'center' | 'bottom';
   dark?: boolean;
   background?: string;
@@ -72,7 +74,7 @@ function ModalHeader({ title, onClose, pal, dark, dismissable }: {
   );
 }
 
-export function Modal({ open, onClose, children, title, side = 'center', dark, background, borderColor, dismissable = true }: ModalProps): React.ReactElement {
+export function Modal({ open, onClose, children, title, footer, bottomInset, side = 'center', dark, background, borderColor, dismissable = true }: ModalProps): React.ReactElement {
   const pal = usePalette(dark);
   const scheme = useKitScheme();
   const centered = side === 'center';
@@ -83,6 +85,8 @@ export function Modal({ open, onClose, children, title, side = 'center', dark, b
       side={side}
       dismissable={dismissable}
       header={<ModalHeader title={title} onClose={onClose} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} />}
+      footer={footer}
+      bottomInset={bottomInset}
       animationType="none"
       gestureRoot
       backdropColor={MODAL.backdrop}

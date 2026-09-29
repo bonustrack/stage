@@ -19,17 +19,20 @@ export interface SignatureDraft { kind: 'personal' | 'eip712'; desc: string; mes
 export interface PaymentDraft { to: string; amount: string; note: string }
 
 async function postStructured(
-  post: PostCtx, label: string, text: string, payload: unknown, send: () => Promise<string>,
+  post: PostCtx, label: string, text: string, payload: unknown, send: (line: string) => Promise<string>,
 ): Promise<void> {
+  const line = await post.openLine();
+  if (line === null) return;
   const localId = mintLocalId();
   setLastAttachment(label);
   post.onOptimistic?.({ localId, text, attachments: [], payload });
   post.close();
   let sendErr: string | undefined;
   let sentId: string | undefined;
-  try { sentId = await send(); }
+  try { sentId = await send(line); }
   catch (e) { sendErr = (e as Error).message; post.setErr(sendErr); }
   finally { post.onSent?.(localId, sendErr, sentId); }
+  if (sendErr === undefined) post.onPosted?.(line);
 }
 
 function buildSignatureContent(d: SignatureDraft): SignatureRequestContent | null {
@@ -49,7 +52,7 @@ export async function sendSignatureRequest(d: SignatureDraft, post: PostCtx): Pr
   await postStructured(
     post, 'Sign', signatureRequestFallbackText(content),
     { contentType: 'signatureRequest', signatureRequest: content },
-    () => xmtpSendSignatureRequest(post.xmtpLine, content),
+    (line) => xmtpSendSignatureRequest(line, content),
   );
 }
 
@@ -69,7 +72,7 @@ export async function sendPoll(d: PollDraft, post: PostCtx): Promise<void> {
   };
   await postStructured(
     post, 'Poll', pollFallbackText(poll), { contentType: 'poll', poll },
-    () => xmtpSendPoll(post.xmtpLine, poll),
+    (line) => xmtpSendPoll(line, poll),
   );
 }
 
@@ -94,6 +97,6 @@ export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<voi
   };
   await postStructured(
     post, 'Payment', walletSendCallsFallbackText(wsc), { contentType: 'walletSendCalls', walletSendCalls: wsc },
-    () => xmtpSendTxRequest(post.xmtpLine, wsc),
+    (line) => xmtpSendTxRequest(line, wsc),
   );
 }

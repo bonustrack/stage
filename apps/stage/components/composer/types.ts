@@ -13,8 +13,9 @@ export interface OptimisticEntry {
 }
 
 export interface PostHooks {
-  xmtpLine: string;
+  openLine: () => Promise<string | null>;
   setErr: (v: string | null) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
   onSent?: (localId: string, error?: string, sentId?: string) => void;
+  onPosted?: (line: string) => void;
 }
