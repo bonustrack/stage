@@ -30,6 +30,7 @@ Run quality commands **from the repo root**; lint is configured in the root `.ox
 | `bun run typecheck` | `tsc --noEmit` per workspace |
 | `bun run check` | lint + turbo typecheck |
 | `bun run build` / `test` | turbo pipelines (test dependsOn build) |
+| `bun run test:changed` | `turbo run test --affected` against `origin/main`: only the packages with committed, uncommitted or untracked changes since `origin/main`, plus the packages that depend on them (local use; CI stays full) |
 | `bun run knip` / `madge` | unused code / circular deps |
 | `bun run served:reset` / `served:drift-check` | served-main maintenance |
 

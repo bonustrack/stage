@@ -17,6 +17,7 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:changed": "TURBO_SCM_BASE=origin/main turbo run test --affected",
     "typecheck": "stage typecheck",
     "lint": "stage lint",
     "lint:fix": "stage lint --fix",
