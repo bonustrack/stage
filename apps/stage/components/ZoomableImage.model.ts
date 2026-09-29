@@ -21,6 +21,13 @@ export function isZoomed(scale: number): boolean {
   return scale > ZOOM_MIN + ZOOMED_EPSILON;
 }
 
+export function imageSwipeStep(translation: ZoomPoint, eligible: boolean, scale: number): number {
+  'worklet';
+  if (!eligible || isZoomed(scale)) return 0;
+  if (Math.abs(translation.x) < 48 || Math.abs(translation.x) < Math.abs(translation.y) * 1.5) return 0;
+  return translation.x < 0 ? 1 : -1;
+}
+
 export function fromCenter(x: number, y: number, view: ZoomSize): ZoomPoint {
   'worklet';
   return { x: x - view.width / 2, y: y - view.height / 2 };

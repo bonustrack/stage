@@ -11,7 +11,7 @@ import { ignore } from '../lib/errorPolicy';
 import { useStableCallback } from '../lib/useStableCallback';
 import { validSize } from './bubble/imageBox.model';
 import {
-  clampOffset, doubleTapTarget, fromCenter, isZoomed, panLimits, zoomAround, ZOOM_RESET,
+  clampOffset, doubleTapTarget, fromCenter, imageSwipeStep, isZoomed, panLimits, zoomAround, ZOOM_RESET,
   type ZoomGeometry, type ZoomPoint, type ZoomSize, type ZoomState,
 } from './ZoomableImage.model';
 
@@ -27,6 +27,7 @@ interface ZoomValues {
   natural: SharedValue<ZoomSize>;
   pinchStart: SharedValue<{ state: ZoomState; focal: ZoomPoint }>;
   pointers: SharedValue<number>;
+  swipeEligible: SharedValue<boolean>;
   frame: ZoomPoint;
 }
 
@@ -38,9 +39,10 @@ function useZoomValues(frame: ZoomPoint): ZoomValues {
   const natural = useSharedValue<ZoomSize>({ width: 0, height: 0 });
   const pinchStart = useSharedValue({ state: ZOOM_RESET, focal: { x: 0, y: 0 } });
   const pointers = useSharedValue(0);
+  const swipeEligible = useSharedValue(false);
   return useMemo(
-    () => ({ scale, x, y, view, natural, pinchStart, pointers, frame }),
-    [scale, x, y, view, natural, pinchStart, pointers, frame],
+    () => ({ scale, x, y, view, natural, pinchStart, pointers, swipeEligible, frame }),
+    [scale, x, y, view, natural, pinchStart, pointers, swipeEligible, frame],
   );
 }
 
@@ -79,6 +81,7 @@ function glide(z: ZoomValues, velocityX: number, velocityY: number): void {
 function pinchGesture(z: ZoomValues): PinchGesture {
   return Gesture.Pinch()
     .onStart((e) => {
+      z.swipeEligible.value = false;
       z.pinchStart.value = { state: stateOf(z), focal: fromCenter(e.focalX, e.focalY, z.view.value) };
     })
     .onUpdate((e) => {
@@ -90,21 +93,30 @@ function pinchGesture(z: ZoomValues): PinchGesture {
     });
 }
 
-function panGesture(z: ZoomValues): PanGesture {
+function panGesture(z: ZoomValues, onStep: (delta: number) => void): PanGesture {
   return Gesture.Pan()
+    .onBegin((e) => { z.swipeEligible.value = e.numberOfPointers === 1 && !isZoomed(z.scale.value); })
+    .onTouchesDown((e) => {
+      if (e.numberOfTouches > 1) z.swipeEligible.value = false;
+    })
     .onStart((e) => { z.pointers.value = e.numberOfPointers; })
     .onChange((e) => {
       const steady = e.numberOfPointers === z.pointers.value;
       z.pointers.value = e.numberOfPointers;
+      if (e.numberOfPointers > 1) z.swipeEligible.value = false;
       if (!steady || e.numberOfPointers > 1) return;
       const offset = clampOffset({ x: z.x.value + e.changeX, y: z.y.value + e.changeY }, geometryOf(z), z.scale.value);
       z.x.value = offset.x;
       z.y.value = offset.y;
     })
-    .onEnd((e) => { glide(z, e.velocityX, e.velocityY); });
+    .onEnd((e, success) => {
+      const delta = imageSwipeStep({ x: e.translationX, y: e.translationY }, success && z.swipeEligible.value, z.scale.value);
+      if (delta) runOnJS(onStep)(delta);
+      else glide(z, e.velocityX, e.velocityY);
+    });
 }
 
-function useZoomGesture(z: ZoomValues, onTap: () => void): ComposedGesture {
+function useZoomGesture(z: ZoomValues, onTap: () => void, onStep: (delta: number) => void): ComposedGesture {
   return useMemo(() => {
     const doubleTap = Gesture.Tap()
       .numberOfTaps(2)
@@ -119,17 +131,17 @@ function useZoomGesture(z: ZoomValues, onTap: () => void): ComposedGesture {
         if (success && !isZoomed(z.scale.value)) runOnJS(onTap)();
       });
     return Gesture.Race(
-      Gesture.Simultaneous(pinchGesture(z), panGesture(z)),
+      Gesture.Simultaneous(pinchGesture(z), panGesture(z, onStep)),
       Gesture.Exclusive(doubleTap, tap),
     );
-  }, [z, onTap]);
+  }, [z, onTap, onStep]);
 }
 
-export function ZoomableImage({ uri, frame, onTap }: {
-  uri: string; frame: ZoomPoint; onTap: () => void;
+export function ZoomableImage({ uri, frame, onTap, onStep }: {
+  uri: string; frame: ZoomPoint; onTap: () => void; onStep?: (delta: number) => void;
 }): React.ReactElement {
   const z = useZoomValues(frame);
-  const gesture = useZoomGesture(z, useStableCallback(onTap));
+  const gesture = useZoomGesture(z, useStableCallback(onTap), useStableCallback((delta: number) => { onStep?.(delta); }));
   const transform = useAnimatedStyle(() => ({
     transform: [{ translateX: z.x.value }, { translateY: z.y.value }, { scale: z.scale.value }],
   }));
@@ -153,7 +165,7 @@ export function ZoomableImage({ uri, frame, onTap }: {
         style={{ flex: 1, paddingHorizontal: frame.x, paddingVertical: frame.y }}
       >
         <Animated.View style={[{ flex: 1 }, transform]}>
-          <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" onLoad={onLoad}/>
+          {uri ? <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" onLoad={onLoad}/> : null}
         </Animated.View>
       </Animated.View>
     </GestureDetector>

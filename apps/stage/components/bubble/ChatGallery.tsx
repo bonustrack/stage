@@ -48,5 +48,5 @@ export function ChatImageViewer({ uri, galleryKey, visible, onClose }: {
     if (next) setShown(next);
   });
   useGalleryKeys(visible && images !== null && galleryKey !== undefined, step);
-  return <ImageViewer uri={shownUri ?? uri} visible={visible} onClose={onClose} />;
+  return <ImageViewer uri={shownUri ?? uri} visible={visible} onClose={onClose} onStep={images && galleryKey !== undefined ? step : undefined} />;
 }

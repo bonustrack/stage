@@ -20,10 +20,11 @@ const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
 const VIEWER_MENU = [{ id: 'download', label: 'Download', icon: IconArrowInbox }];
 
-export function ImageViewer({ uri, visible, onClose }: {
+export function ImageViewer({ uri, visible, onClose, onStep }: {
   uri: string;
   visible: boolean;
   onClose: () => void;
+  onStep?: (delta: number) => void;
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
   const insets = useSafeAreaInsets();
@@ -48,8 +49,8 @@ export function ImageViewer({ uri, visible, onClose }: {
   return (
     <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
-        {uri && isCoarsePointer() ? (
-          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose}/>
+        {(uri || onStep) && isCoarsePointer() ? (
+          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep}/>
         ) : (
           <Pressable
             onPress={onClose}

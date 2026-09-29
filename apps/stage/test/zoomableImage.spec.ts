@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  clampOffset, clampZoom, doubleTapTarget, isZoomed, panLimits, zoomAround,
+  clampOffset, clampZoom, doubleTapTarget, imageSwipeStep, isZoomed, panLimits, zoomAround,
   ZOOM_DOUBLE_TAP, ZOOM_MAX, ZOOM_MIN, ZOOM_RESET, type ZoomGeometry, type ZoomPoint, type ZoomState,
 } from '../components/ZoomableImage.model';
 
@@ -33,6 +33,35 @@ describe('isZoomed', () => {
     expect(isZoomed(1)).toBe(false);
     expect(isZoomed(1.005)).toBe(false);
     expect(isZoomed(1.2)).toBe(true);
+  });
+});
+
+describe('imageSwipeStep', () => {
+  test('swipes left to the next image and right to the previous image', () => {
+    expect(imageSwipeStep({ x: -120, y: 20 }, true, 1)).toBe(1);
+    expect(imageSwipeStep({ x: 120, y: -20 }, true, 1)).toBe(-1);
+  });
+
+  test('ignores taps and short drags', () => {
+    expect(imageSwipeStep({ x: 0, y: 0 }, true, 1)).toBe(0);
+    expect(imageSwipeStep({ x: -47, y: 0 }, true, 1)).toBe(0);
+    expect(imageSwipeStep({ x: 48, y: 0 }, true, 1)).toBe(-1);
+  });
+
+  test('ignores vertical and diagonal drags', () => {
+    expect(imageSwipeStep({ x: 0, y: 120 }, true, 1)).toBe(0);
+    expect(imageSwipeStep({ x: -100, y: 100 }, true, 1)).toBe(0);
+    expect(imageSwipeStep({ x: 120, y: -90 }, true, 1)).toBe(0);
+  });
+
+  test('leaves horizontal movement to panning while zoomed', () => {
+    expect(imageSwipeStep({ x: -120, y: 0 }, true, 2.5)).toBe(0);
+    expect(imageSwipeStep({ x: 120, y: 0 }, true, 1.02)).toBe(0);
+  });
+
+  test('ignores an ineligible or cancelled gesture even after zoom resets', () => {
+    expect(imageSwipeStep({ x: -120, y: 0 }, false, 1)).toBe(0);
+    expect(imageSwipeStep({ x: 120, y: 0 }, false, 1)).toBe(0);
   });
 });
 
