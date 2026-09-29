@@ -4,12 +4,12 @@ import {
   HISTORY_COPY, HistoryProblem,
 } from '../lib/historySync.model';
 
-async function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
+function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
   jest.useFakeTimers();
   try {
     const pending = start();
     jest.advanceTimersByTime(ms);
-    return await pending;
+    return pending;
   } finally {
     jest.useRealTimers();
   }
