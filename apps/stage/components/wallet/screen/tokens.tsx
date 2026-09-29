@@ -1,6 +1,5 @@
 
 import { useMemo } from 'react';
-import { useRouter } from 'expo-router';
 import { Col, PAGE_GUTTER } from '../../layout';
 import { TokenRow } from './parts';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
@@ -17,28 +16,17 @@ export function TokensList({
   bg: string;
   nativeChainIds?: readonly number[];
 }): React.ReactElement {
-  const router = useRouter();
   const sortedRows = useMemo(
-    () => buildSortedTokenRows(rows, nativeChainIds).map(({ r, id }) => ({
-      r,
-      id,
-      onPress: (): void => {
-        router.push({
-          pathname: '/wallet/token/[id]',
-          params: { id, row: JSON.stringify(r) },
-        });
-      },
-    })),
-    [rows, nativeChainIds, router],
+    () => buildSortedTokenRows(rows, nativeChainIds),
+    [rows, nativeChainIds],
   );
   return (
     <Col margin={{ x: PAGE_GUTTER }}>
       {sortedRows
-        .map(({ r, id, onPress }) => (
+        .map(({ r, id }) => (
           <TokenRow
             key={id}
             r={r} head={head} sub={sub} border={border} bg={bg}
-            onPress={onPress}
           />
         ))}
     </Col>

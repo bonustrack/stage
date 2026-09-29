@@ -1,39 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { tokenDetailViewModel, tokenValueUsd } from '../src/wallet/tokenDetail';
 import {
   parsePositiveAmount, tokenAmountFromInput, toggleAmountUnit, trimDecimalString,
 } from '../src/wallet/sendAmount';
 
-
-describe('tokenValueUsd / tokenDetailViewModel', () => {
-  it('null price yields null value and em-dash usd', () => {
-    expect(tokenValueUsd({ priceUsd: null, balance: '5' })).toBeNull();
-    const vm = tokenDetailViewModel(
-      { name: 'Ethereum', symbol: 'ETH', chainId: 1, balance: '2', priceUsd: null },
-      { networkLabels: { 1: 'Ethereum' } },
-    );
-    expect(vm.usdLabel).toBe('-');
-    expect(vm.valueUsd).toBeNull();
-  });
-
-  it('computes value from price * balance and formats labels', () => {
-    const vm = tokenDetailViewModel(
-      { name: 'USD Coin', symbol: 'USDC', chainId: 1, balance: '10', priceUsd: 2 },
-      { networkLabels: { 1: 'Ethereum' } },
-    );
-    expect(vm.valueUsd).toBe(20);
-    expect(vm.balanceLabel).toBe('10 USDC');
-    expect(vm.networkLabel).toBe('Ethereum');
-  });
-
-  it('falls back to Chain <id> for unknown chains', () => {
-    const vm = tokenDetailViewModel(
-      { name: 'Ethereum', symbol: 'ETH', chainId: 8453, balance: '1', priceUsd: 1 },
-      { networkLabels: { 1: 'Ethereum', 11155111: 'Sepolia' } },
-    );
-    expect(vm.networkLabel).toBe('Chain 8453');
-  });
-});
 
 describe('sendAmount', () => {
   it('parsePositiveAmount guards empty / non-finite / non-positive', () => {

@@ -59,7 +59,6 @@
     "./wallet/format": "./src/wallet/format.ts",
     "./wallet/assets": "./src/wallet/assets.ts",
     "./wallet/tokens": "./src/wallet/tokens.ts",
-    "./wallet/tokenDetail": "./src/wallet/tokenDetail.ts",
     "./wallet/sendAmount": "./src/wallet/sendAmount.ts",
     "./wallet/balances": "./src/wallet/balances.ts",
     "./wallet/client": "./src/wallet/client.ts",

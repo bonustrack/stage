@@ -4,12 +4,7 @@ import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { ScreenHeader } from '../chrome/ScreenHeader';
 
-export function WalletHeader({ title, backTone = 'text', truncate, padBottom }: {
-  title: string;
-  backTone?: 'text' | 'link';
-  truncate?: boolean;
-  padBottom?: number;
-}): React.ReactElement {
+export function WalletHeader({ title }: { title: string }): React.ReactElement {
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
   return (
@@ -20,15 +15,12 @@ export function WalletHeader({ title, backTone = 'text', truncate, padBottom }: 
         size: 'xl',
         weight: 'semibold',
         color: head,
-        truncate,
-        maxLines: truncate === true ? 1 : undefined,
       }}
       onBack={() => {
         capabilities.back();
       }}
-      backColor={backTone === 'link' ? head : fg}
+      backColor={fg}
       safeTop={insets.top}
-      padBottom={padBottom}
       surface={toolbarBg}
       borderColor={border}
     />
