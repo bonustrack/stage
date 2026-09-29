@@ -29,7 +29,7 @@ import { useSafeAreaInsets } from '../lib/safeArea';
 import { useWebTabRail } from '../lib/webLayout';
 import { getPeerDisplayName, getPeerHandle, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import {
-  ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, isFilterOptionPicked, memberNames, memberTokenValue, pickSearchFilter,
+  ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
   searchFilterMenu, searchFilterSources,
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
@@ -132,8 +132,8 @@ function useFilterInput(
   return { menu, active: index, pick, onChangeText, inputProps };
 }
 
-function FilterOptionItem({ field, option, highlighted, selected, onPress }: {
-  field: FilterField; option: FilterOption; highlighted: boolean; selected: boolean; onPress: () => void;
+function FilterOptionItem({ field, option, highlighted, onPress }: {
+  field: FilterField; option: FilterOption; highlighted: boolean; onPress: () => void;
 }): React.ReactElement {
   const member = field === 'member';
   const avatar = option.key === ME_VALUE
@@ -145,14 +145,13 @@ function FilterOptionItem({ field, option, highlighted, selected, onPress }: {
       iconName={member ? undefined : IconTag}
       icon={member ? avatar : undefined}
       highlighted={highlighted}
-      selected={selected}
       onPress={onPress}
     />
   );
 }
 
-function FilterMenuItems({ menu, query, active, onPick }: {
-  menu: FilterMenu; query: string; active: number; onPick: (index: number) => void;
+function FilterMenuItems({ menu, active, onPick }: {
+  menu: FilterMenu; active: number; onPick: (index: number) => void;
 }): React.ReactElement {
   if (menu.kind === 'fields') {
     return <>{menu.fields.map((field, i) => (
@@ -168,8 +167,7 @@ function FilterMenuItems({ menu, query, active, onPick }: {
   return <>{menu.options.map((option, i) => (
     <Box key={option.key} {...optionMark(i)}>
       <FilterOptionItem
-        field={field} option={option} highlighted={i === active} selected={isFilterOptionPicked(query, menu, option)}
-        onPress={() => { onPick(i); }}
+        field={field} option={option} highlighted={i === active} onPress={() => { onPick(i); }}
       />
     </Box>
   ))}</>;
@@ -225,7 +223,7 @@ export function FilterSearch({ query, setQuery, scope, onMenu, ...bar }: {
       />
       {filter.menu === null ? null : (
         <Menu>
-          <FilterMenuItems menu={filter.menu} query={query} active={filter.active} onPick={filter.pick}/>
+          <FilterMenuItems menu={filter.menu} active={filter.active} onPick={filter.pick}/>
         </Menu>
       )}
     </Box>

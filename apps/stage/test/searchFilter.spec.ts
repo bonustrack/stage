@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  ME_OPTION, isFilterOptionPicked, isSearchFilterOn, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
-  searchFilterMenu, searchFilterSources, searchFilterValues, searchRowMatcher, toggleSearchFilter,
+  ME_OPTION, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
+  searchFilterMenu, searchFilterSources, searchFilterToken, searchFilterValues, searchRowMatcher,
   type FilterMenu, type FilterOptions, type FilterRow,
 } from '../components/searchFilter.model';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
@@ -108,10 +108,8 @@ describe('member:@me', () => {
     expect(found('member:me')).toEqual([]);
   });
 
-  test('is picked once and toggles like the other values', () => {
-    expect(isSearchFilterOn('member:@ME', 'member', ME_OPTION.value)).toBe(true);
-    expect(isSearchFilterOn('member:me', 'member', ME_OPTION.value)).toBe(false);
-    expect(toggleSearchFilter('ship', 'member', ME_OPTION.value)).toBe('ship member:@me ');
+  test('groups with other members after a comma', () => {
+    expect(found('member:@me,alice123')).toEqual(found('member:@me member:alice123'));
   });
 });
 
@@ -209,46 +207,81 @@ describe('the search filter on the chats page', () => {
   });
 });
 
+describe('values grouped per field', () => {
+  test('a comma joins values of one field, in any order next to the old repeated form', () => {
+    expect(parseSearchFilter('member:@me,chen123 ship label:Todo,Bug')).toEqual({
+      labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], text: 'ship',
+    });
+    expect(parseSearchFilter('member:@me member:chen123,,')).toEqual(parseSearchFilter('member:@me,chen123'));
+  });
+
+  test('comma and repeated forms match the same cards', () => {
+    expect(matching('label:Todo,Bug')).toEqual(matching('label:Todo label:Bug'));
+    expect(matching('member:alice123,bob.base.eth label:Todo')).toEqual(['plan']);
+  });
+
+  test('quoted labels with emoji, spaces or commas round-trip', () => {
+    const labels = ['🚧 In progress', '🔍 In review', 'a,b', 'Todo'];
+    const token = searchFilterToken('label', labels);
+    expect(token).toBe('label:"🚧 In progress","🔍 In review","a,b",Todo');
+    expect(parseSearchFilter(`${token} ship`)).toEqual({ labels, members: [], text: 'ship' });
+    expect(searchFilterToken('member', ['@me', 'chen123'])).toBe('member:@me,chen123');
+  });
+});
+
 describe('picked values in the menu', () => {
   const options: FilterOptions = {
-    label: [{ key: 'Todo', label: 'Todo', value: 'Todo' }, { key: 'Bug', label: 'Bug', value: 'Bug' }],
-    member: [ME_OPTION],
+    label: [
+      { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
+      { key: '🔍 In review', label: '🔍 In review', value: '🔍 In review' },
+      { key: 'Todo', label: 'Todo', value: 'Todo' },
+    ],
+    member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }, { key: BOB, label: '@chen123', value: 'chen123' }],
   };
-  const picked = (query: string): string[] => {
-    const menu = searchFilterMenu(query, query.length, options);
-    if (menu === null) throw new Error('menu expected');
-    return menu.kind === 'values' ? menu.options.filter(option => isFilterOptionPicked(query, menu, option)).map(o => o.value) : [];
+  const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
+  const shown = (query: string): string[] => {
+    const found = menu(query);
+    return found?.kind === 'values' ? found.options.map(option => option.value) : [];
+  };
+  const pick = (query: string, value: string, caret = query.length): { query: string; caret: number } | null => {
+    const found = menu(query, caret);
+    if (found?.kind !== 'values') throw new Error('values expected');
+    return pickSearchFilter(query, found, found.options.findIndex(option => option.value === value));
   };
 
-  test('a value is checked when its token is already in the search', () => {
-    expect(picked('label:todo label:')).toEqual(['Todo']);
-    expect(picked('member:@me member:')).toEqual(['@me']);
-    expect(picked('label:')).toEqual([]);
+  test('values already in the search are hidden, in any case, form or with an @', () => {
+    expect(shown('label:todo label:')).toEqual(['🚧 In progress', '🔍 In review']);
+    expect(shown('member:@ME member:')).toEqual(['alice123', 'chen123']);
+    expect(shown('member:@alice123,')).toEqual(['@me', 'chen123']);
+    expect(shown('label:"🚧 in progress",Todo,')).toEqual(['🔍 In review']);
+    expect(menu('label:Todo,"🚧 In progress","🔍 In review",')).toBeNull();
   });
 
-  test('the word being typed does not check its own value', () => {
-    expect(picked('label:Todo')).toEqual([]);
+  test('the value being typed is not hidden by itself', () => {
+    expect(shown('label:Todo')).toEqual(['Todo']);
   });
 
-  test('picking a checked value removes its token and keeps the rest', () => {
-    const query = 'ship label:Todo member:@me label:';
-    const menu = searchFilterMenu(query, query.length, options);
-    if (menu === null) throw new Error('menu expected');
-    expect(pickSearchFilter(query, menu, 0)).toEqual({ query: 'ship member:@me ', caret: 16 });
-    expect(pickSearchFilter(query, menu, 1)).toEqual({ query: 'ship label:Todo member:@me label:Bug ', caret: 37 });
+  test('typing after a comma narrows the values of that field', () => {
+    expect(shown('member:@me,ch')).toEqual(['chen123']);
+    expect(shown('label:"🚧 In progress","🔍 in')).toEqual(['🔍 In review']);
   });
 
-  test('a value is on when its token is there, in any case or with an @', () => {
-    expect(searchFilterValues('ship label:Todo label:Bug', 'label')).toEqual(['Todo', 'Bug']);
-    expect(isSearchFilterOn('label:"🚧 in progress"', 'label', '🚧 In progress')).toBe(true);
-    expect(isSearchFilterOn('member:@alice123', 'member', 'alice123')).toBe(true);
-    expect(isSearchFilterOn('label:Todo', 'member', 'Todo')).toBe(false);
-  });
-
-  test('a toggled search parses back to the same filter', () => {
-    expect(toggleSearchFilter('member:@alice123', 'member', 'alice123')).toBe('');
-    expect(parseSearchFilter(toggleSearchFilter('ship', 'label', '🚧 In progress'))).toEqual({
-      labels: ['🚧 In progress'], members: [], text: 'ship',
+  test('picking after a comma completes the group', () => {
+    expect(pick('member:@me,ch', 'chen123')).toEqual({ query: 'member:@me,chen123 ', caret: 19 });
+    expect(pick('label:"🚧 In progress",', '🔍 In review')).toEqual({
+      query: 'label:"🚧 In progress","🔍 In review" ', caret: 38,
     });
+  });
+
+  test('picking a value for a field already in the search appends it to that token', () => {
+    expect(pick('member:@me ship member:', 'chen123')).toEqual({ query: 'member:@me,chen123 ship ', caret: 24 });
+    expect(pick('label:Todo member:c', 'chen123')).toEqual({ query: 'label:Todo member:chen123 ', caret: 26 });
+    expect(pick('member: ship member:@me', 'chen123', 7)).toEqual({ query: 'ship member:@me,chen123', caret: 0 });
+  });
+
+  test('a picked search parses back to the same values', () => {
+    const picked = pick('ship label:"🚧 In progress" label:', '🔍 In review');
+    expect(picked?.query).toBe('ship label:"🚧 In progress","🔍 In review" ');
+    expect(searchFilterValues(picked?.query ?? '', 'label')).toEqual(['🚧 In progress', '🔍 In review']);
   });
 });

@@ -63,11 +63,29 @@ function wordsOf(query: string): FilterSpan[] {
 
 const unquote = (raw: string): string => raw.replace(/^"/, '').replace(/"$/, '').trim();
 
-function fieldWord(word: string): { field: FilterField; value: string } | null {
+function valuesOf(raw: string): string[] {
+  const values: string[] = [];
+  let from = 0;
+  let open = false;
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw.charAt(i);
+    if (ch === '"') open = !open;
+    else if (ch === ',' && !open) {
+      values.push(unquote(raw.slice(from, i)));
+      from = i + 1;
+    }
+  }
+  values.push(unquote(raw.slice(from)));
+  return values;
+}
+
+function fieldWord(word: string): { field: FilterField; values: string[] } | null {
   const match = FIELD_RE.exec(word);
   if (match === null) return null;
-  return { field: match[1]?.toLowerCase() === 'member' ? 'member' : 'label', value: unquote(match[2] ?? '') };
+  return { field: match[1]?.toLowerCase() === 'member' ? 'member' : 'label', values: valuesOf(match[2] ?? '') };
 }
+
+const filled = (values: readonly string[]): string[] => values.filter(value => value !== '');
 
 export function parseSearchFilter(query: string): SearchFilter {
   const filter: SearchFilter = { labels: [], members: [], text: '' };
@@ -76,7 +94,7 @@ export function parseSearchFilter(query: string): SearchFilter {
     const word = query.slice(span.start, span.end);
     const token = fieldWord(word);
     if (token === null) free.push(word);
-    else if (token.value !== '') (token.field === 'label' ? filter.labels : filter.members).push(token.value);
+    else (token.field === 'label' ? filter.labels : filter.members).push(...filled(token.values));
   }
   filter.text = free.join(' ');
   return filter;
@@ -154,14 +172,29 @@ const optionMatches = (option: FilterOption, needle: string): boolean => (
   option.label.toLowerCase().includes(needle) || option.value.toLowerCase().includes(needle)
 );
 
+const withoutWord = (query: string, word: FilterSpan): string => `${query.slice(0, word.start)}${query.slice(word.end)}`;
+
+export function searchFilterValues(query: string, field: FilterField): string[] {
+  const filter = parseSearchFilter(query);
+  return field === 'label' ? filter.labels : filter.members;
+}
+
+const sameValue = (field: FilterField, a: string, b: string): boolean => (
+  field === 'label' ? a.trim().toLowerCase() === b.trim().toLowerCase() : memberKey(a) === memberKey(b)
+);
+
 export function searchFilterMenu(query: string, caret: number, options: FilterOptions): FilterMenu | null {
   const word = wordAt(query, caret);
   const text = query.slice(word.start, word.end);
   const token = fieldWord(text);
   if (token !== null) {
-    const needle = bare(token.value);
-    const matching = options[token.field].filter(option => optionMatches(option, needle));
-    return matching.length === 0 ? null : { kind: 'values', word, field: token.field, options: matching };
+    const { field } = token;
+    const needle = bare(token.values.at(-1) ?? '');
+    const picked = [...searchFilterValues(withoutWord(query, word), field), ...filled(token.values.slice(0, -1))];
+    const matching = options[field].filter(option => (
+      !picked.some(value => sameValue(field, value, option.value)) && optionMatches(option, needle)
+    ));
+    return matching.length === 0 ? null : { kind: 'values', word, field, options: matching };
   }
   const typed = text.toLowerCase();
   const fields = FILTER_FIELDS.filter(field => field.startsWith(typed));
@@ -178,40 +211,26 @@ export function filterMenuSize(menu: FilterMenu | null): number {
   return menu.kind === 'fields' ? menu.fields.length : menu.options.length;
 }
 
-const quoted = (value: string): string => (/[\s"]/.test(value) ? `"${value.replace(/"/g, '')}"` : value);
+const quoted = (value: string): string => (/[\s",]/.test(value) ? `"${value.replace(/"/g, '')}"` : value);
+
+export function searchFilterToken(field: FilterField, values: readonly string[]): string {
+  return `${field}:${values.map(quoted).join(',')}`;
+}
 
 function replaceWord(query: string, word: FilterSpan, text: string): { query: string; caret: number } {
   const head = `${query.slice(0, word.start)}${text}`;
   return { query: `${head}${query.slice(word.end)}`, caret: head.length };
 }
 
-export function searchFilterValues(query: string, field: FilterField): string[] {
-  const filter = parseSearchFilter(query);
-  return field === 'label' ? filter.labels : filter.members;
-}
-
-const sameValue = (field: FilterField, a: string, b: string): boolean => (
-  field === 'label' ? a.trim().toLowerCase() === b.trim().toLowerCase() : memberKey(a) === memberKey(b)
-);
-
-export function isSearchFilterOn(query: string, field: FilterField, value: string): boolean {
-  return searchFilterValues(query, field).some(token => sameValue(field, token, value));
-}
-
-export function toggleSearchFilter(query: string, field: FilterField, value: string): string {
-  const words = wordsOf(query).map(span => query.slice(span.start, span.end));
-  const kept = words.filter((word) => {
-    const token = fieldWord(word);
-    return token?.field !== field || !sameValue(field, token.value, value);
-  });
-  if (kept.length === words.length) kept.push(`${field}:${quoted(value)}`);
-  return kept.length === 0 ? '' : `${kept.join(' ')} `;
-}
-
-const withoutWord = (query: string, word: FilterSpan): string => `${query.slice(0, word.start)}${query.slice(word.end)}`;
-
-export function isFilterOptionPicked(query: string, menu: FilterMenu, option: FilterOption): boolean {
-  return menu.kind === 'values' && isSearchFilterOn(withoutWord(query, menu.word), menu.field, option.value);
+function appendToToken(query: string, word: FilterSpan, field: FilterField, value: string): { query: string; caret: number } | null {
+  const rest = `${query.slice(0, word.start)}${query.slice(word.end).replace(/^\s+/, '')}`;
+  for (const span of wordsOf(rest)) {
+    const token = fieldWord(rest.slice(span.start, span.end));
+    if (token?.field !== field) continue;
+    const next = replaceWord(rest, span, searchFilterToken(field, [...filled(token.values), value]));
+    return { query: next.query, caret: span.start < word.start ? word.start + next.query.length - rest.length : word.start };
+  }
+  return null;
 }
 
 export function pickSearchFilter(query: string, menu: FilterMenu, index: number): { query: string; caret: number } | null {
@@ -221,11 +240,10 @@ export function pickSearchFilter(query: string, menu: FilterMenu, index: number)
   }
   const option = menu.options[index];
   if (option === undefined) return null;
-  if (isFilterOptionPicked(query, menu, option)) {
-    const next = toggleSearchFilter(withoutWord(query, menu.word), menu.field, option.value);
-    return { query: next, caret: next.length };
-  }
+  const earlier = filled(fieldWord(query.slice(menu.word.start, menu.word.end))?.values.slice(0, -1) ?? []);
+  const appended = earlier.length === 0 ? appendToToken(query, menu.word, menu.field, option.value) : null;
+  if (appended !== null) return appended;
   const tail = query.slice(menu.word.end).replace(/^\s+/, '');
-  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, `${menu.field}:${quoted(option.value)}`);
+  const picked = replaceWord(`${query.slice(0, menu.word.end)} ${tail}`, menu.word, searchFilterToken(menu.field, [...earlier, option.value]));
   return { query: picked.query, caret: picked.caret + 1 };
 }
