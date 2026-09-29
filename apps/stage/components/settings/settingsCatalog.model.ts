@@ -42,12 +42,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSectionInfo[] = [
   },
 ];
 
-export const SETTINGS_GROUPS: readonly (readonly SettingsSectionId[])[] = [
-  ['appearance', 'notifications'],
-  ['security', 'devices', 'wallet'],
-  ['advanced'],
-];
-
 export function settingsSection(id: SettingsSectionId): SettingsSectionInfo {
   const found = SETTINGS_SECTIONS.find((s) => s.id === id);
   if (found === undefined) throw new Error(`Unknown settings section ${id}`);

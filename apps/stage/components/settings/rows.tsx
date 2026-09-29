@@ -1,4 +1,3 @@
-
 import type { ReactNode } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Checkbox } from '@stage-labs/kit/react-native/checkbox';
@@ -12,6 +11,8 @@ import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radiu
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 
+const ROW_PADDING = { paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 14 };
+
 export function SettingsList({ children }: { children: ReactNode }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return <ListView dark={dark}>{children}</ListView>;
@@ -20,6 +21,7 @@ export function SettingsList({ children }: { children: ReactNode }): React.React
 export interface SettingsNavRowProps {
   label: string;
   value?: string;
+  valueTone?: 'secondary' | 'danger';
   iconStart?: AppIconRef;
   iconEnd?: AppIconRef;
   onPress?: () => void;
@@ -28,15 +30,15 @@ export interface SettingsNavRowProps {
 export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
+    <ListViewItem align="center" gap={14} dark={dark} onPress={props.onPress} padding={ROW_PADDING}>
       {props.iconStart === undefined ? null : (
         <AppIcon name={props.iconStart} color="link" size={24} />
       )}
       <Col flex={1}>
-        <Text value={props.label} size="xl" color="link" truncate />
+        <Text value={props.label} size="lg" color="link" truncate />
       </Col>
       {props.value === undefined ? null : (
-        <Text value={props.value} color="secondary" truncate />
+        <Text value={props.value} size="md" color={props.valueTone ?? 'secondary'} truncate style={{ flexShrink: 1 }} />
       )}
       <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
     </ListViewItem>
@@ -55,9 +57,9 @@ export interface SettingsToggleRowProps {
 export function SettingsToggleRow(props: SettingsToggleRowProps): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <ListViewItem align="center" gap={12} dark={dark}>
+    <ListViewItem align="center" gap={14} dark={dark} padding={ROW_PADDING}>
       <Col gap={2} flex={1}>
-        <Text value={props.label} weight="semibold" size="md" color="text" />
+        <Text value={props.label} size="lg" color="link" />
         {props.description === undefined ? null : (
           <Caption value={props.description} color="secondary" />
         )}
@@ -85,11 +87,11 @@ export interface SettingsValueRowProps {
 export function SettingsValueRow(props: SettingsValueRowProps): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
+    <ListViewItem align="center" gap={14} dark={dark} onPress={props.onPress} padding={ROW_PADDING}>
       <Col flex={1}>
-        <Text value={props.label} size="md" color="secondary" />
+        <Text value={props.label} size="lg" color="link" />
       </Col>
-      <Text value={props.value} size="md" color="text" truncate />
+      <Text value={props.value} size="md" color="secondary" truncate style={{ flexShrink: 1 }} />
       {props.onPress === undefined ? null : (
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}
@@ -111,15 +113,16 @@ export function SettingsButtonRow(props: SettingsButtonRowProps): React.ReactEle
   return (
     <ListViewItem
       align={props.description === undefined ? 'center' : 'start'}
-      gap={12}
+      gap={14}
       dark={dark}
       onPress={props.onPress}
+      padding={ROW_PADDING}
     >
       {props.iconStart === undefined ? null : (
         <AppIcon name={props.iconStart} color={tone} size={24} />
       )}
       <Col gap={2} flex={1}>
-        <Text value={props.label} size="md" weight="semibold" color={tone} />
+        <Text value={props.label} size="lg" color={tone} />
         {props.description === undefined ? null : (
           <Caption value={props.description} color="secondary" />
         )}
@@ -139,10 +142,10 @@ export interface SettingsThemeRowProps {
 export function SettingsThemeRow(props: SettingsThemeRowProps): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
+    <ListViewItem align="center" gap={14} dark={dark} onPress={props.onPress} padding={ROW_PADDING}>
       <AppIcon name={props.iconName} color={props.iconColor ?? 'link'} size={24} />
       <Col flex={1}>
-        <Text value={props.label} size="xl" color="text" truncate />
+        <Text value={props.label} size="lg" color="link" truncate />
       </Col>
       {props.selected ? <AppIcon name={IconCheckmark1} color="link" size={24} /> : null}
     </ListViewItem>

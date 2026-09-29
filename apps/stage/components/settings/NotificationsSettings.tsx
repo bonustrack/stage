@@ -19,6 +19,19 @@ function permissionLabel(perm: string): string {
     : 'Blocked in system settings. Allow notifications for Stage to receive push.';
 }
 
+export async function applyPush(next: boolean): Promise<void> {
+  await setPushEnabled(next);
+  if (next) await requestPushPermission();
+  try {
+    const client = await getOrCreateXmtpClient('production');
+    if (next) await registerPushWithServer(client);
+    else await unregisterPushFromServer(client);
+  } catch (err) {
+    report('settings.push', err);
+    capabilities.toast('Could not update notifications. Try again.');
+  }
+}
+
 function usePushToggle(): { enabled: boolean; perm: string; onToggle: (next: boolean) => void } {
   const enabled = usePushEnabled();
   const [perm, setPerm] = useState<string>('undetermined');
@@ -26,19 +39,7 @@ function usePushToggle(): { enabled: boolean; perm: string; onToggle: (next: boo
     void getPushPermission().then(setPerm);
   }, []);
   const onToggle = (next: boolean): void => {
-    void (async (): Promise<void> => {
-      await setPushEnabled(next);
-      if (next) setPerm(await requestPushPermission());
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        if (next) await registerPushWithServer(client);
-        else await unregisterPushFromServer(client);
-      } catch (err) {
-        report('settings.push', err);
-        capabilities.toast('Could not update notifications. Try again.');
-      }
-      setPerm(await getPushPermission());
-    })();
+    void applyPush(next).then(async () => { setPerm(await getPushPermission()); });
   };
   return { enabled, perm, onToggle };
 }
