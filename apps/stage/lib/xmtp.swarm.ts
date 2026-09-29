@@ -59,6 +59,6 @@ export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: 
   const blob = await (await fetch(encryptedFileUri)).blob();
   if (blob.size > SWARM_UPLOAD_MAX_BYTES) throw tooLargeError(filename);
   const form = new FormData();
-  form.append('file', { uri: encryptedFileUri, name: 'a.bin', type: 'application/octet-stream' } as unknown as Blob);
+  form.append('file', blob.slice(0, blob.size, 'application/octet-stream'), 'a.bin');
   return await uploadFormToSwarmy(form, filename);
 }
