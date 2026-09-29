@@ -26,6 +26,8 @@ export const CARD_GAP = 8;
 export const TITLE_SIZE = '2xl';
 export const HEADER_PADDING = { left: 4, right: 4 + COLUMN_PADDING, y: 2 };
 
+const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
+
 type Columns = readonly BoardColumn<unknown>[];
 
 interface TitleEditState {
@@ -67,6 +69,7 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, ch
   const { border, link } = usePalette();
   return (
     <Col
+      {...SCROLLBAR_ON_HOVER}
       nativeID={nativeID}
       surface="toolbar"
       radius={BLOCK_RADIUS_DEFAULT}
