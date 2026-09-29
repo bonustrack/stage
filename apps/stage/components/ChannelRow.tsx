@@ -1,4 +1,4 @@
-import { Fragment, memo } from 'react';
+import { memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -7,7 +7,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Platform, type TextStyle } from 'react-native';
+import type { TextStyle, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box, PAGE_GUTTER } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
@@ -141,71 +141,59 @@ function TitleRow({ params, scheme, wrap }: {
 }
 
 const CHIP_TEXT_SIZE = 'sm';
-const CHIP_PADDING = { x: 7, y: 3 } as const;
-const NATIVE_CHIP_BASELINE_DROP = 4;
+const CHIP_HEIGHT = 20;
+const CHIP_PADDING_X = 7;
+const CHIP_GAP = 3;
+const CHIP_STYLE: ViewStyle = { flexShrink: 1, minWidth: 0 };
+const CHIP_TEXT_STYLE: TextStyle = { lineHeight: CHIP_HEIGHT, flexShrink: 1, userSelect: 'none' };
+const CHIP_SPACER_STYLE: ViewStyle = { opacity: 0, overflow: 'hidden' };
+const CHIP_OVERLAY_STYLE: ViewStyle = {
+  position: 'absolute', top: (PREVIEW_LINE_HEIGHT - CHIP_HEIGHT) / 2, left: 0, maxWidth: '100%', overflow: 'hidden',
+};
 
-function WebChip({ label, fg, chipBg }: {
-  label: string; fg: string; chipBg: string;
+function PreviewChips({ chips, fg }: {
+  chips: NonNullable<ChannelRowParams['chips']>; fg: string;
 }): React.ReactElement {
   return (
-    <Text
-      value={label}
-      size={CHIP_TEXT_SIZE}
-      color={fg}
-      style={[
-        {
-          backgroundColor: chipBg, borderRadius: 999,
-          paddingHorizontal: CHIP_PADDING.x, paddingVertical: CHIP_PADDING.y, userSelect: 'none',
-        },
-        { whiteSpace: 'nowrap' } as unknown as TextStyle,
-      ]}
-    />
-  );
-}
-
-function NativeChip({ label, fg }: {
-  label: string; fg: string;
-}): React.ReactElement {
-  return (
-    <Box
-      radius="full"
-      surface="raised"
-      padding={CHIP_PADDING}
-      style={{ transform: [{ translateY: NATIVE_CHIP_BASELINE_DROP }] }}
-    >
-      <Text value={label} size={CHIP_TEXT_SIZE} color={fg} />
-    </Box>
-  );
-}
-
-function InlineLabelChips({ params, fg, chipBg }: {
-  params: ChannelRowParams; fg: string; chipBg: string;
-}): React.ReactElement | null {
-  const chips = params.chips;
-  if (chips === undefined || chips.length === 0) return null;
-  return (
-    <>
+    <Row gap={CHIP_GAP}>
       {chips.map((chip, i) => (
-        <Fragment key={`${chip.label}-${i}`}>
-          {Platform.OS === 'web'
-            ? <WebChip label={chip.label} fg={fg} chipBg={chipBg} />
-            : <NativeChip label={chip.label} fg={fg} />}
-          {' '}
-        </Fragment>
+        <Row
+          key={`${chip.label}-${i}`}
+          height={CHIP_HEIGHT}
+          align="center"
+          radius="full"
+          surface="raised"
+          padding={{ x: CHIP_PADDING_X }}
+          style={CHIP_STYLE}
+        >
+          <Text value={chip.label} size={CHIP_TEXT_SIZE} color={fg} truncate style={CHIP_TEXT_STYLE} />
+        </Row>
       ))}
-    </>
+    </Row>
   );
 }
 
-function PreviewParagraph({ params, fg, chipBg, hasPrefix, lines = 2 }: {
-  params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean; lines?: number;
+function PreviewParagraph({ params, fg, hasPrefix, lines = 2 }: {
+  params: ChannelRowParams; fg: string; hasPrefix: boolean; lines?: number;
 }): React.ReactElement {
+  const chips = params.chips !== undefined && params.chips.length > 0 ? params.chips : null;
   return (
-    <Text size="md" role="secondary" maxLines={lines} style={{ flex: 1, minWidth: 0, lineHeight: PREVIEW_LINE_HEIGHT }}>
-      <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
-      {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="danger" /> : null}
-      {params.preview}
-    </Text>
+    <Box flex={1} minWidth={0}>
+      <Text size="md" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
+        {chips === null ? null : (
+          <Box height={1} padding={{ right: CHIP_GAP }} aria-hidden style={CHIP_SPACER_STYLE}>
+            <PreviewChips chips={chips} fg={fg} />
+          </Box>
+        )}
+        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="danger" /> : null}
+        {params.preview}
+      </Text>
+      {chips === null ? null : (
+        <Box style={CHIP_OVERLAY_STYLE}>
+          <PreviewChips chips={chips} fg={fg} />
+        </Box>
+      )}
+    </Box>
   );
 }
 
@@ -213,13 +201,13 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
   params: ChannelRowParams; trailing: React.ReactNode; wrapTitle: boolean; previewLines?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
-  const { text: fg, inputBg } = usePalette();
+  const { text: fg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
     <Col gap={LINE_GAP} flex={1}>
       <TitleRow params={params} scheme={scheme} wrap={wrapTitle} />
       <Row align="start" gap={12}>
-        <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} lines={previewLines} />
+        <PreviewParagraph params={params} fg={fg} hasPrefix={hasPrefix} lines={previewLines} />
         {trailing}
       </Row>
     </Col>
