@@ -25,6 +25,7 @@ interface Props {
   state?: ComposerState;
   mentionCandidates?: { address: string; name: string }[];
   suggestContacts?: boolean;
+  radius?: number;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   autoFocusNonce?: number;
   onClearReply?: () => void;
@@ -112,7 +113,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
   return (
-    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border}>
+    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={props.radius}>
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
@@ -122,7 +123,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         uploading={s.uploading} err={s.err}
       />
       <ComposerEditor
-        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg} radius={props.radius}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={mention.display} setText={mention.setDisplay}

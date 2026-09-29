@@ -7,6 +7,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { errorMessage } from '@stage-labs/client/errors';
 import { AppModal } from '../AppModal';
+import { FORM_FIELD_RADIUS } from '../FormField';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { MemberPicker, useMemberPicker, type Member } from '../group/MemberPicker';
 import { GroupNameField, NewGroupDetails, createGroupLine, type PickedImage } from '../group/NewGroupForm';
@@ -120,8 +121,8 @@ function NewChatFooter({ draft, members, action, phase, onPrimary, onBack }: {
       {note === null ? null : (
         <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text value={note} size="sm" role="secondary" /></Box>
       )}
-      <Box style={{ pointerEvents: busy ? 'none' : 'auto' }}>
-        <MessengerComposer dark={dark} state={draft} suggestContacts
+      <Box padding={{ x: MODAL.padding }} style={{ pointerEvents: busy ? 'none' : 'auto' }}>
+        <MessengerComposer dark={dark} state={draft} suggestContacts radius={FORM_FIELD_RADIUS}
           mentionCandidates={members.map(m => ({ address: m.address, name: m.label }))} />
       </Box>
       <Row gap={8} padding={{ x: MODAL.padding, top: 12 }}>

@@ -28,7 +28,7 @@ import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string; radius?: number;
   recording: boolean; levels: number[]; recordSecs: number;
   slideThresholdPx: number;
   text: string; setText: (v: string) => void;
@@ -156,7 +156,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius="none">
+    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={p.radius ?? 'none'}>
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}
