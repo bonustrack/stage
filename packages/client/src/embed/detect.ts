@@ -19,12 +19,16 @@ export function youtubeIdOf(text: string | undefined | null): string | null {
 
 export interface MapCoords { lat: number; lng: number; sourceUrl: string }
 
+export function googleMapsUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}
+
 export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   if (!text) return null;
   const patterns: RegExp[] = [
     /https?:\/\/[^\s]*maps\.google\.[^\s]*[?&](?:q|ll|center)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
     /https?:\/\/[^\s]*maps\.google\.[^\s]*\/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
-    /https?:\/\/(?:www\.)?google\.[^\s/]+\/maps[^\s]*[?&](?:q|ll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
+    /https?:\/\/(?:www\.)?google\.[^\s/]+\/maps[^\s]*[?&](?:q|ll|query)=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i,
     /https?:\/\/(?:www\.)?google\.[^\s/]+\/maps\/[^\s]*@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
     /https?:\/\/(?:www\.)?openstreetmap\.org\/[^\s]*[?&]mlat=(-?\d+(?:\.\d+)?)[^\s]*&mlon=(-?\d+(?:\.\d+)?)/i,
     /https?:\/\/(?:www\.)?openstreetmap\.org\/[^\s]*#map=\d+\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i,

@@ -5,6 +5,7 @@ import type { PostHooks } from './types';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { googleMapsUrl } from '@stage-labs/client/embed/detect';
 import { xmtpSendText } from '../../modules/messaging';
 import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
@@ -85,7 +86,7 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   try {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const { latitude: lat, longitude: lng } = pos.coords;
-    const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+    const url = googleMapsUrl(lat, lng);
     const line = await a.openLine();
     if (line === null) return;
     await xmtpSendText(line, `📍 ${url}`);

@@ -5,7 +5,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
-import { osmTileUrl } from '@stage-labs/client/embed/detect';
+import { googleMapsUrl, osmTileUrl } from '@stage-labs/client/embed/detect';
 import { usePalette } from '../lib/theme';
 
 export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactElement {
@@ -34,14 +34,14 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
   );
 }
 
-export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
-  lat: number; lng: number; sourceUrl: string; dark: boolean;
+export function LocationEmbed({ lat, lng, dark }: {
+  lat: number; lng: number; dark: boolean;
 }): React.ReactElement {
   const tileUrl = osmTileUrl(lat, lng, 14);
   const label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   const tileBg = usePalette().border;
   return (
-    <MediaCard onPress={() => { capabilities.openUrl(sourceUrl); }}>
+    <MediaCard onPress={() => { capabilities.openUrl(googleMapsUrl(lat, lng)); }}>
       <Box aspectRatio={1} style={{ position: 'relative' }}>
         <Image
           src={tileUrl}

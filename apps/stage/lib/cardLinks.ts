@@ -9,7 +9,7 @@ export type CardLink =
   | { kind: 'dm'; url: string; peerAddress: string }
   | { kind: 'channel'; url: string; convId: string }
   | { kind: 'youtube'; url: string; videoId: string }
-  | { kind: 'map'; url: string; lat: number; lng: number; sourceUrl: string }
+  | { kind: 'map'; url: string; lat: number; lng: number }
   | { kind: 'github'; url: string }
   | { kind: 'preview'; url: string }
   | { kind: 'generic'; url: string };
@@ -66,7 +66,7 @@ const DETECTORS: Detector[] = [
   token => {
     const coords = mapCoordsOf(token);
     return coords
-      ? { kind: 'map', url: coords.sourceUrl, lat: coords.lat, lng: coords.lng, sourceUrl: coords.sourceUrl }
+      ? { kind: 'map', url: coords.sourceUrl, lat: coords.lat, lng: coords.lng }
       : null;
   },
   token => {

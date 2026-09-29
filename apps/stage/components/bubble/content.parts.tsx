@@ -214,7 +214,7 @@ function embedNode(card: CardLink, dark: boolean): React.ReactElement {
     case 'dm': return <ChannelCard peerAddress={card.peerAddress} />;
     case 'channel': return <ChannelCard convId={card.convId} />;
     case 'youtube': return <YouTubeEmbed videoId={card.videoId} />;
-    case 'map': return <LocationEmbed lat={card.lat} lng={card.lng} sourceUrl={card.sourceUrl} dark={dark} />;
+    case 'map': return <LocationEmbed lat={card.lat} lng={card.lng} dark={dark} />;
     case 'github': return <GitHubLinkCard url={card.url} />;
     case 'preview': return <PreviewLinkCard url={card.url} />;
     default: return <LinkPreviewCard url={card.url} dark={dark} />;

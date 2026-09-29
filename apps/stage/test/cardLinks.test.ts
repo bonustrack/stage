@@ -142,4 +142,13 @@ describe('cardLinksOf', () => {
     ].join(' ');
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'generic', 'channel']);
   });
+
+  test('shared locations render as map cards, Google Maps and old OpenStreetMap links alike', () => {
+    expect(cardLinksOf('📍 https://www.google.com/maps/search/?api=1&query=12.3456,-65.4321')[0]).toMatchObject({
+      kind: 'map', lat: 12.3456, lng: -65.4321,
+    });
+    expect(cardLinksOf('📍 https://www.openstreetmap.org/?mlat=12.3456&mlon=-65.4321#map=16/12.3456/-65.4321')[0]).toMatchObject({
+      kind: 'map', lat: 12.3456, lng: -65.4321,
+    });
+  });
 });
