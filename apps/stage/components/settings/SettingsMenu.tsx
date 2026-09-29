@@ -1,38 +1,31 @@
 import { useRouter } from 'expo-router';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
-
-
-import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
+import { SETTINGS_GROUPS, settingsSection, type SettingsSectionInfo } from './settingsCatalog.model';
 import { capabilities } from '../../lib/capabilities';
-import { SettingsPage } from './SettingsPage';
-import { SettingsList, SettingsNavRow } from './rows';
+import { SettingsGroup, SettingsPage } from './SettingsPage';
+import { SettingsNavRow } from './rows';
 import { SettingsAccountHeader } from './SettingsAccountHeader';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { profileLinkOf } from '../../lib/links';
 
-const PROFILE_SETTINGS_HREF = '/settings/profile';
-
 export function SettingsMenu({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const address = useActiveAccountRecord()?.address ?? null;
-  const open = (href: string): void => {
-    if (href === PROFILE_SETTINGS_HREF && address) router.push(profileLinkOf(address));
-    else capabilities.navigate(href);
+  const open = (section: SettingsSectionInfo): void => {
+    if (section.id === 'profile' && address) router.push(profileLinkOf(address));
+    else capabilities.navigate(section.href);
   };
+  const row = (section: SettingsSectionInfo): React.ReactElement => (
+    <SettingsNavRow key={section.id} label={section.label} iconStart={section.icon} onPress={() => { open(section); }} />
+  );
   return (
     <SettingsPage title="Settings" root panRef={panRef}>
       <SettingsAccountHeader />
-      <SettingsList>
-        {SETTINGS_MENU_ITEMS.map((item) => (
-          <SettingsNavRow
-            key={item.href}
-            label={item.label}
-            iconStart={item.icon}
-            onPress={() => { open(item.href); }}
-          />
-        ))}
-      </SettingsList>
+      <SettingsGroup>{row(settingsSection('profile'))}</SettingsGroup>
+      {SETTINGS_GROUPS.map((ids) => (
+        <SettingsGroup key={ids.join()}>{ids.map((id) => row(settingsSection(id)))}</SettingsGroup>
+      ))}
       <SettingsAboutFooter />
     </SettingsPage>
   );

@@ -5,9 +5,7 @@ export type SecurityRowKey =
   | 'passkeyLink'
   | 'devicePasskey'
   | 'recoveryKey'
-  | 'exportKey'
-  | 'linkDevice'
-  | 'removeAccount';
+  | 'exportKey';
 
 export type SecurityCustody = 'undeployed' | 'ecdsa-root' | 'passkey-root' | 'other-root';
 
@@ -18,7 +16,6 @@ export interface SecurityRowsInput {
   devicePasskeyStored: boolean;
   canExportKey: boolean;
   keyRevealed: boolean;
-  canLinkDevice: boolean;
 }
 
 export const BACKUP_PHRASE_COPY = {
@@ -71,7 +68,5 @@ export function securityRows(input: SecurityRowsInput): SecurityRowKey[] {
   if (input.isSmart && input.backedUp === false) rows.push('backupPhrase');
   rows.push(...smartRows(input));
   if (input.canExportKey && !input.keyRevealed) rows.push('exportKey');
-  if (input.canLinkDevice) rows.push('linkDevice');
-  rows.push('removeAccount');
   return rows;
 }

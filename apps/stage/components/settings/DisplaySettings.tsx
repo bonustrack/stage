@@ -1,15 +1,12 @@
-
-
 import { Box, PAGE_GUTTER } from '../layout';
-import { Eyebrow } from '../Eyebrow';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
-import { SettingsPage } from './SettingsPage';
-import { SettingsList, SettingsThemeRow } from './rows';
+import { SettingsGroup, SettingsPage, SettingsSectionLabel } from './SettingsPage';
+import { SettingsThemeRow } from './rows';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 
 export function DisplaySettings(): React.ReactElement {
@@ -17,11 +14,8 @@ export function DisplaySettings(): React.ReactElement {
   const custom = useCustomTheme();
 
   return (
-    <SettingsPage title="Display" keyboardShouldPersistTaps="handled">
-      <Eyebrow style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 20, paddingBottom: 8 }}>
-        THEME
-      </Eyebrow>
-      <SettingsList>
+    <SettingsPage title="Appearance" keyboardShouldPersistTaps="handled">
+      <SettingsGroup title="Theme" footnote="System follows the light or dark mode of this device.">
         {THEME_OPTIONS.map((opt) => (
           <SettingsThemeRow
             key={opt.value}
@@ -40,15 +34,15 @@ export function DisplaySettings(): React.ReactElement {
           selected={custom}
           onPress={() => { setCustomTheme(true); }}
         />
-      </SettingsList>
+      </SettingsGroup>
 
       {custom ? (
-        <Box padding={{ x: PAGE_GUTTER, top: 24 }}>
-          <Eyebrow style={{ paddingBottom: 4 }}>
-            CUSTOM COLORS
-          </Eyebrow>
-          <ColorTokens/>
-        </Box>
+        <>
+          <SettingsSectionLabel>Custom colors</SettingsSectionLabel>
+          <Box padding={{ x: PAGE_GUTTER }}>
+            <ColorTokens/>
+          </Box>
+        </>
       ) : null}
     </SettingsPage>
   );
