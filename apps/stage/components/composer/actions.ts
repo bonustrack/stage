@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
@@ -132,7 +132,7 @@ function beginSend(a: DraftArgs, line: string, body: string): SendStep[] {
   return steps;
 }
 
-async function performSend(a: ComposerActionsArgs): Promise<void> {
+async function performSend(a: ComposerActionsArgs, current: () => ComposerActionsArgs): Promise<void> {
   const body = a.text.trim();
   if (!body && a.pending.length === 0) return;
   const line = await a.openLine();
@@ -141,9 +141,11 @@ async function performSend(a: ComposerActionsArgs): Promise<void> {
   const originalPending = a.pending;
   const steps = beginSend(a, line, body);
   const unsent = await runSendSteps(a, steps);
-  if (unsent.length > 0 && a.text.trim().length === 0 && a.pending.length === 0) {
-    a.setText(originalText);
-    a.setPending(originalPending);
+  const draft = current();
+  if (unsent.length > 0 && draft.text.trim().length === 0 && draft.pending.length === 0) {
+    const kept = unsentDraft(originalText, originalPending, unsent);
+    a.setText(kept.text);
+    a.setPending(kept.pending);
   }
 }
 
@@ -158,6 +160,8 @@ export async function sendDraft(a: DraftArgs, line: string): Promise<boolean> {
 }
 
 export function useComposerActions(a: ComposerActionsArgs) {
+  const current = useRef(a);
+  current.current = a;
   const upload = (uri: string, mime: string, name?: string): Promise<void> => uploadAttachment(a, uri, mime, name);
   const [imageNonce, setImageNonce] = useState(0);
   const [cameraNonce, setCameraNonce] = useState(0);
@@ -184,6 +188,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     onPickedCamera: (files: ComposerPickedFile[]) => onPickedCamera(upload, files),
     onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
-    send: () => performSend(a),
+    send: () => performSend(a, () => current.current),
   };
 }
