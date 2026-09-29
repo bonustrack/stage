@@ -11,7 +11,7 @@ import { Col } from '../layout';
 import { FormField, useFocusOnOpen } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
-import { pickerRows } from './MemberPicker.model';
+import { pickerRows, shownMembers, togglePick } from './MemberPicker.model';
 
 export interface Member {
   address: string;
@@ -39,10 +39,11 @@ async function lookupMember(raw: string): Promise<Member | string> {
   return { address: found.address, label: found.label ?? shortAddress(found.address) };
 }
 
-export function useMemberPicker(): MemberPickerState {
+export function useMemberPicker(single = false): MemberPickerState {
   const [entry, setEntry] = useState('');
-  const [members, setMembers] = useState<Member[]>([]);
+  const [picked, setPicked] = useState<Member[]>([]);
   const [adding, setAdding] = useState(false);
+  const members = useMemo(() => shownMembers(picked, single), [picked, single]);
 
   const addMember = useCallback(async (): Promise<void> => {
     const raw = entry.trim();
@@ -51,32 +52,28 @@ export function useMemberPicker(): MemberPickerState {
     try {
       const member = await lookupMember(raw);
       if (typeof member === 'string') { capabilities.toast(member); return; }
-      const { address, label } = member;
-      const lower = address.toLowerCase();
+      const lower = member.address.toLowerCase();
       if (members.some(m => m.address.toLowerCase() === lower)) {
         capabilities.toast('Already added'); setEntry(''); return;
       }
-      setMembers(prev => [...prev, { address: address, label }]);
+      setPicked(prev => togglePick(prev, member, single));
       setEntry('');
     } catch (err) {
       capabilities.toast((err as Error)?.message ?? 'Failed to add member');
     } finally {
       setAdding(false);
     }
-  }, [entry, adding, members]);
+  }, [entry, adding, members, single]);
 
   const removeMember = useCallback((address: string): void => {
     const lower = address.toLowerCase();
-    setMembers(prev => prev.filter(m => m.address.toLowerCase() !== lower));
+    setPicked(prev => prev.filter(m => m.address.toLowerCase() !== lower));
   }, []);
 
   const toggleContact = useCallback((contact: Contact): void => {
-    const lower = contact.address.toLowerCase();
-    setMembers(prev => (prev.some(m => m.address.toLowerCase() === lower)
-      ? prev.filter(m => m.address.toLowerCase() !== lower)
-      : [...prev, { address: contact.address, label: contact.name }]));
+    setPicked(prev => togglePick(prev, { address: contact.address, label: contact.name }, single));
     setEntry('');
-  }, []);
+  }, [single]);
 
   const selectedAddresses = useMemo(
     () => new Set(members.map(m => m.address.toLowerCase())),

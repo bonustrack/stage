@@ -1,39 +1,33 @@
 export type NewChatPhase = 'idle' | 'creating' | 'sending';
 
-export type NewChatStep = 'chat' | 'members' | 'details';
+export type NewChatMode = 'dm' | 'group';
 
 export interface FooterAction {
   label: string;
   enabled: boolean;
-  next: NewChatStep | null;
-  back: NewChatStep | null;
+}
+
+export const MODE_TABS: { value: NewChatMode; label: string }[] = [
+  { value: 'dm', label: 'Direct message' },
+  { value: 'group', label: 'Group' },
+];
+
+export function isNewChatMode(value: string): value is NewChatMode {
+  return value === 'dm' || value === 'group';
 }
 
 function recipientsKey(addresses: readonly string[]): string {
   return addresses.map(a => a.toLowerCase()).sort().join(',');
 }
 
-function openChatLabel(count: number): string {
-  return count > 1 ? `Create group (${count})` : 'Open chat';
-}
-
-export function footerAction(step: NewChatStep, count: number): FooterAction {
+export function footerAction(mode: NewChatMode, count: number): FooterAction {
   const enabled = count > 0;
-  if (step === 'chat') return { label: openChatLabel(count), enabled, next: null, back: null };
-  if (step === 'members') return { label: enabled ? `Next (${count})` : 'Next', enabled, next: 'details', back: 'chat' };
-  return { label: 'Create group', enabled, next: null, back: 'members' };
+  if (mode === 'dm') return { label: 'Open chat', enabled };
+  return { label: enabled ? `Create group (${count})` : 'Create group', enabled };
 }
 
-export function stepTitle(step: NewChatStep): string {
-  return step === 'chat' ? 'New chat' : 'New group';
-}
-
-export function isDirectChat(step: NewChatStep, count: number): boolean {
-  return step === 'chat' && count === 1;
-}
-
-export function chatKey(step: NewChatStep, addresses: readonly string[]): string {
-  return `${isDirectChat(step, addresses.length) ? 'dm' : 'group'}:${recipientsKey(addresses)}`;
+export function chatKey(mode: NewChatMode, addresses: readonly string[]): string {
+  return `${mode}:${recipientsKey(addresses)}`;
 }
 
 export function phaseNote(phase: NewChatPhase): string | null {
