@@ -48,6 +48,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"
+          bunx eas-cli@20.1.0 --version &
+          EAS_PID=$!
           bunx expo export \
             --platform android \
             --no-minify \
@@ -58,6 +60,7 @@ jobs:
             echo "::error::expo export produced no Android JS bundle" && exit 1
           fi
           node --check "$BUNDLE"
+          wait "$EAS_PID"
           bunx eas-cli@20.1.0 update \
             --branch main-preview \
             --platform android \

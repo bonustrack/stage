@@ -189,6 +189,8 @@ jobs:
           #
           # The deep link rides the shared update groupId, unchanged by these flags,
           # so the launcher still resolves (eas-deeplink.mjs).
+          bunx eas-cli@20.1.0 --version &
+          EAS_PID=$!
           bunx expo export \
             --platform android \
             --no-minify \
@@ -204,6 +206,7 @@ jobs:
             echo "::error::expo export produced no Android JS bundle" && exit 1
           fi
           node --check "$BUNDLE"
+          wait "$EAS_PID"
           # Ensure a channel with the branch's name exists and points at the
           # branch (EAS links same-named channel->branch on create). Channels
           # are what u.expo.dev resolves manifests by, and bundler.stage.box/
