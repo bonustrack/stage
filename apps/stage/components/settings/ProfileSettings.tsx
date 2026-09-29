@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -6,6 +6,7 @@ import { Box, Col, PAGE_GUTTER } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 import { capabilities } from '../../lib/capabilities';
+import { useCopiedFlag } from '../../lib/useCopiedFlag';
 import { getPeerHandle, getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
@@ -16,18 +17,11 @@ import { ClaimStageName } from './ProfileSettings.claim';
 import { EditProfileModal } from './EditProfileModal';
 import { Button } from '@stage-labs/kit/react-native/button';
 
-const COPIED_MS = 1500;
-
 function CopyableAddress({ address }: { address: string }): React.ReactElement {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => { setCopied(false); }, COPIED_MS);
-    return () => { clearTimeout(timer); };
-  }, [copied]);
+  const [copied, markCopied] = useCopiedFlag();
   const copy = (): void => {
     capabilities.copy('Address', address);
-    setCopied(true);
+    markCopied();
   };
   return (
     <Pressable onPress={copy} hitSlop={8}>

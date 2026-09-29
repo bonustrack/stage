@@ -1,4 +1,4 @@
-import { Component, cloneElement, isValidElement } from 'react';
+import { Component, cloneElement, isValidElement, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown, { renderRules, type RenderRules } from 'react-native-markdown-display';
@@ -18,6 +18,8 @@ import { inlineAttachmentUrl } from './attachmentUri';
 import { galleryKeyOf } from './imageGallery.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { HighlightText } from '../HighlightText';
+import { CodeBlock } from './CodeBlock';
+import { splitCodeBlocks } from './codeBlock.model';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
@@ -170,10 +172,17 @@ export function BubbleBody({ text, fg, selectable, highlight, markdownProps }: {
   text: string; fg: string; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
-  const body = unescapeBody(text);
+  const parts = useMemo(() => splitCodeBlocks(unescapeBody(text)), [text]);
   return (
     <Box style={{ alignSelf: 'stretch' }}>
-      <BubbleBodyText body={body} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
+      {parts.map((part, index) => (part.type === 'code' ? (
+        <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} selectable={selectable} highlight={highlight} />
+      ) : (
+        <BubbleBodyText
+          key={`text-${index}`} body={part.text} fg={fg} selectable={selectable}
+          highlight={highlight} markdownProps={markdownProps}
+        />
+      )))}
     </Box>
   );
 }

@@ -1,6 +1,7 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { fontSize } from '@stage-labs/kit/tokens';
+import { Platform } from 'react-native';
+import { fontFamily, fontSize } from '@stage-labs/kit/tokens';
 import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-labs/client/xmtp/poll';
@@ -58,10 +59,22 @@ export interface BubbleLinkProps {
   ref?: (node: unknown) => void;
 }
 
+export const MONO_FONT = Platform.select({
+  ios: fontFamily.mono[0],
+  android: 'monospace',
+  default: fontFamily.mono.join(', '),
+});
+
 export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
   const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
-  return { ...styles, link: { ...styles.link, ...MESSAGE_LINK_STYLE } };
+  return {
+    ...styles,
+    link: { ...styles.link, ...MESSAGE_LINK_STYLE },
+    code_inline: { ...styles.code_inline, fontFamily: MONO_FONT },
+    code_block: { ...styles.code_block, fontFamily: MONO_FONT },
+    fence: { ...styles.fence, fontFamily: MONO_FONT },
+  };
 }
 
 interface QuestionOption { label: string; description?: string }
