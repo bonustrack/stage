@@ -3,8 +3,10 @@ import {
   type ForwardedRef, type Ref, type RefObject,
 } from 'react';
 import { View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
-import { useVirtualizer, useWindowVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
-import { elementHost, windowHost, type ScrollHost } from './VirtualList.web.host';
+import {
+  elementScroll, useVirtualizer, useWindowVirtualizer, windowScroll, type Virtualizer,
+} from '@tanstack/react-virtual';
+import { elementHost, whenShown, windowHost, type ScrollHost } from './VirtualList.web.host';
 import {
   distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart, type ListScrollMetrics,
 } from './VirtualList.model';
@@ -302,7 +304,10 @@ function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }
   const stick = useEndStick(props, host);
   const edges = useEdgeCallbacks(props, host, count);
   const rememberAnchor = usePrependAnchor(props, refs, host, virtualizer);
-  const check = useCallback(() => { stick(); edges(); rememberAnchor(); }, [stick, edges, rememberAnchor]);
+  const check = useCallback(() => {
+    if (!host.shown()) return;
+    stick(); edges(); rememberAnchor();
+  }, [host, stick, edges, rememberAnchor]);
   useScrollSubscription(props, host, check);
   useContentObserver(props, refs, host, setScrollMargin, check);
   useInitialPosition(props, host, virtualizer, count);
@@ -328,7 +333,10 @@ function WindowList<T>({ props, handle }: { props: VirtualListProps<T>; handle: 
   const refs = useListRefs();
   const host = useMemo(() => windowHost(() => refs.content.current), [refs]);
   const [scrollMargin, setScrollMargin] = useState(0);
-  const virtualizer = useWindowVirtualizer(virtualizerOptions(props, scrollMargin, window.innerHeight));
+  const virtualizer = useWindowVirtualizer({
+    ...virtualizerOptions(props, scrollMargin, window.innerHeight),
+    scrollToFn: whenShown(host, windowScroll<Window>),
+  });
   return <ListBody props={props} handle={handle} refs={refs} host={host} virtualizer={virtualizer} setScrollMargin={setScrollMargin} />;
 }
 
@@ -339,6 +347,7 @@ function SelfList<T>({ props, handle }: { props: VirtualListProps<T>; handle: Fo
   const virtualizer = useVirtualizer({
     ...virtualizerOptions(props, scrollMargin, refs.root.current?.clientHeight ?? 0),
     getScrollElement: () => refs.root.current,
+    scrollToFn: whenShown(host, elementScroll<HTMLDivElement>),
   });
   return <ListBody props={props} handle={handle} refs={refs} host={host} virtualizer={virtualizer} setScrollMargin={setScrollMargin} />;
 }

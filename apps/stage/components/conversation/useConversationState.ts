@@ -211,7 +211,6 @@ export function useConversationState(convId: string | undefined, focus: string |
   const scroll = useConvScrollPersistence(convId);
   const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
 
-  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
   const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
@@ -222,7 +221,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const {
     showJump, setShowJump, scrollToNewest, jumpHighlightId,
     listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
-  } = useOutboundLayer(events, myUri, convId, activeLine, atBottom);
+  } = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef);
 
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;

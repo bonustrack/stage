@@ -32,8 +32,9 @@ export function useOutboundLayer(
   myUri: string,
   convId: string | undefined,
   activeLine: string,
-  atBottom: () => boolean,
+  isAtBottomRef: React.MutableRefObject<boolean>,
 ) {
+  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
   const [showJump, setShowJump] = useState(false);
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
   const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,10 +86,11 @@ export function useOutboundLayer(
       ...(replyTo ? { replyTo } : {}),
       ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
     }, ...s.optimistic] }));
+    isAtBottomRef.current = true;
     scrollToNewest();
     setShowJump(false);
     if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
-  }, [activeLine, myUri, convId]);
+  }, [activeLine, myUri, convId, isAtBottomRef]);
 
   const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {
     setOutbound(s => recordSent(s, localId, sentId));
