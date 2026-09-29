@@ -18,4 +18,10 @@ describe('composer draft after a failed send', () => {
   test('the draft is empty when everything went out', () => {
     expect(unsentDraft('hi', [photo], [])).toEqual({ text: '', pending: [] });
   });
+
+  test('a failed location stays pending without bringing back a caption that went out', () => {
+    const location = { id: 'l1', url: 'https://www.google.com/maps/search/?api=1&query=1,2' };
+    const unsent = [{ text: '📍 https://www.google.com/maps/search/?api=1&query=1,2', attachments: [], location }];
+    expect(unsentDraft('see you', [photo, location], unsent)).toEqual({ text: '', pending: [location] });
+  });
 });

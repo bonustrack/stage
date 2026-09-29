@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
+import { mapCoordsOf } from '@stage-labs/client/embed/detect';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -12,11 +13,13 @@ import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/r
 import { Avatar } from '../Avatar';
 import { ImageViewer } from '../ImageViewer';
 import { HoverTooltip } from '../HoverTooltip';
+import { LocationTile } from '../MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
 import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
+import { isLocation } from './location.model';
 import type { ChannelCandidate } from './channels.model';
 import { usePalette } from '../../lib/theme';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
@@ -146,6 +149,24 @@ function PendingImage({
   );
 }
 
+function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void }): React.ReactElement {
+  return (
+    <Box style={{ position: 'absolute', top: -4, right: -4 }}>
+      <HoverTooltip label={label}>
+        <Pressable
+          onPress={onRemove}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          style={{ backgroundColor: '#000', borderRadius: 999, padding: 2 }}
+        >
+          <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
+        </Pressable>
+      </HoverTooltip>
+    </Box>
+  );
+}
+
 function PendingVideo({
   video, fg, onRemove,
 }: {
@@ -155,24 +176,53 @@ function PendingVideo({
     <Col width={128} align="center" gap={4}>
       <Box width={128} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
         <VideoPlayer src={video.url} controls={false}/>
-        <Box style={{ position: 'absolute', top: -4, right: -4 }}>
-          <HoverTooltip label="Remove video">
-            <Pressable
-              onPress={onRemove}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel="Remove video"
-              style={{ backgroundColor: '#000', borderRadius: 999, padding: 2 }}
-            >
-              <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
-            </Pressable>
-          </HoverTooltip>
-        </Box>
+        <RemoveBadge label="Remove video" onRemove={onRemove}/>
       </Box>
       <Text size="3xs" color={fg} style={{ width: 128, textAlign: 'center' }} numberOfLines={1}>
         {video.name ?? video.id}
       </Text>
     </Col>
+  );
+}
+
+function PendingLocation({
+  location, fg, onRemove,
+}: {
+  location: Attachment; fg: string; onRemove: () => void;
+}): React.ReactElement | null {
+  const coords = mapCoordsOf(location.url);
+  if (!coords) return null;
+  return (
+    <Col width={72} align="center" gap={4}>
+      <Box width={72} accessibilityLabel="Location preview">
+        <Box radius={8} style={{ overflow: 'hidden' }}>
+          <LocationTile lat={coords.lat} lng={coords.lng} pin="2xl"/>
+        </Box>
+        <RemoveBadge label="Remove location" onRemove={onRemove}/>
+      </Box>
+      <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
+        {location.name ?? location.id}
+      </Text>
+    </Col>
+  );
+}
+
+function PendingItem({
+  at, fg, sub, chipBg, onRemove,
+}: {
+  at: Attachment; fg: string; sub: string; chipBg: string; onRemove: () => void;
+}): React.ReactElement | null {
+  if (at.kind === 'image') return <PendingImage image={at} fg={fg} onRemove={onRemove}/>;
+  if (at.kind === 'video') return <PendingVideo video={at} fg={fg} onRemove={onRemove}/>;
+  if (isLocation(at)) return <PendingLocation location={at} fg={fg} onRemove={onRemove}/>;
+  return (
+    <Row padding={{ x: 8, y: 4 }} align="center" gap={6} radius="lg" background={chipBg}>
+      <Glyph icon={kindIcon(at.kind)} size={14} color={fg}/>
+      <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{at.name ?? at.id}</Text>
+      <Pressable onPress={onRemove} hitSlop={6}>
+        <Glyph icon={IconCrossMedium} size={14} color={sub}/>
+      </Pressable>
+    </Row>
   );
 }
 
@@ -185,21 +235,8 @@ export function PendingRow({
   return (
     <Row padding={{ x: PAGE_GUTTER, top: 10, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
-        a.kind === 'image' ? (
-          <PendingImage key={a.id} image={a} fg={fg} onRemove={() => { onRemove(i); }}/>
-        ) : a.kind === 'video' ? (
-          <PendingVideo key={a.id} video={a} fg={fg} onRemove={() => { onRemove(i); }}/>
-        ) : (
-          <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
-            <Glyph icon={kindIcon(a.kind)} size={14} color={fg}/>
-            <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-            <Pressable onPress={() => { onRemove(i); }} hitSlop={6}>
-              <Glyph icon={IconCrossMedium} size={14} color={sub}/>
-            </Pressable>
-          </Row>
-        )
+        <PendingItem key={a.id} at={a} fg={fg} sub={sub} chipBg={chipBg} onRemove={() => { onRemove(i); }}/>
       ))}
     </Row>
   );
 }
-

@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { planSendSteps } from '../components/composer/send.model';
+import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
 
 function makeSenders() {
@@ -77,5 +78,42 @@ describe('composer sends encrypted remote attachments', () => {
     const step = steps[0];
     if (!step) throw new Error('Missing attachment step');
     await expect(step.run()).rejects.toThrow('upload failed (413)');
+  });
+});
+
+describe('composer sends a pending location', () => {
+  const location = locationAttachment(12.3456, -65.4321, 'loc');
+  const locationText = '📍 https://www.google.com/maps/search/?api=1&query=12.3456,-65.4321';
+  const photo: Attachment = { id: 'photo', url: 'file:///photo.jpg', kind: 'image', mime: 'image/jpeg', size: 10, name: 'photo.jpg' };
+
+  test('caption, images, then the location as its own Google Maps text message', async () => {
+    const senders = makeSenders();
+    let id = 0;
+    const steps = planSendSteps('line', 'meet here', [location, photo], undefined, senders, () => `local-${id++}`);
+    expect(steps.map(step => step.text)).toEqual(['meet here', '', locationText]);
+    expect(steps.map(step => step.attachments)).toEqual([[], [photo], []]);
+    expect(steps[2]?.location).toEqual(location);
+    for (const step of steps) await step.run();
+    expect(senders.text.mock.calls).toEqual([['line', 'meet here'], ['line', locationText]]);
+    expect(senders.attachments).toHaveBeenCalledWith('line', [
+      { fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' },
+    ]);
+  });
+
+  test('a location alone replies when a reply is set, and never goes out as a file', async () => {
+    const senders = makeSenders();
+    const steps = planSendSteps('line', '', [location], 'reference', senders, () => 'local-id');
+    expect(steps).toHaveLength(1);
+    expect(await steps[0]?.run()).toBe('reply-id');
+    expect(senders.reply).toHaveBeenCalledWith('line', 'reference', locationText);
+    expect(senders.attachments).not.toHaveBeenCalled();
+  });
+
+  test('with a caption the reply goes on the caption only', async () => {
+    const senders = makeSenders();
+    const steps = planSendSteps('line', 'here', [location], 'reference', senders, () => 'local-id');
+    for (const step of steps) await step.run();
+    expect(senders.reply).toHaveBeenCalledWith('line', 'reference', 'here');
+    expect(senders.text).toHaveBeenCalledWith('line', locationText);
   });
 });

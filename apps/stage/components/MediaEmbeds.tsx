@@ -2,7 +2,7 @@
 import { capabilities } from '../lib/capabilities';
 
 import { Image } from '@stage-labs/kit/react-native/image';
-import { Text } from '@stage-labs/kit/react-native/text';
+import { Text, type TextSizeToken } from '@stage-labs/kit/react-native/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
 import { googleMapsUrl, osmTileUrl } from '@stage-labs/client/embed/detect';
@@ -34,24 +34,31 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
   );
 }
 
+export function LocationTile({ lat, lng, pin }: {
+  lat: number; lng: number; pin: TextSizeToken;
+}): React.ReactElement {
+  const tileBg = usePalette().border;
+  return (
+    <Box aspectRatio={1} style={{ position: 'relative' }}>
+      <Image
+        src={osmTileUrl(lat, lng, 14)}
+        fit="cover"
+        style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
+/>
+      <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+        <Text size={pin}>📍</Text>
+      </Box>
+    </Box>
+  );
+}
+
 export function LocationEmbed({ lat, lng, dark }: {
   lat: number; lng: number; dark: boolean;
 }): React.ReactElement {
-  const tileUrl = osmTileUrl(lat, lng, 14);
   const label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  const tileBg = usePalette().border;
   return (
     <MediaCard onPress={() => { capabilities.openUrl(googleMapsUrl(lat, lng)); }}>
-      <Box aspectRatio={1} style={{ position: 'relative' }}>
-        <Image
-          src={tileUrl}
-          fit="cover"
-          style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
-/>
-        <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
-          <Text size="6xl">📍</Text>
-        </Box>
-      </Box>
+      <LocationTile lat={lat} lng={lng} pin="6xl"/>
       <Box padding={{ x: 10, y: 6 }}>
         <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
           Location

@@ -5,13 +5,12 @@ import type { PostHooks } from './types';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { googleMapsUrl } from '@stage-labs/client/embed/detect';
-import { xmtpSendText } from '../../modules/messaging';
 import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './send';
 import { unsentDraft } from './draft.model';
+import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
 
 type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
@@ -30,13 +29,15 @@ function kindOf(mime: string): 'image' | 'audio' | 'video' | 'file' {
   return 'file';
 }
 
+const mintAttachmentId = (): string => `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
 async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: string, name?: string): Promise<void> {
   a.setUploading(true);
   try {
     const resolvedMime = mimeOf(mime, name ?? uri);
     const kind = kindOf(resolvedMime);
     const size = await fetch(uri).then(r => r.blob()).then(b => b.size).catch(ignored(0, 'optional'));
-    const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const id = mintAttachmentId();
     a.setPending(prev => [...prev, { id, url: uri, kind, mime: resolvedMime, size, name }]);
   } catch (e) { a.setErr((e as Error).message); }
   finally { a.setUploading(false); }
@@ -85,11 +86,8 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   if (!perm.granted) { Alert.alert('Location permission denied'); return; }
   try {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    const { latitude: lat, longitude: lng } = pos.coords;
-    const url = googleMapsUrl(lat, lng);
-    const line = await a.openLine();
-    if (line === null) return;
-    await xmtpSendText(line, `📍 ${url}`);
+    const location = locationAttachment(pos.coords.latitude, pos.coords.longitude, mintAttachmentId());
+    a.setPending(prev => withLocation(prev, location));
     setLastAttachment('Location');
   } catch (e) { a.setErr((e as Error).message); }
 }
