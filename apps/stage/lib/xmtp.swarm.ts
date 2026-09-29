@@ -56,7 +56,11 @@ function writeCleanImage(
 }
 
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
-  const blob = await (await fetch(encryptedFileUri)).blob();
+  const response = await fetch(encryptedFileUri);
+  if (!response.ok) {
+    throw new Error(`Couldn't send "${filename}": the encrypted file could not be read. Try attaching it again.`);
+  }
+  const blob = await response.blob();
   if (blob.size > SWARM_UPLOAD_MAX_BYTES) throw tooLargeError(filename);
   const form = new FormData();
   form.append('file', blob.slice(0, blob.size, 'application/octet-stream'), 'a.bin');
