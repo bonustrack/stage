@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["StageCallsModule"] },
+  "android": { "modules": ["box.stage.calls.StageCallsModule"] }
+}

@@ -1,0 +1,42 @@
+Stage ReplayKit broadcast extension
+
+The Swift files in this directory adapt the Jitsi Meet SDK screen sharing
+sample, licensed under the Apache License, Version 2.0. The complete license
+is included in Jitsi-LICENSE.txt. These notices accompany the corresponding
+source files and are also bundled in the broadcast extension.
+
+Upstream repository: https://github.com/jitsi/jitsi-meet-sdk-samples
+Pinned revision: 91f4466b5f8fa4f645878521176ade2cc55ceee8
+Upstream directory: ios/swift-screensharing/JitsiSDKScreenSharingTest/Broadcast Extension
+
+SampleHandler.swift
+Original attribution: Created by Alex-Dan Bumbu on 04.06.2021.
+Modified for Stage on 2026-09-30. Replaces the hardcoded App Group with the
+RTCAppGroupIdentifier Info.plist value. Adds cancelable connection retries,
+a startup timeout, deterministic cleanup and connected-only start events.
+Retains the local rtc_SSFD socket and video-only ReplayKit sample handling.
+
+SampleUploader.swift
+Original attribution: Created by Alex-Dan Bumbu on 22/03/2021.
+Copyright © 2021 8x8, Inc. All rights reserved.
+Modified for Stage on 2026-09-30. Retains JPEG conversion and the serialized
+CFHTTPMessage response protocol. Adds lock-protected frame reservation,
+error recovery, bounded in-flight data and synchronous sample conversion.
+Uses half-resolution frames with JPEG quality 0.8.
+
+SocketConnection.swift
+Original attribution: Created by Alex-Dan Bumbu on 22/03/2021.
+Copyright © 2021 Atlassian Inc. All rights reserved.
+Modified for Stage on 2026-09-30. Replaces stream/run-loop transport with
+nonblocking local UNIX sockets and serial DispatchSource I/O. Initializes
+socket address family and length, bounds UTF-8 paths, handles partial writes
+and backpressure, suppresses SIGPIPE and closes every failed socket attempt.
+
+DarwinNotificationCenter.swift
+Original attribution: Created by Alex-Dan Bumbu on 23/03/2021.
+Copyright © 2021 8x8, Inc. All rights reserved.
+Modified for Stage on 2026-09-30. Uses a static notification helper instead of
+a singleton while retaining iOS_BroadcastStarted and iOS_BroadcastStopped.
+
+The sample Atomic.swift property wrapper is not included or used.
+No Jitsi conferencing SDK, media relay or remote screen-sharing server is used.

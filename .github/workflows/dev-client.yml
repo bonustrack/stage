@@ -8,6 +8,11 @@ name: Dev client APK
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_rolling:
+        description: Replace the rolling dev-client APK
+        type: boolean
+        default: true
   # workflow_dispatch only works once this file reaches the default branch;
   # until then a push touching this file on the PR branch triggers the build.
   push:
@@ -76,6 +81,7 @@ jobs:
       # (releases/download/dev-client/stage-dev-client.apk) that always carries
       # the newest dev-client APK. bundler.stage.box links here.
       - name: Update rolling dev-client release
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_rolling
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

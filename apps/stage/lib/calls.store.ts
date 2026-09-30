@@ -1,5 +1,6 @@
 import { EMPTY_CALLS, type CallsState } from '@stage-labs/client/xmtp/callMachine';
 import { makeListeners, useStoreValue } from './storeCore';
+import type { CallStream } from './calls.types';
 
 export interface CallMedia { audio: boolean; video: boolean; screen: boolean }
 
@@ -8,7 +9,7 @@ export type CallLinkStatus = 'connecting' | 'connected' | 'failed';
 export interface CallPeerView {
   peerId: string;
   inboxId: string;
-  stream: MediaStream;
+  stream: CallStream;
   media: CallMedia;
   status: CallLinkStatus;
 }
@@ -16,7 +17,7 @@ export interface CallPeerView {
 export interface CallView {
   calls: CallsState;
   selfInboxId: string | null;
-  preview: MediaStream | null;
+  preview: CallStream | null;
   media: CallMedia;
   peers: CallPeerView[];
 }

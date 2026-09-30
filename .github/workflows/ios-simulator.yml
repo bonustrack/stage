@@ -1,0 +1,69 @@
+name: iOS simulator
+
+on:
+  push:
+    branches: ['feat/native-calls']
+  pull_request:
+    paths:
+      - 'apps/stage/app.config.js'
+      - 'apps/stage/package.json'
+      - 'apps/stage/modules/**'
+      - 'apps/stage/plugins/**'
+      - 'bun.lock'
+      - '.github/workflows/ios-simulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      BROWSER: none
+      CI: '1'
+      NODE_OPTIONS: --max-old-space-size=1500
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bun install --frozen-lockfile
+      - name: Generate iOS app and extensions
+        working-directory: apps/stage
+        run: bunx expo prebuild --platform ios --no-install
+      - name: Install native dependencies
+        working-directory: apps/stage/ios
+        run: pod install
+      - name: Build unsigned simulator app
+        working-directory: apps/stage
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/Stage.xcworkspace -scheme Stage \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/stage-ios" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            2>&1 | tee "$RUNNER_TEMP/ios-build.log"
+      - name: Archive simulator app
+        run: |
+          ditto -c -k --keepParent "$RUNNER_TEMP/stage-ios/Build/Products/Debug-iphonesimulator/Stage.app" "$RUNNER_TEMP/stage-ios-simulator.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-ios-simulator
+          path: ${{ runner.temp }}/stage-ios-simulator.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-log
+          path: ${{ runner.temp }}/ios-build.log
+          if-no-files-found: ignore

@@ -4,7 +4,7 @@ import { Card } from '@stage-labs/kit/react-native/card';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
+import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
 import { Spinner } from '../Spinner';
 import { AudioCard } from './AudioCard';
 import { MessengerImageAttachment } from './ImageAttachment';
