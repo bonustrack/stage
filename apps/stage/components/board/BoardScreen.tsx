@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
+import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER, STICKY_TOP } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
@@ -332,13 +332,28 @@ function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const safeTop = useSafeAreaInsets().top;
+  const small = !useWebTabRail();
   const [searchKey, setSearchKey] = useState(0);
   const openSearch = (): void => { setSearchKey(key => key + 1); };
+  const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
+  if (small) {
+    return <Box style={STICKY_TOP}>
+      <StackHeader title="Board" backTo="/" inline={inline} trailing={<>
+        <Box flex={1}/>
+        <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
+      </>}/>
+      <FilterSearch
+        key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
+        query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
+        head={link} sub={text} border={border} inline field
+      />
+    </Box>;
+  }
   if (searchKey > 0) {
     return (
       <FilterSearch
         key={searchKey} scope="board" onMenu={onFilterMenu}
-        query={query} setQuery={setQuery} onClose={() => { setSearchKey(0); setQuery(''); }}
+        query={query} setQuery={setQuery} onClose={closeSearch}
         head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
         trailing={<HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>}
       />

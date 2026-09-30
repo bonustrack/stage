@@ -25,7 +25,7 @@ function useViewSwitch(view: HomeView): { onBoard?: () => void; onChats?: () => 
 }
 
 export function HomeTopnavRight({ head, onOpenSearch, view }: {
-  head: string; onOpenSearch: () => void; view: HomeView;
+  head: string; onOpenSearch?: () => void; view: HomeView;
 }): React.ReactElement {
   const router = useRouter();
   const switchView = useViewSwitch(view);
@@ -36,11 +36,11 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
   const openCompose = (): void => { setComposeOpen(true); };
   return (
     <>
-      <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
+      {onOpenSearch === undefined ? null : <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
         <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
           <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
         </Pressable>
-      </HoverTooltip>
+      </HoverTooltip>}
       <HoverTooltip label="New chat" placement="below" shortcut="c" onShortcut={openCompose}>
         <Pressable onPress={openCompose} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
           <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>

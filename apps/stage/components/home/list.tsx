@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { VirtualList } from '../layout';
+import { Box, STICKY_UNDER_CHROME, VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
@@ -15,6 +15,7 @@ import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { isSearchFocused, setSearchFocused } from '../../lib/searchState';
+import { useWebTabRail } from '../../lib/webLayout';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -87,19 +88,29 @@ function useSearchOpen(query: string, setQuery: (query: string) => void): Search
 function useHomeTopnav(p: ChannelsListProps, search: SearchOpen): TopnavSlot {
   const { query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
+  const small = !useWebTabRail();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} onOpenSearch={search.open} view="chats" />,
-    [sub, search.open],
+    () => <HomeTopnavRight head={sub} onOpenSearch={small ? undefined : search.open} view="chats" />,
+    [sub, small, search.open],
   );
   const override = useMemo(
-    () => (search.shown ? (
+    () => small ? (
+      <Box style={STICKY_UNDER_CHROME}>
+        <Topnav inline right={right}/>
+        <FilterSearch
+          key={search.key} scope="chats" onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
+          query={query} setQuery={setQuery} onClose={search.close} onOpen={search.open}
+          head={head} sub={sub} border={border} inline field
+        />
+      </Box>
+    ) : (search.shown ? (
       <FilterSearch
         key={search.key} scope="chats" onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
         query={query} setQuery={setQuery} onClose={search.close}
         head={head} sub={sub} border={border} inline={pane} trailing={right}
       />
     ) : undefined),
-    [search, query, setQuery, onFilterMenu, head, sub, border, pane, right],
+    [search, query, setQuery, onFilterMenu, head, sub, border, pane, right, small],
   );
   usePublishTopnavSlot({ right, override }, !pane);
   return { right, override };

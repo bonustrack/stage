@@ -18,7 +18,7 @@ import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
 import { MENU_WIDTH } from './AnchoredMenu';
 import { MENU_GAP } from './menuStyle';
-import { SearchTopnavBar } from './SearchTopnavBar';
+import { SearchTopnavBar, SEARCH_FIELD_HEIGHT } from './SearchTopnavBar';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { keepInputFocus } from './composer/parts';
 import { mentionKeyAction } from './composer/mentions.model';
@@ -204,15 +204,15 @@ function FilterMenuItems({ menu, active, onPick }: {
   </>;
 }
 
-function useTouchMenuHeight(): number {
+function useTouchMenuHeight(field: boolean): number {
   const { height } = useWindowDimensions();
   const keyboard = useKeyboardState(state => (state.isVisible ? state.height : 0));
-  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
+  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT + (field ? SEARCH_FIELD_HEIGHT : 0);
   return Math.max(0, height - keyboard - top - MENU_GAP - DROPDOWN_MENU.padY * 2);
 }
 
-function TouchFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
-  const maxHeight = useTouchMenuHeight();
+function TouchFilterMenu({ children, field = false }: { children: React.ReactNode; field?: boolean }): React.ReactElement {
+  const maxHeight = useTouchMenuHeight(field);
   return (
     <Box style={{ position: 'absolute', top: '100%', left: 0, right: 0 }} {...keepInputFocus}>
       <DropdownMenu style={{ alignSelf: 'stretch', borderRadius: 0 }}>
@@ -224,7 +224,7 @@ function TouchFilterMenu({ children }: { children: React.ReactNode }): React.Rea
   );
 }
 
-function WideFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
+function WideFilterMenu({ children }: { children: React.ReactNode; field?: boolean }): React.ReactElement {
   return (
     <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: PAGE_GUTTER }} {...keepInputFocus}>
       <DropdownMenu maxHeight={MENU_MAX_HEIGHT} style={{ width: MENU_WIDTH }}>{children}</DropdownMenu>
@@ -255,7 +255,7 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
         {...bar} inline query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
       />
       {filter.menu === null ? null : (
-        <Menu>
+        <Menu field={bar.field}>
           <FilterMenuItems menu={filter.menu} active={filter.active} onPick={filter.pick}/>
         </Menu>
       )}

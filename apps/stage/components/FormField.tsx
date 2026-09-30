@@ -17,7 +17,7 @@ const TRAILING_SLOT = 24;
 type NativeInputProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'>;
 
 export interface FormFieldProps {
-  label: string;
+  label?: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
@@ -27,7 +27,9 @@ export interface FormFieldProps {
   inputType?: InputProps['inputType'];
   inputProps?: NativeInputProps;
   inputRef?: Ref<ComponentRef<typeof Input>>;
+  autoFocus?: boolean;
   onSubmit?: (text: string) => void;
+  leading?: ReactNode;
   trailing?: ReactNode;
   labelTrailing?: ReactNode;
   hint?: string;
@@ -64,7 +66,7 @@ const BARE_INPUT = {
 } as const;
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, onSubmit, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -77,18 +79,19 @@ export function FormField({
       style={{ ...BARE_INPUT, ...textStyle, textAlignVertical: 'top', height: undefined, minHeight: rows * 26 }} />
   ) : (
     <Input ref={inputRef} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
-      dark={dark} disabled={disabled} inputType={inputType} inputProps={inputProps} onSubmit={onSubmit}
+      dark={dark} disabled={disabled} inputType={inputType} inputProps={inputProps} autoFocus={autoFocus} onSubmit={onSubmit}
       style={{ ...BARE_INPUT, ...textStyle, flex: 1 }} />
   );
   return (
     <Col gap={hint === undefined ? 0 : 6}>
       <Col background={colors.background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
         style={disabled === true ? { opacity: 0.6 } : undefined}>
-        <Row align="center" gap={6}>
+        {label === undefined ? null : <Row align="center" gap={6}>
           <Text value={label} size="lg" color="secondary" />
           {labelTrailing}
-        </Row>
+        </Row>}
         <Row align="center" gap={8} minHeight={TRAILING_SLOT}>
+          {leading}
           {field}
           {trailing === undefined ? null : <Row align="center" height={TRAILING_SLOT} style={{ flexShrink: 0 }}>{trailing}</Row>}
         </Row>
