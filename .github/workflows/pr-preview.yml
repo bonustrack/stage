@@ -156,13 +156,16 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
           GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
+          RAW_BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"
-          # EAS channel/branch names allow [a-zA-Z0-9._-]; git refs can contain
-          # '/' (e.g. feat/foo). Sanitise to a safe, stable per-branch channel.
-          RAW_BRANCH='${{ github.ref_name }}'
-          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
+          # One EAS channel per git branch, named by channelKey() in
+          # apps/proxy/src/branchChannel.ts: [A-Za-z0-9.-] kept, every other
+          # byte written as _xx (feat/foo -> feat_2ffoo), so two branches never
+          # share a channel. bundler.stage.box/<branch> maps paths with the same
+          # function, so /feat/foo and /feat%2Ffoo load this channel.
+          BRANCH="$(bun ../../scripts/pr-preview/channel-key.mjs "$RAW_BRANCH")"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           # Git short-hash: the unambiguous identity of the previewed commit. We
           # keep a per-BRANCH EAS channel (the update groupId already makes each
@@ -310,13 +313,14 @@ jobs:
 
       - name: Delete this branch's EAS preview channel + branch
         working-directory: apps/stage
+        env:
+          RAW_BRANCH: ${{ github.event.ref }}
         run: |
           set -euo pipefail
-          # Sanitise the deleted ref the SAME way the publish job does
+          # Map the deleted ref with the SAME channelKey() the publish job uses
           # (github.event.ref is the deleted branch name on a delete event), so we
           # target the exact channel/branch that was created on push.
-          RAW_BRANCH='${{ github.event.ref }}'
-          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
+          BRANCH="$(bun ../../scripts/pr-preview/channel-key.mjs "$RAW_BRANCH")"
           echo "Tearing down EAS preview for branch '$RAW_BRANCH' -> '$BRANCH'"
           # Idempotent: a branch that never got a preview has no EAS channel/branch.
           # `|| true` so a missing channel/branch (or a tag-like ref) never fails

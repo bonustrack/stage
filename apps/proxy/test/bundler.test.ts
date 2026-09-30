@@ -1,31 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { channelFromPath, handleBundler, isBrowserRequest, manifestUrl } from '../src/bundler.ts';
-
-test('channelFromPath maps single segments to channels', () => {
-  assert.equal(channelFromPath('/main'), 'main');
-  assert.equal(channelFromPath('/served-main'), 'served-main');
-});
-
-test('channelFromPath joins multi-segment branch paths with dashes', () => {
-  assert.equal(
-    channelFromPath('/claude/large-refactoring-pr-3rcl0d'),
-    'claude-large-refactoring-pr-3rcl0d',
-  );
-  assert.equal(channelFromPath('/feat/foo/bar'), 'feat-foo-bar');
-});
-
-test('channelFromPath strips characters outside the eas channel alphabet', () => {
-  assert.equal(channelFromPath('/feat/f%20oo'), 'feat-f20oo');
-});
-
-test('channelFromPath passes through root and file-like paths', () => {
-  assert.equal(channelFromPath('/'), null);
-  assert.equal(channelFromPath('/index.html'), null);
-  assert.equal(channelFromPath('/preview-launcher.html'), null);
-  assert.equal(channelFromPath('/favicon.svg'), null);
-  assert.equal(channelFromPath('/.well-known/acme-challenge/token'), null);
-});
+import { handleBundler, isBrowserRequest, manifestUrl } from '../src/bundler.ts';
 
 test('isBrowserRequest is true for html accept without expo headers', () => {
   const request = new Request('https://bundler.stage.box/main', {
@@ -66,17 +41,34 @@ test('manifestUrl forwards client runtime and platform headers', () => {
   assert.equal(url.searchParams.get('platform'), 'ios');
 });
 
-test('handleBundler redirects browsers to the launcher', async () => {
-  const request = new Request('https://bundler.stage.box/feat/foo', {
-    headers: { accept: 'text/html' },
-  });
-  const response = await handleBundler(request);
-  assert.equal(response.status, 302);
-  assert.equal(
-    response.headers.get('location'),
-    'https://bundler.stage.box/preview-launcher.html?u=' +
-      encodeURIComponent('https://bundler.stage.box/feat-foo'),
+function launcherTarget(response: Response): string | null {
+  const location = response.headers.get('location');
+  return location === null ? null : new URL(location).searchParams.get('u');
+}
+
+test('handleBundler redirects browsers to the launcher for the same branch', async () => {
+  for (const path of ['/feat/foo', '/feat%2Ffoo', '/feat%2ffoo']) {
+    const response = await handleBundler(
+      new Request(`https://bundler.stage.box${path}`, { headers: { accept: 'text/html' } }),
+    );
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get('location'),
+      'https://bundler.stage.box/preview-launcher.html?u=' +
+        encodeURIComponent('https://bundler.stage.box/feat/foo'),
+    );
+  }
+});
+
+test('handleBundler keeps dotted and escaped branch names in the launcher link', async () => {
+  const dotted = await handleBundler(
+    new Request('https://bundler.stage.box/chore/version-0.1.0-beta.2', { headers: { accept: 'text/html' } }),
   );
+  assert.equal(launcherTarget(dotted), 'https://bundler.stage.box/chore/version-0.1.0-beta.2');
+  const escaped = await handleBundler(
+    new Request('https://bundler.stage.box/fix/caf%C3%A9%20menu', { headers: { accept: 'text/html' } }),
+  );
+  assert.equal(launcherTarget(escaped), 'https://bundler.stage.box/fix/caf%C3%A9%20menu');
 });
 
 const EXPO_CLIENT_HEADERS = {
@@ -119,6 +111,60 @@ test('handleBundler never answers expo clients with the dev hub html on file pat
     );
     assert.equal(response.status, 404);
     assert.equal(urls.length, 0);
+  }));
+
+function channelOf(url: string | undefined): string | null {
+  assert.ok(url);
+  assert.equal(new URL(url).origin, 'https://u.expo.dev');
+  return new URL(url).searchParams.get('channel-name');
+}
+
+test('handleBundler loads the same channel for raw and encoded branch paths', () =>
+  withStubbedFetch(async (urls) => {
+    for (const path of ['/feat/native-calls', '/feat%2Fnative-calls', '/feat/native-calls/']) {
+      await handleBundler(new Request(`https://bundler.stage.box${path}`, { headers: EXPO_CLIENT_HEADERS }));
+    }
+    assert.deepEqual(urls.map(channelOf), ['feat_2fnative-calls', 'feat_2fnative-calls', 'feat_2fnative-calls']);
+  }));
+
+test('handleBundler keeps slash and dash branches on different channels', () =>
+  withStubbedFetch(async (urls) => {
+    await handleBundler(new Request('https://bundler.stage.box/feat/foo', { headers: EXPO_CLIENT_HEADERS }));
+    await handleBundler(new Request('https://bundler.stage.box/feat-foo', { headers: EXPO_CLIENT_HEADERS }));
+    await handleBundler(new Request('https://bundler.stage.box/main', { headers: EXPO_CLIENT_HEADERS }));
+    assert.deepEqual(urls.map(channelOf), ['feat_2ffoo', 'feat-foo', 'main']);
+  }));
+
+test('handleBundler serves dotted branch names to expo clients', () =>
+  withStubbedFetch(async (urls) => {
+    await handleBundler(
+      new Request('https://bundler.stage.box/chore/config-version-0.1.0-beta.2', { headers: EXPO_CLIENT_HEADERS }),
+    );
+    assert.deepEqual(urls.map(channelOf), ['chore_2fconfig-version-0.1.0-beta.2']);
+  }));
+
+test('handleBundler rejects paths that cannot be branch names', () =>
+  withStubbedFetch(async (urls) => {
+    for (const path of ['/feat%E0%A4%A', '/.well-known/acme-challenge/token', '/feat//foo', '/index.html']) {
+      const response = await handleBundler(
+        new Request(`https://bundler.stage.box${path}`, { headers: EXPO_CLIENT_HEADERS }),
+      );
+      assert.equal(response.status, 404);
+    }
+    assert.equal(urls.length, 0);
+  }));
+
+test('handleBundler passes browsers on static files through to the dev hub', () =>
+  withStubbedFetch(async (urls) => {
+    for (const path of ['/index.html', '/preview-launcher.html?u=x', '/favicon.svg', '/.well-known/x']) {
+      await handleBundler(new Request(`https://bundler.stage.box${path}`, { headers: { accept: 'text/html' } }));
+    }
+    assert.deepEqual(urls, [
+      'https://bundler.stage.box/index.html',
+      'https://bundler.stage.box/preview-launcher.html?u=x',
+      'https://bundler.stage.box/favicon.svg',
+      'https://bundler.stage.box/.well-known/x',
+    ]);
   }));
 
 test('handleBundler passes browsers on the bare domain through to the dev hub', () =>

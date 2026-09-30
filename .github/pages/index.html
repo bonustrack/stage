@@ -88,7 +88,10 @@
 
       <section>
         <h2>1 · Install the dev client (Android)</h2>
-        <p>The rolling APK — always the latest native build. Open on the phone, or scan.</p>
+        <p>
+          The rolling APK. Open on the phone, or scan. APKs built for a given commit are on the
+          <a href="https://github.com/bonustrack/stage/releases/tag/dev-client">dev-client release</a>.
+        </p>
         <a
           class="button"
           href="https://github.com/bonustrack/stage/releases/download/dev-client/stage-dev-client.apk"
@@ -117,10 +120,9 @@
         <h2>Per-branch URL</h2>
         <p>
           In the dev client, "Enter URL manually" accepts
-          <code>https://bundler.stage.box/&lt;branch&gt;</code> — e.g.
-          <code>/main</code> — and always loads that branch's newest bundle.
-          Slashes in branch names become dashes (<code>feat/x</code> →
-          <code>/feat-x</code>), or just paste the path with slashes.
+          <code>https://bundler.stage.box/&lt;branch&gt;</code>, for example
+          <code>/main</code> or <code>/feat/x</code>, and always loads that branch's newest bundle.
+          Use the branch name as it is. <code>/feat%2Fx</code> works too.
         </p>
       </section>
 
