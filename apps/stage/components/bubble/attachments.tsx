@@ -7,7 +7,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { AudioCard } from './AudioCard';
-import { MessengerImageAttachment } from './ImageAttachment';
+import { ImageLoading, MessengerImageAttachment } from './ImageAttachment';
 import { Box, Col, Row } from '../layout';
 import { MediaCard } from '../MediaCard';
 import { usePalette } from '../../lib/theme';
@@ -94,11 +94,13 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: 
   const remote = useRemoteAttachment(att.remote);
   const uri = local ?? remote.uri;
   const label = att.name ?? 'attachment';
-  const compact = resolvedAttachmentKind(att) === 'file';
+  const kind = resolvedAttachmentKind(att);
+  const compact = kind === 'file';
 
   if (remote.isError && !local) {
     return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} compact={compact} />;
   }
+  if (!uri && kind === 'image') return <ImageLoading />;
   if (!uri) return <AttachmentPending label={label} fg={fg} compact={compact} />;
   return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
 }
