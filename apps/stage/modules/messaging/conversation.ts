@@ -51,6 +51,15 @@ function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage 
   return msgs.find(m => isRowCandidate(m, dm)) ?? msgs[0];
 }
 
+const ROW_LOOKBACK = 20;
+
+async function recentRowMessages(conv: Conversation, dm: boolean): Promise<StreamedMessage[]> {
+  const limit = dm ? 6 : 2;
+  const msgs = await rowMessagesOf(conv, limit).catch(recover('conversation.rowMessages', []));
+  const onlyDeletes = msgs.length === limit && msgs.every(m => isDeleteRequestType(m.contentTypeId));
+  return onlyDeletes ? rowMessagesOf(conv, ROW_LOOKBACK).catch(recover('conversation.rowMessages', msgs)) : msgs;
+}
+
 function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
   const bubble = msgs.find(m => isRowCandidate(m, dm) && revivesClearedChat(m.contentTypeId));
   return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
@@ -126,7 +135,7 @@ export async function summarizeConversation(
   await dmRoutesReady().catch(reported('conversation.dmRoutes'));
   const convId = dmRowIdOf(conv.id, peerAddress, knownDmIds);
   const dm = peerAddress !== null;
-  const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(recover('conversation.rowMessages', []));
+  const msgs = await recentRowMessages(conv, dm);
   const last = pickLastMessage(msgs, dm);
   const preview = previewOfMessage(last, dm, msgs, await ownDeletesReady());
   const inboxToAddr = await memberInboxToAddressMap(conv);

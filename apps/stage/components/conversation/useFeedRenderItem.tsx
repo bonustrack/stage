@@ -8,7 +8,7 @@ import { BubbleErrorBoundary } from '../bubble/boundary';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useRouter } from 'expo-router';
 import { previewOf } from './feed-helpers';
-import { deletedViewCache, replyQuoteOf } from './messageDeletion.model';
+import { replyQuoteOf } from './messageDeletion.model';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
 import { XMTP_USER_PREFIX } from '../../modules/messaging';
@@ -66,7 +66,6 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
     [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
   );
-  const deletedView = useMemo(deletedViewCache, []);
 
   const eventsById = useMemo(() => {
     const m = new Map<string, Bubble>();
@@ -98,7 +97,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     return (
       <BubbleErrorBoundary sub={sub} entry={item}>
         <MessengerBubble
-          entry={deleted ? deletedView(item) : namedEntry(item)}
+          entry={namedEntry(item)}
           dark={dark}
           myUri={myUri}
           senderEthAddress={senderEthAddress}
@@ -133,7 +132,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       </BubbleErrorBoundary>
     );
   }, [
-    dark, myUri, sub, senderEthOf, namedEntry, deletedView, deletedIds, confirmedIds, replyingToId, jumpHighlightId, menuForId,
+    dark, myUri, sub, senderEthOf, namedEntry, deletedIds, confirmedIds, replyingToId, jumpHighlightId, menuForId,
     reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,

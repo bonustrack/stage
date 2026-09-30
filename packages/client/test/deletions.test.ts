@@ -71,6 +71,12 @@ describe('isDeletedRowMessage', () => {
     expect(isDeletedRowMessage(last, [del, last])).toBe(true);
   });
 
+  test('a channel update is never shown as deleted', () => {
+    const update = row('g1', 'alice', 'xmtp.org/group_updated:1.0', {});
+    const del = row('d1', 'alice', 'xmtp.org/deleteMessage:1.0', { messageId: 'g1' });
+    expect(isDeletedRowMessage(update, [del, update])).toBe(false);
+  });
+
   test('ignores a delete request from someone else', () => {
     const del = row('d1', 'bob', 'xmtp.org/deleteMessage:1.0', { messageId: 'm1' });
     expect(isDeletedRowMessage(last, [del, last])).toBe(false);

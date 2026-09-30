@@ -108,12 +108,13 @@ async function applyDeletion(line: string, messageId: string): Promise<void> {
 
 function onMessageDeleted({ convId, messageId }: MessageDeletion): void {
   const line = lineOfConv(routeConvId(convId));
-  if (!feedCache.get(line)) return;
+  if (!feedCache.get(line)?.some(e => e.id === messageId)) return;
   void applyDeletion(line, messageId).catch(reported('xmtp.deletion'));
 }
 
 function onGlobalStreamClose(): void {
   cancelStream = null;
+  if (cancelDeletions) { cancelDeletions(); cancelDeletions = null; }
   lastCloseAt = Date.now();
   void resyncActiveFeeds();
   rearmGlobalStream();

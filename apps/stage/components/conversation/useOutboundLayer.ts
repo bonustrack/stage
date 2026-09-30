@@ -6,6 +6,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeleteRequest } from '@stage-labs/client/xmtp/deletions';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
+import { deletedViewCache } from './messageDeletion.model';
 import { isLeftOnlyUpdate } from './systemNames.model';
 import {
   optimisticRowPreview, outboundView, recordSent, settleOutbound, type OutboundState,
@@ -34,6 +35,7 @@ export function useOutboundLayer(
   convId: string | undefined,
   activeLine: string,
   isAtBottomRef: React.MutableRefObject<boolean>,
+  deletedIds: ReadonlySet<string>,
 ) {
   const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
   const [showJump, setShowJump] = useState(false);
@@ -51,9 +53,12 @@ export function useOutboundLayer(
 
   const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
+  const deletedView = useMemo(deletedViewCache, []);
   const liveBubbles = useMemo(
-    () => events.filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e)),
-    [events],
+    () => events
+      .filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e))
+      .map(e => (deletedIds.has(e.id) ? deletedView(e) : e)),
+    [events, deletedIds, deletedView],
   );
   const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
   const allBubbles = useMemo(

@@ -225,7 +225,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const {
     showJump, setShowJump, scrollToNewest, jumpHighlightId,
     listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
-  } = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef);
+  } = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
 
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;

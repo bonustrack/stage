@@ -50,7 +50,7 @@ interface Cursor { bytes: Uint8Array; at: number }
 function readVarint(c: Cursor): number {
   let value = 0;
   let scale = 1;
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 10; i += 1) {
     const byte = c.bytes[c.at];
     if (byte === undefined) throw new Error('deleteMessage: truncated varint');
     c.at += 1;

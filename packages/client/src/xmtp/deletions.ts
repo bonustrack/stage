@@ -1,8 +1,9 @@
 import type { HistoryEntry } from '../types';
 import { isSystemEntry } from './envelope';
+import { isGroupUpdateTypeId } from './humanize';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, isDeleteRequestType,
-  isDeletedPlaceholderType, type DeletedBy,
+  isDeletedPlaceholderType, shortTypeId, type DeletedBy,
 } from './deleteMessage';
 import type { StreamedMessage } from './summarizeRow';
 
@@ -58,6 +59,7 @@ export function isDeletedRowMessage(
   last: StreamedMessage, recent: readonly StreamedMessage[], ownDeletes: ReadonlySet<string> = NO_IDS,
 ): boolean {
   if (isDeletedPlaceholderType(last.contentTypeId) || ownDeletes.has(last.id)) return true;
+  if (isGroupUpdateTypeId(shortTypeId(last.contentTypeId))) return false;
   return recent.some(m => isDeleteRequestType(m.contentTypeId)
     && m.senderInboxId === last.senderInboxId
     && deleteTargetOfContent(m.content) === last.id);
