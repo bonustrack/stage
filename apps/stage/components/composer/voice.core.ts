@@ -25,7 +25,6 @@ export function makeVoiceRecorder(device: VoiceDevice, callbacks: VoiceCallbacks
 
   const finish = async (): Promise<void> => {
     phase = 'stopping';
-    callbacks.stopped();
     try {
       await device.stop();
       if (pending !== 'send' || disposed) return;
@@ -37,6 +36,7 @@ export function makeVoiceRecorder(device: VoiceDevice, callbacks: VoiceCallbacks
       phase = 'idle';
       pending = null;
       finishing = null;
+      callbacks.stopped();
     }
   };
 

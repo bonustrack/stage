@@ -38,17 +38,10 @@ export function useVoiceRecorder(args: VoiceArgs) {
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) throw new Error('Microphone permission denied. Allow microphone access, then try again.');
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-        try { await recorder.prepareToRecordAsync(); }
-        catch (error) {
-          await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-          throw error;
-        }
+        await recorder.prepareToRecordAsync();
       },
       record: () => { recorder.record(); },
-      stop: async () => {
-        try { await recorder.stop(); }
-        finally { await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }); }
-      },
+      stop: () => recorder.stop(),
       file: async () => {
         if (!recorder.uri) throw new Error('The voice recorder did not create an audio file.');
         return recordedVoiceFile(recorder.uri);

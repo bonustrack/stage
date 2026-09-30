@@ -6,7 +6,7 @@ function deferred() {
   return Promise.withResolvers<undefined>();
 }
 
-function harness(overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {}) {
+function harness(overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {}, callbacks: Partial<Parameters<typeof makeVoiceRecorder>[1]> = {}) {
   const events: string[] = [];
   const errors: unknown[] = [];
   const files: string[] = [];
@@ -22,6 +22,7 @@ function harness(overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {
     stopped: () => { events.push('stopped'); },
     error: error => { errors.push(error); },
     upload: async file => { files.push(file.mime); },
+    ...callbacks,
   });
   return { recorder, events, errors, files };
 }
@@ -47,7 +48,7 @@ describe('voice recorder lifecycle', () => {
     const h = harness();
     await h.recorder.start();
     await h.recorder.stop();
-    expect(h.events).toEqual(['begin', 'prepare', 'record', 'started', 'stopped', 'stop']);
+    expect(h.events).toEqual(['begin', 'prepare', 'record', 'started', 'stop', 'stopped']);
     expect(h.files).toEqual(['audio/webm']);
     expect(h.errors).toEqual([]);
   });
@@ -73,7 +74,7 @@ describe('voice recorder lifecycle', () => {
     expect(h.events).toEqual(['begin']);
     permission.resolve(undefined);
     await starting;
-    expect(h.events).toEqual(['begin', 'record', 'stopped', 'stop']);
+    expect(h.events).toEqual(['begin', 'record', 'stop', 'stopped']);
     expect(h.files).toEqual(['audio/webm']);
   });
 
@@ -105,6 +106,25 @@ describe('voice recorder lifecycle', () => {
     await h.recorder.start();
     expect(h.events.filter(event => event === 'begin')).toHaveLength(2);
     await h.recorder.cancel();
+  });
+
+  it('keeps the composer busy until validation and attachment finish', async () => {
+    const validating = deferred();
+    const attaching = deferred();
+    const h = harness({
+      file: async () => { await validating.promise; return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }; },
+    }, { upload: () => attaching.promise });
+    await h.recorder.start();
+    const stopping = h.recorder.stop();
+    await Promise.resolve(undefined);
+    expect(h.events).not.toContain('stopped');
+    validating.resolve(undefined);
+    await Promise.resolve(undefined);
+    await Promise.resolve(undefined);
+    expect(h.events).not.toContain('stopped');
+    attaching.resolve(undefined);
+    await stopping;
+    expect(h.events).toContain('stopped');
   });
 
   it('reports a silent file instead of adding it and allows another recording', async () => {
@@ -147,7 +167,7 @@ describe('voice recorder lifecycle', () => {
     await h.recorder.dispose();
     permission.resolve(undefined);
     await starting;
-    expect(h.events).toEqual(['begin', 'record', 'stopped', 'stop']);
+    expect(h.events).toEqual(['begin', 'record', 'stop', 'stopped']);
     expect(h.files).toEqual([]);
   });
 
@@ -166,7 +186,7 @@ describe('voice recorder lifecycle', () => {
   it('cleans up a prepared microphone if starting fails', async () => {
     const h = harness({ record: () => { throw new Error('Start failed'); } });
     await h.recorder.start();
-    expect(h.events).toEqual(['begin', 'prepare', 'stopped', 'stop']);
+    expect(h.events).toEqual(['begin', 'prepare', 'stop', 'stopped']);
     expect(h.errors).toHaveLength(1);
     expect(h.files).toEqual([]);
   });
