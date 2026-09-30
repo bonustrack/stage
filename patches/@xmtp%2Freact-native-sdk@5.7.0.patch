@@ -129,9 +129,12 @@ index 34e653bb6cd87e1f2660b1fc9acfb9c6edb81d99..83c787a7ddbeb12fbbd5b757c91724d2
      /**
       * Send a sync archive to the history sync server (e.g. for another device to process).
 diff --git a/ios/XMTPModule.swift b/ios/XMTPModule.swift
-index bd7013bd3b35eca42f73b128f7da03c5592b5215..b32cecfadfbe46f3a3401a91d33f528a0e79c117 100644
+index bd7013bd3b35eca42f73b128f7da03c5592b5215..ae72ed1603f07c5bad2d56371ee457b19b0c460e 100644
 --- a/ios/XMTPModule.swift
 +++ b/ios/XMTPModule.swift
+@@ -933 +933 @@ public class XMTPModule: Module {
+-			var groupList: [Group] = try await client.conversations.listGroups(
++			var groupList: [XMTP.Group] = try await client.conversations.listGroups(
 @@ -1767,13 +1767,13 @@ public class XMTPModule: Module {
  			try await client.conversations.sync()
  		}
