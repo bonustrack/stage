@@ -47,6 +47,29 @@ jobs:
       - name: Install native dependencies
         working-directory: apps/stage/ios
         run: pod install
+      - name: Verify SQLite header and encryption settings
+        working-directory: apps/stage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          guards = ['_SQLITE3_H_', '_FTS5_H', '_SQLITE3RTREE_H_']
+          support = Path('ios/Pods/Target Support Files')
+          app_configs = list((support / 'Pods-Stage').glob('*.xcconfig'))
+          cipher_configs = list((support / 'SQLCipher').glob('*.xcconfig'))
+          extension_configs = list((support / 'Pods-StageNotificationService').glob('*.xcconfig'))
+          assert app_configs and cipher_configs and extension_configs, 'Missing native configurations'
+          for config in app_configs:
+              contents = config.read_text()
+              assert all(guard not in contents for guard in guards), config
+              assert 'SQLCipher' in contents, config
+          for config in cipher_configs:
+              contents = config.read_text()
+              assert 'SQLITE_HAS_CODEC' in contents and 'SQLCIPHER_CRYPTO_CC' in contents, config
+          for config in extension_configs:
+              contents = config.read_text()
+              assert all(guard in contents for guard in guards), config
+          print('App header guards removed. SQLCipher codec and extension settings preserved.')
+          PY
       - name: Build unsigned simulator app
         working-directory: apps/stage
         run: |
