@@ -431,7 +431,8 @@
       "files": [
         "apps/stage/components/landing/**",
         "apps/stage/components/chrome/PageIntro.tsx",
-        "apps/stage/components/chrome/PageIntro.model.ts"
+        "apps/stage/components/chrome/PageIntro.model.ts",
+        "apps/stage/components/smallText.ts"
       ],
       "rules": {
         "core/no-restricted-syntax": "off"

@@ -11,6 +11,7 @@ import { X402Card } from './X402Card';
 import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { capabilities } from '../lib/capabilities';
+import { TEXT_11PX } from './smallText';
 
 function LinkPreviewBody({ meta, url, subColor, imageBg }: {
   meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string; imageBg: string;
@@ -28,7 +29,7 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
           {meta.favicon ? (
             <Image src={meta.favicon} alt={domain} radius="xs" style={{ width: 14, height: 14, marginRight: 6 }} />
           ) : null}
-          <Text size="3xs" color={subColor} numberOfLines={1}>{domain}</Text>
+          <Text color={subColor} numberOfLines={1} style={TEXT_11PX}>{domain}</Text>
         </Row>
         {meta.title ? (
           <Text weight="semibold" size="4xl" numberOfLines={2}>{meta.title}</Text>

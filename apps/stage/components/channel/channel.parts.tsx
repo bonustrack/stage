@@ -12,6 +12,7 @@ import { memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './c
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { DANGER, usePalette } from '../../lib/theme';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
+import { TEXT_11PX } from '../smallText';
 
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
@@ -28,9 +29,9 @@ function MemberBadge({ badge, border, sub, dark }: {
     >
       <Text
         value={badge.label}
-        size="3xs"
         weight="medium"
         color={owner ? MEMBER_OWNER_FG[scheme] : sub}
+        style={TEXT_11PX}
       />
     </Box>
   );

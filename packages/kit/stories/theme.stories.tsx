@@ -8,6 +8,7 @@ import { Badge } from '../src/react-native/badge';
 import { Card } from '../src/react-native/card';
 import { Col, Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
+import { SMALL_FONT_SIZE } from '../src/text.styles';
 import { color, range, select, useDark } from './_controls';
 
 export default { title: 'Theme' };
@@ -42,7 +43,7 @@ export const Controls: Story<ThemeArgs> = (args) => {
           {(Object.keys(palette) as (keyof typeof palette)[]).map((name) => (
             <Col key={name} align="center" gap={4}>
               <Col size={40} radius="md" background={palette[name]} border={{ top: { width: 1, color: palette.border }, right: { width: 1, color: palette.border }, bottom: { width: 1, color: palette.border }, left: { width: 1, color: palette.border } }} />
-              <Text size="3xs" color={palette.sub}>{name}</Text>
+              <Text color={palette.sub} style={{ fontSize: SMALL_FONT_SIZE['3xs'] }}>{name}</Text>
             </Col>
           ))}
         </Row>

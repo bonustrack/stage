@@ -1,6 +1,5 @@
 
 import { Box, Col } from '../../components/layout';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation/tabs';
@@ -18,6 +17,7 @@ import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
+import { TEXT_11PX } from '../../components/smallText';
 import { useAccountGate } from '../../lib/accountGate';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
@@ -118,7 +118,7 @@ export default function TabsLayout(): React.ReactElement {
                     tabBarBadgeStyle: {
                       backgroundColor: pal.link,
                       color: pal.bg,
-                      fontSize: fontSize('3xs'),
+                      ...TEXT_11PX,
                       fontFamily: 'Calibre-Semibold',
                       minWidth: 18,
                       height: 18,

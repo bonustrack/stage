@@ -20,6 +20,7 @@ import { bubbleTimestamp } from '../../lib/format';
 import {
   BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, markdownRules, type MarkdownProps,
 } from './content.parts';
+import { TEXT_11PX } from '../smallText';
 
 function descriptorsOf(entry: HistoryEntry): {
   atts: ReturnType<typeof attachmentsOf>; question: ReturnType<typeof questionOf>;
@@ -102,7 +103,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text size="3xs" role="secondary">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
+        <Text role="secondary" style={TEXT_11PX}>{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />

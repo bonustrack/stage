@@ -4,6 +4,7 @@ import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { reactorsLabel } from '../conversation/reactors.model';
 import { ReactionTooltip } from './ReactionTooltip';
+import { TEXT_11PX } from '../smallText';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
@@ -78,7 +79,7 @@ export function ReactionsRow({
           opacity: 0.45,
         }}>
           <Text size="xs">{emoji}</Text>
-          <Text size="3xs" role="secondary">1</Text>
+          <Text role="secondary" style={TEXT_11PX}>1</Text>
         </Row>
       ))}
     </Row>

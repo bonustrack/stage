@@ -27,6 +27,7 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
+import { TEXT_11PX } from '../smallText';
 
 const kindIcon = (kind: string): CentralIcon => (
   kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
@@ -115,7 +116,7 @@ const TRAY_TILE = 72;
 
 function TileName({ name, fg }: { name: string; fg: string }): React.ReactElement {
   return (
-    <Text size="3xs" color={fg} style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
+    <Text color={fg} style={[TEXT_11PX, { width: TRAY_TILE, textAlign: 'center' }]} numberOfLines={1}>
       {name}
     </Text>
   );

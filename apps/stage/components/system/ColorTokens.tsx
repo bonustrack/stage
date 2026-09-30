@@ -20,6 +20,7 @@ import type { AccentLevel, GrayscaleShade, GrayscaleTint } from '@stage-labs/kit
 import {
   fontSize, type Density, type RadiusName, type BaseSize,
 } from '@stage-labs/kit/tokens';
+import { TEXT_11PX } from '../smallText';
 
 const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['surface-background', 'background'],
@@ -176,7 +177,7 @@ export function ColorTokens(): React.ReactElement {
           ] as readonly (readonly [string, string])[]).map(([k, c]) => (
             <Col key={k} align="center" gap={2}>
               <Box width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }}/>
-              <Text size="3xs" color={p.sub}>{k}</Text>
+              <Text color={p.sub} style={TEXT_11PX}>{k}</Text>
             </Col>
           ))}
         </Row>

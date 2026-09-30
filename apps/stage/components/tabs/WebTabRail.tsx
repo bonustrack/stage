@@ -14,6 +14,7 @@ import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
+import { TEXT_11PX } from '../smallText';
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
@@ -40,7 +41,7 @@ function TabIcon({ name, icon, active, unreadBadge }: {
           align="center" justify="center"
           style={{ position: 'absolute', top: -6, right: -14 }}
 >
-          <Text size="3xs" weight="semibold" color={pal.bg}>{unreadBadge}</Text>
+          <Text weight="semibold" color={pal.bg} style={TEXT_11PX}>{unreadBadge}</Text>
         </Box>
       ) : null}
     </Box>

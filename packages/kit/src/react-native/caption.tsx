@@ -2,14 +2,14 @@
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
 import { FONT_SIZE, resolveColorToken, type ColorToken } from '../tokens';
-import { TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
+import { SMALL_FONT_SIZE, TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 export type CaptionSize = 'sm' | 'md';
 export type CaptionWeight = 'normal' | 'medium' | 'semibold';
 export type CaptionAlign = 'start' | 'center' | 'end';
 
-const SIZE: Record<CaptionSize, number> = { sm: FONT_SIZE['2xs'], md: FONT_SIZE.xs };
+const SIZE: Record<CaptionSize, number> = { sm: SMALL_FONT_SIZE['2xs'], md: FONT_SIZE.xs };
 
 export interface CaptionProps {
   value?: string;

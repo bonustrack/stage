@@ -126,6 +126,8 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 ## Breaking changes
 
 - 0.3.0: `Button` sizes are now `xs`, `sm`, `md`, `lg` and `xl`. The `3xs`, `2xs`, `2xl` and `3xl` sizes were removed. Use `xs` instead of `3xs` and `2xs`, and `xl` instead of `2xl` and `3xl`.
+- 0.3.0: `Input`, `Textarea`, `Select` and `DatePicker` sizes are now `xs`, `sm`, `md`, `lg` and `xl`. The `3xs`, `2xs`, `2xl` and `3xl` sizes were removed. Use `xs` instead of `3xs` and `2xs`, and `xl` instead of `2xl` and `3xl`.
+- 0.3.0: `Text` sizes (`TextSizeToken`, `FontSizeName`, `FONT_SIZE` and `fontSize()`) no longer have `3xs` (11px) or `2xs` (12px). The smallest size is `xs` (13px). To keep 11px or 12px text, pass the size in `style`, for example `style={{ fontSize: 11 }}`. `FONT_SIZE_SNAP` now maps 10, 11 and 12 to `xs`. `Badge`, `Caption`, `Label`, `Card` and `DatePicker` keep their 11px and 12px text.
 
 ## Links
 

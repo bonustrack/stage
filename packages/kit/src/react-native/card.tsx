@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Button } from './button';
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
+import { SMALL_FONT_SIZE } from '../text.styles';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -33,7 +34,7 @@ export interface CardProps {
 
 const PADDING: Record<CardSize, number> = { sm: 10, md: 14, lg: 18 };
 const STATUS_SIZE: Record<CardSize, number> = {
-  sm: FONT_SIZE['2xs'],
+  sm: SMALL_FONT_SIZE['2xs'],
   md: FONT_SIZE.xs,
   lg: FONT_SIZE.sm,
 };

@@ -19,6 +19,7 @@ import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
+import { TEXT_11PX } from './smallText';
 
 interface ChannelRowProps {
   title: string;
@@ -64,7 +65,7 @@ function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
   return (
     <Row align="center" height={PREVIEW_LINE_HEIGHT}>
       <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
+        <Text weight="semibold" color={bg} style={TEXT_11PX}>{unreadBadgeLabel(shown)}</Text>
       </Row>
     </Row>
   );

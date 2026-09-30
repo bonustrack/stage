@@ -6,6 +6,7 @@ import { Glyph, type CentralIcon, type IconStyle } from '../src/react-native/gly
 import { Col, Row } from '../src/react-native/box';
 import { Input } from '../src/react-native/input';
 import { Text } from '../src/react-native/text';
+import { SMALL_FONT_SIZE } from '../src/text.styles';
 import { color, range, select, useDark } from './_controls';
 
 export default { title: 'Icon' };
@@ -17,6 +18,7 @@ const STYLES = ['line', 'solid'] as const;
 const NAMES = Object.keys(ICONS) as CentralName[];
 const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
 const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
+const CELL_TEXT = { fontSize: SMALL_FONT_SIZE['3xs'] };
 const BRAND_NAMES = ['brandX', 'brandGithub', 'pin', 'brandApple', 'brandAndroid', 'brandWindows', 'brandLinux'] as const;
 
 function aliasesByName(): Map<CentralName, string[]> {
@@ -48,8 +50,8 @@ function IconCell({ icon, label, detail, dark }: { icon: CentralIcon; label: str
   return (
     <Col width={136} align="center" gap={4} padding={{ y: 8 }}>
       <Glyph icon={icon} size={24} dark={dark} />
-      <Text size="3xs" role="secondary" truncate>{label}</Text>
-      {detail === undefined ? null : <Text size="3xs" role="muted" truncate>{detail}</Text>}
+      <Text role="secondary" truncate style={CELL_TEXT}>{label}</Text>
+      {detail === undefined ? null : <Text role="muted" truncate style={CELL_TEXT}>{detail}</Text>}
     </Col>
   );
 }
@@ -92,8 +94,8 @@ export const Aliases: Story<{ style: IconStyle }> = ({ style }) => {
       {ALIAS_NAMES.map((alias) => (
         <Col key={alias} width={136} align="center" gap={4} padding={{ y: 8 }}>
           <Icon name={alias} variant={style} size={24} dark={dark} />
-          <Text size="3xs" role="secondary" truncate>{alias}</Text>
-          <Text size="3xs" role="muted" truncate>{NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line) ?? ''}</Text>
+          <Text role="secondary" truncate style={CELL_TEXT}>{alias}</Text>
+          <Text role="muted" truncate style={CELL_TEXT}>{NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line) ?? ''}</Text>
         </Col>
       ))}
     </Row>

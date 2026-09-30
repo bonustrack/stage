@@ -28,6 +28,7 @@ import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radiu
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
+import { TEXT_11PX } from './smallText';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
@@ -137,7 +138,7 @@ export function X402Card({ challenge, dark }: {
 
   const badge = (
     <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
-      <Text weight="semibold" size="3xs" color={pal.primary}>x402</Text>
+      <Text weight="semibold" color={pal.primary} style={TEXT_11PX}>x402</Text>
     </Box>
   );
 

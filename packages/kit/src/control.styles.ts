@@ -29,7 +29,7 @@ export function triggerLabelStyle(color: string, fontSize: number): TextStyle {
   return { flex: 1, color, fontSize, fontFamily: fontName.sans };
 }
 
-export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+export type ControlSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type ControlVariant = 'soft' | 'outline';
 
 export interface ControlSizeSpec {
@@ -40,15 +40,11 @@ export interface ControlSizeSpec {
 }
 
 export const CONTROL_SIZES: Record<ControlSize, ControlSizeSpec> = {
-  '3xs': { minHeight: 24, paddingHorizontal: 8, paddingVertical: 3, fontSize: FONT_SIZE['2xs'] },
-  '2xs': { minHeight: 28, paddingHorizontal: 9, paddingVertical: 4, fontSize: FONT_SIZE.xs },
   xs: { minHeight: 32, paddingHorizontal: 10, paddingVertical: 5, fontSize: FONT_SIZE.sm },
   sm: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, fontSize: FONT_SIZE.sm },
   md: { minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: FONT_SIZE.md },
   lg: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, fontSize: FONT_SIZE.lg },
   xl: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 12, fontSize: FONT_SIZE.xl },
-  '2xl': { minHeight: 64, paddingHorizontal: 18, paddingVertical: 14, fontSize: FONT_SIZE['2xl'] },
-  '3xl': { minHeight: 72, paddingHorizontal: 20, paddingVertical: 16, fontSize: FONT_SIZE['4xl'] },
 };
 
 export interface ControlColors {

@@ -6,6 +6,7 @@ import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta } from '../lib/useGithubMeta';
 import { DANGER, SUCCESS, usePalette } from '../lib/theme';
 import { OutlinedLinkCard } from './LinkPreviewCard';
+import { TEXT_11PX } from './smallText';
 
 const DOT: Record<string, string> = {
   open: SUCCESS, merged: '#a371f7', closed: DANGER,
@@ -20,10 +21,10 @@ function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | n
   return (
     <>
       {meta.additions != null ? (
-        <Text weight="semibold" size="3xs" color={SUCCESS} style={{ marginLeft: 8 }}>+{fmt(meta.additions)}</Text>
+        <Text weight="semibold" color={SUCCESS} style={[TEXT_11PX, { marginLeft: 8 }]}>+{fmt(meta.additions)}</Text>
       ) : null}
       {meta.deletions != null ? (
-        <Text weight="semibold" size="3xs" color={DANGER} style={{ marginLeft: 6 }}>−{fmt(meta.deletions)}</Text>
+        <Text weight="semibold" color={DANGER} style={[TEXT_11PX, { marginLeft: 6 }]}>−{fmt(meta.deletions)}</Text>
       ) : null}
     </>
   );
@@ -37,13 +38,13 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
         <Box width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
       ) : null}
       {meta.state ? (
-        <Text size="3xs" color={subColor} style={{ textTransform: 'capitalize' }}>{meta.state}</Text>
+        <Text color={subColor} style={[TEXT_11PX, { textTransform: 'capitalize' }]}>{meta.state}</Text>
       ) : null}
       {meta.kind === 'repo' && meta.stars != null ? (
-        <Text size="3xs" color={subColor}>★ {meta.stars}</Text>
+        <Text color={subColor} style={TEXT_11PX}>★ {meta.stars}</Text>
       ) : null}
       {meta.author ? (
-        <Text size="3xs" color={subColor} style={{ marginLeft: meta.state ? 8 : 0 }}>{meta.author}</Text>
+        <Text color={subColor} style={[TEXT_11PX, { marginLeft: meta.state ? 8 : 0 }]}>{meta.author}</Text>
       ) : null}
       <GithubDiffStats meta={meta} />
     </Row>
@@ -63,7 +64,7 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
     <OutlinedLinkCard url={url} padding={{ x: 12, y: 10 }}>
       <Row margin={{ bottom: 4 }} align="center" justify="start">
         <GithubLogo size={16} color={pal.link}/>
-        <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>
+        <Text color={subColor} style={[TEXT_11PX, { marginLeft: 6 }]}>
           {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
         </Text>
       </Row>

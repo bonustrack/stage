@@ -16,6 +16,7 @@ import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine } from '../../modules/messaging';
 import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
+import { TEXT_12PX } from '../smallText';
 
 const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
 
@@ -78,7 +79,7 @@ function ComposerHeader(p: {
         <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} />
       ) : null}
       {p.uploading || p.err ? (
-        <Text size="2xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
+        <Text color={p.err ? DANGER : p.sub} style={[TEXT_12PX, { paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }]}>
           {p.err ?? 'Uploading…'}
         </Text>
       ) : null}

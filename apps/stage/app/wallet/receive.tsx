@@ -14,6 +14,7 @@ import { AppIcon } from '../../components/widgets';
 import { getActiveAccount } from '../../lib/accounts';
 import { usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { TEXT_12PX } from '../../components/smallText';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
 const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
@@ -30,7 +31,7 @@ function AddressCard({ label, address, hint, onCopy }: {
   const dark = useKitScheme() === 'dark';
   return (
     <Col gap={8}>
-      <Eyebrow value={label.toUpperCase()} color="secondary" size="2xs"/>
+      <Eyebrow value={label.toUpperCase()} color="secondary" style={TEXT_12PX}/>
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Col flex={1}>
           <Text value={address || '-'} size="md" truncate />
