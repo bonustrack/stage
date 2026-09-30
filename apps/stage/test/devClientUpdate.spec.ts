@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  compatibleMainUrl, freshUrl, loadedCommit, mainUpdateMessage, parsePreviewManifest, previewFromStatus,
+  compatibleMainUrl, freshUrl, isDevClientLauncher, loadedCommit, mainUpdateMessage, parsePreviewManifest, previewFromStatus,
 } from '../components/settings/DevClientUpdate.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from '../lib/devClientUpdates.core';
 
@@ -36,13 +36,26 @@ function fixture(newRuntime = 'new-runtime', compatible = manifest()): { request
 }
 
 describe('main dev-client manifests', () => {
+  test('release launcher stubs are not dev-client capabilities', () => {
+    const loadApp = (): Promise<void> => Promise.resolve();
+    expect(isDevClientLauncher(undefined, { loadApp })).toBe(false);
+    expect(isDevClientLauncher(null, { loadApp })).toBe(false);
+    expect(isDevClientLauncher({}, undefined)).toBe(false);
+    expect(isDevClientLauncher({}, { loadApp })).toBe(true);
+  });
+
+  test('no-publication responses explain the APK limit', () => {
+    expect(() => parsePreviewManifest('', '')).toThrow('No compatible main update');
+    expect(() => parsePreviewManifest(' \r\n', '')).toThrow('dev-client APK built from current main');
+  });
+
   test('reads only the manifest part, including quoted boundaries', () => {
     const body = `--abc\r\nContent-Disposition: form-data; name="manifest"\r\nContent-Type: application/json\r\n\r\n${manifest()}\r\n--abc\r\nContent-Disposition: form-data; name="extensions"\r\n\r\n{"not":"an update"}\r\n--abc--\r\n`;
     expect(parsePreviewManifest(body, 'multipart/mixed; boundary="abc"')).toEqual({ id: OLD_ID, runtime: 'old-runtime', gitHash: OLD_SHA });
   });
 
   test('rejects missing manifest, boundary and identity', () => {
-    expect(() => parsePreviewManifest('', 'multipart/mixed')).toThrow('boundary');
+    expect(() => parsePreviewManifest('--abc', 'multipart/mixed')).toThrow('boundary');
     expect(() => parsePreviewManifest('--abc--', 'multipart/mixed; boundary=abc')).toThrow('No compatible');
     expect(() => parsePreviewManifest('{}', 'application/json')).toThrow('verified commit');
     expect(loadedCommit({ extra: { gitHash: NEW_SHA } })).toBeNull();

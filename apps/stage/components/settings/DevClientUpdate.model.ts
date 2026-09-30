@@ -18,6 +18,10 @@ function record(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
 }
 
+export function isDevClientLauncher(debugMarker: unknown, launcher: unknown): boolean {
+  return Boolean(debugMarker) && typeof record(launcher).loadApp === 'function';
+}
+
 export function loadedCommit(manifest: unknown): string | null {
   const extra = record(record(record(manifest).extra).expoClient).extra;
   const gitHash = record(extra).gitHash;
@@ -34,6 +38,7 @@ function manifestIdentity(value: unknown): PreviewManifest {
 }
 
 export function parsePreviewManifest(body: string, contentType: string): PreviewManifest {
+  if (!body.trim()) throw new Error('No compatible main update is published for this APK. Install a dev-client APK built from current main.');
   if (contentType.toLowerCase().startsWith('multipart/mixed')) {
     const boundary = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(contentType);
     const separator = boundary?.[1] ?? boundary?.[2];

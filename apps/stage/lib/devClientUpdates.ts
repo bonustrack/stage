@@ -1,11 +1,12 @@
 import { requireOptionalNativeModule } from 'expo';
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 import * as Updates from 'expo-updates';
-import { freshUrl, loadedCommit, type MainUpdate } from '../components/settings/DevClientUpdate.model';
+import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from '../components/settings/DevClientUpdate.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from './devClientUpdates.core';
 
 interface DevLauncher { loadApp(url: string): Promise<void> }
-const launcher = requireOptionalNativeModule<DevLauncher>('ExpoDevLauncher');
+const installedLauncher = requireOptionalNativeModule<DevLauncher>('ExpoDevLauncher');
+const launcher = isDevClientLauncher(NativeModules.EXDevLauncher, installedLauncher) ? installedLauncher : null;
 
 export function devClientInfo(): { runtime: string | null; updateId: string | null; gitHash: string | null } | null {
   return launcher ? { runtime: Updates.runtimeVersion, updateId: Updates.updateId, gitHash: loadedCommit(Updates.manifest) } : null;
