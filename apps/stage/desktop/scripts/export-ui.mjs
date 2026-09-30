@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const stageDir = path.resolve(here, '..', '..');
 const outDir = path.resolve(here, '..', 'web');
-const env = { ...process.env, APP_VARIANT: 'prod', EXPO_PUBLIC_ZERODEV_RP_ID: 'stage.box', EXPO_NO_TELEMETRY: '1' };
+const env = { ...process.env, APP_VARIANT: 'prod', EXPO_NO_TELEMETRY: '1' };
 
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: stageDir, env, stdio: 'inherit', shell: process.platform === 'win32' });
