@@ -1,12 +1,14 @@
 
 import { capabilities } from '../../lib/capabilities';
+import { Card } from '@stage-labs/kit/react-native/card';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Spinner } from '../Spinner';
 import { AudioCard } from './AudioCard';
 import { MessengerImageAttachment } from './ImageAttachment';
-import { Col } from '../layout';
+import { Box, Col, Row } from '../layout';
 import { MediaCard } from '../MediaCard';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
@@ -36,27 +38,42 @@ export function AttachmentView({ att, fullUrl, fg, galleryKey }: {
   return <AttachmentFile label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
 }
 
-function AttachmentFile({ label, subtitle, fg, onPress }: {
-  label: string; subtitle?: string; fg: string; onPress: () => void;
+function AttachmentFile({ label, subtitle, fg, onPress, pending = false }: {
+  label: string; subtitle?: string; fg: string; onPress?: () => void; pending?: boolean;
 }): React.ReactElement {
+  const scheme = useKitScheme();
+  const { bg } = usePalette();
   return (
-    <MediaCard onPress={onPress}>
+    <Card dark={scheme === 'dark'} background={bg} padding={12} onPress={onPress} style={{ width: '100%' }}>
+      <Row testID="file-card" align="center" gap={12}>
+        <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
+          {pending ? <Spinner size={20} color={fg}/> : <Glyph icon={IconFileBend} size={24} color={fg}/>}
+        </Box>
+        <Col flex={1} minWidth={0} gap={2}>
+          <Text weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
+          {subtitle ? <Text size="sm" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
+        </Col>
+      </Row>
+    </Card>
+  );
+}
+
+function AttachmentRetry({ label, fg, onRetry, compact }: {
+  label: string; fg: string; onRetry: () => void; compact: boolean;
+}): React.ReactElement {
+  if (compact) return <AttachmentFile label={label} subtitle="Tap to retry" fg={fg} onPress={onRetry} />;
+  return (
+    <MediaCard onPress={onRetry}>
       <Col flex={1} padding={12} align="center" justify="center" gap={8}>
         <Glyph icon={IconFileBend} size={32} color={fg}/>
-        <Text weight="semibold" color={fg} numberOfLines={2} textAlign="center">{label}</Text>
-        {subtitle ? <Text size="sm" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
+        <Text weight="semibold" color={fg} numberOfLines={2} textAlign="center">{`${label}. Tap to retry`}</Text>
       </Col>
     </MediaCard>
   );
 }
 
-function AttachmentRetry({ label, fg, onRetry }: {
-  label: string; fg: string; onRetry: () => void;
-}): React.ReactElement {
-  return <AttachmentFile label={`${label}. Tap to retry`} fg={fg} onPress={onRetry} />;
-}
-
-function AttachmentPending({ label, fg }: { label: string; fg: string }): React.ReactElement {
+function AttachmentPending({ label, fg, compact }: { label: string; fg: string; compact: boolean }): React.ReactElement {
+  if (compact) return <AttachmentFile label={label} fg={fg} pending />;
   return (
     <MediaCard>
       <Col flex={1} padding={12} align="center" justify="center" gap={8}>
@@ -77,10 +94,11 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: 
   const remote = useRemoteAttachment(att.remote);
   const uri = local ?? remote.uri;
   const label = att.name ?? 'attachment';
+  const compact = resolvedAttachmentKind(att) === 'file';
 
   if (remote.isError && !local) {
-    return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} />;
+    return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} compact={compact} />;
   }
-  if (!uri) return <AttachmentPending label={label} fg={fg} />;
+  if (!uri) return <AttachmentPending label={label} fg={fg} compact={compact} />;
   return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
 }

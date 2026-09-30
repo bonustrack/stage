@@ -11,6 +11,6 @@ export function validSize(size: { width?: number; height?: number } | undefined)
 }
 
 export function attachmentCellWidths(kinds: readonly string[]): ('50%' | '100%')[] {
-  const squares = kinds.filter(kind => kind !== 'audio').length;
-  return kinds.map(kind => (kind === 'audio' || squares < 2 ? '100%' : '50%'));
+  const squares = kinds.filter(kind => kind !== 'audio' && kind !== 'file').length;
+  return kinds.map(kind => (kind === 'audio' || kind === 'file' || squares < 2 ? '100%' : '50%'));
 }

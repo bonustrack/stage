@@ -9,13 +9,20 @@ describe('attachment squares', () => {
 
   test('several attachments share a grid of equal half-width squares', () => {
     expect(attachmentCellWidths(['image', 'image', 'image'])).toEqual(['50%', '50%', '50%']);
-    expect(attachmentCellWidths(['image', 'video', 'file'])).toEqual(['50%', '50%', '50%']);
+    expect(attachmentCellWidths(['image', 'video', 'file'])).toEqual(['50%', '50%', '100%']);
   });
 
   test('audio keeps a full-width row and never counts as a square', () => {
     expect(attachmentCellWidths(['audio', 'image'])).toEqual(['100%', '100%']);
     expect(attachmentCellWidths(['image', 'audio', 'image'])).toEqual(['50%', '100%', '50%']);
     expect(attachmentCellWidths([])).toEqual([]);
+  });
+
+  test('files keep full-width rows and never count as squares', () => {
+    expect(attachmentCellWidths(['file', 'file'])).toEqual(['100%', '100%']);
+    expect(attachmentCellWidths(['file', 'image'])).toEqual(['100%', '100%']);
+    expect(attachmentCellWidths(['audio', 'file', 'video'])).toEqual(['100%', '100%', '100%']);
+    expect(attachmentCellWidths(['image', 'file', 'image'])).toEqual(['50%', '100%', '50%']);
   });
 
   test('accepts only a positive measured size', () => {
