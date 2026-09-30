@@ -30,6 +30,10 @@ import {
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
 } from '@stage-labs/client/xmtp/readState';
+import {
+  CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callInviteSchema, callInviteText, callSignalSchema,
+  type CallInvite, type CallSignal,
+} from '@stage-labs/client/xmtp/call';
 
 export type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
 
@@ -37,7 +41,7 @@ type JsonSchema<T> = Parameters<typeof decodeJsonContent<T>>[1];
 
 function jsonCodec<T>(
   contentType: ContentTypeId,
-  fallbackText: (content: T) => string,
+  fallbackText: (content: T) => string | undefined,
   schema?: JsonSchema<T>,
   boundary?: string,
 ): JsonCodec<T> {
@@ -97,5 +101,12 @@ export const BOARD_STATE_CODEC: JsonCodec<BoardStateContent> = {
 
 export const SEARCH_STATE_CODEC: JsonCodec<SearchStateContent> = {
   ...jsonCodec<SearchStateContent>(SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema),
+  shouldPush: (): boolean => false,
+};
+
+export const CALL_INVITE_CODEC = jsonCodec<CallInvite>(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');
+
+export const CALL_SIGNAL_CODEC: JsonCodec<CallSignal> = {
+  ...jsonCodec<CallSignal>(CALL_SIGNAL_CONTENT_TYPE, () => undefined, callSignalSchema, 'xmtp.callSignal'),
   shouldPush: (): boolean => false,
 };

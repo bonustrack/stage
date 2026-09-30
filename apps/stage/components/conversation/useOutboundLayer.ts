@@ -6,6 +6,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeleteRequest, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
+import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { deletedViewCache } from './messageDeletion.model';
 import { isLeftOnlyUpdate } from './systemNames.model';
 import {
@@ -56,7 +57,7 @@ export function useOutboundLayer(
   const deletedView = useMemo(deletedViewCache, []);
   const liveBubbles = useMemo(
     () => events
-      .filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e))
+      .filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e) && !isCallSignalEntry(e))
       .map((e) => {
         const by = deletedIds.get(e.id);
         return by ? deletedView(e, by) : e;

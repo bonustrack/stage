@@ -235,7 +235,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     text: (conv, text) => conv.sendText(text),
     reaction: (conv, reaction) => conv.sendReaction(toWasmReaction(reaction)),
     reply: async (conv, replyTo, text) => conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeText(text)) }),
-    json: (conv, codec, content) => conv.send(asEncoded(codec.encode(content))),
+    json: (conv, codec, content) => conv.send(asEncoded(codec.encode(content)), { shouldPush: codec.shouldPush() }),
     attachment: (conv, filename, mimeType, dataB64) =>
       conv.sendAttachment({ filename, mimeType, content: base64ToBytes(dataB64) }),
   },

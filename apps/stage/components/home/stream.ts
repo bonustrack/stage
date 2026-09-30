@@ -9,6 +9,7 @@ import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { recover } from '../../lib/errorPolicy';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
@@ -64,15 +65,18 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   };
 }
 
+function rowPreviewOf(msg: StreamedMessage): string {
+  try { return previewOfXmtpContent(msg.content, msg.contentTypeId); }
+  catch { return `[${msg.contentTypeId ?? 'unknown'}]`; }
+}
+
 export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
-    if (isCancelled() || !msg) return;
+    if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId)) return;
     if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
     const decoded = msg.content;
-    let preview = '';
-    try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
-    catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
+    const preview = rowPreviewOf(msg);
     if (typeof decoded === 'string' && isControlBody(decoded)) return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);

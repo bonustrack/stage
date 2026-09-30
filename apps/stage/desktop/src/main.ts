@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app, BrowserWindow, session, systemPreferences } from 'electron';
+import { app, BrowserWindow, desktopCapturer, session, systemPreferences } from 'electron';
 import { DEEP_LINK_SCHEME, deepLinkIn, desktopRouteUrl, sameSite, siteBaseFor } from './links';
 import { installMenu } from './menu';
 import { registerAppScheme, serveWebApp } from './serve';
@@ -7,7 +7,7 @@ import { startUpdates } from './updates';
 import { createWindow, frontWindow } from './window';
 
 const ALLOWED_PERMISSIONS = new Set([
-  'notifications', 'media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
+  'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
 ]);
 
 const remoteUi = process.env.STAGE_DESKTOP_URL;
@@ -45,6 +45,15 @@ function restrictPermissions(): void {
     allowed(permission, origin !== '' ? origin : details.embeddingOrigin ?? ''));
 }
 
+function allowScreenShare(): void {
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    if (!request.userGesture || !sameSite(request.securityOrigin, site)) { callback({}); return; }
+    desktopCapturer.getSources({ types: ['screen'] })
+      .then((sources) => { callback(sources[0] ? { video: sources[0] } : {}); })
+      .catch(() => { callback({}); });
+  }, { useSystemPicker: true });
+}
+
 function webRoot(): string {
   return app.isPackaged ? path.join(process.resourcesPath, 'web') : path.join(app.getAppPath(), 'web');
 }
@@ -71,6 +80,7 @@ function start(): void {
   void app.whenReady().then(() => {
     if (remoteUi === undefined || remoteUi === '') serveWebApp(webRoot());
     restrictPermissions();
+    allowScreenShare();
     installMenu();
     createWindow(site, pendingLink === null ? site : desktopRouteUrl(site, pendingLink));
     pendingLink = null;
