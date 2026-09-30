@@ -55,6 +55,7 @@ jobs:
             -configuration Debug -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/stage-ios" \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             2>&1 | tee "$RUNNER_TEMP/ios-build.log"
       - name: Archive simulator app
