@@ -23,7 +23,7 @@ const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image
 export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
   const inboxIds = Object.keys(inboxToAddr);
   const { data = NO_ROLES } = useQuery({
-    queryKey: ['groupRoles', convId ?? '', inboxIds.sort().join(',')],
+    queryKey: messagingKeys.groupRoles(convId, inboxIds),
     queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
     enabled: !!convId && inboxIds.length > 0,
   });

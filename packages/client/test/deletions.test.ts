@@ -103,10 +103,12 @@ describe('deletedRowBy', () => {
     expect(deletedRowBy(last, [deleteBy('mod'), last], { superAdmins: SUPER_ADMINS })).toBeNull();
   });
 
-  test('a channel update is never shown as deleted', () => {
+  test('a channel update or a leave request is never shown as deleted', () => {
     const update = row('g1', 'alice', 'xmtp.org/group_updated:1.0', {});
     expect(deletedRowBy(update, [deleteBy('alice', 'g1'), update])).toBeNull();
     expect(deletedRowBy(update, [deleteBy('owner', 'g1'), update], { superAdmins: SUPER_ADMINS })).toBeNull();
+    const leave = row('g1', 'alice', 'xmtp.org/leave_request:1.0', {});
+    expect(deletedRowBy(leave, [deleteBy('owner', 'g1'), leave], { superAdmins: SUPER_ADMINS })).toBeNull();
   });
 
   test('ignores a delete request from someone else', () => {

@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '../types';
 import { isSystemEntry } from './envelope';
-import { isGroupUpdateTypeId } from './humanize';
+import { LEAVE_REQUEST_TYPE_ID, isGroupUpdateTypeId } from './humanize';
 import { XMTP_USER_PREFIX } from './line';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent, isDeleteRequestType,
@@ -98,7 +98,8 @@ export function deletedRowBy(
 ): DeletedBy | null {
   if (isDeletedPlaceholderType(last.contentTypeId)) return deletedByOfContent(last.content);
   if (rights.ownDeletes?.has(last.id)) return ownDeleteBy(last.senderInboxId, rights.selfInboxId);
-  if (isGroupUpdateTypeId(shortTypeId(last.contentTypeId))) return null;
+  const typeId = shortTypeId(last.contentTypeId);
+  if (isGroupUpdateTypeId(typeId) || typeId === LEAVE_REQUEST_TYPE_ID) return null;
   const found = recent
     .filter(m => isDeleteRequestType(m.contentTypeId) && deleteTargetOfContent(m.content) === last.id)
     .map(m => deleteAuthority(m.senderInboxId === last.senderInboxId, m.senderInboxId, rights.superAdmins ?? NO_IDS));
