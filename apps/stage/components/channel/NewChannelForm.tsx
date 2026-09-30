@@ -9,7 +9,7 @@ import { usePalette } from '../../lib/theme';
 import { SquareImagePicker } from '../SquareImagePicker';
 import { Box, Row } from '../layout';
 import { FORM_FIELD_RADIUS, FormField, useFieldColors } from '../FormField';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 
 export interface PickedImage { uri: string; mime: string; name: string }

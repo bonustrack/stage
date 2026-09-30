@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, PAGE_GUTTER } from './layout';
-import { Spinner } from './Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { getPeerName } from '../lib/peerProfiles';

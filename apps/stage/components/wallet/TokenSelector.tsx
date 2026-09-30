@@ -10,7 +10,7 @@ import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../layout';
 import { Eyebrow } from '../Eyebrow';
 import { AppModal } from '../AppModal';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';

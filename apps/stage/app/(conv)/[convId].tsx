@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { Animated as RNAnimated, Platform } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Box, Col, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';

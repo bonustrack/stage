@@ -5,7 +5,7 @@ import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
 import { Col, WebContentFrame, viewportFill } from '../components/layout';
-import { Spinner } from '../components/Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

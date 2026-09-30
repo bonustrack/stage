@@ -8,7 +8,7 @@ import { fontName } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { QrScanner } from '../accounts/QrScanner';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

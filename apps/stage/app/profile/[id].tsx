@@ -3,7 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../../components/layout';
 import { ProfileScreen } from '../../components/ProfileScreen';
 import { ChannelProfile } from '../../components/channel/ChannelProfile';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useResolvedHandle } from '../../lib/resolveHandle';
 import { profileKindOf } from '../../lib/conversationLink';

@@ -5,7 +5,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { capabilities } from '../../lib/capabilities';
 import { DANGER } from '../../lib/theme';
 import type { AccountRecord } from '../../lib/accounts';

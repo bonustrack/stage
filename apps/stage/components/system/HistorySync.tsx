@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useXmtpBootstrapPhase } from '../../modules/messaging';
 import { usePalette } from '../../lib/theme';
 

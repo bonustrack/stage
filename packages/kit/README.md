@@ -150,6 +150,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 - `Image`: `resizeMethod` and `resizeMultiplier` on Android, to choose the size the image is decoded at.
 
+#### Visual changes
+
+- `Spinner` is the Stage app spinner: a ring that fades into its tail and turns once every 0.5s. On web it spins with a CSS animation. Without `color` it takes the heading colour of the theme, black in light and white in dark (it was `#888888`).
+- `Button` `loading` shows `Spinner` instead of the platform `ActivityIndicator`.
+
 ### 0.1.0-beta.1
 
 The first release since 0.1.0-beta.0.

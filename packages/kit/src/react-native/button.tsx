@@ -1,7 +1,6 @@
 
 import { useMemo, type ReactNode } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   Text,
   type PressableProps,
@@ -15,13 +14,17 @@ import {
   type ButtonColor,
   type ButtonControlVariant,
   type ButtonSize,
+  type SizeSpec,
 } from '../button.styles';
+import { Spinner } from './spinner';
 
 export type {
   ButtonColor,
   ButtonControlVariant,
   ButtonSize,
 } from '../button.styles';
+
+const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
 
 let defaultButtonRadius = 999;
 export function setDefaultButtonRadius(r: number): void {
@@ -196,7 +199,7 @@ export function Button(props: ButtonProps): React.ReactElement {
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator size={spec.spinner} color={c.text} />
+        <Spinner size={SPINNER_SIZE[spec.spinner]} color={c.text} />
       ) : (
         <>
           {startIcon}

@@ -5,7 +5,7 @@ import { Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
 import { ChannelMenu } from '../ChannelMenu';

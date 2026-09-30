@@ -1,68 +1,66 @@
-
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Platform, StyleSheet, View, type ViewStyle } from 'react-native';
+import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { schemePalette } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 export interface SpinnerProps {
   size?: number;
   color?: string;
 }
 
-const AnimatedView = Animated.View;
+const TURN_MS = 500;
+const IS_WEB = Platform.OS === 'web';
 
-export function Spinner(props: SpinnerProps): React.ReactElement {
-  const { size = 24, color = '#888888' } = props;
+const webSpin = StyleSheet.create({
+  spin: {
+    animationKeyframes: [{ '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } }],
+    animationDuration: `${TURN_MS}ms`,
+    animationTimingFunction: 'linear',
+    animationIterationCount: 'infinite',
+  } as ViewStyle,
+});
+
+function useNativeRotation(): Animated.AnimatedInterpolation<string> {
   const spin = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
+    if (IS_WEB) return;
     const anim = Animated.loop(
-      Animated.timing(spin, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
+      Animated.timing(spin, { toValue: 1, duration: TURN_MS, easing: Easing.linear, useNativeDriver: true }),
     );
     anim.start();
     return () => {
       anim.stop();
     };
   }, [spin]);
+  return spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+}
 
-  const rotate = spin.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const stroke = Math.max(2, Math.round(size / 10));
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-
+function SpinnerRing({ size, color, gradientId }: { size: number; color: string; gradientId: string }): React.ReactElement {
   return (
-    <View style={{ width: size, height: size }}>
-      <AnimatedView style={{ width: size, height: size, transform: [{ rotate }] }}>
-        <Svg width={size} height={size}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            stroke={color}
-            strokeOpacity={0.2}
-            strokeWidth={stroke}
-            fill="none"
-          />
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${c * 0.25} ${c}`}
-            fill="none"
-          />
-        </Svg>
-      </AnimatedView>
-    </View>
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Defs>
+        <LinearGradient id={gradientId} x1="28.154%" y1="63.74%" x2="74.629%" y2="17.783%">
+          <Stop stopColor={color} offset="0%" />
+          <Stop stopColor={color} stopOpacity="0" offset="70%" />
+        </LinearGradient>
+      </Defs>
+      <G transform="translate(2)" fill="none" fillRule="evenodd">
+        <Circle stroke={`url(#${gradientId})`} strokeWidth={4} strokeLinecap="butt" cx={10} cy={12} r={10} />
+        <Path d="M10 2C4.477 2 0 6.477 0 12" stroke={color} strokeWidth={4} strokeLinecap="butt" />
+        <Rect x={8} y={0} width={4} height={4} rx={0} fill={color} />
+      </G>
+    </Svg>
   );
+}
+
+export function Spinner(props: SpinnerProps): React.ReactElement {
+  const head = schemePalette(useKitScheme() === 'dark').head;
+  const { size = 24, color = head } = props;
+  const [gradientId] = useState(() => `kitSpin${Math.random().toString(36).slice(2, 8)}`);
+  const rotate = useNativeRotation();
+  const ring = <SpinnerRing size={size} color={color} gradientId={gradientId} />;
+
+  if (IS_WEB) return <View style={[{ width: size, height: size }, webSpin.spin]}>{ring}</View>;
+  return <Animated.View style={{ width: size, height: size, transform: [{ rotate }] }}>{ring}</Animated.View>;
 }

@@ -2,7 +2,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Box, Col, Row } from '../layout';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
 import {
   ContinueWithoutHistoryLink, EnterCodeWhileWaitingLink, HistoryStalledActions, useHistoryStepHint,

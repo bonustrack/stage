@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { FormField } from './FormField';
-import { Spinner } from './Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RailTooltip } from './tabs/RailTooltip';
 import { usePalette } from '../lib/theme';
 import { randomUsername } from '../lib/randomUsername';

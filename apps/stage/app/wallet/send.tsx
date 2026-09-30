@@ -13,7 +13,7 @@ import { TxStatus } from '../../components/wallet/send.fields';
 import { RecipientRow, ContactsModal, ContactsButton } from '../../components/wallet/send.recipient';
 import { usePublicSend } from '../../components/wallet/send.public';
 import { SendReview } from '../../components/wallet/send.review';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 

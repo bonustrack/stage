@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, type ViewStyle } from 'react-native';
 import { Box, Col, VirtualList } from '../layout';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
 import {

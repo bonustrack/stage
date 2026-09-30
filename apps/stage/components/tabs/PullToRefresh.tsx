@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Box } from '../layout';
-import { Spinner } from '../Spinner';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 
 const THRESHOLD = 56;
 const ACTIVE_OFFSET = 44;
