@@ -135,16 +135,6 @@ export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
   return record;
 }
 
-export async function updateSmartAccount(
-  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'passkey' | 'passkeySudo' | 'label' | 'devicePasskey'>>,
-): Promise<void> {
-  const list = await loadAccountsForWrite();
-  const rec = list.find(a => a.id === id.toLowerCase());
-  if (!rec) return;
-  Object.assign(rec, patch);
-  await persist(list);
-}
-
 export async function nextSmartHdIndex(phraseId: string): Promise<number> {
   const list = await loadAccountsForWrite();
   const used = list.flatMap(a => (a.type === 'smart' && a.phraseId === phraseId && a.hdIndex !== undefined ? [a.hdIndex] : []));

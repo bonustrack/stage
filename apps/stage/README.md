@@ -4,7 +4,7 @@
 
 ## Overview
 
-`stage` serves Android, iOS, the web (via react-native-web) and the Electron desktop shell from one codebase. It is an XMTP messenger with multi-account support, group channels, message requests shown inline in the channel list (only rejected conversations are hidden), free `*.stage.base.eth` names and avatars, search, and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, recovery phrase backup). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`; a small `Platform.OS === 'web'` gate is fine for trivial divergences.
+`stage` serves Android, iOS, the web (via react-native-web) and the Electron desktop shell from one codebase. It is an XMTP messenger with multi-account support, group channels, message requests shown inline in the channel list (only rejected conversations are hidden), free `*.stage.base.eth` names and avatars, search, and a ZeroDev smart-account wallet on Base (assets, balances, transfers, recovery phrase backup). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`; a small `Platform.OS === 'web'` gate is fine for trivial divergences.
 
 All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure `.model.ts` files colocated with their components.
 
@@ -13,7 +13,7 @@ All platform-neutral logic comes from [`@stage-labs/client`](../../packages/clie
 - Expo SDK 54 (managed workflow) with `expo-dev-client` and `expo-router` for file-based navigation
 - React Native 0.81 (new architecture) + Reanimated; hand-rolled stores + react-query, no global state library
 - XMTP via `@xmtp/react-native-sdk` natively and `@xmtp/browser-sdk` on web, behind the `lib/xmtp.*` seams
-- Wallet via `viem` + `@zerodev/sdk` (Kernel smart accounts, passkey validator, sponsored userOps)
+- Wallet via `viem` + `@zerodev/sdk` (Kernel smart accounts, ECDSA owner validator, sponsored userOps)
 - `expo-secure-store` for keys (Keychain / Keystore on native, device-bound), IndexedDB/OPFS on web
 
 ## Setup

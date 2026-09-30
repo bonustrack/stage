@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -9,15 +9,9 @@ import { Col } from '../layout';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { SettingsNavRow } from './rows';
-import { RecoveryKeyRow } from './RecoveryKeyRow';
-import { DevicePasskeyRow } from './DevicePasskeyRow';
-import { RootKeyRow } from './RootKeyRow';
 import { SettingsGroup } from './SettingsPage';
-import { PasskeyLinkRow, usePasskeyPlace } from './PasskeyLinkRow';
 import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
-import { securityRows, type SecurityCustody, type SecurityRowKey } from './SecuritySettings.model';
-import { kernelCustody } from '../../lib/zerodev';
-import { recover } from '../../lib/errorPolicy';
+import { securityRows, type SecurityRowKey } from './SecuritySettings.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
@@ -66,36 +60,18 @@ function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | n
   return key.id === rec.id ? key.pk : null;
 }
 
-function useCustody(rec: AccountRecord, epoch: number): SecurityCustody | null {
-  const [custody, setCustody] = useState<SecurityCustody | null>(null);
-  useEffect(() => {
-    let alive = true;
-    if (rec.type !== 'smart') { setCustody(null); return; }
-    void kernelCustody(rec.address as `0x${string}`).catch(recover('passkey.custody', null)).then((value) => { if (alive) setCustody(value); });
-    return () => { alive = false; };
-  }, [rec.address, rec.type, epoch]);
-  return custody;
-}
-
 function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [key, setRevealed] = useState<RevealedKey | null>(null);
-  const [epoch, setEpoch] = useState(0);
-  const [place, setPlace] = usePasskeyPlace(rec, epoch);
-  const custody = useCustody(rec, epoch);
   const backedUp = useWalletBackedUp();
   const revealed = revealedKeyFor(key, rec);
   const keys = securityRows({
-    isSmart: rec.type === 'smart', backedUp, custody, devicePasskeyStored: rec.devicePasskey !== undefined,
+    isSmart: rec.type === 'smart', backedUp,
     canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null,
   });
   const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
     backupPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="backup" />,
     showPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="show" />,
-    rootKey: () => <RootKeyRow rec={rec} epoch={epoch} onChanged={() => { setEpoch((n) => n + 1); }} />,
-    passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); setEpoch((n) => n + 1); }} />,
-    devicePasskey: () => <DevicePasskeyRow key={`${rec.id}:${epoch}`} rec={rec} />,
-    recoveryKey: () => <RecoveryKeyRow rec={rec} place={place} />,
     exportKey: () => <SettingsNavRow label="Export private key" iconStart={IconWallet4} iconEnd={IconChevronBottom} onPress={() => { confirmExport(rec, setRevealed); }} />,
   };
   return (
@@ -106,7 +82,7 @@ function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
   );
 }
 
-const SECURITY_FOOTNOTE = 'Your recovery phrase restores this account anywhere. A passkey approves payments on this device.';
+const SECURITY_FOOTNOTE = 'Your recovery phrase or private key controls your account. Keep it somewhere safe.';
 
 export function SecuritySection(): React.ReactElement | null {
   const rec = useActiveAccountRecord();

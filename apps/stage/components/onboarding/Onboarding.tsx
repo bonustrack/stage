@@ -7,7 +7,6 @@ import { pageTopPadding } from '../chrome/PageIntro.model';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { PasskeyStep } from './Onboarding.steps';
 import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
@@ -39,14 +38,12 @@ type Flow = ReturnType<typeof useOnboardingFlow>;
 
 function stepBack(f: Flow): (() => void) | null {
   if (f.step === 'profile') return f.onProfileBack;
-  if (f.step === 'passkey') return f.onPasskeyBack;
   return null;
 }
 
 function stepSkip(f: Flow): (() => void) | null {
   if (f.step === 'username') return () => { f.onUsernameContinue(''); };
   if (f.step === 'profile') return f.onProfileSkip;
-  if (f.step === 'passkey') return f.onSkipPasskey;
   return null;
 }
 
@@ -61,7 +58,7 @@ function StepChrome({ f, top, color }: { f: Flow; top: number; color: string }):
   );
 }
 
-const KEPT_STEPS = new Set(['username', 'profile', 'passkey']);
+const KEPT_STEPS = new Set(['username', 'profile']);
 
 function KeptStep({ f, own, children }: { f: Flow; own: 'username' | 'profile'; children: React.ReactNode }): React.ReactElement | null {
   if (!KEPT_STEPS.has(f.step)) return null;
@@ -83,13 +80,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {f.step === 'import' ? (
         <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
       ) : null}
-      {f.step === 'passkey' ? (
-        <PasskeyStep dark={dark} busy={f.busy} onAdd={f.onAddPasskey} />
-      ) : null}
       {f.step === 'setup' ? (
         <SetupStep
           dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} plan={f.plan}
-          onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipPasskey={f.onSetupSkipPasskey} history={f.history}
+          onRetry={f.onSetupRetry} onBack={f.onSetupBack} history={f.history}
         />
       ) : null}
     </Col>

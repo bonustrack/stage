@@ -7,7 +7,7 @@ import { isXmtpRegistered } from '../xmtp.registered';
 import { ensurePrimaryPhrase, smartOwnerSigner } from './keyring';
 import { reserveSmartHdIndex } from './hdIndexStore';
 import { makePublicClient } from './client';
-import { createEcdsaKernel } from './account';
+import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { zerodevConfigured } from './env';
 
 export interface CreateSmartAccountOpts {

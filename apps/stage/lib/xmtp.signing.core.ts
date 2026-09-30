@@ -20,7 +20,7 @@ async function smartSigningKey(rec: AccountRecord): Promise<SigningKey> {
   }
   const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
   const { SCW_CHAIN_ID } = await import('@stage-labs/client/zerodev/config');
-  const kernelClient = await kernelClientForRecord(rec, 'sign');
+  const kernelClient = await kernelClientForRecord(rec);
   return {
     kind: 'SCW', address: rec.address, chainId: SCW_CHAIN_ID,
     signMessage: (message) => kernelClient.signMessage({ message } as Parameters<typeof kernelClient.signMessage>[0]),

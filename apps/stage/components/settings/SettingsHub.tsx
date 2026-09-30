@@ -95,7 +95,7 @@ function ProtectionCard(): React.ReactElement | null {
   const backedUp = useWalletBackedUp();
   if (rec === null) return null;
   const steps = protectionSteps({
-    isSmart: rec.type === 'smart', backedUp, passkeyOn: rec.devicePasskey !== undefined || rec.passkey !== undefined,
+    isSmart: rec.type === 'smart', backedUp,
     canExportKey: canExportPrivateKey(rec),
   });
   if (steps.length === 0) return null;
@@ -145,7 +145,7 @@ function MoreGroup(): React.ReactElement {
   };
   return (
     <SettingsGroup title="More">
-      {row('security', 'Recovery phrase and passkey')}
+      {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
       {row('wallet', 'Wallet', address ? shortAddress(address) : undefined)}
       {row('advanced', 'Advanced')}

@@ -45,13 +45,13 @@ describe('walletAccountRows', () => {
         hdIndex: 0,
         isSmart: true,
         rec: { type: 'seed' },
-        activeSigner: 'passkey',
+        activeSigner: 'Recovery key',
       }),
     ).toEqual([
       { label: 'Name', value: 'Main' },
       { label: 'HD index', value: '#0' },
       { label: 'Type', value: 'Smart account (ZeroDev Kernel)' },
-      { label: 'Active signer', value: 'passkey' },
+      { label: 'Active signer', value: 'Recovery key' },
     ]);
   });
 });

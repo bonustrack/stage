@@ -5,37 +5,17 @@ import {
 } from '../components/settings/SecuritySettings.model';
 
 const SMART: SecurityRowsInput = {
-  isSmart: true, backedUp: true, custody: 'ecdsa-root', devicePasskeyStored: false,
+  isSmart: true, backedUp: true,
   canExportKey: false, keyRevealed: false,
 };
 
 describe('securityRows', () => {
-  test('a fresh recovery-phrase account offers a passkey for this device and nothing about migration', () => {
-    expect(securityRows(SMART)).toEqual(['devicePasskey', 'showPhrase']);
-    expect(securityRows({ ...SMART, custody: 'undeployed' })).toEqual(['devicePasskey', 'showPhrase']);
-  });
-
-  test('a recovery-phrase account with a device passkey keeps the same single passkey row', () => {
-    expect(securityRows({ ...SMART, devicePasskeyStored: true })).toEqual(['devicePasskey', 'showPhrase']);
-  });
-
-  test('a legacy passkey-rooted account leads with the migration and keeps the legacy rows', () => {
-    expect(securityRows({ ...SMART, custody: 'passkey-root' })).toEqual([
-      'rootKey', 'passkeyLink', 'recoveryKey', 'showPhrase',
-    ]);
-    expect(securityRows({ ...SMART, custody: 'passkey-root', devicePasskeyStored: true })).toEqual([
-      'rootKey', 'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase',
-    ]);
-  });
-
-  test('no key rows while custody is loading or when another signer controls the account', () => {
-    for (const custody of [null, 'other-root'] as const) {
-      expect(securityRows({ ...SMART, custody })).toEqual(['showPhrase']);
-    }
+  test('a backed-up smart account only offers its recovery phrase', () => {
+    expect(securityRows(SMART)).toEqual(['showPhrase']);
   });
 
   test('a device that still needs a backup leads with it', () => {
-    expect(securityRows({ ...SMART, backedUp: false })).toEqual(['backupPhrase', 'devicePasskey']);
+    expect(securityRows({ ...SMART, backedUp: false })).toEqual(['backupPhrase']);
   });
 
   test('backup row waits for the stored flag', () => {
@@ -43,8 +23,8 @@ describe('securityRows', () => {
     expect(securityRows({ ...SMART, backedUp: null })).not.toContain('showPhrase');
   });
 
-  test('legacy key account offers key export until revealed, no passkey rows', () => {
-    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, custody: null, backedUp: false, canExportKey: true };
+  test('key accounts offer key export until revealed', () => {
+    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, backedUp: false, canExportKey: true };
     expect(securityRows(legacy)).toEqual(['exportKey']);
     expect(securityRows({ ...legacy, backedUp: true })).toEqual(['exportKey']);
     expect(securityRows({ ...legacy, keyRevealed: true })).toEqual([]);

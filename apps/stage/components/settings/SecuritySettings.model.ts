@@ -1,19 +1,8 @@
-export type SecurityRowKey =
-  | 'backupPhrase'
-  | 'showPhrase'
-  | 'rootKey'
-  | 'passkeyLink'
-  | 'devicePasskey'
-  | 'recoveryKey'
-  | 'exportKey';
-
-export type SecurityCustody = 'undeployed' | 'ecdsa-root' | 'passkey-root' | 'other-root';
+export type SecurityRowKey = 'backupPhrase' | 'showPhrase' | 'exportKey';
 
 export interface SecurityRowsInput {
   isSmart: boolean;
   backedUp: boolean | null;
-  custody: SecurityCustody | null;
-  devicePasskeyStored: boolean;
   canExportKey: boolean;
   keyRevealed: boolean;
 }
@@ -50,23 +39,10 @@ export function phrasePanelActions(mode: PhraseRowMode): PhrasePanelAction[] {
   return mode === 'backup' ? ['hide', 'saved'] : ['hide'];
 }
 
-function keyRows(input: SecurityRowsInput): SecurityRowKey[] {
-  if (input.custody === 'passkey-root') {
-    return ['rootKey', 'passkeyLink', ...(input.devicePasskeyStored ? ['devicePasskey' as const] : []), 'recoveryKey'];
-  }
-  return input.custody === 'ecdsa-root' || input.custody === 'undeployed' ? ['devicePasskey'] : [];
-}
-
-function smartRows(input: SecurityRowsInput): SecurityRowKey[] {
-  if (!input.isSmart) return [];
-  const rows = keyRows(input);
-  return input.backedUp === true ? [...rows, 'showPhrase'] : rows;
-}
-
 export function securityRows(input: SecurityRowsInput): SecurityRowKey[] {
   const rows: SecurityRowKey[] = [];
   if (input.isSmart && input.backedUp === false) rows.push('backupPhrase');
-  rows.push(...smartRows(input));
+  if (input.isSmart && input.backedUp === true) rows.push('showPhrase');
   if (input.canExportKey && !input.keyRevealed) rows.push('exportKey');
   return rows;
 }

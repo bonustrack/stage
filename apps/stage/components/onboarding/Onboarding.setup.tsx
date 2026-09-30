@@ -49,10 +49,10 @@ function SetupActions({ dark, busy, setupErr, onRetry, history }: {
   return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />;
 }
 
-const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { skipPasskey: 'Continue without passkey', startOver: 'Start over' };
+const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { startOver: 'Start over' };
 
-function SetupLink({ busy, setupErr, onBack, onSkipPasskey, history, waiting }: {
-  busy: boolean; setupErr: SetupErr | null; onBack: () => void; onSkipPasskey: () => void; history: HistoryControls; waiting: boolean;
+function SetupLink({ busy, setupErr, onBack, history, waiting }: {
+  busy: boolean; setupErr: SetupErr | null; onBack: () => void; history: HistoryControls; waiting: boolean;
 }): React.ReactElement | null {
   if (setupErr === null && history.stalled) return <ContinueWithoutHistoryLink history={history} />;
   if (setupErr === null) return waiting ? <EnterCodeWhileWaitingLink history={history} /> : null;
@@ -61,20 +61,20 @@ function SetupLink({ busy, setupErr, onBack, onSkipPasskey, history, waiting }: 
   return (
     <Col gap={16}>
       {links.map((kind) => (
-        <SkipLink key={kind} label={SETUP_LINK_LABELS[kind]} disabled={busy} onPress={kind === 'skipPasskey' ? onSkipPasskey : onBack} />
+        <SkipLink key={kind} label={SETUP_LINK_LABELS[kind]} disabled={busy} onPress={onBack} />
       ))}
     </Col>
   );
 }
 
-export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipPasskey, history }: {
+export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, history }: {
   dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
-  onRetry: () => void; onBack: () => void; onSkipPasskey: () => void; history: HistoryControls;
+  onRetry: () => void; onBack: () => void; history: HistoryControls;
 }): React.ReactElement {
   const stages = setupStages(plan);
   const historyHint = useHistoryStepHint(stage === 'history' && setupErr === null, history.stalled);
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
-  const link = SetupLink({ busy, setupErr, onBack, onSkipPasskey, history, waiting: stage === 'history' });
+  const link = SetupLink({ busy, setupErr, onBack, history, waiting: stage === 'history' });
   return (
     <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={link}>
       <Col width="100%">

@@ -25,8 +25,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSectionInfo[] = [
     icon: 'IconBell', keywords: ['push', 'alerts', 'permission'],
   },
   {
-    id: 'security', href: '/settings/security', label: 'Security', description: 'Recovery phrase and passkey',
-    icon: 'IconKey2', keywords: ['recovery phrase', 'backup', 'passkey', 'private key', 'export', 'seed', 'words'],
+    id: 'security', href: '/settings/security', label: 'Security', description: 'Recovery phrase and private key',
+    icon: 'IconKey2', keywords: ['recovery phrase', 'backup', 'private key', 'export', 'seed', 'words'],
   },
   {
     id: 'devices', href: '/settings/devices', label: 'Devices', description: 'Sessions, linking and chat history',

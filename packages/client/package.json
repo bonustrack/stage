@@ -78,19 +78,13 @@
     "./accounts/hdIndex": "./src/accounts/hdIndex.ts",
     "./zerodev/config": "./src/zerodev/config.ts",
     "./zerodev/account": "./src/zerodev/account.ts",
-    "./zerodev/derive": "./src/zerodev/derive.ts",
-    "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts",
-    "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts",
-    "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts",
-    "./zerodev/devicePasskey": "./src/zerodev/devicePasskey.ts",
-    "./zerodev/rootKey": "./src/zerodev/rootKey.ts"
+    "./zerodev/derive": "./src/zerodev/derive.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "test": "bun test test/"
   },
   "dependencies": {
-    "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/sdk": "5.5.10",

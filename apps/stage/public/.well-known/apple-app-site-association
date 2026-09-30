@@ -10,8 +10,5 @@
         ]
       }
     ]
-  },
-  "webcredentials": {
-    "apps": ["TEAMID.box.stage", "TEAMID.box.metro.monitor"]
   }
 }

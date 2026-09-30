@@ -2,7 +2,7 @@
 
 Stage is a private, encrypted messenger built on XMTP, with group channels,
 multi-account support, free onchain names and avatars (`*.stage.base.eth` on
-Base), and a smart-account wallet (assets, balances, transfers, passkeys,
+Base), and a smart-account wallet (assets, balances, transfers,
 recovery phrase backup). It ships as **one universal Expo app** serving Android, iOS,
 web and desktop from the same React Native codebase (web via
 react-native-web), backed by a framework-agnostic TypeScript core, a
@@ -96,7 +96,6 @@ value is public). Set them in the Netlify site (web) and the EAS build profiles
 |---|---|
 | `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project (Base) |
 | `EXPO_PUBLIC_ZERODEV_RPC` | Optional RPC override for the smart-account client |
-| `EXPO_PUBLIC_ZERODEV_RP_ID` | Passkey relying-party id (default `stage.box`) |
 | `EXPO_PUBLIC_SWARMY_KEY` | Swarmy (`api.swarmy.cloud`) bearer key for encrypted attachment upload |
 | `EXPO_PUBLIC_LINKPROXY_URL` | Base URL of the proxy Worker (default `https://proxy.stage.box`) |
 | `EXPO_PUBLIC_PUSH_SERVER_URL` | Push server base URL |

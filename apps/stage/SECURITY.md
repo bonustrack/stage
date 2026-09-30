@@ -9,8 +9,8 @@ The keyring is the only module that:
 
 - reads or writes each BIP-39 recovery phrase used by smart accounts. Native
   storage stays device-bound (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`). Phrase reads
-  use `STORE_OPTS`, without `requireAuthentication`. Passkey assertions and the
-  authenticated device sentinel are separate reveal guards, not decryption keys;
+  use `STORE_OPTS`, without `requireAuthentication`. The authenticated native
+  device sentinel is a separate export guard, not a decryption key;
 - reads or writes the per-account raw secp256k1 private keys (generated /
   imported EOAs), under the `wallet.pk.<id>` secure-store keys;
 - imports the secret-bearing primitives:
@@ -35,13 +35,13 @@ No other file in the app may touch any of the above.
    prompts biometrics on app open, balance view, or wallet creation.
 3. **Explicit reveal paths.**
    - `revealActiveRecoveryPhrase(expectedAccountId)` displays only the active
-     smart account's phrase, without another passkey or device-auth prompt. It
+     smart account's phrase, without another device-auth prompt. It
      checks the active account before and after reading. Settings keeps the
      screen warning, Hide and show-mode auto-hide. Switching accounts clears
      the displayed phrase.
-   - `revealRecoveryPhrase()` remains guarded by passkey presence or device
-     authentication for Link a device. It is not the Settings display path.
-   - `revealPrivateKey(id)` keeps the same passkey or device-auth guard for the
+   - `revealRecoveryPhrase()` keeps native device authentication for Link a
+     device. It is not the Settings display path.
+   - `revealPrivateKey(id)` keeps native device authentication for the
      explicit "Export private key" action and its destructive UI warning.
    These APIs never log key material. Storage, signing and other sensitive
    actions are unchanged.
@@ -51,8 +51,10 @@ No other file in the app may touch any of the above.
 Opening the app, listing accounts, and showing balances use only public
 addresses from the account registry. They never call the keyring's secret
 accessors, so there is no key read and no biometric prompt on the hot path.
-The derived key signs normal txs (auth only at sign time); the optional passkey
-is invoked only when signing a tx/message, never on app open or wallet creation.
+The recovery-phrase ECDSA owner signs smart-account messages and transactions.
+Native device authentication is reserved for explicit key export and device
+transfer, not wallet signing. On web, `platform/storage.web.ts` uses localStorage
+for wallet secrets and does not enforce device authentication or encrypt them.
 
 ## How the chokepoint is enforced
 

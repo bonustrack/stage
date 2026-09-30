@@ -83,7 +83,7 @@ const config = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.bundleId,
-    associatedDomains: [`applinks:${variant.host}`, `webcredentials:${variant.host}`],
+    associatedDomains: [`applinks:${variant.host}`],
     entitlements: {
       'aps-environment': IS_PROD ? 'production' : 'development',
     },

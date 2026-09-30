@@ -41,26 +41,6 @@ async function requireDeviceAuth(): Promise<boolean> {
   return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(ignored(null, 'probe'))) !== null;
 }
 
-async function requireRevealAuth(id?: string): Promise<boolean> {
-  let stored: import('./passkeys.model').StoredPasskey | undefined;
-  try {
-    const { getActiveAccount, loadAccounts } = await import('../accounts');
-    const rec = id
-      ? (await loadAccounts()).find((a) => a.id === id.toLowerCase())
-      : await getActiveAccount();
-    stored = rec?.devicePasskey ?? rec?.passkey;
-  } catch {
-    stored = undefined;
-  }
-  if (stored) {
-    const { assertPasskeyPresence } = await import('./passkeys');
-    const ok = await assertPasskeyPresence(stored);
-    if (ok !== null) return ok;
-  }
-  return requireDeviceAuth();
-}
-
-
 const PHRASE_KEY_PREFIX = 'wallet.mnemonic.';
 const PRIMARY_PHRASE_KEY = 'wallet.mnemonic.primary';
 const LEGACY_MNEMONIC_KEY = 'wallet.mnemonic';
@@ -236,11 +216,11 @@ export async function revealActiveRecoveryPhrase(expectedAccountId: string): Pro
 }
 
 export async function revealRecoveryPhrase(ref: { phraseId?: string } = {}): Promise<string | null> {
-  if (!(await requireRevealAuth())) return null;
+  if (!(await requireDeviceAuth())) return null;
   return readPhrase(await phraseIdFor(ref));
 }
 
 export async function revealPrivateKey(id: string): Promise<Hex | null> {
-  if (!(await requireRevealAuth(id))) return null;
+  if (!(await requireDeviceAuth())) return null;
   return loadPrivateKey(id);
 }

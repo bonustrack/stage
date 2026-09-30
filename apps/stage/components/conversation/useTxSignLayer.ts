@@ -32,7 +32,7 @@ interface RequestSigner {
 async function requestSigner(): Promise<RequestSigner> {
   const active = await getActiveAccount();
   if (active?.type === 'smart') {
-    const kernel = await kernelClientForRecord(active, 'sign');
+    const kernel = await kernelClientForRecord(active);
     return {
       address: active.address,
       signTypedData: (typedData) => kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]),

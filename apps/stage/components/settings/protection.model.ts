@@ -1,4 +1,4 @@
-export type ProtectionStepId = 'phrase' | 'passkey' | 'key';
+export type ProtectionStepId = 'phrase' | 'key';
 
 export interface ProtectionStep {
   id: ProtectionStepId;
@@ -11,7 +11,6 @@ export interface ProtectionStep {
 export interface ProtectionInput {
   isSmart: boolean;
   backedUp: boolean | null;
-  passkeyOn: boolean;
   canExportKey: boolean;
 }
 
@@ -23,7 +22,6 @@ export function protectionSteps(input: ProtectionInput): ProtectionStep[] {
   }
   return [
     { id: 'phrase', label: 'Recovery phrase backed up', done: input.backedUp === true, doneText: 'Done', action: 'Back up' },
-    { id: 'passkey', label: 'Passkey on this device', done: input.passkeyOn, doneText: 'On', action: 'Set up' },
   ];
 }
 
