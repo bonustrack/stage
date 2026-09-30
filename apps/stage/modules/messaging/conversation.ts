@@ -13,9 +13,10 @@ import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
   ROW_PREVIEW_MAX_CHARS, type RowMessage, type StreamedMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
-import { DELETED_MESSAGE_TEXT, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
-import { isDeletedRowMessage } from '@stage-labs/client/xmtp/deletions';
+import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
+import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { ownDeletesReady } from '../../lib/ownDeletes';
+import { fetchSuperAdmins } from './convMeta.fetch';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
@@ -65,11 +66,25 @@ function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
   return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
 }
 
+const NO_SUPER_ADMINS: ReadonlySet<string> = new Set();
+
+async function rowDeleteRights(
+  conv: Conversation, dm: boolean, msgs: StreamedMessage[], inboxToAddr: Record<string, string>, selfInboxId: string,
+): Promise<DeleteRights> {
+  const hasRequests = !dm && msgs.some(m => isDeleteRequestType(m.contentTypeId));
+  const [ownDeletes, superAdmins] = await Promise.all([
+    ownDeletesReady(),
+    hasRequests ? fetchSuperAdmins(conv.id, inboxToAddr).catch(recover('conversation.superAdmins', NO_SUPER_ADMINS)) : NO_SUPER_ADMINS,
+  ]);
+  return { ownDeletes, superAdmins, selfInboxId };
+}
+
 function previewOfMessage(
-  last: StreamedMessage | undefined, dm: boolean, msgs: StreamedMessage[], ownDeletes: ReadonlySet<string>,
+  last: StreamedMessage | undefined, dm: boolean, msgs: StreamedMessage[], rights: DeleteRights,
 ): string {
   if (!last || isMembershipNoise(last, dm)) return '';
-  if (isDeletedRowMessage(last, msgs, ownDeletes)) return DELETED_MESSAGE_TEXT;
+  const deletedBy = deletedRowBy(last, msgs, rights);
+  if (deletedBy) return deletedTextOf(deletedBy);
   try { return previewOfXmtpContent(last.content, last.contentTypeId); }
   catch { return `[${last.contentTypeId ?? 'unknown'}]`; }
 }
@@ -137,8 +152,8 @@ export async function summarizeConversation(
   const dm = peerAddress !== null;
   const msgs = await recentRowMessages(conv, dm);
   const last = pickLastMessage(msgs, dm);
-  const preview = previewOfMessage(last, dm, msgs, await ownDeletesReady());
   const inboxToAddr = await memberInboxToAddressMap(conv);
+  const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
   const { title, avatarUri, avatarAddress, labels } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
   );

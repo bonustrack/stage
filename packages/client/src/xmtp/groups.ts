@@ -103,6 +103,13 @@ export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdm
   return 'member';
 }
 
+export function superAdminInboxIds(
+  inboxToAddr: Readonly<Record<string, string>>, roles: Readonly<Record<string, GroupRole>>,
+): Set<string> {
+  const ids = Object.entries(inboxToAddr).filter(([, addr]) => roles[addr] === 'owner').map(([id]) => id.toLowerCase());
+  return new Set(ids);
+}
+
 function allows(policy: GroupPolicyOption, role: GroupRole): boolean {
   return ROLE_RANK[role] >= POLICY_RANK[policy];
 }

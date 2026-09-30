@@ -75,10 +75,15 @@ describe('delete entries in the feed', () => {
       .toEqual({ contentType: 'deletedMessage', deletedBy: 'sender' });
     expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 1, adminInboxId: 'x' }, undefined).payload)
       .toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });
+    expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 'Admin' }, undefined).payload)
+      .toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });
+    expect(envelopeFromContent(base, 'deletedMessage', {}, undefined).payload)
+      .toEqual({ contentType: 'deletedMessage', deletedBy: 'sender' });
   });
 
-  test('chat list preview reads Message deleted', () => {
+  test('chat list preview reads Message deleted, or by an admin', () => {
     expect(previewOfXmtpContent({ deletedBy: 0 }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOfXmtpContent({ deletedBy: 1, adminInboxId: 'x' }, 'deletedMessage')).toBe('Message deleted by an admin');
     expect(previewOfXmtpContent({ messageId: 'm1' }, 'xmtp.org/deleteMessage:1.0')).toBe(DELETED_MESSAGE_TEXT);
   });
 

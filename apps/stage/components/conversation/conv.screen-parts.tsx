@@ -21,7 +21,7 @@ import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
-import { canDeleteMessage } from './messageDeletion.model';
+import { canDeleteMessage, isAdminDelete } from './messageDeletion.model';
 import { confirmDeleteMessage } from './deleteMessage';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { RequestActionBar } from '../RequestActionBar';
@@ -154,6 +154,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
   const {
     overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr,
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy, myUri, deletedIds,
+    isSuperAdmin,
   } = c;
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
   const rights = useChannelEditRights(convId, isGroup);
@@ -186,7 +187,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}
-        canDelete={canDeleteMessage(menuFor, myUri, deletedIds)}
+        canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
         onClose={() => { setMenuFor(null); }}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
         onReply={() => {
@@ -207,7 +208,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
           setMenuFor(null);
         }}
         onDelete={() => {
-          if (menuFor) void confirmDeleteMessage(menuFor.id);
+          if (menuFor) void confirmDeleteMessage(menuFor.id, isAdminDelete(menuFor, myUri));
           setMenuFor(null);
         }}
 />

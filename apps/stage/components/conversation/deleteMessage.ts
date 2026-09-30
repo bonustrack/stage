@@ -2,10 +2,10 @@ import { capabilities } from '../../lib/capabilities';
 import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
 import { xmtpDeleteMessage } from '../../modules/messaging';
-import { DELETE_MESSAGE_CONFIRM } from './messageDeletion.model';
+import { deleteConfirmOf } from './messageDeletion.model';
 
-export async function confirmDeleteMessage(messageId: string): Promise<void> {
-  if (!await capabilities.confirm(DELETE_MESSAGE_CONFIRM)) return;
+export async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
+  if (!await capabilities.confirm(deleteConfirmOf(asAdmin))) return;
   await markOwnDelete(messageId);
   try {
     await xmtpDeleteMessage(messageId);

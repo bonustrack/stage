@@ -1,7 +1,9 @@
 import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
-import { DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID } from './deleteMessage';
+import {
+  DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deletedByOfContent, deletedTextOf,
+} from './deleteMessage';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -125,7 +127,7 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   remoteStaticAttachment: previewSingleAttachment,
   multiRemoteStaticAttachment: previewMultiRemote,
   multiRemoteAttachment: previewMultiRemote,
-  [DELETED_MESSAGE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
+  [DELETED_MESSAGE_TYPE_ID]: (decoded) => deletedTextOf(deletedByOfContent(decoded)),
   [DELETE_MESSAGE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
 };
 

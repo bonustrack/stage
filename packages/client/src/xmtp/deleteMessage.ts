@@ -11,7 +11,13 @@ export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 
 export const DELETED_MESSAGE_TEXT = 'Message deleted';
 
+export const DELETED_BY_ADMIN_TEXT = 'Message deleted by an admin';
+
 export type DeletedBy = 'sender' | 'admin';
+
+export function deletedTextOf(by: DeletedBy): string {
+  return by === 'admin' ? DELETED_BY_ADMIN_TEXT : DELETED_MESSAGE_TEXT;
+}
 
 const deleteMessageSchema = z.object({ messageId: z.string().min(1) });
 
@@ -122,9 +128,9 @@ export function deleteTargetOfContent(content: unknown): string | undefined {
   return parsed.success ? parsed.data.messageId : undefined;
 }
 
-const SENDER_VALUES: readonly unknown[] = [0, 'Sender', 'sender'];
+const ADMIN_VALUES: readonly unknown[] = [1, 'Admin', 'admin'];
 
 export function deletedByOfContent(content: unknown): DeletedBy {
   const by = (content as { deletedBy?: unknown } | null | undefined)?.deletedBy;
-  return SENDER_VALUES.includes(by) ? 'sender' : 'admin';
+  return ADMIN_VALUES.includes(by) ? 'admin' : 'sender';
 }

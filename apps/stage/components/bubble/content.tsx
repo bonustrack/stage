@@ -7,8 +7,8 @@ import { cardLinksOf } from '../../lib/cardLinks';
 import { isAttachmentSummary } from './fileCard.model';
 import { Box, Row } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { DELETED_MESSAGE_TEXT } from '@stage-labs/client/xmtp/deleteMessage';
-import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
+import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
+import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import {
   attachmentsOf, mdParser, markdownStyles,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,
@@ -54,7 +54,9 @@ function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
   d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string;
   selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
-  if (isDeletedPlaceholder(entry)) return <Text size="3xl" role="secondary" italic>{DELETED_MESSAGE_TEXT}</Text>;
+  if (isDeletedPlaceholder(entry)) {
+    return <Text size="3xl" role="secondary" italic>{deletedTextOf(deletedByOf(entry))}</Text>;
+  }
   if (d.poll) {
     return d.poll.question ? (
       <Box style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Box>

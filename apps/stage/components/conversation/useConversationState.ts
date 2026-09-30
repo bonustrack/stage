@@ -16,8 +16,10 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
-import { deletedMessageIds } from '@stage-labs/client/xmtp/deletions';
+import { deletedMessages, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { useOwnDeletes } from '../../lib/ownDeletes';
+import { useChannelRoles } from '../channel/channel.detail';
 import type { MenuAnchor } from '../bubble/props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -45,6 +47,21 @@ function useActiveConvSuppression(convId: string | undefined): void {
     });
     return () => { sub.remove(); setActiveConversation(null); setActiveConvId(null); };
   }, [activeConvId]));
+}
+
+function useFeedDeletions(
+  events: HistoryEntry[], groupId: string | undefined, inboxToAddr: Record<string, string>, selfInboxId: string,
+): { deletedIds: DeletedMessages; isSuperAdmin: boolean } {
+  const ownDeletes = useOwnDeletes();
+  const roles = useChannelRoles(groupId, inboxToAddr);
+  const superAdminKey = [...superAdminInboxIds(inboxToAddr, roles)].sort().join(',');
+  const superAdmins = useMemo(() => new Set(superAdminKey ? superAdminKey.split(',') : []), [superAdminKey]);
+  const deletedIds = useMemo(
+    () => deletedMessages(events, { ownDeletes, superAdmins, selfInboxId }),
+    [events, ownDeletes, superAdmins, selfInboxId],
+  );
+  const isSuperAdmin = groupId !== undefined && selfInboxId !== '' && superAdmins.has(selfInboxId.toLowerCase());
+  return { deletedIds, isSuperAdmin };
 }
 
 type ConvConsent = Exclude<ReturnType<typeof useConvConsentState>, null>;
@@ -214,8 +231,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
 
   const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
-  const ownDeletes = useOwnDeletes();
-  const deletedIds = useMemo(() => deletedMessageIds(events, ownDeletes), [events, ownDeletes]);
+  const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
   const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } =
@@ -247,7 +263,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     peerAddr, groupName, groupImage, groupDescription, groupLabels, setGroupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
-    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, deletedIds,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, deletedIds, isSuperAdmin,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     onOptimistic, onSent, markAtBottom, consent, consentKnown, consentAllowed, markConsentAllowed,

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   validMemberAddresses, isNoInboxError, isPermissionError, requireValidMembers,
   mapCreateGroupError, mapAddMembersError, createGroupWith, addGroupMembersWith,
-  groupRoleOf, groupEditRightsOf, canEditGroup, mapUpdateGroupError, updateGroupMetaWith, UNKNOWN_GROUP_POLICY,
+  groupRoleOf, superAdminInboxIds, groupEditRightsOf, canEditGroup, mapUpdateGroupError, updateGroupMetaWith, UNKNOWN_GROUP_POLICY,
   groupMetaPolicyOfSet,
   type GroupMetaPolicy,
 } from '../src/xmtp/groups';
@@ -86,6 +86,15 @@ describe('addGroupMembersWith', () => {
   test('maps add permission error', async () => {
     await expect(addGroupMembersWith([ADDR_A], async () => { throw new Error('admin only'); }))
       .rejects.toThrow('Only a channel admin can add members.');
+  });
+});
+
+describe('superAdminInboxIds', () => {
+  test('only current members whose role is super admin, never plain admins', () => {
+    const inboxToAddr = { OwnerInbox: '0xowner', admininbox: '0xadmin', memberinbox: '0xmember' };
+    const roles = { '0xowner': 'owner', '0xadmin': 'admin', '0xmember': 'member', '0xgone': 'owner' } as const;
+    expect([...superAdminInboxIds(inboxToAddr, roles)]).toEqual(['ownerinbox']);
+    expect(superAdminInboxIds(inboxToAddr, {}).size).toBe(0);
   });
 });
 

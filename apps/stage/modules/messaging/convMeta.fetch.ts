@@ -5,6 +5,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';
 import { groupAdminInboxIds, groupNameImage } from '../../lib/xmtp.groups';
+import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 
 export interface ConvMeta {
   peerAddr: string | null;
@@ -61,4 +62,8 @@ export async function fetchGroupRoles(
     roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
   }
   return roles;
+}
+
+export async function fetchSuperAdmins(convId: string, inboxToAddr: Record<string, string>): Promise<ReadonlySet<string>> {
+  return superAdminInboxIds(inboxToAddr, await fetchGroupRoles(convId, inboxToAddr));
 }
