@@ -1,8 +1,6 @@
 name: iOS simulator
 
 on:
-  push:
-    branches: ['feat/native-calls']
   pull_request:
     paths:
       - 'apps/stage/app.config.js'
@@ -10,6 +8,8 @@ on:
       - 'apps/stage/modules/**'
       - 'apps/stage/plugins/**'
       - 'bun.lock'
+      - 'package.json'
+      - 'patches/**'
       - '.github/workflows/ios-simulator.yml'
   workflow_dispatch:
 

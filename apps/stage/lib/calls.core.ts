@@ -105,14 +105,22 @@ function dropPeer(peerId: string): void {
   if (peer) closePeer(peer);
   peers.delete(peerId);
 }
+function releaseVideo(track: CallTrack): void {
+  const preview = callView().preview;
+  if (preview?.value.getVideoTracks()[0] === track.value) {
+    releaseStream(preview);
+    setCallView({ preview: null });
+  }
+  stopTrack(track);
+}
 function releaseMedia(): void {
   captureVersion += 1;
   for (const peerId of [...peers.keys()]) dropPeer(peerId);
+  releaseStream(callView().preview);
+  setCallView({ preview: null });
   mic = stopTrack(mic);
   camera = stopTrack(camera);
   screen = stopTrack(screen);
-  releaseStream(callView().preview);
-  setCallView({ preview: null });
   stopAudio();
 }
 function endCall(reason: CallEndReason): void {
@@ -284,8 +292,8 @@ export function toggleCamera(): Promise<void> {
     if (camera) {
       const old = camera;
       camera = null;
-      try { await pushMedia(); } finally { stopTrack(old); }
-      await startAudio(false);
+      try { await pushMedia(); } finally { releaseVideo(old); }
+      if (joinedCallId() === callId) await startAudio(false);
       return;
     }
     const media = await userMedia(true, false);
@@ -305,18 +313,18 @@ export function toggleScreen(): Promise<void> {
     if (screen) {
       const old = screen;
       screen = null;
-      try { await pushMedia(); } finally { stopTrack(old); }
+      try { await pushMedia(); } finally { releaseVideo(old); }
       return;
     }
     const track = await displayMedia();
     if (!track) return;
-    if (joinedCallId() !== callId) { stopTrack(track); return; }
+    if (joinedCallId() !== callId || track.ended || track.value.readyState === 'ended') { stopTrack(track); return; }
+    screen = track;
     watchScreenEnd(track, () => {
       if (screen !== track) return;
       screen = null;
-      ignore(pushMedia().finally(() => { stopTrack(track); }), 'ui');
+      ignore(pushMedia().finally(() => { releaseVideo(track); }), 'ui');
     });
-    screen = track;
     await pushMedia();
   });
 }

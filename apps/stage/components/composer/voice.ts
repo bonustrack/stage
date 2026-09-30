@@ -44,6 +44,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
         await recorder.prepareToRecordAsync();
+        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
       },
       record: () => { recorder.record(); },
       stop: () => recorder.stop(),
@@ -82,7 +83,10 @@ export function useVoiceRecorder(args: VoiceArgs) {
 
   return {
     startRec: () => {
-      const starting = controlRef.current?.start() ?? Promise.resolve();
+      if (startingRef.current) return startingRef.current;
+      const starting = (controlRef.current?.start() ?? Promise.resolve()).finally(() => {
+        if (startingRef.current === starting) startingRef.current = null;
+      });
       startingRef.current = starting;
       return starting;
     },

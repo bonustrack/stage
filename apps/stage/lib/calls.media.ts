@@ -6,7 +6,7 @@ import { nativeCalls } from '../modules/stage-calls';
 import { acquireCallAudio, callOwnsAudio, releaseCallAudio } from './calls.audio.core';
 import { cancelScreenPicker, startScreenPicker } from './calls.screen';
 import { ignore, ignored, report } from './errorPolicy';
-import { stopTrack, type CallStream, type CallTrack, type CapturedMedia } from './calls.types';
+import { stopMedia, stopTrack, type CallStream, type CallTrack, type CapturedMedia } from './calls.types';
 
 export const callsSupported = true;
 export const screenShareSupported = true;
@@ -24,6 +24,7 @@ export async function userMedia(video: boolean, audio: boolean): Promise<Capture
     const stream = await mediaDevices.getUserMedia({ audio, video: video ? CAMERA : false });
     const media = { audio: track(stream.getAudioTracks()[0]), video: track(stream.getVideoTracks()[0]) };
     stream.release(false);
+    if (audio && !media.audio) { stopMedia(media); return null; }
     return media;
   } catch (error) { report('calls.media', error); return null; }
 }
@@ -35,9 +36,10 @@ export async function displayMedia(): Promise<CallTrack | null> {
   const video = track(stream.getVideoTracks()[0]);
   stream.release(false);
   if (epoch !== captureEpoch || !video) { stopTrack(video); return null; }
+  watchScreenEnd(video, () => { video.ended = true; });
   try {
     if (Platform.OS === 'ios' && !await startScreenPicker()) { stopTrack(video); return null; }
-    if (epoch !== captureEpoch) { stopTrack(video); return null; }
+    if (epoch !== captureEpoch || video.ended || video.value.readyState === 'ended') { stopTrack(video); return null; }
     return video;
   } catch (error) { stopTrack(video); report('calls.screen', error); return null; }
 }
@@ -49,9 +51,12 @@ export function previewOf(video: CallTrack): CallStream {
 
 export function watchScreenEnd(video: CallTrack, ended: () => void): void {
   if (video.platform !== 'native') return;
-  const subscription = Platform.OS === 'ios' ? nativeCalls.addListener('onScreenShare', event => { if (!event.started) ended(); }) : null;
-  video.value.addEventListener('ended', ended, { once: true });
-  video.cleanup = () => { subscription?.remove(); video.value.removeEventListener('ended', ended); };
+  video.cleanup?.();
+  const onEnd = (): void => { video.ended = true; ended(); };
+  const subscription = Platform.OS === 'ios' ? nativeCalls.addListener('onScreenShare', event => { if (!event.started) onEnd(); }) : null;
+  video.value.addEventListener('ended', onEnd, { once: true });
+  video.cleanup = () => { subscription?.remove(); video.value.removeEventListener('ended', onEnd); };
+  if (video.ended || video.value.readyState === 'ended') onEnd();
 }
 
 export function watchCallLifecycle(leave: () => void): () => void { void leave; return () => undefined; }

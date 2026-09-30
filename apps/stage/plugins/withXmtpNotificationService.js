@@ -100,9 +100,14 @@ function withExtensionFiles(config, group) {
 
 function withExtensionPod(config) {
   return withPodfile(config, (cfg) => {
-    if (cfg.modResults.contents.includes(`target '${TARGET}'`)) return cfg;
+    const target = `target '${TARGET}' do`;
+    if (cfg.modResults.contents.includes(target)) {
+      const modular = `${target}\n  pod 'SQLCipher', :modular_headers => true`;
+      if (!cfg.modResults.contents.includes(modular)) cfg.modResults.contents = cfg.modResults.contents.replace(target, modular);
+      return cfg;
+    }
     const version = xmtpPodVersion(cfg.modRequest.projectRoot);
-    cfg.modResults.contents += `\ntarget '${TARGET}' do\n  pod 'XMTP', '= ${version}'\nend\n`;
+    cfg.modResults.contents += `\ntarget '${TARGET}' do\n  pod 'SQLCipher', :modular_headers => true\n  pod 'XMTP', '= ${version}'\nend\n`;
     return cfg;
   });
 }

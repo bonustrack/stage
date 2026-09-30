@@ -2,7 +2,7 @@ import type { MediaStream as NativeStream, MediaStreamTrack as NativeTrack } fro
 
 export type CallStream = { platform: 'web'; value: MediaStream } | { platform: 'native'; value: NativeStream };
 
-export type CallTrack = ({ platform: 'web'; value: MediaStreamTrack } | { platform: 'native'; value: NativeTrack }) & { cleanup?: () => void };
+export type CallTrack = ({ platform: 'web'; value: MediaStreamTrack } | { platform: 'native'; value: NativeTrack }) & { cleanup?: () => void; ended?: boolean };
 
 export interface Outgoing { audio: CallTrack | null; video: CallTrack | null }
 

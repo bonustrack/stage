@@ -30,7 +30,10 @@ export function previewOf(video: CallTrack): CallStream {
 }
 
 export function watchScreenEnd(video: CallTrack, ended: () => void): void {
-  if (video.platform === 'web') video.value.addEventListener('ended', ended, { once: true });
+  if (video.platform !== 'web') return;
+  video.value.addEventListener('ended', ended, { once: true });
+  video.cleanup = () => { video.value.removeEventListener('ended', ended); };
+  if (video.value.readyState === 'ended') ended();
 }
 
 export function watchCallLifecycle(leave: () => void): () => void {
