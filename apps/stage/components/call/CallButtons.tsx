@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -10,6 +10,7 @@ import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { callsSupported, joinCall, loadCallHistory, startCall } from '../../lib/calls';
 import { useCallView } from '../../lib/calls.store';
+import { CALL_RING_TIMEOUT_MS, CALL_STALE_MS } from '@stage-labs/client/xmtp/call';
 import { joinableCall } from '@stage-labs/client/xmtp/callMachine';
 import { ignore } from '../../lib/errorPolicy';
 
@@ -28,12 +29,22 @@ function HeaderIcon({ label, icon, disabled, onPress }: {
   );
 }
 
+function useRenderAt(atMs: number | null): void {
+  const [, render] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (atMs === null) return;
+    const id = setTimeout(render, Math.max(0, atMs - Date.now()) + 100);
+    return (): void => { clearTimeout(id); };
+  }, [atMs]);
+}
+
 export function CallButtons({ convId, isGroup }: { convId: string; isGroup: boolean }): React.ReactElement | null {
   const view = useCallView();
   const { success, bg } = usePalette();
   useEffect(() => { ignore(loadCallHistory(convId), 'optional'); }, [convId]);
-  if (!callsSupported) return null;
   const joinable = joinableCall(view.calls, convId, Date.now(), !isGroup);
+  useRenderAt(joinable ? joinable.lastMs + (isGroup ? CALL_STALE_MS : CALL_RING_TIMEOUT_MS) : null);
+  if (!callsSupported) return null;
   if (joinable) {
     return (
       <Button
