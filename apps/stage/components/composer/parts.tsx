@@ -196,7 +196,7 @@ function PendingLocation({
     <Col width={72} align="center" gap={4}>
       <Box width={72} accessibilityLabel="Location preview">
         <Box radius={8} style={{ overflow: 'hidden' }}>
-          <LocationTile lat={coords.lat} lng={coords.lng} pin="2xl"/>
+          <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
         </Box>
         <RemoveBadge label="Remove location" onRemove={onRemove}/>
       </Box>

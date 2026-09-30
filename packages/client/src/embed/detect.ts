@@ -19,8 +19,12 @@ export function youtubeIdOf(text: string | undefined | null): string | null {
 
 export interface MapCoords { lat: number; lng: number; sourceUrl: string }
 
+function coordText(value: number): string {
+  return value.toFixed(7).replace(/\.?0+$/, '');
+}
+
 export function googleMapsUrl(lat: number, lng: number): string {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${coordText(lat)},${coordText(lng)}`;
 }
 
 export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
@@ -46,17 +50,39 @@ export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   return null;
 }
 
-function osmTileXY(lat: number, lng: number, zoom: number): { x: number; y: number } {
-  const n = 2 ** zoom;
-  const x = Math.floor(((lng + 180) / 360) * n);
-  const latRad = (lat * Math.PI) / 180;
-  const y = Math.floor(
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
-  );
-  return { x: Math.min(n - 1, Math.max(0, x)), y: Math.min(n - 1, Math.max(0, y)) };
+const TILE = 256;
+const MAX_LAT = 85.0511;
+
+export interface MapView { zoom: number; width: number; height: number }
+
+export interface MapTile { url: string; left: number; top: number; width: number; height: number }
+
+function worldPoint(lat: number, lng: number, zoom: number): { x: number; y: number } {
+  const size = TILE * 2 ** zoom;
+  const rad = (Math.max(-MAX_LAT, Math.min(MAX_LAT, lat)) * Math.PI) / 180;
+  return {
+    x: ((lng + 180) / 360) * size,
+    y: ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * size,
+  };
 }
 
-export function osmTileUrl(lat: number, lng: number, zoom = 14): string {
-  const { x, y } = osmTileXY(lat, lng, zoom);
-  return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+function tileSpan(center: number, span: number): number[] {
+  const first = Math.floor((center - span / 2) / TILE);
+  const last = Math.ceil((center + span / 2) / TILE) - 1;
+  return Array.from({ length: last - first + 1 }, (_, i) => first + i);
+}
+
+export function osmTileGrid(lat: number, lng: number, view: MapView): MapTile[] {
+  const n = 2 ** view.zoom;
+  const center = worldPoint(lat, lng, view.zoom);
+  const left = center.x - view.width / 2;
+  const top = center.y - view.height / 2;
+  const rows = tileSpan(center.y, view.height).filter(y => y >= 0 && y < n);
+  return rows.flatMap(y => tileSpan(center.x, view.width).map(x => ({
+    url: `https://tile.openstreetmap.org/${view.zoom}/${((x % n) + n) % n}/${y}.png`,
+    left: ((x * TILE - left) / view.width) * 100,
+    top: ((y * TILE - top) / view.height) * 100,
+    width: (TILE / view.width) * 100,
+    height: (TILE / view.height) * 100,
+  })));
 }

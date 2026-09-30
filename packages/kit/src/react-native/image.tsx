@@ -37,6 +37,7 @@ function radiusValue(radius?: ImageRadius | number): number | undefined {
 
 export interface ImageProps {
   src: string;
+  headers?: Record<string, string>;
   alt?: string;
   fit?: ImageFit;
   position?: ImagePosition;
@@ -60,7 +61,7 @@ export interface ImageProps {
 
 export function Image(props: ImageProps): React.ReactElement {
   const {
-    src, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
+    src, headers, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
     width, height, minWidth, maxWidth, minHeight, maxHeight,
     background, margin, style, onLoad, onError,
   } = props;
@@ -91,7 +92,7 @@ export function Image(props: ImageProps): React.ReactElement {
 
   return (
     <RNImage
-      source={{ uri: src }}
+      source={headers ? { uri: src, headers } : { uri: src }}
       resizeMode={FIT[fit]}
       accessibilityLabel={alt}
       accessible={alt !== undefined}
