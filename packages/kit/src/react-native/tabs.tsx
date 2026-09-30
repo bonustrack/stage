@@ -1,6 +1,5 @@
 import { Pressable, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native';
-import { centralIcon, type IconName } from '../central-icons';
-import { Glyph } from './glyph';
+import { Glyph, type CentralIcon } from './glyph';
 import { surfaceColor } from '../layout';
 import { textRoleColor } from '../text.styles';
 import { FONT_SIZE, RADIUS_SCALE, fontName, kitPalette, type Scheme } from '../tokens';
@@ -9,7 +8,7 @@ import { useKitPalette, useKitScheme } from './theme-context';
 export interface TabsOptionView {
   value: string;
   label: string;
-  icon?: IconName;
+  icon?: CentralIcon;
 }
 
 export interface TabsProps {
@@ -88,7 +87,7 @@ export function Tabs(props: TabsProps): React.ReactElement {
             onPress={() => onChange?.(opt.value)}
             style={segmentStyle(underline, selected, c)}
           >
-            {opt.icon ? <Glyph icon={centralIcon(opt.icon)} size={16} color={color} /> : null}
+            {opt.icon ? <Glyph icon={opt.icon} size={16} color={color} /> : null}
             <RNText numberOfLines={1} style={labelStyle(underline, color)}>{opt.label}</RNText>
           </Pressable>
         );

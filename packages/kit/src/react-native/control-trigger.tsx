@@ -2,8 +2,7 @@ import type { Ref } from 'react';
 import { Modal, Pressable, Text as RNText, type View, type ViewStyle } from 'react-native';
 import { styleList, triggerLabelStyle, triggerRowStyle } from '../control.styles';
 import { FONT_SIZE } from '../tokens';
-import { centralIcon, type IconName } from '../central-icons';
-import { Glyph } from './glyph';
+import { Glyph, type CentralIcon } from './glyph';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 
 export interface ControlTriggerProps {
@@ -14,7 +13,7 @@ export interface ControlTriggerProps {
   open: boolean;
   hasValue: boolean;
   label: string;
-  icon: IconName;
+  icon: CentralIcon;
   box: ViewStyle;
   headColor: string;
   placeholderColor: string;
@@ -64,7 +63,7 @@ export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {
           <Glyph icon={IconCrossMedium} size={16} color={placeholderColor} />
         </Pressable>
       ) : null}
-      <Glyph icon={centralIcon(icon)} size={16} color={placeholderColor} />
+      <Glyph icon={icon} size={16} color={placeholderColor} />
     </Pressable>
   );
 }
