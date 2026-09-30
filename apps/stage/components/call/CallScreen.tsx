@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
@@ -136,15 +135,10 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const top = useSafeAreaInsets().top;
   return (
     <Col surface="surface" style={viewportFill(60)}>
-      <Row align="center" justify="between" padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
-        <Col>
-          <Text weight="semibold" size="lg" value={callTitle(session.convId)} maxLines={1}/>
-          <Text size="sm" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
-        </Col>
-        <Pressable accessibilityRole="button" accessibilityLabel="Leave call" onPress={leaveCall} hitSlop={8}>
-          <Text size="sm" role="danger" value="Leave"/>
-        </Pressable>
-      </Row>
+      <Col padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
+        <Text weight="semibold" size="lg" value={callTitle(session.convId)} maxLines={1}/>
+        <Text size="sm" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
+      </Col>
       <Row flex={1}>
         <Row flex={1} wrap padding={{ x: 8 }}>
           {tiles.map((t) => (

@@ -68,7 +68,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
 export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
-    if (isCancelled() || !msg) return;
+    if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId)) return;
     if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
     const decoded = msg.content;
     let preview = '';
@@ -80,7 +80,7 @@ export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
 
     const result = applyToRows(streamConvId, msg, lastTs, lastPreview);
     if (result.needsRefresh) onMiss(streamConvId);
-    if (!isCallSignalType(msg.contentTypeId)) maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
+    maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
   };
 }
 
@@ -96,7 +96,7 @@ function applyToRows(
     prev,
     {
       convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview,
-      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !isCallSignalType(msg.contentTypeId) && !alreadyCounted(msg.id),
+      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !alreadyCounted(msg.id),
     },
     cur => ({
       avatarAddress: cur.peerAddress ?? cur.avatarAddress,
