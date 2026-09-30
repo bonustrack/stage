@@ -3,7 +3,7 @@ import { convMetaFromCachedRow } from '../modules/messaging/convMeta.model';
 import type { ConvMeta } from '../modules/messaging/convMeta.fetch';
 
 const EMPTY: ConvMeta = {
-  peerAddr: null, isGroup: false, groupName: null, groupImage: '', groupDescription: '', memberAddrs: [], assigned: [], inboxToAddr: {},
+  peerAddr: null, isGroup: false, groupName: null, groupImage: '', groupDescription: '', memberAddrs: [], assigned: [], assignedReady: false, inboxToAddr: {},
 };
 
 describe('convMetaFromCachedRow', () => {

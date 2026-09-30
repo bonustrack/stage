@@ -1,9 +1,8 @@
 import {
-  createGroupWith, addGroupMembersWith, requireValidMembers, updateGroupMetaWith, groupEditRightsOf, groupRoleOf,
+  createGroupWith, addGroupMembersWith, requireValidMembers, currentMemberAddresses, updateGroupMetaWith, groupEditRightsOf, groupRoleOf,
   type CreateGroupResult, type GroupEditRights, type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
-import { asGroup, writeAssigned } from '@stage-labs/client/xmtp/labels';
-import { memberInboxToAddressMap } from './xmtp.identity';
+import { asGroup, assignedAddresses, writeAssigned } from '@stage-labs/client/xmtp/labels';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup, type GroupAdmins, type GroupInfo, type GroupMeta } from './xmtp.sdk.core';
 import { lineOfConv } from './xmtp.types';
@@ -55,7 +54,11 @@ export async function updateGroupMeta(convId: string, patch: GroupMetaPatch): Pr
 export async function updateGroupAssigned(convId: string, assigned: string[]): Promise<string[]> {
   const conv = await requireGroup(lineOfConv(convId));
   const group = asGroup(conv) ?? notAGroup();
-  return writeAssigned(group, assigned, async () => Object.values(await memberInboxToAddressMap(conv)));
+  return writeAssigned(group, assigned, async () => {
+    const client = await sdk.client();
+    const members = await conv.members();
+    return currentMemberAddresses(assignedAddresses(assigned), members.map(member => member.inboxId), address => sdk.inboxIdOfAddress(client, address));
+  });
 }
 
 export async function groupEditRights(convId: string): Promise<GroupEditRights> {

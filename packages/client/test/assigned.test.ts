@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { assignedAddresses, groupAssignedOf, writeAssigned, writeLabels, type Group } from '../src/xmtp/labels';
+import { assignedAddresses, clearAppDataWrites, groupAssignedOf, writeAssigned, writeLabels, type Group } from '../src/xmtp/labels';
+import { currentMemberAddresses } from '../src/xmtp/groups';
 
 const A = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const B = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -83,6 +84,40 @@ describe('channel assignees', () => {
       writeAssigned(first, [A, B], members),
     ]);
     expect(JSON.parse(state.raw())).toEqual({ v: 1, custom: 1, labels: ['Stage'], assigned: [A, B] });
+  });
+
+  test('validates all linked addresses by current member inbox, including secondary self addresses', async () => {
+    const resolve = (address: string): Promise<string | undefined> => Promise.resolve(address === A || address === B ? 'self-inbox' : undefined);
+    expect(await currentMemberAddresses([A, B], ['self-inbox'], resolve)).toEqual([A, B]);
+    expect(await currentMemberAddresses([A, B], ['other-inbox'], resolve)).toEqual([]);
+    await expect(currentMemberAddresses([A], ['self-inbox'], () => Promise.reject(new Error('unavailable')))).rejects.toThrow('unavailable');
+  });
+
+  test('reset releases the queue from a dead client and cancels old pending edits', async () => {
+    const stalled = Promise.withResolvers<undefined>();
+    const old = fixture();
+    old.group.id = 'reset-channel';
+    old.group.sync = () => stalled.promise;
+    const pending = writeAssigned(old.group, [A], members);
+    const queued = writeLabels(old.group, () => ['Stage']);
+    const results = Promise.allSettled([pending, queued]);
+    clearAppDataWrites();
+    const fresh = fixture();
+    fresh.group.id = 'reset-channel';
+    await writeAssigned(fresh.group, [B], members);
+    expect(await groupAssignedOf(fresh.group)).toEqual([B]);
+    stalled.resolve(undefined);
+    expect((await results).map(result => result.status)).toEqual(['rejected', 'rejected']);
+    expect(old.writes()).toBe(0);
+  });
+
+  test('merges fresh metadata after an asynchronous membership check', async () => {
+    const state = fixture('{"labels":["Todo"]}');
+    await writeAssigned(state.group, [A], async () => {
+      await state.group.updateAppData('{"labels":["Stage"],"github":"https://github.com/a/b"}');
+      return [A];
+    });
+    expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Stage'], github: 'https://github.com/a/b', assigned: [A] });
   });
 
   test('a rejected write does not block the next edit', async () => {

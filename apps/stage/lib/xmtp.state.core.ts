@@ -1,4 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
 import { MemoryStore } from './cache.shared';
 import { makeListeners, useStoreValue } from './storeCore';
 
@@ -33,6 +34,7 @@ let globalStreamTeardown: (() => void) | null = null;
 export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
 
 export function resetSharedXmtpState(): void {
+  clearAppDataWrites();
   globalStreamTeardown?.();
   activeFeedLines.clear();
   feedCache.clear();

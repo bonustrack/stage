@@ -121,14 +121,25 @@ export function renameLabels(labels: string[], from: string, to: string): string
 }
 
 const appDataWrites = new Map<string | Group, Promise<void>>();
+let appDataEpoch = 0;
+
+export function clearAppDataWrites(): void {
+  appDataEpoch += 1;
+  appDataWrites.clear();
+}
 
 async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) => Promise<Record<string, unknown>>): Promise<void> {
   const key = group.id ?? group;
   const previous = appDataWrites.get(key);
+  const epoch = appDataEpoch;
   const task = async (): Promise<void> => {
+    if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
     await group.sync?.();
     const existing = parseBlob(await readAppData(group));
-    await group.updateAppData(JSON.stringify({ ...existing, v: 1, ...await patch(existing) }));
+    const changed = await patch(existing);
+    const latest = parseBlob(await readAppData(group));
+    if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
+    await group.updateAppData(JSON.stringify({ ...latest, v: 1, ...changed }));
   };
   const pending = previous ? previous.then(task, task) : task();
   appDataWrites.set(key, pending);

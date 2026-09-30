@@ -9,6 +9,17 @@ export function validMemberAddresses(addresses: string[]): string[] {
     .filter(a => MEMBER_ADDRESS_RE.test(a));
 }
 
+export async function currentMemberAddresses(
+  addresses: string[], memberInboxIds: string[], resolveInboxId: (address: string) => Promise<string | undefined>,
+): Promise<string[]> {
+  const members = new Set(memberInboxIds);
+  const inboxIds = await Promise.all(addresses.map(resolveInboxId));
+  return addresses.filter((_, i) => {
+    const id = inboxIds[i];
+    return id !== undefined && members.has(id);
+  });
+}
+
 export function isNoInboxError(msg: string): boolean {
   return NO_INBOX_RE.test(msg);
 }

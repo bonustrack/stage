@@ -59,8 +59,8 @@ function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: ()
   );
 }
 
-function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigned: string[] } {
-  const { memberAddrs, inboxToAddr, assigned } = useConvMeta(convId);
+function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigned: string[]; assignedReady: boolean } {
+  const { memberAddrs, inboxToAddr, assigned, assignedReady } = useConvMeta(convId);
   const roles = useChannelRoles(convId, inboxToAddr);
   const self = useSelfAddress();
   const addresses = useMemo(() => (self ? [self, ...memberAddrs] : memberAddrs), [self, memberAddrs]);
@@ -69,22 +69,22 @@ function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigne
     () => memberListEntries(addresses, getPeerName, shortAddress, roles),
     [addresses, profiles, roles],
   );
-  return { entries, assigned };
+  return { entries, assigned, assignedReady };
 }
 
-function MemberHeader({ title, count, children }: { title: string; count: number; children?: React.ReactNode }): React.ReactElement {
+function MemberHeader({ title, count, children }: { title: string; count?: number; children?: React.ReactNode }): React.ReactElement {
   return (
     <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
       <Eyebrow>{title}</Eyebrow>
-      <CountTag count={count}/>
+      {count === undefined ? null : <CountTag count={count}/>}
       <Box flex={1}/>
       {children}
     </Row>
   );
 }
 
-function AssigneesSection({ convId, entries, assigned }: {
-  convId: string; entries: MemberListEntry[]; assigned: string[];
+function AssigneesSection({ convId, entries, assigned, assignedReady }: {
+  convId: string; entries: MemberListEntry[]; assigned: string[]; assignedReady: boolean;
 }): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -93,13 +93,13 @@ function AssigneesSection({ convId, entries, assigned }: {
   const selected = assignedEntries(entries, assigned);
   return (
     <>
-      <MemberHeader title="Assignees" count={selected.length}>
-        {rights.appData ? <Button label="Edit" accessibilityLabel="Edit assignees" size="xs" color="secondary" variant="ghost" dark={dark}
+      <MemberHeader title="Assignees" count={assignedReady ? selected.length : undefined}>
+        {assignedReady && rights.appData ? <Button label="Edit" accessibilityLabel="Edit assignees" size="xs" color="secondary" variant="ghost" dark={dark}
           onPress={() => { setEditing(true); }}/> : null}
       </MemberHeader>
-      {selected.length === 0 ? <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" color="secondary">No assignees.</Text></Box> : null}
+      {assignedReady && selected.length === 0 ? <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" color="secondary">No assignees.</Text></Box> : null}
       {selected.map(entry => <MemberListRow key={entry.address} entry={entry} onPress={() => { router.push(profileLinkOf(entry.address)); }}/>) }
-      {editing && rights.appData ? <AssigneesEditor convId={convId} entries={entries} assigned={selected.map(entry => entry.address)}
+      {editing && assignedReady && rights.appData ? <AssigneesEditor convId={convId} entries={entries} assigned={assigned}
         onClose={() => { setEditing(false); }}/> : null}
     </>
   );
@@ -111,7 +111,7 @@ export function ChannelAssignees({ convId }: { convId: string }): React.ReactEle
 
 export function MemberListSidebar({ convId }: { convId: string }): React.ReactElement {
   const router = useRouter();
-  const { entries, assigned } = useMemberEntries(convId);
+  const { entries, assigned, assignedReady } = useMemberEntries(convId);
   return (
     <VirtualList
       scroll="self"
@@ -120,7 +120,7 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
       keyExtractor={(entry) => entry.address.toLowerCase()}
       contentContainerStyle={{ paddingBottom: PAGE_GUTTER }}
       ListHeaderComponent={<>
-        <AssigneesSection convId={convId} entries={entries} assigned={assigned}/>
+        <AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>
         <MemberHeader title="Members" count={entries.length}/>
       </>}
       renderItem={({ item }) => (

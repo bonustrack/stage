@@ -38,7 +38,7 @@ export function AssigneesEditor({ convId, entries, assigned, onClose }: {
     if (busy) return;
     setBusy(true);
     setError('');
-    const next = entries.filter(entry => selected.has(entry.address.toLowerCase())).map(entry => entry.address);
+    const next = [...selected];
     void updateGroupAssigned(convId, next)
       .then(written => { patchMeta({ assigned: written }); onClose(); })
       .catch((err: unknown) => {
