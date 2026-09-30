@@ -12,7 +12,7 @@ export default { title: 'Button' };
 
 const COLORS = ['primary', 'secondary', 'info', 'discovery', 'success', 'caution', 'warning', 'danger'] as const;
 const VARIANTS = ['solid', 'soft', 'outline', 'ghost'] as const;
-const SIZES = ['3xs', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
 export const Controls: Story<ButtonProps & { withIconStart: boolean; withIconEnd: boolean }> = ({ withIconStart, withIconEnd, ...args }) => {
   const dark = useDark();

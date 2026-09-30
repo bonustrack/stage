@@ -359,34 +359,6 @@ exports[`resolveColors full matrix snapshot (color x variant x dark) 1`] = `
 
 exports[`SIZES snapshot 1`] = `
 {
-  "2xl": {
-    "fontSize": 18,
-    "gap": 10,
-    "height": 64,
-    "paddingHorizontal": 28,
-    "spinner": "large",
-  },
-  "2xs": {
-    "fontSize": 13,
-    "gap": 6,
-    "height": 28,
-    "paddingHorizontal": 10,
-    "spinner": "small",
-  },
-  "3xl": {
-    "fontSize": 20,
-    "gap": 12,
-    "height": 72,
-    "paddingHorizontal": 32,
-    "spinner": "large",
-  },
-  "3xs": {
-    "fontSize": 12,
-    "gap": 4,
-    "height": 24,
-    "paddingHorizontal": 8,
-    "spinner": "small",
-  },
   "lg": {
     "fontSize": 17,
     "gap": 8,

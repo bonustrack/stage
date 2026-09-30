@@ -123,6 +123,10 @@ Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default
 
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
+## Breaking changes
+
+- 0.3.0: `Button` sizes are now `xs`, `sm`, `md`, `lg` and `xl`. The `3xs`, `2xs`, `2xl` and `3xl` sizes were removed. Use `xs` instead of `3xs` and `2xs`, and `xl` instead of `2xl` and `3xl`.
+
 ## Links
 
 - Consumed by [`apps/stage`](../../apps/stage)
