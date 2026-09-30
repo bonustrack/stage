@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER, STICKY_TOP } from '../layout';
+import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
@@ -327,37 +327,46 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   );
 }
 
-function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
+function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
   inline: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
+  children: React.ReactNode;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const safeTop = useSafeAreaInsets().top;
   const small = !useWebTabRail();
   const [searchKey, setSearchKey] = useState(0);
-  const openSearch = (): void => { setSearchKey(key => key + 1); };
+  const [laneHeight, setLaneHeight] = useState(0);
+  const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
+  const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); setSearchKey(key => key + 1); };
   const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
   if (small) {
-    return <Box style={STICKY_TOP}>
-      <StackHeader title="Board" backTo="/" inline={inline} trailing={<>
+    return <>
+      <StackHeader title="Board" backTo="/" inline={inline} bordered={false} trailing={<>
         <Box flex={1}/>
         <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
       </>}/>
-      <FilterSearch
-        key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
-        query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
-        head={link} sub={text} border={border} inline field
-      />
-    </Box>;
+      <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
+        <ScreenScroll ref={scroll} keyboardShouldPersistTaps="handled">
+          <FilterSearch
+            key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
+            query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
+            head={link} sub={text} border={border} inline field
+          />
+          <Col height={laneHeight}>{children}</Col>
+        </ScreenScroll>
+      </Box>
+    </>;
   }
   if (searchKey > 0) {
-    return (
+    return <>
       <FilterSearch
         key={searchKey} scope="board" onMenu={onFilterMenu}
         query={query} setQuery={setQuery} onClose={closeSearch}
         head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
         trailing={<HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>}
       />
-    );
+      {children}
+    </>;
   }
   const trailing = (
     <>
@@ -367,7 +376,7 @@ function BoardHeader({ inline, query, setQuery, onFilterMenu }: {
       </Row>
     </>
   );
-  return <StackHeader title="Board" backTo="/" inline={inline} trailing={trailing}/>;
+  return <><StackHeader title="Board" backTo="/" inline={inline} trailing={trailing}/>{children}</>;
 }
 
 export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactElement | null {
@@ -379,8 +388,9 @@ export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactEleme
   if (docked && pane !== true) return null;
   return (
     <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <BoardHeader inline={pane === true} query={query} setQuery={setQuery} onFilterMenu={setFiltering}/>
-      <BoardBody query={query} filtering={filtering}/>
+      <BoardFrame inline={pane === true} query={query} setQuery={setQuery} onFilterMenu={setFiltering}>
+        <BoardBody query={query} filtering={filtering}/>
+      </BoardFrame>
     </Col>
   );
 }

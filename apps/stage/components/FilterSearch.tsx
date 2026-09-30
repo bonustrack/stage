@@ -250,7 +250,7 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
   useEffect(() => () => { onMenu(false); if (focused.current) onFocusChange?.(false); }, []);
   const Menu = wide ? WideFilterMenu : TouchFilterMenu;
   return (
-    <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: FILTER_LAYER }]}>
+    <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: bar.field === true ? 1 : FILTER_LAYER }]}>
       <SearchTopnavBar
         {...bar} inline query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
       />

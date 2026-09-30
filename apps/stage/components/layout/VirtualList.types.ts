@@ -4,7 +4,7 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 type SharedFlatListProps<T> = Pick<
   FlatListProps<T>,
   | 'data' | 'renderItem' | 'keyExtractor' | 'extraData'
-  | 'ListHeaderComponent' | 'ListFooterComponent' | 'ListEmptyComponent'
+  | 'ListHeaderComponent' | 'ListHeaderComponentStyle' | 'ListFooterComponent' | 'ListEmptyComponent'
   | 'style' | 'contentContainerStyle'
   | 'onEndReached' | 'onEndReachedThreshold' | 'onStartReached' | 'onStartReachedThreshold'
   | 'onScroll' | 'scrollEventThrottle' | 'onScrollBeginDrag' | 'onContentSizeChange' | 'onLayout'

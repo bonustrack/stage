@@ -321,7 +321,9 @@ function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }
       {...(props.scroll === 'self' ? SELF_SCROLLBAR : null)}
     >
       <View ref={asViewRef(refs.content)} style={props.contentContainerStyle}>
-        {renderSlot(props.ListHeaderComponent)}
+        {props.ListHeaderComponentStyle === undefined ? renderSlot(props.ListHeaderComponent) : (
+          <View style={props.ListHeaderComponentStyle}>{renderSlot(props.ListHeaderComponent)}</View>
+        )}
         {count === 0 ? renderSlot(props.ListEmptyComponent) : <VirtualRows props={props} refs={refs} virtualizer={virtualizer} />}
         {renderSlot(props.ListFooterComponent)}
       </View>

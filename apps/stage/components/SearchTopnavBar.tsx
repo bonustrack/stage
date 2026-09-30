@@ -13,7 +13,8 @@ import { FormField } from './FormField';
 import { HoverTooltip } from './HoverTooltip';
 
 const BAR_GAP = 10;
-export const SEARCH_FIELD_HEIGHT = 64;
+const FIELD_GAP = 4;
+export const SEARCH_FIELD_HEIGHT = TOPNAV_HEIGHT;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
@@ -48,7 +49,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   if (props.field === true) {
     return (
       <Frame>
-        <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, y: BAR_GAP }} surface="toolbar" align="center">
+        <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, y: FIELD_GAP }} surface="toolbar" align="center">
           <Box flex={1}>
             <FormField
               inputRef={node => {

@@ -7,10 +7,11 @@ import { isSplitRoute } from './tabs/splitRoutes';
 
 export const TOPNAV_HEIGHT = 52;
 
-export function Topnav({ left, right, inline }: {
+export function Topnav({ left, right, inline, bordered = true }: {
   left?: React.ReactNode;
   right?: React.ReactNode;
   inline?: boolean;
+  bordered?: boolean;
 }): React.ReactElement {
   const { border } = usePalette();
   const pathname = usePathname();
@@ -24,7 +25,7 @@ export function Topnav({ left, right, inline }: {
       align="center"
       justify="between"
       surface="toolbar"
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}
+      style={bordered ? { borderBottomWidth: 1, borderBottomColor: border } : undefined}
     >
       <Row align="center" gap={8}>
         {left}
