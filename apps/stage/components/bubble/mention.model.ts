@@ -1,15 +1,14 @@
-import {
-  hasChannelRef, splitChannelRefs, withChannelLabels,
-} from '@stage-labs/client/xmtp/channelRefs';
-import { hasMention, parseMentions, type MentionSegment } from '@stage-labs/client/xmtp/mentions';
+import { splitChannelRefs, withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
+import { parseMentions, type MentionSegment } from '@stage-labs/client/xmtp/mentions';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
-import { MARKDOWN_LINK_RE } from '../../lib/channelLinks';
+import { channelFallbackLabel, MARKDOWN_LINK_RE } from '../../lib/channelLinks';
 
 export type BodyView = 'plain' | 'namedPlain' | 'mention' | 'markdown';
 
 export type BodySegment =
-  | MentionSegment
-  | { type: 'channel'; convId: string; label?: string; url?: string }
+  | Extract<MentionSegment, { type: 'mention' }>
+  | { type: 'text'; text: string; literal?: boolean }
+  | { type: 'channel'; convId: string; label?: string; url?: string; text?: string; raw?: string }
   | { type: 'link'; url: string; text: string };
 
 interface LinkMatch { index: number; lastIndex: number; url: string }
@@ -31,8 +30,10 @@ export function withMentionLabels(text: string, labelOf: (address: string) => st
 }
 
 export function bodyView(body: string, plain: boolean, findLinks?: LinkFinder): BodyView {
-  const mentions = hasMention(body) || hasChannelRef(body);
-  const channels = plain && findLinks && bodySegments(body, findLinks).some(s => s.type === 'channel');
+  const segments = bodySegments(body, findLinks ?? (() => null));
+  const mentions = segments.some(s => s.type === 'mention' || (s.type === 'channel' && !s.url)
+    || (s.type === 'link' && parseMentions(s.text).some(part => part.type === 'mention')));
+  const channels = segments.some(s => s.type === 'channel');
   if (plain) return mentions || channels ? 'namedPlain' : 'plain';
   return mentions ? 'mention' : 'markdown';
 }
@@ -55,16 +56,21 @@ function wholeLinkUrl(target: string, findLinks: LinkFinder): string | undefined
 
 function linkSegment(url: string, text: string): BodySegment {
   const convId = stageChannelIdOf(url);
+  const label = channelFallbackLabel(text);
   return convId ? {
-    type: 'channel', convId, url, ...(text.startsWith('#') ? { label: text.slice(1) } : {}),
+    type: 'channel', convId, url, ...(text !== url ? { text } : {}),
+    ...(label !== undefined ? { label } : {}),
   } : { type: 'link', url, text };
 }
 
-function markdownLinkSpans(text: string, findLinks: LinkFinder): Span[] {
+function markdownLinkSpans(text: string, findLinks: LinkFinder, plain: boolean): Span[] {
   return [...text.matchAll(MARKDOWN_LINK_RE)].flatMap<Span>(m => {
     const url = wholeLinkUrl(m[2] ?? '', findLinks);
     if (url === undefined) return [];
-    return [{ index: m.index, lastIndex: m.index + m[0].length, segment: linkSegment(url, m[1] ?? '') }];
+    const linked = linkSegment(url, m[1] ?? '');
+    const segment: BodySegment = !plain ? linked : linked.type === 'channel'
+      ? { ...linked, raw: m[0] } : { type: 'text', text: m[0] };
+    return [{ index: m.index, lastIndex: m.index + m[0].length, segment }];
   });
 }
 
@@ -77,13 +83,25 @@ function bareLinkSpans(text: string, findLinks: LinkFinder): Span[] {
   });
 }
 
-export function bodySegments(body: string, findLinks: LinkFinder): BodySegment[] {
+export function bodySegments(body: string, findLinks: LinkFinder, plain = false): BodySegment[] {
   const withBareLinks = (text: string): BodySegment[] => splitSpans(text, bareLinkSpans(text, findLinks), parseMentions);
   const prose = (text: string): BodySegment[] => splitChannelRefs(text).flatMap<BodySegment>(seg => (
-    seg.type === 'channel' ? [seg] : splitSpans(seg.text, markdownLinkSpans(seg.text, findLinks), withBareLinks)
+    seg.type === 'channel' ? [seg] : splitSpans(seg.text, markdownLinkSpans(seg.text, findLinks, plain), withBareLinks)
   ));
-  const code = [...body.matchAll(/```[\s\S]*?```|`[^`\n]*`/g)].map((m): Span => ({
-    index: m.index, lastIndex: m.index + m[0].length, segment: { type: 'text', text: m[0] },
+  const code = [...body.matchAll(/(`+)(?!`)[\s\S]*?[^`]\1(?!`)/g)].map((m): Span => ({
+    index: m.index, lastIndex: m.index + m[0].length, segment: { type: 'text', text: m[0], literal: true },
   }));
   return splitSpans(body, code, prose);
+}
+
+export function namedPlainText(
+  segments: readonly BodySegment[], labelOf: (address: string) => string,
+  channelOf: (segment: Extract<BodySegment, { type: 'channel' }>) => string,
+): string {
+  return segments.map(seg => {
+    if (seg.type === 'channel') return channelOf(seg);
+    if (seg.type === 'mention') return labelOf(seg.address);
+    if (seg.type === 'text' && !seg.literal) return withMentionLabels(seg.text, labelOf);
+    return seg.text;
+  }).join('');
 }

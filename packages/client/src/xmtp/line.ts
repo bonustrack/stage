@@ -39,7 +39,7 @@ export function stageConvIdOf(text?: string | null): string | null {
 }
 
 const CHANNEL_LINK_RE = new RegExp(
-  '^' + LINK_PREFIX + '(?:xmtp|channel)\\/[A-Za-z0-9_-]+\\/?(?:\\?[^\\s<>]*)?$', 'i',
+  '^' + LINK_PREFIX + '(?:xmtp|channel)\\/[A-Za-z0-9_-]+\\/?(?:\\?[^\\s<>#]*)?$', 'i',
 );
 
 export function stageChannelIdOf(url: string): string | null {

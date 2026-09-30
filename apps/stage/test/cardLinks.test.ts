@@ -149,10 +149,14 @@ describe('cardLinksOf', () => {
     const urls = [`https://stage.box/#/channel/${conv}`, `https://stage.box/channel/${conv}`, `stage://channel/${conv}`, `stage://channel/${conv}?m=abc&focus=1`];
     for (const url of urls) {
       expect(cardLinksOf(` \n\t${url}\n `)).toEqual([{ kind: 'channel', url, convId: conv }]);
-      for (const text of [`join ${url}`, `${url}\nhello`, `${url}.`, `(${url})`, `${url} ${url}`, `\`${url}\``, `\`\`\`\n${url}\n\`\`\``]) {
+      for (const text of [`join ${url}`, `join ${url}>`, `${url}\nhello`, `${url}.`, `(${url})`, `${url} ${url}`, `\`${url}\``, `\`\`\`\n${url}\n\`\`\``]) {
         expect(cardLinksOf(text)).toEqual([]);
       }
       expect(cardLinksOf(`[join](${url})`)).toEqual([{ kind: 'channel', url, convId: conv }]);
+      for (const title of ['"Channel"', "'Channel'", '(Channel)']) {
+        expect(cardLinksOf(`[**#Ops**](${url} ${title})`)).toEqual([{ kind: 'channel', url, convId: conv }]);
+        expect(cardLinksOf(`join [#Ops](${url} ${title}) today`)).toEqual([]);
+      }
       expect(cardLinksOf(`join [#Ops](${url}) today`)).toEqual([]);
     }
   });

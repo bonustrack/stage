@@ -29,11 +29,12 @@ import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
-import { ChannelLink } from './ChannelLink';
+import { ChannelLink, useChannelLinkNames } from './ChannelLink';
+import { channelFallbackLabel, channelLinkText, markdownLabelText } from '../../lib/channelLinks';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
-  bodySegments, bodyView, mentionAddresses, mentionLabel, type BodySegment, type LinkFinder,
+  bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, type BodySegment, type LinkFinder,
 } from './mention.model';
 
 function mentionDisplay(address: string): string {
@@ -62,12 +63,12 @@ export const markdownRules: RenderRules = {
   link: (node, children, parents, styles, onLinkPress) => {
     const link = renderRules.link?.(node, children, parents, styles, onLinkPress);
     const href: unknown = node.attributes.href;
-    if (!isValidElement(link) || typeof href !== 'string') return link;
+    if (!isValidElement<ComponentProps<typeof Text>>(link) || typeof href !== 'string') return link;
     const convId = stageChannelIdOf(href);
     if (convId) {
-      const label = node.children.map(child => child.content).join('');
-      return <ChannelLink key={node.key} convId={convId} url={href}
-        label={label.startsWith('#') ? label.slice(1) : undefined} onLinkPress={onLinkPress} />;
+      const label = markdownLabelText(node);
+      return <ChannelLink key={node.key} convId={convId} url={href} text={label} element={link}
+        label={channelFallbackLabel(label)} onLinkPress={onLinkPress} />;
     }
     return cloneElement(link, bubbleLinkProps(href, onLinkPress));
   },
@@ -168,24 +169,23 @@ class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
   }
 }
 
-interface PlainBodyProps { body: string; fg: string; query?: string; inline?: boolean }
+interface PlainBodyProps { body: string; fg: string; query?: string }
 
-function PlainBody({ body, fg, query, inline }: PlainBodyProps): React.ReactElement {
-  if (query) return <HighlightText text={body} query={query} fg={fg} inline={inline} />;
+function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
+  if (query) return <HighlightText text={body} query={query} fg={fg} />;
   return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   usePeerProfiles(mentionAddresses(body));
-  return (
-    <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>
-      {bodySegments(body, findLinks).map((seg, i) => {
-        if (seg.type === 'channel') return <ChannelLink key={i} {...seg} fg={fg} plain query={query} />;
-        const text = seg.type === 'mention' ? mentionDisplay(seg.address) : seg.text;
-        return <PlainBody key={i} body={text} fg={fg} query={query} inline />;
-      })}
-    </Text>
-  );
+  const segments = bodySegments(body, findLinks, true);
+  const convIds = [...new Set(segments.flatMap(seg => seg.type === 'channel' ? [seg.convId] : []))];
+  const names = useChannelLinkNames(convIds);
+  const text = namedPlainText(segments, mentionDisplay, seg => {
+    const meta = names.get(seg.convId);
+    return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddr ? seg.raw ?? seg.text : seg.text);
+  });
+  return <PlainBody body={text} fg={fg} query={query} />;
 }
 
 function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {

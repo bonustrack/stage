@@ -57,6 +57,6 @@ export { summarizeConversation, type ConversationView } from './conversation';
 export { useConvConsentState } from './useConvConsent';
 export { useGroupAccess } from './useGroupAccess';
 
-export { messagingKeys, fetchGroupRoles, useConvMeta, invalidateConvMeta } from './queries';
+export { messagingKeys, fetchGroupRoles, useConvMeta, useConvMetas, invalidateConvMeta } from './queries';
 export { ensureMessagingStreamSync } from './streamSync';
 export { prefetchFeed } from './feedQuery';

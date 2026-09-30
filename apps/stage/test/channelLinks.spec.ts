@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { cachedChannelName, channelLinkLabel } from '../lib/channelLinks';
+import { cachedChannelName, channelLinkLabel, channelLinkText, channelFallbackLabel, markdownLabelText } from '../lib/channelLinks';
 import { bubbleLinkProps as nativeProps } from '../components/bubble/linkProps';
 import { bubbleLinkProps as webProps } from '../components/bubble/linkProps.web';
 import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
@@ -7,12 +7,31 @@ import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 
 describe('channel link names', () => {
-  test('reuses cached group titles, never direct-chat titles', () => {
-    const rows = [{ convId: CONV, title: 'Design', peerAddress: null }, { convId: 'dm', title: 'Alice', peerAddress: '0xabc' }];
+  test('reuses real cached group names, never list fallback or direct-chat titles', () => {
+    const rows = [{ convId: CONV, title: 'Design', groupName: 'Design', peerAddress: null }, { convId: 'dm', groupName: 'Alice', peerAddress: '0xabc' }];
     expect(cachedChannelName(rows, CONV)).toBe('Design');
     expect(cachedChannelName(rows, 'dm')).toBeUndefined();
     expect(cachedChannelName(null, CONV)).toBeUndefined();
-    expect(cachedChannelName([{ convId: CONV, title: 42 }], CONV)).toBeUndefined();
+    expect(cachedChannelName([{ convId: CONV, groupName: 42 }], CONV)).toBeUndefined();
+    for (const title of ['3 members', CONV.slice(0, 6)]) {
+      expect(cachedChannelName([{ convId: CONV, title }], CONV)).toBeUndefined();
+      expect(channelLinkLabel(cachedChannelName([{ convId: CONV, title, groupName: '' }], CONV), 'Ops')).toBe('#Ops');
+    }
+  });
+
+  test('known DM conversation links retain their original text instead of a hash label', () => {
+    const url = `stage://xmtp/${CONV}`;
+    expect(channelLinkText({ peerAddr: '0xabc' }, undefined, url)).toBe(url);
+    expect(channelLinkText({ peerAddr: '0xabc' }, undefined, url, 'Alice')).toBe('Alice');
+    expect(channelLinkText({ groupName: 'Ops' }, undefined, url)).toBe('#Ops');
+  });
+
+  test('reads labels recursively through Markdown emphasis', () => {
+    const label = markdownLabelText({ content: '', children: [{ content: '', children: [{ content: '#Ops', children: [] }] }] });
+    expect(channelLinkLabel(undefined, label)).toBe('#Ops');
+    expect(channelFallbackLabel('**#Ops**')).toBe('Ops');
+    expect(channelFallbackLabel('***#Ops***')).toBe('Ops');
+    expect(channelFallbackLabel('**join here**')).toBeUndefined();
   });
 
   test('uses one hash and a real name or supplied channel label, otherwise #channel', () => {

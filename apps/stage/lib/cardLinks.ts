@@ -105,8 +105,9 @@ function isGenericLink(token: string): boolean {
 
 function classify(token: string): CardLink | null {
   const clean = token.replace(/[.,;:!?)\]}'"`]+$/, '');
-  const convId = stageChannelIdOf(clean);
-  if (convId) return { kind: 'channel', url: clean, convId };
+  const channelUrl = clean.replace(/>+$/, '');
+  const convId = stageChannelIdOf(channelUrl);
+  if (convId) return { kind: 'channel', url: channelUrl, convId };
   const card = specificCard(token);
   if (card) return card;
   return isGenericLink(clean) ? { kind: 'generic', url: clean } : null;

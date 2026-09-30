@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
+import { highlightSegments } from '../components/HighlightText.model';
 import {
-  bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type LinkFinder,
+  bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, withMentionLabels, type LinkFinder,
 } from '../components/bubble/mention.model';
 
 const A = '0x59445094f08d01213bd6ba7215a6ab7a4bc29a4a';
@@ -79,8 +80,8 @@ describe('mention labels', () => {
       { type: 'text', text: 'join ' }, { type: 'channel', convId: 'c0ffee02', url },
       { type: 'text', text: ' with ' }, { type: 'mention', address: A },
     ]);
-    expect(bodySegments(`[Join here](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url }]);
-    expect(bodySegments(`[#Ops](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, label: 'Ops' }]);
+    expect(bodySegments(`[Join here](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, text: 'Join here' }]);
+    expect(bodySegments(`[#Ops](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, text: '#Ops', label: 'Ops' }]);
     expect(bodyView(url, true, findLinks)).toBe('namedPlain');
     expect(bodyView(`**join** ${url}`, false, findLinks)).toBe('markdown');
   });
@@ -90,10 +91,39 @@ describe('mention labels', () => {
     expect(bodySegments(`${url}.`, findLinks)).toEqual([
       { type: 'channel', convId: 'c0ffee02', url }, { type: 'text', text: '.' },
     ]);
-    expect(bodySegments(`\`${url}\``, findLinks)).toEqual([{ type: 'text', text: `\`${url}\`` }]);
+    expect(bodySegments(`\`${url}\``, findLinks)).toEqual([{ type: 'text', text: `\`${url}\``, literal: true }]);
     const profile = `https://stage.box/user/${A}`;
     expect(bodySegments(profile, findLinks)).toEqual([{ type: 'link', url: profile, text: profile }]);
-    expect(bodySegments(`\`${OPS}\``, findLinks)).toEqual([{ type: 'text', text: `\`${OPS}\`` }]);
+    expect(bodySegments(`\`${OPS}\``, findLinks)).toEqual([{ type: 'text', text: `\`${OPS}\``, literal: true }]);
+  });
+
+  test('protects matching backtick runs and ignores code-only mentions when choosing a view', () => {
+    const url = 'stage://channel/c0ffee02';
+    for (const run of ['`', '``', '```', '````']) {
+      const code = `${run}${url} @${A}${run}`;
+      expect(bodySegments(code, findLinks)).toEqual([{ type: 'text', text: code, literal: true }]);
+      expect(bodyView(`**read** ${code}`, false, findLinks)).toBe('markdown');
+      expect(bodyView(code, true, findLinks)).toBe('plain');
+      expect(bodySegments(`${code} @${B}`, findLinks).filter(s => s.type === 'mention')).toEqual([{ type: 'mention', address: B }]);
+    }
+  });
+
+  test('plain views retain ordinary Markdown URLs and resolve mentions within their labels', () => {
+    const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
+    const result = namedPlainText(bodySegments(source, findLinks, true), () => '@Chen', () => '#Ops');
+    expect(result).toBe('read [ping @Chen](https://example.com) today #Ops');
+    expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
+    expect(highlightSegments(result, 'today #Ops').filter(s => s.match).map(s => s.value)).toEqual(['today #Ops']);
+    expect(highlightSegments(result, 'example.com) today').filter(s => s.match).map(s => s.value)).toEqual(['example.com) today']);
+    expect(namedPlainText(bodySegments(`code \`@${A}\` and @${B}`, findLinks, true), () => '@Chen', () => '#Ops'))
+      .toBe(`code \`@${A}\` and @Chen`);
+  });
+
+  test('channel fallbacks work in formatted Markdown links with titles', () => {
+    const url = 'stage://channel/c0ffee02';
+    expect(bodySegments(`[**#Ops**](${url} "Channel")`, findLinks)).toEqual([
+      { type: 'channel', convId: 'c0ffee02', url, text: '**#Ops**', label: 'Ops' },
+    ]);
   });
 
   test('keeps a markdown link to a non web target as text', () => {

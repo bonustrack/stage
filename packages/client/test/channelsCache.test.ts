@@ -78,6 +78,7 @@ describe('applyGroupMeta', () => {
 
   test.each<[string, Partial<GroupRowMeta>]>([
     ['labels', { labels: ['In progress'] }],
+    ['real group name', { groupName: 'Ops' }],
     ['added label', { labels: ['Todo', 'Blocked'] }],
     ['cleared labels', { labels: [] }],
     ['title', { title: 'Renamed' }],

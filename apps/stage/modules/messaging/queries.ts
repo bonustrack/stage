@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';
 import { fetchConvMeta, fetchGroupRoles, type ConvMeta, EMPTY_CONV_META } from './convMeta.fetch';
 import { convMetaFromCachedRow } from './convMeta.model';
@@ -19,15 +19,23 @@ export const messagingKeys = {
 
 export { fetchGroupRoles };
 
-export function useConvMeta(convId?: string | null): ConvMeta {
-  const { data } = useQuery({
+function convMetaOptions(convId?: string | null) {
+  return {
     queryKey: messagingKeys.convMeta(convId),
     queryFn: () => fetchConvMeta(convId ?? ''),
     placeholderData: () => convMetaFromCachedRow(getCachedRows(), convId ?? '', EMPTY_CONV_META),
     enabled: !!convId,
     staleTime: 5 * 60_000,
-  });
+  };
+}
+
+export function useConvMeta(convId?: string | null): ConvMeta {
+  const { data } = useQuery(convMetaOptions(convId));
   return data ?? EMPTY_CONV_META;
+}
+
+export function useConvMetas(convIds: readonly string[]): ConvMeta[] {
+  return useQueries({ queries: convIds.map(convMetaOptions) }).map(result => result.data ?? EMPTY_CONV_META);
 }
 
 export function invalidateConvMeta(convId: string): void {

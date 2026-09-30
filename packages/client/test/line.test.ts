@@ -60,6 +60,9 @@ describe('stageChannelIdOf', () => {
       `https://stage.box/#/profile/${CONV}`, `https://stage.box.evil/channel/${CONV}`,
       `https://example.com/?url=https://stage.box/channel/${CONV}`, `stage://channel/${CONV}/extra`,
       `see stage://channel/${CONV}`, `stage://channel/${CONV}.`, `stage://channel/${CONV})`,
+      `stage://channel/${CONV}?next=#/%`, `https://stage.box/#/channel/${CONV}?next=#/%`,
+      `stage://channel/${CONV}?next=#/other`, `stage://channel/${CONV}#/%`,
+      'stage://channel/%E0%A4', 'https://stage.box/#/channel/%',
     ]) expect(stageChannelIdOf(url)).toBeNull();
   });
 });

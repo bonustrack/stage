@@ -24,6 +24,7 @@ import { reported, recover } from '../../lib/errorPolicy';
 export interface ConversationView {
   convId: string;
   title: string;
+  groupName?: string;
   lastTs: number | null;
   lastBubbleTs: number | null;
   lastPreview: string;
@@ -123,7 +124,7 @@ function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRo
     memberCount: data.memberAddresses.length,
     fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
   });
-  return { title, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), labels: data.labels };
+  return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), labels: data.labels };
 }
 
 export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
@@ -155,7 +156,7 @@ export async function summarizeConversation(
   const last = pickLastMessage(msgs, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
-  const { title, avatarUri, avatarAddress, labels } = rowMetaOf(
+  const { title, groupName, avatarUri, avatarAddress, labels } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
   );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
@@ -168,6 +169,7 @@ export async function summarizeConversation(
   return {
     convId,
     title,
+    groupName,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
     lastBubbleTs: lastBubbleTsOf(msgs, dm),
     lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
