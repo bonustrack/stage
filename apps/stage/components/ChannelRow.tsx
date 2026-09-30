@@ -20,6 +20,7 @@ import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 import { TEXT_11PX } from './smallText';
+import type { BubbleLinkProps } from './bubble/helpers';
 
 interface ChannelRowProps {
   title: string;
@@ -40,6 +41,7 @@ interface ChannelRowProps {
   labels?: string[];
   active?: boolean;
   onPress?: () => void;
+  linkProps?: BubbleLinkProps;
   onPressIn?: () => void;
   onLongPress?: (point?: MenuPoint) => void;
   onContextMenu?: (point: MenuPoint) => void;
@@ -219,7 +221,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
-  onPress, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
+  onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
@@ -244,6 +246,7 @@ function ChannelRowBase({
         backgroundColor: pressed || active === true ? border : 'transparent',
         paddingHorizontal: PAGE_GUTTER,
       })}
+      {...linkProps}
       {...contextMenuProps(onContextMenu ?? onLongPress)}
       {...mark}
 >

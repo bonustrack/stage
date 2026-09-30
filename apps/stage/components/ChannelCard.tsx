@@ -8,13 +8,15 @@ import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { usePalette } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { bubbleLinkProps } from './bubble/linkProps';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 
 export function ChannelCard(
-  { convId, peerAddress }: { convId?: string; peerAddress?: string },
+  { convId, peerAddress, url }: { convId?: string; peerAddress?: string; url?: string },
 ): React.ReactElement | null {
   if (peerAddress) return <DmPeerCard address={peerAddress} />;
   if (!convId) return null;
-  return <ConvIdCard convId={convId} />;
+  return <ConvIdCard convId={convId} url={url} />;
 }
 
 function CardFrame({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -49,7 +51,7 @@ function convAvatar(
   return { avatarUri, avatarAddress };
 }
 
-function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
+function ConvIdCard({ convId, url }: { convId: string; url?: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
 
@@ -70,6 +72,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         avatarAddress={avatarAddress}
         square={meta.isGroup}
         onPress={open}
+        linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
     </CardFrame>
   );

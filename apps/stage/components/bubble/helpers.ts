@@ -53,8 +53,19 @@ export const MESSAGE_LINK_STYLE = { textDecorationLine: 'none' } as const;
 
 export type LinkPress = ((url: string) => boolean) | undefined;
 
+export interface BubbleLinkEvent {
+  defaultPrevented: boolean;
+  preventDefault(): void;
+  button?: number;
+  metaKey?: boolean;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+}
+
 export interface BubbleLinkProps {
-  onPress?: () => void;
+  accessibilityRole?: 'link';
+  onPress?: (event?: BubbleLinkEvent) => void;
   href?: string;
   hrefAttrs?: { target: string; rel: string };
   ref?: (node: unknown) => void;
