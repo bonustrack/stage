@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { LayoutChangeEvent } from 'react-native';
+import { Platform, type ImageLoadEventData, type LayoutChangeEvent, type NativeSyntheticEvent } from 'react-native';
 import {
   Gesture, GestureDetector, type ComposedGesture, type PanGesture, type PinchGesture,
 } from 'react-native-gesture-handler';
@@ -10,8 +10,9 @@ import { getImageSize, Image, type ImageResizeMethod } from '@stage-labs/kit/rea
 import { ignore, ignored } from '../lib/errorPolicy';
 import { useStableCallback } from '../lib/useStableCallback';
 import { validSize } from './bubble/imageBox.model';
+import { dataUriDecodeSize, viewerResizeMethod } from './imageDecode.model';
 import {
-  clampOffset, doubleTapTarget, fromCenter, imageSwipeStep, isZoomed, panLimits, viewerResizeMethod, zoomAround, ZOOM_RESET,
+  clampOffset, doubleTapTarget, fromCenter, imageSwipeStep, isZoomed, panLimits, zoomAround, ZOOM_RESET,
   type ZoomGeometry, type ZoomPoint, type ZoomSize, type ZoomState,
 } from './ZoomableImage.model';
 
@@ -137,20 +138,23 @@ function useZoomGesture(z: ZoomValues, onTap: () => void, onStep: (delta: number
   }, [z, onTap, onStep]);
 }
 
-function useFullDecode(uri: string, z: ZoomValues): ImageResizeMethod | undefined {
-  const [decided, setDecided] = useState<{ uri: string; method: ImageResizeMethod }>();
+function useViewerResizeMethod(uri: string): ImageResizeMethod | null {
+  const android = Platform.OS === 'android';
+  const inline = useMemo(() => (android ? dataUriDecodeSize(uri) : undefined), [android, uri]);
+  const probe = android && !inline && uri !== '';
+  const [probed, setProbed] = useState<{ uri: string; method: ImageResizeMethod }>();
   useEffect(() => {
-    if (!uri) return undefined;
+    if (!probe) return undefined;
     let live = true;
     const decide = (measured: { width: number; height: number } | undefined): void => {
-      const size = validSize(measured);
-      if (size) z.natural.value = size;
-      if (live) setDecided({ uri, method: viewerResizeMethod(size) });
+      if (live) setProbed({ uri, method: viewerResizeMethod(validSize(measured)) });
     };
     ignore(getImageSize(uri).catch(ignored(undefined, 'probe')).then(decide), 'ui');
     return () => { live = false; };
-  }, [uri, z]);
-  return decided?.uri === uri ? decided.method : undefined;
+  }, [probe, uri]);
+  if (!android) return 'auto';
+  if (inline) return viewerResizeMethod(inline);
+  return probed?.uri === uri ? probed.method : null;
 }
 
 export function ZoomableImage({ uri, frame, onTap, onStep }: {
@@ -165,7 +169,15 @@ export function ZoomableImage({ uri, frame, onTap, onStep }: {
     const { width, height } = e.nativeEvent.layout;
     z.view.value = { width, height };
   }, [z]);
-  const resizeMethod = useFullDecode(uri, z);
+  const onLoad = useCallback((event: NativeSyntheticEvent<ImageLoadEventData>) => {
+    const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
+      const size = validSize(measured);
+      if (size) z.natural.value = size;
+      return size !== undefined;
+    };
+    if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
+  }, [z, uri]);
+  const resizeMethod = useViewerResizeMethod(uri);
 
   return (
     <GestureDetector gesture={gesture}>
@@ -175,7 +187,7 @@ export function ZoomableImage({ uri, frame, onTap, onStep }: {
       >
         <Animated.View style={[{ flex: 1 }, transform]}>
           {uri && resizeMethod ? (
-            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod}/>
+            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod} onLoad={onLoad}/>
           ) : null}
         </Animated.View>
       </Animated.View>

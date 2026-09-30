@@ -17,6 +17,13 @@ export type ImagePosition =
   | 'center' | 'top' | 'bottom' | 'left' | 'right'
   | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 export type ImageRadius = RadiusValue;
+
+declare module 'react-native' {
+  interface ImagePropsAndroid {
+    resizeMultiplier?: number;
+  }
+}
+
 export type ImageResizeMethod = NonNullable<RNImageProps['resizeMethod']>;
 
 const FIT: Record<ImageFit, ImageStyle['resizeMode']> = {
@@ -69,7 +76,6 @@ export function Image(props: ImageProps): React.ReactElement {
     width, height, minWidth, maxWidth, minHeight, maxHeight,
     background, margin, style, resizeMethod, resizeMultiplier, onLoad, onError,
   } = props;
-  const decode = { resizeMethod, resizeMultiplier };
 
   const bleed = flushBleed(flush);
   const r = radiusValue(radius);
@@ -99,7 +105,8 @@ export function Image(props: ImageProps): React.ReactElement {
     <RNImage
       source={headers ? { uri: src, headers } : { uri: src }}
       resizeMode={FIT[fit]}
-      {...decode}
+      resizeMethod={resizeMethod}
+      resizeMultiplier={resizeMultiplier}
       accessibilityLabel={alt}
       accessible={alt !== undefined}
       style={flattened}

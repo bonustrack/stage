@@ -5,7 +5,7 @@ import { MediaCard } from '../MediaCard';
 import { ChatImageViewer } from './ChatGallery';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
-const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 1.5 } as const;
+const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 4 / 3 } as const;
 
 export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; galleryKey?: string }): React.ReactElement {
   const [open, setOpen] = useState(false);

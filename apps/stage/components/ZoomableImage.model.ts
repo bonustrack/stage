@@ -3,8 +3,6 @@ export const ZOOM_MAX = 4;
 export const ZOOM_DOUBLE_TAP = 2.5;
 
 const ZOOMED_EPSILON = 0.01;
-const FULL_DECODE_MAX_PIXELS = 20_000_000;
-const FULL_DECODE_MAX_SIDE = 8192;
 
 export interface ZoomSize { width: number; height: number }
 export interface ZoomPoint { x: number; y: number }
@@ -12,13 +10,6 @@ export interface ZoomState extends ZoomPoint { scale: number }
 export interface ZoomGeometry { view: ZoomSize; natural: ZoomSize; frame: ZoomPoint }
 
 export const ZOOM_RESET: ZoomState = { scale: ZOOM_MIN, x: 0, y: 0 };
-
-export function viewerResizeMethod(natural: ZoomSize | undefined): 'none' | 'scale' {
-  if (!natural) return 'scale';
-  const pixels = natural.width * natural.height;
-  const side = Math.max(natural.width, natural.height);
-  return pixels <= FULL_DECODE_MAX_PIXELS && side <= FULL_DECODE_MAX_SIDE ? 'none' : 'scale';
-}
 
 export function clampZoom(scale: number): number {
   'worklet';
