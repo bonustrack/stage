@@ -7,6 +7,7 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
+import { TOPNAV_FADE, TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
 import { HomeTopnavRight } from '../home/topnavRight';
@@ -343,7 +344,8 @@ function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
       <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
     </>}/>
     <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
-      <ScreenScroll ref={scroll} scroll={inline ? 'self' : 'window'} keyboardShouldPersistTaps="handled">
+      <TopnavFade scroll={inline ? 'self' : 'window'} stickyTop={`${TOPNAV_HEIGHT}px`}/>
+      <ScreenScroll ref={scroll} scroll={inline ? 'self' : 'window'} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
           key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
           query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}

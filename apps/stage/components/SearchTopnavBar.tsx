@@ -9,12 +9,12 @@ import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
-import { FormField } from './FormField';
+import { FORM_FIELD_HEIGHT, FormField } from './FormField';
 import { HoverTooltip } from './HoverTooltip';
 
 const BAR_GAP = 10;
 const FIELD_GAP = 4;
-export const SEARCH_FIELD_HEIGHT = TOPNAV_HEIGHT;
+export const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
@@ -48,7 +48,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   if (props.field === true) {
     return (
       <Frame>
-        <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, y: FIELD_GAP }} surface="toolbar" align="center">
+        <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, bottom: FIELD_GAP }} surface="toolbar" align="center">
           <Box flex={1}>
             <FormField
               inputRef={node => {

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { VirtualList } from '../layout';
+import { Box, VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
@@ -7,7 +7,7 @@ import { FilterSearch } from '../FilterSearch';
 import { parseSearchFilter } from '../searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight } from './topnavRight';
-import { Topnav } from '../Topnav';
+import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { usePublishTopnavSlot } from '../tabs/topnavSlots';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
@@ -15,6 +15,9 @@ import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { setSearchFocused } from '../../lib/searchState';
+
+const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
+const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -110,44 +113,46 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
   const search = useSearchOpen(setQuery);
   const nav = useHomeTopnav(pane);
-  const contentStyle = { paddingBottom: 24 };
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
   useScrollTopOnFilter(props);
 
   return (
     <>
       {pane ? nav : null}
-      <VirtualList
-        ref={listRef}
-        scroll={pane ? 'self' : 'window'}
-        simultaneousHandlers={panRef}
-        data={sortedRows}
-        onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
-        scrollEventThrottle={16}
-        onContentSizeChange={(_w, h) => {
-          if (didRestoreRef.current) return;
-          const want = savedOffsetRef.current;
-          if (want == null || want <= 0) { didRestoreRef.current = true; return; }
-          if (h <= 0) return;
-          didRestoreRef.current = true;
-          const offset = Math.min(want, Math.max(0, h));
-          requestAnimationFrame(() => {
-            attempt(() => { listRef.current?.scrollToOffset({ offset, animated: false }); }, 'ui');
-          });
-        }}
-        extraData={listExtraData}
-        keyExtractor={r => r.convId}
-        windowSize={11}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        removeClippedSubviews
-        contentContainerStyle={contentStyle}
-        keyboardShouldPersistTaps="handled"
-        ListHeaderComponentStyle={{ zIndex: 1 }}
-        ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
-        ListFooterComponent={<ListFooter query={query} noChannels={sortedRows.length === 0} knownPeers={knownPeers}/>}
-        renderItem={renderRow}
-/>
+      <Box flex={1}>
+        <TopnavFade scroll={pane ? 'self' : 'window'} stickyTop={UNDER_TOPNAV}/>
+        <VirtualList
+          ref={listRef}
+          scroll={pane ? 'self' : 'window'}
+          simultaneousHandlers={panRef}
+          data={sortedRows}
+          onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
+          scrollEventThrottle={16}
+          onContentSizeChange={(_w, h) => {
+            if (didRestoreRef.current) return;
+            const want = savedOffsetRef.current;
+            if (want == null || want <= 0) { didRestoreRef.current = true; return; }
+            if (h <= 0) return;
+            didRestoreRef.current = true;
+            const offset = Math.min(want, Math.max(0, h));
+            requestAnimationFrame(() => {
+              attempt(() => { listRef.current?.scrollToOffset({ offset, animated: false }); }, 'ui');
+            });
+          }}
+          extraData={listExtraData}
+          keyExtractor={r => r.convId}
+          windowSize={11}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews
+          contentContainerStyle={LIST_CONTENT}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponentStyle={{ zIndex: 1 }}
+          ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
+          ListFooterComponent={<ListFooter query={query} noChannels={sortedRows.length === 0} knownPeers={knownPeers}/>}
+          renderItem={renderRow}
+        />
+      </Box>
     </>
   );
 }

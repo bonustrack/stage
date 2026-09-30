@@ -19,7 +19,7 @@ import { AccountAvatar } from './AccountAvatarButton';
 import { MENU_WIDTH } from './AnchoredMenu';
 import { MENU_GAP } from './menuStyle';
 import { SearchTopnavBar, SEARCH_FIELD_HEIGHT } from './SearchTopnavBar';
-import { TOPNAV_HEIGHT } from './Topnav';
+import { TOPNAV_FADE, TOPNAV_HEIGHT } from './Topnav';
 import { keepInputFocus } from './composer/parts';
 import { mentionKeyAction } from './composer/mentions.model';
 import { revealMarked } from './arrowKeys';
@@ -207,7 +207,7 @@ function FilterMenuItems({ menu, active, onPick }: {
 function useTouchMenuHeight(): number {
   const { height } = useWindowDimensions();
   const keyboard = useKeyboardState(state => (state.isVisible ? state.height : 0));
-  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT + SEARCH_FIELD_HEIGHT;
+  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT + TOPNAV_FADE + SEARCH_FIELD_HEIGHT;
   return Math.max(0, height - keyboard - top - MENU_GAP - DROPDOWN_MENU.padY * 2);
 }
 
