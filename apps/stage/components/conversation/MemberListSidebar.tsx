@@ -75,7 +75,7 @@ function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigne
 function MemberHeader({ title, count, children }: { title: string; count?: number; children?: React.ReactNode }): React.ReactElement {
   return (
     <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
-      <Eyebrow>{title}</Eyebrow>
+      <Eyebrow>{title.toUpperCase()}</Eyebrow>
       {count === undefined ? null : <CountTag count={count}/>}
       <Box flex={1}/>
       {children}
