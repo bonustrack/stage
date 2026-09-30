@@ -28,6 +28,8 @@ import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 import { TEXT_11PX } from '../smallText';
+import { useImageAspectRatio } from '../useImageAspectRatio';
+import { imagePreviewSize } from '../bubble/imageBox.model';
 
 const kindIcon = (kind: string): CentralIcon => (
   kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
@@ -129,6 +131,8 @@ function PendingImage({
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
   const { bg } = usePalette();
+  const { aspectRatio, onLoad } = useImageAspectRatio(image.url);
+  const size = imagePreviewSize(aspectRatio, TRAY_TILE);
   return (
     <>
       <Col width={TRAY_TILE} align="center" gap={4}>
@@ -139,7 +143,7 @@ function PendingImage({
             accessibilityRole="button"
             accessibilityLabel="View image"
           >
-            <Image src={image.url} size={TRAY_TILE} radius={8} fit="cover" background={bg}/>
+            <Image src={image.url} width={size.width} height={size.height} radius={8} fit="cover" background={bg} onLoad={onLoad}/>
           </Pressable>
           <Pressable
             onPress={onRemove}

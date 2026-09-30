@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ImageStyle } from 'react-native';
+import type { ImageLoadEventData, ImageStyle, NativeSyntheticEvent } from 'react-native';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { MediaCard } from '../MediaCard';
 import { ChatImageViewer } from './ChatGallery';
+import { useImageAspectRatio } from '../useImageAspectRatio';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 4 / 3 } as const;
@@ -10,17 +11,19 @@ const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 4 / 3 } as const
 export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; galleryKey?: string }): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [prevUri, setPrevUri] = useState<string | null>(null);
+  const { aspectRatio, onLoad: onSizeLoad } = useImageAspectRatio(uri);
   const loadedUri = useRef<string | null>(null);
   useEffect(() => {
     if (loadedUri.current && loadedUri.current !== uri) setPrevUri(loadedUri.current);
   }, [uri]);
-  const onLoad = useCallback(() => {
+  const onLoad = useCallback((event: NativeSyntheticEvent<ImageLoadEventData>) => {
+    onSizeLoad(event);
     loadedUri.current = uri;
     setPrevUri(null);
-  }, [uri]);
+  }, [uri, onSizeLoad]);
   return (
     <>
-      <MediaCard onPress={() => { setOpen(true); }}>
+      <MediaCard aspectRatio={aspectRatio} onPress={() => { setOpen(true); }}>
         {prevUri && prevUri !== uri ? (
           <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} />
         ) : null}
