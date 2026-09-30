@@ -5,6 +5,7 @@ import { MediaCard } from '../MediaCard';
 import { ChatImageViewer } from './ChatGallery';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
+const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 1.5 } as const;
 
 export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; galleryKey?: string }): React.ReactElement {
   const [open, setOpen] = useState(false);
@@ -21,9 +22,9 @@ export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; gal
     <>
       <MediaCard onPress={() => { setOpen(true); }}>
         {prevUri && prevUri !== uri ? (
-          <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" />
+          <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} />
         ) : null}
-        <Image src={uri} width="100%" height="100%" fit="cover" onLoad={onLoad} />
+        <Image src={uri} width="100%" height="100%" fit="cover" onLoad={onLoad} {...TILE_DECODE} />
       </MediaCard>
       <ChatImageViewer uri={uri} galleryKey={galleryKey} visible={open} onClose={() => { setOpen(false); }} />
     </>

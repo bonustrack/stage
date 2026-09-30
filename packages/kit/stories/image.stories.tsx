@@ -8,6 +8,7 @@ export default { title: 'Image' };
 const FIT = ['none', 'cover', 'contain', 'fill', 'scale-down'] as const;
 const POSITION = ['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right'] as const;
 const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const;
+const RESIZE_METHODS = ['auto', 'resize', 'scale', 'none'] as const;
 const SRC = svgSwatch('#5b8def', 'IMG');
 
 export const Controls: Story<ImageProps> = (args) => <Image {...args} />;
@@ -15,6 +16,7 @@ Controls.args = { src: SRC, alt: 'Blue swatch', fit: 'cover', position: 'center'
 Controls.argTypes = {
   src: text, alt: text, fit: select(FIT), position: select(POSITION), frame: bool, flush: number, radius: select(RADII),
   size: number, aspectRatio: number, width: text, height: text, background: color, margin: number,
+  resizeMethod: select(RESIZE_METHODS), resizeMultiplier: number,
 };
 
 export const Radii: Story = () => (

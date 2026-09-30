@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  clampOffset, clampZoom, doubleTapTarget, imageSwipeStep, isZoomed, panLimits, zoomAround,
+  clampOffset, clampZoom, doubleTapTarget, imageSwipeStep, isZoomed, panLimits, viewerResizeMethod, zoomAround,
   ZOOM_DOUBLE_TAP, ZOOM_MAX, ZOOM_MIN, ZOOM_RESET, type ZoomGeometry, type ZoomPoint, type ZoomState,
 } from '../components/ZoomableImage.model';
 
@@ -19,6 +19,23 @@ const framed: ZoomGeometry = {
 function screenOf(state: ZoomState, point: ZoomPoint): ZoomPoint {
   return { x: state.x + state.scale * point.x, y: state.y + state.scale * point.y };
 }
+
+describe('viewerResizeMethod', () => {
+  test('decodes screenshots and phone photos at full resolution', () => {
+    expect(viewerResizeMethod({ width: 2560, height: 1600 })).toBe('none');
+    expect(viewerResizeMethod({ width: 2560, height: 7800 })).toBe('none');
+    expect(viewerResizeMethod({ width: 4032, height: 3024 })).toBe('none');
+  });
+
+  test('falls back to a capped decode for images too large to draw safely', () => {
+    expect(viewerResizeMethod({ width: 8160, height: 6120 })).toBe('scale');
+    expect(viewerResizeMethod({ width: 1200, height: 9000 })).toBe('scale');
+  });
+
+  test('falls back to a capped decode when the size is unknown', () => {
+    expect(viewerResizeMethod(undefined)).toBe('scale');
+  });
+});
 
 describe('clampZoom', () => {
   test('keeps the scale between 1x and 4x', () => {

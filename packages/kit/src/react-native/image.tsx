@@ -1,6 +1,7 @@
 
 import {
   Image as RNImage,
+  type ImageProps as RNImageProps,
   type ImageStyle,
   type ViewStyle,
   type DimensionValue,
@@ -16,6 +17,7 @@ export type ImagePosition =
   | 'center' | 'top' | 'bottom' | 'left' | 'right'
   | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 export type ImageRadius = RadiusValue;
+export type ImageResizeMethod = NonNullable<RNImageProps['resizeMethod']>;
 
 const FIT: Record<ImageFit, ImageStyle['resizeMode']> = {
   none: 'center',
@@ -55,6 +57,8 @@ export interface ImageProps {
   background?: string;
   margin?: number;
   style?: ImageStyle | ImageStyle[];
+  resizeMethod?: ImageResizeMethod;
+  resizeMultiplier?: number;
   onLoad?: (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
   onError?: () => void;
 }
@@ -63,8 +67,9 @@ export function Image(props: ImageProps): React.ReactElement {
   const {
     src, headers, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
     width, height, minWidth, maxWidth, minHeight, maxHeight,
-    background, margin, style, onLoad, onError,
+    background, margin, style, resizeMethod, resizeMultiplier, onLoad, onError,
   } = props;
+  const decode = { resizeMethod, resizeMultiplier };
 
   const bleed = flushBleed(flush);
   const r = radiusValue(radius);
@@ -94,6 +99,7 @@ export function Image(props: ImageProps): React.ReactElement {
     <RNImage
       source={headers ? { uri: src, headers } : { uri: src }}
       resizeMode={FIT[fit]}
+      {...decode}
       accessibilityLabel={alt}
       accessible={alt !== undefined}
       style={flattened}
