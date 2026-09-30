@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app, BrowserWindow, session, systemPreferences } from 'electron';
+import { app, BrowserWindow, desktopCapturer, session, systemPreferences } from 'electron';
 import { DEEP_LINK_SCHEME, deepLinkIn, desktopRouteUrl, sameSite, siteBaseFor } from './links';
 import { installMenu } from './menu';
 import { registerAppScheme, serveWebApp } from './serve';
@@ -45,6 +45,16 @@ function restrictPermissions(): void {
     allowed(permission, origin !== '' ? origin : details.embeddingOrigin ?? ''));
 }
 
+function allowScreenShare(): void {
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    if (!sameSite(request.securityOrigin, site)) { callback({}); return; }
+    void desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+      const screen = sources[0];
+      callback(screen ? { video: screen } : {});
+    });
+  }, { useSystemPicker: true });
+}
+
 function webRoot(): string {
   return app.isPackaged ? path.join(process.resourcesPath, 'web') : path.join(app.getAppPath(), 'web');
 }
@@ -71,6 +81,7 @@ function start(): void {
   void app.whenReady().then(() => {
     if (remoteUi === undefined || remoteUi === '') serveWebApp(webRoot());
     restrictPermissions();
+    allowScreenShare();
     installMenu();
     createWindow(site, pendingLink === null ? site : desktopRouteUrl(site, pendingLink));
     pendingLink = null;

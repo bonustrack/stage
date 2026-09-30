@@ -16,6 +16,7 @@ import { isPinned } from '../../lib/pins';
 import { getCachedRows, useGroupAccess } from '../../modules/messaging';
 import { ChannelAccessNotice } from './ChannelAccessNotice';
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
+import { CallButtons } from '../call/CallButtons';
 import { HoverTooltip } from '../HoverTooltip';
 import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
@@ -59,6 +60,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
         }}
       />
       <Row align="center" gap={18} padding={{ right: PAGE_GUTTER }}>
+        <CallButtons convId={convId} isGroup={isGroup}/>
         <ConversationSidebarToggle isGroup={isGroup} peerAddress={peerAddr}/>
         <HoverTooltip label="More" placement="below">
           <Pressable

@@ -1,4 +1,4 @@
-import { isControlBody, lineOfConv, type StreamMsg, type StreamStatus } from './xmtp.types';
+import { isHiddenEntry, lineOfConv, type StreamMsg, type StreamStatus } from './xmtp.types';
 import { sdk } from './xmtp.sdk';
 import { activeFeedLines, feedCache, registerGlobalStreamTeardown } from './xmtp.state.core';
 import type { MessageDeletion } from './xmtp.sdk.core';
@@ -73,7 +73,7 @@ function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable
 function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): void {
   const line = lineOfConv(convId);
   const env = sdk.envelopeOf(msg, line);
-  if (isControlBody(env.text)) return;
+  if (isHiddenEntry(env)) return;
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
   mergeIntoFeed(line, [env]);
   if (activeFeedLines.has(line)) {

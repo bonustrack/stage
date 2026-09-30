@@ -28,6 +28,7 @@ import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
 import { AddMembersHost } from '../components/channel/AddMembers';
+import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
@@ -142,6 +143,7 @@ function RootLayoutInner(): React.ReactElement {
       <AlertHost />
       <TooltipHost />
       <AddMembersHost />
+      <CallHost active={shell.sidebarVisible} />
       <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
       </KeyboardProvider>
     </GestureHandlerRootView>

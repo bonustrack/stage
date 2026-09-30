@@ -1,6 +1,7 @@
 import { shortAddress } from '../identity/format';
 import { isGroupUpdateTypeId } from './humanize';
 import { isDeleteRequestType } from './deleteMessage';
+import { isCallSignalType } from './call';
 
 export const ROW_PREVIEW_MAX_CHARS = 200;
 
@@ -29,7 +30,8 @@ export function countUnreadEntries(
   let unreadCount = 0;
   for (const m of entries) {
     if (!m.sentNs || m.sentNs <= lastReadNs) break;
-    if (m.senderInboxId === selfInboxId || isGroupUpdateTypeId(m.contentTypeId) || isDeleteRequestType(m.contentTypeId)) continue;
+    if (m.senderInboxId === selfInboxId || isGroupUpdateTypeId(m.contentTypeId) || isDeleteRequestType(m.contentTypeId)
+      || isCallSignalType(m.contentTypeId)) continue;
     unreadCount += 1;
   }
   return unreadCount;

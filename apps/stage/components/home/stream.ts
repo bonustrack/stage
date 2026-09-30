@@ -9,6 +9,7 @@ import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { recover } from '../../lib/errorPolicy';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
@@ -79,7 +80,7 @@ export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
 
     const result = applyToRows(streamConvId, msg, lastTs, lastPreview);
     if (result.needsRefresh) onMiss(streamConvId);
-    maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
+    if (!isCallSignalType(msg.contentTypeId)) maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
   };
 }
 
@@ -95,7 +96,7 @@ function applyToRows(
     prev,
     {
       convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview,
-      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !alreadyCounted(msg.id),
+      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !isCallSignalType(msg.contentTypeId) && !alreadyCounted(msg.id),
     },
     cur => ({
       avatarAddress: cur.peerAddress ?? cur.avatarAddress,
