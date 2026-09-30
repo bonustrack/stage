@@ -4,7 +4,7 @@ import {
   parseCallInvite, parseCallSignal, type CallSignal,
 } from '../src/xmtp/call';
 import {
-  EMPTY_CALLS, activeCall, reduceCall, type CallEffect, type CallEvent, type CallsState,
+  EMPTY_CALLS, activeCall, joinableCall, reduceCall, type CallEffect, type CallEvent, type CallsState,
 } from '../src/xmtp/callMachine';
 
 const CONV = 'conv-1';
@@ -59,8 +59,8 @@ class Net {
     if (wire.kind === 'signal' && signal) this.apply(d, { ...base, type: 'signal', signal });
   }
 
-  start(d: Device, video = true): void {
-    this.apply(d, { type: 'start', convId: CONV, dm: this.dm, video, callId: 'call-0001', peerId: d.peerId, selfInboxId: d.inboxId, nowMs: T0 });
+  start(d: Device, video = true, callId = 'call-0001'): void {
+    this.apply(d, { type: 'start', convId: CONV, dm: this.dm, video, callId, peerId: d.peerId, selfInboxId: d.inboxId, nowMs: T0 });
   }
 
   join(d: Device): void {
@@ -152,6 +152,62 @@ describe('1-1 call', () => {
     expect(endReasons(c)).toEqual(['no-answer']);
   });
 
+  test('two people calling each other at once end up in one call', () => {
+    const a = device('inbox-a', 'peer-aaaa');
+    const b = device('inbox-b', 'peer-bbbb');
+    const net = new Net([a, b], true);
+    net.start(a, true, 'call-0001');
+    net.start(b, true, 'call-0002');
+    net.deliver();
+    expect(a.state.session?.callId).toBe('call-0001');
+    expect(b.state.session?.callId).toBe('call-0001');
+    expect(net.links).toEqual(['peer-aaaa<>peer-bbbb']);
+    net.apply(a, { type: 'tick', nowMs: T0 + CALL_RING_TIMEOUT_MS });
+    net.apply(b, { type: 'tick', nowMs: T0 + CALL_RING_TIMEOUT_MS });
+    expect(endReasons(a)).toEqual([]);
+    expect(endReasons(b)).toEqual([]);
+  });
+
+  test('a 1-1 call is joinable from the header only while it still rings', () => {
+    const a = device('inbox-a', 'peer-aaaa');
+    const b = device('inbox-b', 'peer-bbbb');
+    const net = new Net([a, b], true, false);
+    net.start(a);
+    net.deliver();
+    expect(joinableCall(b.state, CONV, T0 + 1_000, true)?.callId).toBe('call-0001');
+    expect(joinableCall(b.state, CONV, T0 + CALL_RING_TIMEOUT_MS + 1, true)).toBeNull();
+    expect(joinableCall(b.state, CONV, T0 + CALL_RING_TIMEOUT_MS + 1, false)?.callId).toBe('call-0001');
+    expect(joinableCall(a.state, CONV, T0, true)).toBeNull();
+  });
+
+  test('calling again after a 1-1 call died without a leave starts a new call', () => {
+    const stale = reduceCall(EMPTY_CALLS, {
+      type: 'invite', convId: CONV, senderInboxId: 'inbox-b', selfInboxId: 'inbox-a', sentMs: T0, nowMs: T0,
+      dm: true, allowed: false, invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
+    }).state;
+    expect(activeCall(stale, CONV, T0 + CALL_RING_TIMEOUT_MS + 1)?.roster).toEqual({ 'peer-bbbb': 'inbox-b' });
+    const again = reduceCall(stale, {
+      type: 'start', convId: CONV, dm: true, video: false, callId: 'call-0002', peerId: 'peer-aaaa', selfInboxId: 'inbox-a',
+      nowMs: T0 + CALL_RING_TIMEOUT_MS + 1,
+    });
+    expect(again.effects.map((e) => e.type)).toEqual(['invite']);
+    expect(again.state.session?.callId).toBe('call-0002');
+  });
+
+  test('a link that drops ends a 1-1 call even without a leave message', () => {
+    const a = device('inbox-a', 'peer-aaaa');
+    const b = device('inbox-b', 'peer-bbbb');
+    const net = new Net([a, b], true);
+    net.start(a);
+    net.deliver();
+    net.join(b);
+    net.deliver();
+    net.apply(a, { type: 'lost', peerId: 'peer-bbbb' });
+    expect(a.effects.filter((e) => e.type === 'close')).toEqual([{ type: 'close', peerId: 'peer-bbbb' }]);
+    expect(endReasons(a)).toEqual(['ended']);
+    expect(reduceCall(EMPTY_CALLS, { type: 'lost', peerId: 'peer-bbbb' }).effects).toEqual([]);
+  });
+
   test('answering on one device stops the ring on my other device', () => {
     const a = device('inbox-a', 'peer-aaaa');
     const phone = device('inbox-b', 'peer-phone');
@@ -238,6 +294,50 @@ describe('channel mesh', () => {
     const last = rest.at(-1);
     expect(last?.state.session).toBeNull();
     expect(last ? endReasons(last) : []).toEqual(['full']);
+  });
+
+  test('declining on one device stops the ring on my other devices', () => {
+    const a = device('inbox-a', 'peer-aaaa');
+    const phone = device('inbox-b', 'peer-phone');
+    const laptop = device('inbox-b', 'peer-laptop');
+    const net = new Net([a, phone, laptop], false);
+    net.start(a);
+    net.deliver();
+    net.apply(phone, { type: 'decline' });
+    net.deliver();
+    expect(laptop.state.session).toBeNull();
+    expect(endReasons(laptop)).toEqual(['elsewhere']);
+    expect(a.state.session?.phase).toBe('joined');
+  });
+
+  test('an older call replayed late never replaces the current one', () => {
+    const base = { convId: CONV, senderInboxId: 'inbox-a', selfInboxId: 'inbox-b', nowMs: T0 };
+    const current = reduceCall(EMPTY_CALLS, {
+      ...base, type: 'invite', sentMs: T0, dm: false, allowed: false, invite: { callId: 'call-new0', from: 'peer-aaaa', video: false },
+    }).state;
+    const replayed = reduceCall(current, {
+      ...base, type: 'invite', sentMs: T0 - 60_000, dm: false, allowed: false, invite: { callId: 'call-old0', from: 'peer-old0', video: false },
+    }).state;
+    expect(replayed.calls[CONV]?.callId).toBe('call-new0');
+    const join = reduceCall(current, {
+      ...base, type: 'signal', sentMs: T0 - 60_000, signal: { kind: 'join', callId: 'call-old0', from: 'peer-old1' },
+    }).state;
+    expect(join.calls[CONV]?.callId).toBe('call-new0');
+  });
+
+  test('a forged invite cannot take over another member peer id', () => {
+    const [a, b] = [device('inbox-a', 'peer-aaaa'), device('inbox-b', 'peer-bbbb')];
+    const net = new Net([a, b], false);
+    net.start(a);
+    net.deliver();
+    net.join(b);
+    net.deliver();
+    const forged = reduceCall(a.state, {
+      type: 'invite', convId: CONV, senderInboxId: 'inbox-evil', selfInboxId: 'inbox-a', sentMs: T0, nowMs: T0,
+      dm: false, allowed: true, invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
+    });
+    expect(forged.state).toBe(a.state);
+    expect(a.state.calls[CONV]?.callerInboxId).toBe('inbox-a');
   });
 
   test('a member cannot speak for another member peer id', () => {

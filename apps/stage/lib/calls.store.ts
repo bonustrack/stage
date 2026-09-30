@@ -1,4 +1,4 @@
-import { EMPTY_CALLS, activeCall, type CallInfo, type CallsState } from '@stage-labs/client/xmtp/callMachine';
+import { EMPTY_CALLS, type CallsState } from '@stage-labs/client/xmtp/callMachine';
 import { makeListeners, useStoreValue } from './storeCore';
 
 export interface CallMedia { audio: boolean; video: boolean; screen: boolean }
@@ -38,9 +38,4 @@ export function setCallView(patch: Partial<CallView>): void {
 
 export function useCallView(): CallView {
   return useStoreValue(listeners.subscribe, callView);
-}
-
-export function joinableCall(v: CallView, convId: string): CallInfo | null {
-  if (v.calls.session?.convId === convId) return null;
-  return activeCall(v.calls, convId, Date.now());
 }

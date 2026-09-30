@@ -14,6 +14,7 @@ import {
   ROW_PREVIEW_MAX_CHARS, type RowMessage, type StreamedMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
 import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { ownDeletesReady } from '../../lib/ownDeletes';
 import { fetchSuperAdmins } from './convMeta.fetch';
@@ -45,7 +46,7 @@ function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
 
 function isRowCandidate(m: RowMessage, dm: boolean): boolean {
   return !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm)
-    && !isDeleteRequestType(m.contentTypeId);
+    && !isDeleteRequestType(m.contentTypeId) && !isCallSignalType(m.contentTypeId);
 }
 
 function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage | undefined {
@@ -57,8 +58,8 @@ const ROW_LOOKBACK = 20;
 async function recentRowMessages(conv: Conversation, dm: boolean): Promise<StreamedMessage[]> {
   const limit = dm ? 6 : 2;
   const msgs = await rowMessagesOf(conv, limit).catch(recover('conversation.rowMessages', []));
-  const onlyDeletes = msgs.length === limit && msgs.every(m => isDeleteRequestType(m.contentTypeId));
-  return onlyDeletes ? rowMessagesOf(conv, ROW_LOOKBACK).catch(recover('conversation.rowMessages', msgs)) : msgs;
+  const onlyHidden = msgs.length === limit && msgs.every(m => isDeleteRequestType(m.contentTypeId) || isCallSignalType(m.contentTypeId));
+  return onlyHidden ? rowMessagesOf(conv, ROW_LOOKBACK).catch(recover('conversation.rowMessages', msgs)) : msgs;
 }
 
 function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {

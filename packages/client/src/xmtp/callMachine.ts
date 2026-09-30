@@ -48,6 +48,7 @@ export type CallEvent =
   | { type: 'decline' }
   | { type: 'leave' }
   | { type: 'tick'; nowMs: number }
+  | { type: 'lost'; peerId: string }
   | (Inbound & { type: 'invite'; dm: boolean; allowed: boolean; invite: CallInvite })
   | (Inbound & { type: 'signal'; signal: CallSignal });
 
@@ -91,9 +92,15 @@ export function activeCall(state: CallsState, convId: string, nowMs: number): Ca
   return Object.keys(info.roster).length > 0 ? info : null;
 }
 
+export function joinableCall(state: CallsState, convId: string, nowMs: number, dm: boolean): CallInfo | null {
+  if (state.session?.convId === convId) return null;
+  const info = activeCall(state, convId, nowMs);
+  return info !== null && dm && nowMs - info.lastMs > CALL_RING_TIMEOUT_MS ? null : info;
+}
+
 function start(state: CallsState, e: Extract<CallEvent, { type: 'start' }>): CallStep {
   if (state.session !== null) return step(state);
-  if (activeCall(state, e.convId, e.nowMs) !== null) return join(state, { ...e, type: 'join' });
+  if (joinableCall(state, e.convId, e.nowMs, e.dm) !== null) return join(state, { ...e, type: 'join' });
   const info: CallInfo = {
     convId: e.convId, callId: e.callId, video: e.video, callerInboxId: e.selfInboxId,
     roster: { [e.peerId]: e.selfInboxId }, lastMs: e.nowMs,
@@ -123,8 +130,8 @@ function join(state: CallsState, e: Extract<CallEvent, { type: 'join' }>): CallS
 function decline(state: CallsState): CallStep {
   const s = state.session;
   if (s?.phase !== 'ringing') return s === null ? step(state) : leave(state);
-  const effects: CallEffect[] = s.dm ? [{ type: 'send', convId: s.convId, signal: { kind: 'decline', callId: s.callId } }] : [];
-  return step(withSession(state, null), [...effects, { type: 'end', reason: 'left' }]);
+  const signal: CallSignal = { kind: 'decline', callId: s.callId };
+  return step(withSession(state, null), [{ type: 'send', convId: s.convId, signal }, { type: 'end', reason: 'left' }]);
 }
 
 function hangUp(state: CallsState, reason: CallEndReason): CallStep {
@@ -150,17 +157,51 @@ function tick(state: CallsState, nowMs: number): CallStep {
   return hangUp(state, 'no-answer');
 }
 
-function onInvite(state: CallsState, e: Extract<CallEvent, { type: 'invite' }>): CallStep {
-  const existing = state.calls[e.convId];
-  const roster = existing?.callId === e.invite.callId ? existing.roster : {};
+type InviteEvent = Extract<CallEvent, { type: 'invite' }>;
+
+function superseded(state: CallsState, convId: string, callId: string, sentMs: number): boolean {
+  const s = state.session;
+  if (s !== null && s.convId === convId && s.callId !== callId) return true;
+  const info = state.calls[convId];
+  return info !== undefined && info.callId !== callId && sentMs < info.lastMs;
+}
+
+function crossed(state: CallsState, e: InviteEvent, s: CallSession): CallStep {
+  const peerId = s.selfPeerId;
+  const switches = s.dm && s.phase === 'joined' && !s.answered && e.senderInboxId !== e.selfInboxId && e.invite.callId < s.callId;
+  if (!switches || peerId === null) return step(state);
   const info: CallInfo = {
     convId: e.convId, callId: e.invite.callId, video: e.invite.video, callerInboxId: e.senderInboxId,
-    roster: { ...roster, [e.invite.from]: e.senderInboxId }, lastMs: Math.max(existing?.lastMs ?? 0, e.sentMs),
+    roster: { [e.invite.from]: e.senderInboxId, [peerId]: e.selfInboxId }, lastMs: e.sentMs,
   };
-  const next = withCall(state, info);
-  const rings = state.session === null && e.allowed && e.senderInboxId !== e.selfInboxId
-    && e.nowMs - e.sentMs < CALL_SIGNAL_MAX_AGE_MS;
-  if (!rings) return step(next);
+  const session: CallSession = { ...s, callId: e.invite.callId, startedMs: e.nowMs, links: {} };
+  return step(withSession(withCall(state, info), session), [
+    { type: 'send', convId: e.convId, signal: { kind: 'leave', callId: s.callId, from: peerId } },
+    { type: 'send', convId: e.convId, signal: { kind: 'join', callId: e.invite.callId, from: peerId } },
+  ]);
+}
+
+function invitedCall(same: CallInfo | null, e: InviteEvent): CallInfo {
+  if (same) return { ...same, roster: { ...same.roster, [e.invite.from]: e.senderInboxId }, lastMs: Math.max(same.lastMs, e.sentMs) };
+  return {
+    convId: e.convId, callId: e.invite.callId, video: e.invite.video, callerInboxId: e.senderInboxId,
+    roster: { [e.invite.from]: e.senderInboxId }, lastMs: e.sentMs,
+  };
+}
+
+function rings(state: CallsState, e: InviteEvent): boolean {
+  return state.session === null && e.allowed && e.senderInboxId !== e.selfInboxId && e.nowMs - e.sentMs < CALL_SIGNAL_MAX_AGE_MS;
+}
+
+function onInvite(state: CallsState, e: InviteEvent): CallStep {
+  const s = state.session;
+  if (s !== null && s.convId === e.convId && s.callId !== e.invite.callId) return crossed(state, e, s);
+  if (superseded(state, e.convId, e.invite.callId, e.sentMs)) return step(state);
+  const existing = state.calls[e.convId];
+  const same = existing?.callId === e.invite.callId ? existing : null;
+  if (spoofed(same, e.invite.from, e.senderInboxId)) return step(state);
+  const next = withCall(state, invitedCall(same, e));
+  if (!rings(state, e)) return step(next);
   return step(withSession(next, {
     convId: e.convId, callId: e.invite.callId, dm: e.dm, video: e.invite.video, phase: 'ringing',
     selfPeerId: null, startedMs: e.nowMs, answered: false, links: {},
@@ -182,7 +223,7 @@ function spoofed(info: CallInfo | null, peerId: string, senderInboxId: string): 
 
 function onJoin(state: CallsState, e: SignalEvent, s: SignalOf<'join'>): CallStep {
   const known = knownCall(state, e, s.callId);
-  if (spoofed(known, s.from, e.senderInboxId)) return step(state);
+  if (spoofed(known, s.from, e.senderInboxId) || (known === null && superseded(state, e.convId, s.callId, e.sentMs))) return step(state);
   const info = known ?? { convId: e.convId, callId: s.callId, video: false, callerInboxId: e.senderInboxId, roster: {}, lastMs: e.sentMs };
   const next = withRoster(state, info, { ...info.roster, [s.from]: e.senderInboxId }, e.sentMs);
   const session = sessionFor(next, e.convId, s.callId);
@@ -207,6 +248,14 @@ function peerLeft(state: CallsState, session: CallSession, peerId: string): Call
   if (!session.dm || remaining.some((id) => id !== session.selfPeerId)) return closed;
   const ended = hangUp(closed.state, 'ended');
   return step(ended.state, [...closed.effects, ...ended.effects]);
+}
+
+function lost(state: CallsState, peerId: string): CallStep {
+  const s = state.session;
+  if (s?.phase !== 'joined' || s.links[peerId] === undefined) return step(state);
+  const info = state.calls[s.convId];
+  const next = info?.callId === s.callId ? withRoster(state, info, omit(info.roster, peerId), info.lastMs) : state;
+  return peerLeft(next, s, peerId);
 }
 
 function onLeave(state: CallsState, e: SignalEvent, s: SignalOf<'leave'>): CallStep {
@@ -267,6 +316,7 @@ export function reduceCall(state: CallsState, e: CallEvent): CallStep {
     case 'decline': return decline(state);
     case 'leave': return leave(state);
     case 'tick': return tick(state, e.nowMs);
+    case 'lost': return lost(state, e.peerId);
     case 'invite': return onInvite(state, e);
     case 'signal': return onSignal(state, e);
   }

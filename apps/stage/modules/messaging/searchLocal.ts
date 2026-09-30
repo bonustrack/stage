@@ -5,6 +5,7 @@ import { latestConvMessages, olderConvMessages, type ConvHandle } from '../../li
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { PAGE_SIZE } from '../../lib/xmtp.resync';
 import { deletedMessages, isDeleteRequest, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
+import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { ownDeletesReady } from '../../lib/ownDeletes';
 import { memberInboxToAddressMap } from '../../lib/xmtp.identity';
 import { recover } from '../../lib/errorPolicy';
@@ -22,7 +23,7 @@ export interface SearchScanResult {
 
 function matches(e: HistoryEntry, needle: string): boolean {
   if (!e.text) return false;
-  if (isControlBody(e.text)) return false;
+  if (isControlBody(e.text) || isCallSignalEntry(e)) return false;
   return e.text.toLowerCase().includes(needle);
 }
 

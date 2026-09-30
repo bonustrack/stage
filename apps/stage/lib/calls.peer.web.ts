@@ -1,7 +1,7 @@
 import { CALL_ICE_GATHER_MS, CALL_ICE_SERVERS } from '@stage-labs/client/xmtp/call';
 import { NO_MEDIA, type CallLinkStatus, type CallMedia } from './calls.store';
 
-interface Outgoing { audio: MediaStreamTrack | null; video: MediaStreamTrack | null }
+export interface Outgoing { audio: MediaStreamTrack | null; video: MediaStreamTrack | null }
 
 export interface Peer {
   pc: RTCPeerConnection;
@@ -9,6 +9,13 @@ export interface Peer {
   channel: RTCDataChannel;
   media: CallMedia;
   status: CallLinkStatus;
+  closed: boolean;
+}
+
+interface PeerHooks {
+  onChange: () => void;
+  mine: () => CallMedia;
+  onLost: () => void;
 }
 
 const KINDS = ['audio', 'video'] as const;
@@ -28,13 +35,21 @@ function parseMedia(data: unknown): CallMedia | null {
   }
 }
 
-export function openPeer(onChange: () => void, mine: () => CallMedia): Peer {
+export function openPeer({ onChange, mine, onLost }: PeerHooks): Peer {
   const pc = new RTCPeerConnection({ iceServers: CALL_ICE_SERVERS.map((s) => ({ urls: [...s.urls] })), bundlePolicy: 'max-bundle' });
   const channel = pc.createDataChannel('media', { negotiated: true, id: 0 });
-  const peer: Peer = { pc, stream: new MediaStream(), channel, media: NO_MEDIA, status: 'connecting' };
+  const peer: Peer = { pc, stream: new MediaStream(), channel, media: NO_MEDIA, status: 'connecting', closed: false };
+  let wasUp = false;
+  const lostIfUp = (): void => { if (wasUp && !peer.closed) { peer.closed = true; onLost(); } };
   pc.ontrack = (e) => { peer.stream.addTrack(e.track); onChange(); };
-  pc.onconnectionstatechange = () => { peer.status = statusOf(pc.connectionState); onChange(); };
-  channel.onopen = () => { sendMedia(peer, mine()); };
+  pc.onconnectionstatechange = () => {
+    peer.status = statusOf(pc.connectionState);
+    if (pc.connectionState === 'connected') wasUp = true;
+    if (pc.connectionState === 'failed') lostIfUp();
+    onChange();
+  };
+  channel.onopen = () => { wasUp = true; sendMedia(peer, mine()); };
+  channel.onclose = lostIfUp;
   channel.onmessage = (e: MessageEvent) => {
     const media = parseMedia(e.data);
     if (media === null) return;
@@ -77,20 +92,21 @@ async function localSdp(pc: RTCPeerConnection): Promise<string> {
   return sdp;
 }
 
-export async function createOffer(pc: RTCPeerConnection, out: Outgoing): Promise<string> {
+export async function createOffer(pc: RTCPeerConnection, out: () => Outgoing): Promise<string> {
   for (const kind of KINDS) pc.addTransceiver(kind, { direction: 'sendrecv' });
-  await setOutgoing(pc, out);
+  await setOutgoing(pc, out());
   return localSdp(pc);
 }
 
-export async function createAnswer(pc: RTCPeerConnection, offer: string, out: Outgoing): Promise<string> {
+export async function createAnswer(pc: RTCPeerConnection, offer: string, out: () => Outgoing): Promise<string> {
   await pc.setRemoteDescription({ type: 'offer', sdp: offer });
   for (const t of pc.getTransceivers()) t.direction = 'sendrecv';
-  await setOutgoing(pc, out);
+  await setOutgoing(pc, out());
   return localSdp(pc);
 }
 
 export function closePeer(peer: Peer): void {
+  peer.closed = true;
   peer.channel.close();
   peer.pc.close();
   for (const track of peer.stream.getTracks()) track.stop();

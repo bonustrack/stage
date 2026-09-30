@@ -65,15 +65,18 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   };
 }
 
+function rowPreviewOf(msg: StreamedMessage): string {
+  try { return previewOfXmtpContent(msg.content, msg.contentTypeId); }
+  catch { return `[${msg.contentTypeId ?? 'unknown'}]`; }
+}
+
 export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId)) return;
     if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
     const decoded = msg.content;
-    let preview = '';
-    try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
-    catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
+    const preview = rowPreviewOf(msg);
     if (typeof decoded === 'string' && isControlBody(decoded)) return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);

@@ -7,7 +7,7 @@ import { startUpdates } from './updates';
 import { createWindow, frontWindow } from './window';
 
 const ALLOWED_PERMISSIONS = new Set([
-  'notifications', 'media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
+  'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
 ]);
 
 const remoteUi = process.env.STAGE_DESKTOP_URL;
@@ -47,11 +47,10 @@ function restrictPermissions(): void {
 
 function allowScreenShare(): void {
   session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-    if (!sameSite(request.securityOrigin, site)) { callback({}); return; }
-    void desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
-      const screen = sources[0];
-      callback(screen ? { video: screen } : {});
-    });
+    if (!request.userGesture || !sameSite(request.securityOrigin, site)) { callback({}); return; }
+    desktopCapturer.getSources({ types: ['screen'] })
+      .then((sources) => { callback(sources[0] ? { video: sources[0] } : {}); })
+      .catch(() => { callback({}); });
   }, { useSystemPicker: true });
 }
 

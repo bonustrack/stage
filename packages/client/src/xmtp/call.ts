@@ -49,6 +49,10 @@ export function isCallSignalType(contentTypeId: string | undefined): boolean {
   return typeof contentTypeId === 'string' && contentTypeId.includes(CALL_SIGNAL_CONTENT_TYPE.typeId);
 }
 
+export function isCallSignalEntry(entry: { payload?: unknown }): boolean {
+  return isCallSignalType((entry.payload as { contentType?: string } | undefined)?.contentType);
+}
+
 export function parseCallInvite(content: unknown): CallInvite | null {
   const parsed = callInviteSchema.safeParse(content);
   return parsed.success ? parsed.data : null;

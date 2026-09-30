@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isHiddenEntry } from './xmtp.types';
+import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { report } from './errorPolicy';
 import { mergeFeedEntries } from './feedOrder.model';
@@ -14,7 +14,7 @@ export interface MergeResult {
 }
 
 export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): MergeResult {
-  const filtered = entries.filter(e => !isHiddenEntry(e));
+  const filtered = entries.filter(e => !isControlBody(e.text));
   const merged = mergeFeedEntries(feedCache.get(line) ?? [], filtered);
   if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
   const receivedFullPage = entries.length >= PAGE_SIZE;

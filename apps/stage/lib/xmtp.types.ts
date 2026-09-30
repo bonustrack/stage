@@ -1,5 +1,4 @@
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
@@ -33,10 +32,6 @@ const CONTROL_BODY_PREFIX = 'METRO_CTRL:';
 
 export function isControlBody(text: unknown): boolean {
   return typeof text === 'string' && text.startsWith(CONTROL_BODY_PREFIX);
-}
-
-export function isHiddenEntry(entry: { text?: string; payload?: unknown }): boolean {
-  return isControlBody(entry.text) || isCallSignalType((entry.payload as { contentType?: string } | undefined)?.contentType);
 }
 
 export const XMTP_ENV_KEY = 'xmtp.env';

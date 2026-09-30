@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { startCallService } from '../../lib/calls';
+import { useActiveAccount } from '../../modules/messaging';
 import { useCallView } from '../../lib/calls.store';
 import { CallScreen } from './CallScreen';
 import { IncomingCall } from './IncomingCall';
 
 export function CallHost({ active }: { active: boolean }): React.ReactElement | null {
   const view = useCallView();
-  useEffect(() => (active ? startCallService() : undefined), [active]);
+  const account = useActiveAccount();
+  useEffect(() => (active ? startCallService() : undefined), [active, account]);
   const session = view.calls.session;
   if (!active || session === null) return null;
   if (session.phase === 'ringing') {

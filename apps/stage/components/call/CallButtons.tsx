@@ -9,7 +9,8 @@ import { useHover } from '../hover';
 import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { callsSupported, joinCall, loadCallHistory, startCall } from '../../lib/calls';
-import { joinableCall, useCallView } from '../../lib/calls.store';
+import { useCallView } from '../../lib/calls.store';
+import { joinableCall } from '@stage-labs/client/xmtp/callMachine';
 import { ignore } from '../../lib/errorPolicy';
 
 function HeaderIcon({ label, icon, disabled, onPress }: {
@@ -32,7 +33,7 @@ export function CallButtons({ convId, isGroup }: { convId: string; isGroup: bool
   const { success, bg } = usePalette();
   useEffect(() => { ignore(loadCallHistory(convId), 'optional'); }, [convId]);
   if (!callsSupported) return null;
-  const joinable = joinableCall(view, convId);
+  const joinable = joinableCall(view.calls, convId, Date.now(), !isGroup);
   if (joinable) {
     return (
       <Button
