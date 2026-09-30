@@ -1,9 +1,7 @@
 export const ATTACHMENT_MAX_WIDTH = 400;
-const IMAGE_BOX_MAX = ATTACHMENT_MAX_WIDTH;
+export const ATTACHMENT_GRID_GAP = 4;
 
-export interface ImageSize { width: number; height: number }
-
-interface ImageBox extends ImageSize { aspectRatio: number }
+interface ImageSize { width: number; height: number }
 
 export function validSize(size: { width?: number; height?: number } | undefined): ImageSize | undefined {
   const width = size?.width;
@@ -12,16 +10,7 @@ export function validSize(size: { width?: number; height?: number } | undefined)
   return width > 0 && height > 0 ? { width, height } : undefined;
 }
 
-export function imageBox(natural: ImageSize | undefined, max = IMAGE_BOX_MAX): ImageBox {
-  if (!natural) return { width: max, height: max, aspectRatio: 1 };
-  const scale = Math.min(max / natural.width, max / natural.height, 1);
-  return {
-    width: Math.max(1, Math.round(natural.width * scale)),
-    height: Math.max(1, Math.round(natural.height * scale)),
-    aspectRatio: natural.width / natural.height,
-  };
-}
-
-export function sameSize(a: ImageSize | undefined, b: ImageSize): boolean {
-  return a?.width === b.width && a.height === b.height;
+export function attachmentCellWidths(kinds: readonly string[]): ('50%' | '100%')[] {
+  const squares = kinds.filter(kind => kind !== 'audio').length;
+  return kinds.map(kind => (kind === 'audio' || squares < 2 ? '100%' : '50%'));
 }

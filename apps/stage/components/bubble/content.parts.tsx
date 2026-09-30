@@ -10,14 +10,15 @@ import { LinkPreviewCard } from '../LinkPreviewCard';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
-import { Box } from '../layout';
+import { Box, Row } from '../layout';
 import { BLOCK_GAP, MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
 import type { Attachment, LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
 import { inlineAttachmentUrl } from './attachmentUri';
 import { galleryKeyOf } from './imageGallery.model';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { ATTACHMENT_GRID_GAP, ATTACHMENT_MAX_WIDTH, attachmentCellWidths } from './imageBox.model';
+import { resolvedAttachmentKind } from './attachmentKind.model';
 import { HighlightText } from '../HighlightText';
 import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from './codeBlock.model';
@@ -132,12 +133,17 @@ function BubbleAttachment({ att, index, entryId, fg }: {
 export function BubbleAttachments({ atts, entryId, fg }: {
   atts: Attachment[]; entryId: string; fg: string;
 }): React.ReactElement | null {
+  const widths = useMemo(() => attachmentCellWidths(atts.map(resolvedAttachmentKind)), [atts]);
   if (atts.length === 0) return null;
   return (
-    <Box margin={{ top: 4 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      {atts.map((a, i) => (
-        <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} />
-      ))}
+    <Box margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+      <Row wrap margin={-ATTACHMENT_GRID_GAP / 2}>
+        {atts.map((a, i) => (
+          <Box key={a.id ?? `${entryId}-att-${i}`} width={widths[i]} padding={ATTACHMENT_GRID_GAP / 2}>
+            <BubbleAttachment att={a} index={i} entryId={entryId} fg={fg} />
+          </Box>
+        ))}
+      </Row>
     </Box>
   );
 }

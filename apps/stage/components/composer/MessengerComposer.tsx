@@ -60,7 +60,7 @@ function composerAttachActions(
 }
 
 function ComposerHeader(p: {
-  dark: boolean; fg: string; sub: string; chipBg: string;
+  dark: boolean; fg: string; sub: string;
   replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
   pending: Attachment[]; onRemovePending: (i: number) => void;
   uploading: boolean; err: string | null;
@@ -75,7 +75,7 @@ function ComposerHeader(p: {
         />
       ) : null}
       {p.pending.length > 0 ? (
-        <PendingRow fg={p.fg} sub={p.sub} chipBg={p.chipBg} pending={p.pending} onRemove={p.onRemovePending} />
+        <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} />
       ) : null}
       {p.uploading || p.err ? (
         <Text size="2xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
@@ -117,7 +117,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
-        dark={dark} fg={fg} sub={sub} chipBg={bg}
+        dark={dark} fg={fg} sub={sub}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
         pending={s.pending} onRemovePending={(i) => { s.setPending(prev => prev.filter((_, j) => j !== i)); }}
         uploading={s.uploading} err={s.err}

@@ -58,7 +58,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
   const download = useDownload(uri, model.fileName, att.mime);
 
   return (
-    <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ marginBottom: 6, width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
+    <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Col testID="audio-card" gap={8}>
         <Row align="center" gap={12}>
           <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">

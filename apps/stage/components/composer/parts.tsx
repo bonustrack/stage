@@ -111,6 +111,16 @@ export function ChannelSuggestMenu({ matches, active, onPick }: {
   );
 }
 
+const TRAY_TILE = 72;
+
+function TileName({ name, fg }: { name: string; fg: string }): React.ReactElement {
+  return (
+    <Text size="3xs" color={fg} style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
+      {name}
+    </Text>
+  );
+}
+
 function PendingImage({
   image, fg, onRemove,
 }: {
@@ -120,7 +130,7 @@ function PendingImage({
   const { bg } = usePalette();
   return (
     <>
-      <Col width={72} align="center" gap={4}>
+      <Col width={TRAY_TILE} align="center" gap={4}>
         <Box>
           <Pressable
             onPress={() => { setOpen(true); }}
@@ -128,7 +138,7 @@ function PendingImage({
             accessibilityRole="button"
             accessibilityLabel="View image"
           >
-            <Image src={image.url} size={72} radius={8} fit="contain" background={bg}/>
+            <Image src={image.url} size={TRAY_TILE} radius={8} fit="cover" background={bg}/>
           </Pressable>
           <Pressable
             onPress={onRemove}
@@ -141,9 +151,7 @@ function PendingImage({
             <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
           </Pressable>
         </Box>
-        <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
-          {image.name ?? image.id}
-        </Text>
+        <TileName name={image.name ?? image.id} fg={fg}/>
       </Col>
       <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
     </>
@@ -175,14 +183,14 @@ function PendingVideo({
 }): React.ReactElement {
   const { bg } = usePalette();
   return (
-    <Col width={128} align="center" gap={4}>
-      <Box width={128} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
-        <VideoPlayer src={video.url} controls={false} background={bg}/>
+    <Col width={TRAY_TILE} align="center" gap={4}>
+      <Box width={TRAY_TILE} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
+        <Box radius={8} style={{ overflow: 'hidden' }}>
+          <VideoPlayer src={video.url} controls={false} background={bg} aspectRatio={1} fit="cover"/>
+        </Box>
         <RemoveBadge label="Remove video" onRemove={onRemove}/>
       </Box>
-      <Text size="3xs" color={fg} style={{ width: 128, textAlign: 'center' }} numberOfLines={1}>
-        {video.name ?? video.id}
-      </Text>
+      <TileName name={video.name ?? video.id} fg={fg}/>
     </Col>
   );
 }
@@ -195,49 +203,56 @@ function PendingLocation({
   const coords = mapCoordsOf(location.url);
   if (!coords) return null;
   return (
-    <Col width={72} align="center" gap={4}>
-      <Box width={72} accessibilityLabel="Location preview">
+    <Col width={TRAY_TILE} align="center" gap={4}>
+      <Box width={TRAY_TILE} accessibilityLabel="Location preview">
         <Box radius={8} style={{ overflow: 'hidden' }}>
           <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
         </Box>
         <RemoveBadge label="Remove location" onRemove={onRemove}/>
       </Box>
-      <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
-        {location.name ?? location.id}
-      </Text>
+      <TileName name={location.name ?? location.id} fg={fg}/>
+    </Col>
+  );
+}
+
+function PendingFile({
+  file, fg, onRemove,
+}: {
+  file: Attachment; fg: string; onRemove: () => void;
+}): React.ReactElement {
+  return (
+    <Col width={TRAY_TILE} align="center" gap={4}>
+      <Box width={TRAY_TILE} accessibilityLabel={`File preview ${file.name ?? file.id}`}>
+        <Box size={TRAY_TILE} radius={8} align="center" justify="center" surface="surface">
+          <Glyph icon={kindIcon(file.kind)} size={24} color={fg}/>
+        </Box>
+        <RemoveBadge label="Remove file" onRemove={onRemove}/>
+      </Box>
+      <TileName name={file.name ?? file.id} fg={fg}/>
     </Col>
   );
 }
 
 function PendingItem({
-  at, fg, sub, chipBg, onRemove,
+  at, fg, onRemove,
 }: {
-  at: Attachment; fg: string; sub: string; chipBg: string; onRemove: () => void;
+  at: Attachment; fg: string; onRemove: () => void;
 }): React.ReactElement | null {
   if (at.kind === 'image') return <PendingImage image={at} fg={fg} onRemove={onRemove}/>;
   if (at.kind === 'video') return <PendingVideo video={at} fg={fg} onRemove={onRemove}/>;
   if (isLocation(at)) return <PendingLocation location={at} fg={fg} onRemove={onRemove}/>;
-  return (
-    <Row padding={{ x: 8, y: 4 }} align="center" gap={6} radius="lg" background={chipBg}>
-      <Glyph icon={kindIcon(at.kind)} size={14} color={fg}/>
-      <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{at.name ?? at.id}</Text>
-      <Pressable onPress={onRemove} hitSlop={6}>
-        <Glyph icon={IconCrossMedium} size={14} color={sub}/>
-      </Pressable>
-    </Row>
-  );
+  return <PendingFile file={at} fg={fg} onRemove={onRemove}/>;
 }
 
 export function PendingRow({
-  fg, sub, chipBg, pending, onRemove,
+  fg, pending, onRemove,
 }: {
-  fg: string; sub: string; chipBg: string;
-  pending: Attachment[]; onRemove: (index: number) => void;
+  fg: string; pending: Attachment[]; onRemove: (index: number) => void;
 }): React.ReactElement {
   return (
     <Row padding={{ x: PAGE_GUTTER, top: 10, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
-        <PendingItem key={a.id} at={a} fg={fg} sub={sub} chipBg={chipBg} onRemove={() => { onRemove(i); }}/>
+        <PendingItem key={a.id} at={a} fg={fg} onRemove={() => { onRemove(i); }}/>
       ))}
     </Row>
   );

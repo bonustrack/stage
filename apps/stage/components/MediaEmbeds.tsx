@@ -10,17 +10,19 @@ import { MediaCard } from './MediaCard';
 import { googleMapsUrl, osmTileGrid, type MapView } from '@stage-labs/client/embed/detect';
 import { usePalette, withAlpha } from '../lib/theme';
 
+const LETTERBOX_CROP = 4 / 3;
+
 export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactElement {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   const { bg } = usePalette();
   return (
     <MediaCard onPress={() => { capabilities.openUrl(watchUrl); }}>
-      <Box aspectRatio={16 / 9} style={{ position: 'relative' }}>
+      <Box flex={1} style={{ position: 'relative', overflow: 'hidden' }}>
         <Image
           src={thumbUrl}
           fit="cover"
-          style={{ width: '100%', height: '100%', backgroundColor: bg }}
+          style={{ width: '100%', height: '100%', backgroundColor: bg, transform: [{ scale: LETTERBOX_CROP }] }}
 />
         <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
@@ -41,7 +43,7 @@ type MapSize = 'sm' | 'lg';
 
 const MAP_VIEWS: Record<MapSize, MapView> = {
   sm: { zoom: 15, width: 144, height: 144 },
-  lg: { zoom: 15, width: 512, height: 320 },
+  lg: { zoom: 15, width: 512, height: 512 },
 };
 
 const PIN_SIZE: Record<MapSize, number> = { sm: 16, lg: 26 };
@@ -91,7 +93,7 @@ export function LocationTile({ lat, lng, size }: {
   const view = MAP_VIEWS[size];
   const tiles = useMemo(() => osmTileGrid(lat, lng, view), [lat, lng, view]);
   return (
-    <Box aspectRatio={view.width / view.height} background={tileBg} style={{ position: 'relative', overflow: 'hidden' }}>
+    <Box width="100%" aspectRatio={view.width / view.height} background={tileBg} style={{ position: 'relative', overflow: 'hidden' }}>
       {tiles.map(tile => (
         <Image
           key={tile.url} src={tile.url} headers={TILE_HEADERS} fit="fill"
@@ -102,7 +104,6 @@ export function LocationTile({ lat, lng, size }: {
         />
       ))}
       <MapPin size={PIN_SIZE[size]}/>
-      {size === 'lg' ? <MapAttribution/> : null}
     </Box>
   );
 }
@@ -112,7 +113,10 @@ export function LocationEmbed({ lat, lng, dark }: {
 }): React.ReactElement {
   return (
     <MediaCard onPress={() => { capabilities.openUrl(googleMapsUrl(lat, lng)); }}>
-      <LocationTile lat={lat} lng={lng} size="lg"/>
+      <Box flex={1} justify="center" style={{ overflow: 'hidden' }}>
+        <LocationTile lat={lat} lng={lng} size="lg"/>
+        <MapAttribution/>
+      </Box>
       <Row padding={{ x: 10, y: 8 }} align="center" justify="between" gap={8}>
         <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
           Location
