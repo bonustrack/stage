@@ -10,7 +10,7 @@ Style logic lives in framework-free core modules (`text.styles.ts`, `button.styl
 
 ## Design north star: OpenAI ChatKit
 
-**Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/).** ChatKit is the reference for everything — component names and props, theme options, colour/typography/radius/density variables and their allowed values. Where ChatKit has a concept, Kit mirrors it under the same name and the same literal values; ChatKit is DOM/CSS, Kit is React Native, and that platform difference is the *only* thing that should differ.
+**Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/).** ChatKit is the reference for everything: component names and props, theme options, colour/typography/radius/density variables and their allowed values. Where ChatKit has a concept, Kit mirrors it under the same name and the same literal values; ChatKit is DOM/CSS, Kit is React Native, and that platform difference is the *only* thing that should differ.
 
 Practical rules:
 
@@ -18,7 +18,7 @@ Practical rules:
 - **Don't invent token values.** Reuse `FONT_SIZE`, `semanticColors`, `RADIUS_SCALE`, `DENSITY_SCALE`. A raw literal (`fontSize: 15`, `'#ffffff'`) in a component is drift, even when it currently matches the token.
 - **Keep the literal unions identical** to ChatKit's, so a ChatKit theme config maps onto Kit 1:1.
 
-Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.github.io/chatkit-js/api/openai/chatkit/type-aliases/themeoption/) — every key name and literal union matches, so a ChatKit theme config maps onto Kit 1:1:
+Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.github.io/chatkit-js/api/openai/chatkit/type-aliases/themeoption/). Every key name and literal union matches, so a ChatKit theme config maps onto Kit 1:1.
 
 | ChatKit                                          | Kit                                                  |
 | ------------------------------------------------ | ---------------------------------------------------- |
@@ -27,18 +27,18 @@ Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.git
 | `density: 'compact' \| 'normal' \| 'spacious'`    | `Density` + `DENSITY_SCALE`                          |
 | `typography.baseSize: 14\|15\|16\|17\|18`         | `BaseSize` + `BASE_SIZE_DEFAULT`                     |
 | `typography.fontFamily` / `fontFamilyMono`        | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN)  |
-| `typography.fontSources`                          | N/A — RN loads fonts via `expo-font`                 |
+| `typography.fontSources`                          | N/A, RN loads fonts via `expo-font`                  |
 | `color.surface: { background, foreground }`       | `SurfaceColors` (`theme-derive.ts`)                  |
 | `color.accent: { primary, level: 0\|1\|2\|3 }`    | `AccentColor`                                        |
 | `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions`                                   |
 
-**Caveat — shapes match, generators are Kit's own.** OpenAI publishes ChatKit's theme *types* but not the colour maths behind them, so Kit implements the documented semantics itself: `tint` is saturation in 1% steps, `shade` shifts lightness by 3% per step (negative lighter, positive darker), and `level` mutes the accent toward the surface foreground in 18% steps with `3` meaning "primary unchanged". `grayscaleHex`/`accentHex`/`grayscaleFromHex` in `theme-derive.ts` are the entry points, and the defaults are lossless — `grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')` is exactly `#282a2d`, guarded by tests.
+**Caveat: shapes match, generators are Kit's own.** OpenAI publishes ChatKit's theme *types* but not the colour maths behind them, so Kit implements the documented semantics itself: `tint` is saturation in 1% steps, `shade` shifts lightness by 3% per step (negative lighter, positive darker), and `level` mutes the accent toward the surface foreground in 18% steps with `3` meaning "primary unchanged". `grayscaleHex`/`accentHex`/`grayscaleFromHex` in `theme-derive.ts` are the entry points, and the defaults are lossless: `grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')` is exactly `#282a2d`, guarded by tests.
 
-Component coverage: Kit implements **every ChatKit widget node** — `Badge`, `Box`, `Button`, `Caption`, `Card`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, ...).
+Component coverage: Kit implements **every ChatKit widget node**: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
 
 ## Install
 
-The package is consumed inside the monorepo via `workspace:*`; no separate install is needed.
+Inside the monorepo, workspaces use `workspace:*`, so no separate install is needed.
 
 ```sh
 bun install            # from the repo root
@@ -48,6 +48,14 @@ bun install            # from the repo root
 // in a consuming workspace's package.json
 "dependencies": { "@stage-labs/kit": "workspace:*" }
 ```
+
+Other apps install it from npm. Releases go out under the `beta` tag, so ask for it:
+
+```sh
+bun add @stage-labs/kit@beta
+```
+
+The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker` and `expo-image-picker`. `expo-av` is no longer needed.
 
 ## Usage
 
@@ -75,6 +83,8 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` from `@stage-labs/kit/react-native/icon` still accepts the older HeroIcon names through `CENTRAL_ICON_ALIASES`, with `variant` `'line'` (default) or `'solid'`, but it bundles every aliased icon. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
 
 `AudioPlayer` and `VideoPlayer` play through the `expo-audio` and `expo-video` peers (they replaced `expo-av`). On web those modules expect the Expo runtime global: an Expo app installs it, and a plain react-native-web host must call `installExpoGlobalPolyfill()` from `expo-modules-core/src/polyfill/dangerous-internal` before importing them, as `gallery/expo-runtime.ts` does.
+
+`VideoPlayer` takes `background` (default `#000000`), `aspectRatio` (default 16/9) and `fit` (`'contain'`, the default, or `'cover'`). Fullscreen always shows the whole video. `Image` takes `headers`, sent with the image request, and the same module exports `getImageSize(src)`, which resolves to `{ width, height }`. `Dialog` takes `header` and `footer` nodes around its scroll body, `bottomInset` to lift the panel, `panelWidth`, `panelMaxWidth`, and `panelBorderSides` (`'top'` or `'all'`) for the `panelBorderColor` border. `Badge` has `solid`, `soft` and `outline` variants.
 
 ## Project structure
 
@@ -123,13 +133,53 @@ Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default
 
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
-## Breaking changes
+## Changelog
 
 ### 0.1.0-beta.1
 
+The first release since 0.1.0-beta.0.
+
+#### Breaking changes
+
 - `Button` sizes are now `xs`, `sm`, `md`, `lg` and `xl`. The `3xs`, `2xs`, `2xl` and `3xl` sizes were removed. Use `xs` instead of `3xs` and `2xs`, and `xl` instead of `2xl` and `3xl`.
-- `Input`, `Textarea`, `Select` and `DatePicker` sizes are now `xs`, `sm`, `md`, `lg` and `xl`. The `3xs`, `2xs`, `2xl` and `3xl` sizes were removed. Use `xs` instead of `3xs` and `2xs`, and `xl` instead of `2xl` and `3xl`.
-- `Text` sizes (`TextSizeToken`, `FontSizeName`, `FONT_SIZE` and `fontSize()`) no longer have `3xs` (11px) or `2xs` (12px). The smallest size is `xs` (13px). To keep 11px or 12px text, pass the size in `style`, for example `style={{ fontSize: 11 }}`. `FONT_SIZE_SNAP` now maps 10, 11 and 12 to `xs`. `Badge`, `Caption`, `Label`, `Card` and `DatePicker` keep their 11px and 12px text.
+- `Input`, `Textarea`, `Select` and `DatePicker` sizes are now `xs` to `xl` too, with the same replacements.
+- `Text` sizes (`TextSizeToken`, `FontSizeName`, `FONT_SIZE` and `fontSize()`) no longer have `3xs` (11px) or `2xs` (12px). The smallest size is `xs` (13px). To keep 11px or 12px text, pass it in `style`, for example `style={{ fontSize: 11 }}`. `FONT_SIZE_SNAP` now maps 10, 11 and 12 to `xs`. `Badge`, `Caption`, `Label`, `Card` and `DatePicker` keep their 11px and 12px text.
+- `TextField` lost the `noFocusBorder` prop. No control draws a focus border now.
+- `Button` `pill` now only rounds the corners. It no longer makes a square button. Use `uniform` for that.
+- The theme seed (`theme-derive`) follows ChatKit. `accent` is `{ primary, level }` and `grayscale` is `{ hue, tint, shade }`, no longer hex strings.
+- Peer dependencies: `expo-audio` and `expo-video` replace `expo-av` (`AudioPlayer`, `VideoPlayer`). `react-native-reanimated` 4.5.1 is also accepted.
+- New dependencies: two Central Icons packages from npm, installed with the kit.
+
+#### New components and props
+
+- New components: `Modal`, `DropdownMenu` (with `DropdownMenuItem`, `DropdownMenuSeparator` and `DropdownMenuSheet`), `Tooltip`, `Badge` (`solid`, `soft`, `outline`), `Transition` and `Glyph`.
+- `Image`: `headers` prop and `getImageSize()`.
+- `VideoPlayer`: `background`, `aspectRatio` and `fit`. Fullscreen shows the whole video.
+- `Dialog`: `header`, `footer`, `bottomInset`, `panelWidth`, `panelMaxWidth` and `panelBorderSides`.
+- `Icon`: `variant` (`'line'` or `'solid'`), and it accepts a Central icon too. HeroIcon names still work. New brand icons: Apple, Android, Windows, Linux and pin.
+- `useAudioPlayback` hook with preload. `Scroll` forwards its ref. The `GesturePressable` `onPress` gets the tap point. `VoiceRecorder` has `wrapMic`. `TextField` `autoGrow` works on web.
+- New exports: `markdownStyles`, `fontName`, `kitPalette`, `CONTROL_RADIUS_DEFAULT`, `grayscaleHex`, `accentHex` and `FLEX_ALIGN`.
+
+#### Visual changes
+
+- Every `Icon` draws Central Icons instead of Heroicons. `focused` no longer thickens the stroke.
+- Segmented `Tabs`: fully rounded track and thumb in kit colours. Without `dark` it follows the theme.
+- Form controls: 8px corners (was 12px), no blue focus border and no browser focus ring.
+- `Select` opens a dropdown under the field, not a centered sheet.
+- `Markdown`: blue links without underline, rounded code blocks, a quote bar and framed tables.
+- `Button` `lg` and `xl` labels are 1px and 2px bigger.
+- `Scroll` and `FlatList` hide scrollbars on iOS and Android by default.
+
+#### Fixes
+
+- `GesturePressable`: pointer cursor on web, no text selection on tap, and touch scrolling no longer freezes on mobile web.
+- Audio players are released on unmount, so a voice note stops when it leaves the screen.
+- The `Dialog` backdrop and panel show no focus ring.
+- Long `Markdown` links wrap.
+
+### 0.1.0-beta.0
+
+First published version (2026-07-22).
 
 ## Links
 
