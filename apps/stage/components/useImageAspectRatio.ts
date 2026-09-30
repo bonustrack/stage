@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Platform, type ImageLoadEventData, type NativeSyntheticEvent } from 'react-native';
+import type { ImageLoadEventData, NativeSyntheticEvent } from 'react-native';
 import { getImageSize } from '@stage-labs/kit/react-native/image';
 import { ignore } from '../lib/errorPolicy';
 import { imageAspectRatio, validSize } from './bubble/imageBox.model';
@@ -11,7 +11,7 @@ export function useImageAspectRatio(uri: string): { aspectRatio: number; onLoad:
   const currentUri = useRef(uri);
   currentUri.current = uri;
   const onLoad = useCallback<ImageLoaded>((event) => {
-    if (Platform.OS === 'web' || currentUri.current !== uri) return;
+    if (currentUri.current !== uri) return;
     const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
       const size = validSize(measured);
       if (!size || currentUri.current !== uri) return false;
@@ -20,6 +20,6 @@ export function useImageAspectRatio(uri: string): { aspectRatio: number; onLoad:
     };
     if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
   }, [uri]);
-  const aspectRatio = Platform.OS !== 'web' && natural?.uri === uri ? natural.aspectRatio : 1;
+  const aspectRatio = natural?.uri === uri ? natural.aspectRatio : 1;
   return { aspectRatio, onLoad };
 }
