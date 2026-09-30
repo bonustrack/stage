@@ -1,13 +1,13 @@
-import { useRef } from 'react';
-import { Alert } from 'react-native';
+import { useEffect, useRef } from 'react';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder,
-  type AudioRecorder,
 } from 'expo-audio';
-import { ignored } from '../../lib/errorPolicy';
+import { describeError, report } from '../../lib/errorPolicy';
+import { makeVoiceRecorder } from './voice.core';
+import { recordedVoiceFile } from './voiceFile';
 
 export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 
@@ -23,67 +23,67 @@ interface VoiceArgs {
 }
 
 export function useVoiceRecorder(args: VoiceArgs) {
-  const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
-  const recRef = useRef<AudioRecorder | null>(null);
-  const recTimerRef = useRef<number | null>(null);
-  const meterTimerRef = useRef<number | null>(null);
-  const recordingRef = useRef(false);
-  const pendingStop = useRef<null | 'send' | 'cancel'>(null);
+  const argsRef = useRef(args);
+  argsRef.current = args;
+  const controlRef = useRef<ReturnType<typeof makeVoiceRecorder> | null>(null);
 
-  const clearTimers = (): void => {
-    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
-    if (meterTimerRef.current) { clearInterval(meterTimerRef.current); meterTimerRef.current = null; }
+  useEffect(() => {
+    let mounted = true;
+    let secondsTimer: ReturnType<typeof setInterval> | undefined;
+    let meterTimer: ReturnType<typeof setInterval> | undefined;
+    const clearTimers = (): void => { clearInterval(secondsTimer); clearInterval(meterTimer); };
+    const control = makeVoiceRecorder({
+      prepare: async () => {
+        const permission = await requestRecordingPermissionsAsync();
+        if (!permission.granted) throw new Error('Microphone permission denied. Allow microphone access, then try again.');
+        await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+        try { await recorder.prepareToRecordAsync(); }
+        catch (error) {
+          await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+          throw error;
+        }
+      },
+      record: () => { recorder.record(); },
+      stop: async () => {
+        try { await recorder.stop(); }
+        finally { await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }); }
+      },
+      file: async () => {
+        if (!recorder.uri) throw new Error('The voice recorder did not create an audio file.');
+        return recordedVoiceFile(recorder.uri);
+      },
+    }, {
+      begin: () => { argsRef.current.setErr(null); },
+      started: () => {
+        if (!mounted) return;
+        const a = argsRef.current;
+        a.setLevels([]); a.setRecordSecs(0); a.setRecording(true);
+        secondsTimer = setInterval(() => { argsRef.current.setRecordSecs(seconds => seconds + 1); }, 1000);
+        meterTimer = setInterval(() => {
+          const status = recorder.getStatus();
+          if (!status.isRecording || typeof status.metering !== 'number') return;
+          const level = Math.max(0.05, Math.min(1, (status.metering + 55) / 55));
+          argsRef.current.setLevels(levels => [...levels, level].slice(-40));
+        }, METERING_INTERVAL_MS);
+      },
+      stopped: () => {
+        clearTimers();
+        if (mounted) { argsRef.current.setRecording(false); argsRef.current.setLevels([]); }
+      },
+      error: error => {
+        report('voice.recording', error);
+        if (mounted) argsRef.current.setErr(describeError(error));
+      },
+      upload: file => argsRef.current.upload(file.uri, file.mime, `voice-${Date.now()}.${file.extension}`),
+    });
+    controlRef.current = control;
+    return () => { mounted = false; clearTimers(); void control.dispose(); };
+  }, [recorder]);
+
+  return {
+    startRec: () => controlRef.current?.start() ?? Promise.resolve(),
+    cancelRec: () => controlRef.current?.cancel() ?? Promise.resolve(),
+    stopRec: () => controlRef.current?.stop() ?? Promise.resolve(),
   };
-
-  const sampleLevel = (rec: AudioRecorder): void => {
-    const s = rec.getStatus();
-    if (!s.isRecording || typeof s.metering !== 'number') return;
-    const level = Math.max(0.05, Math.min(1, (s.metering + 55) / 55));
-    setLevels(prev => [...prev, level].slice(-40));
-  };
-
-  const startRec = async (): Promise<void> => {
-    if (recordingRef.current) return;
-    setErr(null);
-    recordingRef.current = true;
-    pendingStop.current = null;
-    const perm = await requestRecordingPermissionsAsync();
-    if (!perm.granted) { recordingRef.current = false; Alert.alert('Mic permission denied'); return; }
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    await recorder.prepareToRecordAsync();
-    setLevels([]);
-    recorder.record();
-    recRef.current = recorder;
-    setRecording(true);
-    setRecordSecs(0);
-    recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000) as unknown as number;
-    meterTimerRef.current = setInterval(() => { sampleLevel(recorder); }, METERING_INTERVAL_MS) as unknown as number;
-    if (pendingStop.current === 'cancel') void cancelRec();
-    else if (pendingStop.current === 'send') void stopRec();
-  };
-
-  const cancelRec = async (): Promise<void> => {
-    recordingRef.current = false;
-    const rec = recRef.current;
-    if (!rec) { pendingStop.current = 'cancel'; setRecording(false); return; }
-    setRecording(false); recRef.current = null; pendingStop.current = null;
-    clearTimers();
-    setLevels([]);
-    await rec.stop().catch(ignored(undefined, 'cleanup'));
-  };
-
-  const stopRec = async (): Promise<void> => {
-    recordingRef.current = false;
-    const rec = recRef.current;
-    if (!rec) { pendingStop.current = 'send'; return; }
-    setRecording(false); recRef.current = null; pendingStop.current = null;
-    clearTimers();
-    setLevels([]);
-    await rec.stop();
-    const uri = rec.uri; if (!uri) return;
-    await upload(uri, 'audio/m4a', `voice-${Date.now()}.m4a`);
-  };
-
-  return { startRec, cancelRec, stopRec };
 }
