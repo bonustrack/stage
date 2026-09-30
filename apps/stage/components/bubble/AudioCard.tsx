@@ -18,6 +18,7 @@ import { report } from '../../lib/errorPolicy';
 import { capabilities } from '../../lib/capabilities';
 import { downloadFile } from '../../lib/fileDownload';
 import { SEEK_THUMB } from '../../lib/uiColors';
+import { callOwnsAudio } from '../../lib/calls.audio.core';
 import { AudioSeekBar } from './AudioSeekBar';
 import { audioCardModel } from './audioCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
@@ -71,7 +72,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
           <CardIconButton icon={IconCloudDownload} label="Download" color={pal.sub} onPress={download}/>
         </Row>
         <Row align="center" gap={12}>
-          <CardIconButton icon={playing ? IconPause : IconPlay} label={playing ? 'Pause' : 'Play'} color={pal.text} onPress={() => { void toggle(); }}/>
+          <CardIconButton icon={playing ? IconPause : IconPlay} label={playing ? 'Pause' : 'Play'} color={pal.text} onPress={() => { if (callOwnsAudio()) capabilities.toast('Leave the call before playing audio.'); else void toggle(); }}/>
           <AudioSeekBar
             progress={model.progress}
             enabled={duration > 0}

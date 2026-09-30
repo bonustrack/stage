@@ -8,6 +8,7 @@ import {
 import { describeError, report } from '../../lib/errorPolicy';
 import { makeVoiceRecorder } from './voice.core';
 import { recordedVoiceFile } from './voiceFile';
+import { callOwnsAudio, registerCallRecorder } from '../../lib/calls.audio.core';
 
 export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 
@@ -27,6 +28,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
   const argsRef = useRef(args);
   argsRef.current = args;
   const controlRef = useRef<ReturnType<typeof makeVoiceRecorder> | null>(null);
+  const startingRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -35,10 +37,14 @@ export function useVoiceRecorder(args: VoiceArgs) {
     const clearTimers = (): void => { clearInterval(secondsTimer); clearInterval(meterTimer); };
     const control = makeVoiceRecorder({
       prepare: async () => {
+        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) throw new Error('Microphone permission denied. Allow microphone access, then try again.');
+        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
         await recorder.prepareToRecordAsync();
+        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
       },
       record: () => { recorder.record(); },
       stop: () => recorder.stop(),
@@ -71,11 +77,19 @@ export function useVoiceRecorder(args: VoiceArgs) {
       upload: file => argsRef.current.upload(file.uri, file.mime, `voice-${Date.now()}.${file.extension}`),
     });
     controlRef.current = control;
-    return () => { mounted = false; clearTimers(); void control.dispose(); };
+    const unregister = registerCallRecorder(async () => { await control.cancel(); await startingRef.current; });
+    return () => { mounted = false; clearTimers(); unregister(); void control.dispose(); };
   }, [recorder]);
 
   return {
-    startRec: () => controlRef.current?.start() ?? Promise.resolve(),
+    startRec: () => {
+      if (startingRef.current) return startingRef.current;
+      const starting = (controlRef.current?.start() ?? Promise.resolve()).finally(() => {
+        if (startingRef.current === starting) startingRef.current = null;
+      });
+      startingRef.current = starting;
+      return starting;
+    },
     cancelRec: () => controlRef.current?.cancel() ?? Promise.resolve(),
     stopRec: () => controlRef.current?.stop() ?? Promise.resolve(),
   };

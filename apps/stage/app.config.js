@@ -100,7 +100,6 @@ const config = {
     package: variant.androidPackage,
     versionCode: 27,
     blockedPermissions: [
-      'android.permission.FOREGROUND_SERVICE_MICROPHONE',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       'android.permission.READ_MEDIA_IMAGES',
@@ -168,13 +167,13 @@ const config = {
     [
       'expo-audio',
       {
-        microphonePermission: `Allow ${variant.name} to record voice messages.`,
+        microphonePermission: `Allow ${variant.name} to use your microphone for calls and voice messages.`,
       },
     ],
     [
       'expo-camera',
       {
-        cameraPermission: `Allow ${variant.name} to scan a QR code when importing an account.`,
+        cameraPermission: `Allow ${variant.name} to use your camera for video calls, photos and QR codes.`,
       },
     ],
     [
@@ -206,6 +205,7 @@ const config = {
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     './plugins/withXmtpNotificationService',
+    './plugins/withCalls',
   ],
   notification: {
     icon: './assets/notification-icon.png',

@@ -98,11 +98,36 @@ function withExtensionFiles(config, group) {
   }]);
 }
 
+function withSqlCipherAppHeaders(contents) {
+  const marker = 'sqlite_system_header_guards =';
+  if (contents.includes(marker)) return contents;
+  const hook = 'post_install do |installer|';
+  if (!contents.includes(hook)) throw new Error('withXmtpNotificationService: Podfile post_install hook not found');
+  const appHeaders = [
+    '    sqlite_system_header_guards = %w[_SQLITE3_H_ _FTS5_H _SQLITE3RTREE_H_]',
+    '    installer.aggregate_targets.each do |target|',
+    "      next unless target.user_targets.any? { |user_target| user_target.product_type == 'com.apple.product-type.application' }",
+    '      target.xcconfigs.each do |configuration, xcconfig|',
+    "        definitions = xcconfig.attributes['GCC_PREPROCESSOR_DEFINITIONS'].to_s.split",
+    "        xcconfig.attributes['GCC_PREPROCESSOR_DEFINITIONS'] = definitions.reject { |definition| sqlite_system_header_guards.include?(definition.split('=').first) }.join(' ')",
+    '        xcconfig.save_as(target.xcconfig_path(configuration))',
+    '      end',
+    '    end',
+  ].join('\n');
+  return contents.replace(hook, `${hook}\n${appHeaders}`);
+}
+
 function withExtensionPod(config) {
   return withPodfile(config, (cfg) => {
-    if (cfg.modResults.contents.includes(`target '${TARGET}'`)) return cfg;
+    cfg.modResults.contents = withSqlCipherAppHeaders(cfg.modResults.contents);
+    const target = `target '${TARGET}' do`;
+    if (cfg.modResults.contents.includes(target)) {
+      const modular = `${target}\n  pod 'SQLCipher', :modular_headers => true`;
+      if (!cfg.modResults.contents.includes(modular)) cfg.modResults.contents = cfg.modResults.contents.replace(target, modular);
+      return cfg;
+    }
     const version = xmtpPodVersion(cfg.modRequest.projectRoot);
-    cfg.modResults.contents += `\ntarget '${TARGET}' do\n  pod 'XMTP', '= ${version}'\nend\n`;
+    cfg.modResults.contents += `\ntarget '${TARGET}' do\n  pod 'SQLCipher', :modular_headers => true\n  pod 'XMTP', '= ${version}'\nend\n`;
     return cfg;
   });
 }

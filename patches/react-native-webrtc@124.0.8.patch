@@ -1,0 +1,93 @@
+diff --git a/ios/RCTWebRTC/SocketConnection.m b/ios/RCTWebRTC/SocketConnection.m
+index 805986d1a04cb0b14154be1322a20965828ea321..ba7626cfb8cc46b591712a6d4250aa2df11a6361 100644
+--- a/ios/RCTWebRTC/SocketConnection.m
++++ b/ios/RCTWebRTC/SocketConnection.m
+@@ -45,29 +45,34 @@
+ 
+     dispatch_source_t listeningSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, self.serverSocket, 0, NULL);
+     dispatch_source_set_event_handler(listeningSource, ^{
+-        int clientSocket = accept(self.serverSocket, NULL, NULL);
+-        if (clientSocket < 0) {
+-            NSLog(@"failure accepting connection");
+-            return;
+-        }
++        @synchronized(self) {
++            if (self.serverSocket < 0 || self.inputStream) {
++                return;
++            }
++            int clientSocket = accept(self.serverSocket, NULL, NULL);
++            if (clientSocket < 0) {
++                NSLog(@"failure accepting connection");
++                return;
++            }
+ 
+-        CFReadStreamRef readStream;
+-        CFWriteStreamRef writeStream;
++            CFReadStreamRef readStream;
++            CFWriteStreamRef writeStream;
+ 
+-        CFStreamCreatePairWithSocket(kCFAllocatorDefault, clientSocket, &readStream, &writeStream);
++            CFStreamCreatePairWithSocket(kCFAllocatorDefault, clientSocket, &readStream, &writeStream);
+ 
+-        self.inputStream = (__bridge_transfer NSInputStream *)readStream;
+-        self.inputStream.delegate = streamDelegate;
+-        [self.inputStream setProperty:@"kCFBooleanTrue" forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
++            self.inputStream = (__bridge_transfer NSInputStream *)readStream;
++            self.inputStream.delegate = streamDelegate;
++            [self.inputStream setProperty:@"kCFBooleanTrue" forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
+ 
+-        self.outputStream = (__bridge_transfer NSOutputStream *)writeStream;
+-        [self.outputStream setProperty:@"kCFBooleanTrue" forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
++            self.outputStream = (__bridge_transfer NSOutputStream *)writeStream;
++            [self.outputStream setProperty:@"kCFBooleanTrue" forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
+ 
+-        [self.networkThread start];
+-        [self performSelector:@selector(scheduleStreams) onThread:self.networkThread withObject:nil waitUntilDone:true];
++            [self.networkThread start];
++            [self performSelector:@selector(scheduleStreams) onThread:self.networkThread withObject:nil waitUntilDone:true];
+ 
+-        [self.inputStream open];
+-        [self.outputStream open];
++            [self.inputStream open];
++            [self.outputStream open];
++        }
+     });
+ 
+     self.listeningSource = listeningSource;
+@@ -75,18 +80,28 @@
+ }
+ 
+ - (void)close {
+-    [self performSelector:@selector(unscheduleStreams) onThread:self.networkThread withObject:nil waitUntilDone:true];
++    @synchronized(self) {
++        if (self.serverSocket < 0) {
++            return;
++        }
++        if (self.inputStream || self.outputStream) {
++            [self performSelector:@selector(unscheduleStreams) onThread:self.networkThread withObject:nil waitUntilDone:true];
++        }
+ 
+-    self.inputStream.delegate = nil;
+-    self.outputStream.delegate = nil;
++        self.inputStream.delegate = nil;
++        self.outputStream.delegate = nil;
+ 
+-    [self.inputStream close];
+-    [self.outputStream close];
++        [self.inputStream close];
++        [self.outputStream close];
+ 
+-    [self.networkThread cancel];
++        [self.networkThread cancel];
+ 
+-    dispatch_source_cancel(self.listeningSource);
+-    close(self.serverSocket);
++        if (self.listeningSource) {
++            dispatch_source_cancel(self.listeningSource);
++        }
++        close(self.serverSocket);
++        self.serverSocket = -1;
++    }
+ }
+ 
+ // MARK: - Private Methods

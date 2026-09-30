@@ -1,0 +1,96 @@
+name: iOS simulator
+
+on:
+  pull_request:
+    paths:
+      - 'apps/stage/app.config.js'
+      - 'apps/stage/package.json'
+      - 'apps/stage/modules/**'
+      - 'apps/stage/plugins/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'patches/**'
+      - '.github/workflows/ios-simulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      BROWSER: none
+      CI: '1'
+      NODE_OPTIONS: --max-old-space-size=1500
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify Apple toolchain
+        run: xcodebuild -version && xcrun swift --version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bun install --frozen-lockfile
+      - name: Generate iOS app and extensions
+        working-directory: apps/stage
+        run: bunx expo prebuild --platform ios --no-install
+      - name: Install native dependencies
+        working-directory: apps/stage/ios
+        run: pod install
+      - name: Verify SQLite header and encryption settings
+        working-directory: apps/stage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          guards = ['_SQLITE3_H_', '_FTS5_H', '_SQLITE3RTREE_H_']
+          support = Path('ios/Pods/Target Support Files')
+          app_configs = list((support / 'Pods-Stage').glob('*.xcconfig'))
+          cipher_configs = list((support / 'SQLCipher').glob('*.xcconfig'))
+          extension_configs = list((support / 'Pods-StageNotificationService').glob('*.xcconfig'))
+          assert app_configs and cipher_configs and extension_configs, 'Missing native configurations'
+          for config in app_configs:
+              contents = config.read_text()
+              assert all(guard not in contents for guard in guards), config
+              assert 'SQLCipher' in contents, config
+          for config in cipher_configs:
+              contents = config.read_text()
+              assert 'SQLITE_HAS_CODEC' in contents and 'SQLCIPHER_CRYPTO_CC' in contents, config
+          for config in extension_configs:
+              contents = config.read_text()
+              assert all(guard in contents for guard in guards), config
+          print('App header guards removed. SQLCipher codec and extension settings preserved.')
+          PY
+      - name: Build unsigned simulator app
+        working-directory: apps/stage
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/Stage.xcworkspace -scheme Stage \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/stage-ios" \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            2>&1 | tee "$RUNNER_TEMP/ios-build.log"
+      - name: Archive simulator app
+        run: |
+          ditto -c -k --keepParent "$RUNNER_TEMP/stage-ios/Build/Products/Debug-iphonesimulator/Stage.app" "$RUNNER_TEMP/stage-ios-simulator.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-ios-simulator
+          path: ${{ runner.temp }}/stage-ios-simulator.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-log
+          path: ${{ runner.temp }}/ios-build.log
+          if-no-files-found: ignore

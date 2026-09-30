@@ -20,13 +20,15 @@ import { leaveCall, screenShareSupported, toggleCamera, toggleMic, toggleScreen 
 import type { CallLinkStatus, CallMedia, CallView } from '../../lib/calls.store';
 import { ignore } from '../../lib/errorPolicy';
 import { CallMediaView } from './CallMediaView';
+import { CallScreenPicker } from './CallScreenPicker';
+import type { CallStream } from '../../lib/calls.types';
 import { callPerson, callTitle } from './callPeople';
 import { callGrid, callSubtitle } from './CallScreen.model';
 
 interface TileData {
   key: string;
   inboxId: string;
-  stream: MediaStream | null;
+  stream: CallStream | null;
   media: CallMedia;
   status: CallLinkStatus;
   self: boolean;
@@ -135,6 +137,7 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const top = useSafeAreaInsets().top;
   return (
     <Col surface="surface" style={viewportFill(60)}>
+      <CallScreenPicker/>
       <Col padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
         <Text weight="semibold" size="lg" value={callTitle(session.convId)} maxLines={1}/>
         <Text size="sm" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>

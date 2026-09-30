@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { View } from '../layout/native';
 import { ignore } from '../../lib/errorPolicy';
+import type { CallStream } from '../../lib/calls.types';
 
 interface CallMediaViewProps {
-  stream: MediaStream | null;
+  stream: CallStream | null;
   kind: 'video' | 'audio';
   mirrored?: boolean;
   contain?: boolean;
@@ -26,9 +27,9 @@ function mediaElement(kind: CallMediaViewProps['kind'], mirrored: boolean, conta
 export function CallMediaView({ stream, kind, mirrored = false, contain = false }: CallMediaViewProps): React.ReactElement {
   const [host, setHost] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    if (host === null || stream === null) return;
+    if (host === null || stream?.platform !== 'web') return;
     const el = mediaElement(kind, mirrored, contain);
-    el.srcObject = stream;
+    el.srcObject = stream.value;
     host.appendChild(el);
     ignore(el.play(), 'ui');
     return () => {

@@ -6,7 +6,7 @@ import { mapCoordsOf } from '@stage-labs/client/embed/detect';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
+import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
