@@ -1,10 +1,14 @@
-function parseObject(raw: string | undefined): Record<string, unknown> {
-  if (!raw?.trim()) return {};
+import { assignedAddresses } from './labels';
+import { mentionToken } from './mentions';
+
+function parseObject(raw: string | undefined): Record<string, unknown> | null {
+  if (raw === undefined) return null;
+  if (!raw.trim()) return {};
   try {
     const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
   } catch {
-    return {};
+    return null;
   }
 }
 
@@ -36,12 +40,30 @@ function githubClause(before: string, after: string): string {
   return `linked ${after.replace(/^https?:\/\/(www\.)?/, '')}`;
 }
 
+function assigneesOf(blob: Record<string, unknown> | null): string[] | null {
+  if (!blob) return null;
+  return blob.assigned === undefined || Array.isArray(blob.assigned) ? assignedAddresses(blob.assigned) : null;
+}
+
+function assigneeClauses(before: Record<string, unknown> | null, after: Record<string, unknown> | null): string[] {
+  const previous = assigneesOf(before);
+  const next = assigneesOf(after);
+  if (!previous || !next) return [];
+  const added = next.filter(address => !previous.includes(address));
+  const removed = previous.filter(address => !next.includes(address));
+  return [
+    added.length ? `assigned ${added.map(mentionToken).join(', ')}` : '',
+    removed.length ? `unassigned ${removed.map(mentionToken).join(', ')}` : '',
+  ].filter(Boolean);
+}
+
 export function describeAppDataChange(oldValue: string | undefined, newValue: string | undefined): string {
   const before = parseObject(oldValue);
   const after = parseObject(newValue);
   const clauses = [
-    ...labelClauses(stringList(before.labels), stringList(after.labels)),
-    githubClause(stringOf(before.github), stringOf(after.github)),
+    ...labelClauses(stringList(before?.labels), stringList(after?.labels)),
+    githubClause(stringOf(before?.github), stringOf(after?.github)),
+    ...assigneeClauses(before, after),
   ].filter(Boolean);
   return clauses.length ? clauses.join(' • ') : 'updated the channel settings';
 }

@@ -59,6 +59,27 @@ describe('member names in group event lines', () => {
     expect(isLeftOnlyUpdate(kicked)).toBe(false);
   });
 
+  test('retains historical assignment names as profile mentions during re-humanization', () => {
+    const e = entry({ system: true, groupUpdate: {
+      metadataFieldChanges: [{
+        fieldName: 'app_data', oldValue: JSON.stringify({ assigned: [PEER] }), newValue: JSON.stringify({ assigned: [OTHER] }),
+      }],
+    } }, 'updated the channel settings');
+    const text = withMemberNames(e, nameOf).text;
+    expect(text).toBe(`assigned @${OTHER} • unassigned @${PEER.toLowerCase()}`);
+    expect(parseMentions(text).filter(part => part.type === 'mention')).toEqual([
+      { type: 'mention', address: OTHER }, { type: 'mention', address: PEER.toLowerCase() },
+    ]);
+    expect(isLeftOnlyUpdate(e)).toBe(false);
+  });
+
+  test('does not infer assignment history from a missing before-value', () => {
+    const e = entry({ system: true, groupUpdate: {
+      metadataFieldChanges: [{ fieldName: 'app_data', newValue: JSON.stringify({ assigned: [PEER] }) }],
+    } }, 'updated the channel settings');
+    expect(withMemberNames(e, nameOf)).toBe(e);
+  });
+
   test('keeps other entries untouched', () => {
     const e = entry({ contentType: 'text' }, 'hello');
     expect(withMemberNames(e, nameOf)).toBe(e);
