@@ -1,5 +1,5 @@
 export {
-  revealRecoveryPhrase, smartOwnerSigner,
+  revealActiveRecoveryPhrase, smartOwnerSigner,
 } from './keyring';
 export { passkeysAvailable } from './passkeys';
 export { zerodevConfigured } from './env';

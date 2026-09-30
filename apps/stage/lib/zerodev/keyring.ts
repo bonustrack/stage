@@ -225,6 +225,16 @@ export async function deleteKey(id: string): Promise<void> {
 }
 
 
+export async function revealActiveRecoveryPhrase(expectedAccountId: string): Promise<string | null> {
+  const { getActiveAccountId, loadAccounts } = await import('../accounts');
+  const id = expectedAccountId.toLowerCase();
+  if ((await getActiveAccountId()) !== id) return null;
+  const rec = (await loadAccounts()).find((account) => account.id === id && account.type === 'smart');
+  if (!rec) return null;
+  const phrase = await readPhrase(await phraseIdFor(rec));
+  return (await getActiveAccountId()) === id ? phrase : null;
+}
+
 export async function revealRecoveryPhrase(ref: { phraseId?: string } = {}): Promise<string | null> {
   if (!(await requireRevealAuth())) return null;
   return readPhrase(await phraseIdFor(ref));

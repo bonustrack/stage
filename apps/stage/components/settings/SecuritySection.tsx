@@ -90,8 +90,8 @@ function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
     canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null,
   });
   const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
-    backupPhrase: () => <RecoveryPhraseRow rec={rec} mode="backup" />,
-    showPhrase: () => <RecoveryPhraseRow rec={rec} mode="show" />,
+    backupPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="backup" />,
+    showPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="show" />,
     rootKey: () => <RootKeyRow rec={rec} epoch={epoch} onChanged={() => { setEpoch((n) => n + 1); }} />,
     passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); setEpoch((n) => n + 1); }} />,
     devicePasskey: () => <DevicePasskeyRow key={`${rec.id}:${epoch}`} rec={rec} />,

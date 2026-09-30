@@ -7,9 +7,10 @@ auditable chokepoint: [`lib/zerodev/keyring.ts`](./lib/zerodev/keyring.ts).
 
 The keyring is the only module that:
 
-- reads or writes the single BIP-39 app mnemonic (root of every smart account +
-  agent), stored hardened (`requireAuthentication: true` +
-  `WHEN_UNLOCKED_THIS_DEVICE_ONLY`);
+- reads or writes each BIP-39 recovery phrase used by smart accounts. Native
+  storage stays device-bound (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`). Phrase reads
+  use `STORE_OPTS`, without `requireAuthentication`. Passkey assertions and the
+  authenticated device sentinel are separate reveal guards, not decryption keys;
 - reads or writes the per-account raw secp256k1 private keys (generated /
   imported EOAs), under the `wallet.pk.<id>` secure-store keys;
 - imports the secret-bearing primitives:
@@ -27,20 +28,23 @@ No other file in the app may touch any of the above.
 1. **Key never leaves.** Signing happens inside the keyring. Its public API
    returns signatures or an opaque viem/XMTP signer object (an `HDAccount` /
    `PrivateKeyAccount` can sign but exposes no key extractor). It never returns
-   the raw 32-byte key or the mnemonic string, except via the two guarded
-   reveals below.
+   the raw 32-byte key or the mnemonic string, except via the explicit reveal
+   APIs below.
 2. **Sign-in-place only.** A key is read only at an actual sign; the mnemonic is
    read only when deriving a new account or at a reveal. Nothing reads a key or
    prompts biometrics on app open, balance view, or wallet creation.
-3. **One guarded reveal each.**
-   - `revealRecoveryPhrase()` returns the mnemonic for the backup screen. It is
-     biometric-gated by construction: the mnemonic is stored
-     `requireAuthentication: true`, so the OS prompts biometrics/passcode on the
-     read (no extra native dep needed).
-   - `revealPrivateKey(id)` returns one EOA's raw key for the explicit
-     "Export private key" action, which the UI gates behind a destructive
-     warning Alert.
-   Both never log key material; nothing else returns secrets.
+3. **Explicit reveal paths.**
+   - `revealActiveRecoveryPhrase(expectedAccountId)` displays only the active
+     smart account's phrase, without another passkey or device-auth prompt. It
+     checks the active account before and after reading. Settings keeps the
+     screen warning, Hide and show-mode auto-hide. Switching accounts clears
+     the displayed phrase.
+   - `revealRecoveryPhrase()` remains guarded by passkey presence or device
+     authentication for Link a device. It is not the Settings display path.
+   - `revealPrivateKey(id)` keeps the same passkey or device-auth guard for the
+     explicit "Export private key" action and its destructive UI warning.
+   These APIs never log key material. Storage, signing and other sensitive
+   actions are unchanged.
 
 ## Everyday / view path needs no key, no biometric
 

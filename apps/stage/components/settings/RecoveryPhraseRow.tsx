@@ -8,7 +8,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
-import { revealRecoveryPhrase } from '../../lib/zerodev';
+import { revealActiveRecoveryPhrase } from '../../lib/zerodev';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 import { Box, Col, Row } from '../layout';
 import { SettingsButtonRow } from './rows';
@@ -79,7 +79,7 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
     void (async (): Promise<void> => {
       try {
         if (mode === 'show' && !(await confirmShow())) return;
-        const words = await revealRecoveryPhrase(rec);
+        const words = await revealActiveRecoveryPhrase(rec.id);
         if (!words) throw new Error(BACKUP_PHRASE_COPY.missing);
         setPhrase(words);
       } catch (e) {
