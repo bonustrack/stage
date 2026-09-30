@@ -13,13 +13,14 @@ import { usePalette, withAlpha } from '../lib/theme';
 export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactElement {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const { bg } = usePalette();
   return (
     <MediaCard onPress={() => { capabilities.openUrl(watchUrl); }}>
       <Box aspectRatio={16 / 9} style={{ position: 'relative' }}>
         <Image
           src={thumbUrl}
           fit="cover"
-          style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
+          style={{ width: '100%', height: '100%', backgroundColor: bg }}
 />
         <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
@@ -86,7 +87,7 @@ function MapAttribution(): React.ReactElement {
 export function LocationTile({ lat, lng, size }: {
   lat: number; lng: number; size: MapSize;
 }): React.ReactElement {
-  const tileBg = usePalette().border;
+  const tileBg = usePalette().bg;
   const view = MAP_VIEWS[size];
   const tiles = useMemo(() => osmTileGrid(lat, lng, view), [lat, lng, view]);
   return (

@@ -117,6 +117,7 @@ function PendingImage({
   image: Attachment; fg: string; onRemove: () => void;
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
+  const { bg } = usePalette();
   return (
     <>
       <Col width={72} align="center" gap={4}>
@@ -127,7 +128,7 @@ function PendingImage({
             accessibilityRole="button"
             accessibilityLabel="View image"
           >
-            <Image src={image.url} size={72} radius={8} fit="contain"/>
+            <Image src={image.url} size={72} radius={8} fit="contain" background={bg}/>
           </Pressable>
           <Pressable
             onPress={onRemove}
@@ -172,10 +173,11 @@ function PendingVideo({
 }: {
   video: Attachment; fg: string; onRemove: () => void;
 }): React.ReactElement {
+  const { bg } = usePalette();
   return (
     <Col width={128} align="center" gap={4}>
       <Box width={128} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
-        <VideoPlayer src={video.url} controls={false}/>
+        <VideoPlayer src={video.url} controls={false} background={bg}/>
         <RemoveBadge label="Remove video" onRemove={onRemove}/>
       </Box>
       <Text size="3xs" color={fg} style={{ width: 128, textAlign: 'center' }} numberOfLines={1}>

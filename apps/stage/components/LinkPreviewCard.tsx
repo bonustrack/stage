@@ -12,8 +12,8 @@ import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { capabilities } from '../lib/capabilities';
 
-function LinkPreviewBody({ meta, url, subColor }: {
-  meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string;
+function LinkPreviewBody({ meta, url, subColor, imageBg }: {
+  meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string; imageBg: string;
 }): React.ReactElement {
   const domain = meta.siteName == null || meta.siteName === ''
     ? domainOf(meta.url == null || meta.url === '' ? url : meta.url)
@@ -21,7 +21,7 @@ function LinkPreviewBody({ meta, url, subColor }: {
   return (
     <>
       {meta.image ? (
-        <Image src={meta.image} alt={meta.title} fit="cover" style={{ width: '100%', height: 160 }} />
+        <Image src={meta.image} alt={meta.title} fit="cover" background={imageBg} style={{ width: '100%', height: 160 }} />
       ) : null}
       <Box padding={{ x: 12, y: 10 }}>
         <Row margin={{ bottom: 4 }} align="center" justify="start">
@@ -66,7 +66,7 @@ export function LinkPreviewCard({ url, dark }: {
 
   return (
     <OutlinedLinkCard url={url}>
-      <LinkPreviewBody meta={meta} url={url} subColor={pal.text} />
+      <LinkPreviewBody meta={meta} url={url} subColor={pal.text} imageBg={pal.bg} />
     </OutlinedLinkCard>
   );
 }

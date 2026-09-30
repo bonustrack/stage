@@ -14,8 +14,7 @@ interface Props {
 }
 
 export function MediaCard({ onPress, width, maxWidth = ATTACHMENT_MAX_WIDTH, children }: Props): React.ReactElement {
-  const border = usePalette().border;
-  const bg = border;
+  const { border, bg } = usePalette();
   const style = {
     width: width ?? undefined,
     maxWidth,

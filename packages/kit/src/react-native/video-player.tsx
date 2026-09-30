@@ -6,10 +6,11 @@ export interface VideoPlayerProps {
   src: string;
   poster?: string;
   controls?: boolean;
+  background?: string;
 }
 
 export function VideoPlayer(props: VideoPlayerProps): React.ReactElement {
-  const { src, poster, controls = true } = props;
+  const { src, poster, controls = true, background = '#000000' } = props;
   const player = useVideoPlayer({ uri: src });
   const [showPoster, setShowPoster] = useState(poster !== undefined);
 
@@ -26,7 +27,7 @@ export function VideoPlayer(props: VideoPlayerProps): React.ReactElement {
         width: '100%',
         borderRadius: 12,
         overflow: 'hidden',
-        backgroundColor: '#000000',
+        backgroundColor: background,
       }}
     >
       <VideoView

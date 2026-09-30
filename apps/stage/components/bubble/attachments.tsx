@@ -19,10 +19,11 @@ import { resolvedAttachmentKind } from './attachmentKind.model';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
+  const { bg } = usePalette();
   return (
     <Box margin={{ bottom: 6 }}>
-      <Box maxWidth={ATTACHMENT_MAX_WIDTH} radius="md" background="#000">
-        <VideoPlayer src={uri} controls />
+      <Box maxWidth={ATTACHMENT_MAX_WIDTH} radius="md" surface="surface">
+        <VideoPlayer src={uri} controls background={bg} />
       </Box>
     </Box>
   );
@@ -43,9 +44,9 @@ function AttachmentChip({ label, subtitle, fg, onPress }: {
   label: string; subtitle?: string; fg: string; onPress: () => void;
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
-  const { border } = usePalette();
+  const { bg } = usePalette();
   return (
-    <Card dark={dark} background={border} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: ATTACHMENT_MAX_WIDTH }}>
+    <Card dark={dark} background={bg} padding={10} onPress={onPress} style={{ marginBottom: 6, maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Row align="center" gap={10}>
         <Box width={40} height={40} radius="md" align="center" justify="center" surface="surface">
           <Glyph icon={IconFileBend} size={22} color={fg}/>
@@ -66,8 +67,12 @@ function AttachmentRetry({ label, fg, onRetry }: {
 }
 
 function AttachmentPending({ label, fg }: { label: string; fg: string }): React.ReactElement {
+  const { border } = usePalette();
   return (
-    <Row padding={{ x: 10, y: 8 }} margin={{ bottom: 6 }} align="center" gap={8} radius="sm" background="rgba(0,0,0,0.12)">
+    <Row
+      padding={{ x: 9, y: 7 }} margin={{ bottom: 6 }} align="center" gap={8} radius="sm" surface="surface"
+      style={{ borderWidth: 1, borderColor: border }}
+    >
       <Spinner size={20} color={fg}/>
       <Text size="xs" role="secondary" numberOfLines={1}>
         {label}
