@@ -1,8 +1,10 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 
 export interface FeedMerge {
   entries: HistoryEntry[];
   added: number;
+  replaced: number;
 }
 
 interface Keyed {
@@ -42,13 +44,28 @@ function newestFirst(entries: readonly HistoryEntry[]): HistoryEntry[] {
   return keyed(entries).sort(byNewest).map(({ entry }) => entry);
 }
 
+function withDeletedPlaceholders(
+  prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[],
+): { entries: readonly HistoryEntry[]; replaced: number } {
+  const placeholders = new Map(incoming.filter(isDeletedPlaceholder).map(e => [e.id, e]));
+  let replaced = 0;
+  const entries = placeholders.size === 0 ? prev : prev.map((e) => {
+    const placeholder = placeholders.get(e.id);
+    if (placeholder === undefined || isDeletedPlaceholder(e)) return e;
+    replaced += 1;
+    return placeholder;
+  });
+  return { entries, replaced };
+}
+
 export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[]): FeedMerge {
-  const seen = new Set(prev.map(e => e.id));
+  const { entries: base, replaced } = withDeletedPlaceholders(prev, incoming);
+  const seen = new Set(base.map(e => e.id));
   const fresh = incoming.filter((e) => {
     if (seen.has(e.id)) return false;
     seen.add(e.id);
     return true;
   });
-  if (fresh.length === 0) return { entries: [...prev], added: 0 };
-  return { entries: newestFirst([...fresh, ...prev]), added: fresh.length };
+  if (fresh.length === 0) return { entries: [...base], added: 0, replaced };
+  return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced };
 }

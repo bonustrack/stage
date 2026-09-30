@@ -1,12 +1,12 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { makeSenders } from './xmtp.send.core';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
-export async function rowMessagesOf(conv: ConvHandle, limit: number): Promise<RowMessage[]> {
+export async function rowMessagesOf(conv: ConvHandle, limit: number): Promise<StreamedMessage[]> {
   return (await sdk.messages(conv, { limit })).map(sdk.rowOf);
 }
 
@@ -22,6 +22,10 @@ export async function olderConvMessages(line: string, beforeTsMs: number, limit:
   if (!conv) return [];
   const older = await sdk.messages(conv, { limit, beforeMs: beforeTsMs, order: 'desc' });
   return older.map(m => sdk.envelopeOf(m, line));
+}
+
+export function xmtpDeleteMessage(messageId: string): Promise<string> {
+  return withReadableSendError(async () => sdk.deleteMessage(await sdk.client(), messageId));
 }
 
 function sendTo<A extends unknown[]>(

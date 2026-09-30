@@ -8,6 +8,7 @@ import { BubbleErrorBoundary } from '../bubble/boundary';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useRouter } from 'expo-router';
 import { previewOf } from './feed-helpers';
+import { deletedViewCache, replyQuoteOf } from './messageDeletion.model';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
 import { XMTP_USER_PREFIX } from '../../modules/messaging';
@@ -29,6 +30,18 @@ function payHandlerOf(item: HistoryEntry, myUri: string, onPay: ConvState['onPay
   return () => { onPay(item.id, wsc); };
 }
 
+function unlessDeleted<T>(deleted: boolean, byId: ReadonlyMap<string, T>, id: string): T | undefined {
+  return deleted ? undefined : byId.get(id);
+}
+
+type BubbleInteractions = Pick<
+  React.ComponentProps<typeof MessengerBubble>, 'replyPreview' | 'onReplyPreviewPress' | 'onReact' | 'onReply' | 'onOpenMenu'
+>;
+
+function interactionsOf(deleted: boolean, live: () => BubbleInteractions): BubbleInteractions {
+  return deleted ? {} : live();
+}
+
 export function useFeedRenderItem(c: ConvState, highlight?: string): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
   extraData: readonly unknown[];
@@ -39,7 +52,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     groupDescription, groupLabels, senderEthOf, profilesVersion,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed,
+    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed, deletedIds,
   } = c;
 
   const sub = usePalette().text;
@@ -50,9 +63,10 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
 
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId],
-    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId],
+    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
+    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
   );
+  const deletedView = useMemo(deletedViewCache, []);
 
   const eventsById = useMemo(() => {
     const m = new Map<string, Bubble>();
@@ -79,23 +93,29 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
 
   const renderItem = useCallback(({ item }: { item: Bubble }) => {
     const senderEthAddress = senderEthOf(item.from);
+    const deleted = deletedIds.has(item.id);
     const target = item.replyTo;
     return (
       <BubbleErrorBoundary sub={sub} entry={item}>
         <MessengerBubble
-          entry={namedEntry(item)}
+          entry={deleted ? deletedView(item) : namedEntry(item)}
           dark={dark}
           myUri={myUri}
           senderEthAddress={senderEthAddress}
           onAvatarPress={onAvatarPress}
           pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
           replyTarget={replyingToId === item.id || jumpHighlightId === item.id || menuForId === item.id}
-          reactions={reactorNames.get(item.id)}
-          pendingReactions={optimisticReactions.get(item.id)}
-          pendingRemovals={optimisticRemovals.get(item.id)}
-          ownEmojis={ownReactions.get(item.id)}
-          replyPreview={target ? previewOf(eventsById.get(target) ?? item) : undefined}
-          onReplyPreviewPress={target ? () => { jumpToMessage(target); } : undefined}
+          reactions={unlessDeleted(deleted, reactorNames, item.id)}
+          pendingReactions={unlessDeleted(deleted, optimisticReactions, item.id)}
+          pendingRemovals={unlessDeleted(deleted, optimisticRemovals, item.id)}
+          ownEmojis={unlessDeleted(deleted, ownReactions, item.id)}
+          {...interactionsOf(deleted, () => ({
+            replyPreview: replyQuoteOf(item, deletedIds, id => eventsById.get(id)),
+            onReplyPreviewPress: target ? () => { jumpToMessage(target); } : undefined,
+            onReact: (emoji) => { onReact(item.id, emoji); },
+            onReply: () => { setReplyTarget(item.id, previewOf(item), senderEthAddress); },
+            onOpenMenu: (anchor) => { setMenuAnchor(anchor); setMenuFor(item); },
+          }))}
           votes={displayVotes.get(item.id)}
           ownVotes={displayOwnVotes.get(item.id)}
           onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}
@@ -106,9 +126,6 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
           onSign={signHandlerOf(item, myUri, onSign)}
           paying={payingIds.has(item.id)}
           onPay={payHandlerOf(item, myUri, onPay)}
-          onReact={(emoji) => { onReact(item.id, emoji); }}
-          onReply={() => { setReplyTarget(item.id, previewOf(item), senderEthAddress); }}
-          onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
           selectable={selectedForCopy === item.id}
           onAnswer={(label) => { onAnswer(item.id, label); }}
           highlight={highlight}
@@ -116,7 +133,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       </BubbleErrorBoundary>
     );
   }, [
-    dark, myUri, sub, senderEthOf, namedEntry, confirmedIds, replyingToId, jumpHighlightId, menuForId,
+    dark, myUri, sub, senderEthOf, namedEntry, deletedView, deletedIds, confirmedIds, replyingToId, jumpHighlightId, menuForId,
     reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,

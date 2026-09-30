@@ -13,6 +13,9 @@ import {
   walletSendCallsFallbackText, transactionReferenceFallbackText,
 } from './tx';
 import { XMTP_USER_PREFIX } from './line';
+import {
+  DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
+} from './deleteMessage';
 
 export interface DecodedMessageView {
   id: string;
@@ -176,6 +179,12 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
   attachment: attachmentEnvelope,
   multiRemoteStaticAttachment: multiRemoteEnvelope,
   multiRemoteAttachment: multiRemoteEnvelope,
+  [DELETE_MESSAGE_TYPE_ID]: (base, typeId, decoded) => ({
+    ...base, payload: { contentType: typeId, deletes: deleteTargetOfContent(decoded) },
+  }),
+  [DELETED_MESSAGE_TYPE_ID]: (base, typeId, decoded) => ({
+    ...base, payload: { contentType: typeId, deletedBy: deletedByOfContent(decoded) },
+  }),
 };
 
 function leaveEnvelope(base: HistoryEntry, typeId: string): HistoryEntry {

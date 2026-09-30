@@ -90,15 +90,19 @@ function ReactionStrip({ stripBg, onReact }: {
   );
 }
 
-interface BubbleActions { reply: () => void; copy: () => void; select: () => void; shareLink: () => void }
+interface BubbleActions {
+  reply: () => void; copy: () => void; select: () => void; shareLink: () => void; delete: () => void;
+}
 
 const SELECT_TEXT = Platform.OS !== 'web';
 
-function ActionDropdown({ hasText, on }: { hasText: boolean; on: BubbleActions }): React.ReactElement {
+function ActionDropdown({ hasText, canDelete, on }: {
+  hasText: boolean; canDelete: boolean; on: BubbleActions;
+}): React.ReactElement {
   return (
     <MenuSurface>
-      {bubbleMenuItems(hasText, { selectText: SELECT_TEXT }).map(item => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} onPress={on[item.id]} />
+      {bubbleMenuItems(hasText, { selectText: SELECT_TEXT, canDelete }).map(item => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
       ))}
     </MenuSurface>
   );
@@ -131,13 +135,14 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
 }
 
 export function BubbleActionMenu({
-  target, anchor, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
+  target, anchor, canDelete, onClose, onReact, onReply, onCopy, onSelect, onShareLink, onDelete,
 }: {
-  target: HistoryEntry | null; anchor: MenuAnchor;
+  target: HistoryEntry | null; anchor: MenuAnchor; canDelete: boolean;
   onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onSelect: () => void;
   onShareLink: () => void;
+  onDelete: () => void;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
 
@@ -147,7 +152,10 @@ export function BubbleActionMenu({
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   const dropdown = (
-    <ActionDropdown hasText={!!target?.text} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
+    <ActionDropdown
+      hasText={!!target?.text} canDelete={canDelete}
+      on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink, delete: onDelete }}
+    />
   );
   const strip = (
     <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />

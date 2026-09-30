@@ -4,6 +4,8 @@ import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages, type ConvHandle } from '../../lib/xmtp.messages';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { PAGE_SIZE } from '../../lib/xmtp.resync';
+import { deletedMessageIds, isDeleteRequest } from '@stage-labs/client/xmtp/deletions';
+import { ownDeletesReady } from '../../lib/ownDeletes';
 
 export type SearchHit = HistoryEntry;
 
@@ -29,6 +31,8 @@ interface ScanState {
   hits: SearchHit[];
   seen: Set<string>;
   truncated: boolean;
+  deleteRequests: HistoryEntry[];
+  ownDeletes: ReadonlySet<string>;
 }
 
 async function readLocalSearchPage(
@@ -46,10 +50,12 @@ async function readLocalSearchPage(
 }
 
 function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanState): boolean {
+  state.deleteRequests.push(...mapped.filter(isDeleteRequest));
+  const deleted = deletedMessageIds([...state.deleteRequests, ...mapped], state.ownDeletes);
   for (const e of mapped) {
     if (state.seen.has(e.id)) continue;
     state.seen.add(e.id);
-    if (matches(e, needle)) {
+    if (!deleted.has(e.id) && !isDeleteRequest(e) && matches(e, needle)) {
       state.hits.push(e);
       if (state.hits.length >= SEARCH_MAX_RESULTS) { state.truncated = true; return true; }
     }
@@ -79,7 +85,9 @@ export async function searchLocalHistory(
   const conv = await convOfLine(line);
   if (!conv) return empty;
 
-  const state: ScanState = { hits: [], seen: new Set<string>(), truncated: false };
+  const state: ScanState = {
+    hits: [], seen: new Set<string>(), truncated: false, deleteRequests: [], ownDeletes: await ownDeletesReady(),
+  };
   let beforeTsMs: number | undefined;
 
   for (let page = 0; page < SEARCH_MAX_PAGES; page += 1) {

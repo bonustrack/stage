@@ -11,8 +11,11 @@ import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
-  ROW_PREVIEW_MAX_CHARS, type RowMessage,
+  ROW_PREVIEW_MAX_CHARS, type RowMessage, type StreamedMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
+import { DELETED_MESSAGE_TEXT, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isDeletedRowMessage } from '@stage-labs/client/xmtp/deletions';
+import { ownDeletesReady } from '../../lib/ownDeletes';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
@@ -39,22 +42,25 @@ function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
   return dm && isGroupUpdateTypeId(m.contentTypeId);
 }
 
-function pickLastMessage(msgs: RowMessage[], dm: boolean): RowMessage | undefined {
-  return msgs.find(m =>
-    !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm),
-  ) ?? msgs[0];
+function isRowCandidate(m: RowMessage, dm: boolean): boolean {
+  return !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm)
+    && !isDeleteRequestType(m.contentTypeId);
+}
+
+function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage | undefined {
+  return msgs.find(m => isRowCandidate(m, dm)) ?? msgs[0];
 }
 
 function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
-  const bubble = msgs.find(m =>
-    !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm)
-    && revivesClearedChat(m.contentTypeId),
-  );
+  const bubble = msgs.find(m => isRowCandidate(m, dm) && revivesClearedChat(m.contentTypeId));
   return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
 }
 
-function previewOfMessage(last: RowMessage | undefined, dm: boolean): string {
+function previewOfMessage(
+  last: StreamedMessage | undefined, dm: boolean, msgs: StreamedMessage[], ownDeletes: ReadonlySet<string>,
+): string {
   if (!last || isMembershipNoise(last, dm)) return '';
+  if (isDeletedRowMessage(last, msgs, ownDeletes)) return DELETED_MESSAGE_TEXT;
   try { return previewOfXmtpContent(last.content, last.contentTypeId); }
   catch { return `[${last.contentTypeId ?? 'unknown'}]`; }
 }
@@ -122,7 +128,7 @@ export async function summarizeConversation(
   const dm = peerAddress !== null;
   const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(recover('conversation.rowMessages', []));
   const last = pickLastMessage(msgs, dm);
-  const preview = previewOfMessage(last, dm);
+  const preview = previewOfMessage(last, dm, msgs, await ownDeletesReady());
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const { title, avatarUri, avatarAddress, labels } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, peerAddress),

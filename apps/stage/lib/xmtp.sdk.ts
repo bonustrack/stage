@@ -1,6 +1,6 @@
 import {
   Dm, Group, PublicIdentity, addGroupMembers, staticKeyPackageStatuses,
-  type Conversation, type ConversationId,
+  type Conversation, type ConversationId, type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply, buildStaticAttachment } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
@@ -10,7 +10,7 @@ import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup, sendableFinder,
-  type MessageQuery, type XmtpSdk,
+  type MessageDeletion, type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt } from './errorPolicy';
 import { archiveFromBytes, archiveToBytes } from './archiveFile';
@@ -24,6 +24,8 @@ type NativeArchiveOptions = NonNullable<Parameters<NativeClient['createArchive']
 const ARCHIVE_OPTIONS: NativeArchiveOptions = { archiveElements: ['messages', 'consent'], excludeDisappearingMessages: false };
 
 const asConversationId = (id: string): ConversationId => id as ConversationId;
+
+const asMessageId = (id: string): MessageId => id as MessageId;
 
 function identityOf(address: string): PublicIdentity {
   return new PublicIdentity(address, 'ETHEREUM');
@@ -113,6 +115,30 @@ function streamConsent(client: NativeClient, onChange: () => void): () => void {
   };
 }
 
+function streamDeletions(client: NativeClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
+  let live = true;
+  let cancel: (() => void) | null = null;
+  void client.conversations.streamMessageDeletions((messageId, convId) => {
+    if (live) onDeleted({ convId, messageId });
+    return Promise.resolve();
+  }).then((stop) => {
+    if (live) cancel = stop;
+    else attempt(stop, 'cleanup');
+  }).catch(reported('xmtp.deletionStream'));
+  return () => {
+    live = false;
+    if (cancel) attempt(cancel, 'cleanup');
+  };
+}
+
+async function deleteMessage(client: NativeClient, messageId: string): Promise<string> {
+  const message = await client.conversations.findMessage(asMessageId(messageId));
+  const convId = message ? convIdFromTopic(message.topic) ?? conversationIdField(message) : undefined;
+  const conv = convId ? await client.conversations.findConversation(asConversationId(convId)) : undefined;
+  if (!conv) throw new Error('Message not found');
+  return conv.deleteMessage(asMessageId(messageId));
+}
+
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
   const { statuses } = await staticKeyPackageStatuses('production', installationIds as InstallationIds);
   return [...statuses.values()].map(s => s.validationError);
@@ -151,6 +177,9 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamAllMessages,
   streamConversations,
   streamConsent,
+  streamDeletions,
+  deletedEntryOf: () => Promise.resolve(null),
+  deleteMessage,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),

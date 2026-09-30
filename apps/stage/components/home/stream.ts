@@ -8,6 +8,7 @@ import { homeRows } from './state';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
+import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
 import { recover } from '../../lib/errorPolicy';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
@@ -67,6 +68,7 @@ export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg) return;
+    if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
     const decoded = msg.content;
     let preview = '';
     try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }

@@ -1,5 +1,6 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
+import { DELETE_MESSAGE_CODEC } from '@stage-labs/client/xmtp/deleteMessage';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC,
   READ_STATE_CODEC, PIN_STATE_CODEC, CLEAR_STATE_CODEC, BOARD_STATE_CODEC, SEARCH_STATE_CODEC,
@@ -17,6 +18,7 @@ export const XMTP_CODECS = [
   CLEAR_STATE_CODEC,
   BOARD_STATE_CODEC,
   SEARCH_STATE_CODEC,
+  DELETE_MESSAGE_CODEC,
 ];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {

@@ -1,6 +1,7 @@
 import { isControlBody, lineOfConv, type StreamMsg, type StreamStatus } from './xmtp.types';
 import { sdk } from './xmtp.sdk';
-import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
+import { activeFeedLines, feedCache, registerGlobalStreamTeardown } from './xmtp.state.core';
+import type { MessageDeletion } from './xmtp.sdk.core';
 import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
@@ -19,6 +20,7 @@ const RETRY_MAX_MS = 60_000;
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 
 let cancelStream: (() => void) | null = null;
+let cancelDeletions: (() => void) | null = null;
 let starting = false;
 let generation = 0;
 let rearmTimer: ReturnType<typeof setTimeout> | null = null;
@@ -98,6 +100,18 @@ function handleStreamMessage(msg: StreamMessage): void {
   if (!isHiddenConv(convId)) routeMessageToFeed(convId, msg);
 }
 
+async function applyDeletion(line: string, messageId: string): Promise<void> {
+  const entry = await sdk.deletedEntryOf(await sdk.client(), messageId, line);
+  if (entry) mergeIntoFeed(line, [entry]);
+  else if (activeFeedLines.has(line)) await resyncActiveFeeds();
+}
+
+function onMessageDeleted({ convId, messageId }: MessageDeletion): void {
+  const line = lineOfConv(routeConvId(convId));
+  if (!feedCache.get(line)) return;
+  void applyDeletion(line, messageId).catch(reported('xmtp.deletion'));
+}
+
 function onGlobalStreamClose(): void {
   cancelStream = null;
   lastCloseAt = Date.now();
@@ -115,6 +129,7 @@ export async function ensureGlobalStream(): Promise<void> {
     const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
     if (startedIn !== generation) { cancel(); return; }
     cancelStream = cancel;
+    cancelDeletions ??= sdk.streamDeletions(client, onMessageDeleted);
     startFailures = 0;
     foregroundWatch.attach(status);
   } catch (err) {
@@ -127,6 +142,7 @@ export async function ensureGlobalStream(): Promise<void> {
 function teardownGlobalStream(): void {
   generation += 1;
   if (cancelStream) { cancelStream(); cancelStream = null; }
+  if (cancelDeletions) { cancelDeletions(); cancelDeletions = null; }
   if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
   lastMessageAt = 0; lastCloseAt = 0; startFailures = 0;
   foregroundWatch.detach();

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { isDeleteRequest } from '@stage-labs/client/xmtp/deletions';
 import type { VirtualListHandle } from '../layout';
 import { isReaction } from './feed-helpers';
 import { isLeftOnlyUpdate } from './systemNames.model';
@@ -50,7 +51,10 @@ export function useOutboundLayer(
 
   const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
-  const liveBubbles = useMemo(() => events.filter(e => !isReaction(e) && !isLeftOnlyUpdate(e)), [events]);
+  const liveBubbles = useMemo(
+    () => events.filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e)),
+    [events],
+  );
   const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
   const allBubbles = useMemo(
     () => (view.pending.length ? [...view.pending, ...liveBubbles] : liveBubbles),

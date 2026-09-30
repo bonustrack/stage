@@ -36,6 +36,8 @@
     "./xmtp/historyTransfer": "./src/xmtp/historyTransfer.ts",
     "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
     "./xmtp/summarizeRow": "./src/xmtp/summarizeRow.ts",
+    "./xmtp/deleteMessage": "./src/xmtp/deleteMessage.ts",
+    "./xmtp/deletions": "./src/xmtp/deletions.ts",
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",
     "./routing/deepLinks": "./src/routing/deepLinks.ts",
     "./routing/handles": "./src/routing/handles.ts",

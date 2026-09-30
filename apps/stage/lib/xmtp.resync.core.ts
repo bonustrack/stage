@@ -16,7 +16,7 @@ export interface MergeResult {
 export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): MergeResult {
   const filtered = entries.filter(e => !isControlBody(e.text));
   const merged = mergeFeedEntries(feedCache.get(line) ?? [], filtered);
-  if (merged.added > 0) feedCache.set(line, merged.entries);
+  if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
   const receivedFullPage = entries.length >= PAGE_SIZE;
   setReceivedFullPage(line, receivedFullPage);
   return {

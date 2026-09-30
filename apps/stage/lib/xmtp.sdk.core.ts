@@ -47,6 +47,8 @@ export interface SendOps<C> {
   attachment: (conv: C, filename: string, mimeType: string, dataB64: string) => Promise<string>;
 }
 
+export interface MessageDeletion { convId: string; messageId: string }
+
 export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
@@ -75,6 +77,9 @@ interface ClientPrimitives<Cl, C, M> {
   streamAllMessages: (client: Cl, onMessage: (m: M | undefined) => void, onClose: () => void) => Promise<() => void>;
   streamConversations: (client: Cl, onConv: (conv: C) => void) => () => void;
   streamConsent: (client: Cl, onChange: () => void) => () => void;
+  streamDeletions: (client: Cl, onDeleted: (deletion: MessageDeletion) => void) => () => void;
+  deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;
+  deleteMessage: (client: Cl, messageId: string) => Promise<string>;
   history: HistoryOps<Cl>;
 }
 

@@ -5,9 +5,11 @@ import {
   type Reaction,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
+import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
@@ -17,7 +19,7 @@ import { webGroupMetaPolicy } from './groupPolicyWeb.model';
 import type { XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
-  type GroupMeta, type MessageQuery, type XmtpSdk,
+  type GroupMeta, type MessageDeletion, type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, ignore, ignored } from './errorPolicy';
 
@@ -118,6 +120,25 @@ function streamConsent(client: WebClient, onChange: () => void): () => void {
   }));
 }
 
+function streamDeletions(client: WebClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
+  return endWhenCancelled(client.conversations.streamDeletedMessages({
+    onValue: (m: DecodedMessage) => { onDeleted({ convId: m.conversationId, messageId: m.id }); },
+    onError: reported('xmtp.deletionStream'),
+  }));
+}
+
+async function deletedEntryOf(client: WebClient, messageId: string, line: string): Promise<HistoryEntry | null> {
+  const m = await client.conversations.getMessageById(messageId);
+  return m ? envelopeOfXmtpMessage(m, line) : null;
+}
+
+async function deleteMessage(client: WebClient, messageId: string): Promise<string> {
+  const message = await client.conversations.getMessageById(messageId);
+  const conv = message ? await client.conversations.getConversationById(message.conversationId) : undefined;
+  if (!conv) throw new Error('Message not found');
+  return conv.send(asEncoded(encodeDeleteMessage(messageId)), { shouldPush: false });
+}
+
 async function dmLookup(client: WebClient, address: string): Promise<{
   find: () => Promise<Dm | undefined>; peerInboxId: () => Promise<string>;
 } | null> {
@@ -168,6 +189,9 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   streamConversations: (client, onConv) =>
     endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),
   streamConsent,
+  streamDeletions,
+  deletedEntryOf,
+  deleteMessage,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),

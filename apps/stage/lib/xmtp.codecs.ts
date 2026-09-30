@@ -1,7 +1,7 @@
 import {
   PublicIdentity,
   ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
-  MultiRemoteAttachmentCodec, GroupUpdatedCodec,
+  MultiRemoteAttachmentCodec, GroupUpdatedCodec, DeleteMessageCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
 import {
@@ -19,6 +19,7 @@ export const XMTP_CODECS = [
   new RemoteAttachmentCodec(),
   new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
+  new DeleteMessageCodec(),
   POLL_CODEC,
   SIGNATURE_REQUEST_CODEC,
   SIGNATURE_REFERENCE_CODEC,

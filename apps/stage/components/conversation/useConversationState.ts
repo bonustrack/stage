@@ -16,6 +16,8 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
+import { deletedMessageIds } from '@stage-labs/client/xmtp/deletions';
+import { useOwnDeletes } from '../../lib/ownDeletes';
 import type { MenuAnchor } from '../bubble/props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -212,6 +214,8 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
 
   const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
+  const ownDeletes = useOwnDeletes();
+  const deletedIds = useMemo(() => deletedMessageIds(events, ownDeletes), [events, ownDeletes]);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
   const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } =
@@ -243,7 +247,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     peerAddr, groupName, groupImage, groupDescription, groupLabels, setGroupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
-    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, deletedIds,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     onOptimistic, onSent, markAtBottom, consent, consentKnown, consentAllowed, markConsentAllowed,
