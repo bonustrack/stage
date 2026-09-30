@@ -18,6 +18,10 @@ export const RIGHT_PANE_INSET: ViewStyle = WEB ? css({ right: RIGHT_PANE }) : {}
 
 export const STICKY_TOP: ViewStyle = WEB ? css({ position: 'sticky', top: 0, zIndex: 2 }) : {};
 
+export const SELF_SCROLL: ViewStyle = WEB ? css({ overflowY: 'auto' }) : {};
+
+export const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
+
 export const STICKY_UNDER_CHROME: ViewStyle = WEB
   ? css({ position: 'sticky', top: 'var(--stage-top-inset, 0px)', zIndex: 2 })
   : {};

@@ -332,51 +332,27 @@ function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
   children: React.ReactNode;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
-  const safeTop = useSafeAreaInsets().top;
-  const small = !useWebTabRail();
   const [searchKey, setSearchKey] = useState(0);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
   const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); setSearchKey(key => key + 1); };
   const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
-  if (small) {
-    return <>
-      <StackHeader title="Board" backTo="/" inline={inline} bordered={false} trailing={<>
-        <Box flex={1}/>
-        <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
-      </>}/>
-      <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
-        <ScreenScroll ref={scroll} keyboardShouldPersistTaps="handled">
-          <FilterSearch
-            key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
-            query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
-            head={link} sub={text} border={border} inline field
-          />
-          <Col height={laneHeight}>{children}</Col>
-        </ScreenScroll>
-      </Box>
-    </>;
-  }
-  if (searchKey > 0) {
-    return <>
-      <FilterSearch
-        key={searchKey} scope="board" onMenu={onFilterMenu}
-        query={query} setQuery={setQuery} onClose={closeSearch}
-        head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop}
-        trailing={<HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>}
-      />
-      {children}
-    </>;
-  }
-  const trailing = (
-    <>
+  return <>
+    <StackHeader title="Board" backTo="/" inline={inline} bordered={false} trailing={<>
       <Box flex={1}/>
-      <Row align="center" gap={18}>
-        <HomeTopnavRight head={text} onOpenSearch={openSearch} view="board"/>
-      </Row>
-    </>
-  );
-  return <><StackHeader title="Board" backTo="/" inline={inline} trailing={trailing}/>{children}</>;
+      <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
+    </>}/>
+    <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
+      <ScreenScroll ref={scroll} scroll={inline ? 'self' : 'window'} keyboardShouldPersistTaps="handled">
+        <FilterSearch
+          key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
+          query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
+          head={link} sub={text} border={border}
+        />
+        <Col height={laneHeight}>{children}</Col>
+      </ScreenScroll>
+    </Box>
+  </>;
 }
 
 export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactElement | null {

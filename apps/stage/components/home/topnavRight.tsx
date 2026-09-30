@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { HomeOverflowMenu } from './overflow';
 import { NewChatModal } from './NewChatModal';
 import { IconBubbleSparkle } from '../IconBubbleSparkle';
@@ -24,23 +23,15 @@ function useViewSwitch(view: HomeView): { onBoard?: () => void; onChats?: () => 
   return { onBoard: () => { router.push(boardViewHref(pathname, homeRows() ?? [], getPeerHandle)); } };
 }
 
-export function HomeTopnavRight({ head, onOpenSearch, view }: {
-  head: string; onOpenSearch?: () => void; view: HomeView;
-}): React.ReactElement {
+export function HomeTopnavRight({ head, view }: { head: string; view: HomeView }): React.ReactElement {
   const router = useRouter();
   const switchView = useViewSwitch(view);
   const { link } = usePalette();
-  const search = useHover();
   const compose = useHover();
   const [composeOpen, setComposeOpen] = useState(false);
   const openCompose = (): void => { setComposeOpen(true); };
   return (
     <>
-      {onOpenSearch === undefined ? null : <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
-        <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
-          <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
-        </Pressable>
-      </HoverTooltip>}
       <HoverTooltip label="New chat" placement="below" shortcut="c" onShortcut={openCompose}>
         <Pressable onPress={openCompose} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
           <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>

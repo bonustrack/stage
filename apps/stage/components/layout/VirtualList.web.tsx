@@ -2,7 +2,7 @@ import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
   type ForwardedRef, type Ref, type RefObject,
 } from 'react';
-import { View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
+import { View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import {
   elementScroll, useVirtualizer, useWindowVirtualizer, windowScroll, type Virtualizer,
 } from '@tanstack/react-virtual';
@@ -11,12 +11,11 @@ import {
   distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart, type ListScrollMetrics,
 } from './VirtualList.model';
 import type { ListAnchor, VirtualListHandle, VirtualListProps } from './VirtualList.types';
+import { SELF_SCROLL, SELF_SCROLLBAR } from './webChrome';
 
 const ESTIMATED_ITEM_SIZE = 72;
 const OVERSCAN = 6;
 const SEPARATORS = { highlight: () => undefined, unhighlight: () => undefined, updateProps: () => undefined };
-const SELF_SCROLL = { overflowY: 'auto' } as unknown as ViewStyle;
-const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 const ITEM_STYLE = { position: 'absolute', top: 0, left: 0, width: '100%' } as const;
 const ANCHOR_SETTLE_FRAMES = 8;
 

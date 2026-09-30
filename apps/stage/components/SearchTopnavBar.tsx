@@ -33,7 +33,6 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   field?: boolean;
   onOpen?: () => void;
   autoFocus?: boolean;
-  trailing?: React.ReactNode;
   inputProps?: InputProps['inputProps'];
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
@@ -95,7 +94,6 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       <Pressable onPress={props.onClose} hitSlop={8} accessibilityLabel="Close search">
         <Glyph icon={IconCrossMedium} size={18} color={sub}/>
       </Pressable>
-      {props.trailing !== undefined ? <Row align="center" gap={18}>{props.trailing}</Row> : null}
     </Row>
     </Frame>
   );

@@ -104,8 +104,6 @@ export function setSearchFocused(next: boolean): void {
   settleWhenIdle();
 }
 
-export const isSearchFocused = (): boolean => focused;
-
 export async function applyRemoteSearchState(forAccount: string, incoming: SearchStateContent): Promise<void> {
   await ensureLoaded();
   if (forAccount === accountId) {

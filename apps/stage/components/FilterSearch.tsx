@@ -13,7 +13,7 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
-import { Box, PAGE_GUTTER, STICKY_UNDER_CHROME } from './layout';
+import { Box, PAGE_GUTTER } from './layout';
 import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
 import { MENU_WIDTH } from './AnchoredMenu';
@@ -38,7 +38,7 @@ import {
 } from './searchFilter.model';
 
 const MENU_MAX_HEIGHT = 360;
-const FILTER_LAYER = 5;
+const FILTER_LAYER = 1;
 const NATIVE = Platform.OS !== 'web';
 const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member', has: 'Has' };
 const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople, has: IconFilter1 };
@@ -204,15 +204,15 @@ function FilterMenuItems({ menu, active, onPick }: {
   </>;
 }
 
-function useTouchMenuHeight(field: boolean): number {
+function useTouchMenuHeight(): number {
   const { height } = useWindowDimensions();
   const keyboard = useKeyboardState(state => (state.isVisible ? state.height : 0));
-  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT + (field ? SEARCH_FIELD_HEIGHT : 0);
+  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT + SEARCH_FIELD_HEIGHT;
   return Math.max(0, height - keyboard - top - MENU_GAP - DROPDOWN_MENU.padY * 2);
 }
 
-function TouchFilterMenu({ children, field = false }: { children: React.ReactNode; field?: boolean }): React.ReactElement {
-  const maxHeight = useTouchMenuHeight(field);
+function TouchFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
+  const maxHeight = useTouchMenuHeight();
   return (
     <Box style={{ position: 'absolute', top: '100%', left: 0, right: 0 }} {...keepInputFocus}>
       <DropdownMenu style={{ alignSelf: 'stretch', borderRadius: 0 }}>
@@ -224,7 +224,7 @@ function TouchFilterMenu({ children, field = false }: { children: React.ReactNod
   );
 }
 
-function WideFilterMenu({ children }: { children: React.ReactNode; field?: boolean }): React.ReactElement {
+function WideFilterMenu({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
     <Box margin={{ top: MENU_GAP }} style={{ position: 'absolute', top: '100%', left: PAGE_GUTTER }} {...keepInputFocus}>
       <DropdownMenu maxHeight={MENU_MAX_HEIGHT} style={{ width: MENU_WIDTH }}>{children}</DropdownMenu>
@@ -238,7 +238,7 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
   scope: FilterScope;
   onMenu: (open: boolean) => void;
   onFocusChange?: (focused: boolean) => void;
-} & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder'>): React.ReactElement {
+} & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder' | 'inline' | 'field' | 'topInset'>): React.ReactElement {
   const wide = useWebTabRail();
   const keyboardUp = useKeyboardState(state => state.isVisible);
   const options = useFilterOptions(scope);
@@ -250,12 +250,12 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
   useEffect(() => () => { onMenu(false); if (focused.current) onFocusChange?.(false); }, []);
   const Menu = wide ? WideFilterMenu : TouchFilterMenu;
   return (
-    <Box style={[bar.inline === true ? { position: 'relative' } : STICKY_UNDER_CHROME, { zIndex: bar.field === true ? 1 : FILTER_LAYER }]}>
+    <Box style={{ position: 'relative', zIndex: FILTER_LAYER }}>
       <SearchTopnavBar
-        {...bar} inline query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
+        {...bar} inline field query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
       />
       {filter.menu === null ? null : (
-        <Menu field={bar.field}>
+        <Menu>
           <FilterMenuItems menu={filter.menu} active={filter.active} onPick={filter.pick}/>
         </Menu>
       )}
