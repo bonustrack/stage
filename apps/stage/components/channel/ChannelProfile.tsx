@@ -13,6 +13,7 @@ import { reported } from '../../lib/errorPolicy';
 import { openAddMembers } from '../../lib/addMembersHost';
 import { channelProfileMenuItems } from './channel.parts.model';
 import { ChannelMembersList } from './channel.members';
+import { ChannelAssignees } from '../conversation/MemberListSidebar';
 import { ChannelProfileHeader, ChannelTitle } from './channel.header';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
@@ -54,6 +55,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         <ChannelTitle name={g.name} description={g.description} />
       </ChannelProfileHeader>
       <ChannelLabelsView labels={labels} />
+      <ChannelAssignees convId={convId}/>
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}

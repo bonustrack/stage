@@ -6,6 +6,7 @@ import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
 import {
   addGroupMembers as addMembers, removeGroupMembers as removeMembers, updateGroupMeta as updateMeta,
+  updateGroupAssigned as updateAssigned,
 } from '../../lib/xmtp.groups';
 import {
   addGroupLabel as addLabel, moveGroupLabel as moveRemoteLabel, removeGroupLabel as removeLabel,
@@ -110,6 +111,10 @@ export async function renameGroupLabel(line: string, from: string, to: string): 
 
 export async function updateGroupMeta(convId: string, patch: Parameters<typeof updateMeta>[1]): Promise<void> {
   try { await updateMeta(convId, patch); } finally { refreshGroupRow(convId); }
+}
+
+export async function updateGroupAssigned(convId: string, assigned: string[]): Promise<string[]> {
+  try { return await updateAssigned(convId, assigned); } finally { refreshGroupRow(convId); }
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {

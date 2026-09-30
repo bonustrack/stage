@@ -6,6 +6,7 @@ import {
 } from '../../lib/xmtp.identity';
 import { groupAdminInboxIds, groupNameImage } from '../../lib/xmtp.groups';
 import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
+import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
 
 export interface ConvMeta {
   peerAddr: string | null;
@@ -14,25 +15,27 @@ export interface ConvMeta {
   groupImage: string;
   groupDescription: string;
   memberAddrs: string[];
+  assigned: string[];
   inboxToAddr: Record<string, string>;
 }
 
 export const EMPTY_CONV_META: ConvMeta = {
   peerAddr: null, isGroup: false, groupName: null, groupImage: '',
-  groupDescription: '', memberAddrs: [], inboxToAddr: {},
+  groupDescription: '', memberAddrs: [], assigned: [], inboxToAddr: {},
 };
 
 async function fetchGroupConvMeta(
   conv: Parameters<typeof groupMemberEthAddresses>[0],
   inboxToAddr: Record<string, string>,
 ): Promise<ConvMeta> {
-  const [members, meta] = await Promise.all([
+  const [members, meta, assigned] = await Promise.all([
     groupMemberEthAddresses(conv),
     groupNameImage(conv),
+    groupAssignedOf(conv),
   ]);
   return {
     peerAddr: null, isGroup: true, groupName: meta.name, groupImage: meta.imageUrl,
-    groupDescription: meta.description, memberAddrs: members, inboxToAddr,
+    groupDescription: meta.description, memberAddrs: members, assigned, inboxToAddr,
   };
 }
 

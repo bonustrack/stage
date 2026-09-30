@@ -1,7 +1,10 @@
+import { validMemberAddresses } from './groups';
+
 export interface LabelsBlob {
   v: 1;
   labels: string[];
   github?: string;
+  assigned?: string[];
 }
 
 export const MAX_LABELS = 16;
@@ -15,6 +18,7 @@ export class LabelPermissionError extends Error {
 }
 
 interface GroupLike {
+  id?: string;
   sync?: () => Promise<unknown>;
   appData?: (() => Promise<string>) | string;
   updateAppData?: (appData: string) => Promise<void>;
@@ -116,19 +120,59 @@ export function renameLabels(labels: string[], from: string, to: string): string
   });
 }
 
+const appDataWrites = new Map<string | Group, Promise<void>>();
+
+async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) => Promise<Record<string, unknown>>): Promise<void> {
+  const key = group.id ?? group;
+  const previous = appDataWrites.get(key);
+  const task = async (): Promise<void> => {
+    await group.sync?.();
+    const existing = parseBlob(await readAppData(group));
+    await group.updateAppData(JSON.stringify({ ...existing, v: 1, ...await patch(existing) }));
+  };
+  const pending = previous ? previous.then(task, task) : task();
+  appDataWrites.set(key, pending);
+  try { await pending; } finally {
+    if (appDataWrites.get(key) === pending) appDataWrites.delete(key);
+  }
+}
+
 export async function writeLabels(
   group: Group,
   fn: (labels: string[]) => string[],
 ): Promise<string[]> {
-  await group.sync?.();
-  const existing = parseBlob(await readAppData(group));
-  const next = readLabels({ ...existing, labels: fn(readLabels(existing)) });
-  const blob: LabelsBlob & Record<string, unknown> = { ...existing, v: 1, labels: next };
+  let next: string[] = [];
   try {
-    await group.updateAppData(JSON.stringify(blob));
+    await writeBlob(group, (existing) => {
+      next = readLabels({ labels: fn(readLabels(existing)) });
+      return Promise.resolve({ labels: next });
+    });
   } catch (e) {
     if (isLabelPermissionDenied(e)) throw new LabelPermissionError();
     throw e;
   }
+  return next;
+}
+
+export function assignedAddresses(value: unknown): string[] {
+  const raw = Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+  return [...new Set(validMemberAddresses(raw).map(address => address.toLowerCase()))];
+}
+
+export async function groupAssignedOf(conv: unknown): Promise<string[]> {
+  const group = asGroup(conv);
+  return group ? assignedAddresses(parseBlob(await readAppData(group)).assigned) : [];
+}
+
+export async function writeAssigned(group: Group, assigned: string[], members: () => Promise<string[]>): Promise<string[]> {
+  const next = assignedAddresses(assigned);
+  if (next.length !== new Set(assigned.map(address => address.trim().toLowerCase())).size) {
+    throw new Error('Choose valid channel members.');
+  }
+  await writeBlob(group, async () => {
+    const current = new Set(assignedAddresses(await members()));
+    if (next.some(address => !current.has(address))) throw new Error('Assignees must be current channel members.');
+    return { assigned: next };
+  });
   return next;
 }

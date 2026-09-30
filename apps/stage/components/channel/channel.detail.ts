@@ -18,7 +18,7 @@ type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
 
-const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false };
+const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false, appData: false };
 
 export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
   const inboxIds = Object.keys(inboxToAddr);

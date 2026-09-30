@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { memberAdminMark, memberListEntries } from '../components/conversation/MemberListSidebar.model';
+import { assignedEntries, memberAdminMark, memberListEntries } from '../components/conversation/MemberListSidebar.model';
 
 const names: Record<string, string> = {
   '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',
@@ -52,6 +52,15 @@ describe('memberListEntries', () => {
       ['zoe.base.eth', 'Admin'],
       ['0xAAAA…0001', 'Super admin'],
     ]);
+  });
+});
+
+describe('assignedEntries', () => {
+  test('zero or multiple current members, case insensitive and without duplicates', () => {
+    const entries = memberListEntries(Object.keys(names), nameOf, shortOf);
+    expect(assignedEntries(entries, [])).toEqual([]);
+    expect(assignedEntries(entries, [Object.keys(names)[0]?.toUpperCase() ?? '', Object.keys(names)[0] ?? '', '0xgone'])).toEqual([entries[1]]);
+    expect(assignedEntries(entries, Object.keys(names))).toEqual(entries);
   });
 });
 

@@ -23,14 +23,16 @@ describe('web group policy', () => {
       updateGroupNamePolicy: PermissionPolicy.Admin,
       updateGroupDescriptionPolicy: PermissionPolicy.Deny,
       updateGroupImageUrlSquarePolicy: PermissionPolicy.SuperAdmin,
-    }))).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin' });
-    expect(webGroupMetaPolicy(policySet({}))).toEqual({ name: 'allow', description: 'allow', image: 'allow' });
+      updateAppDataPolicy: PermissionPolicy.Admin,
+    }))).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin', appData: 'admin' });
+    expect(webGroupMetaPolicy(policySet({}))).toEqual({ name: 'allow', description: 'allow', image: 'allow', appData: 'allow' });
   });
 
   test('a missing policy is admin-only and a compound one is unknown', () => {
     expect(webGroupMetaPolicy(policySet({
       updateGroupNamePolicy: PermissionPolicy.DoesNotExist,
       updateGroupDescriptionPolicy: PermissionPolicy.Other,
-    }))).toEqual({ name: 'admin', description: 'unknown', image: 'allow' });
+      updateAppDataPolicy: PermissionPolicy.DoesNotExist,
+    }))).toEqual({ name: 'admin', description: 'unknown', image: 'allow', appData: 'admin' });
   });
 });

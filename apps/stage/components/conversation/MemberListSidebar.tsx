@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -10,12 +11,13 @@ import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
-import { memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
-import { useChannelRoles } from '../channel/channel.detail';
+import { assignedEntries, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
+import { useChannelRoles, useChannelEditRights } from '../channel/channel.detail';
+import { AssigneesEditor } from '../channel/AssigneesEditor';
 import { useConvMeta, shortAddress } from '../../modules/messaging';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
 import { IconCrown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrown';
 import { IconShield } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShield';
 
@@ -57,9 +59,8 @@ function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: ()
   );
 }
 
-export function MemberListSidebar({ convId }: { convId: string }): React.ReactElement {
-  const router = useRouter();
-  const { memberAddrs, inboxToAddr } = useConvMeta(convId);
+function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigned: string[] } {
+  const { memberAddrs, inboxToAddr, assigned } = useConvMeta(convId);
   const roles = useChannelRoles(convId, inboxToAddr);
   const self = useSelfAddress();
   const addresses = useMemo(() => (self ? [self, ...memberAddrs] : memberAddrs), [self, memberAddrs]);
@@ -68,22 +69,63 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
     () => memberListEntries(addresses, getPeerName, shortAddress, roles),
     [addresses, profiles, roles],
   );
+  return { entries, assigned };
+}
+
+function MemberHeader({ title, count, children }: { title: string; count: number; children?: React.ReactNode }): React.ReactElement {
+  return (
+    <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
+      <Eyebrow>{title}</Eyebrow>
+      <CountTag count={count}/>
+      <Box flex={1}/>
+      {children}
+    </Row>
+  );
+}
+
+function AssigneesSection({ convId, entries, assigned }: {
+  convId: string; entries: MemberListEntry[]; assigned: string[];
+}): React.ReactElement {
+  const router = useRouter();
+  const dark = useEffectiveColorScheme() === 'dark';
+  const rights = useChannelEditRights(convId);
+  const [editing, setEditing] = useState(false);
+  const selected = assignedEntries(entries, assigned);
   return (
     <>
-      <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
-        <Eyebrow>MEMBERS</Eyebrow>
-        <CountTag count={entries.length}/>
-      </Row>
-      <VirtualList
-        scroll="self"
-        data={entries}
-        extraData={profiles}
-        keyExtractor={(entry) => entry.address.toLowerCase()}
-        contentContainerStyle={{ paddingBottom: PAGE_GUTTER }}
-        renderItem={({ item }) => (
-          <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>
-        )}
-      />
+      <MemberHeader title="Assignees" count={selected.length}>
+        {rights.appData ? <Button label="Edit" accessibilityLabel="Edit assignees" size="xs" color="secondary" variant="ghost" dark={dark}
+          onPress={() => { setEditing(true); }}/> : null}
+      </MemberHeader>
+      {selected.length === 0 ? <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" color="secondary">No assignees.</Text></Box> : null}
+      {selected.map(entry => <MemberListRow key={entry.address} entry={entry} onPress={() => { router.push(profileLinkOf(entry.address)); }}/>) }
+      {editing && rights.appData ? <AssigneesEditor convId={convId} entries={entries} assigned={selected.map(entry => entry.address)}
+        onClose={() => { setEditing(false); }}/> : null}
     </>
+  );
+}
+
+export function ChannelAssignees({ convId }: { convId: string }): React.ReactElement {
+  return <AssigneesSection convId={convId} {...useMemberEntries(convId)}/>;
+}
+
+export function MemberListSidebar({ convId }: { convId: string }): React.ReactElement {
+  const router = useRouter();
+  const { entries, assigned } = useMemberEntries(convId);
+  return (
+    <VirtualList
+      scroll="self"
+      data={entries}
+      extraData={assigned}
+      keyExtractor={(entry) => entry.address.toLowerCase()}
+      contentContainerStyle={{ paddingBottom: PAGE_GUTTER }}
+      ListHeaderComponent={<>
+        <AssigneesSection convId={convId} entries={entries} assigned={assigned}/>
+        <MemberHeader title="Members" count={entries.length}/>
+      </>}
+      renderItem={({ item }) => (
+        <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>
+      )}
+    />
   );
 }

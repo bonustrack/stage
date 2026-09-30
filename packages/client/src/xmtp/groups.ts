@@ -76,13 +76,13 @@ export async function addGroupMembersWith(
 
 export type GroupPolicyOption = 'allow' | 'deny' | 'admin' | 'superAdmin' | 'unknown';
 
-export interface GroupMetaPolicy { name: GroupPolicyOption; description: GroupPolicyOption; image: GroupPolicyOption }
+export interface GroupMetaPolicy { name: GroupPolicyOption; description: GroupPolicyOption; image: GroupPolicyOption; appData: GroupPolicyOption }
 
 export type GroupRole = 'owner' | 'admin' | 'member';
 
-export interface GroupEditRights { name: boolean; description: boolean; image: boolean }
+export interface GroupEditRights { name: boolean; description: boolean; image: boolean; appData: boolean }
 
-export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = { name: 'unknown', description: 'unknown', image: 'unknown' };
+export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = { name: 'unknown', description: 'unknown', image: 'unknown', appData: 'unknown' };
 
 const ROLE_RANK: Record<GroupRole, number> = { member: 0, admin: 1, owner: 2 };
 
@@ -92,8 +92,9 @@ const POLICY_RANK: Record<GroupPolicyOption, number> = {
 
 export function groupMetaPolicyOfSet(set: {
   updateGroupNamePolicy: GroupPolicyOption; updateGroupDescriptionPolicy: GroupPolicyOption; updateGroupImagePolicy: GroupPolicyOption;
+  updateAppDataPolicy: GroupPolicyOption;
 }): GroupMetaPolicy {
-  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy };
+  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy, appData: set.updateAppDataPolicy };
 }
 
 export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdmins: string[] }): GroupRole {
@@ -119,11 +120,12 @@ export function groupEditRightsOf(policy: GroupMetaPolicy, role: GroupRole): Gro
     name: allows(policy.name, role),
     description: allows(policy.description, role),
     image: allows(policy.image, role),
+    appData: policy.appData !== 'unknown' && allows(policy.appData, role),
   };
 }
 
 export function canEditGroup(rights: GroupEditRights): boolean {
-  return rights.name || rights.description || rights.image;
+  return rights.name || rights.description || rights.image || rights.appData;
 }
 
 export function mapUpdateGroupError(err: unknown): Error {

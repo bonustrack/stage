@@ -14,6 +14,11 @@ export interface MemberListEntry {
   admin?: MemberAdminMark;
 }
 
+export function assignedEntries(entries: MemberListEntry[], assigned: readonly string[]): MemberListEntry[] {
+  const selected = new Set(assigned.map(address => address.toLowerCase()));
+  return entries.filter(entry => selected.has(entry.address.toLowerCase()));
+}
+
 export function memberAdminMark(role: ChannelMemberRole): MemberAdminMark | undefined {
   if (role === 'owner') return { role: 'superAdmin', label: 'Super admin' };
   if (role === 'admin') return { role: 'admin', label: 'Admin' };
