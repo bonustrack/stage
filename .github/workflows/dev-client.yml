@@ -11,8 +11,9 @@ name: Dev client APK
 # versionCode, signing certificate, packaged runtime, commit) and published as a
 # direct download on the `dev-client` GitHub release, named after the commit:
 #   releases/download/dev-client/stage-dev-client-<sha7>.apk
-# `publish_rolling` also replaces the rolling stage-dev-client.apk asset.
-# Existing assets are never deleted.
+# `publish_rolling` also replaces the rolling stage-dev-client.apk asset, with
+# the new build or with the commit's existing APK. Other assets are never
+# deleted.
 
 on:
   workflow_dispatch:
@@ -23,7 +24,7 @@ on:
         default: false
 
 concurrency:
-  group: dev-client-${{ github.ref }}
+  group: dev-client-${{ github.sha }}
   cancel-in-progress: false
 
 env:
@@ -33,7 +34,7 @@ jobs:
   guard:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     outputs:
       apk: ${{ steps.asset.outputs.apk }}
       url: ${{ steps.asset.outputs.url }}
@@ -62,6 +63,16 @@ jobs:
               echo "Already published, no new build: [Download APK]($URL)"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Replace the rolling dev-client APK with this commit's APK
+        if: steps.asset.outputs.exists == 'true' && inputs.publish_rolling
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.asset.outputs.apk }}
+        run: |
+          set -euo pipefail
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$APK" --output stage-dev-client.apk
+          gh release upload "$RELEASE_TAG" stage-dev-client.apk --clobber --repo "$GITHUB_REPOSITORY"
 
   android:
     needs: guard

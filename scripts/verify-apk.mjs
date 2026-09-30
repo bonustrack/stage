@@ -246,8 +246,8 @@ function inspect(path) {
   };
 }
 
-function normalise(value) {
-  return String(value).toLowerCase().replaceAll(':', '');
+function normalise(field, value) {
+  return field === 'certSha256' ? String(value).toLowerCase().replaceAll(':', '') : String(value);
 }
 
 function main() {
@@ -284,7 +284,7 @@ function main() {
   ];
   const mismatches = expected
     .filter(([, want]) => want !== undefined)
-    .filter(([field, want]) => report[field] === null || normalise(report[field]) !== normalise(want))
+    .filter(([field, want]) => report[field] === null || normalise(field, report[field]) !== normalise(field, want))
     .map(([field, want]) => `${field} is ${report[field]}, expected ${want}`);
   console.log(JSON.stringify(report, null, 2));
   if (mismatches.length > 0) {
