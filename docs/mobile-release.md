@@ -23,9 +23,17 @@ The compiler generates memoization during the build, not a persistent message or
 | Job | What it does |
 |---|---|
 | `android-store` | EAS cloud build (`production-prod`, AAB) then `eas submit` to the Play `internal` and `closed` tracks. `production` is attempted but allowed to fail while the Play account gate is in place. |
-| `android-apk` | EAS cloud build (`preview-prod`, APK) attached to the GitHub Release `v<version>`. |
+| `android-apk` | EAS cloud build (`preview-prod`, APK), checked with `scripts/verify-apk.mjs`, then attached to the GitHub Release `v<version>` as the direct download `releases/download/v<version>/stage.apk`. |
 | `testers` | Pushes that APK to the Firebase App Distribution `testers` group. |
 | `ios` | EAS cloud build (`production-prod`) then `eas submit` to TestFlight. Skips with a warning until the Apple secrets exist. |
+
+## Android APKs
+
+APKs are never built per commit. The production APK is built only by this release. The dev-client APK is built on demand: `Actions -> Dev client APK -> Run workflow` on a branch. It is published on the `dev-client` GitHub release as `releases/download/dev-client/stage-dev-client-<sha7>.apk`, named after the commit. A commit that already has its APK is not built again. Tick `publish_rolling` to also replace the rolling `stage-dev-client.apk`.
+
+Both workflows check the downloaded APK with `bun scripts/verify-apk.mjs <file.apk>` before publishing it. It verifies the APK Signature Scheme v2 signature and prints the package, versionCode, versionName, signing certificate SHA-256, packaged runtime (`assets/fingerprint`) and commit (`extra.gitHash`). Flags such as `--package`, `--version-code`, `--runtime`, `--commit` and `--cert` make it fail on a mismatch. The signing certificate is pinned in each workflow, so an APK that could not install over the previous one is never published.
+
+The dev client loads a branch preview from `https://bundler.stage.box/<branch>`, for example `/main` or `/feat/foo` (`/feat%2Ffoo` works too). Each branch publishes to its own EAS channel, named by `channelKey()` in `apps/proxy/src/branchChannel.ts`. The preview workflow and the bundler Worker share that function.
 
 Version codes and build numbers are managed by EAS (`appVersionSource: remote`, `autoIncrement: true`), so nothing needs bumping besides `version`.
 

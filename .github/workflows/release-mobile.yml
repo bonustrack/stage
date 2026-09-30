@@ -5,8 +5,10 @@ name: Release Mobile
 #   android-store : EAS cloud build (production-prod, AAB) -> eas submit to the
 #                   Play internal + closed tracks; production is allowed to fail
 #                   while the Play account gate is in place.
-#   android-apk   : EAS cloud build (preview-prod, APK) -> GitHub Release asset
-#                   and Firebase App Distribution for the `testers` group.
+#   android-apk   : EAS cloud build (preview-prod, APK), checked with
+#                   scripts/verify-apk.mjs -> direct stage.apk download on the
+#                   GitHub Release v<version> and Firebase App Distribution for
+#                   the `testers` group.
 #   ios           : EAS cloud build (production-prod) -> eas submit to TestFlight.
 #                   EAS creates/reuses the distribution certificate and profile
 #                   from the App Store Connect API key, so no Xcode or macOS
@@ -134,11 +136,30 @@ jobs:
       - name: Build (EAS, preview-prod APK)
         working-directory: apps/stage
         run: |
-          OUT=$(eas build -p android --profile preview-prod --non-interactive --json --wait)
-          echo "$OUT"
-          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
-          [ -n "$URL" ] && [ "$URL" != null ] || { echo "::error::No APK URL from EAS"; exit 1; }
+          set -euo pipefail
+          eas build -p android --profile preview-prod --non-interactive --json --wait > "$RUNNER_TEMP/eas-build.json"
+          cat "$RUNNER_TEMP/eas-build.json"
+          URL=$(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl // empty' "$RUNNER_TEMP/eas-build.json")
+          [ -n "$URL" ] || { echo "::error::No APK URL from EAS"; exit 1; }
           curl -fSL "$URL" -o "$GITHUB_WORKSPACE/stage.apk"
+      - name: Verify the APK
+        env:
+          SIGNING_CERT_SHA256: 60e191bb1a545735eeadf91c63e954795c862aa349e770b7032779a03ff077e8
+        run: |
+          set -euo pipefail
+          BUILD="$RUNNER_TEMP/eas-build.json"
+          RUNTIME=$(jq -r '.[0].runtime.version // .[0].fingerprint.hash // empty' "$BUILD")
+          VERSION_CODE=$(jq -r '.[0].appBuildVersion // empty' "$BUILD")
+          if [ -z "$RUNTIME" ] || [ -z "$VERSION_CODE" ]; then
+            echo "::error::EAS output has no runtime or versionCode"; exit 1
+          fi
+          bun scripts/verify-apk.mjs stage.apk \
+            --package box.stage \
+            --cert "$SIGNING_CERT_SHA256" \
+            --commit "$GITHUB_SHA" \
+            --version-name "${{ needs.guard.outputs.version }}" \
+            --version-code "$VERSION_CODE" \
+            --runtime "$RUNTIME"
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
@@ -265,3 +286,9 @@ jobs:
             the store release is approved. iOS ships through TestFlight.
             Commit: ${{ github.sha }}
           files: artifacts/*.apk
+      - name: Check the direct APK download
+        run: |
+          set -euo pipefail
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/v${{ needs.guard.outputs.version }}/stage.apk"
+          curl -fsSIL -o /dev/null "$URL"
+          echo "Android APK: [stage.apk]($URL)" >> "$GITHUB_STEP_SUMMARY"

@@ -1,36 +1,81 @@
 name: Dev client APK
 
 # On-demand Android dev-client build (EAS `development` profile) for whichever
-# ref it is dispatched on. Produces the APK as an EAS download link (QR in the
-# job summary for phone install) and as a workflow artifact. Needed whenever
-# native code / native deps change and the installed dev client can no longer
-# load JS-OTA previews (pr-preview.yml). Each run consumes one EAS build slot.
+# ref it is dispatched on. Dev-client APKs are built on demand only, never per
+# commit. Needed whenever native code / native deps change and the installed
+# dev client can no longer load JS-OTA previews (pr-preview.yml). Each build
+# consumes one EAS build slot, so a commit that already has its APK is not
+# rebuilt.
+#
+# The APK is checked with scripts/verify-apk.mjs (v2 signature, package,
+# versionCode, signing certificate, packaged runtime, commit) and published as a
+# direct download on the `dev-client` GitHub release, named after the commit:
+#   releases/download/dev-client/stage-dev-client-<sha7>.apk
+# `publish_rolling` also replaces the rolling stage-dev-client.apk asset.
+# Existing assets are never deleted.
 
 on:
   workflow_dispatch:
     inputs:
       publish_rolling:
-        description: Replace the rolling dev-client APK
+        description: Also replace the rolling stage-dev-client.apk
         type: boolean
-        default: true
-  # workflow_dispatch only works once this file reaches the default branch;
-  # until then a push touching this file on the PR branch triggers the build.
-  push:
-    branches: ['claude/large-refactoring-pr-3rcl0d']
-    paths: ['.github/workflows/dev-client.yml']
+        default: false
 
 concurrency:
   group: dev-client-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  RELEASE_TAG: dev-client
+
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      apk: ${{ steps.asset.outputs.apk }}
+      url: ${{ steps.asset.outputs.url }}
+      exists: ${{ steps.asset.outputs.exists }}
+    steps:
+      - name: Look for this commit's APK
+        id: asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="stage-dev-client-${GITHUB_SHA::7}.apk"
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$APK"
+          ASSETS="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          EXISTS=false
+          if grep -Fxq "$APK" <<< "$ASSETS"; then EXISTS=true; fi
+          {
+            echo "apk=$APK"
+            echo "url=$URL"
+            echo "exists=$EXISTS"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$EXISTS" = true ]; then
+            {
+              echo "## Dev-client APK - \`$GITHUB_REF_NAME\` @ \`${GITHUB_SHA::7}\`"
+              echo ""
+              echo "Already published, no new build: [Download APK]($URL)"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   android:
+    needs: guard
+    if: needs.guard.outputs.exists == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
       contents: write
     env:
       EXPO_NO_TELEMETRY: '1'
+      APK: ${{ needs.guard.outputs.apk }}
+      APK_URL: ${{ needs.guard.outputs.url }}
+      PACKAGE: box.metro.monitor
+      SIGNING_CERT_SHA256: 96951d975d57446c655fcadae9117bdf1a00f72eb6882ff72cef1a836c2ad096
     steps:
       - uses: actions/checkout@v6
 
@@ -46,44 +91,63 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build dev-client APK on EAS
-        id: build
         working-directory: apps/stage
         run: |
           set -euo pipefail
-          OUT=$(eas build -p android --profile development --non-interactive --json --wait)
-          echo "$OUT"
-          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "No Android artifact URL from EAS"; exit 1
-          fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          curl -fSL "$URL" -o "$GITHUB_WORKSPACE/stage-dev-client.apk"
+          eas build -p android --profile development --non-interactive --json --wait > "$RUNNER_TEMP/eas-build.json"
+          cat "$RUNNER_TEMP/eas-build.json"
+          URL=$(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl // empty' "$RUNNER_TEMP/eas-build.json")
+          [ -n "$URL" ] || { echo "::error::No Android artifact URL from EAS"; exit 1; }
+          curl -fSL "$URL" -o "$GITHUB_WORKSPACE/$APK"
 
-      - name: Write install link to job summary
+      - name: Verify the APK
+        id: verify
         run: |
           set -euo pipefail
-          URL='${{ steps.build.outputs.url }}'
-          QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$URL")"
+          BUILD="$RUNNER_TEMP/eas-build.json"
+          RUNTIME=$(jq -r '.[0].runtime.version // .[0].fingerprint.hash // empty' "$BUILD")
+          VERSION_CODE=$(jq -r '.[0].appBuildVersion // empty' "$BUILD")
+          if [ -z "$RUNTIME" ] || [ -z "$VERSION_CODE" ]; then
+            echo "::error::EAS output has no runtime or versionCode"; exit 1
+          fi
+          bun scripts/verify-apk.mjs "$APK" \
+            --package "$PACKAGE" \
+            --cert "$SIGNING_CERT_SHA256" \
+            --commit "$GITHUB_SHA" \
+            --version-code "$VERSION_CODE" \
+            --runtime "$RUNTIME"
           {
-            echo "## Dev-client APK - \`${{ github.ref_name }}\` @ \`$(git rev-parse --short HEAD)\`"
-            echo ""
-            echo "[Download APK]($URL) (open on the phone, then install)"
-            echo ""
-            echo "![QR]($QR)"
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "runtime=$RUNTIME"
+            echo "version_code=$VERSION_CODE"
+          } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dev-client-apk
-          path: stage-dev-client.apk
-
-      # Rolling `dev-client` release: a stable public download URL
-      # (releases/download/dev-client/stage-dev-client.apk) that always carries
-      # the newest dev-client APK. bundler.stage.box links here.
-      - name: Update rolling dev-client release
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_rolling
+      - name: Publish the APK on the dev-client release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release upload dev-client stage-dev-client.apk --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" "$APK" --repo "$GITHUB_REPOSITORY"
+          curl -fsSIL -o /dev/null "$APK_URL"
+
+      - name: Replace the rolling dev-client APK
+        if: inputs.publish_rolling
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$APK" stage-dev-client.apk
+          gh release upload "$RELEASE_TAG" stage-dev-client.apk --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Write install link to job summary
+        run: |
+          set -euo pipefail
+          QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$APK_URL")"
+          {
+            echo "## Dev-client APK - \`$GITHUB_REF_NAME\` @ \`${GITHUB_SHA::7}\`"
+            echo ""
+            echo "[Download APK]($APK_URL) (open on the phone, then install)"
+            echo ""
+            echo "Runtime \`${{ steps.verify.outputs.runtime }}\`, versionCode ${{ steps.verify.outputs.version_code }}."
+            echo ""
+            echo "![QR]($QR)"
+          } >> "$GITHUB_STEP_SUMMARY"
