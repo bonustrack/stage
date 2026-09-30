@@ -80,7 +80,7 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 <Glyph icon={IconThumbtack} size={16} color={link} />
 ```
 
-The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` from `@stage-labs/kit/react-native/icon` still accepts the older HeroIcon names through `CENTRAL_ICON_ALIASES`, with `variant` `'line'` (default) or `'solid'`, but it bundles every aliased icon. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
+The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` from `@stage-labs/kit/react-native/icon` still accepts the older HeroIcon names through `CENTRAL_ICON_ALIASES`, with `variant` `'line'` (default) or `'solid'`, but it bundles every aliased icon. It is the only component that does: `Tabs` options, `DropdownMenuItem` and the `Select` and `DatePicker` triggers take Central icons, like `Glyph`. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
 
 `AudioPlayer` and `VideoPlayer` play through the `expo-audio` and `expo-video` peers (they replaced `expo-av`). On web those modules expect the Expo runtime global: an Expo app installs it, and a plain react-native-web host must call `installExpoGlobalPolyfill()` from `expo-modules-core/src/polyfill/dangerous-internal` before importing them, as `gallery/expo-runtime.ts` does.
 
@@ -134,6 +134,21 @@ Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
 ## Changelog
+
+### 0.1.0-beta.2
+
+#### Breaking changes
+
+- The `Tabs` option `icon` and the `DropdownMenuItem` `iconName` take a Central icon, like `Glyph`, for example `icon: IconBubble3` instead of `icon: 'chatBubble'`. HeroIcon names still work with `Icon`.
+- `@stage-labs/kit/react-native/dropdown-menu` now exports the same `DropdownMenu`, `DropdownMenuItem`, `DropdownMenuSeparator` and `DropdownMenuSheet` as `@stage-labs/kit/react-native/menu`.
+
+#### Smaller bundles
+
+- `Tabs`, `DropdownMenu`, `Select` and `DatePicker` no longer load `CENTRAL_ICON_ALIASES`, which pulls in every aliased icon (about 110 KB gzip on web). Only `Icon` loads it now.
+
+#### New props
+
+- `Image`: `resizeMethod` and `resizeMultiplier` on Android, to choose the size the image is decoded at.
 
 ### 0.1.0-beta.1
 
