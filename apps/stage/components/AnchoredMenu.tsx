@@ -70,17 +70,18 @@ export function AnchoredOverlay({ open, onClose, children }: {
   );
 }
 
-export function AnchoredMenu({ visible, onClose, anchor, children }: {
+export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, children }: {
   visible: boolean;
   onClose: () => void;
   anchor?: MenuPoint | null;
+  forceAnchor?: boolean;
   children: ReactNode;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const viewport = useWindowDimensions();
   const centered = useWebTabRail();
 
-  if (!anchored || !anchor) {
+  if ((!anchored && !forceAnchor) || !anchor) {
     return (
       <DropdownMenuSheet open={visible} onClose={onClose} side={centered ? 'center' : 'bottom'} maxWidth={MENU_WIDTH}>
         {children}

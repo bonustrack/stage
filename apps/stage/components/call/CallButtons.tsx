@@ -1,4 +1,7 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
+import { Platform, type GestureResponderEvent } from 'react-native';
+import { View, type ViewType } from '../layout/native';
+import { MENU_GAP } from '../menuStyle';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -20,27 +23,38 @@ function CallMenu({ convId, isGroup, disabled }: {
   convId: string; isGroup: boolean; disabled: boolean;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const trigger = useRef<ViewType>(null);
+  const opening = useRef(0);
   const { text, link, sub } = usePalette();
   const hover = useHover();
   const color = disabled ? sub : hover.hovered ? link : text;
-  useEffect(() => { if (disabled) setAnchor(null); }, [disabled]);
-  const close = (): void => { setAnchor(null); };
+  useEffect(() => { if (disabled) { opening.current++; setAnchor(null); } }, [disabled]);
+  const close = (): void => { opening.current++; setAnchor(null); };
+  const open = (event: GestureResponderEvent): void => {
+    const request = ++opening.current;
+    if (Platform.OS === 'web') setAnchor(menuPointBelowEnd(event));
+    else trigger.current?.measureInWindow((left, top, width, height) => {
+      if (request === opening.current) setAnchor({ x: left + width, y: top + height + MENU_GAP });
+    });
+  };
   const start = (video: boolean): void => {
     close();
     if (!disabled) ignore(startCall(convId, !isGroup, video), 'ui');
   };
   return (
     <>
+      <View ref={trigger} collapsable={false}>
       <HoverTooltip label="Call" placement="below">
         <Pressable
           accessibilityRole="button" accessibilityLabel="Call"
           accessibilityState={{ disabled }} aria-expanded={anchor !== null && !disabled}
-          disabled={disabled} onPress={(e) => { setAnchor(menuPointBelowEnd(e)); }} hitSlop={8} {...hover.hoverProps}
+          disabled={disabled} onPress={open} hitSlop={8} {...hover.hoverProps}
         >
           <Glyph icon={IconCall} size={24} color={color}/>
         </Pressable>
       </HoverTooltip>
-      <AnchoredMenu visible={anchor !== null && !disabled} onClose={close} anchor={anchor}>
+      </View>
+      <AnchoredMenu visible={anchor !== null && !disabled} onClose={close} anchor={anchor} forceAnchor>
         <MenuRow label="Voice call" icon={IconCall} onPress={() => { start(false); }}/>
         <MenuRow label="Video call" icon={IconVideo} onPress={() => { start(true); }}/>
       </AnchoredMenu>
