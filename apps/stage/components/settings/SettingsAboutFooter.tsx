@@ -8,6 +8,8 @@ import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 import { timeAgo } from '../../lib/buildInfo.model';
+import { devClientInfo } from '../../lib/devClientUpdates';
+import { DevClientUpdate } from './DevClientUpdate';
 
 const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: 'sm', weight: 'medium' } as const;
 const GITHUB_ICON_SIZE = 14;
@@ -43,7 +45,9 @@ function FooterLink({ href, label, children }: {
 
 export function SettingsAboutFooter(): React.ReactElement {
   const { sub } = usePalette();
-  const { gitHash, commitTime, buildProfile } = buildMeta();
+  const { gitHash: configuredHash, commitTime, buildProfile } = buildMeta();
+  const devClient = devClientInfo();
+  const gitHash = devClient?.gitHash ?? configuredHash;
   const committed = timeAgo(commitTime, Date.now());
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 7);
   const name = Constants.expoConfig?.name ?? 'Stage';
@@ -53,7 +57,7 @@ export function SettingsAboutFooter(): React.ReactElement {
         {`${name} ${versionLabel()} · ${buildProfile}`}
       </Text>
       <Row align="center" justify="center" gap={4} wrap>
-        <FooterLink href={commitUrl(gitHash)} label={shortHash} />
+        <FooterLink href={commitUrl(gitHash)} label={devClient ? `Loaded ${shortHash}` : shortHash} />
         <Text {...FOOTER_TEXT}>·</Text>
         <Text {...FOOTER_TEXT}>{committed.length > 0 ? committed : '-'}</Text>
         <Text {...FOOTER_TEXT}>·</Text>
@@ -61,6 +65,7 @@ export function SettingsAboutFooter(): React.ReactElement {
           <GithubLogo size={GITHUB_ICON_SIZE} color={sub} />
         </FooterLink>
       </Row>
+      <DevClientUpdate />
     </Col>
   );
 }
