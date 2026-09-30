@@ -9,7 +9,7 @@ import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../lib/webLayout';
 import { isSplitRoute } from './tabs/splitRoutes';
 
 export const TOPNAV_HEIGHT = 52;
-export const TOPNAV_FADE = 12;
+export const TOPNAV_FADE = 8;
 
 const FADE_OVERLAY = { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 } as const;
 
