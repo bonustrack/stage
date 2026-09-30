@@ -2,9 +2,12 @@ import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
 import type { MarkdownIt } from 'react-native-markdown-display';
 import { literalStars, taskLists, taskStateOf } from '../components/bubble/markdown.model';
+import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
+import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 
 const createParser = createRequire(import.meta.url)('markdown-it') as (options: object) => MarkdownIt;
 const md = createParser({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists);
+registerDeepLinkSchemas(md.linkify);
 
 function inline(text: string): string {
   return md.renderInline(text);
@@ -24,6 +27,28 @@ describe('literalStars', () => {
     expect(inline('*italic*, **bold** and ***both***')).toBe('<em>italic</em>, <strong>bold</strong> and <em><strong>both</strong></em>');
     expect(inline('(*a*) "**b**": _c_')).toBe('(<em>a</em>) &quot;<strong>b</strong>&quot;: <em>c</em>');
     expect(inline('**Note:** read *this*.')).toBe('<strong>Note:</strong> read <em>this</em>.');
+  });
+});
+
+describe('channel URLs in the actual markdown parser', () => {
+  const conv = '47bf58a8f56cad829b2263797a7e25e4';
+  const urls = [`stage://channel/${conv}`, `stage://xmtp/${conv}`, `https://stage.box/#/channel/${conv}`];
+
+  test('linkifies channel forms with punctuation kept outside the link', () => {
+    for (const url of urls) {
+      const tokens = md.parseInline(`join (${url}).`, {}).flatMap(t => t.children ?? []);
+      const hrefs = tokens.filter(t => t.type === 'link_open').map(t => t.attrGet('href'));
+      expect(hrefs).toEqual([url]);
+      expect(hrefs.map(href => stageChannelIdOf(href ?? ''))).toEqual([conv]);
+      expect(md.renderInline(`join (${url}).`)).toContain('</a>).');
+    }
+  });
+
+  test('keeps Markdown formatting and does not linkify code', () => {
+    for (const url of urls) {
+      expect(inline(`**join** [a channel](${url})`)).toContain(`<strong>join</strong> <a href="${url}">a channel</a>`);
+      expect(inline(`\`${url}\``)).toBe(`<code>${url}</code>`);
+    }
   });
 });
 

@@ -27,11 +27,13 @@ import { TaskMark } from './TaskMark';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { conversationLinkOf, profileLinkOf } from '../../lib/links';
+import { profileLinkOf } from '../../lib/links';
+import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
+import { ChannelLink } from './ChannelLink';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
-  bodySegments, bodyView, mentionAddresses, mentionLabel, withMentionLabels, type BodySegment, type LinkFinder,
+  bodySegments, bodyView, mentionAddresses, mentionLabel, type BodySegment, type LinkFinder,
 } from './mention.model';
 
 function mentionDisplay(address: string): string {
@@ -50,17 +52,6 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   );
 }
 
-function ChannelRefLink({ convId, label, fg }: { convId: string; label: string; fg: string }): React.ReactElement {
-  const router = useRouter();
-  return (
-    <Text size="3xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      onPress={() => { router.push(conversationLinkOf(convId)); }} role="link"
-      suppressHighlighting>
-      {`#${label}`}
-    </Text>
-  );
-}
-
 export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'rules' | 'style'>;
 
 type MarkdownViewStyles = Readonly<Record<string, ViewStyle | undefined>>;
@@ -72,6 +63,12 @@ export const markdownRules: RenderRules = {
     const link = renderRules.link?.(node, children, parents, styles, onLinkPress);
     const href: unknown = node.attributes.href;
     if (!isValidElement(link) || typeof href !== 'string') return link;
+    const convId = stageChannelIdOf(href);
+    if (convId) {
+      const label = node.children.map(child => child.content).join('');
+      return <ChannelLink key={node.key} convId={convId} url={href}
+        label={label.startsWith('#') ? label.slice(1) : undefined} onLinkPress={onLinkPress} />;
+    }
     return cloneElement(link, bubbleLinkProps(href, onLinkPress));
   },
   list_item: (node, children, parents, styles: MarkdownViewStyles, inheritedStyles) => {
@@ -107,7 +104,7 @@ function WebLink({ url, text, fg, onLinkPress }: {
 function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkPress): React.ReactNode {
   if (seg.type === 'text') return seg.text;
   if (seg.type === 'link') return <WebLink key={`l${i}`} url={seg.url} text={seg.text} fg={fg} onLinkPress={onLinkPress} />;
-  if (seg.type === 'channel') return <ChannelRefLink key={`c${i}`} convId={seg.convId} label={seg.label} fg={fg} />;
+  if (seg.type === 'channel') return <ChannelLink key={`c${i}`} {...seg} fg={fg} onLinkPress={onLinkPress} />;
   return <MentionLink key={`m${i}`} address={seg.address} fg={fg} />;
 }
 
@@ -171,16 +168,24 @@ class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
   }
 }
 
-interface PlainBodyProps { body: string; fg: string; query?: string }
+interface PlainBodyProps { body: string; fg: string; query?: string; inline?: boolean }
 
-function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
-  if (query) return <HighlightText text={body} query={query} fg={fg} />;
+function PlainBody({ body, fg, query, inline }: PlainBodyProps): React.ReactElement {
+  if (query) return <HighlightText text={body} query={query} fg={fg} inline={inline} />;
   return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   usePeerProfiles(mentionAddresses(body));
-  return <PlainBody body={withMentionLabels(body, mentionDisplay)} fg={fg} query={query} />;
+  return (
+    <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>
+      {bodySegments(body, findLinks).map((seg, i) => {
+        if (seg.type === 'channel') return <ChannelLink key={i} {...seg} fg={fg} plain query={query} />;
+        const text = seg.type === 'mention' ? mentionDisplay(seg.address) : seg.text;
+        return <PlainBody key={i} body={text} fg={fg} query={query} inline />;
+      })}
+    </Text>
+  );
 }
 
 function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
@@ -188,7 +193,7 @@ function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const query = highlight?.trim() ? highlight : undefined;
-  switch (bodyView(body, query !== undefined || selectable === true)) {
+  switch (bodyView(body, query !== undefined || selectable === true, findLinks)) {
     case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
     case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
     case 'mention': return <MentionBody text={body} fg={fg} onLinkPress={markdownProps.onLinkPress} />;

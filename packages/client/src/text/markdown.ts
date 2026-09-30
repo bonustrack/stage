@@ -11,7 +11,7 @@ const DEEP_LINK_SCHEMAS = ['metro:', 'stage:'] as const;
 const deepLinkRule: LinkifyRule = {
   validate(text: string, pos: number): number {
     const m = /^\/\/[^\s]+/.exec(text.slice(pos));
-    return m ? m[0].length : 0;
+    return m ? m[0].replace(/[.,;:!?)\]}'"`>]+$/, '').length : 0;
   },
 };
 

@@ -1,7 +1,8 @@
 import { youtubeIdOf, mapCoordsOf } from '@stage-labs/client/embed/detect';
 import { githubLinkOf } from '@stage-labs/client/api/github';
-import { stageConvIdOf, stageDmPeerOf } from '@stage-labs/client/xmtp/line';
+import { stageChannelIdOf, stageDmPeerOf } from '@stage-labs/client/xmtp/line';
 import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
+import { singleChannelLinkOf } from './channelLinks';
 
 export const MAX_CARDS = 5;
 
@@ -56,7 +57,7 @@ const DETECTORS: Detector[] = [
     return peerAddress ? { kind: 'dm', url: token, peerAddress } : null;
   },
   token => {
-    const convId = stageConvIdOf(token);
+    const convId = stageChannelIdOf(token);
     return convId ? { kind: 'channel', url: token, convId } : null;
   },
   token => {
@@ -103,9 +104,11 @@ function isGenericLink(token: string): boolean {
 }
 
 function classify(token: string): CardLink | null {
+  const clean = token.replace(/[.,;:!?)\]}'"`]+$/, '');
+  const convId = stageChannelIdOf(clean);
+  if (convId) return { kind: 'channel', url: clean, convId };
   const card = specificCard(token);
   if (card) return card;
-  const clean = token.replace(/[.,;:!?)\]}'"]+$/, '');
   return isGenericLink(clean) ? { kind: 'generic', url: clean } : null;
 }
 
@@ -117,13 +120,15 @@ function isBracketWrapped(text: string, token: string, start: number): boolean {
 
 export function cardLinksOf(text?: string | null): CardLink[] {
   if (!text) return [];
+  const channel = singleChannelLinkOf(text);
+  if (channel) return [{ kind: 'channel', ...channel }];
   const scanned = withChannelLabels(text);
   const out: CardLink[] = [];
   const seen = new Set<string>();
   for (const m of scanned.matchAll(TOKEN_RE)) {
     if (isBracketWrapped(scanned, m[0], m.index)) continue;
     const card = classify(m[0]);
-    if (!card) continue;
+    if (!card || card.kind === 'channel') continue;
     if (seen.has(card.url)) continue;
     seen.add(card.url);
     out.push(card);

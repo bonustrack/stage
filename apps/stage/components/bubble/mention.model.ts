@@ -1,13 +1,15 @@
 import {
-  hasChannelRef, splitChannelRefs, withChannelLabels, type ChannelRefSegment,
+  hasChannelRef, splitChannelRefs, withChannelLabels,
 } from '@stage-labs/client/xmtp/channelRefs';
 import { hasMention, parseMentions, type MentionSegment } from '@stage-labs/client/xmtp/mentions';
+import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
+import { MARKDOWN_LINK_RE } from '../../lib/channelLinks';
 
 export type BodyView = 'plain' | 'namedPlain' | 'mention' | 'markdown';
 
 export type BodySegment =
   | MentionSegment
-  | Extract<ChannelRefSegment, { type: 'channel' }>
+  | { type: 'channel'; convId: string; label?: string; url?: string }
   | { type: 'link'; url: string; text: string };
 
 interface LinkMatch { index: number; lastIndex: number; url: string }
@@ -15,8 +17,6 @@ interface LinkMatch { index: number; lastIndex: number; url: string }
 export type LinkFinder = (text: string) => readonly LinkMatch[] | null;
 
 interface Span { index: number; lastIndex: number; segment: BodySegment }
-
-const MARKDOWN_LINK_RE = /\[([^[\]\n]+)\]\(((?:[^\s()]|\([^\s()]*\))+)\)/g;
 
 export function mentionLabel(name: string): string {
   return name.startsWith('@') ? name : `@${name}`;
@@ -30,9 +30,10 @@ export function withMentionLabels(text: string, labelOf: (address: string) => st
   return parseMentions(withChannelLabels(text)).map(seg => (seg.type === 'mention' ? labelOf(seg.address) : seg.text)).join('');
 }
 
-export function bodyView(body: string, plain: boolean): BodyView {
+export function bodyView(body: string, plain: boolean, findLinks?: LinkFinder): BodyView {
   const mentions = hasMention(body) || hasChannelRef(body);
-  if (plain) return mentions ? 'namedPlain' : 'plain';
+  const channels = plain && findLinks && bodySegments(body, findLinks).some(s => s.type === 'channel');
+  if (plain) return mentions || channels ? 'namedPlain' : 'plain';
   return mentions ? 'mention' : 'markdown';
 }
 
@@ -52,25 +53,37 @@ function wholeLinkUrl(target: string, findLinks: LinkFinder): string | undefined
   return match.url;
 }
 
+function linkSegment(url: string, text: string): BodySegment {
+  const convId = stageChannelIdOf(url);
+  return convId ? {
+    type: 'channel', convId, url, ...(text.startsWith('#') ? { label: text.slice(1) } : {}),
+  } : { type: 'link', url, text };
+}
+
 function markdownLinkSpans(text: string, findLinks: LinkFinder): Span[] {
   return [...text.matchAll(MARKDOWN_LINK_RE)].flatMap<Span>(m => {
     const url = wholeLinkUrl(m[2] ?? '', findLinks);
     if (url === undefined) return [];
-    return [{ index: m.index, lastIndex: m.index + m[0].length, segment: { type: 'link', url, text: m[1] ?? '' } }];
+    return [{ index: m.index, lastIndex: m.index + m[0].length, segment: linkSegment(url, m[1] ?? '') }];
   });
 }
 
 function bareLinkSpans(text: string, findLinks: LinkFinder): Span[] {
-  return (findLinks(text) ?? []).map((m): Span => ({
-    index: m.index,
-    lastIndex: m.lastIndex,
-    segment: { type: 'link', url: m.url, text: text.slice(m.index, m.lastIndex) },
-  }));
+  return (findLinks(text) ?? []).map((m): Span => {
+    const clean = m.url.replace(/[.,;:!?)\]}'"`>]+$/, '');
+    const url = stageChannelIdOf(clean) ? clean : m.url;
+    const lastIndex = m.lastIndex - (m.url.length - url.length);
+    return { index: m.index, lastIndex, segment: linkSegment(url, text.slice(m.index, lastIndex)) };
+  });
 }
 
 export function bodySegments(body: string, findLinks: LinkFinder): BodySegment[] {
   const withBareLinks = (text: string): BodySegment[] => splitSpans(text, bareLinkSpans(text, findLinks), parseMentions);
-  return splitChannelRefs(body).flatMap<BodySegment>(seg => (
+  const prose = (text: string): BodySegment[] => splitChannelRefs(text).flatMap<BodySegment>(seg => (
     seg.type === 'channel' ? [seg] : splitSpans(seg.text, markdownLinkSpans(seg.text, findLinks), withBareLinks)
   ));
+  const code = [...body.matchAll(/```[\s\S]*?```|`[^`\n]*`/g)].map((m): Span => ({
+    index: m.index, lastIndex: m.index + m[0].length, segment: { type: 'text', text: m[0] },
+  }));
+  return splitSpans(body, code, prose);
 }

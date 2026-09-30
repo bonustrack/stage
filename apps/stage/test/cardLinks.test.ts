@@ -23,7 +23,7 @@ describe('cardLinksOf', () => {
       'build metro://expo-development-client/?url=https://u.expo.dev/abc/group/grp123',
     ].join(' ');
     const cards = cardLinksOf(text);
-    expect(cards.map(c => c.kind)).toEqual(['github', 'channel', 'preview']);
+    expect(cards.map(c => c.kind)).toEqual(['github', 'preview']);
   });
 
   test('dedupes identical urls', () => {
@@ -47,7 +47,8 @@ describe('cardLinksOf', () => {
   test('shows no card for a channel shared by typing #', () => {
     const conv = '47bf58a8f56cad829b2263797a7e25e4';
     expect(cardLinksOf(`join ${channelRefToken(conv, 'Design')} today`)).toEqual([]);
-    expect(cardLinksOf(`${channelRefToken(conv, 'Design')} https://stage.box/#/channel/${conv}`)).toMatchObject([{ kind: 'channel', convId: conv }]);
+    expect(cardLinksOf(`${channelRefToken(conv, 'Design')} https://stage.box/#/channel/${conv}`)).toEqual([]);
+    expect(cardLinksOf(channelRefToken(conv, 'Design'))).toMatchObject([{ kind: 'channel', convId: conv }]);
   });
 
   test('classifies a channel/ (no xmtp) conv link as channel', () => {
@@ -63,10 +64,10 @@ describe('cardLinksOf', () => {
   });
 
   test('current and legacy channel link schemes each render a channel card', () => {
-    const cards = cardLinksOf(
-      'stage://xmtp/47bf58a8f56cad829b2263797a7e25e4 and metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
-    );
-    expect(cards.map(c => c.kind)).toEqual(['channel', 'channel']);
+    const conv = '47bf58a8f56cad829b2263797a7e25e4';
+    expect(cardLinksOf(`stage://xmtp/${conv}`)).toMatchObject([{ kind: 'channel', convId: conv }]);
+    expect(cardLinksOf(`metro://xmtp/${conv}`)).toMatchObject([{ kind: 'channel', convId: conv }]);
+    expect(cardLinksOf(`stage://xmtp/${conv} and metro://xmtp/${conv}`)).toEqual([]);
   });
 
   test('https user links render a dm card', () => {
@@ -98,7 +99,7 @@ describe('cardLinksOf', () => {
       'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
       'https://github.com/bonustrack/stage/pull/505',
     ].join('\n');
-    expect(cardLinksOf(text).map(c => c.kind)).toEqual(['preview', 'channel', 'github']);
+    expect(cardLinksOf(text).map(c => c.kind)).toEqual(['preview', 'github']);
   });
 
   test('a plain web link is a generic preview card', () => {
@@ -140,7 +141,20 @@ describe('cardLinksOf', () => {
       'https://news.ycombinator.com/item?id=1',
       'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
     ].join(' ');
-    expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'generic', 'channel']);
+    expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'generic']);
+  });
+
+  test('only standalone channel links get cards, with surrounding whitespace allowed', () => {
+    const conv = '47bf58a8f56cad829b2263797a7e25e4';
+    const urls = [`https://stage.box/#/channel/${conv}`, `https://stage.box/channel/${conv}`, `stage://channel/${conv}`, `stage://channel/${conv}?m=abc&focus=1`];
+    for (const url of urls) {
+      expect(cardLinksOf(` \n\t${url}\n `)).toEqual([{ kind: 'channel', url, convId: conv }]);
+      for (const text of [`join ${url}`, `${url}\nhello`, `${url}.`, `(${url})`, `${url} ${url}`, `\`${url}\``, `\`\`\`\n${url}\n\`\`\``]) {
+        expect(cardLinksOf(text)).toEqual([]);
+      }
+      expect(cardLinksOf(`[join](${url})`)).toEqual([{ kind: 'channel', url, convId: conv }]);
+      expect(cardLinksOf(`join [#Ops](${url}) today`)).toEqual([]);
+    }
   });
 
   test('shared locations render as map cards, Google Maps and old OpenStreetMap links alike', () => {

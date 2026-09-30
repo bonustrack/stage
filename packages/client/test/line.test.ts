@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { convIdOfLine, lineOfConv, stageConvIdOf, stageDmPeerOf } from '../src/xmtp/line';
+import { convIdOfLine, lineOfConv, stageChannelIdOf, stageConvIdOf, stageDmPeerOf } from '../src/xmtp/line';
 
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 const ADDR = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
@@ -40,6 +40,27 @@ describe('stageConvIdOf', () => {
   test('null for non-links', () => {
     expect(stageConvIdOf('just text')).toBeNull();
     expect(stageConvIdOf(null)).toBeNull();
+  });
+});
+
+describe('stageChannelIdOf', () => {
+  test('recognizes whole supported channel URLs, including message and focus parameters', () => {
+    for (const prefix of ['stage://', 'metro://', 'https://stage.box/', 'https://stage.box/#/', 'http://stage.box/']) {
+      for (const path of ['channel', 'xmtp']) {
+        expect(stageChannelIdOf(`${prefix}${path}/${CONV}`)).toBe(CONV);
+        expect(stageChannelIdOf(`${prefix}${path}/${CONV}/?m=abc&focus=1`)).toBe(CONV);
+      }
+    }
+  });
+
+  test('does not confuse profile links, external hosts, partial links or punctuation with channels', () => {
+    for (const url of [
+      `stage://user/${ADDR}`, `stage://${ADDR}`, `stage://xmtp/user/${ADDR}`, `stage://xmtp/${ADDR}`,
+      'stage://alice', 'https://stage.box/#/alice', `https://stage.box/user/${ADDR}`,
+      `https://stage.box/#/profile/${CONV}`, `https://stage.box.evil/channel/${CONV}`,
+      `https://example.com/?url=https://stage.box/channel/${CONV}`, `stage://channel/${CONV}/extra`,
+      `see stage://channel/${CONV}`, `stage://channel/${CONV}.`, `stage://channel/${CONV})`,
+    ]) expect(stageChannelIdOf(url)).toBeNull();
   });
 });
 

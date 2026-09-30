@@ -7,7 +7,7 @@ import {
 const A = '0x59445094f08d01213bd6ba7215a6ab7a4bc29a4a';
 const B = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
 const OPS = channelRefToken('c0ffee02', 'Ops');
-const findLinks: LinkFinder = text => [...text.matchAll(/https?:\/\/\S+/g)].map(m => (
+const findLinks: LinkFinder = text => [...text.matchAll(/(?:https?:\/\/|stage:\/\/|metro:\/\/)\S+/g)].map(m => (
   { index: m.index, lastIndex: m.index + m[0].length, url: m[0] }
 ));
 
@@ -71,6 +71,29 @@ describe('mention labels', () => {
       { type: 'text', text: ' for ' },
       { type: 'mention', address: A },
     ]);
+  });
+
+  test('uses channel segments for URL forms beside text and mentions, retaining routes', () => {
+    const url = 'stage://channel/c0ffee02?m=123&focus=1';
+    expect(bodySegments(`join ${url} with @${A}`, findLinks)).toEqual([
+      { type: 'text', text: 'join ' }, { type: 'channel', convId: 'c0ffee02', url },
+      { type: 'text', text: ' with ' }, { type: 'mention', address: A },
+    ]);
+    expect(bodySegments(`[Join here](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url }]);
+    expect(bodySegments(`[#Ops](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, label: 'Ops' }]);
+    expect(bodyView(url, true, findLinks)).toBe('namedPlain');
+    expect(bodyView(`**join** ${url}`, false, findLinks)).toBe('markdown');
+  });
+
+  test('keeps punctuation, profile URLs and code separate from channel links', () => {
+    const url = 'stage://channel/c0ffee02';
+    expect(bodySegments(`${url}.`, findLinks)).toEqual([
+      { type: 'channel', convId: 'c0ffee02', url }, { type: 'text', text: '.' },
+    ]);
+    expect(bodySegments(`\`${url}\``, findLinks)).toEqual([{ type: 'text', text: `\`${url}\`` }]);
+    const profile = `https://stage.box/user/${A}`;
+    expect(bodySegments(profile, findLinks)).toEqual([{ type: 'link', url: profile, text: profile }]);
+    expect(bodySegments(`\`${OPS}\``, findLinks)).toEqual([{ type: 'text', text: `\`${OPS}\`` }]);
   });
 
   test('keeps a markdown link to a non web target as text', () => {

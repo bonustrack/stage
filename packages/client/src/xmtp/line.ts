@@ -1,3 +1,5 @@
+import { routeForUrl } from '../routing/deepLinks';
+
 export const XMTP_USER_PREFIX = 'stage://xmtp/user/';
 
 export function lineOfConv(convId: string): string {
@@ -34,4 +36,14 @@ export function stageConvIdOf(text?: string | null): string | null {
   if (!text) return null;
   const m = CONV_ID_RE.exec(text);
   return m?.[1] ?? null;
+}
+
+const CHANNEL_LINK_RE = new RegExp(
+  '^' + LINK_PREFIX + '(?:xmtp|channel)\\/[A-Za-z0-9_-]+\\/?(?:\\?[^\\s<>]*)?$', 'i',
+);
+
+export function stageChannelIdOf(url: string): string | null {
+  if (!CHANNEL_LINK_RE.test(url) || /[.,;:!?)\]}'"`>]+$/.test(url) || stageDmPeerOf(url)) return null;
+  const route = routeForUrl(url);
+  return route?.pathname === '/channel/[convId]' ? route.params.convId : null;
 }
