@@ -201,6 +201,7 @@
     "expo@57.0.25": "patches/expo@57.0.25.patch",
     "expo-router@57.0.23": "patches/expo-router@57.0.23.patch",
     "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch",
+    "expo-dev-launcher@57.0.20": "patches/expo-dev-launcher@57.0.20.patch",
   },
   "packages": {
     "@adraffy/ens-normalize": ["@adraffy/ens-normalize@1.11.1", "", {}, "sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ=="],

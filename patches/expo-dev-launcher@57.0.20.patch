@@ -1,0 +1,15 @@
+diff --git a/android/src/debug/java/expo/modules/devlauncher/DevLauncherController.kt b/android/src/debug/java/expo/modules/devlauncher/DevLauncherController.kt
+index 1a3b8706b1130fb1899c9d6cf5cc20fd6de77df7..32e3e723b13f50b2de15eb1603044e65ca1ed76a 100644
+--- a/android/src/debug/java/expo/modules/devlauncher/DevLauncherController.kt
++++ b/android/src/debug/java/expo/modules/devlauncher/DevLauncherController.kt
+@@ -444,8 +444,8 @@ class DevLauncherController private constructor(
+           intent.extras?.let {
+             putExtras(it)
+           }
+-          intent.categories?.let {
+-            categories.addAll(it)
++          intent.categories?.forEach {
++            addCategory(it)
+           }
+         } ?: run {
+         // If no pending intent is available, use the extras from the intent that was used to launch the app.
