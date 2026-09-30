@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { isAllowedLinkScheme } from '../lib/safeOpenLink';
+import { internalLinkPath, isAllowedLinkScheme } from '../lib/safeOpenLink';
 
 describe('isAllowedLinkScheme', () => {
   test('allows web + mailto + our app schemes', () => {
@@ -34,5 +34,39 @@ describe('isAllowedLinkScheme', () => {
     expect(isAllowedLinkScheme('example.com/path')).toBe(false);
     expect(isAllowedLinkScheme('/relative/path')).toBe(false);
     expect(isAllowedLinkScheme('')).toBe(false);
+  });
+});
+
+describe('internalLinkPath', () => {
+  test('reuses canonical app routes and preserves the complete query', () => {
+    for (const [url, path] of [
+      ['https://stage.box/#/settings', '/settings'],
+      ['HTTPS://STAGE.BOX/contacts', '/contacts'],
+      ['stage://channels', '/'],
+      ['stage://group/channel72', '/profile/channel72'],
+      ['metro://user/alice', '/profile/alice'],
+      ['stage://xmtp/user/alice?m=a%2Fb%20c&focus=1&extra=keep', '/alice?m=a%2Fb%20c&focus=1&extra=keep'],
+      ['https://stage.box/xmtp/channel72?m=abc&focus=1', '/channel/channel72?m=abc&focus=1'],
+      ['stage://wallet/send?to=alice', '/wallet/send?to=alice'],
+      ['https://stage.box/#/settings/display?theme=dark', '/settings/display?theme=dark'],
+      ['https://stage.box/board/channel72?m=abc', '/board/channel72?m=abc'],
+    ]) expect(internalLinkPath(url ?? '')).toBe(path);
+  });
+
+  test('never treats other hosts, credentials, ports or schemes as internal', () => {
+    for (const url of [
+      'https://example.com/#/settings', 'https://stage.box.evil.test/channel/abc',
+      'https://stage.box@evil.test/#/contacts', 'https://evil.test@stage.box/#/settings',
+      'https://stage.box:8080/#/profile/alice', 'https://stage.box\\@evil.test/#/settings',
+      'https://stage.box./#/settings', 'https://dev.stage.box/#/settings',
+      'javascript:https://stage.box/#/settings', 'file://stage.box/settings',
+      '//stage.box/#/settings', '/settings', 'stage://profile/%ZZ',
+      'stage://channel/bad#fragment', 'https://stage.box/#/channel/bad#fragment',
+    ]) expect(internalLinkPath(url)).toBeNull();
+  });
+
+  test('keeps preview-build launch actions outside the app router', () => {
+    expect(internalLinkPath('stage://expo-development-client/?url=https%3A%2F%2Fu.expo.dev%2Fbuild')).toBeNull();
+    expect(internalLinkPath('https://stage.box/preview-launcher.html?u=build')).toBeNull();
   });
 });

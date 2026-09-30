@@ -10,7 +10,8 @@ import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPr
 import { X402Card } from './X402Card';
 import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { capabilities } from '../lib/capabilities';
+import { bubbleLinkProps } from './bubble/linkProps';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 import { TEXT_11PX } from './smallText';
 
 function LinkPreviewBody({ meta, url, subColor, imageBg }: {
@@ -49,7 +50,7 @@ export function OutlinedLinkCard({ url, padding, children }: {
 }): React.ReactElement {
   const pal = usePalette();
   return (
-    <Pressable onPress={() => { capabilities.openUrl(url); }}>
+    <Pressable {...bubbleLinkProps(url, openInBubbleLink)}>
       <Box background={'transparent'} padding={padding} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
         {children}
       </Box>

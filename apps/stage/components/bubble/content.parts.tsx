@@ -222,7 +222,7 @@ export function BubbleBody({ text, fg, selectable, highlight, markdownProps }: {
 
 function embedNode(card: CardLink, dark: boolean): React.ReactElement {
   switch (card.kind) {
-    case 'dm': return <ChannelCard peerAddress={card.peerAddress} />;
+    case 'dm': return <ChannelCard peerAddress={card.peerAddress} url={card.url} />;
     case 'channel': return <ChannelCard convId={card.convId} url={card.url} />;
     case 'youtube': return <YouTubeEmbed videoId={card.videoId} />;
     case 'map': return <LocationEmbed lat={card.lat} lng={card.lng} dark={dark} />;

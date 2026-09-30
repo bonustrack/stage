@@ -3,6 +3,7 @@ import { cachedChannelName, channelLinkLabel, channelLinkText, channelFallbackLa
 import { bubbleLinkProps as nativeProps } from '../components/bubble/linkProps';
 import { bubbleLinkProps as webProps } from '../components/bubble/linkProps.web';
 import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
+import { internalLinkPath } from '../lib/safeOpenLink';
 
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 
@@ -102,12 +103,30 @@ describe('channel link platform clicks', () => {
     expect(routeForUrl(opened)).toEqual({ pathname: '/channel/[convId]', params: { convId: CONV, m: 'a/b c', focus: '1' } });
   });
 
-  test('web external, non-channel and malformed links keep their previous behavior', () => {
+  test('web internal profile, DM, tab and nested links use the same click convention', () => {
+    for (const url of [
+      'https://stage.box/#/settings', 'stage://profile/alice',
+      'stage://xmtp/user/0x1111111111111111111111111111111111111111?m=abc&focus=1',
+      'https://stage.box/#/contacts', 'stage://channels', 'stage://board',
+      'https://stage.box/settings/display?theme=dark', 'stage://wallet/send?to=alice',
+    ]) {
+      let opened = '';
+      let prevented = false;
+      const props = webProps(url, target => { opened = target; return false; });
+      expect(props.href).toBe(url.startsWith('stage://') ? `https://stage.box/#${internalLinkPath(url)}` : url);
+      expect(props.hrefAttrs).toBeUndefined();
+      props.onPress?.({ defaultPrevented: false, preventDefault: () => { prevented = true; } });
+      expect(prevented).toBe(true);
+      expect(opened).toBe(url);
+      props.onPress?.({ defaultPrevented: false, ctrlKey: true, preventDefault: () => { throw new Error('keep browser action'); } });
+    }
+  });
+
+  test('web external and malformed links keep their previous behavior', () => {
     for (const url of [
       'https://example.com/#/channel/other', 'mailto:hi@example.com',
-      'https://stage.box/#/settings', 'stage://profile/alice',
-      'stage://xmtp/user/0x1111111111111111111111111111111111111111',
-      'https://stage.box/#/channel/bad#fragment', 'stage://channel/bad/extra',
+      'https://stage.box.evil.test/#/settings', 'https://stage.box@evil.test/#/contacts',
+      'https://stage.box/#/channel/bad#fragment', 'stage://profile/%ZZ',
     ]) {
       const props = webProps(url, () => { throw new Error('browser handles it'); });
       expect(props.href).toBe(url);

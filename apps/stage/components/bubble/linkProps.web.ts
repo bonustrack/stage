@@ -1,5 +1,4 @@
-import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
-import { isAllowedLinkScheme, openInBubbleLink } from '../../lib/safeOpenLink';
+import { internalLinkPath, isAllowedLinkScheme, openInBubbleLink } from '../../lib/safeOpenLink';
 import type { BubbleLinkEvent, BubbleLinkProps, LinkPress } from './helpers';
 
 const NEW_TAB = { target: '_blank', rel: 'noopener noreferrer' } as const;
@@ -20,9 +19,10 @@ function shouldRoute(event?: BubbleLinkEvent): boolean {
 
 export function bubbleLinkProps(url: string, onLinkPress: LinkPress): BubbleLinkProps {
   if (!isAllowedLinkScheme(url)) return { onPress: () => { onLinkPress?.(url); } };
-  if (!stageChannelIdOf(url)) return { href: url, hrefAttrs: NEW_TAB, onPress: undefined, ref: keepBrowserContextMenu };
+  const path = internalLinkPath(url);
+  if (!path) return { href: url, hrefAttrs: NEW_TAB, onPress: undefined, ref: keepBrowserContextMenu };
   return {
-    href: url.replace(/^(?:metro|stage):\/\/(?:xmtp|channel)\//i, 'https://stage.box/#/channel/'),
+    href: /^(?:metro|stage):\/\//i.test(url.trim()) ? `https://stage.box/#${path}` : url,
     hrefAttrs: undefined,
     accessibilityRole: 'link',
     onPress: event => {

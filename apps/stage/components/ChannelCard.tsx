@@ -14,7 +14,7 @@ import { openInBubbleLink } from '../lib/safeOpenLink';
 export function ChannelCard(
   { convId, peerAddress, url }: { convId?: string; peerAddress?: string; url?: string },
 ): React.ReactElement | null {
-  if (peerAddress) return <DmPeerCard address={peerAddress} />;
+  if (peerAddress) return <DmPeerCard address={peerAddress} url={url} />;
   if (!convId) return null;
   return <ConvIdCard convId={convId} url={url} />;
 }
@@ -78,7 +78,7 @@ function ConvIdCard({ convId, url }: { convId: string; url?: string }): React.Re
   );
 }
 
-function DmPeerCard({ address }: { address: string }): React.ReactElement {
+function DmPeerCard({ address, url }: { address: string; url?: string }): React.ReactElement {
   usePeerProfiles([address]);
 
   const peerName = getPeerName(address);
@@ -96,6 +96,7 @@ function DmPeerCard({ address }: { address: string }): React.ReactElement {
         subtitle="Direct message"
         avatarAddress={avatarAddress}
         onPress={open}
+        linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
     </CardFrame>
   );
