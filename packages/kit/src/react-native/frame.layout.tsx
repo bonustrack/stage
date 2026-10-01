@@ -264,11 +264,11 @@ export function FrameChart({ node }: FrameNodeProps<'Chart'>): React.ReactElemen
   return (
     <Table dark={dark}>
       <TableRow dark={dark} header>
-        {header.map((h, i) => <TableCell key={i}><Text size="sm" weight="semibold" value={h} /></TableCell>)}
+        {header.map((h, i) => <TableCell key={i}><Text size="xs" weight="semibold" value={h} /></TableCell>)}
       </TableRow>
       {rows.map((row, r) => (
         <TableRow key={r} dark={dark}>
-          {row.map((v, i) => <TableCell key={i}><Text size="sm" value={v} /></TableCell>)}
+          {row.map((v, i) => <TableCell key={i}><Text size="xs" value={v} /></TableCell>)}
         </TableRow>
       ))}
     </Table>

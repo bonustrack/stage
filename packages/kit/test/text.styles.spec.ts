@@ -21,18 +21,18 @@ const PALETTE: TextRolePalette = {
 
 describe('resolveTextSize', () => {
   test('explicit size wins over variant', () => {
-    expect(resolveTextSize('2xl', 'caption')).toBe(FONT_SIZE['2xl']);
-    expect(resolveTextSize('sm', undefined)).toBe(FONT_SIZE.sm);
+    expect(resolveTextSize('xl', 'caption')).toBe(FONT_SIZE.xl);
+    expect(resolveTextSize('xs', undefined)).toBe(FONT_SIZE.xs);
   });
 
-  test('caption variant falls back to xs', () => {
-    expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE.xs);
+  test('caption variant falls back to 2xs', () => {
+    expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['2xs']);
   });
 
-  test('default is md', () => {
-    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.md);
-    expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.md);
-    expect(resolveTextSize(undefined, 'mono')).toBe(FONT_SIZE.md);
+  test('default is sm', () => {
+    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.sm);
+    expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.sm);
+    expect(resolveTextSize(undefined, 'mono')).toBe(FONT_SIZE.sm);
   });
 });
 

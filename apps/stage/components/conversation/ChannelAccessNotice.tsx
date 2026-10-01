@@ -8,7 +8,7 @@ export function ChannelAccessNotice({ outside }: { outside: boolean }): React.Re
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Col width={'100%'} padding={{ x: PAGE_GUTTER, top: 14, bottom: 14 }} align="stretch" style={{ alignSelf: 'stretch' }}>
-        <Text size="2xl" color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
+        <Text size="xl" color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           {outside ? OUTSIDE_CHANNEL_NOTICE : CHANNEL_WAITING_NOTICE}
         </Text>
       </Col>

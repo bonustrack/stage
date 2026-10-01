@@ -51,7 +51,7 @@ function FrameBody({ frame, convId, line, messageId, onSent, insetBottom, naviga
         onOpenUrl={(url) => { openInBubbleLink(url); }} />
       {notice ? (
         <Box padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
-          <Text size="sm" role="secondary">Accept this conversation to use this frame.</Text>
+          <Text size="xs" role="secondary">Accept this conversation to use this frame.</Text>
         </Box>
       ) : null}
     </View>

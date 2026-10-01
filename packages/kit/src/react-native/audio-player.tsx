@@ -187,7 +187,7 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
       <RNText
         style={{
           color: onAccent,
-          fontSize: FONT_SIZE.xs,
+          fontSize: FONT_SIZE['2xs'],
           minWidth: 34,
           textAlign: 'right',
           fontFamily: 'Calibre-Regular',
@@ -242,7 +242,7 @@ function BasicPlayer(props: {
           }}
         />
       </View>
-      <RNText style={{ color: fg, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>
+      <RNText style={{ color: fg, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>
         {fmt(lengthMs)}
       </RNText>
     </View>

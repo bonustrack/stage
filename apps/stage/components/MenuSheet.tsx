@@ -41,10 +41,10 @@ function AccountSwitchRow({ account, active, onSwitch }: {
     >
       <Avatar address={account.address} size={26} style={{ backgroundColor: border }}/>
       <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="sm" numberOfLines={1} color={head}>
+        <Text weight="semibold" size="xs" numberOfLines={1} color={head}>
           {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
         </Text>
-        <Text size="xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
+        <Text size="2xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
           {shortAddress(account.address)}
         </Text>
       </Col>

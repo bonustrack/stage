@@ -57,7 +57,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
         }}
 />
       <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="md" color={p.head}>{name}</Text>
+        <Text weight="semibold" size="sm" color={p.head}>{name}</Text>
         <Input
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setSeedColor(scheme, seedKey, t); }}
@@ -67,7 +67,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
             backgroundColor: 'transparent', borderWidth: 0,
-            color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
+            color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('2xs'), fontFamily: 'Calibre-Medium',
           }}
 />
       </Col>
@@ -103,7 +103,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
 }): React.ReactElement {
   return (
     <Box margin={{ top: 16 }}>
-      <Text weight="semibold" size="md" color={p.head}>{name}</Text>
+      <Text weight="semibold" size="sm" color={p.head}>{name}</Text>
       <Row margin={{ top: 6 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
         {options.map((opt) => (
           <Button

@@ -22,7 +22,7 @@ import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-
 
 const PICKER_LIST_MAX_HEIGHT = 320;
 const PICKER_ROW_MIN_HEIGHT = 40;
-const TITLE_SIZE = 'sm';
+const TITLE_SIZE = 'xs';
 const TITLE_ICON_SIZE = 15;
 
 export interface SectionDraft { draft: string[]; toggle: (key: string) => void }
@@ -81,7 +81,7 @@ function SectionHeader({ title, icon, count, editLabel, penShown, onEdit, onFocu
 }
 
 export function SectionNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" color="secondary">{text}</Text></Box>;
+  return <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="sm" color="secondary">{text}</Text></Box>;
 }
 
 export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
@@ -105,7 +105,7 @@ export function PickerList({ children }: { children: ReactNode }): React.ReactEl
 }
 
 export function PickerNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="md" color="secondary">{text}</Text></Box>;
+  return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="sm" color="secondary">{text}</Text></Box>;
 }
 
 export function PickerRow({ selected, disabled = false, label, onPress, children }: {

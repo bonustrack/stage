@@ -17,7 +17,7 @@ export function DropOverlay({ head }: { head: string }): React.ReactElement {
       style={{ position: 'absolute', top: 6, right: 6, bottom: 6, left: 6 }}
     >
       <Glyph icon={IconPaperclip3} size={20} color={head}/>
-      <Text weight="semibold" size="md" color={head}>Drop files to attach</Text>
+      <Text weight="semibold" size="sm" color={head}>Drop files to attach</Text>
     </Row>
   );
 }

@@ -15,7 +15,7 @@ export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
 export type TextSizeToken = FontSizeName;
 
-export const SMALL_FONT_SIZE = { '3xs': 11, '2xs': 12 } as const;
+export const SMALL_FONT_SIZE = { '4xs': 11, '3xs': 12 } as const;
 
 export type TextAlign = 'start' | 'center' | 'end';
 
@@ -45,7 +45,7 @@ export function resolveTextSize(
   variant: TextVariant | undefined,
 ): number {
   if (size) return FONT_SIZE[size];
-  return variant === 'caption' ? FONT_SIZE.xs : FONT_SIZE.md;
+  return variant === 'caption' ? FONT_SIZE['2xs'] : FONT_SIZE.sm;
 }
 
 export function textVariantRole(variant: TextVariant | undefined): TextRole {

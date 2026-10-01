@@ -27,8 +27,8 @@ function detailColors(dark: boolean): { fill: string; border: string } {
 function SenderNote({ note, fill, border }: { note: string; fill: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={fill} padding={8} style={{ borderWidth: 1, borderColor: border }}>
-      <Text size="xs" role="secondary">Sender's note (untrusted)</Text>
-      <Text size="xs" numberOfLines={4}>{note}</Text>
+      <Text size="2xs" role="secondary">Sender's note (untrusted)</Text>
+      <Text size="2xs" numberOfLines={4}>{note}</Text>
     </Box>
   );
 }
@@ -40,7 +40,7 @@ function Eip712DomainLine({ domain }: {
   const chainId = stringifyPrimitive(domain?.chainId);
   if (!domainName && !chainId) return null;
   return (
-    <Text size="xs" role="secondary">
+    <Text size="2xs" role="secondary">
       {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
     </Text>
   );
@@ -49,8 +49,8 @@ function Eip712DomainLine({ domain }: {
 function Eip712FieldRow({ name, value }: { name: string; value: unknown }): React.ReactElement {
   return (
     <Row align="start" gap={8}>
-      <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
-      <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+      <Text size="2xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
+      <Text variant="mono" size="2xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
         {fmtSigValue(value)}
       </Text>
     </Row>
@@ -66,7 +66,7 @@ function Eip712Detail({ req, fill, border }: {
   return (
     <Col radius="md" background={fill} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
       <Eip712DomainLine domain={domain} />
-      {primaryType ? <Text weight="semibold" size="xs">{primaryType}</Text> : null}
+      {primaryType ? <Text weight="semibold" size="2xs">{primaryType}</Text> : null}
       {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} />)}
     </Col>
   );
@@ -75,7 +75,7 @@ function Eip712Detail({ req, fill, border }: {
 function MessageDetail({ message, fill, border }: { message: string; fill: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={fill} padding={10} style={{ borderWidth: 1, borderColor: border }}>
-      <Text variant="mono" size="xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
+      <Text variant="mono" size="2xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
     </Box>
   );
 }
@@ -86,7 +86,7 @@ function SigAction({ gated, dark, signing, onSign }: {
   const pal = usePalette();
   if (gated) {
     return (
-      <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
+      <Text size="2xs" role="secondary" style={{ marginTop: 2 }}>
         Accept this conversation to enable signing.
       </Text>
     );
@@ -114,7 +114,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
     <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconPencil} size={18} color={pal.link}/>
-        <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
+        <Text weight="semibold" size="sm" style={{ flexShrink: 1 }}>{title}</Text>
       </Row>
       {senderNote ? <SenderNote note={senderNote} fill={fill} border={border} /> : null}
       {req.kind === 'eip712' ? (
@@ -134,7 +134,7 @@ export function ReceiptBox({ dark, title, children }: {
     <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconCheckmark1} size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
-        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
+        <Text weight="semibold" size="sm" color={dark ? '#ffffff' : '#000000'}>
           {title}
         </Text>
       </Row>
@@ -149,8 +149,8 @@ export function SigReferenceCard({ ref, dark }: {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
   return (
     <ReceiptBox dark={dark} title="Signed ✓">
-      {ref.signer ? <Text size="xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
-      <Text size="xs" role="secondary">{short(ref.signature)}</Text>
+      {ref.signer ? <Text size="2xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
+      <Text size="2xs" role="secondary">{short(ref.signature)}</Text>
     </ReceiptBox>
   );
 }

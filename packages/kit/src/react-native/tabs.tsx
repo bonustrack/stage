@@ -66,8 +66,8 @@ function segmentStyle(underline: boolean, selected: boolean, c: TabsColors): Vie
 }
 
 function labelStyle(underline: boolean, color: string): TextStyle {
-  if (underline) return { color, fontSize: FONT_SIZE['3xl'], fontFamily: fontName.head };
-  return { color, fontSize: FONT_SIZE.xl, fontFamily: fontName.sans };
+  if (underline) return { color, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head };
+  return { color, fontSize: FONT_SIZE.lg, fontFamily: fontName.sans };
 }
 
 export function Tabs(props: TabsProps): React.ReactElement {

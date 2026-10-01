@@ -38,7 +38,7 @@ export function ToastHost(): React.ReactElement | null {
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
       >
-        <Text size="xl" color={pal.bg}>{toast.message}</Text>
+        <Text size="lg" color={pal.bg}>{toast.message}</Text>
       </Box>
     </Row>
   );

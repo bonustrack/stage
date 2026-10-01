@@ -68,7 +68,7 @@ function OptionRow({ opt, isOn, multi, dark, fg, onPress }: {
         borderColor: isOn ? '#c0a06e' : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
       })}
     >
-      <Text size="md" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
+      <Text size="sm" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
       {opt.description ? (
         <Text role="secondary" style={[TEXT_12PX, { marginTop: 2 }]}>{opt.description}</Text>
       ) : null}
@@ -89,7 +89,7 @@ function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }):
         borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
       })}
     >
-      <Text size="md" role="secondary">Other…</Text>
+      <Text size="sm" role="secondary">Other…</Text>
     </Pressable>
   );
 }
@@ -118,7 +118,7 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
         opacity: disabled ? 0.5 : 1,
       })}
     >
-      <Text weight="semibold" size="sm" color={'#000'}>
+      <Text weight="semibold" size="xs" color={'#000'}>
         Submit{s.multi && s.selected.size > 0 ? ` (${s.selected.size}${s.otherText.trim() ? '+1' : ''})` : ''}
       </Text>
     </Pressable>

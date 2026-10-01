@@ -22,13 +22,15 @@ import { controlSize, FrameTextField } from './frame.controls';
 import { useFormScope, useFrameColor, useFrameRuntime } from './frame.runtime';
 
 const TITLE_PX = {
-  sm: FONT_SIZE.lg, md: FONT_SIZE['2xl'], lg: FONT_SIZE['4xl'], xl: FONT_SIZE['5xl'],
-  '2xl': FONT_SIZE['6xl'], '3xl': FONT_SIZE['6xl'], '4xl': FONT_SIZE['7xl'], '5xl': FONT_SIZE['7xl'],
+  sm: FONT_SIZE.md, md: FONT_SIZE.xl, lg: FONT_SIZE['3xl'], xl: FONT_SIZE['4xl'],
+  '2xl': FONT_SIZE['5xl'], '3xl': FONT_SIZE['5xl'], '4xl': FONT_SIZE['6xl'], '5xl': FONT_SIZE['6xl'],
 } as const;
 
+const TEXT_SIZE = { xs: '2xs', sm: 'xs', md: 'sm', lg: 'md', xl: 'lg' } as const;
+
 const ICON_PX = {
-  xs: FONT_SIZE.xs, sm: FONT_SIZE.sm, md: FONT_SIZE.lg, lg: FONT_SIZE['2xl'],
-  xl: FONT_SIZE['4xl'], '2xl': FONT_SIZE['5xl'], '3xl': FONT_SIZE['6xl'],
+  xs: FONT_SIZE['2xs'], sm: FONT_SIZE.xs, md: FONT_SIZE.md, lg: FONT_SIZE.xl,
+  xl: FONT_SIZE['3xl'], '2xl': FONT_SIZE['4xl'], '3xl': FONT_SIZE['5xl'],
 } as const;
 
 const markdownParser = MarkdownIt({ html: false, linkify: true, typographer: false }).disable(['image']);
@@ -40,7 +42,7 @@ export function FrameText({ node }: { node: FrameNodeOf<'Text'> }): React.ReactE
     return <FrameTextField name={editable.name} value={value} placeholder={editable.placeholder} required={editable.required} />;
   }
   return (
-    <Text value={value} size={size} weight={weight} color={color(node.props.color)} textAlign={textAlign}
+    <Text value={value} size={size === undefined ? undefined : TEXT_SIZE[size]} weight={weight} color={color(node.props.color)} textAlign={textAlign}
       italic={italic} lineThrough={lineThrough} truncate={truncate} maxLines={maxLines}
       style={width === undefined ? frameFlex(node) : [frameFlex(node), { width: width as DimensionValue }]} />
   );
@@ -155,7 +157,7 @@ export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.Re
   return (
     <Button label={label} color={tone} variant={kind} size={controlSize(size)} pill={pill} uniform={uniform} block={block}
       disabled={disabled === true || !acts || !usable(submit === true ? undefined : onClickAction)} loading={loading} dark={dark}
-      iconStart={iconNode(iconStart, fg, FONT_SIZE.lg)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.lg)}
+      iconStart={iconNode(iconStart, fg, FONT_SIZE.md)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.md)}
       onPress={() => { void press(); }} />
   );
 }

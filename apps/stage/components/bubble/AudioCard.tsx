@@ -67,7 +67,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
             <Text weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>
-            {model.subtitle ? <Text size="sm" role="secondary" numberOfLines={1}>{model.subtitle}</Text> : null}
+            {model.subtitle ? <Text size="xs" role="secondary" numberOfLines={1}>{model.subtitle}</Text> : null}
           </Col>
           <CardIconButton icon={IconCloudDownload} label="Download" color={pal.sub} onPress={download}/>
         </Row>
@@ -81,7 +81,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             onScrub={setScrub}
             onSeek={seek}
           />
-          <Text size="sm" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
+          <Text size="xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
         </Row>
       </Col>
     </Card>

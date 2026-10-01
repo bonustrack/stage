@@ -8,7 +8,7 @@ import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devCli
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
 
-const COPY = { role: 'secondary', variant: 'caption', size: 'sm', weight: 'medium' } as const;
+const COPY = { role: 'secondary', variant: 'caption', size: 'xs', weight: 'medium' } as const;
 
 export function DevClientUpdate(): React.ReactElement | null {
   const [status, setStatus] = useState('');

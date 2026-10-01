@@ -20,9 +20,9 @@ export function WalletInfoRow({ label, value }: {
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
       <Col flex={1}>
-        <Text value={label} size="md" color="secondary" />
+        <Text value={label} size="sm" color="secondary" />
       </Col>
-      <Text value={value} size="md" color="text" />
+      <Text value={value} size="sm" color="text" />
     </ListViewItem>
   );
 }
@@ -36,8 +36,8 @@ export function WalletCopyRow({ label, value, onCopy }: {
   return (
     <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
       <Col flex={1} gap={4}>
-        <Text value={label} size="xs" color="secondary" />
-        <Text value={value} size="md" color="text" />
+        <Text value={label} size="2xs" color="secondary" />
+        <Text value={value} size="sm" color="text" />
       </Col>
       <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
     </ListViewItem>
@@ -54,10 +54,10 @@ function WalletModuleRow({ name, role, status }: {
     <ListViewItem align="start" gap={12} dark={dark}>
       <Col flex={1} gap={3}>
         <Row align="center" gap={8}>
-          <Text value={name} size="md" color="text" />
+          <Text value={name} size="sm" color="text" />
           <Badge label={role.toUpperCase()} color={WALLET_ROLE_BADGE[role]} />
         </Row>
-        <Text value={status} size="xs" color="secondary" />
+        <Text value={status} size="2xs" color="secondary" />
       </Col>
     </ListViewItem>
   );

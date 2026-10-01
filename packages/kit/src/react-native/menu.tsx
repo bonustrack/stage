@@ -102,7 +102,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     >
       {icon}
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        <Text value={props.label} size={sheet ? '3xl' : 'xl'} color={color} truncate style={{ lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight }} />
+        <Text value={props.label} size={sheet ? '2xl' : 'lg'} color={color} truncate style={{ lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight }} />
       </View>
       {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>

@@ -75,7 +75,7 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
       }}
       action={action}
       footer={onPay && gated ? (
-        <Text size="xs" role="secondary">Accept this conversation to enable paying.</Text>
+        <Text size="2xs" role="secondary">Accept this conversation to enable paying.</Text>
       ) : undefined}
     />
   );
@@ -161,7 +161,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
       ) : null}
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
-      <Text size="xs" role="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
+      <Text size="2xs" role="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
     </Col>
   );
 }
@@ -173,9 +173,9 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
     <Pressable
       onPress={() => { router.push(profileLinkOf(address)); }}>
       <Row align="center" gap={6}>
-        <Text role="secondary" size="xs">To</Text>
+        <Text role="secondary" size="2xs">To</Text>
         <Avatar address={address} size={16} />
-        <Text role="link" weight="semibold" size="lg" suppressHighlighting>
+        <Text role="link" weight="semibold" size="md" suppressHighlighting>
           {display}
         </Text>
       </Row>
@@ -188,7 +188,7 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
   return (
     <Row align="center" gap={6}>
       <Glyph icon={IconPaperPlane} size={14} color={pal.link}/>
-      <Text size="sm" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
+      <Text size="xs" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
     </Row>
   );
 }
@@ -213,24 +213,24 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
     <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconCodeBrackets} size={14} color={sub}/>
-        <Text size="xs" role="secondary">This transaction calls</Text>
+        <Text size="2xs" role="secondary">This transaction calls</Text>
       </Row>
-      <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
+      <Text variant="mono" weight="semibold" size="xs" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
+          <Text size="2xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>
-          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
+          <Text variant="mono" size="2xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
-        <Text size="xs" role="secondary">{decoded.note}</Text>
+        <Text size="2xs" role="secondary">{decoded.note}</Text>
       ) : null}
       {target ? (
-        <Text size="xs" role="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
+        <Text size="2xs" role="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
       ) : null}
     </Col>
   );
@@ -242,9 +242,9 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconShieldBreak} size={14} color={pal.danger}/>
-        <Text size="xs" weight="semibold" color={pal.danger}>Check before signing</Text>
+        <Text size="2xs" weight="semibold" color={pal.danger}>Check before signing</Text>
       </Row>
-      <Text size="xs" color={pal.danger} numberOfLines={4}>{text}</Text>
+      <Text size="2xs" color={pal.danger} numberOfLines={4}>{text}</Text>
     </Box>
   );
 }
@@ -259,7 +259,7 @@ export function TxReceiptCard({ receipt, dark }: {
   return (
     <ReceiptBox dark={dark} title={successLabel}>
       <Pressable onPress={() => { capabilities.openUrl(url); }}>
-        <Text size="xs" color={pal.link}>
+        <Text size="2xs" color={pal.link}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>

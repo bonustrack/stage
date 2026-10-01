@@ -31,7 +31,7 @@ export function IncomingCall({ session, info, selfInboxId }: {
           <Avatar address={caller.address} size={44}/>
           <Col flex={1}>
             <Text weight="semibold" value={caller.name} maxLines={1}/>
-            <Text size="sm" role="secondary" value={where} maxLines={2}/>
+            <Text size="xs" role="secondary" value={where} maxLines={2}/>
           </Col>
         </Row>
         <Row gap={10}>

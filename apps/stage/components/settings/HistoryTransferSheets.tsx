@@ -41,8 +41,8 @@ function Preparing(): React.ReactElement {
   return (
     <Col gap={10} align="center" padding={{ y: 24 }}>
       <Spinner size={28} color={link} />
-      <Text size="lg" textAlign="center">{transferStepLabel(step) ?? SEND_COPY.preparing}</Text>
-      <Text size="sm" role="secondary" textAlign="center">{SEND_COPY.preparingHint}</Text>
+      <Text size="md" textAlign="center">{transferStepLabel(step) ?? SEND_COPY.preparing}</Text>
+      <Text size="xs" role="secondary" textAlign="center">{SEND_COPY.preparingHint}</Text>
     </Col>
   );
 }
@@ -51,12 +51,12 @@ function ReadyCode({ dark, code, expiresAt }: { dark: boolean; code: string; exp
   const shown = displayCode(code);
   return (
     <Col gap={14} align="center">
-      <Text size="4xl" weight="semibold" textAlign="center" style={CODE_STYLE}>{shown}</Text>
+      <Text size="3xl" weight="semibold" textAlign="center" style={CODE_STYLE}>{shown}</Text>
       <Box padding={12} background="#ffffff" style={{ borderRadius: 12 }}>
         <QrCode value={shown} size={QR_SIZE} />
       </Box>
-      <Text size="sm" role="secondary" textAlign="center">{expiryLabel(expiresAt, Date.now())}</Text>
-      <Text size="sm" role="secondary" textAlign="center">{SEND_COPY.howTo}</Text>
+      <Text size="xs" role="secondary" textAlign="center">{expiryLabel(expiresAt, Date.now())}</Text>
+      <Text size="xs" role="secondary" textAlign="center">{SEND_COPY.howTo}</Text>
       <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Copy code"
         onPress={() => { capabilities.copy('Code', shown); }} />
     </Col>
@@ -66,8 +66,8 @@ function ReadyCode({ dark, code, expiresAt }: { dark: boolean; code: string; exp
 function Failed({ dark, message, onRetry }: { dark: boolean; message: string; onRetry: () => void }): React.ReactElement {
   return (
     <Col gap={12} align="center" padding={{ y: 12 }}>
-      <Text size="lg" textAlign="center">{SEND_COPY.failedTitle}</Text>
-      <Text size="sm" role="danger" textAlign="center">{message}</Text>
+      <Text size="md" textAlign="center">{SEND_COPY.failedTitle}</Text>
+      <Text size="xs" role="danger" textAlign="center">{message}</Text>
       <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Try again" onPress={onRetry} />
     </Col>
   );
@@ -141,7 +141,7 @@ export function ReceiveCodeSheet({ visible, onClose, onReceive }: {
   return (
     <AppModal visible={visible} onClose={() => { if (!form.busy) onClose(); }} title={RECEIVE_COPY.title} dismissable={!form.busy}>
       <Col gap={12}>
-        <Text size="sm" role="secondary">{RECEIVE_COPY.about}</Text>
+        <Text size="xs" role="secondary">{RECEIVE_COPY.about}</Text>
         {scanning ? <QrScanner dark={dark} onScan={onScan} /> : (
           <FormField label="Code" placeholder={RECEIVE_COPY.placeholder} value={form.code} onChangeText={form.setCode}
             disabled={form.busy} onSubmit={form.submit}

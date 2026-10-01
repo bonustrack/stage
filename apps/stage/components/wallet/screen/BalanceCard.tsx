@@ -51,8 +51,8 @@ export function WalletBalanceCard({ balance, border, onAction }: {
           style={({ pressed }) => ({ alignSelf: 'flex-start', maxWidth: '100%', opacity: pressed || hovered ? 0.7 : 1 })}
         >
           <Animated.View style={pulse}>
-            <Title size="lg" hero="7xl">
-              {hero.total}<Title hero="7xl" color="secondary">{hero.decimals}</Title>{hero.unit}
+            <Title size="lg" hero="6xl">
+              {hero.total}<Title hero="6xl" color="secondary">{hero.decimals}</Title>{hero.unit}
             </Title>
           </Animated.View>
         </Pressable>

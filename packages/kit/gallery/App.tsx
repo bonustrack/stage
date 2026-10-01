@@ -44,8 +44,8 @@ function StoryStage({ story, args }: { story: StoryEntry; args: Record<string, u
   return (
     <Col flex={1} gap={16} padding={24} style={SCROLL_Y}>
       <Row align="baseline" gap={8}>
-        <Text weight="semibold" size="5xl">{story.component}</Text>
-        <Text size="3xl" role="secondary">{story.name}</Text>
+        <Text weight="semibold" size="4xl">{story.component}</Text>
+        <Text size="2xl" role="secondary">{story.name}</Text>
       </Row>
       <Box><Render {...args} /></Box>
     </Col>

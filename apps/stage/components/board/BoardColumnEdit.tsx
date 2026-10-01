@@ -23,7 +23,7 @@ import { addBoardColumn } from './boardActions';
 
 export const COLUMN_PADDING = 10;
 export const CARD_GAP = 8;
-export const TITLE_SIZE = '2xl';
+export const TITLE_SIZE = 'xl';
 export const HEADER_PADDING = { left: 4, right: 4 + COLUMN_PADDING, y: 2 };
 
 const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
@@ -121,7 +121,7 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
 
 function TitleNote({ note }: { note: string | null }): React.ReactElement | null {
   if (note === null) return null;
-  return <Text value={note} size="sm" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
+  return <Text value={note} size="xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
 }
 
 export function RenameHeading({ label, columns, count, onRename, onClose }: {

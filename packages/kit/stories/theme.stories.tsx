@@ -43,11 +43,11 @@ export const Controls: Story<ThemeArgs> = (args) => {
           {(Object.keys(palette) as (keyof typeof palette)[]).map((name) => (
             <Col key={name} align="center" gap={4}>
               <Col size={40} radius="md" background={palette[name]} border={{ top: { width: 1, color: palette.border }, right: { width: 1, color: palette.border }, bottom: { width: 1, color: palette.border }, left: { width: 1, color: palette.border } }} />
-              <Text color={palette.sub} style={{ fontSize: SMALL_FONT_SIZE['3xs'] }}>{name}</Text>
+              <Text color={palette.sub} style={{ fontSize: SMALL_FONT_SIZE['4xs'] }}>{name}</Text>
             </Col>
           ))}
         </Row>
-        <Text size="xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
+        <Text size="2xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
       </Col>
     </KitThemeProvider>
   );

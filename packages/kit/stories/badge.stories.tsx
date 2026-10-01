@@ -20,7 +20,7 @@ export const Matrix: Story = () => {
     <Col gap={12}>
       {VARIANTS.map((variant) => (
         <Row key={variant} gap={8} align="center" wrap>
-          <Text size="sm" role="secondary">{variant}</Text>
+          <Text size="xs" role="secondary">{variant}</Text>
           {COLORS.map((c) => <Badge key={c} dark={dark} color={c} variant={variant} label={c} />)}
         </Row>
       ))}

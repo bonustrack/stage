@@ -48,7 +48,7 @@ export function ListView(props: ListViewProps): React.ReactElement {
         <RNText
           style={{
             color: c.sub,
-            fontSize: FONT_SIZE.xs,
+            fontSize: FONT_SIZE['2xs'],
             fontFamily: fontName.sans,
             paddingVertical: 10,
             paddingHorizontal: 16,

@@ -173,7 +173,7 @@ export function HomeError({ error, dark, fg }: {
 }): React.ReactElement {
   return (
     <Col padding={24} flex={1} align="center" justify="center" surface="surface">
-      <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+      <Text size="sm" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Button label="Reload" size="lg" pill color="primary" variant="solid" dark={dark}
         style={{ alignSelf: 'center', marginBottom: 12 }} onPress={() => { reloadApp(); }} />
       <Pressable
@@ -184,7 +184,7 @@ export function HomeError({ error, dark, fg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
 >
-        <Text size="md" color={DANGER}>
+        <Text size="sm" color={DANGER}>
           {RESET_TITLE}
         </Text>
       </Pressable>

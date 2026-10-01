@@ -47,7 +47,7 @@ export class BubbleErrorBoundary extends Component<Props, State> {
     if (this.state.failed) {
       return (
         <Box padding={{ x: PAGE_GUTTER, y: 6 }}>
-          <Text size="xl" selectable color={this.props.sub} style={{ opacity: 0.85, lineHeight: 21 }}>
+          <Text size="lg" selectable color={this.props.sub} style={{ opacity: 0.85, lineHeight: 21 }}>
             {this.fallbackText()}
           </Text>
         </Box>

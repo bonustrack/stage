@@ -8,7 +8,7 @@ export type LabelSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type LabelWeight = 'normal' | 'medium' | 'semibold' | 'bold';
 export type LabelAlign = 'start' | 'center' | 'end';
 
-const SIZE: Record<LabelSize, number> = { xs: SMALL_FONT_SIZE['2xs'], sm: FONT_SIZE.xs, md: FONT_SIZE.md, lg: FONT_SIZE.xl, xl: FONT_SIZE['4xl'] };
+const SIZE: Record<LabelSize, number> = { xs: SMALL_FONT_SIZE['3xs'], sm: FONT_SIZE['2xs'], md: FONT_SIZE.sm, lg: FONT_SIZE.lg, xl: FONT_SIZE['3xl'] };
 
 export interface LabelProps {
   value?: string;

@@ -32,13 +32,13 @@ function PaymentBalanceLine({ show, bal, pal }: {
   if (!show) return null;
   if (bal) {
     return (
-      <Text size="xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
+      <Text size="2xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
         {bal.text}
       </Text>
     );
   }
   return (
-    <Text size="xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
+    <Text size="2xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
       Balance: …
     </Text>
   );
@@ -89,14 +89,14 @@ export function PaymentCard({
       <Row align="center" justify="between" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
-          <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
+          <Text weight="semibold" size="sm" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
             {description}
           </Text>
         </Row>
         {badge ?? null}
       </Row>
       {amountLabel ? (
-        <Text weight="semibold" size="5xl" color={pal.link}>
+        <Text weight="semibold" size="4xl" color={pal.link}>
           {amountLabel}
         </Text>
       ) : null}

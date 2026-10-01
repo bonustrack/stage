@@ -57,7 +57,7 @@ function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
   selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
   if (isDeletedPlaceholder(entry)) {
-    return <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>{deletedTextOf(deletedByOf(entry))}</Text>;
+    return <Text size="2xl" color={fg} style={{ lineHeight: 23 }}>{deletedTextOf(deletedByOf(entry))}</Text>;
   }
   if (d.poll) {
     return d.poll.question ? (

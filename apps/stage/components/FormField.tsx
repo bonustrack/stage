@@ -56,12 +56,12 @@ export function useFieldColors(): { background: string; text: string; placeholde
 }
 
 function useFieldText(): { color: string; fontFamily: string; fontSize: number } {
-  return { color: useFieldColors().text, fontFamily: fontName.sans, fontSize: fontSize('2xl') };
+  return { color: useFieldColors().text, fontFamily: fontName.sans, fontSize: fontSize('xl') };
 }
 
 function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
   if (hint === undefined) return null;
-  return <Text value={hint} size="md" color={color} style={{ paddingHorizontal: 4 }} />;
+  return <Text value={hint} size="sm" color={color} style={{ paddingHorizontal: 4 }} />;
 }
 
 const BARE_INPUT = {
@@ -104,7 +104,7 @@ function StackedFrame({ field, label, labelTrailing, leading, trailing, backgrou
     <Col background={background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
       style={disabled === true ? { opacity: 0.6 } : undefined}>
       {label === undefined ? null : <Row align="center" gap={6}>
-        <Text value={label} size="lg" color="secondary" />
+        <Text value={label} size="md" color="secondary" />
         {labelTrailing}
       </Row>}
       <Row align="center" gap={8} minHeight={TRAILING_SLOT}>

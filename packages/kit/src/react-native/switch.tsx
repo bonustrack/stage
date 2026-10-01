@@ -59,7 +59,7 @@ export function Switch(props: SwitchProps): React.ReactElement {
         <RNText
           style={{
             color: dark ? '#ffffff' : '#000000',
-            fontSize: FONT_SIZE.md,
+            fontSize: FONT_SIZE.sm,
             fontFamily: fontName.sans,
           }}
         >

@@ -59,7 +59,7 @@ export function AlertHost(): React.ReactElement | null {
     <AppModal visible onClose={onClose} title={request.title}>
       <Col gap={8}>
         {request.message !== undefined && request.message !== '' ? (
-          <Text size="4xl" style={{ paddingVertical: 12 }}>{request.message}</Text>
+          <Text size="3xl" style={{ paddingVertical: 12 }}>{request.message}</Text>
         ) : null}
         <AlertButtons request={request} dark={dark} />
       </Col>

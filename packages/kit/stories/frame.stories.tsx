@@ -174,8 +174,8 @@ export const Controls: Story<FrameStoryArgs> = ({ sample, disabled, showJson }) 
     <Box gap={16}>
       <Frame widget={widget} dark={dark} disabled={disabled}
         onAction={(action, source) => { setLast({ action, label: source.label }); }} />
-      <Text variant="mono" size="xs" role="secondary" value={lastActionText(last?.action ?? null, last?.label)} />
-      {showJson ? <Text variant="mono" size="xs" role="secondary" value={JSON.stringify(widget, null, 2)} /> : null}
+      <Text variant="mono" size="2xs" role="secondary" value={lastActionText(last?.action ?? null, last?.label)} />
+      {showJson ? <Text variant="mono" size="2xs" role="secondary" value={JSON.stringify(widget, null, 2)} /> : null}
     </Box>
   );
 };

@@ -34,9 +34,9 @@ export interface CardProps {
 
 const PADDING: Record<CardSize, number> = { sm: 10, md: 14, lg: 18 };
 const STATUS_SIZE: Record<CardSize, number> = {
-  sm: SMALL_FONT_SIZE['2xs'],
-  md: FONT_SIZE.xs,
-  lg: FONT_SIZE.sm,
+  sm: SMALL_FONT_SIZE['3xs'],
+  md: FONT_SIZE['2xs'],
+  lg: FONT_SIZE.xs,
 };
 
 function palette(dark: boolean): { surface: string; border: string; sub: string } {

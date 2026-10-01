@@ -53,7 +53,7 @@ function AttachmentFile({ label, subtitle, fg, onPress, pending = false }: {
         </Box>
         <Col flex={1} minWidth={0} gap={2}>
           <Text weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
-          {subtitle ? <Text size="sm" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
+          {subtitle ? <Text size="xs" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
         </Col>
       </Row>
     </Card>
@@ -80,7 +80,7 @@ function AttachmentPending({ label, fg, compact }: { label: string; fg: string; 
     <MediaCard>
       <Col flex={1} padding={12} align="center" justify="center" gap={8}>
         <Spinner size={20} color={fg}/>
-        <Text size="xs" role="secondary" numberOfLines={1}>
+        <Text size="2xs" role="secondary" numberOfLines={1}>
           {label}
         </Text>
       </Col>

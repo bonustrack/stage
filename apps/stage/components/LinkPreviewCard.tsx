@@ -33,10 +33,10 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
           <Text color={subColor} numberOfLines={1} style={TEXT_11PX}>{domain}</Text>
         </Row>
         {meta.title ? (
-          <Text weight="semibold" size="4xl" numberOfLines={2}>{meta.title}</Text>
+          <Text weight="semibold" size="3xl" numberOfLines={2}>{meta.title}</Text>
         ) : null}
         {meta.description ? (
-          <Text size="md" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
+          <Text size="sm" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
             {meta.description}
           </Text>
         ) : null}

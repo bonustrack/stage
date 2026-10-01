@@ -26,7 +26,7 @@ export const Controls: Story<Pick<VoiceRecorderProps, 'slideThresholdPx'>> = (ar
   }, [recording]);
   return (
     <Col gap={12}>
-      <Text role="secondary" size="sm">{log}</Text>
+      <Text role="secondary" size="xs">{log}</Text>
       <Box surface="sunken" radius="xl" padding={8}>
         <VoiceRecorder
           {...args}

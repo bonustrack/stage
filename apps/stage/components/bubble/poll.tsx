@@ -60,7 +60,7 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   return (
     <Col gap={6}>
       {block.question === undefined ? null : (
-        <Text value={block.question} weight="semibold" size="3xl" />
+        <Text value={block.question} weight="semibold" size="2xl" />
       )}
       {block.header === undefined ? null : (
         <Caption value={block.header} color="secondary" weight="semibold" />

@@ -55,13 +55,13 @@ function WalletTokens({ rows, err, nativeChainIds, c }: {
   if (err && rows === null) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
-        <Text size="md" color={DANGER}>Couldn’t load tokens</Text>
+        <Text size="sm" color={DANGER}>Couldn’t load tokens</Text>
       </Col>
     );
   }
   if (rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Text size="md" color="secondary">Loading tokens</Text></Col>
+      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Text size="sm" color="secondary">Loading tokens</Text></Col>
     );
   }
   return (

@@ -108,7 +108,7 @@ function DayCell(props: {
           opacity: enabled ? 1 : 0.3,
         }}
       >
-        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>
+        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.sm, fontFamily: fontName.sans }}>
           {d.getDate()}
         </RNText>
       </View>
@@ -128,7 +128,7 @@ function MonthHeader(props: {
       <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { onShift(-1); }} hitSlop={8}>
         <Glyph icon={IconChevronLeft} size={20} color={head} />
       </Pressable>
-      <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.lg, fontFamily: fontName.head }}>
+      <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.md, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
       </RNText>
       <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { onShift(1); }} hitSlop={8}>
@@ -160,7 +160,7 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
       <View style={{ flexDirection: 'row' }}>
         {WEEKDAYS.map((w, i) => (
           <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 4 }}>
-            <RNText style={{ color: colors.sub, fontSize: SMALL_FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{w}</RNText>
+            <RNText style={{ color: colors.sub, fontSize: SMALL_FONT_SIZE['3xs'], fontFamily: fontName.sans }}>{w}</RNText>
           </View>
         ))}
       </View>

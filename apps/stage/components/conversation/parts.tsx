@@ -71,7 +71,7 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
       <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
-      <TitleText title={title} weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
+      <TitleText title={title} weight="semibold" size="3xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
     </Pressable>
   );
 }
@@ -83,7 +83,7 @@ function ReactionStrip({ stripBg, onReact }: {
     <Row background={stripBg} radius="full" padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ alignSelf: 'flex-start', ...MENU_SHADOW }}>
       {REACT_PRESETS.map(e => (
         <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
-          <Text size="5xl">{e}</Text>
+          <Text size="4xl">{e}</Text>
         </Pressable>
       ))}
     </Row>

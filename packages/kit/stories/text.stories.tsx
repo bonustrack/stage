@@ -10,7 +10,7 @@ const ROLES = ['default', 'secondary', 'muted', 'link', 'primary', 'danger', 'su
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold', 'regular'] as const;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
-Controls.args = { value: 'The quick brown fox jumps over the lazy dog', size: 'md', weight: 'normal', variant: 'body', role: 'default', textAlign: 'start', italic: false, lineThrough: false, truncate: false };
+Controls.args = { value: 'The quick brown fox jumps over the lazy dog', size: 'sm', weight: 'normal', variant: 'body', role: 'default', textAlign: 'start', italic: false, lineThrough: false, truncate: false };
 Controls.argTypes = {
   value: text, variant: select(VARIANTS), role: select(ROLES), size: select(FONT_SIZES), weight: select(WEIGHTS),
   color: select(COLOR_TOKENS), textAlign: select(ALIGNS), italic: bool, lineThrough: bool, truncate: bool, maxLines: number,

@@ -105,7 +105,7 @@ function AddButton({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: disabled ? 0.5 : pressed ? 0.7 : 1 })}
     >
       <Glyph icon={IconPlusLarge} size={14} color={disabled ? sub : fg} />
-      <Text size="md" color={disabled ? sub : fg}>Add</Text>
+      <Text size="sm" color={disabled ? sub : fg}>Add</Text>
     </Pressable>
   );
 }
@@ -167,7 +167,7 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
         {creatable ? (
           <PickerRow selected={false} label={`Create label ${typed}`} onPress={create}>
             <Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>
-            <Text size="md" numberOfLines={1} style={{ flexShrink: 1 }}>{`Create "${typed}"`}</Text>
+            <Text size="sm" numberOfLines={1} style={{ flexShrink: 1 }}>{`Create "${typed}"`}</Text>
           </PickerRow>
         ) : null}
         {shown.length === 0 && !creatable ? <PickerNote text="Type to create a label."/> : null}

@@ -38,7 +38,7 @@ export function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
           key={`${qi}-${voter}`}
           style={{ alignSelf: 'stretch' }}
 >
-          <Text size="lg" color={pal.text}>
+          <Text size="md" color={pal.text}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
         </Box>

@@ -87,7 +87,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
         {checked ? <Glyph icon={IconCheckmark1} size={size - 4} color={bg} /> : null}
       </View>
       {label ? (
-        <RNText style={{ color: head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>{label}</RNText>
+        <RNText style={{ color: head, fontSize: FONT_SIZE.sm, fontFamily: fontName.sans }}>{label}</RNText>
       ) : null}
     </Pressable>
   );

@@ -45,15 +45,15 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         <TokenRowAvatar logoUri={params.logoUri} chainBadgeUri={params.chainBadgeUri} />
       ) : null}
       <Col gap={2}>
-        <Text value={params.symbol} weight="semibold" size="2xl" truncate />
-        <Text value={params.name} color="secondary" size="md" />
+        <Text value={params.symbol} weight="semibold" size="xl" truncate />
+        <Text value={params.name} color="secondary" size="sm" />
       </Col>
       <Spacer />
       <Col gap={2} align="end">
-        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="2xl" textAlign="end" />}
+        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="xl" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
-          <Text value={params.priceUsd} color="secondary" size="md" />
-          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="md" />}
+          <Text value={params.priceUsd} color="secondary" size="sm" />
+          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="sm" />}
         </Row>
       </Col>
       {params.trailingChevron !== false ? (

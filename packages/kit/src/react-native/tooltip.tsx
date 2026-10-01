@@ -62,7 +62,7 @@ export function Tooltip({ label, trailing, arrow = 'down', dark, background, col
         }}
         onLayout={(e) => { onBubbleWidth?.(e.nativeEvent.layout.width); }}
       >
-        <Text size="xl" color={color ?? pal.link} numberOfLines={1} style={{ lineHeight: TOOLTIP.lineHeight, flexShrink: 1 }}>{label}</Text>
+        <Text size="lg" color={color ?? pal.link} numberOfLines={1} style={{ lineHeight: TOOLTIP.lineHeight, flexShrink: 1 }}>{label}</Text>
         {trailing}
       </View>
       {arrowFirst ? null : arrowBox}

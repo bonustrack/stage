@@ -27,7 +27,7 @@ function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }):
   const slot = useTopnavSlot();
   if (slot?.override) return <>{slot.override}</>;
   const title = rail ? WIDE_TAB_TITLES[pathname] : undefined;
-  const left = title === undefined ? undefined : <Text value={title} size="4xl" weight="semibold" />;
+  const left = title === undefined ? undefined : <Text value={title} size="3xl" weight="semibold" />;
   return <Topnav left={left} right={slot?.right} />;
 }
 

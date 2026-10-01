@@ -19,7 +19,7 @@ export function HighlightText({ text, query, fg }: {
           key={`${index}-${segment.value}`}
           value={segment.value}
           color={fg}
-          size="3xl"
+          size="2xl"
           style={{
             lineHeight: 23,
             minWidth: 0,

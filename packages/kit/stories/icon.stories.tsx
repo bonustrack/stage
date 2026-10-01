@@ -18,7 +18,7 @@ const STYLES = ['line', 'solid'] as const;
 const NAMES = Object.keys(ICONS) as CentralName[];
 const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
 const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
-const CELL_TEXT = { fontSize: SMALL_FONT_SIZE['3xs'] };
+const CELL_TEXT = { fontSize: SMALL_FONT_SIZE['4xs'] };
 const BRAND_NAMES = ['brandX', 'brandGithub', 'pin', 'brandApple', 'brandAndroid', 'brandWindows', 'brandLinux'] as const;
 
 function aliasesByName(): Map<CentralName, string[]> {

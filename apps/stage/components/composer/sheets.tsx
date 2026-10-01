@@ -67,7 +67,7 @@ function PollSheet(props: SheetProps): React.ReactElement {
       <Button variant="ghost" size="sm" dark={props.dark} onPress={() => { setOptions([...d.options, '']); }}
         label="Add option" icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />} />
       <Row align="center" justify="between" gap={12} padding={{ y: 4 }}>
-        <Text size="md" color={fg}>Allow multiple choices</Text>
+        <Text size="sm" color={fg}>Allow multiple choices</Text>
         <Switch name="Allow multiple choices" checked={d.multi} dark={props.dark} onChange={multi => { patch({ multi }); }} />
       </Row>
     </SheetShell>

@@ -48,20 +48,20 @@ function X402Detail({ accept, network, endpoint, pal, onOpen }: {
     <>
       {accept.payTo ? (
         <Row align="center" gap={6}>
-          <Text role="secondary" size="xs">To</Text>
-          <Text size="lg" weight="semibold" color={pal.text} numberOfLines={1}>
+          <Text role="secondary" size="2xs">To</Text>
+          <Text size="md" weight="semibold" color={pal.text} numberOfLines={1}>
             {shortAddress(accept.payTo)}
           </Text>
         </Row>
       ) : null}
       <Row align="center" gap={6}>
-        <Text role="secondary" size="xs">On</Text>
-        <Text size="sm" color={pal.sub} numberOfLines={1}>{network}</Text>
+        <Text role="secondary" size="2xs">On</Text>
+        <Text size="xs" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
       <Pressable onPress={onOpen}>
         <Row align="center" gap={6}>
           <Glyph icon={IconChainLink3} size={13} color={pal.sub}/>
-          <Text size="xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
+          <Text size="2xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
             {domainOf(endpoint)}
           </Text>
         </Row>

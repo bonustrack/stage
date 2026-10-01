@@ -27,7 +27,7 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
 />
         <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
-            <Text size="5xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
+            <Text size="4xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
           </Box>
         </Box>
       </Box>
@@ -119,7 +119,7 @@ export function LocationEmbed({ lat, lng, dark }: {
         <MapAttribution/>
       </Box>
       <Row padding={{ x: 10, y: 8 }} align="center" justify="between" gap={8}>
-        <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
+        <Text weight="semibold" size="2xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
         <Text role="secondary" numberOfLines={1} style={TEXT_11PX}>

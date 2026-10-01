@@ -38,7 +38,7 @@ function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }
         iconStart={<Glyph icon={icon} size={24} color={fg} dark={dark} />}
         onPress={onPress}
       />
-      <Text value={label} weight="semibold" size="md" color={fg} truncate />
+      <Text value={label} weight="semibold" size="sm" color={fg} truncate />
     </Col>
   );
 }
