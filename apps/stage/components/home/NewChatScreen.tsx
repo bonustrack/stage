@@ -7,7 +7,6 @@ import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { sendDraft } from '../composer/actions';
-import { resolveErrorMessage } from '../conversation/conv.hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -19,7 +18,6 @@ import { useNewChatFocusNonce } from './newChatFocus';
 import {
   NO_RECIPIENT_NOTE, chatKey, phaseNote, pickedRecipients, recipientCandidates, shownRecipients, type NewChatPhase,
 } from './newChat.model';
-import { resolveDmConvId } from '../../lib/dmResolve';
 import { capabilities } from '../../lib/capabilities';
 import { useClearedChats } from '../../lib/clearedChats';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
@@ -27,7 +25,7 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  convIdOfLine, createGroup, lineOfConv, shortAddress, subscribeCachedRows, useActiveAccountRecord,
+  convIdOfLine, createGroup, shortAddress, subscribeCachedRows, useActiveAccountRecord,
 } from '../../modules/messaging';
 
 interface Recipients {
@@ -47,8 +45,8 @@ function useRecipients(): Recipients {
   );
   const [added, setAdded] = useState<string[]>([]);
   const [chosen, setChosen] = useState<string[] | null>(null);
-  const shown = useMemo(() => shownRecipients(candidates, added), [candidates, added]);
   const picked = pickedRecipients(chosen, candidates);
+  const shown = shownRecipients(candidates, added, picked);
   usePeerProfiles(shown);
   const toggle = (address: string): void => {
     setChosen(toggleKey(picked, address));
@@ -58,12 +56,8 @@ function useRecipients(): Recipients {
   return { shown, picked, toggle, reset };
 }
 
-async function openRecipients(addresses: readonly string[]): Promise<string> {
-  const only = addresses.length === 1 ? addresses[0] : undefined;
-  if (only === undefined) return (await createGroup([...addresses])).line;
-  const res = await resolveDmConvId(only);
-  if ('convId' in res) return lineOfConv(res.convId);
-  throw new Error(resolveErrorMessage(res.error, res.detail));
+async function createChannel(addresses: readonly string[]): Promise<string> {
+  return (await createGroup([...addresses])).line;
 }
 
 function useStartChat(draft: ComposerState, onOpened: (line: string) => void): {
@@ -79,7 +73,7 @@ function useStartChat(draft: ComposerState, onOpened: (line: string) => void): {
     if (opened.current?.key === key) return opened.current.line;
     setPhase('creating');
     try {
-      const line = await openRecipients(addresses);
+      const line = await createChannel(addresses);
       opened.current = { key, line };
       return line;
     } catch (err) {

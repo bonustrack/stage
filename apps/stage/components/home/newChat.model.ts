@@ -2,7 +2,7 @@ import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.mode
 
 export type NewChatPhase = 'idle' | 'creating' | 'sending';
 
-export const RECENT_RECIPIENTS = 12;
+export const MAX_SHOWN_RECIPIENTS = 5;
 
 export const NO_RECIPIENT_NOTE = 'Pick who to send it to.';
 
@@ -29,16 +29,20 @@ export function recentPeers(rows: readonly PeerRow[], self: string | null): stri
 }
 
 export function recipientCandidates(
-  rows: readonly PeerRow[], self: string | null, pool: readonly string[] = SUGGESTED_CONTACTS, limit = RECENT_RECIPIENTS,
+  rows: readonly PeerRow[], self: string | null, pool: readonly string[] = SUGGESTED_CONTACTS,
 ): string[] {
   const peers = recentPeers(rows, self);
   const suggested = suggestedContacts(peers, self, pool).map(address => address.toLowerCase());
-  return [...peers.slice(0, limit), ...suggested];
+  return [...peers, ...suggested];
 }
 
-export function shownRecipients(candidates: readonly string[], added: readonly string[]): string[] {
+export function shownRecipients(
+  candidates: readonly string[], added: readonly string[], picked: readonly string[], max = MAX_SHOWN_RECIPIENTS,
+): string[] {
   const known = new Set(candidates.map(address => address.toLowerCase()));
-  return [...added.filter(address => !known.has(address.toLowerCase())), ...candidates];
+  const all = [...added.filter(address => !known.has(address.toLowerCase())), ...candidates];
+  const chosen = new Set(picked.map(address => address.toLowerCase()));
+  return all.filter((address, i) => i < max || chosen.has(address.toLowerCase()));
 }
 
 export function pickedRecipients(picked: readonly string[] | null, candidates: readonly string[]): string[] {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  RECENT_RECIPIENTS, chatKey, phaseNote, pickedRecipients, recentPeers, recipientCandidates, shownRecipients,
+  MAX_SHOWN_RECIPIENTS, chatKey, phaseNote, pickedRecipients, recentPeers, recipientCandidates, shownRecipients,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
@@ -28,11 +28,12 @@ describe('new chat recipients', () => {
     expect(recipientCandidates([dm('0xb0b', 1), dm(ALICE, 2)], SELF, POOL)).toEqual([ALICE.toLowerCase(), '0xb0b']);
   });
 
-  test('only the most recent people are listed', () => {
-    const rows = Array.from({ length: RECENT_RECIPIENTS + 3 }, (_, i) => dm(`0x${i.toString(16)}`, i));
-    const candidates = recipientCandidates(rows, SELF, []);
-    expect(candidates).toHaveLength(RECENT_RECIPIENTS);
-    expect(candidates[0]).toBe(`0x${(RECENT_RECIPIENTS + 2).toString(16)}`);
+  test('at most five people show, most recent first, unless more are picked', () => {
+    const rows = Array.from({ length: 8 }, (_, i) => dm(`0x${i}`, i));
+    const candidates = recipientCandidates(rows, SELF, POOL);
+    expect(candidates.slice(0, 2)).toEqual(['0x7', '0x6']);
+    expect(shownRecipients(candidates, [], ['0x7'])).toEqual(['0x7', '0x6', '0x5', '0x4', '0x3']);
+    expect(shownRecipients(candidates, [], ['0x0'])).toHaveLength(MAX_SHOWN_RECIPIENTS + 1);
   });
 
   test('the first person is picked until the choice is changed, even to nobody', () => {
@@ -43,7 +44,7 @@ describe('new chat recipients', () => {
   });
 
   test('people added by search show before the suggestions, once', () => {
-    expect(shownRecipients(['0xa', '0xb'], ['0xd', '0xB'])).toEqual(['0xd', '0xa', '0xb']);
+    expect(shownRecipients(['0xa', '0xb'], ['0xd', '0xB'], [])).toEqual(['0xd', '0xa', '0xb']);
   });
 
   test('a created chat is reused only for the same people', () => {

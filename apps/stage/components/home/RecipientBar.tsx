@@ -18,9 +18,9 @@ import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
 const AVATAR_PX = 32;
-const RING = 2;
-const RING_GAP = 2;
-const SLOT_PX = AVATAR_PX + (RING + RING_GAP) * 2;
+const AVATAR_GAP = 8;
+const UNPICKED_OPACITY = 0.4;
+const HOVER_OPACITY = 0.7;
 const PICKER_WIDTH = 300;
 const ADD_LABEL = 'Add people';
 const PICK_RIGHTS = { add: true, remove: true };
@@ -28,7 +28,6 @@ const PICK_RIGHTS = { add: true, remove: true };
 function RecipientAvatar({ address, picked, onToggle }: {
   address: string; picked: boolean; onToggle: (address: string) => void;
 }): React.ReactElement {
-  const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
   const name = getPeerName(address) ?? shortAddress(address);
   return (
@@ -39,10 +38,7 @@ function RecipientAvatar({ address, picked, onToggle }: {
         accessibilityState={{ checked: picked }}
         accessibilityLabel={name}
         {...hoverProps}
-        style={{
-          padding: RING_GAP, borderRadius: SLOT_PX, borderWidth: RING, borderColor: picked ? link : 'transparent',
-          opacity: picked || hovered ? 1 : 0.45,
-        }}
+        style={{ borderRadius: AVATAR_PX, opacity: picked ? 1 : hovered ? HOVER_OPACITY : UNPICKED_OPACITY }}
       >
         <Avatar address={address} size={AVATAR_PX}/>
       </Pressable>
@@ -51,13 +47,13 @@ function RecipientAvatar({ address, picked, onToggle }: {
 }
 
 function AddPeopleButton({ onPress }: { onPress: (event: GestureResponderEvent) => void }): React.ReactElement {
-  const { text, link, bg } = usePalette();
+  const { text, link, border } = usePalette();
   const { hovered, hoverProps } = useHover();
   return (
     <HoverTooltip label={ADD_LABEL} placement="above">
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={ADD_LABEL} {...hoverProps}
-        style={{ width: SLOT_PX, height: SLOT_PX, borderRadius: SLOT_PX, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <Glyph icon={IconPlusLarge} size={18} color={hovered ? link : text}/>
+        style={{ width: AVATAR_PX, height: AVATAR_PX, borderRadius: AVATAR_PX, alignItems: 'center', justifyContent: 'center', backgroundColor: border }}>
+        <Glyph icon={IconPlusLarge} size={16} color={hovered ? link : text}/>
       </Pressable>
     </HoverTooltip>
   );
@@ -66,14 +62,13 @@ function AddPeopleButton({ onPress }: { onPress: (event: GestureResponderEvent) 
 export function RecipientBar({ shown, picked, onToggle, note }: {
   shown: readonly string[]; picked: readonly string[]; onToggle: (address: string) => void; note: string | null;
 }): React.ReactElement {
-  const { border } = usePalette();
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const [open, setOpen] = useState(false);
   return (
-    <Col background={border} padding={{ top: 10 }} gap={6}>
+    <Col padding={{ bottom: 10 }} gap={6}>
       <Scroll horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Row align="center" gap={6} padding={{ x: PAGE_GUTTER - RING - RING_GAP }}>
+        <Row align="center" gap={AVATAR_GAP} padding={{ x: PAGE_GUTTER }}>
           {shown.map(address => (
             <RecipientAvatar key={address} address={address} picked={includesKey(picked, address)} onToggle={onToggle}/>
           ))}
