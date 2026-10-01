@@ -1,3 +1,5 @@
+import type { PointerEvent } from 'react-native';
+
 export interface ContextMenuEvent {
   preventDefault: () => void;
   clientX: number;
@@ -8,4 +10,8 @@ export interface ContextMenuEvent {
 
 export interface ContextMenuProps {
   onContextMenu?: (event: ContextMenuEvent) => void;
+}
+
+export interface HoldMenuProps {
+  onPointerDown?: (event: PointerEvent) => void;
 }

@@ -33,7 +33,6 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 
 const THRESHOLD = -64;
 const SWIPE_TO_REPLY = Platform.OS !== 'web';
-const WEB_DOUBLE_CLICK_MAX_GAP_MS = 150;
 
 export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const { pending, onReply, onReact, onOpenMenu } = input;
@@ -85,11 +84,8 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   },
   [onReply, pending, swipeX, crossed, navGestureRef]);
 
-  const doubleTap = useMemo(() => {
-    const tap = keepsFeedScrollable(Gesture.Tap()).numberOfTaps(2);
-    if (Platform.OS === 'web') tap.maxDelay(WEB_DOUBLE_CLICK_MAX_GAP_MS);
-    return tap.onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); });
-  }, [onDoubleTap]);
+  const doubleTap = useMemo(() => keepsFeedScrollable(Gesture.Tap()).numberOfTaps(2)
+    .onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); }), [onDoubleTap]);
   const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
     .onStart((e) => { runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY }); }), [openMenu]);
   const tapGestures = useMemo(() => {

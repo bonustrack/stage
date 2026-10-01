@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -6,9 +7,10 @@ import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
 import { Col, PAGE_GUTTER } from '../layout';
 import type { MessengerBubbleProps } from './props';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
-import { contextMenuProps } from '../../lib/contextMenu';
+import { contextMenuProps, holdMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { useBubbleGestures } from './gestures';
@@ -63,28 +65,29 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
   const g = useBubbleGestures(props);
-  return (
-    <GestureDetector gesture={g.tapGestures}>
+  const openMenu = (point: MenuPoint): void => { g.openMenu(point); };
+  const row = (
+    <Animated.View
+      ref={g.rowRef}
+      {...contextMenuProps(openMenu)}
+      {...holdMenuProps(openMenu)}
+      style={[g.swipeStyle, {
+        flexDirection: 'row', alignItems: 'flex-start',
+        paddingHorizontal: PAGE_GUTTER, paddingVertical: 6, gap: 10,
+        backgroundColor: rowBackground(replyTarget, dark),
+      }]}
+    >
       <Animated.View
-        ref={g.rowRef}
-        {...contextMenuProps(point => { g.openMenu(point); })}
-        style={[g.swipeStyle, {
-          flexDirection: 'row', alignItems: 'flex-start',
-          paddingHorizontal: PAGE_GUTTER, paddingVertical: 6, gap: 10,
-          backgroundColor: rowBackground(replyTarget, dark),
-        }]}
+        pointerEvents="none"
+        style={[g.replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
       >
-        <Animated.View
-          pointerEvents="none"
-          style={[g.replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
-        >
-          <Glyph icon={IconArrowUndoUp} size={20} color={sub}/>
-        </Animated.View>
-        <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
-        <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} />
+        <Glyph icon={IconArrowUndoUp} size={20} color={sub}/>
       </Animated.View>
-    </GestureDetector>
+      <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
+      <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} />
+    </Animated.View>
   );
+  return Platform.OS === 'web' ? row : <GestureDetector gesture={g.tapGestures}>{row}</GestureDetector>;
 }
 
 const DATA_KEYS = [
