@@ -36,11 +36,12 @@ function isLabelList(value: unknown): value is string[] {
 }
 
 export function useLiveChannelLabels(convId: string | undefined): string[] {
-  const read = useCallback((): string[] => {
+  const read = useCallback((): string => {
     const labels = getCachedRows()?.find((row) => row.convId === convId)?.labels;
-    return isLabelList(labels) ? labels : NO_LABELS;
+    return isLabelList(labels) ? labels.join('\n') : '';
   }, [convId]);
-  return useStoreValue(subscribeCachedRows, read);
+  const key = useStoreValue(subscribeCachedRows, read);
+  return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
 }
 
 export async function writeLabels(line: string, edits: ListEdits): Promise<string[] | null> {
