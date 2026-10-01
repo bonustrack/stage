@@ -40,6 +40,8 @@ interface EditorProps {
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   busy?: boolean;
+  placeholder?: string;
+  rounded?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -92,7 +94,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         name="composer"
         value={p.text}
         onKeyPress={makeWebEnterToSend(p)}
-        placeholder="Message"
+        placeholder={p.placeholder ?? 'Message'}
         variant="plain"
         multiline
         autoGrow
@@ -154,10 +156,14 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   );
 }
 
+export function composerRadius(rounded: boolean | undefined): 'sm' | 'none' {
+  return rounded === true ? 'sm' : 'none';
+}
+
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius="none">
+    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}

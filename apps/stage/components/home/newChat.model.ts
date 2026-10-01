@@ -1,4 +1,5 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.model';
+import { reactorsLabel } from '../conversation/reactors.model';
 
 export const MAX_SHOWN_RECIPIENTS = 5;
 
@@ -80,4 +81,8 @@ export function pickedRecipients(picked: readonly string[] | null, candidates: r
   if (picked !== null) return [...picked];
   const first = candidates[0];
   return first === undefined ? [] : [first];
+}
+
+export function askPlaceholder(names: readonly string[]): string | undefined {
+  return names.length === 0 ? undefined : `Ask ${reactorsLabel(names)}`;
 }
