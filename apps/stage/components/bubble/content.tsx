@@ -16,7 +16,7 @@ import {
 import { QuestionView } from './question';
 import { PollView } from './poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
-import { FrameCard } from '../frame/FrameCard';
+import { FramePreview } from '../frame/FramePreview';
 import { frameOf } from '../frame/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
@@ -89,7 +89,9 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
         <TxRequestCard req={d.txReq} dark={p.dark} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} />
       ) : null}
       {d.txReceipt ? <TxReceiptCard receipt={d.txReceipt} dark={p.dark} /> : null}
-      {d.frame ? <FrameCard frame={d.frame} line={p.entry.line} messageId={p.entry.id} /> : null}
+      {d.frame ? (
+        <FramePreview frame={d.frame} line={p.entry.line} messageId={p.entry.id} disabled={p.consentAllowed === false} />
+      ) : null}
     </>
   );
 }

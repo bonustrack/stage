@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseFrameDoc } from '@stage-labs/kit/frame';
+import { kitPalette } from '@stage-labs/kit/tokens';
 import {
-  frameActionContent, frameCardModel, frameInputOf, frameLinkOf, frameOf, frameScreenTitle,
+  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameLinkOf, frameOf, framePreviewClipped,
+  frameScreenTitle,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -86,5 +88,29 @@ describe('frames with screens', () => {
     expect(frameScreenTitle(frame, parsed, 's1')).toBe('Story');
     expect(frameScreenTitle(frame, parsed, 's2')).toBe('Hacker News');
     expect(frameScreenTitle(frame, parsed, 'missing')).toBe('Hacker News');
+  });
+});
+
+describe('the frame preview in the feed', () => {
+  const light = kitPalette('light');
+  const dark = kitPalette('dark');
+
+  test('the backdrop is the start screen root background, else the page background', () => {
+    expect(frameBackdrop({ widget }, 'light', light)).toBe(light.bg);
+    expect(frameBackdrop({ widget: { type: 'Card', background: '#1d4ed8' } }, 'dark', dark)).toBe('#1d4ed8');
+    expect(frameBackdrop({ widget: { type: 'Basic', background: { light: '#ffffff', dark: '#000000' } } }, 'dark', dark)).toBe('#000000');
+    expect(frameBackdrop({ screens: { home: { type: 'Card', background: '#123456' }, s1: widget } }, 'light', light)).toBe('#123456');
+    expect(frameBackdrop({ widget: { type: 'Iframe' } }, 'light', light)).toBe(light.bg);
+  });
+
+  test('a root with its own theme uses that theme', () => {
+    expect(frameBackdrop({ widget: { type: 'ListView', theme: 'dark', children: [] } }, 'light', light)).toBe(dark.bg);
+    expect(frameBackdrop({ widget: { type: 'Card', theme: 'light', background: { light: '#eeeeee', dark: '#111111' } } }, 'dark', dark)).toBe('#eeeeee');
+  });
+
+  test('it is clipped only past the image height less its border', () => {
+    expect(framePreviewClipped(0)).toBe(false);
+    expect(framePreviewClipped(398)).toBe(false);
+    expect(framePreviewClipped(399)).toBe(true);
   });
 });
