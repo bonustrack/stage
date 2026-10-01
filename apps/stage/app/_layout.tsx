@@ -28,6 +28,7 @@ import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
 import { AddMembersHost } from '../components/channel/AddMembers';
+import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
@@ -125,6 +126,7 @@ function RootLayoutInner(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
+      <KeyboardResync/>
       <StatusBar style={barStyle}/>
       <WebContentFrame>
       <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
