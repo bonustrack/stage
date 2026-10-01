@@ -1,7 +1,5 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.model';
 
-export type NewChatPhase = 'idle' | 'creating' | 'sending';
-
 export const MAX_SHOWN_RECIPIENTS = 5;
 
 export const REQUEST_CHECK_LIMIT = 10;
@@ -60,8 +58,4 @@ export function pickedRecipients(picked: readonly string[] | null, candidates: r
   if (picked !== null) return [...picked];
   const first = candidates[0];
   return first === undefined ? [] : [first];
-}
-
-export function chatKey(addresses: readonly string[]): string {
-  return addresses.map(a => a.toLowerCase()).sort().join(',');
 }

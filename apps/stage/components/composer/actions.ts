@@ -10,6 +10,8 @@ import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './send';
+import { fileInputs } from './send.model';
+import { prepareAttachments, uploadAttachments } from '../../modules/messaging';
 import { unsentDraft } from './draft.model';
 import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
@@ -38,8 +40,9 @@ async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: strin
     const resolvedMime = mimeOf(mime, name ?? uri);
     const kind = kindOf(resolvedMime);
     const size = await fetch(uri).then(r => r.blob()).then(b => b.size).catch(ignored(0, 'optional'));
-    const id = mintAttachmentId();
-    a.setPending(prev => [...prev, { id, url: uri, kind, mime: resolvedMime, size, name }]);
+    const attachment = { id: mintAttachmentId(), url: stashLocalAttachment(uri), kind, mime: resolvedMime, size, name };
+    a.setPending(prev => [...prev, attachment]);
+    prepareAttachments(fileInputs([attachment]));
   } catch (e) { a.setErr((e as Error).message); }
   finally { a.setUploading(false); }
 }
@@ -120,7 +123,8 @@ async function runSendSteps(a: DraftArgs, steps: SendStep[]): Promise<SendStep[]
 }
 
 function beginSend(a: DraftArgs, line: string, body: string): SendStep[] {
-  const sendingAttachments = a.pending.map((at) => ({ ...at, url: stashLocalAttachment(at.url) }));
+  const sendingAttachments = a.pending;
+  uploadAttachments(fileInputs(sendingAttachments));
   const sendingReplyTo = a.replyingTo?.id;
   const steps = planSendSteps(line, body, sendingAttachments, sendingReplyTo);
   steps.forEach((s, i) => a.onOptimistic?.({
@@ -147,16 +151,6 @@ async function performSend(a: ComposerActionsArgs, current: () => ComposerAction
     a.setText(kept.text);
     a.setPending(kept.pending);
   }
-}
-
-export async function sendDraft(a: DraftArgs, line: string): Promise<boolean> {
-  const { text, pending } = a;
-  const unsent = await runSendSteps(a, beginSend(a, line, text.trim()));
-  if (unsent.length === 0) return true;
-  const kept = unsentDraft(text, pending, unsent);
-  a.setText(kept.text);
-  a.setPending(kept.pending);
-  return false;
 }
 
 const KEYBOARD_HIDE_WAIT_MS = 500;
@@ -197,5 +191,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a, () => current.current),
+    sendDraft: (draft: Pick<ComposerState, 'text' | 'pending'>) => performSend({ ...a, ...draft }, () => current.current),
   };
 }

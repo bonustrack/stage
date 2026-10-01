@@ -36,7 +36,7 @@ export {
 } from '../../lib/xmtp.messages';
 
 export {
-  xmtpSendMultiRemoteAttachment, resolveRemoteAttachment,
+  xmtpSendMultiRemoteAttachment, resolveRemoteAttachment, prepareAttachments, uploadAttachments, forgetAttachments,
 } from '../../lib/xmtp.attachments';
 
 export { subscribeAllMessages } from '../../lib/xmtp.stream';

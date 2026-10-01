@@ -10,6 +10,7 @@ import { withMainThreadWasm } from './xmtp.wasm.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
+import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
 
 export { swarmToHttp } from './swarmy';
 
@@ -47,36 +48,37 @@ async function uploadEncryptedToSwarm(payload: Uint8Array, filename: string): Pr
   return await uploadFormToSwarmy(form, filename);
 }
 
-async function remoteAttachmentOf(f: LocalAttachmentInput): Promise<RemoteAttachment> {
-  const sourceMime = attachmentMimeType(f.mimeType, f.filename);
-  const raw = await fetchBytes(f.fileUri);
-  const filename = f.filename;
-  const clean = sanitizeAttachmentBytes(raw, sourceMime, filename);
-  const encrypted = await encryptSanitizedAttachment({
-    bytes: clean, mimeType: sourceMime, filename,
-  });
-  const url = await uploadEncryptedToSwarm(encrypted.payload, filename);
+async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
+  const mimeType = attachmentMimeType(f.mimeType, f.filename);
+  const clean = sanitizeAttachmentBytes(await fetchBytes(f.fileUri), mimeType, f.filename);
+  return await encryptSanitizedAttachment({ bytes: clean, mimeType, filename: f.filename });
+}
+
+async function storedRemoteAttachment(encrypted: EncryptedAttachment, f: LocalAttachmentInput): Promise<RemoteAttachment> {
   return {
-    url,
+    url: await uploadEncryptedToSwarm(encrypted.payload, f.filename),
     contentDigest: encrypted.contentDigest,
     secret: encrypted.secret,
     salt: encrypted.salt,
     nonce: encrypted.nonce,
     scheme: 'https://',
     contentLength: encrypted.contentLength,
-    filename,
+    filename: f.filename,
   };
 }
+
+const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
+
+export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[],
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
-  const conv = await withReadableSendError(() => sendableConvOfLine(line));
-
-  const infos: RemoteAttachment[] = [];
-  for (const f of files) infos.push(await remoteAttachmentOf(f));
-  return await withReadableSendError(() => conv.sendMultiRemoteAttachment({ attachments: infos }));
+  const [conv, infos] = await Promise.all([withReadableSendError(() => sendableConvOfLine(line)), prep.uploaded(files)]);
+  const id = await withReadableSendError(() => conv.sendMultiRemoteAttachment({ attachments: infos }));
+  prep.forget(files);
+  return id;
 }
 
 export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{

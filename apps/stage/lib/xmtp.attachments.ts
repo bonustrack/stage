@@ -14,6 +14,7 @@ import {
   type SanitizedFileUri,
 } from './xmtp.swarm';
 import { attachmentMimeType } from './attachmentFiles';
+import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
 import { attempt } from './errorPolicy';
 
 export { swarmToHttp } from './xmtp.swarm';
@@ -30,29 +31,32 @@ export async function encryptSanitizedAttachment(
   return await client.encryptAttachment(file);
 }
 
+async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedLocalAttachment> {
+  const client = await xmtpClient();
+  const fileUri = await materializeFileUri(f.fileUri);
+  const mimeType = attachmentMimeType(f.mimeType, f.filename);
+  const cleanUri = await sanitizeFileUri(fileUri, mimeType, f.filename);
+  return await encryptSanitizedAttachment(client, { fileUri: cleanUri, mimeType, filename: f.filename });
+}
+
+async function storedRemoteAttachment(encrypted: EncryptedLocalAttachment, f: LocalAttachmentInput): Promise<RemoteAttachmentInfo> {
+  const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
+  return MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, { ...encrypted.metadata, filename: f.filename });
+}
+
+const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
+
+export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
+
 export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[],
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
-  const conv = await withReadableSendError(() => sendableConvOfLine(line));
-  const client = await xmtpClient();
-
-  const infos: RemoteAttachmentInfo[] = [];
-  for (const f of files) {
-    const fileUri = await materializeFileUri(f.fileUri);
-    const mimeType = attachmentMimeType(f.mimeType, f.filename);
-    const cleanUri = await sanitizeFileUri(fileUri, mimeType, f.filename);
-    const encrypted = await encryptSanitizedAttachment(client, {
-      fileUri: cleanUri, mimeType, filename: f.filename,
-    });
-    const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
-    infos.push(MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, {
-      ...encrypted.metadata, filename: f.filename,
-    }));
-  }
-
+  const [conv, infos] = await Promise.all([withReadableSendError(() => sendableConvOfLine(line)), prep.uploaded(files)]);
   const payload: MultiRemoteAttachmentContent = { attachments: infos };
-  return await withReadableSendError(() => conv.send({ multiRemoteAttachment: payload }));
+  const id = await withReadableSendError(() => conv.send({ multiRemoteAttachment: payload }));
+  prep.forget(files);
+  return id;
 }
 
 export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promise<{

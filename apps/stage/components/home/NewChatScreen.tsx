@@ -7,7 +7,8 @@ import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
-import { sendDraft } from '../composer/actions';
+import { handDraftTo } from '../composer/handoff';
+import { fileInputs } from '../composer/send.model';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -17,8 +18,7 @@ import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, chatKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
-  type DmPeer, type NewChatPhase,
+  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients, type DmPeer,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
@@ -28,7 +28,7 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  convIdOfLine, createGroup, getConvConsentState, shortAddress, subscribeCachedRows, useActiveAccountRecord,
+  convIdOfLine, createGroup, getConvConsentState, shortAddress, subscribeCachedRows, uploadAttachments, useActiveAccountRecord,
 } from '../../modules/messaging';
 
 interface Recipients {
@@ -86,53 +86,37 @@ function useRecipients(drafting: boolean): Recipients {
   return { shown, picked, toggle, reset };
 }
 
-async function createChannel(addresses: readonly string[]): Promise<string> {
-  return (await createGroup([...addresses])).line;
-}
-
-function useStartChat(draft: ComposerState, onOpened: (line: string) => void): {
-  phase: NewChatPhase; start: (addresses: readonly string[]) => Promise<void>;
+function useStartChat(draft: ComposerState, onOpened: (convId: string) => void): {
+  creating: boolean; start: (addresses: readonly string[]) => Promise<void>;
 } {
-  const [phase, setPhase] = useState<NewChatPhase>('idle');
-  const opened = useRef<{ key: string; line: string } | null>(null);
+  const [creating, setCreating] = useState(false);
   const busy = useRef(false);
-  const latest = useRef(draft);
-  latest.current = draft;
-  const lineFor = async (addresses: readonly string[]): Promise<string | null> => {
-    const key = chatKey(addresses);
-    if (opened.current?.key === key) return opened.current.line;
-    setPhase('creating');
-    try {
-      const line = await createChannel(addresses);
-      opened.current = { key, line };
-      return line;
-    } catch (err) {
-      capabilities.toast(errorMessage(err));
-      return null;
-    }
-  };
   const start = async (addresses: readonly string[]): Promise<void> => {
     if (busy.current) return;
     if (addresses.length === 0) { capabilities.toast(NO_RECIPIENT_NOTE); return; }
     busy.current = true;
+    setCreating(true);
+    const handed = { text: draft.text, pending: draft.pending };
+    uploadAttachments(fileInputs(handed.pending));
     try {
-      const line = await lineFor(addresses);
-      if (line === null) return;
-      setPhase('sending');
-      if (await sendDraft(latest.current, line)) {
-        opened.current = null;
-        onOpened(line);
-      }
+      const convId = convIdOfLine((await createGroup([...addresses])).line);
+      if (convId === null) return;
+      handDraftTo(convId, handed);
+      draft.setText('');
+      draft.setPending([]);
+      onOpened(convId);
+    } catch (err) {
+      capabilities.toast(errorMessage(err));
     } finally {
       busy.current = false;
-      setPhase('idle');
+      setCreating(false);
     }
   };
-  return { phase, start };
+  return { creating, start };
 }
 
-function NewChatFooter({ recipients, draft, phase, onSubmit }: {
-  recipients: Recipients; draft: ComposerState; phase: NewChatPhase; onSubmit: () => void;
+function NewChatFooter({ recipients, draft, creating, onSubmit }: {
+  recipients: Recipients; draft: ComposerState; creating: boolean; onSubmit: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -140,11 +124,11 @@ function NewChatFooter({ recipients, draft, phase, onSubmit }: {
   const mentionCandidates = recipients.picked.map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }));
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
-      <Box style={{ pointerEvents: phase === 'idle' ? 'auto' : 'none' }}>
+      <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
         <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
           onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
         <MessengerComposer dark={dark} state={draft} suggestContacts mentionCandidates={mentionCandidates}
-          autoFocusNonce={focusNonce} onSubmit={onSubmit}/>
+          autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
         <Box height={insets.bottom} surface="raised"/>
       </Box>
     </KeyboardStickyView>
@@ -159,14 +143,13 @@ export function NewChatScreen(): React.ReactElement {
   const [footerH, setFooterH] = useState(0);
   const draft = useComposerState();
   const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0);
-  const { phase, start } = useStartChat(draft, (line) => {
+  const { creating, start } = useStartChat(draft, (convId) => {
     recipients.reset();
-    const convId = convIdOfLine(line);
-    if (convId !== null) router.replace({ pathname: '/channel/[convId]', params: { convId } });
+    router.replace({ pathname: '/channel/[convId]', params: { convId } });
   });
   return (
     <Col flex={1} surface="surface">
-      <ChatColumn>{phase === 'idle' ? null : <ChatColumnSpinner bottomInset={footerH}/>}</ChatColumn>
+      <ChatColumn>{creating ? <ChatColumnSpinner bottomInset={footerH}/> : null}</ChatColumn>
       <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}>
         <Box flex={1}/>
         <Row align="center" padding={{ right: PAGE_GUTTER }}>
@@ -174,7 +157,7 @@ export function NewChatScreen(): React.ReactElement {
         </Row>
       </ConvTopnavShell>
       <FooterDock height={footerH} onHeight={setFooterH} memberList={memberList}>
-        <NewChatFooter recipients={recipients} draft={draft} phase={phase} onSubmit={() => { void start(recipients.picked); }}/>
+        <NewChatFooter recipients={recipients} draft={draft} creating={creating} onSubmit={() => { void start(recipients.picked); }}/>
       </FooterDock>
       {memberList ? <ConversationSidebar/> : null}
     </Col>

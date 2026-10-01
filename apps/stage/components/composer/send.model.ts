@@ -3,6 +3,10 @@ import type { LocalAttachmentInput } from '../../modules/messaging';
 import { isLocation, locationText } from './location.model';
 import type { Attachment } from './types';
 
+export function fileInputs(attachments: readonly Attachment[]): LocalAttachmentInput[] {
+  return attachments.filter(at => !isLocation(at)).map(at => ({ fileUri: at.url, ...outgoingFileMeta(at) }));
+}
+
 export interface SendStep {
   localId: string;
   text: string;
@@ -37,10 +41,7 @@ export function planSendSteps(
   if (files.length > 0) {
     steps.push({
       localId: mintLocalId(), text: '', attachments: files,
-      run: () => senders.attachments(
-        xmtpLine,
-        files.map((at) => ({ fileUri: at.url, ...outgoingFileMeta(at) })),
-      ),
+      run: () => senders.attachments(xmtpLine, fileInputs(files)),
     });
   }
   for (const location of attachments.filter(isLocation)) {

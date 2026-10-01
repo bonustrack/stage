@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, chatKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
+  MAX_SHOWN_RECIPIENTS, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
@@ -53,11 +53,5 @@ describe('new chat recipients', () => {
 
   test('people added by search show before the suggestions, once', () => {
     expect(shownRecipients(['0xa', '0xb'], ['0xd', '0xB'], [])).toEqual(['0xd', '0xa', '0xb']);
-  });
-
-  test('a created chat is reused only for the same people', () => {
-    expect(chatKey(['0xB0B'])).toBe(chatKey(['0xb0b']));
-    expect(chatKey(['0xb0b', '0xa11ce'])).toBe(chatKey(['0xA11CE', '0xB0B']));
-    expect(chatKey(['0xa11ce'])).not.toBe(chatKey(['0xa11ce', '0xb0b']));
   });
 });

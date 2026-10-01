@@ -39,6 +39,7 @@ interface EditorProps {
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
+  busy?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -79,7 +80,7 @@ function makeWebEnterToSend(
     }
     if (e.key !== 'Enter' || e.shiftKey) return;
     e.preventDefault();
-    if (p.hasContent) p.onSend();
+    if (p.hasContent && p.busy !== true) p.onSend();
   };
 }
 
@@ -110,6 +111,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         blurNonce={p.blurNonce}
         selection={p.selection}
         dark={dark}
+        disabled={p.busy}
         onChangeText={(text) => { p.setText(text); }}
         onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
       />
@@ -147,7 +149,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button size="md" uniform pill dark={dark} tintBg={primary}
+    <Button size="md" uniform pill dark={dark} tintBg={primary} loading={p.busy}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
   );
 }

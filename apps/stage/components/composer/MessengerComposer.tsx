@@ -4,6 +4,7 @@ import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col, PAGE_GUTTER } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
+import { useHandedDraft } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
@@ -13,7 +14,8 @@ import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './part
 import { useChannelSuggest } from './channels';
 import { ComposerEditor, buildAttachActions } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
-import { convIdOfLine } from '../../modules/messaging';
+import { convIdOfLine, forgetAttachments } from '../../modules/messaging';
+import { fileInputs } from './send.model';
 import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
 import { TEXT_12PX } from '../smallText';
@@ -28,6 +30,7 @@ interface Props {
   suggestContacts?: boolean;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   autoFocusNonce?: number;
+  busy?: boolean;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
@@ -108,6 +111,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
+  useHandedDraft(convId, (draft) => { void actions.sendDraft(draft); });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId ?? '');
 
@@ -124,7 +128,10 @@ export function MessengerComposer(props: Props): React.ReactElement {
       <ComposerHeader
         dark={dark} fg={fg} sub={sub}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
-        pending={s.pending} onRemovePending={(i) => { s.setPending(prev => prev.filter((_, j) => j !== i)); }}
+        pending={s.pending} onRemovePending={(i) => {
+          forgetAttachments(fileInputs(s.pending.filter((_, j) => j === i)));
+          s.setPending(prev => prev.filter((_, j) => j !== i));
+        }}
         uploading={s.uploading} err={s.err}
       />
       <ComposerEditor
@@ -139,6 +146,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
+        busy={props.busy}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
