@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { Animated as RNAnimated } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Col, RIGHT_PANE_PAD } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -24,7 +23,7 @@ import {
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
 import { FooterDock } from '../../components/conversation/FooterDock';
 import {
-  ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
+  ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
 
 function UnresolvedConversation({ resolved }: {
@@ -32,13 +31,10 @@ function UnresolvedConversation({ resolved }: {
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const sidebar = useConversationSidebarShown();
-  const loaderFill = useChatColumnFill(measuredFooterHeight);
   if (resolved.resolving) {
     return (
       <>
-        <Col surface="surface" flex={1} align="center" justify="center" style={loaderFill}>
-          <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
-        </Col>
+        <ChatColumnSpinner bottomInset={measuredFooterHeight}/>
         {sidebar ? <ConversationSidebar/> : null}
       </>
     );

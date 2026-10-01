@@ -8,7 +8,6 @@ module.exports = [
   'components/bubble/poll.tsx',
   'components/bubble/question.tsx',
   'components/bubble/reactions.tsx',
-  'components/home/SplitPlaceholder.tsx',
   'components/home/labelbar.tsx',
   'components/home/overflow.tsx',
   'components/home/topnavRight.tsx',

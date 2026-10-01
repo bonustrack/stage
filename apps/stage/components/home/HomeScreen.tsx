@@ -27,7 +27,8 @@ import { channelsPaneWidth } from '../tabs/paneWidth';
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const splitHome = useWebTabRail() && pane !== true;
-  if (splitHome) return <NewChatScreen/>;
+  const accountEpoch = useActiveAccount();
+  if (splitHome) return <NewChatScreen key={accountEpoch}/>;
   return <ChannelsHome panRef={panRef} pane={pane === true}/>;
 }
 

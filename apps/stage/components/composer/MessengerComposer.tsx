@@ -101,8 +101,8 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const draftOnly = props.xmtpLine === undefined;
   const { convId, openLine } = composerTarget(props.xmtpLine);
   const actions = useComposerActions({ ...props, ...s, openLine });
-  usePastedImages((files) => { void actions.onPickedImages(files); });
   const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
+  usePastedImages((files) => { void actions.onPickedImages(files); }, drop.zoneId);
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);

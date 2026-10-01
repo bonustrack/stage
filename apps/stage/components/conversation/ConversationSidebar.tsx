@@ -1,14 +1,15 @@
 import { MemberListSidebar } from './MemberListSidebar';
 import { PeerProfileSidebar } from './PeerProfileSidebar';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Box, PANE_LEFT_PAD, RIGHT_PANE_PAD, pinnedEdges, viewportFill } from '../layout';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
+import { Box, Col, PANE_LEFT_PAD, RIGHT_PANE_PAD, pinnedEdges, viewportFill } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../tabs/paneWidth';
 import { PaneResizeHandle } from '../tabs/PaneResizeHandle';
 import { useMemberListOpen } from '../../lib/memberList';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useWebTabRail } from '../../lib/webLayout';
-import { usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 const sidebarWidth = createPaneWidth({
   key: 'web.memberListWidth',
@@ -29,6 +30,15 @@ export function useChatColumnFill(bottomInset: number): StyleProp<ViewStyle> {
   const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
   const shown = useConversationSidebarShown();
   return [viewportFill(), PANE_LEFT_PAD, shown ? RIGHT_PANE_PAD : null, { paddingTop: top, paddingBottom: bottomInset }];
+}
+
+export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return (
+    <Col surface="surface" flex={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
+      <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
+    </Col>
+  );
 }
 
 export function ConversationSidebar({ convId, isGroup = false, peerAddress = null }: {

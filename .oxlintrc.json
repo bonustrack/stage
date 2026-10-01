@@ -511,7 +511,6 @@
         "apps/stage/components/bubble/poll.tsx",
         "apps/stage/components/bubble/question.tsx",
         "apps/stage/components/bubble/reactions.tsx",
-        "apps/stage/components/home/SplitPlaceholder.tsx",
         "apps/stage/components/home/labelbar.tsx",
         "apps/stage/components/home/overflow.tsx",
         "apps/stage/components/home/topnavRight.tsx"

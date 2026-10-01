@@ -1,39 +1,47 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, chatKey, phaseNote, pickedRecipients, recentPeers, recipientCandidates, shownRecipients,
+  MAX_SHOWN_RECIPIENTS, chatKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';
 const POOL = [ALICE];
 
-function dm(peer: string, lastTs: number): { peerAddress: string; lastTs: number } {
-  return { peerAddress: peer, lastTs };
+function dm(peer: string, lastTs: number): { convId: string; peerAddress: string; lastTs: number } {
+  return { convId: `c-${peer}-${lastTs}`, peerAddress: peer, lastTs };
+}
+
+function candidates(rows: ReturnType<typeof dm>[], requests: ReadonlySet<string> = new Set()): string[] {
+  return recipientCandidates(recentDmPeers(rows, SELF), SELF, requests, POOL);
 }
 
 describe('new chat recipients', () => {
   test('direct message peers come most recent first, once each, never the account itself', () => {
-    const rows = [dm('0xb0b', 10), { peerAddress: null, lastTs: 50 }, dm('0xC4E', 30), dm('0xb0b', 5), dm(SELF, 40)];
-    expect(recentPeers(rows, SELF.toUpperCase())).toEqual(['0xc4e', '0xb0b']);
+    const rows = [dm('0xb0b', 10), { convId: 'group', peerAddress: null, lastTs: 50 }, dm('0xC4E', 30), dm('0xb0b', 5), dm(SELF, 40)];
+    expect(recentDmPeers(rows, SELF.toUpperCase())).toEqual([{ convId: 'c-0xC4E-30', peer: '0xc4e' }, { convId: 'c-0xb0b-10', peer: '0xb0b' }]);
   });
 
   test('a new account gets Alice, and she is the one picked by default', () => {
-    const candidates = recipientCandidates([], SELF, POOL);
-    expect(candidates).toEqual([ALICE.toLowerCase()]);
-    expect(pickedRecipients(null, candidates)).toEqual([ALICE.toLowerCase()]);
+    const list = candidates([]);
+    expect(list).toEqual([ALICE.toLowerCase()]);
+    expect(pickedRecipients(null, list)).toEqual([ALICE.toLowerCase()]);
   });
 
   test('Alice follows the recent people and is not repeated when already a contact', () => {
-    expect(recipientCandidates([dm('0xb0b', 1)], SELF, POOL)).toEqual(['0xb0b', ALICE.toLowerCase()]);
-    expect(recipientCandidates([dm('0xb0b', 1), dm(ALICE, 2)], SELF, POOL)).toEqual([ALICE.toLowerCase(), '0xb0b']);
+    expect(candidates([dm('0xb0b', 1)])).toEqual(['0xb0b', ALICE.toLowerCase()]);
+    expect(candidates([dm('0xb0b', 1), dm(ALICE, 2)])).toEqual([ALICE.toLowerCase(), '0xb0b']);
   });
 
-  test('at most five people show, most recent first, unless more are picked', () => {
-    const rows = Array.from({ length: 8 }, (_, i) => dm(`0x${i}`, i));
-    const candidates = recipientCandidates(rows, SELF, POOL);
-    expect(candidates.slice(0, 2)).toEqual(['0x7', '0x6']);
-    expect(shownRecipients(candidates, [], ['0x7'])).toEqual(['0x7', '0x6', '0x5', '0x4', '0x3']);
-    expect(shownRecipients(candidates, [], ['0x0'])).toHaveLength(MAX_SHOWN_RECIPIENTS + 1);
+  test('people who only sent a request are never offered', () => {
+    expect(candidates([dm('0xb0b', 2), dm('0xc4e', 1)], new Set(['0xb0b']))).toEqual(['0xc4e', ALICE.toLowerCase()]);
+  });
+
+  test('at most five people show, most recent first, and picked people always show', () => {
+    const list = candidates(Array.from({ length: 8 }, (_, i) => dm(`0x${i}`, i)));
+    expect(list.slice(0, 2)).toEqual(['0x7', '0x6']);
+    expect(shownRecipients(list, [], ['0x7'])).toEqual(['0x7', '0x6', '0x5', '0x4', '0x3']);
+    expect(shownRecipients(list, [], ['0x0'])).toHaveLength(MAX_SHOWN_RECIPIENTS + 1);
+    expect(shownRecipients(['0xa'], [], ['0xgone'])).toEqual(['0xa', '0xgone']);
   });
 
   test('the first person is picked until the choice is changed, even to nobody', () => {
@@ -51,11 +59,5 @@ describe('new chat recipients', () => {
     expect(chatKey(['0xB0B'])).toBe(chatKey(['0xb0b']));
     expect(chatKey(['0xb0b', '0xa11ce'])).toBe(chatKey(['0xA11CE', '0xB0B']));
     expect(chatKey(['0xa11ce'])).not.toBe(chatKey(['0xa11ce', '0xb0b']));
-  });
-
-  test('the note follows the phase', () => {
-    expect(phaseNote('idle')).toBeNull();
-    expect(phaseNote('creating')).toBe('Creating the chat…');
-    expect(phaseNote('sending')).toBe('Sending…');
   });
 });

@@ -3,7 +3,17 @@ import type { ComposerImageFile } from './pastedImages.types';
 import { carriesPlainText, imageItemIndexes, pastedImageName, takesImagePaste, takesPicturePaste } from './pastedImages.model';
 
 let openPictureTargets = 0;
-const imageTargets: symbol[] = [];
+const imageTargets: { owner: symbol; zoneId: string | undefined }[] = [];
+
+function shown(zoneId: string | undefined): boolean {
+  if (zoneId === undefined) return true;
+  const zone = document.getElementById(zoneId);
+  return zone !== null && zone.getClientRects().length > 0;
+}
+
+function pasteOwner(): symbol | undefined {
+  return imageTargets.findLast(target => shown(target.zoneId))?.owner;
+}
 
 function clipboardItems(event: ClipboardEvent): DataTransferItem[] {
   return Array.from(event.clipboardData?.items ?? []);
@@ -23,14 +33,14 @@ function pasteTarget(event: ClipboardEvent): { tag: string | null; editable: boo
   return { tag: target?.tagName ?? null, editable };
 }
 
-export function usePastedImages(onImages: (files: ComposerImageFile[]) => void): void {
+export function usePastedImages(onImages: (files: ComposerImageFile[]) => void, zoneId?: string): void {
   const handler = useRef(onImages);
   handler.current = onImages;
   useEffect(() => {
     const owner = Symbol('composer');
-    imageTargets.push(owner);
+    imageTargets.push({ owner, zoneId });
     const onPaste = (event: ClipboardEvent): void => {
-      if (openPictureTargets > 0 || imageTargets[imageTargets.length - 1] !== owner) return;
+      if (openPictureTargets > 0 || pasteOwner() !== owner) return;
       const { tag, editable } = pasteTarget(event);
       if (!takesImagePaste(tag, editable)) return;
       const files = imagesFrom(clipboardItems(event), Infinity);
@@ -40,10 +50,10 @@ export function usePastedImages(onImages: (files: ComposerImageFile[]) => void):
     };
     document.addEventListener('paste', onPaste);
     return (): void => {
-      imageTargets.splice(imageTargets.indexOf(owner), 1);
+      imageTargets.splice(imageTargets.findIndex(target => target.owner === owner), 1);
       document.removeEventListener('paste', onPaste);
     };
-  }, []);
+  }, [zoneId]);
 }
 
 export function usePastedPicture(enabled: boolean, onImage: (file: ComposerImageFile) => void): void {

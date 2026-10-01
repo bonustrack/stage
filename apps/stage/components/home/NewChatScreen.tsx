@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
@@ -8,7 +9,7 @@ import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { sendDraft } from '../composer/actions';
 import { ConvTopnavShell } from '../conversation/parts';
-import { ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
+import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
 import { FooterDock } from '../conversation/FooterDock';
 import { includesKey, toggleKey } from '../conversation/SidebarSection.model';
@@ -16,16 +17,18 @@ import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_RECIPIENT_NOTE, chatKey, phaseNote, pickedRecipients, recipientCandidates, shownRecipients, type NewChatPhase,
+  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, chatKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
+  type DmPeer, type NewChatPhase,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
+import { reported } from '../../lib/errorPolicy';
 import { useClearedChats } from '../../lib/clearedChats';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  convIdOfLine, createGroup, shortAddress, subscribeCachedRows, useActiveAccountRecord,
+  convIdOfLine, createGroup, getConvConsentState, shortAddress, subscribeCachedRows, useActiveAccountRecord,
 } from '../../modules/messaging';
 
 interface Recipients {
@@ -35,22 +38,49 @@ interface Recipients {
   reset: () => void;
 }
 
-function useRecipients(): Recipients {
+const NO_REQUESTS: ReadonlySet<string> = new Set();
+
+function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
+  const [requests, setRequests] = useState(NO_REQUESTS);
+  const checked = peers.slice(0, REQUEST_CHECK_LIMIT);
+  const key = checked.map(p => p.convId).join(',');
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(checked.map(async p => ((await getConvConsentState(p.convId)) === 'unknown' ? [p.peer] : [])))
+      .then((found) => { if (!cancelled) setRequests(new Set(found.flat())); })
+      .catch(reported('newChat.requests'));
+    return () => { cancelled = true; };
+  }, [key]);
+  return requests;
+}
+
+function useCandidates(): string[] {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
   const self = useActiveAccountRecord()?.address ?? null;
-  const candidates = useMemo(
-    () => (rows === null ? [] : recipientCandidates(rows.filter(r => !isRowCleared(cleared, r)), self)),
+  const peers = useMemo(
+    () => (rows === null ? [] : recentDmPeers(rows.filter(r => !isRowCleared(cleared, r)), self)),
     [rows, cleared, self],
   );
+  const requests = useRequestPeers(peers);
+  return useMemo(() => recipientCandidates(peers, self, requests), [peers, self, requests]);
+}
+
+function useRecipients(drafting: boolean): Recipients {
+  const candidates = useCandidates();
   const [added, setAdded] = useState<string[]>([]);
   const [chosen, setChosen] = useState<string[] | null>(null);
   const picked = pickedRecipients(chosen, candidates);
   const shown = shownRecipients(candidates, added, picked);
+  const latest = useRef({ picked, candidates });
+  latest.current = { picked, candidates };
   usePeerProfiles(shown);
+  useEffect(() => {
+    if (drafting && chosen === null && picked.length > 0) setChosen(picked);
+  }, [drafting]);
   const toggle = (address: string): void => {
-    setChosen(toggleKey(picked, address));
-    if (!includesKey(shown, address)) setAdded(list => [address, ...list]);
+    setChosen(prev => toggleKey(prev ?? latest.current.picked, address));
+    setAdded(list => (includesKey(list, address) || includesKey(latest.current.candidates, address) ? list : [address, ...list]));
   };
   const reset = (): void => { setChosen(null); setAdded([]); };
   return { shown, picked, toggle, reset };
@@ -111,7 +141,8 @@ function NewChatFooter({ recipients, draft, phase, onSubmit }: {
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box style={{ pointerEvents: phase === 'idle' ? 'auto' : 'none' }}>
-        <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle} note={phaseNote(phase)}/>
+        <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
+          onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
         <MessengerComposer dark={dark} state={draft} suggestContacts mentionCandidates={mentionCandidates}
           autoFocusNonce={focusNonce} onSubmit={onSubmit}/>
         <Box height={insets.bottom} surface="raised"/>
@@ -126,8 +157,8 @@ export function NewChatScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const memberList = useConversationSidebarShown();
   const [footerH, setFooterH] = useState(0);
-  const recipients = useRecipients();
   const draft = useComposerState();
+  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0);
   const { phase, start } = useStartChat(draft, (line) => {
     recipients.reset();
     const convId = convIdOfLine(line);
@@ -135,8 +166,8 @@ export function NewChatScreen(): React.ReactElement {
   });
   return (
     <Col flex={1} surface="surface">
-      <Box flex={1}/>
-      <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
+      {phase === 'idle' ? <Box flex={1}/> : <ChatColumnSpinner bottomInset={footerH}/>}
+      <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}>
         <Box flex={1}/>
         <Row align="center" padding={{ right: PAGE_GUTTER }}>
           <ConversationSidebarToggle/>
