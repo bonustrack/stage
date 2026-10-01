@@ -10,7 +10,7 @@ import { useComposerState, type ComposerState } from '../composer/state';
 import { handSendTo } from '../composer/handoff';
 import { startSend } from '../composer/sendRun';
 import { fileInputs } from '../composer/send.model';
-import { useForgetOnUnmount } from '../composer/hooks';
+import { clearComposerDraft } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -20,7 +20,8 @@ import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients, type DmPeer,
+  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
+  type DmPeer,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
@@ -89,15 +90,13 @@ function useRecipients(drafting: boolean): Recipients {
   return { shown, picked, toggle, reset };
 }
 
-function useStartChat(draft: ComposerState, onOpened: (convId: string) => void): {
+function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (convId: string) => void): {
   creating: boolean; start: (addresses: readonly string[]) => Promise<void>;
 } {
   const [creating, setCreating] = useState(false);
   const busy = useRef(false);
   const latest = useRef(draft);
   latest.current = draft;
-  const handedUrls = useRef(new Set<string>());
-  useForgetOnUnmount(draft.pending, at => handedUrls.current.has(at.url));
   const start = async (addresses: readonly string[]): Promise<void> => {
     if (busy.current) return;
     if (addresses.length === 0) { capabilities.toast(NO_RECIPIENT_NOTE); return; }
@@ -110,8 +109,8 @@ function useStartChat(draft: ComposerState, onOpened: (convId: string) => void):
       if (convId === null) return;
       rememberOwnGroup(convId);
       const { text, pending } = latest.current;
-      pending.forEach(at => handedUrls.current.add(at.url));
       handSendTo(convId, startSend(line, text, pending));
+      if (draftKey !== null) clearComposerDraft(draftKey);
       draft.setText('');
       draft.setPending([]);
       onOpened(convId);
@@ -126,8 +125,8 @@ function useStartChat(draft: ComposerState, onOpened: (convId: string) => void):
   return { creating, start };
 }
 
-function NewChatFooter({ recipients, draft, creating, onSubmit }: {
-  recipients: Recipients; draft: ComposerState; creating: boolean; onSubmit: () => void;
+function NewChatFooter({ recipients, draft, draftKey, creating, onSubmit }: {
+  recipients: Recipients; draft: ComposerState; draftKey: string | null; creating: boolean; onSubmit: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -138,7 +137,7 @@ function NewChatFooter({ recipients, draft, creating, onSubmit }: {
       <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
         <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
           onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
-        <MessengerComposer dark={dark} state={draft} suggestContacts mentionCandidates={mentionCandidates}
+        <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
           autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
         <Box height={insets.bottom} surface="raised"/>
       </Box>
@@ -153,8 +152,9 @@ export function NewChatScreen(): React.ReactElement {
   const memberList = useConversationSidebarShown();
   const [footerH, setFooterH] = useState(0);
   const draft = useComposerState();
+  const draftKey = newChatDraftKey(useActiveAccountRecord());
   const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0);
-  const { creating, start } = useStartChat(draft, (convId) => {
+  const { creating, start } = useStartChat(draft, draftKey, (convId) => {
     recipients.reset();
     router.replace({ pathname: '/channel/[convId]', params: { convId } });
   });
@@ -168,7 +168,8 @@ export function NewChatScreen(): React.ReactElement {
         </Row>
       </ConvTopnavShell>
       <FooterDock height={footerH} onHeight={setFooterH} memberList={memberList}>
-        <NewChatFooter recipients={recipients} draft={draft} creating={creating} onSubmit={() => { void start(recipients.picked); }}/>
+        <NewChatFooter recipients={recipients} draft={draft} draftKey={draftKey} creating={creating}
+          onSubmit={() => { void start(recipients.picked); }}/>
       </FooterDock>
       {memberList ? <ConversationSidebar/> : null}
     </Col>

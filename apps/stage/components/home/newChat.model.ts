@@ -6,6 +6,10 @@ export const REQUEST_CHECK_LIMIT = 10;
 
 export const NO_RECIPIENT_NOTE = 'Pick who to send it to.';
 
+export function newChatDraftKey(account: { id: string } | null): string | null {
+  return account === null ? null : `new-chat:${account.id}`;
+}
+
 interface PeerRow {
   convId: string;
   peerAddress?: unknown;

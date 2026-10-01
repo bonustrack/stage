@@ -8,7 +8,7 @@ import { useHandedSend } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
-import { useComposerDrafts, useComposerFocus, useCaretToEnd, useForgetOnUnmount, useLastAttachment } from './hooks';
+import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
 import { useMentionEditor } from './mentions';
 import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
 import { useChannelSuggest } from './channels';
@@ -22,11 +22,10 @@ import { TEXT_12PX } from '../smallText';
 
 const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
 
-const NO_PENDING: Attachment[] = [];
-
 interface Props {
   dark: boolean;
   xmtpLine?: string;
+  draftKey?: string | null;
   state?: ComposerState;
   mentionCandidates?: { address: string; name: string }[];
   suggestContacts?: boolean;
@@ -44,9 +43,12 @@ function loneCandidate(candidates: Props['mentionCandidates']): string | undefin
   return candidates?.length === 1 ? candidates[0]?.address : undefined;
 }
 
-function composerTarget(xmtpLine: string | undefined): { convId: string | null; openLine: () => Promise<string | null> } {
+function composerTarget(xmtpLine: string | undefined, draftKey: string | null | undefined): {
+  convId: string | null; draftKey: string | null; openLine: () => Promise<string | null>;
+} {
   const line = xmtpLine ?? null;
-  return { convId: line === null ? null : convIdOfLine(line) ?? line, openLine: () => Promise.resolve(line) };
+  const convId = line === null ? null : convIdOfLine(line) ?? line;
+  return { convId, draftKey: draftKey ?? convId, openLine: () => Promise.resolve(line) };
 }
 
 function sendHandler(onSubmit: (() => void) | undefined, send: () => Promise<void>): () => void {
@@ -55,7 +57,6 @@ function sendHandler(onSubmit: (() => void) | undefined, send: () => Promise<voi
 
 function useDraftState(shared: ComposerState | undefined): ComposerState {
   const own = useComposerState();
-  useForgetOnUnmount(shared === undefined ? own.pending : NO_PENDING);
   return shared ?? own;
 }
 
@@ -105,7 +106,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const s = useDraftState(props.state);
   const draftOnly = props.xmtpLine === undefined;
-  const { convId, openLine } = composerTarget(props.xmtpLine);
+  const { convId, draftKey, openLine } = composerTarget(props.xmtpLine, props.draftKey);
   const actions = useComposerActions({ ...props, ...s, openLine });
   const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
   usePastedImages((files) => { void actions.onPickedImages(files); }, drop.zoneId);
@@ -113,7 +114,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
-  useComposerDrafts(convId, s.text, mention.restore);
+  useComposerDrafts(draftKey, s, mention.restore);
   useHandedSend(convId, (started) => { void actions.adoptSend(started); });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId ?? '');
