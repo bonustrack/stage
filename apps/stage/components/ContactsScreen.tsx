@@ -25,7 +25,6 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
     const model = contactNameModel({
       resolvedName: getPeerName(item.address) ?? null,
       fallbackName: item.name,
-      address: item.address,
       shortAddress: shortAddress(item.address),
       description: getPeerDescription(item.address),
       handle: getPeerHandle(item.address),

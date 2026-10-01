@@ -3,7 +3,6 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 interface ContactNameDomain {
   resolvedName: string | null;
   fallbackName: string;
-  address: string;
   shortAddress: string;
   description?: string;
   handle?: string;
@@ -24,7 +23,7 @@ function contactSubtitle(name: string, d: ContactNameDomain): string {
   const handle = d.handle?.trim() ?? '';
   const shownHandle = handle === '' ? '' : displayHandle(handle);
   if (shownHandle !== '' && shownHandle !== name) return shownHandle;
-  return name === d.shortAddress ? d.address : d.shortAddress;
+  return d.shortAddress;
 }
 
 export function contactNameModel(d: ContactNameDomain): ContactNameModel {
