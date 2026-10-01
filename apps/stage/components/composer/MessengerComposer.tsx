@@ -7,6 +7,7 @@ import { useComposerActions } from './actions';
 import { useHandedSend } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
+import type { DropZone } from './droppedFiles.model';
 import { DropOverlay } from './dropOverlay';
 import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
 import { useMentionEditor } from './mentions';
@@ -71,6 +72,13 @@ function composerAttachActions(
   return draftOnly ? all.filter(([, label]) => DRAFT_ATTACH_LABELS.has(label)) : all;
 }
 
+function useDroppedAndPasted(actions: ReturnType<typeof useComposerActions>, focus: () => void): DropZone {
+  const focusUnlessKept = (keepFocus: boolean): void => { if (!keepFocus) focus(); };
+  const drop = useDroppedFiles((files, keepFocus) => { void actions.onDroppedFiles(files); focusUnlessKept(keepFocus); });
+  usePastedImages((files, keepFocus) => { void actions.onPickedImages(files); focusUnlessKept(keepFocus); }, drop.zoneId);
+  return drop;
+}
+
 function ComposerHeader(p: {
   dark: boolean; fg: string; sub: string;
   replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
@@ -108,12 +116,11 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const draftOnly = props.xmtpLine === undefined;
   const { convId, draftKey, openLine } = composerTarget(props.xmtpLine, props.draftKey);
   const actions = useComposerActions({ ...props, ...s, openLine });
-  const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
-  usePastedImages((files) => { void actions.onPickedImages(files); }, drop.zoneId);
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
+  const drop = useDroppedAndPasted(actions, () => { caretToEnd(); s.bumpFocus(); });
   useComposerDrafts(draftKey, s, mention.restore);
   useHandedSend(convId, (started) => { void actions.adoptSend(started); });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);

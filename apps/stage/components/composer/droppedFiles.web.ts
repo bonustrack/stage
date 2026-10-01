@@ -22,7 +22,9 @@ function filesFrom(event: DragEvent): DroppedFile[] {
     .map((file) => ({ uri: URL.createObjectURL(file), mime: file.type, name: file.name }));
 }
 
-function listen(id: string, onFiles: (files: DroppedFile[]) => void, setActive: (active: boolean) => void): () => void {
+type OnFiles = (files: DroppedFile[], keepFocus: boolean) => void;
+
+function listen(id: string, onFiles: OnFiles, setActive: (active: boolean) => void): () => void {
   let targets: EventTarget[] = [];
   const track = (next: EventTarget[]): void => {
     if ((targets.length > 0) !== (next.length > 0)) setActive(next.length > 0);
@@ -49,7 +51,7 @@ function listen(id: string, onFiles: (files: DroppedFile[]) => void, setActive: 
     track([]);
     if (zone === null || !inZone(zone, event.target)) return;
     const files = filesFrom(event);
-    if (files.length > 0) onFiles(files);
+    if (files.length > 0) onFiles(files, inZone(zone, document.activeElement));
   };
   const onKey = (event: KeyboardEvent): void => { if (event.key === 'Escape') track([]); };
   const ac = new AbortController();
@@ -63,11 +65,11 @@ function listen(id: string, onFiles: (files: DroppedFile[]) => void, setActive: 
   return (): void => { ac.abort(); };
 }
 
-export function useDroppedFiles(onFiles: (files: DroppedFile[]) => void): DropZone {
+export function useDroppedFiles(onFiles: OnFiles): DropZone {
   const zoneId = useId();
   const handler = useRef(onFiles);
   handler.current = onFiles;
   const [active, setActive] = useState(false);
-  useEffect(() => listen(zoneId, (files) => { handler.current(files); }, setActive), [zoneId]);
+  useEffect(() => listen(zoneId, (files, keepFocus) => { handler.current(files, keepFocus); }, setActive), [zoneId]);
   return { zoneId, active };
 }

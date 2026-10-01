@@ -1,6 +1,6 @@
 import type { ComposerImageFile } from './pastedImages.types';
 
-export function usePastedImages(onImages: (files: ComposerImageFile[]) => void, zoneId?: string): void {
+export function usePastedImages(onImages: (files: ComposerImageFile[], keepFocus: boolean) => void, zoneId?: string): void {
   void onImages;
   void zoneId;
 }

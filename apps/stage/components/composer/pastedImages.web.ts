@@ -33,7 +33,7 @@ function pasteTarget(event: ClipboardEvent): { tag: string | null; editable: boo
   return { tag: target?.tagName ?? null, editable };
 }
 
-export function usePastedImages(onImages: (files: ComposerImageFile[]) => void, zoneId?: string): void {
+export function usePastedImages(onImages: (files: ComposerImageFile[], keepFocus: boolean) => void, zoneId?: string): void {
   const handler = useRef(onImages);
   handler.current = onImages;
   useEffect(() => {
@@ -46,7 +46,7 @@ export function usePastedImages(onImages: (files: ComposerImageFile[]) => void, 
       const files = imagesFrom(clipboardItems(event), Infinity);
       if (files.length === 0) return;
       event.preventDefault();
-      handler.current(files);
+      handler.current(files, editable);
     };
     document.addEventListener('paste', onPaste);
     return (): void => {
