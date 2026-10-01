@@ -30,7 +30,7 @@ interface MemberPickerState {
   selectedAddresses: Set<string>;
 }
 
-async function lookupMember(raw: string): Promise<Member | string> {
+export async function lookupMember(raw: string): Promise<Member | string> {
   const start = startRecipient(raw);
   const found = start.kind === 'resolving'
     ? settleRecipient(start, await resolveHandleToAddress(start.query.handle))

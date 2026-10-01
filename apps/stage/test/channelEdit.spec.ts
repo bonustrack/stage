@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
   CHANNEL_DESCRIPTION_MAX, CHANNEL_NAME_MAX, channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch,
-  hasLabelEdits, labelEdits,
 } from '../components/channel/EditChannelModal.model';
 
 describe('channel edit model', () => {
@@ -50,16 +49,5 @@ describe('channel edit model', () => {
     expect(channelMetaCachePatch({ name: 'Crew', imageUrl: '', description: 'x' }))
       .toEqual({ groupName: 'Crew', groupImage: '', groupDescription: 'x' });
     expect(channelMetaCachePatch({ description: '' })).toEqual({ groupDescription: '' });
-  });
-
-  test('diffs the label draft against the saved labels, ignoring case', () => {
-    const none = labelEdits(['Bug', 'Urgent'], ['urgent', 'bug']);
-    expect(none).toEqual({ added: [], removed: [] });
-    expect(hasLabelEdits(none)).toBe(false);
-    const edits = labelEdits(['Bug', 'Urgent'], ['Bug', 'Design']);
-    expect(edits).toEqual({ added: ['Design'], removed: ['Urgent'] });
-    expect(hasLabelEdits(edits)).toBe(true);
-    expect(hasLabelEdits(labelEdits([], ['Bug']))).toBe(true);
-    expect(hasLabelEdits(labelEdits(['Bug'], []))).toBe(true);
   });
 });

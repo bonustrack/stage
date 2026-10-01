@@ -44,18 +44,3 @@ export function channelMetaCachePatch(patch: GroupMetaPatch): ChannelMetaCachePa
   if (patch.imageUrl !== undefined) out.groupImage = patch.imageUrl;
   return out;
 }
-
-export interface LabelEdits { added: string[]; removed: string[] }
-
-function missingFrom(labels: string[], other: string[]): string[] {
-  const keys = new Set(other.map((l) => l.toLowerCase()));
-  return labels.filter((l) => !keys.has(l.toLowerCase()));
-}
-
-export function labelEdits(current: string[], draft: string[]): LabelEdits {
-  return { added: missingFrom(draft, current), removed: missingFrom(current, draft) };
-}
-
-export function hasLabelEdits(edits: LabelEdits): boolean {
-  return edits.added.length > 0 || edits.removed.length > 0;
-}

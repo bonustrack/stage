@@ -1,4 +1,5 @@
 import type { ChannelMemberRole } from '../channel/channel.parts.model';
+import type { ListEdits } from './SidebarSection.model';
 
 type MemberAdminRole = 'superAdmin' | 'admin';
 
@@ -50,4 +51,15 @@ export function memberListEntries(
     entries.push(admin === undefined ? entry : { ...entry, admin });
   }
   return entries.sort(compareEntries);
+}
+
+function countText(count: number, one: string, many: string): string {
+  return count === 1 ? one : `${count} ${many}`;
+}
+
+export function memberEditsText(edits: ListEdits): string {
+  const parts: string[] = [];
+  if (edits.added.length > 0) parts.push(countText(edits.added.length, 'Member added', 'members added'));
+  if (edits.removed.length > 0) parts.push(countText(edits.removed.length, 'Member removed', 'members removed'));
+  return parts.join('. ');
 }

@@ -18,7 +18,9 @@ type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
 
-const NO_EDIT_RIGHTS: GroupEditRights = { name: false, description: false, image: false, appData: false };
+const NO_EDIT_RIGHTS: GroupEditRights = {
+  name: false, description: false, image: false, appData: false, addMembers: false, removeMembers: false,
+};
 
 export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
   const inboxIds = Object.keys(inboxToAddr);
@@ -93,6 +95,16 @@ export function useChannelEditRights(convId: string | undefined, enabled = true)
   return data;
 }
 
+export function confirmMemberRemoval(names: string[]): Promise<boolean> {
+  const who = names.length === 1 ? names[0] ?? '' : `${names.length} members`;
+  return capabilities.confirm({
+    title: names.length === 1 ? 'Remove member' : 'Remove members',
+    message: `Remove ${who} from this channel? They'll lose access to past + future messages.`,
+    confirmLabel: 'Remove',
+    destructive: true,
+  });
+}
+
 export function useChannelDetail(convId: string | undefined) {
   const router = useRouter();
   const line = lineOfConv(convId ?? '');
@@ -103,13 +115,7 @@ export function useChannelDetail(convId: string | undefined) {
   const rights = useChannelEditRights(convId);
 
   const removeMember = async (addr: string): Promise<void> => {
-    const ok = await capabilities.confirm({
-      title: 'Remove member',
-      message: `Remove ${shortAddress(addr)} from this channel? They'll lose access to past + future messages.`,
-      confirmLabel: 'Remove',
-      destructive: true,
-    });
-    if (!ok) return;
+    if (!await confirmMemberRemoval([shortAddress(addr)])) return;
     await run((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => (
       { memberAddrs: await removeChannelMember(line, addr) }
     ));

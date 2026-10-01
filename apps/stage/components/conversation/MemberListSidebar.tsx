@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react';
-import { Button } from '@stage-labs/kit/react-native/button';
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -7,17 +6,21 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
 import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
-import { CountTag } from '../CountTag';
-import { Eyebrow } from '../Eyebrow';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
-import { assignedEntries, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
-import { useChannelRoles, useChannelEditRights } from '../channel/channel.detail';
-import { AssigneesEditor } from '../channel/AssigneesEditor';
-import { useConvMeta, shortAddress } from '../../modules/messaging';
+import { assignedEntries, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
+import { confirmMemberRemoval, useChannelRoles, useChannelEditRights, useConvMetaPatch } from '../channel/channel.detail';
+import { ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
+import { SectionNote, SidebarSection } from './SidebarSection';
+import { applyListEdits, type ListEdits } from './SidebarSection.model';
+import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
+import {
+  addGroupMembers, invalidateConvMeta, removeGroupMembers, shortAddress, updateGroupAssigned, useConvMeta,
+} from '../../modules/messaging';
+import { capabilities } from '../../lib/capabilities';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
-import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
+import { usePalette, withAlpha } from '../../lib/theme';
 import { IconCrown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrown';
 import { IconShield } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShield';
 
@@ -72,36 +75,60 @@ function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigne
   return { entries, assigned, assignedReady };
 }
 
-function MemberHeader({ title, count, children }: { title: string; count?: number; children?: React.ReactNode }): React.ReactElement {
-  return (
-    <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
-      <Eyebrow>{title.toUpperCase()}</Eyebrow>
-      {count === undefined ? null : <CountTag count={count}/>}
-      <Box flex={1}/>
-      {children}
-    </Row>
-  );
+function errorLine(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message.split('\n')[0] ?? fallback : fallback;
 }
 
 function AssigneesSection({ convId, entries, assigned, assignedReady }: {
   convId: string; entries: MemberListEntry[]; assigned: string[]; assignedReady: boolean;
 }): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
   const rights = useChannelEditRights(convId);
-  const [editing, setEditing] = useState(false);
+  const patchMeta = useConvMetaPatch(convId);
   const selected = assignedEntries(entries, assigned);
+  const commit = (edits: ListEdits): void => {
+    void updateGroupAssigned(convId, applyListEdits(assigned, edits))
+      .then(written => { patchMeta({ assigned: written }); })
+      .catch((err: unknown) => {
+        invalidateConvMeta(convId);
+        capabilities.toast(errorLine(err, 'Could not save assignees.'));
+      });
+  };
   return (
-    <>
-      <MemberHeader title="Assignees" count={assignedReady ? selected.length : undefined}>
-        {assignedReady && rights.appData ? <Button label="Edit" accessibilityLabel="Edit assignees" size="xs" color="secondary" variant="ghost" dark={dark}
-          onPress={() => { setEditing(true); }}/> : null}
-      </MemberHeader>
-      {assignedReady && selected.length === 0 ? <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" color="secondary">No assignees.</Text></Box> : null}
+    <SidebarSection title="Assignees" count={assignedReady ? selected.length : undefined} editLabel="Edit assignees"
+      canEdit={assignedReady && rights.appData} current={assigned} onCommit={commit}
+      renderPicker={(draft) => <AssigneePicker {...draft} entries={entries}/>}>
+      {assignedReady && selected.length === 0 ? <SectionNote text="No assignees."/> : null}
       {selected.map(entry => <MemberListRow key={entry.address} entry={entry} onPress={() => { router.push(profileLinkOf(entry.address)); }}/>) }
-      {editing && assignedReady && rights.appData ? <AssigneesEditor convId={convId} entries={entries} assigned={assigned}
-        onClose={() => { setEditing(false); }}/> : null}
-    </>
+    </SidebarSection>
+  );
+}
+
+async function applyMemberEdits(convId: string, entries: MemberListEntry[], edits: ListEdits): Promise<void> {
+  const names = edits.removed.map(address => entries.find(entry => entry.address.toLowerCase() === address.toLowerCase())?.name ?? shortAddress(address));
+  if (edits.removed.length > 0 && !await confirmMemberRemoval(names)) return;
+  try {
+    if (edits.removed.length > 0) await removeGroupMembers(convId, edits.removed);
+    if (edits.added.length > 0) await addGroupMembers(convId, edits.added);
+    capabilities.toast(memberEditsText(edits));
+  } catch (err) {
+    capabilities.toast(errorLine(err, 'Could not update members.'));
+  } finally {
+    invalidateConvMeta(convId);
+  }
+}
+
+function MembersSection({ convId, entries, count = entries.length }: {
+  convId: string; entries: MemberListEntry[]; count?: number;
+}): React.ReactElement {
+  const rights = useChannelEditRights(convId);
+  const self = useSelfAddress();
+  const memberRights = { add: rights.addMembers, remove: rights.removeMembers };
+  return (
+    <SidebarSection title="Members" count={count} editLabel="Edit members"
+      canEdit={memberRights.add || memberRights.remove} current={entries.map(entry => entry.address.toLowerCase())}
+      onCommit={(edits) => { void applyMemberEdits(convId, entries, edits); }}
+      renderPicker={(draft) => <MembersPicker {...draft} entries={entries} self={self} rights={memberRights}/>}/>
   );
 }
 
@@ -109,9 +136,14 @@ export function ChannelAssignees({ convId }: { convId: string }): React.ReactEle
   return <AssigneesSection convId={convId} {...useMemberEntries(convId)}/>;
 }
 
+export function ChannelMembersSection({ convId, count }: { convId: string; count: number }): React.ReactElement {
+  return <MembersSection convId={convId} entries={useMemberEntries(convId).entries} count={count}/>;
+}
+
 export function MemberListSidebar({ convId }: { convId: string }): React.ReactElement {
   const router = useRouter();
   const { entries, assigned, assignedReady } = useMemberEntries(convId);
+  const labels = useLiveChannelLabels(convId);
   return (
     <VirtualList
       scroll="self"
@@ -120,9 +152,10 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
       keyExtractor={(entry) => entry.address.toLowerCase()}
       contentContainerStyle={{ paddingBottom: PAGE_GUTTER }}
       ListHeaderComponent={<>
-        <AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>
-        <MemberHeader title="Members" count={entries.length}/>
+        <ChannelLabels convId={convId} labels={labels}/>
+        <MembersSection convId={convId} entries={entries}/>
       </>}
+      ListFooterComponent={<AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>}
       renderItem={({ item }) => (
         <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>
       )}

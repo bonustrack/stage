@@ -19,5 +19,7 @@ export function webGroupMetaPolicy(set: PermissionPolicySet): GroupMetaPolicy {
     description: policyOption(set.updateGroupDescriptionPolicy),
     image: policyOption(set.updateGroupImageUrlSquarePolicy),
     appData: policyOption(set.updateAppDataPolicy),
+    addMember: policyOption(set.addMemberPolicy),
+    removeMember: policyOption(set.removeMemberPolicy),
   };
 }

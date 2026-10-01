@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { assignedEntries, memberAdminMark, memberListEntries } from '../components/conversation/MemberListSidebar.model';
+import { assignedEntries, memberAdminMark, memberEditsText, memberListEntries } from '../components/conversation/MemberListSidebar.model';
 
 const names: Record<string, string> = {
   '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',
@@ -70,5 +70,13 @@ describe('memberAdminMark', () => {
     expect(memberAdminMark('admin')).toEqual({ role: 'admin', label: 'Admin' });
     expect(memberAdminMark('member')).toBeUndefined();
     expect(memberAdminMark(undefined)).toBeUndefined();
+  });
+});
+
+describe('memberEditsText', () => {
+  test('says what changed, one or many', () => {
+    expect(memberEditsText({ added: ['0xa'], removed: [] })).toBe('Member added');
+    expect(memberEditsText({ added: [], removed: ['0xa', '0xb'] })).toBe('2 members removed');
+    expect(memberEditsText({ added: ['0xa', '0xb'], removed: ['0xc'] })).toBe('2 members added. Member removed');
   });
 });

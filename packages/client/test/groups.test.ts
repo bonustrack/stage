@@ -114,14 +114,19 @@ describe('groupMetaPolicyOfSet', () => {
       updateGroupDescriptionPolicy: 'deny',
       updateGroupImagePolicy: 'superAdmin',
       updateAppDataPolicy: 'admin',
-    })).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin', appData: 'admin' });
+      addMemberPolicy: 'allow',
+      removeMemberPolicy: 'admin',
+    })).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin', appData: 'admin', addMember: 'allow', removeMember: 'admin' });
   });
 });
 
 describe('groupEditRightsOf', () => {
-  const policy = (p: GroupMetaPolicy['name']): GroupMetaPolicy => ({ name: p, description: p, image: p, appData: p });
+  const policy = (p: GroupMetaPolicy['name']): GroupMetaPolicy => ({ name: p, description: p, image: p, appData: p, addMember: p, removeMember: p });
+  const members = { addMember: 'allow', removeMember: 'admin' } as const;
   test('allow lets every member edit', () => {
-    expect(groupEditRightsOf(policy('allow'), 'member')).toEqual({ name: true, description: true, image: true, appData: true });
+    expect(groupEditRightsOf(policy('allow'), 'member')).toEqual({
+      name: true, description: true, image: true, appData: true, addMembers: true, removeMembers: true,
+    });
   });
   test('admin policy needs an admin or the owner', () => {
     expect(canEditGroup(groupEditRightsOf(policy('admin'), 'member'))).toBe(false);
@@ -136,23 +141,33 @@ describe('groupEditRightsOf', () => {
     expect(canEditGroup(groupEditRightsOf(policy('deny'), 'owner'))).toBe(false);
   });
   test('unknown metadata policies stay open but assignment waits for a known policy', () => {
-    expect(groupEditRightsOf(UNKNOWN_GROUP_POLICY, 'member')).toEqual({ name: true, description: true, image: true, appData: false });
+    expect(groupEditRightsOf(UNKNOWN_GROUP_POLICY, 'member')).toEqual({
+      name: true, description: true, image: true, appData: false, addMembers: true, removeMembers: true,
+    });
   });
   test('rights are per field', () => {
-    const rights = groupEditRightsOf({ name: 'admin', description: 'allow', image: 'deny', appData: 'admin' }, 'member');
-    expect(rights).toEqual({ name: false, description: true, image: false, appData: false });
+    const rights = groupEditRightsOf({ name: 'admin', description: 'allow', image: 'deny', appData: 'admin', ...members }, 'member');
+    expect(rights).toEqual({ name: false, description: true, image: false, appData: false, addMembers: true, removeMembers: false });
     expect(canEditGroup(rights)).toBe(true);
-    const imageOnly = groupEditRightsOf({ name: 'deny', description: 'deny', image: 'allow', appData: 'deny' }, 'member');
-    expect(imageOnly).toEqual({ name: false, description: false, image: true, appData: false });
+    const imageOnly = groupEditRightsOf({ name: 'deny', description: 'deny', image: 'allow', appData: 'deny', ...members }, 'member');
+    expect(imageOnly).toEqual({ name: false, description: false, image: true, appData: false, addMembers: true, removeMembers: false });
     expect(canEditGroup(imageOnly)).toBe(true);
   });
   test('assignees follow the appData policy independently of names and images', () => {
-    const appDataOnly: GroupMetaPolicy = { name: 'deny', description: 'deny', image: 'deny', appData: 'admin' };
+    const appDataOnly: GroupMetaPolicy = { name: 'deny', description: 'deny', image: 'deny', appData: 'admin', ...members };
     expect(groupEditRightsOf(appDataOnly, 'member').appData).toBe(false);
     expect(canEditGroup(groupEditRightsOf(appDataOnly, 'admin'))).toBe(true);
     expect(groupEditRightsOf({ ...appDataOnly, appData: 'superAdmin' }, 'admin').appData).toBe(false);
     expect(groupEditRightsOf({ ...appDataOnly, appData: 'superAdmin' }, 'owner').appData).toBe(true);
     expect(groupEditRightsOf({ ...appDataOnly, appData: 'deny' }, 'owner').appData).toBe(false);
+  });
+  test('member changes follow their own policies and never make the channel editable', () => {
+    const locked: GroupMetaPolicy = { name: 'deny', description: 'deny', image: 'deny', appData: 'deny', ...members };
+    expect(groupEditRightsOf(locked, 'member')).toMatchObject({ addMembers: true, removeMembers: false });
+    expect(groupEditRightsOf(locked, 'admin')).toMatchObject({ addMembers: true, removeMembers: true });
+    expect(groupEditRightsOf({ ...locked, addMember: 'superAdmin', removeMember: 'deny' }, 'admin'))
+      .toMatchObject({ addMembers: false, removeMembers: false });
+    expect(canEditGroup(groupEditRightsOf(locked, 'owner'))).toBe(false);
   });
 });
 

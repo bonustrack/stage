@@ -13,16 +13,14 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import {
-  addGroupLabel, getGroupLabels, invalidateConvMeta, lineOfConv, removeGroupLabel, updateGroupMeta,
-} from '../../modules/messaging';
+import { getGroupLabels, invalidateConvMeta, lineOfConv, updateGroupMeta } from '../../modules/messaging';
 import { reported } from '../../lib/errorPolicy';
 import { useConvMetaPatch } from './channel.detail';
-import { ChannelLabelsEditor } from './channel.labels';
+import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import {
-  channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch, hasLabelEdits, labelEdits,
-  type ChannelCurrent, type ChannelDraft, type LabelEdits,
+  channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch, type ChannelCurrent, type ChannelDraft,
 } from './EditChannelModal.model';
+import { hasListEdits, listEdits, type ListEdits } from '../conversation/SidebarSection.model';
 
 const AVATAR_PX = 96;
 
@@ -38,13 +36,6 @@ async function writeChannel(convId: string, patch: GroupMetaPatch, picture: Pict
   if (picture.kind === 'remove') full.imageUrl = '';
   if (Object.keys(full).length > 0) await updateGroupMeta(convId, full);
   return full;
-}
-
-async function writeLabels(line: string, edits: LabelEdits): Promise<string[] | null> {
-  let latest: string[] | null = null;
-  for (const label of edits.removed) latest = await removeGroupLabel(line, label);
-  for (const label of edits.added) latest = await addGroupLabel(line, label);
-  return latest;
 }
 
 function useLabelDraft(labels: string[]): {
@@ -68,7 +59,7 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
 }
 
-async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: LabelEdits): Promise<{
+async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<{
   written: GroupMetaPatch; labels: string[] | null;
 }> {
   const written = await writeChannel(convId, patch, picture);
@@ -94,8 +85,8 @@ function EditChannelSection({ convId, current, rights, picture, labels, onLabels
 
   const save = (): void => {
     if (busy || problem) return;
-    const edits = labelEdits(labels, labelDraft.final());
-    if (Object.keys(changes).length === 0 && picture.kind === 'keep' && !hasLabelEdits(edits)) { setStatus('Nothing changed yet.'); return; }
+    const edits = listEdits(labels, labelDraft.final());
+    if (Object.keys(changes).length === 0 && picture.kind === 'keep' && !hasListEdits(edits)) { setStatus('Nothing changed yet.'); return; }
     setBusy(true);
     setStatus(null);
     void saveChannel(convId, changes, picture, edits)

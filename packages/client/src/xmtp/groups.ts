@@ -87,13 +87,20 @@ export async function addGroupMembersWith(
 
 export type GroupPolicyOption = 'allow' | 'deny' | 'admin' | 'superAdmin' | 'unknown';
 
-export interface GroupMetaPolicy { name: GroupPolicyOption; description: GroupPolicyOption; image: GroupPolicyOption; appData: GroupPolicyOption }
+export interface GroupMetaPolicy {
+  name: GroupPolicyOption; description: GroupPolicyOption; image: GroupPolicyOption; appData: GroupPolicyOption;
+  addMember: GroupPolicyOption; removeMember: GroupPolicyOption;
+}
 
 export type GroupRole = 'owner' | 'admin' | 'member';
 
-export interface GroupEditRights { name: boolean; description: boolean; image: boolean; appData: boolean }
+export interface GroupEditRights {
+  name: boolean; description: boolean; image: boolean; appData: boolean; addMembers: boolean; removeMembers: boolean;
+}
 
-export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = { name: 'unknown', description: 'unknown', image: 'unknown', appData: 'unknown' };
+export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = {
+  name: 'unknown', description: 'unknown', image: 'unknown', appData: 'unknown', addMember: 'unknown', removeMember: 'unknown',
+};
 
 const ROLE_RANK: Record<GroupRole, number> = { member: 0, admin: 1, owner: 2 };
 
@@ -103,9 +110,12 @@ const POLICY_RANK: Record<GroupPolicyOption, number> = {
 
 export function groupMetaPolicyOfSet(set: {
   updateGroupNamePolicy: GroupPolicyOption; updateGroupDescriptionPolicy: GroupPolicyOption; updateGroupImagePolicy: GroupPolicyOption;
-  updateAppDataPolicy: GroupPolicyOption;
+  updateAppDataPolicy: GroupPolicyOption; addMemberPolicy: GroupPolicyOption; removeMemberPolicy: GroupPolicyOption;
 }): GroupMetaPolicy {
-  return { name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy, appData: set.updateAppDataPolicy };
+  return {
+    name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy, appData: set.updateAppDataPolicy,
+    addMember: set.addMemberPolicy, removeMember: set.removeMemberPolicy,
+  };
 }
 
 export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdmins: string[] }): GroupRole {
@@ -132,6 +142,8 @@ export function groupEditRightsOf(policy: GroupMetaPolicy, role: GroupRole): Gro
     description: allows(policy.description, role),
     image: allows(policy.image, role),
     appData: policy.appData !== 'unknown' && allows(policy.appData, role),
+    addMembers: allows(policy.addMember, role),
+    removeMembers: allows(policy.removeMember, role),
   };
 }
 

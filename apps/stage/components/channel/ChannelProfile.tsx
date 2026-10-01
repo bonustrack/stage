@@ -10,14 +10,13 @@ import { cachedSelfEthAddress, selfEthAddress } from '../../modules/messaging';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
 import { reported } from '../../lib/errorPolicy';
-import { openAddMembers } from '../../lib/addMembersHost';
 import { channelProfileMenuItems } from './channel.parts.model';
 import { ChannelMembersList } from './channel.members';
-import { ChannelAssignees } from '../conversation/MemberListSidebar';
+import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberListSidebar';
 import { ChannelProfileHeader, ChannelTitle } from './channel.header';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
-import { ChannelLabelsView, useChannelLabels } from './channel.labels';
+import { ChannelLabels, useChannelLabels } from './channel.labels';
 
 export function ChannelProfile({ convId }: { convId: string }): React.ReactElement {
   const router = useRouter();
@@ -54,12 +53,11 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
       >
         <ChannelTitle name={g.name} description={g.description} />
       </ChannelProfileHeader>
-      <ChannelLabelsView labels={labels} />
-      <ChannelAssignees convId={convId}/>
+      <ChannelLabels convId={convId} labels={labels} onSaved={setLabels}/>
+      <ChannelMembersSection convId={convId} count={g.members.length}/>
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
-        selfAddress={selfAddress} removing={g.removing} dark={dark}
-        onAdd={() => { openAddMembers(convId); }}
+        selfAddress={selfAddress} removing={g.removing} dark={dark} footer={<ChannelAssignees convId={convId}/>}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
       />
