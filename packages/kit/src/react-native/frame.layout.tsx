@@ -1,4 +1,4 @@
-import { Children, useState, type ReactNode } from 'react';
+import { Children, useMemo, useState, type ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FRAME_SPACING_UNIT, frameSummary, type FrameColor, type FrameNode, type FrameNodeOf } from '../frame';
 import type { FrameBorder, FrameBorderSide } from '../frame.values';
@@ -177,7 +177,7 @@ export function FrameListViewItem({ node, children }: FrameNodeProps<'ListViewIt
   const scope = useFormScope();
   const { onClickAction, gap, align } = node.props;
   const pressable = onClickAction !== undefined && enabled && !busy;
-  const label = frameSummary(node).title;
+  const label = useMemo(() => frameSummary(node).title, [node]);
   return (
     <ListViewItem dark={dark} gap={gap} align={align === 'baseline' || align === 'stretch' ? undefined : align}
       onPress={pressable ? () => { void scope?.run(onClickAction, { label }); } : undefined}>

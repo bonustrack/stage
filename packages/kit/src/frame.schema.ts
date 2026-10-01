@@ -1,6 +1,6 @@
 import {
-  action, bool, border, cardAction, color, editable, httpsUrl, int, label, length, oneOf, options,
-  padding, px, ratio, space, status, str, text, type Validator,
+  action, bool, border, cardAction, color, editable, fieldName, httpsUrl, int, label, length, oneOf, options,
+  padding, px, ratio, space, status, text, type Validator,
 } from './frame.values';
 
 export const FRAME_ICONS = [
@@ -29,7 +29,6 @@ const FIELD_VARIANT = oneOf(['soft', 'outline']);
 const THEME = oneOf(['light', 'dark']);
 const ICON = oneOf(FRAME_ICONS);
 const FLEX: Validator<number> = (raw) => (typeof raw === 'number' && raw >= 0 && raw <= 100 ? raw : undefined);
-const NAME = str(120);
 
 const BLOCK = {
   height: length, width: length, size: length, minHeight: length, minWidth: length,
@@ -45,7 +44,7 @@ const TEXT_BASE = {
   value: text, color, weight: WEIGHT, textAlign: TEXT_ALIGN, truncate: bool, maxLines: int(1, 100),
 };
 
-const FIELD = { name: NAME, placeholder: label, required: bool, disabled: bool, size: CONTROL_SIZE };
+const FIELD = { name: fieldName, placeholder: label, required: bool, disabled: bool, size: CONTROL_SIZE };
 
 interface NodeSchema {
   props: Record<string, Validator<unknown>>;
@@ -75,7 +74,7 @@ export const FRAME_NODE_SCHEMAS = {
   Title: { props: { ...TEXT_BASE, size: oneOf(['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']) }, required: ['value'] },
   Caption: { props: { ...TEXT_BASE, size: oneOf(['sm', 'md', 'lg']) }, required: ['value'] },
   Label: {
-    props: { value: label, fieldName: NAME, size: TEXT_SIZE, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
+    props: { value: label, fieldName, size: TEXT_SIZE, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
     required: ['value'],
   },
   Markdown: { props: { value: text }, required: ['value'] },
@@ -131,12 +130,12 @@ export const FRAME_NODE_SCHEMAS = {
     required: ['name'],
   },
   Checkbox: {
-    props: { name: NAME, label, defaultChecked: bool, onChangeAction: action, disabled: bool, required: bool },
+    props: { name: fieldName, label, defaultChecked: bool, onChangeAction: action, disabled: bool, required: bool },
     required: ['name'],
   },
   RadioGroup: {
     props: {
-      name: NAME, options, onChangeAction: action, defaultValue: label, direction: DIRECTION,
+      name: fieldName, options, onChangeAction: action, defaultValue: label, direction: DIRECTION,
       disabled: bool, required: bool,
     },
     required: ['name', 'options'],

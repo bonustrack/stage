@@ -119,8 +119,11 @@ export interface FrameSummary {
   description?: string;
 }
 
+const SUMMARY_TEXT_MAX = 400;
+
 function plainText(value: string): string {
   return value
+    .slice(0, SUMMARY_TEXT_MAX)
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/^\s*(?:#{1,6}|>)\s*/gm, '')
     .replace(/[*_`~]/g, '')

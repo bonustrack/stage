@@ -59,6 +59,7 @@ export function str(max = MAX_LABEL): Validator<string> {
 }
 
 export const label = str();
+export const fieldName = str(120);
 export const text = str(FRAME_MAX_TEXT);
 
 export const bool: Validator<boolean> = (raw) => (typeof raw === 'boolean' ? raw : undefined);
@@ -231,7 +232,7 @@ export interface FrameEditable {
 
 export const editable: Validator<FrameEditable> = (raw) => {
   if (!isRecord(raw)) return undefined;
-  const name = label(raw.name);
+  const name = fieldName(raw.name);
   if (name === undefined || name === '') return undefined;
   return { name, placeholder: label(raw.placeholder), required: bool(raw.required) };
 };

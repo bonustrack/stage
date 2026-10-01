@@ -2,12 +2,13 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
 import { MemoryStore } from './cache.shared';
 import { makeListeners, useStoreValue } from './storeCore';
+import { resetFeedLines } from './feedLines';
 
 export const inboxEthCache = new MemoryStore<string, string>();
 
 export const feedCache = new MemoryStore<string, HistoryEntry[]>();
 
-export const activeFeedLines = new Set<string>();
+export { activeFeedLines } from './feedLines';
 
 export type XmtpBootstrapPhase = 'idle' | 'registering';
 
@@ -36,7 +37,7 @@ export function registerGlobalStreamTeardown(fn: () => void): void { globalStrea
 export function resetSharedXmtpState(): void {
   clearAppDataWrites();
   globalStreamTeardown?.();
-  activeFeedLines.clear();
+  resetFeedLines();
   feedCache.clear();
   inboxEthCache.clear();
 }

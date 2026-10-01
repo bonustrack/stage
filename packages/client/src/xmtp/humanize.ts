@@ -117,12 +117,25 @@ function previewPoll(decoded: unknown): string {
   return title ? `Poll: ${title}` : '[poll]';
 }
 
+function previewFrame(decoded: unknown): string {
+  const title = (decoded as { title?: unknown } | null)?.title;
+  return typeof title === 'string' && title.trim() !== '' ? `Frame: ${title.trim()}` : 'Frame';
+}
+
+function previewFrameAction(decoded: unknown): string {
+  const a = decoded as { label?: unknown; action?: { type?: unknown } } | null;
+  if (typeof a?.label === 'string' && a.label !== '') return a.label;
+  return typeof a?.action?.type === 'string' ? a.action.type : '[frame action]';
+}
+
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
+  frame: previewFrame,
+  frameAction: previewFrameAction,
   reply: previewReply,
   attachment: previewSingleAttachment,
   remoteStaticAttachment: previewSingleAttachment,

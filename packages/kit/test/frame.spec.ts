@@ -227,6 +227,14 @@ describe('frameSummary', () => {
     }))).toEqual({ title: 'Globex', description: 'Invoice #1041' });
   });
 
+  test('long or hostile text stays fast and short', () => {
+    const value = '['.repeat(7900);
+    const started = performance.now();
+    const summary = frameSummary(root({ type: 'Card', children: Array.from({ length: 7 }, () => ({ type: 'Text', value })) }));
+    expect(performance.now() - started).toBeLessThan(50);
+    expect(summary.title?.length).toBeLessThanOrEqual(400);
+  });
+
   test('falls back to text when there is no Title', () => {
     expect(frameSummary(root({ type: 'Card', children: [{ type: 'Text', value: 'One' }, { type: 'Caption', value: 'Two' }] })))
       .toEqual({ title: 'One', description: 'Two' });

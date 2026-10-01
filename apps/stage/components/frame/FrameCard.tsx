@@ -21,6 +21,7 @@ export function FrameCard({ frame, line, messageId }: {
   const pal = usePalette();
   const model = useMemo(() => frameCardModel(frame), [frame]);
   const convId = convIdOfLine(line);
+  const side = { width: 1, color: pal.border };
   return (
     <Pressable
       accessibilityRole="button"
@@ -30,7 +31,7 @@ export function FrameCard({ frame, line, messageId }: {
       onPress={() => { if (convId !== null) router.push(frameLinkOf(convId, messageId)); }}
       style={{ alignSelf: 'stretch' }}
     >
-      <Row gap={12} align="center" padding={12} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border }}>
+      <Row gap={12} align="center" padding={12} radius={BLOCK_RADIUS_DEFAULT} border={{ top: side, right: side, bottom: side, left: side }}>
         <Box size={ICON_TILE} radius="md" background={pal.inputBg} align="center" justify="center">
           <Glyph icon={IconCrop} size={20} color={pal.link} />
         </Box>

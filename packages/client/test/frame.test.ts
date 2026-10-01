@@ -6,6 +6,7 @@ import {
 } from '../src/xmtp/frame';
 import { FRAME_MAX_CHARS, frameActionSchema, frameContentSchema } from '../src/xmtp/frame.schema';
 import { mapDecodedToEnvelope } from '../src/xmtp/envelope';
+import { previewOfXmtpContent } from '../src/xmtp/humanize';
 
 const NS = 1_717_000_000_000 * 1_000_000;
 
@@ -93,5 +94,15 @@ describe('frame envelopes', () => {
     }, 'stage://xmtp/a/conv1');
     expect(e.text).toBe('Frame: Broken');
     expect(e.payload).toEqual({ contentType: 'frame' });
+  });
+});
+
+describe('frame chat-list previews', () => {
+  test('a frame reads as its title, an action as its label or type', () => {
+    expect(previewOfXmtpContent(frame, 'stage.box/frame:1.0')).toBe('Frame: Weekly report');
+    expect(previewOfXmtpContent({ widget: {} }, 'stage.box/frame:1.0')).toBe('Frame');
+    expect(previewOfXmtpContent(action, 'stage.box/frameAction:1.0')).toBe('Approve');
+    expect(previewOfXmtpContent({ frameId: 'f', action: { type: 'pick' } }, 'stage.box/frameAction:1.0')).toBe('pick');
+    expect(previewOfXmtpContent(null, 'stage.box/frameAction:1.0')).toBe('[frame action]');
   });
 });

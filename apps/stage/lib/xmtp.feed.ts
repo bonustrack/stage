@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient } from './xmtp.client';
-import { feedCache, activeFeedLines } from './xmtp.state.core';
+import { feedCache } from './xmtp.state.core';
+import { holdFeedLine } from './feedLines';
 import { ensureGlobalStream } from './xmtp.stream';
 import { getQueryClient } from './queryClient';
 import { messagingKeys } from '../modules/messaging/queries';
@@ -44,7 +45,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     if (!enabled || !line) return;
     const ln = line;
     ensureFeedQueryBridge();
-    activeFeedLines.add(ln);
+    const release = holdFeedLine(ln);
     void ensureGlobalStream();
     let cancelled = false;
     void getOrCreateXmtpClient('production')
@@ -54,7 +55,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     setLoadingOlder(false);
     loadingOlderRef.current = false;
     hasMoreRef.current = true;
-    return () => { cancelled = true; activeFeedLines.delete(ln); };
+    return () => { cancelled = true; release(); };
   }, [line, enabled, accountEpoch]);
 
   const queryKey = messagingKeys.messages(accountEpoch, line ?? '');

@@ -56,11 +56,15 @@ function FrameNotice({ reason }: { reason: FrameError | 'render' }): React.React
   );
 }
 
-class FrameBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class FrameBoundary extends Component<{ resetKey: unknown; children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
 
   static getDerivedStateFromError(): { failed: boolean } {
     return { failed: true };
+  }
+
+  override componentDidUpdate(prev: { resetKey: unknown }): void {
+    if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false });
   }
 
   override render(): ReactNode {
@@ -80,7 +84,7 @@ function FrameBody({ widget }: { widget: unknown }): React.ReactElement {
   const parsed = useMemo(() => parseFrame(widget), [widget]);
   if (!parsed.ok) return <FrameNotice reason={parsed.error} />;
   return (
-    <FrameBoundary>
+    <FrameBoundary resetKey={parsed}>
       <FrameFormScope>
         <FrameNodeView node={parsed.root} />
       </FrameFormScope>

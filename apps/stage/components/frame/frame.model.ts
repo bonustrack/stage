@@ -1,6 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { FrameActionContent } from '@stage-labs/client/xmtp/frame';
-import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
+import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import { frameSummary, parseFrame, type FrameAction } from '@stage-labs/kit/frame';
 
 export const FRAME_ROUTE = '/frame';
@@ -39,8 +38,9 @@ export function frameLinkOf(convId: string, messageId: string): FrameLink {
   return { pathname: FRAME_ROUTE, params: { convId, id: messageId } };
 }
 
-export function frameActionContent(frameId: string, action: FrameAction, label: string | undefined): FrameActionContent {
+export function frameActionContent(frameId: string, action: FrameAction, label: string | undefined): FrameActionContent | null {
   const name = filled(label);
   const act = action.payload === undefined ? { type: action.type } : { type: action.type, payload: action.payload };
-  return name === undefined ? { frameId, action: act } : { frameId, action: act, label: name };
+  const parsed = frameActionSchema.safeParse(name === undefined ? { frameId, action: act } : { frameId, action: act, label: name });
+  return parsed.success ? parsed.data : null;
 }

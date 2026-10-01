@@ -22,10 +22,15 @@ function FrameBody({ frame, convId, line, messageId, onSent }: {
 }): React.ReactElement {
   const consent = useConvConsentState(convId);
   const dark = useEffectiveColorScheme() === 'dark';
-  const gated = consent === 'unknown' || consent === 'denied';
+  const gated = consent !== 'allowed';
   const onAction = useCallback(async (action: FrameAction, source: FrameActionSource): Promise<void> => {
+    const content = frameActionContent(messageId, action, source.label);
+    if (content === null) {
+      capabilities.toast('This answer is too long to send.');
+      return;
+    }
     try {
-      await xmtpSendFrameAction(line, frameActionContent(messageId, action, source.label));
+      await xmtpSendFrameAction(line, content);
       onSent();
     } catch (err) {
       report('frame.action', err);
@@ -36,7 +41,9 @@ function FrameBody({ frame, convId, line, messageId, onSent }: {
     <Col gap={12}>
       <Frame widget={frame.widget} dark={dark} disabled={gated} onAction={onAction}
         onOpenUrl={(url) => { openInBubbleLink(url); }} />
-      {gated ? <Text size="sm" role="secondary">Accept this conversation to use this frame.</Text> : null}
+      {consent === 'unknown' || consent === 'denied' ? (
+        <Text size="sm" role="secondary">Accept this conversation to use this frame.</Text>
+      ) : null}
     </Col>
   );
 }
@@ -47,6 +54,7 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   const line = lineOfConv(convId);
   const feed = useXmtpFeed(line, true);
   const frame = useMemo(() => frameOf(feed.events.find((e) => e.id === messageId)), [feed.events, messageId]);
+  const title = useMemo(() => (frame === null ? 'Frame' : frameCardModel(frame).title), [frame]);
   const chat = `/channel/${convId}`;
   const canGoBack = router.canGoBack();
   const leave = useCallback(() => {
@@ -55,12 +63,13 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   }, [router, canGoBack, chat]);
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title={frame === null ? 'Frame' : frameCardModel(frame).title} backTo={canGoBack ? undefined : chat} />
+      <StackHeader title={title} backTo={canGoBack ? undefined : chat} />
       <ScreenScroll
         contentContainerStyle={{ padding: PAGE_GUTTER, paddingBottom: PAGE_GUTTER + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
-        <Box style={{ width: '100%', maxWidth: FRAME_MAX_WIDTH, alignSelf: 'center' }}>
+        <Col align="center">
+        <Box width="100%" maxWidth={FRAME_MAX_WIDTH}>
           {frame !== null ? (
             <FrameBody frame={frame} convId={convId} line={line} messageId={messageId} onSent={leave} />
           ) : feed.status === 'loading' ? (
@@ -69,6 +78,7 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
             <EmptyState title="This frame is not available." />
           )}
         </Box>
+        </Col>
       </ScreenScroll>
     </Col>
   );

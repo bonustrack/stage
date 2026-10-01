@@ -37,7 +37,7 @@ describe('frameCardModel', () => {
   test('falls back to Frame and drops a description equal to the title', () => {
     expect(frameCardModel({ widget: { type: 'Card' } })).toEqual({ title: 'Frame' });
     expect(frameCardModel({ title: 'Same', description: ' Same ', widget })).toEqual({ title: 'Same' });
-    expect(frameCardModel({ title: '  ', widget: 'nope' as unknown as Record<string, unknown> })).toEqual({ title: 'Frame' });
+    expect(frameCardModel({ title: '  ', widget: { type: 'Iframe' } })).toEqual({ title: 'Frame' });
   });
 });
 
@@ -51,5 +51,9 @@ describe('frame navigation and actions', () => {
     expect(frameActionContent('msg-frame-1', { type: 'approve', payload: { week: 39 } }, ' Approve '))
       .toEqual({ frameId: 'msg-frame-1', action: { type: 'approve', payload: { week: 39 } }, label: 'Approve' });
     expect(frameActionContent('msg-frame-1', { type: 'pick' }, undefined)).toEqual({ frameId: 'msg-frame-1', action: { type: 'pick' } });
+  });
+
+  test('an action too large to decode is not sent', () => {
+    expect(frameActionContent('msg-frame-1', { type: 'save', payload: { note: 'x'.repeat(20_000) } }, 'Save')).toBeNull();
   });
 });
