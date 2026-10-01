@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FRAME_ICONS, FRAME_LIMITS, frameFillPadding, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
+  FRAME_ICONS, FRAME_LIMITS, frameFillPadding, frameFlex, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
   type FrameNode,
 } from '../src/frame';
 import { kitPalette } from '../src/tokens';
@@ -234,6 +234,40 @@ describe('frameFillPadding', () => {
   test('a root padding wins, so padding 0 leaves no spacing', () => {
     expect(frameFillPadding({ top: 0, right: 0, bottom: 0, left: 0 }, { padding: 18 })).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
     expect(frameFillPadding({ top: 8, left: 4 }, { padding: 18, insetBottom: 10 })).toEqual({ top: 8, left: 4, bottom: 10 });
+  });
+});
+
+describe('frameFlex', () => {
+  const shrink = { flexShrink: 1, minWidth: 0 };
+  const keep = { flexShrink: 0 };
+
+  test('Box, Row, Col and Form shrink to the width they get', () => {
+    for (const type of ['Box', 'Row', 'Col', 'Form']) expect(frameFlex(only({ type }))).toEqual(shrink);
+  });
+
+  test('a box with its own minWidth keeps it', () => {
+    expect(frameFlex(only({ type: 'Col', minWidth: 120 }))).toEqual({ flexShrink: 1 });
+  });
+
+  test('text that can wrap shrinks, so it wraps instead of running off', () => {
+    expect(frameFlex(only({ type: 'Text', value: 'The top secret URSALA, RAQUEL, and FARRAH satellites' }))).toEqual(shrink);
+    expect(frameFlex(only({ type: 'Title', value: 'Hacker News' }))).toEqual(shrink);
+    expect(frameFlex(only({ type: 'Caption', value: 'new | past | comments' }))).toEqual(shrink);
+    expect(frameFlex(only({ type: 'Label', value: 'Your full name' }))).toEqual(shrink);
+    expect(frameFlex(only({ type: 'Text', value: 'https://news.ycombinator.com/item?id=1' }))).toEqual(shrink);
+  });
+
+  test('short single words keep their width', () => {
+    expect(frameFlex(only({ type: 'Caption', value: '10.' }))).toEqual(keep);
+    expect(frameFlex(only({ type: 'Title', value: '31\u00b0C' }))).toEqual(keep);
+    expect(frameFlex(only({ type: 'Text', value: ' Yesterday ' }))).toEqual(keep);
+  });
+
+  test('badges, buttons, icons and images keep their width', () => {
+    expect(frameFlex(only({ type: 'Badge', label: 'Bulk import live' }))).toEqual(keep);
+    expect(frameFlex(only({ type: 'Button', label: 'Needs a lot more work' }))).toEqual(keep);
+    expect(frameFlex(only({ type: 'Icon', name: 'star' }))).toEqual(keep);
+    expect(frameFlex(only({ type: 'Image', src: 'https://x.y/a.png' }))).toEqual(keep);
   });
 });
 

@@ -1,7 +1,7 @@
 import { Children, useMemo, useState, type ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
 import {
-  FRAME_SPACING_UNIT, frameFillPadding, frameSummary, type FrameColor, type FrameFill, type FrameNode, type FrameNodeOf,
+  FRAME_SPACING_UNIT, frameFillPadding, frameFlex, frameSummary, type FrameColor, type FrameFill, type FrameNode, type FrameNodeOf,
 } from '../frame';
 import type { FrameBorder, FrameBorderSide } from '../frame.values';
 import { spacingEntries, type BoxBaseProps, type ResolvedBoxBorder, type ResolvedBoxBorderSide } from '../layout';
@@ -72,16 +72,16 @@ function useBoxProps(props: BoxNode['props']): BoxBaseProps {
 }
 
 export function FrameBox({ node, children }: FrameNodeProps<'Box'>): React.ReactElement {
-  return <Box direction={node.props.direction ?? 'col'} {...useBoxProps(node.props)}>{children}</Box>;
+  return <Box direction={node.props.direction ?? 'col'} {...useBoxProps(node.props)} style={frameFlex(node)}>{children}</Box>;
 }
 
 export function FrameRow({ node, children }: FrameNodeProps<'Row'>): React.ReactElement {
   const props = useBoxProps(node.props);
-  return <Row {...props} align={props.align ?? 'center'} gap={props.gap ?? ROW_GAP}>{children}</Row>;
+  return <Row {...props} align={props.align ?? 'center'} gap={props.gap ?? ROW_GAP} style={frameFlex(node)}>{children}</Row>;
 }
 
 export function FrameCol({ node, children }: FrameNodeProps<'Col'>): React.ReactElement {
-  return <Col {...useBoxProps(node.props)}>{children}</Col>;
+  return <Col {...useBoxProps(node.props)} style={frameFlex(node)}>{children}</Col>;
 }
 
 function FormMissing(): React.ReactElement | null {
@@ -94,7 +94,7 @@ export function FrameForm({ node, children }: FrameNodeProps<'Form'>): React.Rea
   const props = useBoxProps(node.props);
   return (
     <FrameFormScope submitAction={node.props.onSubmitAction}>
-      <Box direction={node.props.direction ?? 'col'} {...props} gap={props.gap ?? CHILD_GAP}>
+      <Box direction={node.props.direction ?? 'col'} {...props} gap={props.gap ?? CHILD_GAP} style={frameFlex(node)}>
         {children}
         <FormMissing />
       </Box>

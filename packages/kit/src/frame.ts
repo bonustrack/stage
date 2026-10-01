@@ -192,3 +192,22 @@ export function frameFillPadding(padding: FrameSpacing | undefined, fill: FrameF
   const own = padding ?? { top: fill.padding, right: fill.padding, bottom: fill.padding, left: fill.padding };
   return { ...own, bottom: (own.bottom ?? 0) + (fill.insetBottom ?? 0) };
 }
+
+type FrameFlex = Readonly<{ flexShrink: 0 | 1; minWidth?: 0 }>;
+
+const SHRINK: FrameFlex = { flexShrink: 1, minWidth: 0 };
+const SHRINK_OWN_MIN: FrameFlex = { flexShrink: 1 };
+const KEEP: FrameFlex = { flexShrink: 0 };
+const BOX_TYPES: ReadonlySet<FrameNode['type']> = new Set(['Box', 'Row', 'Col', 'Form']);
+const KEEP_MAX_CHARS = 12;
+
+function keepsWidth(value: string): boolean {
+  const word = value.trim();
+  return word.length <= KEEP_MAX_CHARS && !/\s/.test(word);
+}
+
+export function frameFlex(node: FrameNode): FrameFlex {
+  if (BOX_TYPES.has(node.type)) return 'minWidth' in node.props && node.props.minWidth !== undefined ? SHRINK_OWN_MIN : SHRINK;
+  const value = 'value' in node.props ? node.props.value : undefined;
+  return typeof value === 'string' && !keepsWidth(value) ? SHRINK : KEEP;
+}

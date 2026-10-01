@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import type { DimensionValue } from 'react-native';
+import { View, type DimensionValue } from 'react-native';
 import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
-import type { FrameIconName, FrameNodeOf } from '../frame';
+import { frameFlex, type FrameIconName, type FrameNodeOf } from '../frame';
 import { httpsUrl } from '../frame.values';
 import { resolveColors, type ButtonColor, type ButtonControlVariant } from '../button.styles';
 import { spacingEntries } from '../layout';
@@ -41,7 +41,7 @@ export function FrameText({ node }: { node: FrameNodeOf<'Text'> }): React.ReactE
   return (
     <Text value={value} size={size} weight={weight} color={color(node.props.color)} textAlign={textAlign}
       italic={italic} lineThrough={lineThrough} truncate={truncate} maxLines={maxLines}
-      style={width === undefined ? undefined : { width: width as DimensionValue }} />
+      style={width === undefined ? frameFlex(node) : [frameFlex(node), { width: width as DimensionValue }]} />
   );
 }
 
@@ -52,6 +52,7 @@ export function FrameTitle({ node }: { node: FrameNodeOf<'Title'> }): React.Reac
   return (
     <Title color={color(node.props.color)} numberOfLines={truncate === true ? 1 : maxLines}
       style={{
+        ...frameFlex(node),
         fontSize: TITLE_PX[size],
         ...(textAlign === undefined ? {} : { textAlign: TEXT_ALIGN_MAP[textAlign] }),
         ...(light ? { fontFamily: TEXT_FONTS[weight] } : {}),
@@ -66,7 +67,7 @@ export function FrameCaption({ node }: { node: FrameNodeOf<'Caption'> }): React.
   const { value, size, weight, textAlign, truncate, maxLines } = node.props;
   return (
     <Caption value={value} size={size === 'lg' ? 'md' : size} weight={weight === 'bold' ? 'semibold' : weight}
-      textAlign={textAlign} color={color(node.props.color)} truncate={truncate} maxLines={maxLines} />
+      textAlign={textAlign} color={color(node.props.color)} truncate={truncate} maxLines={maxLines} style={frameFlex(node)} />
   );
 }
 
@@ -74,7 +75,10 @@ export function FrameLabel({ node }: { node: FrameNodeOf<'Label'> }): React.Reac
   const { dark } = useFrameRuntime();
   const color = useFrameColor();
   const { value, fieldName, size, weight, textAlign } = node.props;
-  return <Label value={value} fieldName={fieldName} size={size} weight={weight} textAlign={textAlign} color={color(node.props.color)} dark={dark} />;
+  return (
+    <Label value={value} fieldName={fieldName} size={size} weight={weight} textAlign={textAlign} color={color(node.props.color)}
+      dark={dark} style={frameFlex(node)} />
+  );
 }
 
 export function FrameMarkdown({ node }: { node: FrameNodeOf<'Markdown'> }): React.ReactElement {
@@ -102,7 +106,11 @@ export function FrameIcon({ node }: { node: FrameNodeOf<'Icon'> }): React.ReactE
   const color = useFrameColor();
   const { name, size = 'md' } = node.props;
   if (name === undefined) return null;
-  return <Glyph icon={FRAME_ICON_GLYPHS[name]} size={ICON_PX[size]} color={color(node.props.color)} dark={dark} />;
+  return (
+    <View style={frameFlex(node)}>
+      <Glyph icon={FRAME_ICON_GLYPHS[name]} size={ICON_PX[size]} color={color(node.props.color)} dark={dark} />
+    </View>
+  );
 }
 
 export function FrameImage({ node }: { node: FrameNodeOf<'Image'> }): React.ReactElement | null {
