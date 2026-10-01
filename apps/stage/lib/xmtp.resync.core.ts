@@ -2,28 +2,20 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { report } from './errorPolicy';
-import { mergeFeedEntries } from './feedOrder.model';
-import { setReceivedFullPage } from './feedPageInfo';
+import { mergeFeedEntries, type FeedMerge } from './feedOrder.model';
+import { markFeedStart } from './feedStart';
 
 export const PAGE_SIZE = 20;
 
-export interface MergeResult {
-  entries: HistoryEntry[];
-  added: number;
-  receivedFullPage: boolean;
+export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {
+  const merged = mergeFeedEntries(feedCache.get(line) ?? [], entries.filter(e => !isControlBody(e.text)));
+  if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
+  return merged;
 }
 
-export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): MergeResult {
-  const filtered = entries.filter(e => !isControlBody(e.text));
-  const merged = mergeFeedEntries(feedCache.get(line) ?? [], filtered);
-  if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
-  const receivedFullPage = entries.length >= PAGE_SIZE;
-  setReceivedFullPage(line, receivedFullPage);
-  return {
-    entries: merged.entries,
-    added: merged.added,
-    receivedFullPage,
-  };
+export function mergePageIntoFeed(line: string, page: readonly HistoryEntry[], older = false): void {
+  const { entries, added } = mergeIntoFeed(line, page);
+  if (page.length < PAGE_SIZE || (older && added === 0)) markFeedStart(line, entries[entries.length - 1]?.id ?? '');
 }
 
 export function throttledInboxSync(syncAll: () => Promise<boolean>): (maxAgeMs?: number) => Promise<void> {
@@ -54,7 +46,7 @@ export function feedResync(
     for (const line of activeFeedLines) {
       try {
         const page = await latestPage(line);
-        if (page !== null) mergeIntoFeed(line, page);
+        if (page !== null) mergePageIntoFeed(line, page);
       } catch (err) {
         report('xmtp.feedResync', err);
       }

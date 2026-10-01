@@ -3,7 +3,7 @@ import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
-import { PAGE_SIZE, mergeIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
+import { PAGE_SIZE, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache } from '../../lib/xmtp.state.core';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
@@ -32,7 +32,7 @@ function revalidateFeed(line: string): Promise<void> {
       await syncInboxOnce(0);
       const page = await refreshLatestPage(line);
       if (!page) return;
-      mergeIntoFeed(line, page);
+      mergePageIntoFeed(line, page);
       await reconcileOnOpen(line);
     } catch (err) {
       report('feed.revalidate', err);
@@ -51,7 +51,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
     await perfTime('feed.revalidate', () => revalidateFeed(line));
     return feedCache.get(line) ?? [];
   }
-  mergeIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
+  mergePageIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }
@@ -66,8 +66,7 @@ export function prefetchFeed(line: string): void {
     .catch(ignored(undefined, 'optional'));
 }
 
-export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
+export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<void> {
   const beforeTsMs = new Date(oldest.ts).getTime();
-  const result = mergeIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE));
-  return result.added >= PAGE_SIZE;
+  mergePageIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE), true);
 }

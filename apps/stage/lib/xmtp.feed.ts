@@ -13,8 +13,8 @@ import {
 } from '../modules/messaging/feedQuery';
 import { type XmtpFeedStatus } from './xmtp.types';
 import { report, reported } from './errorPolicy';
-import { feedReachedStart, markFeedStart, useFeedReachedStart } from './feedStart';
-import { didReceiveFullPage } from './feedPageInfo';
+import { feedStartId, useFeedStartId } from './feedStart';
+import { isAtFeedStart } from './feedStart.model';
 
 const EMPTY: HistoryEntry[] = [];
 
@@ -29,13 +29,11 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
 } {
   const accountEpoch = useAccountEpoch();
-  const reachedStart = useFeedReachedStart(line);
+  const firstId = useFeedStartId(line);
   const [inboxId, setInboxId] = useState<string>('');
-  const [hasMore, setHasMore] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const loadingOlderRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  hasMoreRef.current = hasMore;
+  const olderFailedRef = useRef(false);
   const lineRef = useRef(line);
   lineRef.current = line;
   const epochRef = useRef(accountEpoch);
@@ -51,10 +49,9 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     void getOrCreateXmtpClient('production')
       .then(c => { if (!cancelled) setInboxId(c.inboxId); })
       .catch(reported('feed.client'));
-    setHasMore(true);
     setLoadingOlder(false);
     loadingOlderRef.current = false;
-    hasMoreRef.current = true;
+    olderFailedRef.current = false;
     return () => { cancelled = true; release(); };
   }, [line, enabled, accountEpoch]);
 
@@ -67,36 +64,26 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     staleTime: 0,
   });
   const events = query.data ?? EMPTY;
-
-  useEffect(() => {
-    if (query.isFetching || !query.isFetched) return;
-    if (!didReceiveFullPage(line ?? '')) {
-      hasMoreRef.current = false;
-      setHasMore(false);
-      if (line) markFeedStart(line);
-    }
-  }, [query.isFetching, query.isFetched, line]);
+  const reachedStart = isAtFeedStart(events[events.length - 1]?.id, firstId);
 
   const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
   const error = query.error ? (query.error).message : null;
 
   const loadOlder = useCallback(async (): Promise<void> => {
     const ln = lineRef.current;
-    if (loadingOlderRef.current || !hasMoreRef.current || !ln || feedReachedStart(ln)) return;
+    if (loadingOlderRef.current || olderFailedRef.current || !ln) return;
     const slice = getQueryClient().getQueryData<HistoryEntry[]>(
       messagingKeys.messages(epochRef.current, ln),
     ) ?? feedCache.get(ln) ?? EMPTY;
     const oldest = slice[slice.length - 1];
-    if (!oldest) return;
+    if (!oldest || isAtFeedStart(oldest.id, feedStartId(ln))) return;
     loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
-      const more = await loadFeedOlderPage(ln, oldest);
-      if (!more) { hasMoreRef.current = false; setHasMore(false); markFeedStart(ln); }
+      await loadFeedOlderPage(ln, oldest);
     } catch (err) {
       report('feed.loadOlder', err);
-      hasMoreRef.current = false;
-      setHasMore(false);
+      olderFailedRef.current = true;
     }
     finally {
       loadingOlderRef.current = false;
@@ -104,5 +91,5 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     }
   }, []);
 
-  return { events, status, error, inboxId, loadOlder, hasMore: hasMore && !reachedStart, loadingOlder };
+  return { events, status, error, inboxId, loadOlder, hasMore: !reachedStart, loadingOlder };
 }

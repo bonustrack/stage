@@ -1,24 +1,24 @@
 import { createValueStore } from './persistedStore';
-import { parseFeedStarts, withFeedStart } from './feedStart.model';
+import { feedStartOf, parseFeedStarts, withFeedStart, type FeedStart } from './feedStart.model';
 
-const store = createValueStore<string[]>({
+const store = createValueStore<FeedStart[]>({
   key: 'feed.reachedStart',
   default: [],
-  serialize: (lines) => JSON.stringify(lines),
+  serialize: (starts) => JSON.stringify(starts),
   deserialize: parseFeedStarts,
 });
 
 store.loadAsync();
 
-export function feedReachedStart(line: string): boolean {
-  return store.get().includes(line);
+export function feedStartId(line: string): string | undefined {
+  return feedStartOf(store.get(), line);
 }
 
-export function markFeedStart(line: string): void {
-  if (!feedReachedStart(line)) store.set(withFeedStart(store.get(), line));
+export function markFeedStart(line: string, firstId: string): void {
+  if (feedStartId(line) !== firstId) store.set(withFeedStart(store.get(), line, firstId));
 }
 
-export function useFeedReachedStart(line: string | null): boolean {
-  const lines = store.use();
-  return line !== null && lines.includes(line);
+export function useFeedStartId(line: string | null): string | undefined {
+  const starts = store.use();
+  return line === null ? undefined : feedStartOf(starts, line);
 }

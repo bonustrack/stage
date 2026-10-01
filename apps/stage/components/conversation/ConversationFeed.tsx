@@ -85,15 +85,17 @@ function restoreFeedScroll(c: ConvState, contentHeight: number, refs: FeedScroll
   return distance;
 }
 
-function feedPager(
-  loadOlder: () => Promise<void>,
-  metrics: React.RefObject<FeedScrollMetrics>,
-  positioned: React.RefObject<boolean>,
-): () => void {
+function feedPager(loadOlder: () => Promise<void>, refs: FeedScrollRefs): () => void {
   return () => {
-    if (UPRIGHT && !shouldPageOlder(metrics.current, positioned.current)) return;
-    void loadOlder();
+    refs.olderPending.current = UPRIGHT && !shouldPageOlder(refs.metrics.current, refs.positioned.current);
+    if (!refs.olderPending.current) void loadOlder();
   };
+}
+
+function flushPendingOlder(c: ConvState, refs: FeedScrollRefs): void {
+  if (!refs.olderPending.current || !shouldPageOlder(refs.metrics.current, refs.positioned.current)) return;
+  refs.olderPending.current = false;
+  setTimeout(() => { void c.loadOlder(); }, 0);
 }
 
 interface OrientedFeed {
@@ -144,6 +146,7 @@ interface FeedScrollRefs {
   metrics: React.MutableRefObject<FeedScrollMetrics>;
   positioned: React.MutableRefObject<boolean>;
   settleUntil: React.MutableRefObject<number>;
+  olderPending: React.MutableRefObject<boolean>;
 }
 
 function useFeedScrollRefs(convId: string): FeedScrollRefs {
@@ -152,14 +155,16 @@ function useFeedScrollRefs(convId: string): FeedScrollRefs {
   const metrics = useRef<FeedScrollMetrics>({ offset: 0, contentHeight: 0, viewportHeight: 0 });
   const positioned = useRef(false);
   const settleUntil = useRef(0);
+  const olderPending = useRef(false);
   const shownConv = useRef(convId);
   if (shownConv.current !== convId) {
     shownConv.current = convId;
     userDragged.current = false;
     positioned.current = false;
     settleUntil.current = 0;
+    olderPending.current = false;
   }
-  return { viewportHeight, userDragged, metrics, positioned, settleUntil };
+  return { viewportHeight, userDragged, metrics, positioned, settleUntil, olderPending };
 }
 
 function feedScrollEvents(c: ConvState, convId: string, refs: FeedScrollRefs): Pick<
@@ -172,6 +177,7 @@ function feedScrollEvents(c: ConvState, convId: string, refs: FeedScrollRefs): P
       const m = ev.nativeEvent;
       viewportHeight.current = m.layoutMeasurement.height;
       metrics.current = { offset: m.contentOffset.y, contentHeight: m.contentSize.height, viewportHeight: m.layoutMeasurement.height };
+      flushPendingOlder(c, refs);
       if (UPRIGHT && (!positioned.current || Date.now() < settleUntil.current)) return;
       handleFeedScroll(c, convId, feedDistanceFromNewest(metrics.current, UPRIGHT));
     },
@@ -180,6 +186,7 @@ function feedScrollEvents(c: ConvState, convId: string, refs: FeedScrollRefs): P
       const applied = restoreFeedScroll(c, h, refs);
       if (applied !== null) positioned.current = true;
       metrics.current = { offset: applied ?? metrics.current.offset, contentHeight: h, viewportHeight: viewportHeight.current };
+      flushPendingOlder(c, refs);
     },
   };
 }
@@ -209,7 +216,6 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   const { renderItem, extraData } = useFeedRenderItem(c);
   const intro = <ConversationIntro c={c} convId={convId} />;
   const refs = useFeedScrollRefs(convId);
-  const { metrics, positioned } = refs;
   const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
   const empty = rows.length === 0 && (status !== 'open' || hasMore);
   const slowOpen = useSlowOpen(empty);
@@ -232,7 +238,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   );
   const firstBatch = UPRIGHT ? uprightFirstBatch(rows.length) : FEED_MIN_BATCH;
   const o = orientFeed(
-    feedPager(loadOlder, metrics, positioned),
+    feedPager(loadOlder, refs),
     topPad + 24, 24 + bottomInset, olderEdge,
   );
 
@@ -245,7 +251,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
         extraData={extraData}
         inverted={o.inverted}
         anchor={UPRIGHT ? 'end' : 'start'}
-        stickToEnd={() => positioned.current && c.isAtBottomRef.current}
+        stickToEnd={() => refs.positioned.current && c.isAtBottomRef.current}
         estimatedItemSize={FEED_ESTIMATED_ROW}
         showsVerticalScrollIndicator={Platform.OS === 'web'}
         maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
