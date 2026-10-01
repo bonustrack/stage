@@ -28,8 +28,6 @@ import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 import { TEXT_11PX } from '../smallText';
-import { useImageAspectRatio } from '../useImageAspectRatio';
-import { imagePreviewSize } from '../bubble/imageBox.model';
 
 const kindIcon = (kind: string): CentralIcon => (
   kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
@@ -124,45 +122,6 @@ function TileName({ name, fg }: { name: string; fg: string }): React.ReactElemen
   );
 }
 
-function PendingImage({
-  image, fg, onRemove,
-}: {
-  image: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement {
-  const [open, setOpen] = useState(false);
-  const { bg } = usePalette();
-  const { aspectRatio, onLoad } = useImageAspectRatio(image.url);
-  const size = imagePreviewSize(aspectRatio, TRAY_TILE);
-  return (
-    <>
-      <Col width={TRAY_TILE} align="center" gap={4}>
-        <Box>
-          <Pressable
-            onPress={() => { setOpen(true); }}
-            pressedOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="View image"
-          >
-            <Image src={image.url} width={size.width} height={size.height} radius={8} fit="cover" background={bg} onLoad={onLoad}/>
-          </Pressable>
-          <Pressable
-            onPress={onRemove}
-            hitSlop={6}
-            style={{
-              position: 'absolute', top: -4, right: -4,
-              backgroundColor: '#000', borderRadius: 999, padding: 2,
-            }}
->
-            <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
-          </Pressable>
-        </Box>
-        <TileName name={image.name ?? image.id} fg={fg}/>
-      </Col>
-      <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
-    </>
-  );
-}
-
 function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void }): React.ReactElement {
   return (
     <Box style={{ position: 'absolute', top: -4, right: -4 }}>
@@ -181,6 +140,47 @@ function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void 
   );
 }
 
+function TrayTile({
+  at, fg, label, removeLabel, onRemove, children,
+}: {
+  at: Attachment; fg: string; label: string; removeLabel: string; onRemove: () => void; children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <Col width={TRAY_TILE} align="center" gap={4}>
+      <Box size={TRAY_TILE} accessibilityLabel={label}>
+        <Box size={TRAY_TILE} radius={8} surface="surface" style={{ overflow: 'hidden' }}>
+          {children}
+        </Box>
+        <RemoveBadge label={removeLabel} onRemove={onRemove}/>
+      </Box>
+      <TileName name={at.name ?? at.id} fg={fg}/>
+    </Col>
+  );
+}
+
+function PendingImage({
+  image, fg, onRemove,
+}: {
+  image: Attachment; fg: string; onRemove: () => void;
+}): React.ReactElement {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <TrayTile at={image} fg={fg} label={`Image preview ${image.name ?? image.id}`} removeLabel="Remove image" onRemove={onRemove}>
+        <Pressable
+          onPress={() => { setOpen(true); }}
+          pressedOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="View image"
+        >
+          <Image src={image.url} size={TRAY_TILE} fit="contain"/>
+        </Pressable>
+      </TrayTile>
+      <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
+    </>
+  );
+}
+
 function PendingVideo({
   video, fg, onRemove,
 }: {
@@ -188,15 +188,9 @@ function PendingVideo({
 }): React.ReactElement {
   const { bg } = usePalette();
   return (
-    <Col width={TRAY_TILE} align="center" gap={4}>
-      <Box width={TRAY_TILE} accessibilityLabel={`Video preview ${video.name ?? video.id}`}>
-        <Box radius={8} style={{ overflow: 'hidden' }}>
-          <VideoPlayer src={video.url} controls={false} background={bg} aspectRatio={1} fit="cover"/>
-        </Box>
-        <RemoveBadge label="Remove video" onRemove={onRemove}/>
-      </Box>
-      <TileName name={video.name ?? video.id} fg={fg}/>
-    </Col>
+    <TrayTile at={video} fg={fg} label={`Video preview ${video.name ?? video.id}`} removeLabel="Remove video" onRemove={onRemove}>
+      <VideoPlayer src={video.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
+    </TrayTile>
   );
 }
 
@@ -208,15 +202,9 @@ function PendingLocation({
   const coords = mapCoordsOf(location.url);
   if (!coords) return null;
   return (
-    <Col width={TRAY_TILE} align="center" gap={4}>
-      <Box width={TRAY_TILE} accessibilityLabel="Location preview">
-        <Box radius={8} style={{ overflow: 'hidden' }}>
-          <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
-        </Box>
-        <RemoveBadge label="Remove location" onRemove={onRemove}/>
-      </Box>
-      <TileName name={location.name ?? location.id} fg={fg}/>
-    </Col>
+    <TrayTile at={location} fg={fg} label="Location preview" removeLabel="Remove location" onRemove={onRemove}>
+      <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
+    </TrayTile>
   );
 }
 
@@ -226,15 +214,11 @@ function PendingFile({
   file: Attachment; fg: string; onRemove: () => void;
 }): React.ReactElement {
   return (
-    <Col width={TRAY_TILE} align="center" gap={4}>
-      <Box width={TRAY_TILE} accessibilityLabel={`File preview ${file.name ?? file.id}`}>
-        <Box size={TRAY_TILE} radius={8} align="center" justify="center" surface="surface">
-          <Glyph icon={kindIcon(file.kind)} size={24} color={fg}/>
-        </Box>
-        <RemoveBadge label="Remove file" onRemove={onRemove}/>
+    <TrayTile at={file} fg={fg} label={`File preview ${file.name ?? file.id}`} removeLabel="Remove file" onRemove={onRemove}>
+      <Box size={TRAY_TILE} align="center" justify="center">
+        <Glyph icon={kindIcon(file.kind)} size={24} color={fg}/>
       </Box>
-      <TileName name={file.name ?? file.id} fg={fg}/>
-    </Col>
+    </TrayTile>
   );
 }
 

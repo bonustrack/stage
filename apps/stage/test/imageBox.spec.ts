@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { attachmentCellWidths, imageAspectRatio, imagePreviewSize, validSize } from '../components/bubble/imageBox.model';
+import { attachmentCellWidths, validSize } from '../components/bubble/imageBox.model';
 
 describe('attachment layout', () => {
   test('a single attachment uses the full width', () => {
@@ -23,26 +23,6 @@ describe('attachment layout', () => {
     expect(attachmentCellWidths(['file', 'image'])).toEqual(['100%', '100%']);
     expect(attachmentCellWidths(['audio', 'file', 'video'])).toEqual(['100%', '100%', '100%']);
     expect(attachmentCellWidths(['image', 'file', 'image'])).toEqual(['50%', '100%', '50%']);
-  });
-
-  test('images retain landscape, portrait and square ratios', () => {
-    expect(imageAspectRatio({ width: 2560, height: 1600 })).toBe(1.6);
-    expect(imageAspectRatio({ width: 2560, height: 6000 })).toBeCloseTo(2560 / 6000);
-    expect(imageAspectRatio({ width: 800, height: 800 })).toBe(1);
-  });
-
-  test('images use a square placeholder until their size is known', () => {
-    expect(imageAspectRatio(undefined)).toBe(1);
-    expect(imageAspectRatio({ width: 640 })).toBe(1);
-    expect(imageAspectRatio({ width: 0, height: 480 })).toBe(1);
-  });
-
-  test('composer image previews keep their ratio within the existing tile size', () => {
-    expect(imagePreviewSize(1.6, 72)).toEqual({ width: 72, height: 45 });
-    const portrait = imagePreviewSize(2560 / 6000, 72);
-    expect(portrait.width).toBeCloseTo(30.72);
-    expect(portrait.height).toBe(72);
-    expect(imagePreviewSize(1, 72)).toEqual({ width: 72, height: 72 });
   });
 
   test('accepts only a positive measured size', () => {

@@ -5,15 +5,14 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 interface Props {
   onPress?: () => void;
-  aspectRatio?: number;
   children: React.ReactNode;
 }
 
-export function MediaCard({ onPress, aspectRatio = 1, children }: Props): React.ReactElement {
+export function MediaCard({ onPress, children }: Props): React.ReactElement {
   const { border, bg } = usePalette();
   const style = {
     width: '100%' as const,
-    aspectRatio,
+    aspectRatio: 1,
     borderRadius: BLOCK_RADIUS_DEFAULT,
     borderWidth: 1,
     borderColor: border,
