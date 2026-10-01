@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { attachmentCellWidths, validSize } from '../components/bubble/imageBox.model';
+import { attachmentCellWidths, imageAspectRatio, validSize } from '../components/bubble/imageBox.model';
 
 describe('attachment layout', () => {
   test('a single attachment uses the full width', () => {
@@ -23,6 +23,18 @@ describe('attachment layout', () => {
     expect(attachmentCellWidths(['file', 'image'])).toEqual(['100%', '100%']);
     expect(attachmentCellWidths(['audio', 'file', 'video'])).toEqual(['100%', '100%', '100%']);
     expect(attachmentCellWidths(['image', 'file', 'image'])).toEqual(['50%', '100%', '50%']);
+  });
+
+  test('images retain landscape, portrait and square ratios', () => {
+    expect(imageAspectRatio({ width: 2560, height: 1600 })).toBe(1.6);
+    expect(imageAspectRatio({ width: 2560, height: 6000 })).toBeCloseTo(2560 / 6000);
+    expect(imageAspectRatio({ width: 800, height: 800 })).toBe(1);
+  });
+
+  test('images use a square placeholder until their size is known', () => {
+    expect(imageAspectRatio(undefined)).toBe(1);
+    expect(imageAspectRatio({ width: 640 })).toBe(1);
+    expect(imageAspectRatio({ width: 0, height: 480 })).toBe(1);
   });
 
   test('accepts only a positive measured size', () => {

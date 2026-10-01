@@ -22,7 +22,7 @@ function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement 
   const { bg } = usePalette();
   return (
     <MediaCard>
-      <VideoPlayer src={uri} controls background={bg} aspectRatio={1} fit="contain" />
+      <VideoPlayer src={uri} controls background={bg} aspectRatio={1} fit="cover" />
     </MediaCard>
   );
 }
