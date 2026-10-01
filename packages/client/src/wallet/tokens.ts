@@ -54,6 +54,10 @@ export function isNativeTokenRow(r: { chainId: number; symbol: string }): boolea
   return ASSETS.some(a => a.address === null && a.chainId === r.chainId && a.symbol === r.symbol);
 }
 
+function isAlwaysListedRow(r: { chainId: number; symbol: string }): boolean {
+  return isNativeTokenRow(r) || ASSETS.some(a => a.alwaysListed && a.chainId === r.chainId && a.symbol === r.symbol);
+}
+
 export function nativeTokenChainIds(): number[] {
   return [...new Set(ASSETS.filter(a => a.address === null).map(a => a.chainId))];
 }
@@ -63,7 +67,7 @@ export function isListedTokenRow(
   nativeChainIds: readonly number[] = [],
 ): boolean {
   if (Number(r.balance) > 0) return true;
-  return nativeChainIds.includes(r.chainId) && isNativeTokenRow(r);
+  return nativeChainIds.includes(r.chainId) && isAlwaysListedRow(r);
 }
 
 export function buildSortedTokenRows(

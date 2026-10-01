@@ -16,6 +16,7 @@ export interface Asset {
   cgId?: string;
   cgPlatform?: string;
   priceAddress?: Hex;
+  alwaysListed?: true;
 }
 
 export const ASSETS: Asset[] = [
@@ -24,7 +25,7 @@ export const ASSETS: Asset[] = [
   { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 11155111, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
   { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 11155111, address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'ethereum', priceAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
   { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 8453, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
-  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 8453, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'base', priceAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 8453, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'base', priceAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', alwaysListed: true },
   { symbol: 'STAGE', name: 'Stage', decimals: 18, chainId: 11155111, address: '0x7a49F33AD000220a764ED303f9911cB08422d138', logoAddress: '0x7a49F33AD000220a764ED303f9911cB08422d138' },
 ];
 

@@ -84,17 +84,20 @@ describe('native token listing', () => {
     expect(isListedTokenRow(row({ symbol: 'ETH', chainId: 1, balance: '0' }), [8453])).toBe(false);
   });
 
-  test('zero non-native rows stay hidden even on a native chain', () => {
-    expect(isListedTokenRow(row({ symbol: 'USDC', chainId: 8453, balance: '0' }), [8453])).toBe(false);
+  test('zero USDC on Base is listed next to the native row, other zero tokens stay hidden', () => {
+    expect(isListedTokenRow(row({ symbol: 'USDC', chainId: 8453, balance: '0' }), [8453])).toBe(true);
+    expect(isListedTokenRow(row({ symbol: 'USDC', chainId: 8453, balance: '0' }))).toBe(false);
+    expect(isListedTokenRow(row({ symbol: 'USDC', chainId: 1, balance: '0' }), [1, 8453])).toBe(false);
+    expect(isListedTokenRow(row({ symbol: 'STAGE', chainId: 11155111, balance: '0' }), [11155111])).toBe(false);
   });
 
-  test('sorted rows keep the zero native row after funded tokens', () => {
+  test('sorted rows keep the zero native and USDC rows after funded tokens', () => {
     const rows = [
       row({ symbol: 'ETH', chainId: 8453, balance: '0', priceUsd: 3000 }),
       row({ symbol: 'USDC', chainId: 8453, balance: '0' }),
       row({ symbol: 'USDC', chainId: 1, balance: '2', priceUsd: 1 }),
     ];
-    expect(buildSortedTokenRows(rows, [8453]).map(x => x.id)).toEqual(['1:USDC', '8453:ETH']);
+    expect(buildSortedTokenRows(rows, [8453]).map(x => x.id)).toEqual(['1:USDC', '8453:ETH', '8453:USDC']);
   });
 });
 

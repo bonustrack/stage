@@ -42,17 +42,17 @@ describe('listedNativeChains', () => {
 });
 
 describe('listedSendableRows', () => {
-  test('an empty smart account still offers ETH on Base at zero', () => {
-    expect(ids(listedSendableRows(emptyWallet, true))).toEqual(['8453:ETH']);
+  test('an empty smart account still offers ETH and USDC on Base at zero', () => {
+    expect(ids(listedSendableRows(emptyWallet, true))).toEqual(['8453:ETH', '8453:USDC']);
   });
 
-  test('an empty key account offers native ETH on every chain and hides zero tokens', () => {
-    expect(ids(listedSendableRows(emptyWallet, false))).toEqual(['1:ETH', '11155111:ETH', '8453:ETH']);
+  test('an empty key account offers native ETH on every chain, USDC on Base and hides other zero tokens', () => {
+    expect(ids(listedSendableRows(emptyWallet, false))).toEqual(['1:ETH', '11155111:ETH', '8453:ETH', '8453:USDC']);
   });
 
   test('funded non-native tokens are listed next to the native rows', () => {
-    const funded = emptyWallet.map(r => (r.chainId === 8453 && r.symbol === 'USDC' ? { ...r, balance: '5' } : r));
-    expect(ids(listedSendableRows(funded, true))).toEqual(['8453:ETH', '8453:USDC']);
+    const funded = emptyWallet.map(r => (r.chainId === 1 && r.symbol === 'USDC' ? { ...r, balance: '5' } : r));
+    expect(ids(listedSendableRows(funded, false))).toEqual(['1:ETH', '1:USDC', '11155111:ETH', '8453:ETH', '8453:USDC']);
   });
 });
 
