@@ -31,11 +31,14 @@ function watchWebVideo(video: HTMLVideoElement, report: (width: number, height: 
 
 function watchNativeVideo(player: ExpoVideoPlayer, report: (width: number, height: number) => void): () => void {
   let stopped = false;
+  let probed = false;
   const fromTrack = (): void => {
     const size = stopped ? undefined : player.videoTrack?.size;
     if (size) report(size.width, size.height);
   };
   const probe = async (): Promise<void> => {
+    if (probed || stopped) return;
+    probed = true;
     try {
       const [frame] = await player.generateThumbnailsAsync(0, SIZE_PROBE);
       if (!frame) { fromTrack(); return; }
@@ -45,9 +48,10 @@ function watchNativeVideo(player: ExpoVideoPlayer, report: (width: number, heigh
       fromTrack();
     }
   };
-  const sub = player.addListener('sourceLoad', () => { void probe(); });
+  const loaded = player.addListener('sourceLoad', () => { void probe(); });
+  const ready = player.addListener('statusChange', ({ status }) => { if (status === 'readyToPlay') void probe(); });
   if (player.status === 'readyToPlay') void probe();
-  return () => { stopped = true; sub.remove(); };
+  return () => { stopped = true; loaded.remove(); ready.remove(); };
 }
 
 function useVideoSize(player: ExpoVideoPlayer, frame: React.RefObject<View | null>, onVideoSize?: (size: VideoSize) => void): void {
