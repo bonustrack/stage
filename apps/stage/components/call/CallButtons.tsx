@@ -81,7 +81,7 @@ export function CallButtons({ convId, isGroup }: { convId: string; isGroup: bool
   if (joinable) {
     return (
       <Button
-        size="sm" pill label="Join call" tintBg={success} tintFg={bg}
+        size="sm" pill label="Join call" tintBg={success} tintFg={bg} style={{ alignSelf: 'center' }}
         iconStart={<Glyph icon={IconCall} size={16} color={bg}/>}
         disabled={view.calls.session !== null}
         onPress={() => { ignore(joinCall(convId, !isGroup), 'ui'); }}
