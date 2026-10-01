@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates, savedPicks,
-  shownRecipients,
+  MAX_SHOWN_RECIPIENTS, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates,
+  savedPicks, shownRecipients,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
@@ -69,5 +69,13 @@ describe('new chat recipients', () => {
     expect(savedPicks('hello')).toBeNull();
     expect(savedPicks({ added: ['0xd'] })).toBeNull();
     expect(savedPicks({ added: [1], chosen: null })).toBeNull();
+  });
+
+  test('the composer asks the picked people by name, and keeps its default with nobody picked', () => {
+    expect(askPlaceholder([])).toBeUndefined();
+    expect(askPlaceholder(['Emma'])).toBe('Ask Emma');
+    expect(askPlaceholder(['Emma', 'Alice'])).toBe('Ask Emma and Alice');
+    expect(askPlaceholder(['Emma', 'Alice', 'Tony'])).toBe('Ask Emma, Alice and Tony');
+    expect(askPlaceholder(['Emma', 'Alice', 'Tony', 'Chen'])).toBe('Ask Emma, Alice and 2 others');
   });
 });

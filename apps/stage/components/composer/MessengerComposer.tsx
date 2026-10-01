@@ -13,7 +13,7 @@ import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment }
 import { useMentionEditor } from './mentions';
 import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
 import { useChannelSuggest } from './channels';
-import { ComposerEditor, buildAttachActions } from './editor';
+import { ComposerEditor, buildAttachActions, composerRadius } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine, forgetAttachments } from '../../modules/messaging';
 import { fileInputs } from './send.model';
@@ -33,6 +33,8 @@ interface Props {
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   autoFocusNonce?: number;
   busy?: boolean;
+  placeholder?: string;
+  rounded?: boolean;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
@@ -133,7 +135,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
   return (
-    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border}>
+    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
@@ -158,6 +160,8 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
         busy={props.busy}
+        placeholder={props.placeholder}
+        rounded={props.rounded}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
@@ -20,8 +20,8 @@ import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers,
-  recipientCandidates, savedPicks, shownRecipients, type DmPeer,
+  NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients,
+  recentDmPeers, recipientCandidates, savedPicks, shownRecipients, type DmPeer,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
@@ -31,6 +31,7 @@ import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useTopChromeInset, useWebTabRail } from '../../lib/webLayout';
 import {
   convIdOfLine, createGroup, getConvConsentState, rememberOwnGroup, shortAddress, subscribeCachedRows, uploadAttachments,
   useActiveAccountRecord,
@@ -44,6 +45,8 @@ interface Recipients {
 }
 
 const NO_REQUESTS: ReadonlySet<string> = new Set();
+
+const CENTERED_MAX_WIDTH = 640;
 
 function clearNewChatDraft(draftKey: string | null): void {
   const membersKey = membersDraftKey(draftKey);
@@ -138,23 +141,43 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
   return { creating, start };
 }
 
-function NewChatFooter({ recipients, draft, draftKey, creating, onSubmit }: {
+interface FormProps {
   recipients: Recipients; draft: ComposerState; draftKey: string | null; creating: boolean; onSubmit: () => void;
-}): React.ReactElement {
-  const insets = useSafeAreaInsets();
+}
+
+function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded }: FormProps & { rounded?: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const focusNonce = useNewChatFocusNonce();
   const mentionCandidates = recipients.picked.map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }));
   return (
+    <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
+      <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
+        onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
+      <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
+        placeholder={askPlaceholder(mentionCandidates.map(c => c.name))} rounded={rounded}
+        autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
+    </Box>
+  );
+}
+
+function NewChatFooter(props: FormProps): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
-      <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
-        <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
-          onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
-        <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
-          autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
-        <Box height={insets.bottom} surface="raised"/>
-      </Box>
+      <NewChatForm {...props}/>
+      <Box height={insets.bottom} surface="raised"/>
     </KeyboardStickyView>
+  );
+}
+
+function CenteredNewChat(props: FormProps): React.ReactElement {
+  const height = useWindowDimensions().height - useTopChromeInset();
+  return (
+    <Col height={height} surface="surface" align="center" justify="center" padding={{ x: PAGE_GUTTER }}>
+      <Col width="100%" maxWidth={CENTERED_MAX_WIDTH}>
+        <NewChatForm {...props} rounded/>
+      </Col>
+    </Col>
   );
 }
 
@@ -163,6 +186,7 @@ export function NewChatScreen(): React.ReactElement {
   const { text: fg, border } = usePalette();
   const insets = useSafeAreaInsets();
   const memberList = useConversationSidebarShown();
+  const centered = useWebTabRail();
   const [footerH, setFooterH] = useState(0);
   const draft = useComposerState();
   const draftKey = newChatDraftKey(useActiveAccountRecord());
@@ -171,6 +195,8 @@ export function NewChatScreen(): React.ReactElement {
     recipients.reset();
     router.replace({ pathname: '/channel/[convId]', params: { convId } });
   });
+  const form = { recipients, draft, draftKey, creating, onSubmit: () => { void start(recipients.picked); } };
+  if (centered) return <CenteredNewChat {...form}/>;
   return (
     <Col flex={1} surface="surface">
       <ChatColumn>{creating ? <ChatColumnSpinner bottomInset={footerH}/> : null}</ChatColumn>
@@ -181,8 +207,7 @@ export function NewChatScreen(): React.ReactElement {
         </Row>
       </ConvTopnavShell>
       <FooterDock height={footerH} onHeight={setFooterH} memberList={memberList}>
-        <NewChatFooter recipients={recipients} draft={draft} draftKey={draftKey} creating={creating}
-          onSubmit={() => { void start(recipients.picked); }}/>
+        <NewChatFooter {...form}/>
       </FooterDock>
       {memberList ? <ConversationSidebar/> : null}
     </Col>
