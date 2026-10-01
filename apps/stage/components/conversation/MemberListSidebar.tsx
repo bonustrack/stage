@@ -154,11 +154,11 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
       extraData={assigned}
       keyExtractor={(entry) => entry.address.toLowerCase()}
       contentContainerStyle={{ paddingBottom: PAGE_GUTTER }}
-      ListHeaderComponent={<>
+      ListHeaderComponent={<MembersSection convId={convId} entries={entries}/>}
+      ListFooterComponent={<>
+        <AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>
         <ChannelLabels convId={convId} labels={labels}/>
-        <MembersSection convId={convId} entries={entries}/>
       </>}
-      ListFooterComponent={<AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>}
       renderItem={({ item }) => (
         <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>
       )}

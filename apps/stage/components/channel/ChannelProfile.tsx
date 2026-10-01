@@ -53,11 +53,11 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
       >
         <ChannelTitle name={g.name} description={g.description} />
       </ChannelProfileHeader>
-      <ChannelLabels convId={convId} labels={labels} onSaved={setLabels}/>
       <ChannelMembersSection convId={convId} count={g.members.length}/>
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
-        selfAddress={selfAddress} removing={g.removing} dark={dark} footer={<ChannelAssignees convId={convId}/>}
+        selfAddress={selfAddress} removing={g.removing} dark={dark}
+        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels} onSaved={setLabels}/></>}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
       />
