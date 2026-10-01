@@ -34,7 +34,7 @@ Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.git
 
 **Caveat: shapes match, generators are Kit's own.** OpenAI publishes ChatKit's theme *types* but not the colour maths behind them, so Kit implements the documented semantics itself: `tint` is saturation in 1% steps, `shade` shifts lightness by 3% per step (negative lighter, positive darker), and `level` mutes the accent toward the surface foreground in 18% steps with `3` meaning "primary unchanged". `grayscaleHex`/`accentHex`/`grayscaleFromHex` in `theme-derive.ts` are the entry points, and the defaults are lossless: `grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')` is exactly `#282a2d`, guarded by tests.
 
-Component coverage: Kit implements **every ChatKit widget node**: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
+Component coverage: Kit implements **every ChatKit widget node**, and `Frame` renders ChatKit widget JSON with them: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
 
 ## Install
 
@@ -86,6 +86,31 @@ The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `roun
 
 `VideoPlayer` takes `background` (default `#000000`), `aspectRatio` (default 16/9) and `fit` (`'contain'`, the default, or `'cover'`). Fullscreen always shows the whole video. `Image` takes `headers`, sent with the image request, and the same module exports `getImageSize(src)`, which resolves to `{ width, height }`. On Android, `Image` also takes `resizeMethod` and `resizeMultiplier`, passed to React Native's `Image`, to choose the size the image is decoded at. Other platforms ignore them. `Dialog` takes `header` and `footer` nodes around its scroll body, `bottomInset` to lift the panel, `panelWidth`, `panelMaxWidth`, and `panelBorderSides` (`'top'` or `'all'`) for the `panelBorderColor` border. `Badge` has `solid`, `soft` and `outline` variants.
 
+## Frame
+
+`Frame` (`@stage-labs/kit/react-native/frame`) renders OpenAI ChatKit widget JSON with kit components. It takes the same JSON ChatKit streams as a widget item: a `Card`, `ListView` or `Basic` root with the ChatKit nodes inside (`Box`, `Row`, `Col`, `Form`, `Text`, `Title`, `Caption`, `Label`, `Markdown`, `Badge`, `Icon`, `Image`, `Button`, `Spacer`, `Divider`, `Transition`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`, `Table`, `Table.Row`, `Table.Cell`), with ChatKit's prop names and values. `Chart` shows its data as a table.
+
+```tsx
+import { Frame } from '@stage-labs/kit/react-native/frame';
+
+<Frame
+  widget={{ type: 'Card', children: [
+    { type: 'Title', value: 'Weekly report' },
+    { type: 'Button', label: 'Approve', onClickAction: { type: 'report.approve', payload: { week: 39 } } },
+  ] }}
+  onAction={async (action, { label }) => { await send(action, label); }}
+  onOpenUrl={(url) => { open(url); }}
+/>
+```
+
+- The JSON is checked first by `parseFrame` (`@stage-labs/kit/frame`, no React): at most 64K characters, depth 16, 500 nodes and 200 children per node. A frame over a limit, or not an object, shows a short notice instead.
+- Unknown props are dropped. An unknown node type, or a node without a required prop (`Text.value`, `Image.src`, `Select.options`, ...), shows a small "Unsupported" box. Nothing throws, and an error boundary catches render errors.
+- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs.
+- Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
+- Actions: `Button.onClickAction`, `ListViewItem.onClickAction`, `Card` `confirm`/`cancel`, `Form.onSubmitAction` and the controls' `onChangeAction` call `onAction({ type, payload }, { label })`. The values of the fields in the same `Form` (or `Card asForm`, or the whole frame) are added to `payload` by `name` (`todo.title` nests), and a key already in the payload wins. A submit is blocked while a `required` field is empty. `handler` and `loadingBehavior` are ignored. While `onAction` runs, every button is disabled. Without `onAction`, or with `disabled`, the frame is read only.
+- `dark` picks the scheme (default: the `KitThemeProvider` scheme); a root's `theme` overrides it for its subtree.
+- `frameSummary(root)` gives a title and description from the first `Title` and text nodes, for previews.
+
 ## Project structure
 
 ```
@@ -136,6 +161,10 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 ## Changelog
 
 ### 0.1.0-beta.2
+
+#### New component
+
+- `Frame` renders OpenAI ChatKit widget JSON with kit components, with validation, limits and actions. See Frame above. `@stage-labs/kit/frame` has its pure `parseFrame` and `frameSummary`.
 
 #### Breaking changes
 
