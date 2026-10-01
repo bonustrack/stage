@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { ImageLoadEventData, NativeSyntheticEvent } from 'react-native';
 import { getImageSize } from '@stage-labs/kit/react-native/image';
 import { ignore } from '../lib/errorPolicy';
-import { imageAspectRatio, validSize } from './bubble/imageBox.model';
+import { mediaAspectRatio, validSize } from './bubble/imageBox.model';
 
 type ImageLoaded = (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
 
@@ -15,7 +15,7 @@ export function useImageAspectRatio(uri: string): { aspectRatio: number; onLoad:
     const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
       const size = validSize(measured);
       if (!size || currentUri.current !== uri) return false;
-      setNatural({ uri, aspectRatio: imageAspectRatio(size) });
+      setNatural({ uri, aspectRatio: mediaAspectRatio(size) });
       return true;
     };
     if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');

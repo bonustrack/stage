@@ -1,40 +1,28 @@
 import { describe, expect, test } from 'bun:test';
-import { attachmentCellWidths, imageAspectRatio, validSize } from '../components/bubble/imageBox.model';
+import { ATTACHMENT_MAX_HEIGHT, VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, mediaMaxWidth, validSize } from '../components/bubble/imageBox.model';
 
 describe('attachment layout', () => {
-  test('a single attachment uses the full width', () => {
-    expect(attachmentCellWidths(['image'])).toEqual(['100%']);
-    expect(attachmentCellWidths(['file'])).toEqual(['100%']);
-  });
-
-  test('several attachments share equal half-width cells', () => {
-    expect(attachmentCellWidths(['image', 'image', 'image'])).toEqual(['50%', '50%', '50%']);
-    expect(attachmentCellWidths(['image', 'video', 'file'])).toEqual(['50%', '50%', '100%']);
-  });
-
-  test('audio keeps a full-width row and never counts as a grid cell', () => {
-    expect(attachmentCellWidths(['audio', 'image'])).toEqual(['100%', '100%']);
-    expect(attachmentCellWidths(['image', 'audio', 'image'])).toEqual(['50%', '100%', '50%']);
-    expect(attachmentCellWidths([])).toEqual([]);
-  });
-
-  test('files keep full-width rows and never count as squares', () => {
-    expect(attachmentCellWidths(['file', 'file'])).toEqual(['100%', '100%']);
-    expect(attachmentCellWidths(['file', 'image'])).toEqual(['100%', '100%']);
-    expect(attachmentCellWidths(['audio', 'file', 'video'])).toEqual(['100%', '100%', '100%']);
-    expect(attachmentCellWidths(['image', 'file', 'image'])).toEqual(['50%', '100%', '50%']);
-  });
-
-  test('images retain landscape, portrait and square ratios', () => {
-    expect(imageAspectRatio({ width: 2560, height: 1600 })).toBe(1.6);
-    expect(imageAspectRatio({ width: 2560, height: 6000 })).toBeCloseTo(2560 / 6000);
-    expect(imageAspectRatio({ width: 800, height: 800 })).toBe(1);
+  test('media retain landscape, portrait and square ratios', () => {
+    expect(mediaAspectRatio({ width: 2560, height: 1600 })).toBe(1.6);
+    expect(mediaAspectRatio({ width: 2560, height: 6000 })).toBeCloseTo(2560 / 6000);
+    expect(mediaAspectRatio({ width: 800, height: 800 })).toBe(1);
   });
 
   test('images use a square placeholder until their size is known', () => {
-    expect(imageAspectRatio(undefined)).toBe(1);
-    expect(imageAspectRatio({ width: 640 })).toBe(1);
-    expect(imageAspectRatio({ width: 0, height: 480 })).toBe(1);
+    expect(mediaAspectRatio(undefined)).toBe(1);
+    expect(mediaAspectRatio({ width: 640 })).toBe(1);
+    expect(mediaAspectRatio({ width: 0, height: 480 })).toBe(1);
+  });
+
+  test('videos use a 16:9 placeholder until their size is known', () => {
+    expect(mediaAspectRatio(undefined, VIDEO_PLACEHOLDER_RATIO)).toBe(16 / 9);
+    expect(mediaAspectRatio({ width: 1080, height: 1920 }, VIDEO_PLACEHOLDER_RATIO)).toBe(0.5625);
+  });
+
+  test('portrait media narrow so they never pass the max height', () => {
+    expect(mediaMaxWidth(9 / 16)).toBe(225);
+    expect(mediaMaxWidth(3 / 4)).toBe(300);
+    expect(mediaMaxWidth(16 / 9) / (16 / 9)).toBe(ATTACHMENT_MAX_HEIGHT);
   });
 
   test('accepts only a positive measured size', () => {

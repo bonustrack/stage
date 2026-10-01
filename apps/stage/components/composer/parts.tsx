@@ -1,10 +1,12 @@
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { mapCoordsOf } from '@stage-labs/client/embed/detect';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -233,16 +235,23 @@ function PendingItem({
   return <PendingFile file={at} fg={fg} onRemove={onRemove}/>;
 }
 
+const TRAY_PADDING = { x: PAGE_GUTTER, top: 10, bottom: 6 };
+const TRAY_SCROLL = { flexGrow: 0 };
+
 export function PendingRow({
   fg, pending, onRemove,
 }: {
   fg: string; pending: Attachment[]; onRemove: (index: number) => void;
 }): React.ReactElement {
-  return (
-    <Row padding={{ x: PAGE_GUTTER, top: 10, bottom: 6 }} wrap gap={8}>
-      {pending.map((a, i) => (
-        <PendingItem key={a.id} at={a} fg={fg} onRemove={() => { onRemove(i); }}/>
-      ))}
-    </Row>
+  const gesture = useMemo(() => Gesture.Native().disallowInterruption(true).shouldCancelWhenOutside(false), []);
+  const tray = (
+    <Scroll horizontal style={TRAY_SCROLL} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <Row padding={TRAY_PADDING} gap={8}>
+        {pending.map((a, i) => (
+          <PendingItem key={a.id} at={a} fg={fg} onRemove={() => { onRemove(i); }}/>
+        ))}
+      </Row>
+    </Scroll>
   );
+  return Platform.OS === 'web' ? tray : <GestureDetector gesture={gesture}>{tray}</GestureDetector>;
 }

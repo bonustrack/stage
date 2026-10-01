@@ -1,5 +1,7 @@
 export const ATTACHMENT_MAX_WIDTH = 400;
-export const ATTACHMENT_GRID_GAP = 4;
+export const ATTACHMENT_MAX_HEIGHT = 400;
+export const ATTACHMENT_GAP = 4;
+export const VIDEO_PLACEHOLDER_RATIO = 16 / 9;
 
 interface ImageSize { width: number; height: number }
 
@@ -10,12 +12,11 @@ export function validSize(size: { width?: number; height?: number } | undefined)
   return width > 0 && height > 0 ? { width, height } : undefined;
 }
 
-export function imageAspectRatio(size: { width?: number; height?: number } | undefined): number {
+export function mediaAspectRatio(size: { width?: number; height?: number } | undefined, fallback = 1): number {
   const measured = validSize(size);
-  return measured ? measured.width / measured.height : 1;
+  return measured ? measured.width / measured.height : fallback;
 }
 
-export function attachmentCellWidths(kinds: readonly string[]): ('50%' | '100%')[] {
-  const squares = kinds.filter(kind => kind !== 'audio' && kind !== 'file').length;
-  return kinds.map(kind => (kind === 'audio' || kind === 'file' || squares < 2 ? '100%' : '50%'));
+export function mediaMaxWidth(aspectRatio: number): number {
+  return ATTACHMENT_MAX_HEIGHT * aspectRatio;
 }

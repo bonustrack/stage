@@ -10,6 +10,7 @@ import { AudioCard } from './AudioCard';
 import { ImageLoading, MessengerImageAttachment } from './ImageAttachment';
 import { Box, Col, Row } from '../layout';
 import { MediaCard } from '../MediaCard';
+import { useVideoAspectRatio } from '../useVideoAspectRatio';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
@@ -20,9 +21,10 @@ import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   const { bg } = usePalette();
+  const { aspectRatio, onVideoSize } = useVideoAspectRatio(uri);
   return (
-    <MediaCard>
-      <VideoPlayer src={uri} controls background={bg} aspectRatio={1} fit="cover" />
+    <MediaCard aspectRatio={aspectRatio}>
+      <VideoPlayer src={uri} controls background={bg} aspectRatio={aspectRatio} fit="contain" onVideoSize={onVideoSize} />
     </MediaCard>
   );
 }
