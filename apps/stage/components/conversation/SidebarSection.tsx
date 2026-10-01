@@ -135,16 +135,18 @@ export function SidebarSection({ title, count, editLabel, canEdit, current, onCo
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<PickerAnchor | null>(null);
   const [open, setOpen] = useState(false);
+  const [opened, setOpened] = useState<string[]>([]);
   const [draft, setDraft] = useState<string[]>([]);
   const start = (event: GestureResponderEvent): void => {
     setAnchor(pickerAnchorOf(rectOf(event), viewport.width, PAGE_GUTTER));
+    setOpened([...current]);
     setDraft([...current]);
     setOpen(true);
   };
   const close = (): void => {
     setOpen(false);
-    const edits = listEdits(current, draft);
-    if (hasListEdits(edits)) onCommit(edits);
+    const edits = listEdits(opened, draft);
+    if (hasListEdits(edits)) setTimeout(() => { onCommit(edits); }, 0);
   };
   const toggle = (key: string): void => { setDraft(list => toggleKey(list, key)); };
   return (

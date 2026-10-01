@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { assignedEntries, memberAdminMark, memberEditsText, memberListEntries } from '../components/conversation/MemberListSidebar.model';
+import { assignedEntries, memberAdminMark, memberChanges, memberEditsText, memberListEntries } from '../components/conversation/MemberListSidebar.model';
 
 const names: Record<string, string> = {
   '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',
@@ -78,5 +78,12 @@ describe('memberEditsText', () => {
     expect(memberEditsText({ added: ['0xa'], removed: [] })).toBe('Member added');
     expect(memberEditsText({ added: [], removed: ['0xa', '0xb'] })).toBe('2 members removed');
     expect(memberEditsText({ added: ['0xa', '0xb'], removed: ['0xc'] })).toBe('2 members added. Member removed');
+  });
+});
+
+describe('memberChanges', () => {
+  test('skips people already added or already gone', () => {
+    expect(memberChanges(['0xA', '0xB'], { added: ['0xa', '0xc'], removed: ['0xb', '0xd'] }))
+      .toEqual({ added: ['0xc'], removed: ['0xb'] });
   });
 });

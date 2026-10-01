@@ -8,11 +8,11 @@ import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
-import { assignedEntries, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
+import { assignedEntries, memberChanges, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
 import { confirmMemberRemoval, useChannelRoles, useChannelEditRights, useConvMetaPatch } from '../channel/channel.detail';
 import { ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
-import { applyListEdits, type ListEdits } from './SidebarSection.model';
+import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
 import {
   addGroupMembers, invalidateConvMeta, removeGroupMembers, shortAddress, updateGroupAssigned, useConvMeta,
@@ -104,9 +104,12 @@ function AssigneesSection({ convId, entries, assigned, assignedReady }: {
   );
 }
 
-async function applyMemberEdits(convId: string, entries: MemberListEntry[], edits: ListEdits): Promise<void> {
-  const names = edits.removed.map(address => entries.find(entry => entry.address.toLowerCase() === address.toLowerCase())?.name ?? shortAddress(address));
-  if (edits.removed.length > 0 && !await confirmMemberRemoval(names)) return;
+async function applyMemberEdits(convId: string, entries: MemberListEntry[], wanted: ListEdits): Promise<void> {
+  const changes = memberChanges(entries.map(entry => entry.address), wanted);
+  const names = changes.removed.map(address => entries.find(entry => entry.address.toLowerCase() === address.toLowerCase())?.name ?? shortAddress(address));
+  const confirmed = changes.removed.length === 0 || await confirmMemberRemoval(names);
+  const edits = confirmed ? changes : { added: changes.added, removed: [] };
+  if (!hasListEdits(edits)) return;
   try {
     if (edits.removed.length > 0) await removeGroupMembers(convId, edits.removed);
     if (edits.added.length > 0) await addGroupMembers(convId, edits.added);

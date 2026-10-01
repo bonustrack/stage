@@ -1,5 +1,5 @@
 import type { ChannelMemberRole } from '../channel/channel.parts.model';
-import type { ListEdits } from './SidebarSection.model';
+import { includesKey, type ListEdits } from './SidebarSection.model';
 
 type MemberAdminRole = 'superAdmin' | 'admin';
 
@@ -51,6 +51,13 @@ export function memberListEntries(
     entries.push(admin === undefined ? entry : { ...entry, admin });
   }
   return entries.sort(compareEntries);
+}
+
+export function memberChanges(members: readonly string[], wanted: ListEdits): ListEdits {
+  return {
+    added: wanted.added.filter(address => !includesKey(members, address)),
+    removed: wanted.removed.filter(address => includesKey(members, address)),
+  };
 }
 
 function countText(count: number, one: string, many: string): string {
