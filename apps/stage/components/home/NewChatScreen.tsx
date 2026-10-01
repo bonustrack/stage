@@ -10,7 +10,7 @@ import { useComposerState, type ComposerState } from '../composer/state';
 import { handSendTo } from '../composer/handoff';
 import { startSend } from '../composer/sendRun';
 import { fileInputs } from '../composer/send.model';
-import { clearComposerDraft } from '../composer/hooks';
+import { clearComposerDraft, useKeptInMemory } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -44,6 +44,18 @@ interface Recipients {
 
 const NO_REQUESTS: ReadonlySet<string> = new Set();
 
+interface Picks { added: string[]; chosen: string[] | null }
+
+const NO_PICKS: Picks = { added: [], chosen: null };
+
+const keptPicks = new Map<string, Picks>();
+
+function clearNewChatDraft(draftKey: string | null): void {
+  if (draftKey === null) return;
+  clearComposerDraft(draftKey);
+  keptPicks.delete(draftKey);
+}
+
 function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
   const [requests, setRequests] = useState(NO_REQUESTS);
   const checked = peers.slice(0, REQUEST_CHECK_LIMIT);
@@ -70,23 +82,25 @@ function useCandidates(): string[] {
   return useMemo(() => recipientCandidates(peers, self, requests), [peers, self, requests]);
 }
 
-function useRecipients(drafting: boolean): Recipients {
+function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
   const candidates = useCandidates();
-  const [added, setAdded] = useState<string[]>([]);
-  const [chosen, setChosen] = useState<string[] | null>(null);
-  const picked = pickedRecipients(chosen, candidates);
-  const shown = shownRecipients(candidates, added, picked);
+  const [picks, setPicks] = useState(NO_PICKS);
+  useKeptInMemory(keptPicks, draftKey, picks, setPicks, picks === NO_PICKS);
+  const picked = pickedRecipients(picks.chosen, candidates);
+  const shown = shownRecipients(candidates, picks.added, picked);
   const latest = useRef({ picked, candidates });
   latest.current = { picked, candidates };
   usePeerProfiles(shown);
   useEffect(() => {
-    if (drafting && chosen === null && picked.length > 0) setChosen(picked);
+    if (drafting && picks.chosen === null && picked.length > 0) setPicks(prev => ({ ...prev, chosen: picked }));
   }, [drafting]);
   const toggle = (address: string): void => {
-    setChosen(prev => toggleKey(prev ?? latest.current.picked, address));
-    setAdded(list => (includesKey(list, address) || includesKey(latest.current.candidates, address) ? list : [address, ...list]));
+    setPicks(({ added, chosen }) => ({
+      chosen: toggleKey(chosen ?? latest.current.picked, address),
+      added: includesKey(added, address) || includesKey(latest.current.candidates, address) ? added : [address, ...added],
+    }));
   };
-  const reset = (): void => { setChosen(null); setAdded([]); };
+  const reset = (): void => { setPicks(NO_PICKS); };
   return { shown, picked, toggle, reset };
 }
 
@@ -110,7 +124,7 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
       rememberOwnGroup(convId);
       const { text, pending } = latest.current;
       handSendTo(convId, startSend(line, text, pending));
-      if (draftKey !== null) clearComposerDraft(draftKey);
+      clearNewChatDraft(draftKey);
       draft.setText('');
       draft.setPending([]);
       onOpened(convId);
@@ -153,7 +167,7 @@ export function NewChatScreen(): React.ReactElement {
   const [footerH, setFooterH] = useState(0);
   const draft = useComposerState();
   const draftKey = newChatDraftKey(useActiveAccountRecord());
-  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0);
+  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0, draftKey);
   const { creating, start } = useStartChat(draft, draftKey, (convId) => {
     recipients.reset();
     router.replace({ pathname: '/channel/[convId]', params: { convId } });

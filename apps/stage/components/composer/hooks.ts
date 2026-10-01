@@ -14,19 +14,21 @@ export function clearComposerDraft(key: string): void {
   keptAttachments.delete(key);
 }
 
-function useKeptAttachments(key: string | null, s: Pick<ComposerState, 'pending' | 'setPending'>): void {
+export function useKeptInMemory<T>(
+  kept: Map<string, T>, key: string | null, value: T, restore: (value: T) => void, empty: boolean,
+): void {
   const restoring = useRef(false);
   useEffect(() => {
-    const kept = key === null ? undefined : keptAttachments.get(key);
-    if (kept === undefined) return;
+    const found = key === null ? undefined : kept.get(key);
+    if (found === undefined) return;
     restoring.current = true;
-    s.setPending(kept);
+    restore(found);
   }, [key]);
   useEffect(() => {
     if (key === null) return;
     if (restoring.current) { restoring.current = false; return; }
-    if (s.pending.length > 0) keptAttachments.set(key, s.pending); else keptAttachments.delete(key);
-  }, [key, s.pending]);
+    if (empty) kept.delete(key); else kept.set(key, value);
+  }, [key, value]);
 }
 
 export function useCaretToEnd(
@@ -48,7 +50,7 @@ export function useComposerDrafts(
 ): void {
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useKeptAttachments(key, s);
+  useKeptInMemory(keptAttachments, key, s.pending, s.setPending, s.pending.length === 0);
   useEffect(() => {
     draftRestored.current = false;
     if (key === null) return;
