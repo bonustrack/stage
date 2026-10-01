@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import { KeyboardController } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { setLastAttachment } from '../../lib/lastAttachment';
@@ -158,6 +159,14 @@ export async function sendDraft(a: DraftArgs, line: string): Promise<boolean> {
   return false;
 }
 
+const KEYBOARD_HIDE_WAIT_MS = 500;
+
+function afterKeyboardHides(open: () => void): void {
+  if (Platform.OS === 'web') { open(); return; }
+  const waited = new Promise<void>(done => { setTimeout(done, KEYBOARD_HIDE_WAIT_MS); });
+  void Promise.race([KeyboardController.dismiss(), waited]).then(open);
+}
+
 export function useComposerActions(a: ComposerActionsArgs) {
   const current = useRef(a);
   current.current = a;
@@ -178,9 +187,9 @@ export function useComposerActions(a: ComposerActionsArgs) {
   return {
     SLIDE_CANCEL_THRESHOLD_PX,
     startRec: voice.startRec, cancelRec: voice.cancelRec, stopRec: voice.stopRec,
-    pickImage: () => { setImageNonce(n => n + 1); },
-    takePhoto: () => { void takePhoto(); },
-    pickFile: () => { setFileNonce(n => n + 1); },
+    pickImage: () => { afterKeyboardHides(() => { setImageNonce(n => n + 1); }); },
+    takePhoto: () => { afterKeyboardHides(() => { void takePhoto(); }); },
+    pickFile: () => { afterKeyboardHides(() => { setFileNonce(n => n + 1); }); },
     pickLocation: () => pickLocation(a),
     imageNonce, cameraNonce, fileNonce,
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
