@@ -14,7 +14,7 @@ export const Controls: Story<Pick<ModalProps, 'title' | 'side' | 'dismissable'>>
     <>
       <Button label="Open modal" dark={dark} onPress={() => { setOpen(true); }} />
       <Modal {...args} dark={dark} open={open} onClose={() => { setOpen(false); }}>
-        <Text value="Modal content goes here." />
+        <Text size="sm" value="Modal content goes here." />
       </Modal>
     </>
   );

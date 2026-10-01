@@ -16,7 +16,7 @@ export const Controls: Story<ListViewProps & Pick<ListViewItemProps, 'gap' | 'al
       {ITEMS.map((label) => (
         <ListViewItem key={label} dark={dark} gap={gap} align={align} showDivider={showDivider} pressedBackground={pressedBackground} onPress={() => undefined}>
           <Glyph icon={IconPeople} size={20} dark={dark} />
-          <Text>{label}</Text>
+          <Text size="sm">{label}</Text>
         </ListViewItem>
       ))}
     </ListView>

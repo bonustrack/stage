@@ -19,8 +19,8 @@ Controls.argTypes = {
 export const Matrix: Story = () => (
   <Col gap={12}>
     {FONT_SIZES.map((s) => <Text key={s} size={s}>{s} · Calibre {s}</Text>)}
-    {WEIGHTS.map((w) => <Text key={w} weight={w}>weight {w}</Text>)}
-    {VARIANTS.map((v) => <Text key={v} variant={v}>variant {v}</Text>)}
-    {ROLES.map((r) => <Text key={r} role={r}>role {r}</Text>)}
+    {WEIGHTS.map((w) => <Text key={w} size="sm" weight={w}>weight {w}</Text>)}
+    {VARIANTS.map((v) => <Text key={v} size={v === 'caption' ? undefined : 'sm'} variant={v}>variant {v}</Text>)}
+    {ROLES.map((r) => <Text key={r} size="sm" role={r}>role {r}</Text>)}
   </Col>
 );

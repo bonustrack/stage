@@ -37,12 +37,12 @@ const markdownParser = MarkdownIt({ html: false, linkify: true, typographer: fal
 
 export function FrameText({ node }: { node: FrameNodeOf<'Text'> }): React.ReactElement {
   const color = useFrameColor();
-  const { value, editable, size, weight, textAlign, italic, lineThrough, truncate, maxLines, width } = node.props;
+  const { value, editable, size = 'md', weight, textAlign, italic, lineThrough, truncate, maxLines, width } = node.props;
   if (editable !== undefined) {
     return <FrameTextField name={editable.name} value={value} placeholder={editable.placeholder} required={editable.required} />;
   }
   return (
-    <Text value={value} size={size === undefined ? undefined : TEXT_SIZE[size]} weight={weight} color={color(node.props.color)} textAlign={textAlign}
+    <Text value={value} size={TEXT_SIZE[size]} weight={weight} color={color(node.props.color)} textAlign={textAlign}
       italic={italic} lineThrough={lineThrough} truncate={truncate} maxLines={maxLines}
       style={width === undefined ? frameFlex(node) : [frameFlex(node), { width: width as DimensionValue }]} />
   );

@@ -19,7 +19,7 @@ export const Controls: Story<Omit<DialogProps, 'open' | 'onClose' | 'children'>>
       <Dialog {...args} open={open} onClose={() => { setOpen(false); }}>
         <Col gap={12} padding={16}>
           <Text weight="semibold" size="md">Dialog title</Text>
-          <Text role="secondary">Every option of the panel is a control on the right.</Text>
+          <Text size="sm" role="secondary">Every option of the panel is a control on the right.</Text>
           <Button dark={dark} label="Close" onPress={() => { setOpen(false); }} />
         </Col>
       </Dialog>

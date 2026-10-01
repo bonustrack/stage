@@ -177,10 +177,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 - The `Tabs` option `icon` and the `DropdownMenuItem` `iconName` take a Central icon, like `Glyph`, for example `icon: IconBubble3` instead of `icon: 'chatBubble'`. HeroIcon names still work with `Icon`.
 - `@stage-labs/kit/react-native/dropdown-menu` now exports the same `DropdownMenu`, `DropdownMenuItem`, `DropdownMenuSeparator` and `DropdownMenuSheet` as `@stage-labs/kit/react-native/menu`.
-- `Text` sizes (`TextSizeToken`, `FontSizeName`, `FONT_SIZE` and `fontSize()`) moved one step down. Each pixel size now has the name one step below: `2xs` is 13px (was `xs`), `xs` 14px (was `sm`), `sm` 15px (was `md`), `md` 16px (was `lg`), `lg` 17px (was `xl`), `xl` 18px (was `2xl`), `2xl` 19px (was `3xl`), `3xl` 20px (was `4xl`), `4xl` 24px (was `5xl`), `5xl` 32px (was `6xl`) and `6xl` 40px (was `7xl`). `7xl` was removed. To keep the same size, rename each size one step down: `md` to `sm`, `xs` to `2xs`, `7xl` to `6xl`. The default size is now called `sm` (`FONT_SIZE_DEFAULT`) and `caption` text uses `2xs`; both are still 15px and 13px. `FONT_SIZE_SNAP` maps to the new names.
+- `Text` sizes (`TextSizeToken`, `FontSizeName`, `FONT_SIZE` and `fontSize()`) moved one step down. Each pixel size now has the name one step below: `2xs` is 13px (was `xs`), `xs` 14px (was `sm`), `sm` 15px (was `md`), `md` 16px (was `lg`), `lg` 17px (was `xl`), `xl` 18px (was `2xl`), `2xl` 19px (was `3xl`), `3xl` 20px (was `4xl`), `4xl` 24px (was `5xl`), `5xl` 32px (was `6xl`) and `6xl` 40px (was `7xl`). `7xl` was removed. To keep the same size, rename each size one step down: `md` to `sm`, `xs` to `2xs`, `7xl` to `6xl`. `caption` text uses `2xs`, still 13px. `FONT_SIZE_SNAP` maps to the new names.
+- The default `Text` size (`FONT_SIZE_DEFAULT`, used when `size` is not set) is now `md`, 16px. It was 15px. To keep 15px, pass `size="sm"`. `caption` text keeps 13px.
 - `Title` `hero` sizes moved the same way: `5xl` is 44px (was `6xl`) and `6xl` is 60px (was `7xl`). `7xl` was removed.
 - `SMALL_FONT_SIZE` moved the same way: `3xs` is 12px (was `2xs`) and `4xs` is 11px (was `3xs`). `BadgeFontToken` is now `4xs`, `3xs` or `2xs`. `Badge` sizes did not change.
-- `Frame` keeps ChatKit's own `Text` sizes (`xs` to `xl`) and maps them to the new names, so a widget renders at the same size as before.
+- `Frame` keeps ChatKit's own `Text` sizes (`xs` to `xl`, `md` when not set) and maps them to the new names, so a widget renders at the same size as before.
 
 #### Smaller bundles
 

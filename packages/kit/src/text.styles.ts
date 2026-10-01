@@ -1,4 +1,4 @@
-import { FONT_SIZE, type FontSizeName } from './tokens';
+import { FONT_SIZE, FONT_SIZE_DEFAULT, type FontSizeName } from './tokens';
 
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 
@@ -45,7 +45,7 @@ export function resolveTextSize(
   variant: TextVariant | undefined,
 ): number {
   if (size) return FONT_SIZE[size];
-  return variant === 'caption' ? FONT_SIZE['2xs'] : FONT_SIZE.sm;
+  return variant === 'caption' ? FONT_SIZE['2xs'] : FONT_SIZE[FONT_SIZE_DEFAULT];
 }
 
 export function textVariantRole(variant: TextVariant | undefined): TextRole {

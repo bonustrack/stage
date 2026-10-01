@@ -16,7 +16,7 @@ export const Controls: Story<Pick<GesturePressableProps, 'hitSlop'>> = (args) =>
       onLongPress={() => { setLog('long press'); }}
       onSwipe={(dir) => { setLog(`swipe ${dir}`); }}
     >
-      <Box padding={32} background="#9b6bd6" radius="md"><Text color="#fff">{log}</Text></Box>
+      <Box padding={32} background="#9b6bd6" radius="md"><Text size="sm" color="#fff">{log}</Text></Box>
     </GesturePressable>
   );
 };

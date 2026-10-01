@@ -43,7 +43,7 @@ function PollOptionView({ option, colors }: {
       />
       <Row align="center" justify="between" gap={8} padding={{ x: 12, y: 8 }}>
         <Col flex={1}>
-          <Text value={option.label} truncate />
+          <Text size="sm" value={option.label} truncate />
         </Col>
         <Caption value={option.stats} color="secondary" weight="semibold" />
       </Row>

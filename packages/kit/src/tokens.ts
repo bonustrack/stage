@@ -217,7 +217,7 @@ export const FONT_SIZE: Record<FontSizeName, number> = {
   '6xl': 40,
 } as const;
 
-export const FONT_SIZE_DEFAULT: FontSizeName = 'sm';
+export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
 
 export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];

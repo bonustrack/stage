@@ -52,7 +52,7 @@ function AttachmentFile({ label, subtitle, fg, onPress, pending = false }: {
           {pending ? <Spinner size={20} color={fg}/> : <Glyph icon={IconFileBend} size={24} color={fg}/>}
         </Box>
         <Col flex={1} minWidth={0} gap={2}>
-          <Text weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
+          <Text size="sm" weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
           {subtitle ? <Text size="xs" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
         </Col>
       </Row>
@@ -68,7 +68,7 @@ function AttachmentRetry({ label, fg, onRetry, compact }: {
     <MediaCard onPress={onRetry}>
       <Col flex={1} padding={12} align="center" justify="center" gap={8}>
         <Glyph icon={IconFileBend} size={32} color={fg}/>
-        <Text weight="semibold" color={fg} numberOfLines={2} textAlign="center">{`${label}. Tap to retry`}</Text>
+        <Text size="sm" weight="semibold" color={fg} numberOfLines={2} textAlign="center">{`${label}. Tap to retry`}</Text>
       </Col>
     </MediaCard>
   );

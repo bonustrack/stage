@@ -16,7 +16,7 @@ export const Controls: Story<{ count: number; horizontal: boolean; inverted: boo
       data={DATA.slice(0, count)}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{ padding: 12, gap }}
-      renderItem={({ item }) => <Box padding={12} background="#5b8def" radius="sm" flex={1}><Text color="#fff">{item.label}</Text></Box>}
+      renderItem={({ item }) => <Box padding={12} background="#5b8def" radius="sm" flex={1}><Text size="sm" color="#fff">{item.label}</Text></Box>}
     />
   </Box>
 );

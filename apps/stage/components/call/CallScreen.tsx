@@ -113,7 +113,7 @@ function Participants({ tiles, convId, selfInboxId }: { tiles: TileData[]; convI
   const { border } = usePalette();
   return (
     <Col width={260} gap={12} padding={16} style={{ borderLeftWidth: 1, borderLeftColor: border }}>
-      <Text weight="semibold" value={`In this call (${tiles.length})`}/>
+      <Text size="sm" weight="semibold" value={`In this call (${tiles.length})`}/>
       {tiles.map((t) => {
         const person = callPerson(convId, t.inboxId, selfInboxId);
         return (

@@ -9,7 +9,7 @@ import {
   type TextRole,
   type TextRolePalette,
 } from '../src/text.styles';
-import { FONT_SIZE } from '../src/tokens';
+import { FONT_SIZE, FONT_SIZE_DEFAULT } from '../src/tokens';
 
 const PALETTE: TextRolePalette = {
   sub: '#sub000',
@@ -29,10 +29,11 @@ describe('resolveTextSize', () => {
     expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['2xs']);
   });
 
-  test('default is sm', () => {
-    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.sm);
-    expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.sm);
-    expect(resolveTextSize(undefined, 'mono')).toBe(FONT_SIZE.sm);
+  test('default is md', () => {
+    expect(FONT_SIZE_DEFAULT).toBe('md');
+    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.md);
+    expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.md);
+    expect(resolveTextSize(undefined, 'mono')).toBe(FONT_SIZE.md);
   });
 });
 

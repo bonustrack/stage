@@ -56,7 +56,7 @@ function CodeText({ code, fg, selectable, highlight }: {
     <Text variant="mono" size="xs" color={fg} selectable={selectable} style={CODE_TEXT}>
       {query === '' ? code : highlightSegments(code, query).map((segment, index) => (
         segment.match ? (
-          <Text key={`${index}-${segment.value}`} style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
+          <Text key={`${index}-${segment.value}`} size="sm" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
         ) : segment.value
       ))}
     </Text>

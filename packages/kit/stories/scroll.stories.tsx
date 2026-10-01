@@ -10,7 +10,7 @@ export const Controls: Story<ScrollProps> = (args) => (
   <Box height={args.horizontal ? undefined : 200} width={args.horizontal ? 320 : undefined} surface="sunken" radius="md">
     <Scroll {...args}>
       {Array.from({ length: 12 }, (_, i) => (
-        <Box key={i} padding={16} background={SWATCHES[i % SWATCHES.length]} radius="sm" minWidth={120}><Text color="#fff">Item {i + 1}</Text></Box>
+        <Box key={i} padding={16} background={SWATCHES[i % SWATCHES.length]} radius="sm" minWidth={120}><Text size="sm" color="#fff">Item {i + 1}</Text></Box>
       ))}
     </Scroll>
   </Box>
