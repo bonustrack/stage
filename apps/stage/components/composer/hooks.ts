@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
-import { loadDrafts, getDraft, setDraft } from '../../lib/drafts';
+import { loadDrafts, getDraftValue, setDraft, setDraftValue } from '../../lib/drafts';
 import type { ComposerState } from './state';
 import type { Attachment } from './types';
 
@@ -9,12 +9,14 @@ export { useLastAttachment } from '../../lib/lastAttachment';
 
 const keptAttachments = new Map<string, Attachment[]>();
 
+const TEXT_SAVE_DELAY_MS = 300;
+
 export function clearComposerDraft(key: string): void {
   setDraft(key, '');
   keptAttachments.delete(key);
 }
 
-export function useKeptInMemory<T>(
+function useKeptInMemory<T>(
   kept: Map<string, T>, key: string | null, value: T, restore: (value: T) => void, empty: boolean,
 ): void {
   const restoring = useRef(false);
@@ -43,29 +45,36 @@ export function useCaretToEnd(
   }, [setSelection]);
 }
 
+export function useSavedDraft(
+  key: string | null, value: unknown, restore: (saved: unknown) => void, delayMs = 0,
+): void {
+  const restored = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    restored.current = false;
+    if (key === null) return;
+    void loadDrafts().then(() => {
+      restore(getDraftValue(key));
+      restored.current = true;
+    });
+  }, [key]);
+  useEffect(() => {
+    if (key === null || !restored.current) return;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => { setDraftValue(key, value); }, delayMs);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [value, key]);
+}
+
 export function useComposerDrafts(
   key: string | null,
   s: Pick<ComposerState, 'text' | 'pending' | 'setPending'>,
   restore: (draft: string) => void,
 ): void {
-  const draftRestored = useRef(false);
-  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useKeptInMemory(keptAttachments, key, s.pending, s.setPending, s.pending.length === 0);
-  useEffect(() => {
-    draftRestored.current = false;
-    if (key === null) return;
-    void loadDrafts().then(() => {
-      const d = getDraft(key);
-      if (d) restore(d);
-      draftRestored.current = true;
-    });
-  }, [key]);
-  useEffect(() => {
-    if (key === null || !draftRestored.current) return;
-    if (draftTimer.current) clearTimeout(draftTimer.current);
-    draftTimer.current = setTimeout(() => { setDraft(key, s.text); }, 300);
-    return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
-  }, [s.text, key]);
+  useSavedDraft(key, s.text.trim() ? s.text : undefined, (saved) => {
+    if (typeof saved === 'string' && saved) restore(saved);
+  }, TEXT_SAVE_DELAY_MS);
 }
 
 export function useComposerFocus(

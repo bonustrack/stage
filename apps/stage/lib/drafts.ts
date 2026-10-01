@@ -10,8 +10,12 @@ export async function loadDrafts(): Promise<void> {
   await store.hydrate();
 }
 
+export function getDraftValue(key: string): unknown {
+  return store.get()?.[key];
+}
+
 export function getDraft(convId: string): string {
-  const draft = store.get()?.[convId];
+  const draft = getDraftValue(convId);
   return typeof draft === 'string' ? draft : '';
 }
 
@@ -19,11 +23,14 @@ export function hasDraft(convId?: string | null): boolean {
   return !!convId && !!getDraft(convId).trim();
 }
 
-export function setDraft(convId: string, text: string): void {
-  const t = text.trim() ? text : '';
+export function setDraftValue(key: string, value: unknown): void {
   const next = { ...store.get() };
-  if (t) next[convId] = t; else Reflect.deleteProperty(next, convId);
+  if (value === undefined) Reflect.deleteProperty(next, key); else next[key] = value;
   store.set(Object.keys(next).length ? next : null);
+}
+
+export function setDraft(convId: string, text: string): void {
+  setDraftValue(convId, text.trim() ? text : undefined);
 }
 
 export function useDraftsVersion(): number {

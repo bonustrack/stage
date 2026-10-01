@@ -10,6 +10,24 @@ export function newChatDraftKey(account: { id: string } | null): string | null {
   return account === null ? null : `new-chat:${account.id}`;
 }
 
+export function membersDraftKey(draftKey: string | null): string | null {
+  return draftKey === null ? null : `${draftKey}:members`;
+}
+
+export interface Picks { added: string[]; chosen: string[] | null }
+
+export const NO_PICKS: Picks = { added: [], chosen: null };
+
+function isAddresses(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(a => typeof a === 'string');
+}
+
+export function savedPicks(saved: unknown): Picks | null {
+  if (typeof saved !== 'object' || saved === null || !('added' in saved) || !('chosen' in saved)) return null;
+  const { added, chosen } = saved;
+  return isAddresses(added) && (chosen === null || isAddresses(chosen)) ? { added, chosen } : null;
+}
+
 interface PeerRow {
   convId: string;
   peerAddress?: unknown;

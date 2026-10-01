@@ -10,7 +10,7 @@ import { useComposerState, type ComposerState } from '../composer/state';
 import { handSendTo } from '../composer/handoff';
 import { startSend } from '../composer/sendRun';
 import { fileInputs } from '../composer/send.model';
-import { clearComposerDraft, useKeptInMemory } from '../composer/hooks';
+import { clearComposerDraft, useSavedDraft } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -20,11 +20,12 @@ import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
-  type DmPeer,
+  NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers,
+  recipientCandidates, savedPicks, shownRecipients, type DmPeer,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
+import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/clearedChats';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
@@ -44,16 +45,11 @@ interface Recipients {
 
 const NO_REQUESTS: ReadonlySet<string> = new Set();
 
-interface Picks { added: string[]; chosen: string[] | null }
-
-const NO_PICKS: Picks = { added: [], chosen: null };
-
-const keptPicks = new Map<string, Picks>();
-
 function clearNewChatDraft(draftKey: string | null): void {
-  if (draftKey === null) return;
+  const membersKey = membersDraftKey(draftKey);
+  if (draftKey === null || membersKey === null) return;
   clearComposerDraft(draftKey);
-  keptPicks.delete(draftKey);
+  setDraftValue(membersKey, undefined);
 }
 
 function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
@@ -85,7 +81,10 @@ function useCandidates(): string[] {
 function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
   const candidates = useCandidates();
   const [picks, setPicks] = useState(NO_PICKS);
-  useKeptInMemory(keptPicks, draftKey, picks, setPicks, picks === NO_PICKS);
+  useSavedDraft(membersDraftKey(draftKey), picks === NO_PICKS ? undefined : picks, (saved) => {
+    const restored = savedPicks(saved);
+    if (restored !== null) setPicks(restored);
+  });
   const picked = pickedRecipients(picks.chosen, candidates);
   const shown = shownRecipients(candidates, picks.added, picked);
   const latest = useRef({ picked, candidates });

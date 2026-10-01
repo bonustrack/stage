@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates, shownRecipients,
+  MAX_SHOWN_RECIPIENTS, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates, savedPicks,
+  shownRecipients,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
@@ -58,5 +59,15 @@ describe('new chat recipients', () => {
   test('the new chat draft is kept per account, and not before the account is known', () => {
     expect(newChatDraftKey({ id: 'a' })).not.toBe(newChatDraftKey({ id: 'b' }));
     expect(newChatDraftKey(null)).toBeNull();
+    expect(membersDraftKey('new-chat:a')).not.toBe('new-chat:a');
+    expect(membersDraftKey(null)).toBeNull();
+  });
+
+  test('saved members come back as they were picked, anything else is ignored', () => {
+    expect(savedPicks({ added: ['0xd'], chosen: ['0xd'] })).toEqual({ added: ['0xd'], chosen: ['0xd'] });
+    expect(savedPicks({ added: [], chosen: null })).toEqual({ added: [], chosen: null });
+    expect(savedPicks('hello')).toBeNull();
+    expect(savedPicks({ added: ['0xd'] })).toBeNull();
+    expect(savedPicks({ added: [1], chosen: null })).toBeNull();
   });
 });
