@@ -22,6 +22,8 @@ import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-
 
 const PICKER_LIST_MAX_HEIGHT = 320;
 const PICKER_ROW_MIN_HEIGHT = 40;
+const TITLE_SIZE = 'sm';
+const TITLE_ICON_SIZE = 15;
 
 export interface SectionDraft { draft: string[]; toggle: (key: string) => void }
 
@@ -38,8 +40,8 @@ function HeaderContent({ title, icon, count, tint, pen }: {
   const { sub } = usePalette();
   return (
     <>
-      <Glyph icon={icon} size={14} color={tint ?? sub}/>
-      <Eyebrow color={tint}>{title.toUpperCase()}</Eyebrow>
+      <Glyph icon={icon} size={TITLE_ICON_SIZE} color={tint ?? sub}/>
+      <Eyebrow size={TITLE_SIZE} color={tint}>{title.toUpperCase()}</Eyebrow>
       {count === undefined ? null : <CountTag count={count}/>}
       <Box flex={1}/>
       {pen === 'none' ? null : <Box style={{ opacity: pen === 'shown' ? 1 : 0 }}><Glyph icon={IconPencil} size={16} color={tint ?? sub}/></Box>}
