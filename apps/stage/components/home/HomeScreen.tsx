@@ -7,7 +7,7 @@ import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
-import { SplitPlaceholder } from './SplitPlaceholder';
+import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../../lib/webLayout';
 import { HomeError, HomeSpinner, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { ChannelsList } from './list';
@@ -27,7 +27,7 @@ import { channelsPaneWidth } from '../tabs/paneWidth';
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const splitHome = useWebTabRail() && pane !== true;
-  if (splitHome) return <SplitPlaceholder/>;
+  if (splitHome) return <NewChatScreen/>;
   return <ChannelsHome panRef={panRef} pane={pane === true}/>;
 }
 

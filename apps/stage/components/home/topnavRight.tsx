@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { HomeOverflowMenu } from './overflow';
-import { NewChatModal } from './NewChatModal';
+import { requestNewChatFocus } from './newChatFocus';
 import { IconBubbleSparkle } from '../IconBubbleSparkle';
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
@@ -14,6 +13,7 @@ import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
 import { getPeerHandle } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
+import { useWebTabRail } from '../../lib/webLayout';
 
 type HomeView = 'chats' | 'board';
 
@@ -32,8 +32,12 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
   const { link } = usePalette();
   const search = useHover();
   const compose = useHover();
-  const [composeOpen, setComposeOpen] = useState(false);
-  const openCompose = (): void => { setComposeOpen(true); };
+  const wide = useWebTabRail();
+  const openCompose = (): void => {
+    requestNewChatFocus();
+    if (wide) router.replace('/');
+    else router.push('/new');
+  };
   return (
     <>
       {onOpenSearch === undefined ? null : <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
@@ -46,7 +50,6 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
           <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>
         </Pressable>
       </HoverTooltip>
-      <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />
       <HomeOverflowMenu
         color={head}
         onBoard={switchView.onBoard}

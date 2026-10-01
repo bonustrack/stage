@@ -26,13 +26,13 @@ interface Props {
   state?: ComposerState;
   mentionCandidates?: { address: string; name: string }[];
   suggestContacts?: boolean;
-  radius?: number;
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   autoFocusNonce?: number;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
   onSent?: (localId: string, error?: string, sentId?: string) => void;
+  onSubmit?: () => void;
 }
 
 function loneCandidate(candidates: Props['mentionCandidates']): string | undefined {
@@ -42,6 +42,10 @@ function loneCandidate(candidates: Props['mentionCandidates']): string | undefin
 function composerTarget(xmtpLine: string | undefined): { convId: string | null; openLine: () => Promise<string | null> } {
   const line = xmtpLine ?? null;
   return { convId: line === null ? null : convIdOfLine(line) ?? line, openLine: () => Promise.resolve(line) };
+}
+
+function sendHandler(onSubmit: (() => void) | undefined, send: () => Promise<void>): () => void {
+  return onSubmit ?? (() => { void send(); });
 }
 
 function useDraftState(shared: ComposerState | undefined): ComposerState {
@@ -114,7 +118,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
   return (
-    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={props.radius}>
+    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border}>
       <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
       <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
       <ComposerHeader
@@ -124,7 +128,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         uploading={s.uploading} err={s.err}
       />
       <ComposerEditor
-        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg} radius={props.radius}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={mention.display} setText={mention.setDisplay}
@@ -135,12 +139,11 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
-        draftOnly={draftOnly}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
         onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
-        onSend={() => void actions.send()}
+        onSend={sendHandler(props.onSubmit, actions.send)}
       />
       {draftOnly ? null : (
         <ComposerSheets

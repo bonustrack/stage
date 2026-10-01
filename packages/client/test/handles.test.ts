@@ -31,6 +31,7 @@ describe('isPeerHandleSegment', () => {
     expect(isPeerHandleSegment(ADDR)).toBe(true);
     expect(isPeerHandleSegment('requests')).toBe(false);
     expect(isPeerHandleSegment('new-group')).toBe(false);
+    expect(isPeerHandleSegment('new')).toBe(false);
     expect(isPeerHandleSegment('settings')).toBe(false);
     expect(isPeerHandleSegment('board')).toBe(false);
     expect(isPeerHandleSegment(CONV)).toBe(false);

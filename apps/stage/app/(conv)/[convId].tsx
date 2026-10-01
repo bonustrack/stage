@@ -1,14 +1,13 @@
 
 import { useCallback, useState } from 'react';
 
-import { Animated as RNAnimated, Platform } from 'react-native';
+import { Animated as RNAnimated } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Box, Col, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom } from '../../components/layout';
+import { Col, RIGHT_PANE_PAD } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -23,6 +22,7 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
+import { FooterDock } from '../../components/conversation/FooterDock';
 import {
   ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
@@ -65,24 +65,6 @@ function UnresolvedConversation({ resolved }: {
 
 let measuredFooterHeight = 0;
 
-function FooterDock({ children, height, onHeight, memberList }: {
-  children: React.ReactNode; height: number; onHeight: (h: number) => void; memberList: boolean;
-}): React.ReactElement {
-  useReportBottomChrome(height);
-  if (Platform.OS !== 'web') return <>{children}</>;
-  return (
-    <Box
-      style={[pinnedBottom(2), memberList ? RIGHT_PANE_INSET : null]}
-      onLayout={(e) => {
-        measuredFooterHeight = e.nativeEvent.layout.height;
-        onHeight(measuredFooterHeight);
-      }}
->
-      {children}
-    </Box>
-  );
-}
-
 function ConversationShell({ bg, children }: {
   bg: string; children: React.ReactNode;
 }): React.ReactElement {
@@ -109,6 +91,7 @@ export default function XmtpConversation(): React.ReactElement {
   const searchInputRef = useSearchKeyboardFocus(searchOpen);
 
   const [composerH, setComposerH] = useState(measuredFooterHeight);
+  const onFooterHeight = useCallback((h: number) => { measuredFooterHeight = h; setComposerH(h); }, []);
 
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
@@ -144,7 +127,7 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
         <ConversationTopnav c={c} convId={convId}/>
       )}
-      <FooterDock height={composerH} onHeight={setComposerH} memberList={memberList}>
+      <FooterDock height={composerH} onHeight={onFooterHeight} memberList={memberList}>
         <ConversationFooter c={c} convId={convId}/>
       </FooterDock>
       {memberList ? <ConversationSidebar convId={convId} isGroup={c.isGroup} peerAddress={c.peerAddr}/> : null}

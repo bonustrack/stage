@@ -28,7 +28,7 @@ import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string; radius?: number;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
   slideThresholdPx: number;
   text: string; setText: (v: string) => void;
@@ -39,7 +39,6 @@ interface EditorProps {
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
-  draftOnly?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -78,7 +77,7 @@ function makeWebEnterToSend(
       e.preventDefault();
       return;
     }
-    if (e.key !== 'Enter' || e.shiftKey || p.draftOnly === true) return;
+    if (e.key !== 'Enter' || e.shiftKey) return;
     e.preventDefault();
     if (p.hasContent) p.onSend();
   };
@@ -146,7 +145,7 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
 
 function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }): React.ReactElement | null {
   const { dark, bg } = p;
-  if (!p.hasContent || p.draftOnly === true) return null;
+  if (!p.hasContent) return null;
   return (
     <Button size="md" uniform pill dark={dark} tintBg={primary}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
@@ -156,7 +155,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={p.radius ?? 'none'}>
+    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius="none">
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}

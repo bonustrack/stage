@@ -9,14 +9,12 @@ import { useWebTabRail } from '../../lib/webLayout';
 
 const LABEL = 'Toggle panel';
 
-export function ConversationSidebarToggle({ isGroup, peerAddress }: {
-  isGroup: boolean; peerAddress: string | null;
-}): React.ReactElement | null {
+export function ConversationSidebarToggle(): React.ReactElement | null {
   const open = useMemberListOpen();
   const wide = useWebTabRail();
   const { text, link } = usePalette();
   const hover = useHover();
-  if (!wide || (!isGroup && !peerAddress)) return null;
+  if (!wide) return null;
   return (
     <HoverTooltip label={LABEL} placement="below">
       <Pressable

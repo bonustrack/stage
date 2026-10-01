@@ -10,13 +10,8 @@ export function pickerRows<C extends PickerContact>(
   return [...selected, ...contacts.filter(c => !picked.has(c.address.toLowerCase()))];
 }
 
-export function shownMembers<M extends PickerMember>(members: readonly M[], single: boolean): M[] {
-  return single ? members.slice(0, 1) : [...members];
-}
-
-export function togglePick<M extends PickerMember>(members: readonly M[], member: M, single: boolean): M[] {
-  const shown = shownMembers(members, single);
+export function togglePick<M extends PickerMember>(members: readonly M[], member: M): M[] {
   const lower = member.address.toLowerCase();
-  if (shown.some(m => m.address.toLowerCase() === lower)) return shown.filter(m => m.address.toLowerCase() !== lower);
-  return single ? [member] : [...shown, member];
+  if (members.some(m => m.address.toLowerCase() === lower)) return members.filter(m => m.address.toLowerCase() !== lower);
+  return [...members, member];
 }
