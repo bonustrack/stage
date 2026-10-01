@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 
 let requested = 0;
@@ -12,7 +12,7 @@ export function requestNewChatFocus(): void {
 
 export function useNewChatFocusNonce(): number {
   const nonce = useStoreValue(listeners.subscribe, () => requested);
-  const pending = nonce > handled ? nonce : 0;
+  const [handledBefore] = useState(() => handled);
   useEffect(() => { handled = Math.max(handled, nonce); }, [nonce]);
-  return pending;
+  return nonce > handledBefore ? nonce : 0;
 }
