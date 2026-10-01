@@ -15,6 +15,7 @@ import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { TEXT_11PX } from '../smallText';
+import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from './tabBadge';
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
@@ -33,13 +34,13 @@ function TabIcon({ name, icon, active, unreadBadge }: {
   return (
     <HoverTint>
       {(hovered) => (
-    <Box>
+    <Box width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
       <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text}/>
       {name === 'index' && unreadBadge !== undefined ? (
         <Box
-          minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
+          minWidth={TAB_BADGE_SIZE} height={TAB_BADGE_SIZE} padding={{ x: 4 }} radius="full" background={pal.link}
           align="center" justify="center"
-          style={{ position: 'absolute', top: -6, right: -14 }}
+          style={TAB_BADGE_POSITION}
 >
           <Text weight="semibold" color={pal.bg} style={TEXT_11PX}>{unreadBadge}</Text>
         </Box>

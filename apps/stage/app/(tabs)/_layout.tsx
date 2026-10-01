@@ -11,6 +11,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
+import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from '../../components/tabs/tabBadge';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -102,6 +103,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarActiveTintColor: active,
           tabBarInactiveTintColor: inactive,
           tabBarShowLabel: false,
+          tabBarIconStyle: TAB_ICON_FRAME,
         }}
 >
         {TAB_ICONS.map(([name, icon]) => (
@@ -116,13 +118,14 @@ export default function TabsLayout(): React.ReactElement {
                 ? {
                     tabBarBadge: unreadBadge,
                     tabBarBadgeStyle: {
+                      ...TAB_BADGE_POSITION,
                       backgroundColor: pal.link,
                       color: pal.bg,
                       ...TEXT_11PX,
                       fontFamily: 'Calibre-Semibold',
-                      minWidth: 18,
-                      height: 18,
-                      lineHeight: 18,
+                      minWidth: TAB_BADGE_SIZE,
+                      height: TAB_BADGE_SIZE,
+                      lineHeight: TAB_BADGE_SIZE,
                     },
                   }
                 : {}),
