@@ -36,6 +36,9 @@ import {
 } from '@stage-labs/client/xmtp/frame';
 import { frameContentSchema, frameActionSchema } from '@stage-labs/client/xmtp/frame.schema';
 import {
+  STAGE_DELETE_CONTENT_TYPE, deleteMessageSchema, type DeleteMessageContent,
+} from '@stage-labs/client/xmtp/deleteMessage';
+import {
   CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callInviteSchema, callInviteText, callSignalSchema,
   type CallInvite, type CallSignal,
 } from '@stage-labs/client/xmtp/call';
@@ -121,3 +124,8 @@ export const FRAME_CODEC = jsonCodec<FrameContent>(FRAME_CONTENT_TYPE, frameFall
 export const FRAME_ACTION_CODEC = jsonCodec<FrameActionContent>(
   FRAME_ACTION_CONTENT_TYPE, frameActionFallbackText, frameActionSchema, 'xmtp.frameAction',
 );
+
+export const DELETE_REQUEST_CODEC: JsonCodec<DeleteMessageContent> = {
+  ...jsonCodec<DeleteMessageContent>(STAGE_DELETE_CONTENT_TYPE, () => undefined, deleteMessageSchema, 'xmtp.deleteRequest'),
+  shouldPush: (): boolean => false,
+};

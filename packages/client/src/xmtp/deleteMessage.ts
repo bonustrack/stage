@@ -7,6 +7,17 @@ export const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
 
 export const DELETE_MESSAGE_TYPE_ID = DELETE_MESSAGE_CONTENT_TYPE.typeId;
 
+export const STAGE_DELETE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'deleteRequest', versionMajor: 1, versionMinor: 0,
+};
+
+export const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
+
+const XMTP_DELETABLE_TYPE_IDS: readonly string[] = [
+  'text', 'markdown', 'reply', 'attachment', 'remoteStaticAttachment', 'multiRemoteStaticAttachment',
+  'transactionReference', 'walletSendCalls',
+];
+
 export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 
 export const DELETED_MESSAGE_TEXT = 'Message deleted';
@@ -19,7 +30,7 @@ export function deletedTextOf(by: DeletedBy): string {
   return by === 'admin' ? DELETED_BY_ADMIN_TEXT : DELETED_MESSAGE_TEXT;
 }
 
-const deleteMessageSchema = z.object({ messageId: z.string().min(1) });
+export const deleteMessageSchema = z.object({ messageId: z.string().min(1) });
 
 export type DeleteMessageContent = z.infer<typeof deleteMessageSchema>;
 
@@ -116,7 +127,12 @@ export function shortTypeId(contentTypeId: string | undefined | null): string {
 }
 
 export function isDeleteRequestType(contentTypeId: string | undefined | null): boolean {
-  return shortTypeId(contentTypeId) === DELETE_MESSAGE_TYPE_ID;
+  const typeId = shortTypeId(contentTypeId);
+  return typeId === DELETE_MESSAGE_TYPE_ID || typeId === STAGE_DELETE_TYPE_ID;
+}
+
+export function isXmtpDeletableType(contentTypeId: string | undefined | null): boolean {
+  return XMTP_DELETABLE_TYPE_IDS.includes(shortTypeId(contentTypeId));
 }
 
 export function isDeletedPlaceholderType(contentTypeId: string | undefined | null): boolean {

@@ -17,7 +17,7 @@ import {
 } from './frame';
 import { XMTP_USER_PREFIX } from './line';
 import {
-  DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
+  DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
 } from './deleteMessage';
 
 export interface DecodedMessageView {
@@ -156,6 +156,10 @@ type Handler = (
   base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string,
 ) => HistoryEntry;
 
+const deleteRequestEnvelope: Handler = (base, _typeId, decoded) => ({
+  ...base, payload: { contentType: DELETE_MESSAGE_TYPE_ID, deletes: deleteTargetOfContent(decoded) },
+});
+
 const ENVELOPE_HANDLERS: Record<string, Handler> = {
   reaction: reactionEnvelope,
   poll: (base, typeId, decoded) => ({
@@ -190,9 +194,8 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
   attachment: attachmentEnvelope,
   multiRemoteStaticAttachment: multiRemoteEnvelope,
   multiRemoteAttachment: multiRemoteEnvelope,
-  [DELETE_MESSAGE_TYPE_ID]: (base, typeId, decoded) => ({
-    ...base, payload: { contentType: typeId, deletes: deleteTargetOfContent(decoded) },
-  }),
+  [DELETE_MESSAGE_TYPE_ID]: deleteRequestEnvelope,
+  [STAGE_DELETE_TYPE_ID]: deleteRequestEnvelope,
   [DELETED_MESSAGE_TYPE_ID]: (base, typeId, decoded) => ({
     ...base, payload: { contentType: typeId, deletedBy: deletedByOfContent(decoded) },
   }),

@@ -19,7 +19,7 @@ import { webGroupMetaPolicy } from './groupPolicyWeb.model';
 import type { XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
-  type GroupMeta, type MessageDeletion, type MessageQuery, type XmtpSdk,
+  type GroupMeta, type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, ignore, ignored } from './errorPolicy';
 
@@ -132,11 +132,10 @@ async function deletedEntryOf(client: WebClient, messageId: string, line: string
   return m ? envelopeOfXmtpMessage(m, line) : null;
 }
 
-async function deleteMessage(client: WebClient, messageId: string): Promise<string> {
+async function messageTarget(client: WebClient, messageId: string): Promise<MessageTarget<Conversation> | null> {
   const message = await client.conversations.getMessageById(messageId);
   const conv = message ? await client.conversations.getConversationById(message.conversationId) : undefined;
-  if (!conv) throw new Error('Message not found');
-  return conv.send(asEncoded(encodeDeleteMessage(messageId)), { shouldPush: false });
+  return message && conv ? { conv, contentTypeId: message.contentType.typeId } : null;
 }
 
 async function dmLookup(client: WebClient, address: string): Promise<{
@@ -191,7 +190,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   streamConsent,
   streamDeletions,
   deletedEntryOf,
-  deleteMessage,
+  messageTarget,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
@@ -231,6 +230,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   sentNsOf: (m) => Number(m.sentAtNs),
   sentNsText: (m) => String(m.sentAtNs),
   convIdOf: (m) => m.conversationId || null,
+  deleteMessage: (conv, messageId) => conv.send(asEncoded(encodeDeleteMessage(messageId)), { shouldPush: false }),
   send: {
     text: (conv, text) => conv.sendText(text),
     reaction: (conv, reaction) => conv.sendReaction(toWasmReaction(reaction)),

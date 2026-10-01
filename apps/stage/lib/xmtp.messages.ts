@@ -1,8 +1,10 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import { isXmtpDeletableType } from '@stage-labs/client/xmtp/deleteMessage';
 import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { makeSenders } from './xmtp.send.core';
+import { DELETE_REQUEST_CODEC } from './xmtpJsonCodecs';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -25,7 +27,13 @@ export async function olderConvMessages(line: string, beforeTsMs: number, limit:
 }
 
 export function xmtpDeleteMessage(messageId: string): Promise<string> {
-  return withReadableSendError(async () => sdk.deleteMessage(await sdk.client(), messageId));
+  return withReadableSendError(async () => {
+    const target = await sdk.messageTarget(await sdk.client(), messageId);
+    if (!target) throw new Error('Message not found');
+    return isXmtpDeletableType(target.contentTypeId)
+      ? sdk.deleteMessage(target.conv, messageId)
+      : sdk.send.json(target.conv, DELETE_REQUEST_CODEC, { messageId });
+  });
 }
 
 function sendTo<A extends unknown[]>(

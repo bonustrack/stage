@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   DELETE_MESSAGE_CODEC, DELETED_MESSAGE_TEXT, decodeDeleteMessageBytes, encodeDeleteMessage, encodeDeleteMessageBytes,
-  isDeleteRequestType, isDeletedPlaceholderType,
+  isDeleteRequestType, isDeletedPlaceholderType, isXmtpDeletableType,
 } from '../src/xmtp/deleteMessage';
 import { envelopeFromContent, mapDecodedToEnvelope } from '../src/xmtp/envelope';
 import { previewOfXmtpContent } from '../src/xmtp/humanize';
@@ -56,6 +56,28 @@ describe('XIP-76 delete message codec', () => {
     expect(isDeletedPlaceholderType('xmtp.org/deletedMessage:1.0')).toBe(true);
     expect(isDeletedPlaceholderType(undefined)).toBe(false);
   });
+
+  test('the Stage delete request counts as a delete request too', () => {
+    expect(isDeleteRequestType('stage.box/deleteRequest:1.0')).toBe(true);
+    expect(isDeleteRequestType('deleteRequest')).toBe(true);
+  });
+});
+
+describe('which messages XMTP itself can delete', () => {
+  test('text, replies, attachments and transactions go through the XMTP delete', () => {
+    for (const id of [
+      'xmtp.org/text:1.0', 'xmtp.org/markdown:1.0', 'xmtp.org/reply:1.0', 'xmtp.org/attachment:1.0',
+      'xmtp.org/remoteStaticAttachment:1.0', 'xmtp.org/multiRemoteStaticAttachment:1.0',
+      'xmtp.org/transactionReference:1.0', 'xmtp.org/walletSendCalls:1.0', 'text', 'reply',
+    ]) expect(isXmtpDeletableType(id)).toBe(true);
+  });
+
+  test('Stage and metro content types are unknown to XMTP, so they need the Stage delete', () => {
+    for (const id of [
+      'stage.box/frameAction:1.0', 'stage.box/frame:1.0', 'metro.box/poll:1.0', 'metro.box/signatureRequest:1.0',
+      'frameAction', 'frame', 'poll', '', undefined,
+    ]) expect(isXmtpDeletableType(id)).toBe(false);
+  });
 });
 
 describe('delete entries in the feed', () => {
@@ -66,6 +88,17 @@ describe('delete entries in the feed', () => {
     }, 'stage://xmtp/c');
     expect(e.payload).toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
     expect(e.text).toBeUndefined();
+  });
+
+  test('a Stage delete request becomes the same hidden request, on native and on web', () => {
+    const native = mapDecodedToEnvelope({
+      id: 'd1', senderInboxId: 'alice', sentNs: 1, contentTypeId: 'stage.box/deleteRequest:1.0',
+      content: () => ({ messageId: 'm1' }),
+    }, 'stage://xmtp/c');
+    expect(native.payload).toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
+    expect(native.text).toBeUndefined();
+    expect(envelopeFromContent(base, 'deleteRequest', { messageId: 'm1' }, undefined).payload)
+      .toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
   });
 
   test('a web placeholder keeps who deleted it, number or string', () => {
@@ -85,10 +118,12 @@ describe('delete entries in the feed', () => {
     expect(previewOfXmtpContent({ deletedBy: 0 }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
     expect(previewOfXmtpContent({ deletedBy: 1, adminInboxId: 'x' }, 'deletedMessage')).toBe('Message deleted by an admin');
     expect(previewOfXmtpContent({ messageId: 'm1' }, 'xmtp.org/deleteMessage:1.0')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOfXmtpContent({ messageId: 'm1' }, 'stage.box/deleteRequest:1.0')).toBe(DELETED_MESSAGE_TEXT);
   });
 
   test('a delete request is never counted as unread', () => {
     const entries = [
+      { sentNs: 400, senderInboxId: 'other', contentTypeId: 'stage.box/deleteRequest:1.0' },
       { sentNs: 300, senderInboxId: 'other', contentTypeId: 'xmtp.org/deleteMessage:1.0' },
       { sentNs: 200, senderInboxId: 'other', contentTypeId: 'text' },
     ];

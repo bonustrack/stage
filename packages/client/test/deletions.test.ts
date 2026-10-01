@@ -115,6 +115,15 @@ describe('deletedRowBy', () => {
     expect(deletedRowBy(last, [deleteBy('bob'), last])).toBeNull();
   });
 
+  test('a Stage delete request hides a frame action, from its sender or a super admin only', () => {
+    const tap = row('m1', 'alice', 'stage.box/frameAction:1.0', { frameId: 'f1', action: { type: 'subscribe' } });
+    const stageDelete = (sender: string): StreamedMessage =>
+      row('d1', sender, 'stage.box/deleteRequest:1.0', { messageId: 'm1' });
+    expect(deletedRowBy(tap, [stageDelete('alice'), tap])).toBe('sender');
+    expect(deletedRowBy(tap, [stageDelete('owner'), tap], { superAdmins: SUPER_ADMINS })).toBe('admin');
+    expect(deletedRowBy(tap, [stageDelete('bob'), tap])).toBeNull();
+  });
+
   test('web: the SDK placeholder, and this device\'s own delete', () => {
     expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 0 }), [])).toBe('sender');
     expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 1, adminInboxId: 'owner' }), [])).toBe('admin');

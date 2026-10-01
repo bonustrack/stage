@@ -10,7 +10,7 @@ import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup, sendableFinder,
-  type MessageDeletion, type MessageQuery, type XmtpSdk,
+  type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt } from './errorPolicy';
 import { archiveFromBytes, archiveToBytes } from './archiveFile';
@@ -131,12 +131,11 @@ function streamDeletions(client: NativeClient, onDeleted: (deletion: MessageDele
   };
 }
 
-async function deleteMessage(client: NativeClient, messageId: string): Promise<string> {
+async function messageTarget(client: NativeClient, messageId: string): Promise<MessageTarget<Conversation> | null> {
   const message = await client.conversations.findMessage(asMessageId(messageId));
   const convId = message ? convIdFromTopic(message.topic) ?? conversationIdField(message) : undefined;
   const conv = convId ? await client.conversations.findConversation(asConversationId(convId)) : undefined;
-  if (!conv) throw new Error('Message not found');
-  return conv.deleteMessage(asMessageId(messageId));
+  return message && conv ? { conv, contentTypeId: message.contentTypeId } : null;
 }
 
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
@@ -179,7 +178,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamConsent,
   streamDeletions,
   deletedEntryOf: () => Promise.resolve(null),
-  deleteMessage,
+  messageTarget,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
@@ -212,6 +211,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   sentNsOf: (m) => m.sentNs,
   sentNsText: (m) => String(m.sentNs),
   convIdOf: (m) => convIdFromTopic(m.topic) ?? conversationIdField(m),
+  deleteMessage: (conv, messageId) => conv.deleteMessage(asMessageId(messageId)),
   send: {
     text: (conv, text) => conv.send(text),
     reaction: (conv, reaction) => conv.send({ reaction }),

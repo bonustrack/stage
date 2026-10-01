@@ -2,7 +2,8 @@ import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
 import {
-  DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deletedByOfContent, deletedTextOf,
+  DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deletedByOfContent,
+  deletedTextOf,
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
@@ -143,6 +144,7 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   multiRemoteAttachment: previewMultiRemote,
   [DELETED_MESSAGE_TYPE_ID]: (decoded) => deletedTextOf(deletedByOfContent(decoded)),
   [DELETE_MESSAGE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
+  [STAGE_DELETE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
   [CALL_INVITE_CONTENT_TYPE.typeId]: callPreviewText,
   [CALL_SIGNAL_CONTENT_TYPE.typeId]: callPreviewText,
 };

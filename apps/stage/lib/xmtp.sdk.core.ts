@@ -49,6 +49,8 @@ export interface SendOps<C> {
 
 export interface MessageDeletion { convId: string; messageId: string }
 
+export interface MessageTarget<C> { conv: C; contentTypeId: string }
+
 export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
@@ -79,7 +81,7 @@ interface ClientPrimitives<Cl, C, M> {
   streamConsent: (client: Cl, onChange: () => void) => () => void;
   streamDeletions: (client: Cl, onDeleted: (deletion: MessageDeletion) => void) => () => void;
   deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;
-  deleteMessage: (client: Cl, messageId: string) => Promise<string>;
+  messageTarget: (client: Cl, messageId: string) => Promise<MessageTarget<C> | null>;
   history: HistoryOps<Cl>;
 }
 
@@ -104,6 +106,7 @@ interface ConvPrimitives<C, M> {
   sentNsOf: (m: M) => number;
   sentNsText: (m: M) => string;
   convIdOf: (m: M) => string | null | undefined;
+  deleteMessage: (conv: C, messageId: string) => Promise<string>;
   send: SendOps<C>;
 }
 
