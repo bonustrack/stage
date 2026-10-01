@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  matchConfirmed, mergeConfirmed, optimisticRowPreview, outboundView, recordSent, settleOutbound,
+  matchConfirmed, mergeConfirmed, optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound,
   type OutboundState, type OutboundView,
 } from '../components/conversation/outboundRows.model';
 
@@ -108,5 +108,17 @@ describe('optimisticRowPreview', () => {
     expect(optimisticRowPreview(' ', [{ mime: 'image/png' }, { name: 'b.jpg' }, { mime: 'image/heic' }]))
       .toBe('Sent 3 images');
     expect(optimisticRowPreview('', [{ name: 'a.jpg' }, { mime: 'application/pdf' }])).toBe('Sent 2 attachments');
+  });
+});
+
+describe('pendingFromMe', () => {
+  test('a message sent before my inbox was known still shows as mine', () => {
+    const early = entry('tmp_1', 0, 'hi', { from: 'metro://xmtp/' });
+    expect(pendingFromMe([early], ME)[0]?.from).toBe(ME);
+  });
+
+  test('pending messages already from me are kept as they are', () => {
+    const pending = [entry('tmp_1', 0, 'hi')];
+    expect(pendingFromMe(pending, ME)).toBe(pending);
   });
 });

@@ -10,7 +10,7 @@ import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { deletedViewCache } from './messageDeletion.model';
 import { isLeftOnlyUpdate } from './systemNames.model';
 import {
-  optimisticRowPreview, outboundView, recordSent, settleOutbound, type OutboundState,
+  optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState,
 } from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
@@ -66,8 +66,8 @@ export function useOutboundLayer(
   );
   const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
   const allBubbles = useMemo(
-    () => (view.pending.length ? [...view.pending, ...liveBubbles] : liveBubbles),
-    [view, liveBubbles],
+    () => (view.pending.length ? [...pendingFromMe(view.pending, myUri), ...liveBubbles] : liveBubbles),
+    [view, liveBubbles, myUri],
   );
   useEffect(() => {
     if (view.confirmed.size) setOutbound(s => settleOutbound(s, view.confirmed));

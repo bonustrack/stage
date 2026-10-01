@@ -46,4 +46,32 @@ describe('attachment prep', () => {
     expect(encrypt).toHaveBeenCalledTimes(2);
     expect(store).toHaveBeenCalledTimes(2);
   });
+
+  test('an upload failure encrypts the file again on the next try', async () => {
+    let uploads = 0;
+    const encrypt = mock(async (file: typeof photo) => `enc:${file.filename}`);
+    const prep = makeAttachmentPrep(encrypt, async (encrypted: string) => {
+      uploads += 1;
+      if (uploads === 1) throw new Error('upload failed');
+      return `url:${encrypted}`;
+    });
+    await expect(prep.uploaded([photo])).rejects.toThrow('upload failed');
+    expect(await prep.uploaded([photo])).toEqual(['url:enc:photo.png']);
+    expect(encrypt).toHaveBeenCalledTimes(2);
+  });
+
+  test('at most two files are encrypted at the same time', async () => {
+    let running = 0;
+    let peak = 0;
+    const prep = makeAttachmentPrep(async (file: typeof photo) => {
+      running += 1;
+      peak = Math.max(peak, running);
+      await new Promise(done => { setTimeout(done, 5); });
+      running -= 1;
+      return file.filename;
+    }, async (encrypted: string) => encrypted);
+    const files = ['a', 'b', 'c', 'd'].map(n => ({ ...photo, fileUri: `blob:${n}`, filename: `${n}.png` }));
+    expect(await prep.uploaded(files)).toEqual(['a.png', 'b.png', 'c.png', 'd.png']);
+    expect(peak).toBe(2);
+  });
 });

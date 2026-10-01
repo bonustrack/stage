@@ -2,8 +2,20 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../../lib/drafts';
+import { forgetAttachments } from '../../modules/messaging';
+import { fileInputs } from './send.model';
+import type { Attachment } from './types';
 
 export { useLastAttachment } from '../../lib/lastAttachment';
+
+export function useForgetOnUnmount(pending: Attachment[], kept: (at: Attachment) => boolean = () => false): void {
+  const latest = useRef({ pending, kept });
+  latest.current = { pending, kept };
+  useEffect(() => () => {
+    const last = latest.current;
+    forgetAttachments(fileInputs(last.pending.filter(at => !last.kept(at))));
+  }, []);
+}
 
 export function useCaretToEnd(
   text: string,

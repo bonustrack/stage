@@ -9,6 +9,26 @@ export interface AttachmentPrep<R> {
   forget: (files: Files) => void;
 }
 
+const ENCRYPTS_AT_ONCE = 2;
+const UPLOADS_AT_ONCE = 3;
+
+type Limit = <T>(run: () => Promise<T>) => Promise<T>;
+
+function limitConcurrency(max: number): Limit {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  return async <T>(run: () => Promise<T>): Promise<T> => {
+    while (active >= max) await new Promise<void>((go) => { waiting.push(go); });
+    active += 1;
+    try {
+      return await run();
+    } finally {
+      active -= 1;
+      waiting.shift()?.();
+    }
+  };
+}
+
 function keyOf(file: LocalAttachmentInput): string {
   return `${file.fileUri}\n${file.mimeType}\n${file.filename}`;
 }
@@ -28,9 +48,19 @@ export function makeAttachmentPrep<E, R>(
 ): AttachmentPrep<R> {
   const encrypted = new Map<string, Promise<E>>();
   const stored = new Map<string, Promise<R>>();
-  const encryptedOf = (file: LocalAttachmentInput): Promise<E> => once(encrypted, keyOf(file), () => encrypt(file));
-  const storedOf = (file: LocalAttachmentInput): Promise<R> =>
-    once(stored, keyOf(file), async () => store(await encryptedOf(file), file));
+  const encryptSlot = limitConcurrency(ENCRYPTS_AT_ONCE);
+  const uploadSlot = limitConcurrency(UPLOADS_AT_ONCE);
+  const encryptedOf = (file: LocalAttachmentInput): Promise<E> =>
+    once(encrypted, keyOf(file), () => encryptSlot(() => encrypt(file)));
+  const storedOf = (file: LocalAttachmentInput): Promise<R> => once(stored, keyOf(file), async () => {
+    const ready = await encryptedOf(file);
+    try {
+      return await uploadSlot(() => store(ready, file));
+    } catch (err) {
+      encrypted.delete(keyOf(file));
+      throw err;
+    }
+  });
   return {
     prepare: (files) => { for (const file of files) void encryptedOf(file); },
     upload: (files) => { for (const file of files) void storedOf(file); },

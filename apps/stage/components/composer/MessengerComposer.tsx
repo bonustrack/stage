@@ -8,7 +8,7 @@ import { useHandedDraft } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
-import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
+import { useComposerDrafts, useComposerFocus, useCaretToEnd, useForgetOnUnmount, useLastAttachment } from './hooks';
 import { useMentionEditor } from './mentions';
 import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
 import { useChannelSuggest } from './channels';
@@ -21,6 +21,8 @@ import { ComposerSheets } from './sheets';
 import { TEXT_12PX } from '../smallText';
 
 const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
+
+const NO_PENDING: Attachment[] = [];
 
 interface Props {
   dark: boolean;
@@ -53,6 +55,7 @@ function sendHandler(onSubmit: (() => void) | undefined, send: () => Promise<voi
 
 function useDraftState(shared: ComposerState | undefined): ComposerState {
   const own = useComposerState();
+  useForgetOnUnmount(shared === undefined ? own.pending : NO_PENDING);
   return shared ?? own;
 }
 

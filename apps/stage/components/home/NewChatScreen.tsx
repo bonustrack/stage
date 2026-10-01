@@ -9,6 +9,7 @@ import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { handDraftTo } from '../composer/handoff';
 import { fileInputs } from '../composer/send.model';
+import { useForgetOnUnmount } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -92,23 +93,30 @@ function useStartChat(draft: ComposerState, onOpened: (convId: string) => void):
 } {
   const [creating, setCreating] = useState(false);
   const busy = useRef(false);
+  const latest = useRef(draft);
+  latest.current = draft;
+  const handedUrls = useRef(new Set<string>());
+  useForgetOnUnmount(draft.pending, at => handedUrls.current.has(at.url));
   const start = async (addresses: readonly string[]): Promise<void> => {
     if (busy.current) return;
     if (addresses.length === 0) { capabilities.toast(NO_RECIPIENT_NOTE); return; }
     busy.current = true;
     setCreating(true);
-    const handed = { text: draft.text, pending: draft.pending };
-    uploadAttachments(fileInputs(handed.pending));
+    uploadAttachments(fileInputs(draft.pending));
     try {
       const convId = convIdOfLine((await createGroup([...addresses])).line);
       if (convId === null) return;
       rememberOwnGroup(convId);
-      handDraftTo(convId, handed);
+      const { text, pending } = latest.current;
+      uploadAttachments(fileInputs(pending));
+      pending.forEach(at => handedUrls.current.add(at.url));
+      handDraftTo(convId, { text, pending });
       draft.setText('');
       draft.setPending([]);
       onOpened(convId);
     } catch (err) {
       capabilities.toast(errorMessage(err));
+      draft.bumpFocus();
     } finally {
       busy.current = false;
       setCreating(false);

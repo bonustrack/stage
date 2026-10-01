@@ -65,6 +65,10 @@ export function outboundView(state: OutboundState, liveBubbles: HistoryEntry[], 
   };
 }
 
+export function pendingFromMe(pending: HistoryEntry[], myUri: string): HistoryEntry[] {
+  return pending.some(e => e.from !== myUri) ? pending.map(e => (e.from === myUri ? e : { ...e, from: myUri })) : pending;
+}
+
 export function settleOutbound(state: OutboundState, confirmed: Map<string, string>): OutboundState {
   const optimistic = state.optimistic.filter(o => !confirmed.has(o.id));
   const confirmedIds = mergeConfirmed(state.confirmedIds, confirmed);
