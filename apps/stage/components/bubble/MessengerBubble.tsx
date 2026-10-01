@@ -10,6 +10,7 @@ import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
 import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
+import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { useBubbleGestures } from './gestures';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 
@@ -57,9 +58,9 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
 
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const { entry, dark, replyTarget, senderEthAddress, onAvatarPress } = props;
-  const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
+  const muted = (entry.payload as { system?: boolean } | undefined)?.system === true || isDeletedPlaceholder(entry);
   const pal = usePalette();
-  const fg = isSystem ? pal.text : pal.link;
+  const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
   const g = useBubbleGestures(props);
   return (
