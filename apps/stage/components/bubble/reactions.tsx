@@ -3,6 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { reactorsLabel } from '../conversation/reactors.model';
+import { reactionPills } from './reactions.model';
 import { ReactionTooltip } from './ReactionTooltip';
 import { TEXT_11PX } from '../smallText';
 
@@ -49,24 +50,21 @@ export function ReactionsRow({
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();
-  const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
-  const removed = new Set(pendingRemovals ?? []);
-  const confirmedEntries = reactions
-    ? [...reactions.entries()].filter(([emoji]) => !removed.has(emoji))
-    : [];
-  const hasConfirmed = confirmedEntries.length> 0;
-  if (!hasConfirmed && pendingEmojis.length === 0) return null;
+  const pills = reactionPills(reactions, ownEmojis, pendingReactions, pendingRemovals);
+  const confirmedPills = pills.filter(p => !p.pending);
+  const pendingPills = pills.filter(p => p.pending);
+  if (pills.length === 0) return null;
 
   return (
     <Row margin={{ top: 4 }} wrap gap={4}>
-      {hasConfirmed ? (
+      {confirmedPills.length > 0 ? (
         <Row gap={4} wrap align="center">
-          {confirmedEntries.map(([emoji, names]) => (
+          {confirmedPills.map(({ emoji, names, own }) => (
             <ReactionTooltip key={emoji} label={reactorsLabel(names)} emoji={emoji} onReact={onReact}>
               <ReactionPill
                 emoji={emoji}
                 count={names.length}
-                own={!!ownEmojis?.has(emoji)}
+                own={own}
                 pillBg={pillBg}
                 ownBorderColor={link}
               />
@@ -74,7 +72,7 @@ export function ReactionsRow({
           ))}
         </Row>
       ) : null}
-      {pendingEmojis.map(emoji => (
+      {pendingPills.map(({ emoji }) => (
         <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,
         }}>

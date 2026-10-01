@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { xmtpReact } from '../../modules/messaging';
 import { useStableCallback } from '../../lib/useStableCallback';
+import { ownsReaction } from '../bubble/reactions.model';
 
 type Pending = Map<string, string[]>;
 
@@ -31,28 +32,27 @@ function settle(prev: Pending, keep: (msgId: string, emoji: string) => boolean):
   return changed ? next : prev;
 }
 
-export function useReactionsLayer(
-  activeLine: string,
-  reactions: Map<string, Map<string, string[]>>,
-  ownReactions: Map<string, Set<string>>,
-) {
+export function useReactionsLayer(activeLine: string, ownReactions: Map<string, Set<string>>) {
   const [optimisticReactions, setOptimisticReactions] = useState<Pending>(new Map());
   const [optimisticRemovals, setOptimisticRemovals] = useState<Pending>(new Map());
 
   useEffect(() => {
-    setOptimisticReactions(prev => settle(prev, (msgId, e) => !reactions.get(msgId)?.has(e)));
-    setOptimisticRemovals(prev => settle(prev, (msgId, e) => !!reactions.get(msgId)?.has(e)));
-  }, [reactions]);
+    setOptimisticReactions(prev => settle(prev, (msgId, e) => !ownReactions.get(msgId)?.has(e)));
+    setOptimisticRemovals(prev => settle(prev, (msgId, e) => !!ownReactions.get(msgId)?.has(e)));
+  }, [ownReactions]);
 
   const onReact = useStableCallback((messageId: string, emoji: string) => {
-    const alreadyOwned = !!ownReactions.get(messageId)?.has(emoji)
-      && !(optimisticRemovals.get(messageId)?.includes(emoji));
-    const [setPending, setOpposite] = alreadyOwned
+    const removing = ownsReaction(
+      !!ownReactions.get(messageId)?.has(emoji),
+      !!optimisticReactions.get(messageId)?.includes(emoji),
+      !!optimisticRemovals.get(messageId)?.includes(emoji),
+    );
+    const [setPending, setOpposite] = removing
       ? [setOptimisticRemovals, setOptimisticReactions]
       : [setOptimisticReactions, setOptimisticRemovals];
     setPending(prev => withEmoji(prev, messageId, emoji));
-    if (alreadyOwned) setOpposite(prev => withoutEmoji(prev, messageId, emoji));
-    void xmtpReact(activeLine, messageId, emoji, alreadyOwned ? 'removed' : 'added')
+    setOpposite(prev => withoutEmoji(prev, messageId, emoji));
+    void xmtpReact(activeLine, messageId, emoji, removing ? 'removed' : 'added')
       .catch((e: unknown) => {
         console.warn('xmtp react failed', e);
         setPending(prev => withoutEmoji(prev, messageId, emoji));

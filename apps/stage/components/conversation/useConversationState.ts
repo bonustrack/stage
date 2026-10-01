@@ -233,7 +233,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
 
-  const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
+  const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, ownReactions);
   const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } =
     useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
   const { signingIds, onSign, payingIds, onPay } = useTxSignLayer(activeLine);
