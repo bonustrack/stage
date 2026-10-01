@@ -31,7 +31,6 @@ function RecipientAvatar({ address, picked, onToggle }: {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
   const name = getPeerName(address) ?? shortAddress(address);
-  const border = picked ? PICKED_BORDER : 0;
   return (
     <HoverTooltip label={name} placement="above">
       <Pressable
@@ -41,11 +40,11 @@ function RecipientAvatar({ address, picked, onToggle }: {
         accessibilityLabel={name}
         {...hoverProps}
         style={{
-          borderRadius: AVATAR_PX, borderWidth: border, borderColor: link,
+          borderRadius: AVATAR_PX, outlineStyle: 'solid', outlineWidth: picked ? PICKED_BORDER : 0, outlineColor: link,
           opacity: picked ? 1 : hovered ? HOVER_OPACITY : UNPICKED_OPACITY,
         }}
       >
-        <Avatar address={address} size={AVATAR_PX - border * 2}/>
+        <Avatar address={address} size={AVATAR_PX}/>
       </Pressable>
     </HoverTooltip>
   );
@@ -71,9 +70,9 @@ export function RecipientBar({ shown, picked, onToggle, onAvatarPress }: {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const [open, setOpen] = useState(false);
   return (
-    <Col padding={{ bottom: 10 }}>
+    <Col padding={{ bottom: 10 - PICKED_BORDER }}>
       <Scroll horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Row align="center" gap={AVATAR_GAP} padding={{ x: PAGE_GUTTER }}>
+        <Row align="center" gap={AVATAR_GAP} padding={{ x: PAGE_GUTTER, y: PICKED_BORDER }}>
           {shown.map(address => (
             <RecipientAvatar key={address} address={address} picked={includesKey(picked, address)}
               onToggle={(a) => { onToggle(a); onAvatarPress?.(); }}/>
