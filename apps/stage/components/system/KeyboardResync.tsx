@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { AppState, Keyboard, Platform } from 'react-native';
 import { withTiming } from 'react-native-reanimated';
-import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import { KeyboardEvents, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { KEYBOARD_SETTLE_MS, keyboardLiftIsStale } from './KeyboardResync.model';
 
 export function KeyboardResync(): null {
@@ -19,8 +19,9 @@ export function KeyboardResync(): null {
     };
     const hidden = Keyboard.addListener('keyboardDidHide', settle);
     const shown = Keyboard.addListener('keyboardDidShow', () => { clearTimeout(timer); });
+    const libraryShown = KeyboardEvents.addListener('keyboardDidShow', settle);
     const app = AppState.addEventListener('change', (state) => { if (state === 'active') settle(); });
-    return () => { clearTimeout(timer); hidden.remove(); shown.remove(); app.remove(); };
+    return () => { clearTimeout(timer); hidden.remove(); shown.remove(); libraryShown.remove(); app.remove(); };
   }, [height, progress]);
   return null;
 }
