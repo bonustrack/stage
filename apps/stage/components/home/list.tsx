@@ -60,7 +60,6 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
         <LabelFilterBar
           labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
           onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
-          panRef={p.panRef}
         />
       ) : null}
     </>
