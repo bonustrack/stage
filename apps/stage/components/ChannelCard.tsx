@@ -10,6 +10,7 @@ import { shortAddress } from '../modules/messaging';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { bubbleLinkProps } from './bubble/linkProps';
 import { openInBubbleLink } from '../lib/safeOpenLink';
+import { channelTitle, type ConvTitle } from './conversation/convTitle';
 
 export function ChannelCard(
   { convId, peerAddress, url }: { convId?: string; peerAddress?: string; url?: string },
@@ -28,11 +29,12 @@ function CardFrame({ children }: { children: React.ReactNode }): React.ReactElem
   );
 }
 
-function convTitle(meta: ReturnType<typeof useConvMeta>, convId: string): string {
-  if (meta.isGroup) return meta.groupName == null || meta.groupName === '' ? 'Channel' : meta.groupName;
+function cardTitle(meta: ReturnType<typeof useConvMeta>, convId: string): ConvTitle {
+  if (meta.isGroup) return channelTitle(meta.groupName, 'Channel');
   const peerName = getPeerName(meta.peerAddr);
-  if (peerName != null && peerName !== '') return peerName;
-  return meta.peerAddr ? shortAddress(meta.peerAddr) : `Channel ${convId.slice(0, 6)}…`;
+  if (peerName != null && peerName !== '') return { text: peerName, placeholder: false };
+  if (meta.peerAddr) return { text: shortAddress(meta.peerAddr), placeholder: false };
+  return { text: `Channel ${convId.slice(0, 6)}…`, placeholder: true };
 }
 
 function convSubtitle(meta: ReturnType<typeof useConvMeta>): string {
@@ -55,7 +57,7 @@ function ConvIdCard({ convId, url }: { convId: string; url?: string }): React.Re
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
 
-  const title = convTitle(meta, convId);
+  const title = cardTitle(meta, convId);
   const subtitle = convSubtitle(meta);
   const { avatarUri, avatarAddress } = convAvatar(meta, convId);
 
@@ -66,7 +68,8 @@ function ConvIdCard({ convId, url }: { convId: string; url?: string }): React.Re
   return (
     <CardFrame>
       <ChannelRow
-        title={title}
+        title={title.text}
+        placeholderTitle={title.placeholder}
         subtitle={subtitle}
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}

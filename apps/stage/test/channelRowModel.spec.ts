@@ -47,6 +47,11 @@ describe('channelRowModel', () => {
     expect(channelRowModel(base).preview).toBe('');
   });
 
+  test('keeps the placeholder flag of a fallback title', () => {
+    expect(channelRowModel({ title: '3 members', placeholderTitle: true, timestampLabel: '' }).placeholderTitle).toBe(true);
+    expect(channelRowModel({ title: 'Team', timestampLabel: '' }).placeholderTitle).toBeUndefined();
+  });
+
   test('highlight segments', () => {
     const p = channelRowModel({ title: 'Alice Smith', timestampLabel: '', highlightQuery: 'ali' });
     expect(p.titleSegments).toEqual([

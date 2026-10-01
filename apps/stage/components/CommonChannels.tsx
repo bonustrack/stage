@@ -46,6 +46,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           <ChannelRow
             key={ch.convId}
             title={ch.title}
+            placeholderTitle={ch.placeholderTitle}
             avatarUri={ch.avatarUri}
             avatarAddress={showAddr}
             square

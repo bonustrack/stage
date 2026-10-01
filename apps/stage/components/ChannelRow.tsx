@@ -20,10 +20,12 @@ import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 import { TEXT_11PX } from './smallText';
+import { titleTone } from './TitleText';
 import type { BubbleLinkProps } from './bubble/helpers';
 
 interface ChannelRowProps {
   title: string;
+  placeholderTitle?: boolean;
   avatarAddress?: string | null;
   avatarUri?: string | null;
   square?: boolean;
@@ -112,6 +114,7 @@ function TitleLine({ params, scheme, wrap }: {
       size="2xl"
       weight="semibold"
       truncate={!wrap}
+      {...titleTone(params.placeholderTitle)}
       style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
     />
   ));
@@ -218,7 +221,7 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
 }
 
 function ChannelRowBase({
-  title, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
+  title, placeholderTitle, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
   onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
@@ -226,6 +229,7 @@ function ChannelRowBase({
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
     title,
+    placeholderTitle,
     highlightQuery,
     lastPreview,
     subtitle,

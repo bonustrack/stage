@@ -8,6 +8,8 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 import { PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
+import { TitleText } from '../TitleText';
+import { channelTitle } from '../conversation/convTitle';
 
 export function ChannelProfileHeader({ imageUrl, channelId, insetTop, onView, children }: {
   imageUrl: string; channelId: string; insetTop: number; onView: () => void; children: ReactNode;
@@ -40,9 +42,7 @@ export function ChannelTitle({ name, description }: { name: string | null; descr
   return (
     <>
       <Box padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
-          {name?.trim() ? name : 'Untitled channel'}
-        </Text>
+        <TitleText title={channelTitle(name)} weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}/>
       </Box>
       {about ? (
         <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>

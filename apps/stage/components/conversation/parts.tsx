@@ -19,6 +19,8 @@ import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import type { MenuAnchor } from '../bubble/props';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { TitleText } from '../TitleText';
+import type { ConvTitle } from './convTitle';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
@@ -61,7 +63,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
 
 export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, border, head, title, onPress }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean;
-  border: string; head: string; title: string; onPress: () => void;
+  border: string; head: string; title: ConvTitle; onPress: () => void;
 }): React.ReactElement {
   return (
     <Pressable
@@ -69,9 +71,7 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
       <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
-      <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
-        {title}
-      </Text>
+      <TitleText title={title} weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
     </Pressable>
   );
 }

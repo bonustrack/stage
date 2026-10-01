@@ -43,7 +43,7 @@ function PendingTopnav({ address, title }: { address: string; title: string }): 
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
       <ConvTopnavIdentity
         peerAddr={address} groupImage="" channelId={address} isGroup={false}
-        border={border} head={head} title={title}
+        border={border} head={head} title={{ text: title, placeholder: false }}
         onPress={() => { router.push(profileLinkOf(address)); }}
       />
     </ConvTopnavShell>

@@ -87,6 +87,7 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
   const source = useBoardDragSource(isGroup ? { kind: 'card', convId: item.convId, from: columnKey } : null);
   const [menu, setMenu] = useState<RowMenu | null>(null);
   const openMenu = rowMenuOpener(item, setMenu);
+  const title = rowTitle(item);
   return (
     <Box
       {...cardDataSet(columnKey, item.convId)}
@@ -99,7 +100,8 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
       }}
     >
       <ChannelRow
-        title={rowTitle(item)}
+        title={title.text}
+        placeholderTitle={title.placeholder}
         hideAvatar
         wrapTitle
         lastPreview={rowPreview(item)}

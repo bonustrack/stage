@@ -55,6 +55,10 @@ export function channelRowTitle(i: ChannelRowTitleInputs): string {
   return i.fallbackId.slice(0, 12);
 }
 
+export function isUnnamedChannelRow(row: { peerAddress?: unknown; groupName?: unknown }): boolean {
+  return row.peerAddress == null && typeof row.groupName === 'string' && row.groupName.trim() === '';
+}
+
 export interface InitialMarkedUnreadInputs {
   lastReadNs: number;
   unreadCount: number;

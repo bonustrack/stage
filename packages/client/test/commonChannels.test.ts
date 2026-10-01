@@ -13,6 +13,7 @@ describe('commonChannelFromRow', () => {
     const ch = commonChannelFromRow(row, ['0xA', '0xB']);
     expect(ch.convId).toBe('c1');
     expect(ch.title).toBe('Channel');
+    expect(ch.placeholderTitle).toBe(true);
     expect(ch.avatarUri).toBeNull();
     expect(ch.memberCount).toBe(3);
     expect(ch.lastPreview).toBe('');
@@ -27,6 +28,11 @@ describe('commonChannelFromRow', () => {
     const withSeed = commonChannelFromRow(
       { convId: 'c1', avatarAddress: '0xSeed' }, []);
     expect(withSeed.avatarAddress).toBe('0xSeed');
+  });
+
+  test('flags a fallback title, never a real name', () => {
+    expect(commonChannelFromRow({ convId: 'c1', title: '3 members', groupName: '' }, []).placeholderTitle).toBe(true);
+    expect(commonChannelFromRow({ convId: 'c1', title: 'Team', groupName: 'Team' }, []).placeholderTitle).toBe(false);
   });
 
   test('injected avatarSeedOf overrides avatarAddress when no avatarUri (app parity)', () => {

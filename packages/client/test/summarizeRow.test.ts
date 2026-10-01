@@ -3,6 +3,7 @@ import {
   channelRowTitle,
   countUnreadEntries,
   initialMarkedUnread,
+  isUnnamedChannelRow,
 } from '../src/xmtp/summarizeRow';
 
 describe('countUnreadEntries', () => {
@@ -42,6 +43,15 @@ describe('channelRowTitle', () => {
     expect(channelRowTitle({ ...base, groupName: '  Team  ' })).toBe('Team');
     expect(channelRowTitle({ ...base, groupName: ' ', memberCount: 2 })).toBe('3 members');
     expect(channelRowTitle({ ...base, groupName: '' })).toBe('abcdefghijkl');
+  });
+});
+
+describe('isUnnamedChannelRow', () => {
+  test('only a channel row with a known blank name is unnamed', () => {
+    expect(isUnnamedChannelRow({ peerAddress: null, groupName: '  ' })).toBe(true);
+    expect(isUnnamedChannelRow({ peerAddress: null, groupName: 'Team' })).toBe(false);
+    expect(isUnnamedChannelRow({ peerAddress: null })).toBe(false);
+    expect(isUnnamedChannelRow({ peerAddress: '0xabc', groupName: '' })).toBe(false);
   });
 });
 

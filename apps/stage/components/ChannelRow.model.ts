@@ -14,6 +14,7 @@ interface ChannelTitleSegment {
 
 export interface ChannelRowParams {
   title: string;
+  placeholderTitle?: boolean;
   preview: string;
   timestamp: string;
   titleSegments?: ChannelTitleSegment[];
@@ -26,6 +27,7 @@ const MAX_VISIBLE_LABELS = 2;
 
 interface ChannelRowDomain {
   title: string;
+  placeholderTitle?: boolean;
   lastPreview?: string | null;
   subtitle?: string | null;
   timestampLabel: string;
@@ -76,6 +78,7 @@ export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
   const draft = resolveDraft(d.hasDraft, d.draftText);
   return {
     title: d.title,
+    placeholderTitle: d.placeholderTitle,
     titleSegments: resolveTitleSegments(d.title, d.highlightQuery),
     preview: resolvePreview(draft, d),
     previewPrefix: draft ? 'Draft:' : undefined,

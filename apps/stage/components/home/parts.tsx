@@ -24,9 +24,12 @@ import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
 import { rowDataSet } from './rowArrows';
+import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
+import type { ConvTitle } from '../conversation/convTitle';
 
-export function rowTitle(item: RowT): string {
-  return item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+export function rowTitle(item: RowT): ConvTitle {
+  if (item.peerAddress) return { text: getPeerName(item.peerAddress) ?? item.title, placeholder: false };
+  return { text: item.title, placeholder: isUnnamedChannelRow(item) };
 }
 
 export function rowPreview(item: RowT): string {
@@ -75,6 +78,7 @@ interface ChannelRowItemProps {
   setRowMenu: (m: RowMenu) => void;
   query?: string;
   title: string;
+  placeholderTitle: boolean;
   preview: string;
   avatarAddress: string | null;
   pinned: boolean;
@@ -85,7 +89,7 @@ interface ChannelRowItemProps {
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar,
+  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   const openMenu = rowMenuOpener(item, setRowMenu);
@@ -93,6 +97,7 @@ function ChannelRowItemBase({
   const row = (
     <ChannelRow
       title={title}
+      placeholderTitle={placeholderTitle}
       mark={rowDataSet(item.convId)}
       active={active}
       highlightQuery={query}
@@ -129,22 +134,26 @@ export function useChannelRowRenderer(
   },
 ): ({ item }: { item: RowT }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar } = deps;
-  return useCallback(({ item }: { item: RowT }): React.ReactElement => (
-    <ChannelRowItem
-      item={item}
-      router={router}
-      setRowMenu={setRowMenu}
-      query={query}
-      title={rowTitle(item)}
-      preview={rowPreview(item)}
-      avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
-      pinned={pinned.includes(item.convId)}
-      draftText={getDraft(item.convId)}
-      active={menuConvId === item.convId || isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
-      pinDrag={pinDrag}
-      hideAvatar={hideAvatar}
-    />
-  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar]);
+  return useCallback(({ item }: { item: RowT }): React.ReactElement => {
+    const title = rowTitle(item);
+    return (
+      <ChannelRowItem
+        item={item}
+        router={router}
+        setRowMenu={setRowMenu}
+        query={query}
+        title={title.text}
+        placeholderTitle={title.placeholder}
+        preview={rowPreview(item)}
+        avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
+        pinned={pinned.includes(item.convId)}
+        draftText={getDraft(item.convId)}
+        active={menuConvId === item.convId || isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
+        pinDrag={pinDrag}
+        hideAvatar={hideAvatar}
+      />
+    );
+  }, [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar]);
 }
 
 const RESET_TITLE = 'Reset local database';

@@ -41,9 +41,11 @@ function ChannelChoice({ item, picked, query, onToggle }: {
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { link } = usePalette();
+  const title = rowTitle(item);
   return (
     <ChannelRow
-      title={rowTitle(item)}
+      title={title.text}
+      placeholderTitle={title.placeholder}
       avatarUri={item.avatarUri}
       avatarAddress={rowAvatarAddress(item, true)}
       square

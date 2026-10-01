@@ -23,6 +23,7 @@ import { CallMediaView } from './CallMediaView';
 import { CallScreenPicker } from './CallScreenPicker';
 import type { CallStream } from '../../lib/calls.types';
 import { callPerson, callTitle } from './callPeople';
+import { TitleText } from '../TitleText';
 import { callGrid, callSubtitle } from './CallScreen.model';
 
 interface TileData {
@@ -139,7 +140,7 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
     <Col surface="surface" style={viewportFill(60)}>
       <CallScreenPicker/>
       <Col padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
-        <Text weight="semibold" size="lg" value={callTitle(session.convId)} maxLines={1}/>
+        <TitleText weight="semibold" size="lg" title={callTitle(session.convId)} maxLines={1}/>
         <Text size="sm" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
       </Col>
       <Row flex={1}>

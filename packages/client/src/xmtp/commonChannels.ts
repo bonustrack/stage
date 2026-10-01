@@ -1,6 +1,9 @@
+import { isUnnamedChannelRow } from './summarizeRow';
+
 export interface CommonChannel {
   convId: string;
   title: string;
+  placeholderTitle: boolean;
   avatarUri: string | null;
   avatarAddress: string | null;
   memberCount: number;
@@ -16,6 +19,7 @@ export interface CommonChannelRow {
   convId: string;
   peerAddress?: string | null;
   title?: string | null;
+  groupName?: string | null;
   avatarUri?: string | null;
   avatarAddress?: string | null;
   lastTs?: number | null;
@@ -40,10 +44,11 @@ export function commonChannelFromRow(
   avatarSeedOf: ChannelAvatarSeed = defaultAvatarSeed,
 ): CommonChannel {
   const avatarUri = str(row.avatarUri);
-  const title = str(row.title);
+  const title = str(row.title)?.trim() ?? '';
   return {
     convId: row.convId,
-    title: title?.trim() ? title.trim() : 'Channel',
+    title: title || 'Channel',
+    placeholderTitle: !title || isUnnamedChannelRow(row),
     avatarUri,
     avatarAddress: avatarUri ? null : avatarSeedOf(row),
     memberCount: members.length + 1,

@@ -20,7 +20,7 @@ export function IncomingCall({ session, info, selfInboxId }: {
   const top = useSafeAreaInsets().top;
   const caller = callPerson(session.convId, info?.callerInboxId ?? '', selfInboxId);
   const kind = session.video ? 'video call' : 'voice call';
-  const where = session.dm ? `Incoming ${kind}` : `Incoming ${kind} in ${callTitle(session.convId)}`;
+  const where = session.dm ? `Incoming ${kind}` : `Incoming ${kind} in ${callTitle(session.convId).text}`;
   return (
     <Row justify="center" style={pinnedEdges({ top: 12 + top, left: 12, right: 12 }, 70)}>
       <Col
