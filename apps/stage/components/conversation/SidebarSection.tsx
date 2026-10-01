@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useWindowDimensions, type GestureResponderEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
@@ -12,6 +12,7 @@ import { FormField } from '../FormField';
 import { AnchoredMenu, useAnchoredMenus } from '../AnchoredMenu';
 import { useHover } from '../hover';
 import { usePalette, withAlpha } from '../../lib/theme';
+import { isCoarsePointer } from '../../lib/webLayout';
 import {
   hasListEdits, listEdits, pickerAnchorOf, toggleKey, type ListEdits, type PickerAnchor,
 } from './SidebarSection.model';
@@ -31,35 +32,39 @@ function rectOf(event: GestureResponderEvent): DomRect | undefined {
   return target.getBoundingClientRect?.();
 }
 
-function HeaderContent({ title, count, tint, editable }: {
-  title: string; count?: number; tint?: string; editable: boolean;
+function HeaderContent({ title, icon, count, tint, pen }: {
+  title: string; icon: CentralIcon; count?: number; tint?: string; pen: 'none' | 'hidden' | 'shown';
 }): React.ReactElement {
   const { sub } = usePalette();
   return (
     <>
+      <Glyph icon={icon} size={14} color={tint ?? sub}/>
       <Eyebrow color={tint}>{title.toUpperCase()}</Eyebrow>
       {count === undefined ? null : <CountTag count={count}/>}
       <Box flex={1}/>
-      {editable ? <Glyph icon={IconPencil} size={16} color={tint ?? sub}/> : null}
+      {pen === 'none' ? null : <Box style={{ opacity: pen === 'shown' ? 1 : 0 }}><Glyph icon={IconPencil} size={16} color={tint ?? sub}/></Box>}
     </>
   );
 }
 
-function SectionHeader({ title, count, editLabel, onEdit }: {
-  title: string; count?: number; editLabel: string; onEdit?: (event: GestureResponderEvent) => void;
+function SectionHeader({ title, icon, count, editLabel, penShown, onEdit, onFocusChange }: {
+  title: string; icon: CentralIcon; count?: number; editLabel: string; penShown: boolean;
+  onEdit?: (event: GestureResponderEvent) => void; onFocusChange: (focused: boolean) => void;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
   if (onEdit === undefined) {
     return (
       <Row align="center" gap={8} padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: 8 }}>
-        <HeaderContent title={title} count={count} editable={false}/>
+        <HeaderContent title={title} icon={icon} count={count} pen="none"/>
       </Row>
     );
   }
   return (
     <Pressable
       onPress={onEdit}
+      onFocus={() => { onFocusChange(true); }}
+      onBlur={() => { onFocusChange(false); }}
       accessibilityRole="button"
       accessibilityLabel={editLabel}
       {...hoverProps}
@@ -68,7 +73,7 @@ function SectionHeader({ title, count, editLabel, onEdit }: {
         paddingHorizontal: PAGE_GUTTER, paddingTop: PAGE_GUTTER, paddingBottom: 8, opacity: pressed ? 0.7 : 1,
       })}
 >
-      <HeaderContent title={title} count={count} tint={hovered ? link : undefined} editable/>
+      <HeaderContent title={title} icon={icon} count={count} tint={hovered ? link : undefined} pen={penShown ? 'shown' : 'hidden'}/>
     </Pressable>
   );
 }
@@ -127,14 +132,16 @@ export function PickerRow({ selected, disabled = false, label, onPress, children
   );
 }
 
-export function SidebarSection({ title, count, editLabel, canEdit, current, onCommit, renderPicker, children }: {
-  title: string; count?: number; editLabel: string; canEdit: boolean; current: string[];
+export function SidebarSection({ title, icon, count, editLabel, canEdit, current, onCommit, renderPicker, children }: {
+  title: string; icon: CentralIcon; count?: number; editLabel: string; canEdit: boolean; current: string[];
   onCommit: (edits: ListEdits) => void; renderPicker: (draft: SectionDraft) => ReactNode; children?: ReactNode;
 }): React.ReactElement {
   const viewport = useWindowDimensions();
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<PickerAnchor | null>(null);
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [opened, setOpened] = useState<string[]>([]);
   const [draft, setDraft] = useState<string[]>([]);
   const start = (event: GestureResponderEvent): void => {
@@ -149,15 +156,17 @@ export function SidebarSection({ title, count, editLabel, canEdit, current, onCo
     if (hasListEdits(edits)) setTimeout(() => { onCommit(edits); }, 0);
   };
   const toggle = (key: string): void => { setDraft(list => toggleKey(list, key)); };
+  const penShown = open || hovered || focused || isCoarsePointer();
   return (
-    <>
-      <SectionHeader title={title} count={count} editLabel={editLabel} onEdit={canEdit ? start : undefined}/>
+    <Box onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
+      <SectionHeader title={title} icon={icon} count={count} editLabel={editLabel} penShown={penShown}
+        onEdit={canEdit ? start : undefined} onFocusChange={setFocused}/>
       {children}
       {open ? (
         <AnchoredMenu visible onClose={close} anchor={anchor?.point ?? null}>
           <Col width={anchored && anchor !== null ? anchor.width : undefined}>{renderPicker({ draft, toggle })}</Col>
         </AnchoredMenu>
       ) : null}
-    </>
+    </Box>
   );
 }

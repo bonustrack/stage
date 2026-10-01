@@ -23,6 +23,8 @@ import { profileLinkOf } from '../../lib/links';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { IconCrown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrown';
 import { IconShield } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShield';
+import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
+import { IconPeopleAdded } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdded';
 
 const ROW_HEIGHT = 44;
 const ROW_INSET = 8;
@@ -95,7 +97,7 @@ function AssigneesSection({ convId, entries, assigned, assignedReady }: {
       });
   };
   return (
-    <SidebarSection title="Assignees" count={assignedReady ? selected.length : undefined} editLabel="Edit assignees"
+    <SidebarSection title="Assignees" icon={IconPeopleAdded} count={assignedReady ? selected.length : undefined} editLabel="Edit assignees"
       canEdit={assignedReady && rights.appData} current={assigned} onCommit={commit}
       renderPicker={(draft) => <AssigneePicker {...draft} entries={entries}/>}>
       {assignedReady && selected.length === 0 ? <SectionNote text="No assignees."/> : null}
@@ -128,7 +130,7 @@ function MembersSection({ convId, entries, count = entries.length }: {
   const self = useSelfAddress();
   const memberRights = { add: rights.addMembers, remove: rights.removeMembers };
   return (
-    <SidebarSection title="Members" count={count} editLabel="Edit members"
+    <SidebarSection title="Members" icon={IconGroup1} count={count} editLabel="Edit members"
       canEdit={memberRights.add || memberRights.remove} current={entries.map(entry => entry.address.toLowerCase())}
       onCommit={(edits) => { void applyMemberEdits(convId, entries, edits); }}
       renderPicker={(draft) => <MembersPicker {...draft} entries={entries} self={self} rights={memberRights}/>}/>

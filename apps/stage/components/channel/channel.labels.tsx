@@ -21,6 +21,7 @@ import { reported } from '../../lib/errorPolicy';
 import { useChannelEditRights } from './channel.detail';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -200,7 +201,7 @@ export function ChannelLabels({ convId, labels, onSaved }: {
       });
   };
   return (
-    <SidebarSection title="Labels" count={labels.length} editLabel="Edit labels" canEdit={rights.appData} current={labels}
+    <SidebarSection title="Labels" icon={IconTag} count={labels.length} editLabel="Edit labels" canEdit={rights.appData} current={labels}
       onCommit={commit} renderPicker={(draft) => <LabelPicker {...draft} current={labels}/>}>
       {labels.length === 0 ? <SectionNote text="No labels yet"/> : (
         <Row gap={8} wrap align="center" padding={{ x: PAGE_GUTTER, bottom: 8 }}>
