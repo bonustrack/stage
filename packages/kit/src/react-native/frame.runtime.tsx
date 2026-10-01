@@ -56,9 +56,9 @@ export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, navi
   const busyRef = useRef(false);
   const enabled = onAction !== undefined && disabled !== true;
   const dispatch = useCallback(async (action: FrameAction, source: FrameActionSource): Promise<void> => {
-    const nav = frameNavOf(action);
+    const nav = navigate === undefined ? undefined : frameNavOf(action);
     if (nav !== undefined) {
-      navigate?.(nav);
+      if (!busyRef.current) navigate?.(nav);
       return;
     }
     if (!enabled || onAction === undefined || busyRef.current) return;
@@ -72,7 +72,7 @@ export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, navi
     }
   }, [enabled, onAction, navigate, screen]);
   const usable = useCallback((action: FrameAction | undefined): boolean => (
-    frameNavOf(action) === undefined ? enabled && !busy : navigate !== undefined
+    !busy && (enabled || (navigate !== undefined && frameNavOf(action) !== undefined))
   ), [enabled, busy, navigate]);
   const value = useMemo<FrameRuntime>(() => ({
     dark, scheme: dark ? 'dark' : 'light', palette, enabled, busy, dispatch, usable, openUrl: onOpenUrl,

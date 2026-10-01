@@ -121,6 +121,7 @@ export const FRAME_BACK = 'frame.back';
 const MAX_SCREEN_ID = 120;
 const MAX_SCREEN_TITLE = 200;
 const MAX_STACK = 50;
+const INDEX_KEY = /^(?:0|[1-9]\d*)$/;
 
 export interface FrameScreen {
   title?: string;
@@ -167,12 +168,12 @@ function parseScreens(raw: Record<string, unknown>, start: unknown): FrameDocRes
     if (!parsed.ok) return parsed;
     screens.set(id, parsed.title === undefined ? { root: parsed.root } : { title: parsed.title, root: parsed.root });
   }
-  const first = entries[0]?.[0] ?? '';
+  const first = (entries.find(([id]) => !INDEX_KEY.test(id)) ?? entries[0])?.[0] ?? '';
   return { ok: true, doc: { start: typeof start === 'string' ? start : first, screens, multi: true } };
 }
 
 export function parseFrameDoc(raw: unknown): FrameDocResult {
-  if (isRecord(raw) && isRecord(raw.screens)) return parseScreens(raw.screens, raw.start);
+  if (isRecord(raw) && raw.type === undefined && isRecord(raw.screens)) return parseScreens(raw.screens, raw.start);
   const parsed = parseFrame(raw);
   if (!parsed.ok) return parsed;
   return { ok: true, doc: { start: '', screens: new Map([['', { root: parsed.root }]]), multi: false } };
@@ -188,7 +189,8 @@ export function frameNavOf(action: FrameAction | undefined): FrameNav | undefine
 export function navigateFrame(stack: readonly string[], nav: FrameNav): readonly string[] {
   if (nav.kind === 'back') return stack.length > 1 ? stack.slice(0, -1) : stack;
   if (stack[stack.length - 1] === nav.screen) return stack;
-  return [...stack, nav.screen].slice(-MAX_STACK);
+  const next = [...stack, nav.screen];
+  return next.length > MAX_STACK ? next.slice(0, 1).concat(next.slice(1 - MAX_STACK)) : next;
 }
 
 export function withScreen(action: FrameAction, screen: string): FrameAction {

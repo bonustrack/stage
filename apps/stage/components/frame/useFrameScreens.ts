@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
 import { useFrameNavigation, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
@@ -28,6 +28,7 @@ export function useFrameScreens(frame: FrameContent | null, leave: () => void): 
     else step(next);
   }, [depth, step, leave]);
   useFocusEffect(useCallback(() => {
+    if (Platform.OS !== 'android') return undefined;
     const sub = BackHandler.addEventListener('hardwareBackPress', back);
     return () => { sub.remove(); };
   }, [back]));
@@ -38,8 +39,9 @@ export function useFrameScreens(frame: FrameContent | null, leave: () => void): 
     shown.current = screen;
     scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [screen]);
+  const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, parsed, screen)), [frame, parsed, screen]);
   return {
-    title: frame === null ? 'Frame' : frameScreenTitle(frame, parsed, screen),
+    title,
     navigation: { screen, depth, navigate },
     onBack: depth > 0 ? () => { back(); } : undefined,
     scrollRef,

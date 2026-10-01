@@ -32,6 +32,17 @@ describe('parseFrameDoc', () => {
     expect(multi.screens.get('s1')?.root.type).toBe('Card');
   });
 
+  test('the default start skips number ids, which JSON lists first', () => {
+    const parsed = doc(JSON.parse('{"screens":{"home":{"type":"Card"},"41234567":{"type":"Card"}}}'));
+    expect([...parsed.screens.keys()]).toEqual(['41234567', 'home']);
+    expect(parsed.start).toBe('home');
+    expect(doc({ screens: { 2: detail, 1: detail } }).start).toBe('1');
+  });
+
+  test('a widget with a screens prop stays one widget', () => {
+    expect(doc({ type: 'Card', screens: { home: list } }).multi).toBe(false);
+  });
+
   test('an explicit start wins, even when it names no screen', () => {
     expect(doc({ screens: { home: list, s1: detail }, start: 's1' }).start).toBe('s1');
     const lost = doc({ screens: { home: list }, start: 'nope' });
@@ -92,6 +103,7 @@ describe('frame navigation', () => {
     let stack: readonly string[] = ['home'];
     for (let i = 0; i < 80; i += 1) stack = navigateFrame(stack, { kind: 'open', screen: `s${i}` });
     expect(stack).toHaveLength(50);
+    expect(stack[0]).toBe('home');
     expect(stack[stack.length - 1]).toBe('s79');
   });
 });

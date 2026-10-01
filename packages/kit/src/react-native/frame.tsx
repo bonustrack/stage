@@ -141,10 +141,10 @@ export function Frame({ widget, dark, onAction, onOpenUrl, disabled, fill, navig
   const parsed = useMemo(() => parseFrameDoc(widget), [widget]);
   const own = useFrameNavigation(parsed.ok ? parsed.doc.start : '');
   const nav = navigation ?? own;
-  const screen = parsed.ok && parsed.doc.multi ? nav.screen : undefined;
+  const multi = parsed.ok && parsed.doc.multi;
   const body = (
     <FrameRuntimeProvider dark={scheme === 'dark'} onAction={onAction} onOpenUrl={onOpenUrl} disabled={disabled}
-      navigate={nav.navigate} screen={screen}>
+      navigate={multi ? nav.navigate : undefined} screen={multi ? nav.screen : undefined}>
       <FrameBody parsed={parsed} screen={nav.screen} fill={fill} />
     </FrameRuntimeProvider>
   );
