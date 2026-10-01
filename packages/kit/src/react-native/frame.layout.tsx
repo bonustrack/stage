@@ -1,6 +1,8 @@
 import { Children, useMemo, useState, type ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
-import { FRAME_SPACING_UNIT, frameSummary, type FrameColor, type FrameNode, type FrameNodeOf } from '../frame';
+import {
+  FRAME_SPACING_UNIT, frameFillPadding, frameSummary, type FrameColor, type FrameFill, type FrameNode, type FrameNodeOf,
+} from '../frame';
 import type { FrameBorder, FrameBorderSide } from '../frame.values';
 import { spacingEntries, type BoxBaseProps, type ResolvedBoxBorder, type ResolvedBoxBorderSide } from '../layout';
 import { BLOCK_RADIUS_DEFAULT, DENSITY_DEFAULT, DENSITY_SCALE } from '../tokens';
@@ -18,6 +20,22 @@ import { FrameFormScope, FrameThemeScope, useFormScope, useFrameColor, useFrameR
 export interface FrameNodeProps<T extends FrameNode['type']> {
   node: FrameNodeOf<T>;
   children?: ReactNode;
+  fill?: FrameFill;
+}
+
+const FILL_STYLE: ViewStyle = { flexGrow: 1 };
+
+const FILL_CARD_STYLE: ViewStyle = { flexGrow: 1, borderWidth: 0, borderRadius: 0 };
+
+export function FrameFillBox({ fill, children }: { fill: FrameFill; children: ReactNode }): React.ReactElement {
+  const { palette } = useFrameRuntime();
+  return <Box padding={frameFillPadding(undefined, fill)} background={palette.bg} style={FILL_STYLE}>{children}</Box>;
+}
+
+function useFillBackground(background: FrameColor | undefined, fill: FrameFill | undefined): string | undefined {
+  const color = useFrameColor();
+  const { palette } = useFrameRuntime();
+  return color(background) ?? (fill === undefined ? undefined : palette.bg);
 }
 
 const CHILD_GAP = DENSITY_SCALE[DENSITY_DEFAULT].gap;
@@ -84,11 +102,21 @@ export function FrameForm({ node, children }: FrameNodeProps<'Form'>): React.Rea
   );
 }
 
-export function FrameBasic({ node, children }: FrameNodeProps<'Basic'>): React.ReactElement {
-  const { theme, direction, ...rest } = node.props;
+function BasicBody({ node, children, fill }: FrameNodeProps<'Basic'>): React.ReactElement {
+  const { direction, gap, align, justify, padding, background } = node.props;
   return (
-    <FrameThemeScope theme={theme}>
-      <Box direction={direction ?? 'col'} {...rest}>{children}</Box>
+    <Box direction={direction ?? 'col'} gap={gap} align={align} justify={justify}
+      padding={fill === undefined ? padding : frameFillPadding(padding, fill)}
+      background={useFillBackground(background, fill)} style={fill === undefined ? undefined : FILL_STYLE}>
+      {children}
+    </Box>
+  );
+}
+
+export function FrameBasic({ node, children, fill }: FrameNodeProps<'Basic'>): React.ReactElement {
+  return (
+    <FrameThemeScope theme={node.props.theme}>
+      <BasicBody node={node} fill={fill}>{children}</BasicBody>
     </FrameThemeScope>
   );
 }
@@ -114,16 +142,21 @@ function CardFooter({ confirm, cancel, asForm }: { confirm?: CardAction; cancel?
   );
 }
 
-function CardBody({ node, children }: FrameNodeProps<'Card'>): React.ReactElement {
-  const { dark } = useFrameRuntime();
-  const color = useFrameColor();
-  const { size = 'md', padding, background, status, collapsed, confirm, cancel, asForm } = node.props;
-  const style: ViewStyle = {
+function cardStyle(padding: FrameNodeOf<'Card'>['props']['padding'], fill: FrameFill | undefined): ViewStyle {
+  const pad = fill === undefined ? padding : frameFillPadding(padding, fill);
+  return {
     width: '100%',
-    ...(padding === undefined ? {} : spacingEntries('padding', padding)),
+    ...(pad === undefined ? {} : spacingEntries('padding', pad)),
+    ...(fill === undefined ? {} : FILL_CARD_STYLE),
   };
+}
+
+function CardBody({ node, children, fill }: FrameNodeProps<'Card'>): React.ReactElement {
+  const { dark } = useFrameRuntime();
+  const { size = 'md', padding, background, status, collapsed, confirm, cancel, asForm } = node.props;
+  const style = cardStyle(padding, fill);
   return (
-    <Card dark={dark} size={size === 'full' ? 'lg' : size} background={color(background)}
+    <Card dark={dark} size={size === 'full' ? 'lg' : size} background={useFillBackground(background, fill)}
       status={status === undefined ? undefined : { text: status }} collapsed={collapsed} style={style}>
       <Col gap={CHILD_GAP}>
         {children}
@@ -134,8 +167,8 @@ function CardBody({ node, children }: FrameNodeProps<'Card'>): React.ReactElemen
   );
 }
 
-export function FrameCard({ node, children }: FrameNodeProps<'Card'>): React.ReactElement {
-  const body = <CardBody node={node}>{children}</CardBody>;
+export function FrameCard({ node, children, fill }: FrameNodeProps<'Card'>): React.ReactElement {
+  const body = <CardBody node={node} fill={fill}>{children}</CardBody>;
   return (
     <FrameThemeScope theme={node.props.theme}>
       {node.props.asForm === true ? <FrameFormScope submitAction={node.props.confirm?.action}>{body}</FrameFormScope> : body}
@@ -168,8 +201,13 @@ function ListBody({ node, children }: FrameNodeProps<'ListView'>): React.ReactEl
   );
 }
 
-export function FrameListView({ node, children }: FrameNodeProps<'ListView'>): React.ReactElement {
-  return <FrameThemeScope theme={node.props.theme}><ListBody node={node}>{children}</ListBody></FrameThemeScope>;
+export function FrameListView({ node, children, fill }: FrameNodeProps<'ListView'>): React.ReactElement {
+  const body = <ListBody node={node}>{children}</ListBody>;
+  return (
+    <FrameThemeScope theme={node.props.theme}>
+      {fill === undefined ? body : <FrameFillBox fill={fill}>{body}</FrameFillBox>}
+    </FrameThemeScope>
+  );
 }
 
 export function FrameListViewItem({ node, children }: FrameNodeProps<'ListViewItem'>): React.ReactElement {

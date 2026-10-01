@@ -62,7 +62,10 @@ export const FRAME_NODE_SCHEMAS = {
   },
   ListView: { props: { limit: int(1, 500), status, theme: THEME }, children: 'nodes' },
   ListViewItem: { props: { onClickAction: action, gap: space, align: ALIGN }, children: 'nodes' },
-  Basic: { props: { direction: DIRECTION, gap: space, padding, align: ALIGN, justify: JUSTIFY, theme: THEME }, children: 'nodes' },
+  Basic: {
+    props: { direction: DIRECTION, gap: space, padding, align: ALIGN, justify: JUSTIFY, background: color, theme: THEME },
+    children: 'nodes',
+  },
   Box: { props: { ...BOX, direction: DIRECTION }, children: 'nodes' },
   Row: { props: BOX, children: 'nodes' },
   Col: { props: BOX, children: 'nodes' },

@@ -109,6 +109,8 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 - Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
 - Actions: `Button.onClickAction`, `ListViewItem.onClickAction`, `Card` `confirm`/`cancel`, `Form.onSubmitAction` and the controls' `onChangeAction` call `onAction({ type, payload }, { label })`. The values of the fields in the same `Form` (or `Card asForm`, or the whole frame) are added to `payload` by `name` (`todo.title` nests), and a key already in the payload wins. A submit is blocked while a `required` field is empty. `handler` and `loadingBehavior` are ignored. While `onAction` runs, every button is disabled. Without `onAction`, or with `disabled`, the frame is read only.
 - `dark` picks the scheme (default: the `KitThemeProvider` scheme); a root's `theme` overrides it for its subtree.
+- `fill` (`{ padding, insetBottom? }`) shows the frame as a full page: the root grows to fill its container, a `Card` root loses its border and radius, and the root `background` (or the background of its `theme`) paints the whole area. `padding` is used only when the root sets no `padding` of its own, so `padding: 0` means no spacing. `insetBottom` is added at the bottom, for a safe area. A `ListView` root, which has no padding, keeps the fill padding. Without `fill`, the frame takes only the space its content needs.
+- `Basic` also takes `background`, like `Card`.
 - `frameSummary(root)` gives a title and description from the first `Title` and text nodes, for previews.
 
 ## Project structure

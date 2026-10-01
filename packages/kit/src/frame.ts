@@ -1,9 +1,9 @@
-import { isRecord, type FrameAction } from './frame.values';
+import { isRecord, type FrameAction, type FrameSpacing } from './frame.values';
 import {
   isFrameNodeType, schemaOf, type FrameChartNode, type FrameNode, type FrameUnsupportedNode,
 } from './frame.schema';
 
-export type { FrameAction, FrameColor, FrameOption } from './frame.values';
+export type { FrameAction, FrameColor, FrameOption, FrameSpacing } from './frame.values';
 export { resolveFrameColor, FRAME_SPACING_UNIT } from './frame.values';
 export type { FrameIconName, FrameNode, FrameNodeOf, FrameNodeType } from './frame.schema';
 export { FRAME_ICONS } from './frame.schema';
@@ -181,4 +181,14 @@ export function missingRequired(required: Iterable<string>, values: Readonly<Rec
     const v = values[name];
     return v === undefined || v === null || v === '' || v === false;
   });
+}
+
+export interface FrameFill {
+  padding: number;
+  insetBottom?: number;
+}
+
+export function frameFillPadding(padding: FrameSpacing | undefined, fill: FrameFill): FrameSpacing {
+  const own = padding ?? { top: fill.padding, right: fill.padding, bottom: fill.padding, left: fill.padding };
+  return { ...own, bottom: (own.bottom ?? 0) + (fill.insetBottom ?? 0) };
 }

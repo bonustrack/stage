@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FRAME_LIMITS, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
+  FRAME_LIMITS, frameFillPadding, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
   type FrameNode,
 } from '../src/frame';
 import { kitPalette } from '../src/tokens';
@@ -45,6 +45,12 @@ describe('parseFrame: roots', () => {
 
   test('Basic root', () => {
     expect(root({ type: 'Basic', direction: 'row', gap: 3, children: [] }).props).toEqual({ direction: 'row', gap: 12 });
+  });
+
+  test('Basic root keeps a background and a zero padding', () => {
+    expect(root({ type: 'Basic', background: '#1d4ed8', padding: 0, children: [] }).props).toEqual({
+      background: { fixed: '#1d4ed8' }, padding: { top: 0, right: 0, bottom: 0, left: 0 },
+    });
   });
 
   test('a bare component works as a root too', () => {
@@ -206,6 +212,17 @@ describe('frame colors', () => {
     expect(resolveFrameColor({ palette: 'sub' }, 'dark', dark)).toBe(dark.sub);
     expect(resolveFrameColor({ light: '#000', dark: '#fff' }, 'light', light)).toBe('#000');
     expect(resolveFrameColor(undefined, 'light', light)).toBeUndefined();
+  });
+});
+
+describe('frameFillPadding', () => {
+  test('a root without padding gets the fill padding, and the bottom inset is added', () => {
+    expect(frameFillPadding(undefined, { padding: 18, insetBottom: 20 })).toEqual({ top: 18, right: 18, bottom: 38, left: 18 });
+  });
+
+  test('a root padding wins, so padding 0 leaves no spacing', () => {
+    expect(frameFillPadding({ top: 0, right: 0, bottom: 0, left: 0 }, { padding: 18 })).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+    expect(frameFillPadding({ top: 8, left: 4 }, { padding: 18, insetBottom: 10 })).toEqual({ top: 8, left: 4, bottom: 10 });
   });
 });
 

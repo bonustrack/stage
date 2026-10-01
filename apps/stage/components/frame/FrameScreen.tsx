@@ -7,6 +7,7 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
+import { View } from '../layout/native';
 import { lineOfConv, useConvConsentState, useXmtpFeed, xmtpSendFrameAction } from '../../modules/messaging';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -14,15 +15,18 @@ import { capabilities } from '../../lib/capabilities';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { report } from '../../lib/errorPolicy';
 import { frameActionContent, frameCardModel, frameOf } from './frame.model';
+import { useFillViewport } from './useFillViewport';
 
-const FRAME_MAX_WIDTH = 720;
+const FILL_STYLE = { flexGrow: 1 } as const;
 
-function FrameBody({ frame, convId, line, messageId, onSent }: {
-  frame: FrameContent; convId: string; line: string; messageId: string; onSent: () => void;
+function FrameBody({ frame, convId, line, messageId, onSent, insetBottom }: {
+  frame: FrameContent; convId: string; line: string; messageId: string; onSent: () => void; insetBottom: number;
 }): React.ReactElement {
   const consent = useConvConsentState(convId);
   const dark = useEffectiveColorScheme() === 'dark';
   const gated = consent !== 'allowed';
+  const notice = consent === 'unknown' || consent === 'denied';
+  const viewport = useFillViewport();
   const onAction = useCallback(async (action: FrameAction, source: FrameActionSource): Promise<void> => {
     const content = frameActionContent(messageId, action, source.label);
     if (content === null) {
@@ -38,13 +42,16 @@ function FrameBody({ frame, convId, line, messageId, onSent }: {
     }
   }, [line, messageId, onSent]);
   return (
-    <Col gap={12}>
+    <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <Frame widget={frame.widget} dark={dark} disabled={gated} onAction={onAction}
+        fill={{ padding: PAGE_GUTTER, insetBottom: notice ? 0 : insetBottom }}
         onOpenUrl={(url) => { openInBubbleLink(url); }} />
-      {consent === 'unknown' || consent === 'denied' ? (
-        <Text size="sm" role="secondary">Accept this conversation to use this frame.</Text>
+      {notice ? (
+        <Box padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
+          <Text size="sm" role="secondary">Accept this conversation to use this frame.</Text>
+        </Box>
       ) : null}
-    </Col>
+    </View>
   );
 }
 
@@ -64,21 +71,17 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title={title} backTo={canGoBack ? undefined : chat} />
-      <ScreenScroll
-        contentContainerStyle={{ padding: PAGE_GUTTER, paddingBottom: PAGE_GUTTER + insets.bottom }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Col align="center">
-        <Box width="100%" maxWidth={FRAME_MAX_WIDTH}>
-          {frame !== null ? (
-            <FrameBody frame={frame} convId={convId} line={line} messageId={messageId} onSent={leave} />
-          ) : feed.status === 'loading' ? (
-            <Box padding={24} align="center"><Spinner /></Box>
-          ) : (
-            <EmptyState title="This frame is not available." />
-          )}
-        </Box>
-        </Col>
+      <ScreenScroll contentContainerStyle={FILL_STYLE} keyboardShouldPersistTaps="handled">
+        {frame !== null ? (
+          <FrameBody frame={frame} convId={convId} line={line} messageId={messageId} onSent={leave}
+            insetBottom={insets.bottom} />
+        ) : (
+          <Box padding={PAGE_GUTTER}>
+            {feed.status === 'loading' ? <Box padding={24} align="center"><Spinner /></Box> : (
+              <EmptyState title="This frame is not available." />
+            )}
+          </Box>
+        )}
       </ScreenScroll>
     </Col>
   );

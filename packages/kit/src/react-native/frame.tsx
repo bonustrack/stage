@@ -1,11 +1,11 @@
 import { Component, useMemo, type ComponentType, type ReactNode } from 'react';
-import { parseFrame, type FrameError, type FrameNode, type FrameNodeOf } from '../frame';
+import { parseFrame, type FrameError, type FrameFill, type FrameNode, type FrameNodeOf } from '../frame';
 import { kitPalette } from '../tokens';
 import { Box } from './box';
 import { Caption } from './caption';
 import { KitThemeProvider, useKitScheme } from './theme-context';
 import {
-  FrameBasic, FrameBox, FrameCard, FrameChart, FrameCol, FrameDivider, FrameForm, FrameListView,
+  FrameBasic, FrameBox, FrameCard, FrameChart, FrameCol, FrameDivider, FrameFillBox, FrameForm, FrameListView,
   FrameListViewItem, FrameRow, FrameSpacer, FrameTable, FrameTableCell, FrameTableRow, FrameTransition,
   FrameUnsupported,
 } from './frame.layout';
@@ -18,9 +18,11 @@ import {
 import { FrameFormScope, FrameRuntimeProvider, useFrameRuntime, type FrameActionHandler } from './frame.runtime';
 
 export type { FrameActionHandler, FrameActionSource } from './frame.runtime';
-export type { FrameAction } from '../frame';
+export type { FrameAction, FrameFill } from '../frame';
 
-type NodeRenderers = { [T in FrameNode['type']]: ComponentType<{ node: FrameNodeOf<T>; children?: ReactNode }> };
+type NodeRenderers = {
+  [T in FrameNode['type']]: ComponentType<{ node: FrameNodeOf<T>; children?: ReactNode; fill?: FrameFill }>
+};
 
 const RENDERERS: NodeRenderers = {
   Card: FrameCard, ListView: FrameListView, ListViewItem: FrameListViewItem, Basic: FrameBasic,
@@ -32,10 +34,21 @@ const RENDERERS: NodeRenderers = {
   'Table.Row': FrameTableRow, 'Table.Cell': FrameTableCell, Chart: FrameChart, Unsupported: FrameUnsupported,
 };
 
-function FrameNodeView({ node }: { node: FrameNode }): React.ReactElement {
-  const Render = RENDERERS[node.type] as ComponentType<{ node: FrameNode; children?: ReactNode }>;
-  if (node.children.length === 0) return <Render node={node} />;
-  return <Render node={node}>{node.children.map((child, i) => <FrameNodeView key={i} node={child} />)}</Render>;
+function FrameNodeView({ node, fill }: { node: FrameNode; fill?: FrameFill }): React.ReactElement {
+  const Render = RENDERERS[node.type] as ComponentType<{ node: FrameNode; children?: ReactNode; fill?: FrameFill }>;
+  if (node.children.length === 0) return <Render node={node} fill={fill} />;
+  return <Render node={node} fill={fill}>{node.children.map((child, i) => <FrameNodeView key={i} node={child} />)}</Render>;
+}
+
+const FILL_ROOTS = new Set<FrameNode['type']>(['Card', 'ListView', 'Basic']);
+
+function Filled({ fill, children }: { fill?: FrameFill; children: ReactNode }): React.ReactElement {
+  return fill === undefined ? <>{children}</> : <FrameFillBox fill={fill}>{children}</FrameFillBox>;
+}
+
+function FrameRoot({ node, fill }: { node: FrameNode; fill?: FrameFill }): React.ReactElement {
+  if (fill === undefined || FILL_ROOTS.has(node.type)) return <FrameNodeView node={node} fill={fill} />;
+  return <FrameFillBox fill={fill}><FrameNodeView node={node} /></FrameFillBox>;
 }
 
 const NOTICE: Record<FrameError | 'render', string> = {
@@ -56,7 +69,7 @@ function FrameNotice({ reason }: { reason: FrameError | 'render' }): React.React
   );
 }
 
-class FrameBoundary extends Component<{ resetKey: unknown; children: ReactNode }, { failed: boolean }> {
+class FrameBoundary extends Component<{ resetKey: unknown; fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
 
   static getDerivedStateFromError(): { failed: boolean } {
@@ -68,7 +81,7 @@ class FrameBoundary extends Component<{ resetKey: unknown; children: ReactNode }
   }
 
   override render(): ReactNode {
-    return this.state.failed ? <FrameNotice reason="render" /> : this.props.children;
+    return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
 
@@ -78,26 +91,27 @@ export interface FrameProps {
   onAction?: FrameActionHandler;
   onOpenUrl?: (url: string) => void;
   disabled?: boolean;
+  fill?: FrameFill;
 }
 
-function FrameBody({ widget }: { widget: unknown }): React.ReactElement {
+function FrameBody({ widget, fill }: { widget: unknown; fill?: FrameFill }): React.ReactElement {
   const parsed = useMemo(() => parseFrame(widget), [widget]);
-  if (!parsed.ok) return <FrameNotice reason={parsed.error} />;
+  if (!parsed.ok) return <Filled fill={fill}><FrameNotice reason={parsed.error} /></Filled>;
   return (
-    <FrameBoundary resetKey={parsed}>
+    <FrameBoundary resetKey={parsed} fallback={<Filled fill={fill}><FrameNotice reason="render" /></Filled>}>
       <FrameFormScope>
-        <FrameNodeView node={parsed.root} />
+        <FrameRoot node={parsed.root} fill={fill} />
       </FrameFormScope>
     </FrameBoundary>
   );
 }
 
-export function Frame({ widget, dark, onAction, onOpenUrl, disabled }: FrameProps): React.ReactElement {
+export function Frame({ widget, dark, onAction, onOpenUrl, disabled, fill }: FrameProps): React.ReactElement {
   const contextScheme = useKitScheme();
   const scheme = dark === undefined ? contextScheme : dark ? 'dark' : 'light';
   const body = (
     <FrameRuntimeProvider dark={scheme === 'dark'} onAction={onAction} onOpenUrl={onOpenUrl} disabled={disabled}>
-      <FrameBody widget={widget} />
+      <FrameBody widget={widget} fill={fill} />
     </FrameRuntimeProvider>
   );
   if (scheme === contextScheme) return body;
