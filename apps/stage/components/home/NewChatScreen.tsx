@@ -11,7 +11,7 @@ import { sendDraft } from '../composer/actions';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
-import { FooterDock } from '../conversation/FooterDock';
+import { ChatColumn, FooterDock } from '../conversation/FooterDock';
 import { includesKey, toggleKey } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
@@ -166,7 +166,7 @@ export function NewChatScreen(): React.ReactElement {
   });
   return (
     <Col flex={1} surface="surface">
-      {phase === 'idle' ? <Box flex={1}/> : <ChatColumnSpinner bottomInset={footerH}/>}
+      <ChatColumn>{phase === 'idle' ? null : <ChatColumnSpinner bottomInset={footerH}/>}</ChatColumn>
       <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}>
         <Box flex={1}/>
         <Row align="center" padding={{ right: PAGE_GUTTER }}>

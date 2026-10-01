@@ -5,9 +5,6 @@ import { Animated as RNAnimated } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, RIGHT_PANE_PAD } from '../../components/layout';
-import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
@@ -21,7 +18,7 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { boardPanelConvId } from '../../components/tabs/splitRoutes';
-import { FooterDock } from '../../components/conversation/FooterDock';
+import { ChatColumn, FooterDock } from '../../components/conversation/FooterDock';
 import {
   ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
@@ -89,10 +86,6 @@ export default function XmtpConversation(): React.ReactElement {
   const [composerH, setComposerH] = useState(measuredFooterHeight);
   const onFooterHeight = useCallback((h: number) => { measuredFooterHeight = h; setComposerH(h); }, []);
 
-  const insets = useSafeAreaInsets();
-  const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
-  const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
-
   if (resolved.resolving || !convId) {
     return (
       <ConversationShell bg={bg}>
@@ -103,9 +96,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   return (
     <ConversationShell bg={bg}>
-      <Reanimated.View
-        style={[{ flex: 1 }, memberList ? RIGHT_PANE_PAD : null, listWrapperStyle]}
->
+      <ChatColumn style={memberList ? RIGHT_PANE_PAD : null}>
       <ConversationFeed
         c={c}
         convId={convId}
@@ -114,7 +105,7 @@ export default function XmtpConversation(): React.ReactElement {
           <ConversationSearch line={activeLine} query={searchQuery} c={c}/>
         ) : undefined}
 />
-      </Reanimated.View>
+      </ChatColumn>
       {searchOpen ? (
         <ConversationSearchTopnav
           searchInputRef={searchInputRef}
