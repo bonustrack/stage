@@ -36,7 +36,7 @@ function sendTo<A extends unknown[]>(
 
 export const {
   xmtpSendText, xmtpReact, xmtpSendJson, xmtpSendPoll, xmtpSendSignatureRequest, xmtpSendSignatureReference,
-  xmtpSendTxRequest, xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply,
+  xmtpSendTxRequest, xmtpSendTxReference, xmtpSendFrameAction, xmtpVote, xmtpOpenAnswer, xmtpReply,
 } = makeSenders({
   text: sendTo(sdk.send.text),
   reaction: sendTo(sdk.send.reaction),

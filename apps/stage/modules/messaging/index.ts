@@ -32,7 +32,7 @@ export {
 export {
   xmtpSendText, xmtpReact, xmtpSendPoll,
   xmtpSendSignatureRequest, xmtpSendSignatureReference, xmtpSendTxRequest,
-  xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpDeleteMessage,
+  xmtpSendTxReference, xmtpSendFrameAction, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpDeleteMessage,
 } from '../../lib/xmtp.messages';
 
 export {

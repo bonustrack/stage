@@ -31,6 +31,11 @@ import {
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
 } from '@stage-labs/client/xmtp/readState';
 import {
+  FRAME_CONTENT_TYPE, FRAME_ACTION_CONTENT_TYPE, frameFallbackText, frameActionFallbackText,
+  type FrameContent, type FrameActionContent,
+} from '@stage-labs/client/xmtp/frame';
+import { frameContentSchema, frameActionSchema } from '@stage-labs/client/xmtp/frame.schema';
+import {
   CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callInviteSchema, callInviteText, callSignalSchema,
   type CallInvite, type CallSignal,
 } from '@stage-labs/client/xmtp/call';
@@ -110,3 +115,9 @@ export const CALL_SIGNAL_CODEC: JsonCodec<CallSignal> = {
   ...jsonCodec<CallSignal>(CALL_SIGNAL_CONTENT_TYPE, () => undefined, callSignalSchema, 'xmtp.callSignal'),
   shouldPush: (): boolean => false,
 };
+
+export const FRAME_CODEC = jsonCodec<FrameContent>(FRAME_CONTENT_TYPE, frameFallbackText, frameContentSchema, 'xmtp.frame');
+
+export const FRAME_ACTION_CODEC = jsonCodec<FrameActionContent>(
+  FRAME_ACTION_CONTENT_TYPE, frameActionFallbackText, frameActionSchema, 'xmtp.frameAction',
+);

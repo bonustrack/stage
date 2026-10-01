@@ -4,9 +4,10 @@ import {
 import { openVoteKey, type PollContent } from '@stage-labs/client/xmtp/poll';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
+import type { FrameActionContent } from '@stage-labs/client/xmtp/frame';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, type JsonCodec,
+  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, FRAME_ACTION_CODEC, type JsonCodec,
 } from './xmtpJsonCodecs';
 
 interface SendPrimitives {
@@ -34,6 +35,8 @@ export function makeSenders(p: SendPrimitives) {
       p.json(line, WALLET_SEND_CALLS_CODEC, params),
     xmtpSendTxReference: (line: string, ref: TransactionReferenceContent): Promise<string> =>
       p.json(line, TRANSACTION_REFERENCE_CODEC, ref),
+    xmtpSendFrameAction: (line: string, content: FrameActionContent): Promise<string> =>
+      p.json(line, FRAME_ACTION_CODEC, content),
     xmtpVote: (
       line: string, pollMessageId: string, optionIndex: number, action: ReactionAction = 'added', questionIndex = 0,
     ): Promise<string> => p.reaction(line, buildVote(pollMessageId, optionIndex, action, questionIndex)),

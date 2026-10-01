@@ -12,6 +12,9 @@ import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
 } from './tx';
+import {
+  type FrameActionContent, type FrameContent, frameActionText, frameFallbackText,
+} from './frame';
 import { XMTP_USER_PREFIX } from './line';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
@@ -174,6 +177,14 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
   transactionReference: (base, typeId, decoded) => ({
     ...base, text: transactionReferenceFallbackText(decoded as TransactionReferenceContent),
     payload: { contentType: typeId, txReference: decoded as TransactionReferenceContent },
+  }),
+  frame: (base, typeId, decoded) => ({
+    ...base, text: frameFallbackText(decoded as FrameContent),
+    payload: { contentType: typeId, frame: decoded as FrameContent },
+  }),
+  frameAction: (base, typeId, decoded) => ({
+    ...base, text: frameActionText(decoded as FrameActionContent),
+    payload: { contentType: typeId, frameAction: decoded as FrameActionContent },
   }),
   reply: replyEnvelope,
   attachment: attachmentEnvelope,

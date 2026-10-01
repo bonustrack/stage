@@ -16,6 +16,8 @@ import {
 import { QuestionView } from './question';
 import { PollView } from './poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
+import { FrameCard } from '../frame/FrameCard';
+import { frameOf } from '../frame/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
   BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, markdownRules, type MarkdownProps,
@@ -26,12 +28,12 @@ function descriptorsOf(entry: HistoryEntry): {
   atts: ReturnType<typeof attachmentsOf>; question: ReturnType<typeof questionOf>;
   poll: ReturnType<typeof pollOf>; sigReq: ReturnType<typeof sigRequestOf>;
   sigRef: ReturnType<typeof sigReferenceOf>; txReq: ReturnType<typeof txRequestOf>;
-  txReceipt: ReturnType<typeof txReceiptOf>;
+  txReceipt: ReturnType<typeof txReceiptOf>; frame: ReturnType<typeof frameOf>;
 } {
   return {
     atts: attachmentsOf(entry), question: questionOf(entry), poll: pollOf(entry),
     sigReq: sigRequestOf(entry), sigRef: sigReferenceOf(entry),
-    txReq: txRequestOf(entry), txReceipt: txReceiptOf(entry),
+    txReq: txRequestOf(entry), txReceipt: txReceiptOf(entry), frame: frameOf(entry),
   };
 }
 
@@ -62,7 +64,7 @@ function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
       <Box style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Box>
     ) : null;
   }
-  if (d.txReq || d.txReceipt) return null;
+  if (d.txReq || d.txReceipt || d.frame) return null;
   if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
   return <BubbleBody text={entry.text} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
 }
@@ -87,6 +89,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
         <TxRequestCard req={d.txReq} dark={p.dark} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} />
       ) : null}
       {d.txReceipt ? <TxReceiptCard receipt={d.txReceipt} dark={p.dark} /> : null}
+      {d.frame ? <FrameCard frame={d.frame} line={p.entry.line} messageId={p.entry.id} /> : null}
     </>
   );
 }
