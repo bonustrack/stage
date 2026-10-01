@@ -13,7 +13,7 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
-import { Box, PAGE_GUTTER } from './layout';
+import { Box, PAGE_GUTTER, STICKY_UNDER_CHROME } from './layout';
 import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
 import { MENU_WIDTH } from './AnchoredMenu';
@@ -38,7 +38,9 @@ import {
 } from './searchFilter.model';
 
 const MENU_MAX_HEIGHT = 360;
-const FILTER_LAYER = 1;
+const FILTER_LAYER = { zIndex: 5 };
+const RELATIVE = { position: 'relative' } as const;
+const FIELD_LAYER = { ...RELATIVE, zIndex: 1 };
 const NATIVE = Platform.OS !== 'web';
 const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member', has: 'Has' };
 const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople, has: IconFilter1 };
@@ -238,7 +240,7 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
   scope: FilterScope;
   onMenu: (open: boolean) => void;
   onFocusChange?: (focused: boolean) => void;
-} & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder' | 'inline' | 'field' | 'topInset'>): React.ReactElement {
+} & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder' | 'field'>): React.ReactElement {
   const wide = useWebTabRail();
   const keyboardUp = useKeyboardState(state => state.isVisible);
   const options = useFilterOptions(scope);
@@ -249,10 +251,11 @@ export function FilterSearch({ query, setQuery, scope, onMenu, onFocusChange, ..
   useEffect(() => { onMenu(open); }, [open]);
   useEffect(() => () => { onMenu(false); if (focused.current) onFocusChange?.(false); }, []);
   const Menu = wide ? WideFilterMenu : TouchFilterMenu;
+  const layer = wide ? [bar.inline === true ? RELATIVE : STICKY_UNDER_CHROME, FILTER_LAYER] : FIELD_LAYER;
   return (
-    <Box style={{ position: 'relative', zIndex: FILTER_LAYER }}>
+    <Box style={layer}>
       <SearchTopnavBar
-        {...bar} inline field query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
+        {...bar} inline field={!wide} query={query} setQuery={filter.onChangeText} inputProps={filter.inputProps}
       />
       {filter.menu === null ? null : (
         <Menu>

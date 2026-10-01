@@ -333,19 +333,34 @@ function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
   children: React.ReactNode;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
+  const safeTop = useSafeAreaInsets().top;
+  const wide = useWebTabRail();
   const [searchKey, setSearchKey] = useState(0);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
   const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); setSearchKey(key => key + 1); };
   const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
+  const right = <HomeTopnavRight head={text} onOpenSearch={wide ? openSearch : undefined} view="board"/>;
+  if (wide && searchKey > 0) {
+    return <>
+      <FilterSearch
+        key={searchKey} scope="board" onMenu={onFilterMenu}
+        query={query} setQuery={setQuery} onClose={closeSearch}
+        head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop} trailing={right}
+      />
+      {children}
+    </>;
+  }
+  const header = <StackHeader title="Board" backTo="/" inline={inline} bordered={wide} trailing={<>
+    <Box flex={1}/>
+    <Row align="center" gap={18}>{right}</Row>
+  </>}/>;
+  if (wide) return <>{header}{children}</>;
   return <>
-    <StackHeader title="Board" backTo="/" inline={inline} bordered={false} trailing={<>
-      <Box flex={1}/>
-      <Row align="center" gap={18}><HomeTopnavRight head={text} view="board"/></Row>
-    </>}/>
+    {header}
     <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
-      <TopnavFade scroll={inline ? 'self' : 'window'} stickyTop={`${TOPNAV_HEIGHT}px`}/>
-      <ScreenScroll ref={scroll} scroll={inline ? 'self' : 'window'} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
+      <TopnavFade scroll="window" stickyTop={`${TOPNAV_HEIGHT}px`}/>
+      <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
           key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
           query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}

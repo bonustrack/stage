@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
@@ -8,16 +8,19 @@ import { parseSearchFilter } from '../searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
-import { usePublishTopnavSlot } from '../tabs/topnavSlots';
+import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
-import { setSearchFocused } from '../../lib/searchState';
+import { isSearchFocused, setSearchFocused } from '../../lib/searchState';
+import { useWebTabRail } from '../../lib/webLayout';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
+const WIDE_LIST_CONTENT = { paddingBottom: 24 };
+const HEADER_LAYER = { zIndex: 1 };
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -43,14 +46,15 @@ function knownPeerAddresses(rows: readonly Row[] | null): string[] {
 }
 
 function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: SearchOpen }): React.ReactElement {
+  const wide = useWebTabRail();
   const { text: sub, link: head, border } = usePalette();
   return (
     <>
-      <FilterSearch
+      {wide ? null : <FilterSearch
         key={search.key} scope="chats" onMenu={p.onFilterMenu} onFocusChange={setSearchFocused} autoFocus={search.key > 0}
         query={p.query} setQuery={p.setQuery} onClose={search.close} onOpen={search.open}
         head={head} sub={sub} border={border}
-      />
+      />}
       <MessagingSetupBanner />
       {p.showFilterBar ? (
         <LabelFilterBar
@@ -73,27 +77,44 @@ function ListFooter({ query, noChannels, knownPeers }: {
 
 interface SearchOpen {
   key: number;
+  shown: boolean;
   open: () => void;
   close: () => void;
+  onFocusChange: (focused: boolean) => void;
 }
 
-function useSearchOpen(setQuery: (query: string) => void): SearchOpen {
+function useSearchOpen(query: string, setQuery: (query: string) => void, wide: boolean): SearchOpen {
   const [key, setKey] = useState(0);
+  const [held, setHeld] = useState(false);
+  const reset = (): void => { setKey(0); setHeld(false); };
+  const open = useCallback(() => { setKey(k => k + 1); setHeld(true); }, []);
+  useEffect(() => { if (wide && query === '' && !isSearchFocused()) reset(); }, [query, wide]);
   return {
     key,
-    open: () => { setKey(k => k + 1); },
-    close: () => { setKey(0); setQuery(''); },
+    shown: held || query !== '',
+    open,
+    close: () => { reset(); setQuery(''); },
+    onFocusChange: (focused) => { setSearchFocused(focused); if (focused) setHeld(true); },
   };
 }
 
-function useHomeTopnav(pane: boolean): React.ReactElement {
-  const { text: sub } = usePalette();
-  const nav = useMemo(
-    () => <Topnav inline={pane} right={<HomeTopnavRight head={sub} view="chats"/>} bordered={false}/>,
-    [sub, pane],
+function useHomeTopnav(p: ChannelsListProps, search: SearchOpen, wide: boolean): TopnavSlot {
+  const { query, setQuery, onFilterMenu, pane } = p;
+  const { text: sub, link: head, border } = usePalette();
+  const right = useMemo(
+    () => <HomeTopnavRight head={sub} onOpenSearch={wide ? search.open : undefined} view="chats"/>,
+    [sub, wide, search.open],
   );
-  usePublishTopnavSlot({ override: nav }, !pane);
-  return nav;
+  const smallNav = useMemo(() => <Topnav inline={pane} right={right} bordered={false}/>, [pane, right]);
+  const override = !wide ? smallNav : (search.shown ? (
+    <FilterSearch
+      key={search.key} scope="chats" onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
+      query={query} setQuery={setQuery} onClose={search.close}
+      head={head} sub={sub} border={border} inline={pane} trailing={right}
+    />
+  ) : undefined);
+  usePublishTopnavSlot({ right, override }, !pane);
+  return { right, override };
 }
 
 function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsListProps): void {
@@ -111,16 +132,17 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
   } = props;
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
-  const search = useSearchOpen(setQuery);
-  const nav = useHomeTopnav(pane);
+  const wide = useWebTabRail();
+  const search = useSearchOpen(query, setQuery, wide);
+  const slot = useHomeTopnav(props, search, wide);
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
   useScrollTopOnFilter(props);
 
   return (
     <>
-      {pane ? nav : null}
+      {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
       <Box flex={1}>
-        <TopnavFade scroll={pane ? 'self' : 'window'} stickyTop={UNDER_TOPNAV}/>
+        {wide ? null : <TopnavFade scroll={pane ? 'self' : 'window'} stickyTop={UNDER_TOPNAV}/>}
         <VirtualList
           ref={listRef}
           scroll={pane ? 'self' : 'window'}
@@ -145,9 +167,9 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           removeClippedSubviews
-          contentContainerStyle={LIST_CONTENT}
+          contentContainerStyle={wide ? WIDE_LIST_CONTENT : LIST_CONTENT}
           keyboardShouldPersistTaps="handled"
-          ListHeaderComponentStyle={{ zIndex: 1 }}
+          ListHeaderComponentStyle={wide ? undefined : HEADER_LAYER}
           ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
           ListFooterComponent={<ListFooter query={query} noChannels={sortedRows.length === 0} knownPeers={knownPeers}/>}
           renderItem={renderRow}
