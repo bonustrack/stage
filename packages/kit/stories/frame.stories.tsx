@@ -35,6 +35,34 @@ const FRAME_SAMPLES = {
       },
     ],
   },
+  answer: {
+    type: 'Basic',
+    gap: 3,
+    children: [
+      { type: 'Markdown', value: 'Paris is the capital of France. It sits on the **Seine** and has about 2.1 million people.' },
+      {
+        type: 'Row',
+        gap: 1,
+        children: ['copy', 'thumbs-up', 'thumbs-down', 'share'].map((icon) => ({
+          type: 'Button', iconStart: icon, variant: 'ghost', color: 'secondary', size: 'sm', uniform: true,
+          onClickAction: { type: `answer.${icon}` },
+        })),
+      },
+      {
+        type: 'Row',
+        gap: 2,
+        padding: { x: 4, y: 2 },
+        radius: 'full',
+        background: 'surface-secondary',
+        children: [
+          { type: 'Text', value: 'Ask anything', color: 'secondary' },
+          { type: 'Spacer' },
+          { type: 'Button', iconStart: 'mic', variant: 'ghost', color: 'secondary', uniform: true, pill: true, onClickAction: { type: 'composer.mic' } },
+          { type: 'Button', iconStart: 'arrow-up', uniform: true, pill: true, onClickAction: { type: 'composer.send' } },
+        ],
+      },
+    ],
+  },
   form: {
     type: 'Card',
     asForm: true,

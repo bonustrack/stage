@@ -61,6 +61,15 @@ import { IconWreath } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconPencilLine } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencilLine';
 import { IconEditBig } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEditBig';
+import { IconArrowUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUp';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { IconChevronTop } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronTop';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
+import { IconSend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSend';
+import { IconShareOs } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShareOs';
+import { IconThumbsDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconThumbsDown';
+import { IconThumbsUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconThumbsUp';
 import type { CentralIcon } from '../glyph';
 import type { FrameIconName } from '../frame.schema';
 
@@ -128,4 +137,13 @@ export const FRAME_ICON_GLYPHS: Record<FrameIconName, CentralIcon> = {
   write: IconPencil,
   'write-alt': IconPencilLine,
   'write-alt2': IconEditBig,
+  'arrow-up': IconArrowUp,
+  'chevron-down': IconChevronBottom,
+  'chevron-up': IconChevronTop,
+  copy: IconSquareBehindSquare1,
+  mic: IconMicrophone,
+  send: IconSend,
+  share: IconShareOs,
+  'thumbs-down': IconThumbsDown,
+  'thumbs-up': IconThumbsUp,
 };

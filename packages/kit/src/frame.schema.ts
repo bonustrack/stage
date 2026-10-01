@@ -3,7 +3,7 @@ import {
   padding, px, ratio, space, status, text, type Validator,
 } from './frame.values';
 
-export const FRAME_ICONS = [
+const CHATKIT_ICONS = [
   'agent', 'analytics', 'atom', 'batch', 'bolt', 'book-open', 'book-closed', 'book-clock', 'bug',
   'calendar', 'chart', 'check', 'check-circle', 'check-circle-filled', 'chevron-left', 'chevron-right',
   'circle-question', 'compass', 'confetti', 'cube', 'desktop', 'document', 'dot', 'dots-horizontal',
@@ -13,6 +13,12 @@ export const FRAME_ICONS = [
   'star', 'star-filled', 'search', 'sparkle', 'sparkle-double', 'square-code', 'square-image',
   'square-text', 'suitcase', 'settings-slider', 'user', 'wreath', 'write', 'write-alt', 'write-alt2',
 ] as const;
+
+const STAGE_ICONS = [
+  'arrow-up', 'chevron-down', 'chevron-up', 'copy', 'mic', 'send', 'share', 'thumbs-down', 'thumbs-up',
+] as const;
+
+export const FRAME_ICONS = [...CHATKIT_ICONS, ...STAGE_ICONS] as const;
 
 export type FrameIconName = (typeof FRAME_ICONS)[number];
 

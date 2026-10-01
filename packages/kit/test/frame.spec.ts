@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FRAME_LIMITS, frameFillPadding, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
+  FRAME_ICONS, FRAME_LIMITS, frameFillPadding, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
   type FrameNode,
 } from '../src/frame';
 import { kitPalette } from '../src/tokens';
@@ -131,6 +131,17 @@ describe('parseFrame: text and content nodes', () => {
     expect(only({ type: 'Icon', name: 'not-an-icon' }).type).toBe('Unsupported');
     expect(only({ type: 'Button', label: 'Go', onClickAction: { type: 'go' }, iconStart: 'bolt', style: 'secondary', size: '3xl', block: true }).props)
       .toEqual({ label: 'Go', onClickAction: { type: 'go' }, iconStart: 'bolt', style: 'secondary', size: '3xl', block: true });
+  });
+
+  test('Stage icon names work next to the ChatKit ones', () => {
+    const stage = ['arrow-up', 'chevron-down', 'chevron-up', 'copy', 'mic', 'send', 'share', 'thumbs-down', 'thumbs-up'];
+    expect(FRAME_ICONS).toHaveLength(63 + stage.length);
+    expect(FRAME_ICONS.slice(63)).toEqual(stage);
+    for (const name of stage) {
+      expect(only({ type: 'Icon', name }).props).toEqual({ name });
+      expect(only({ type: 'Button', iconStart: name, iconEnd: name, uniform: true }).props)
+        .toEqual({ iconStart: name, iconEnd: name, uniform: true });
+    }
   });
 
   test('Image only takes https sources', () => {
