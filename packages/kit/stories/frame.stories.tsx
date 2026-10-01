@@ -121,6 +121,33 @@ const FRAME_SAMPLES = {
       { type: 'Text', value: 'Unsafe color dropped', color: 'url(https://example.com/x.png)' },
     ],
   },
+  screens: {
+    start: 'home',
+    screens: {
+      home: {
+        type: 'ListView',
+        children: ['Acme', 'Globex'].map((name) => ({
+          type: 'ListViewItem',
+          onClickAction: { type: 'frame.open', payload: { screen: name } },
+          children: [{ type: 'Text', value: name, weight: 'semibold' }, { type: 'Spacer' }, { type: 'Icon', name: 'chevron-right' }],
+        })),
+      },
+      ...Object.fromEntries(['Acme', 'Globex'].map((name) => [name, {
+        title: name,
+        widget: {
+          type: 'Card',
+          children: [
+            { type: 'Title', value: name, size: 'sm' },
+            { type: 'Text', value: 'A second screen, opened with frame.open and no message to the agent.' },
+            { type: 'Row', gap: 2, children: [
+              { type: 'Button', label: 'Back', color: 'secondary', onClickAction: { type: 'frame.back' } },
+              { type: 'Button', label: 'Approve', onClickAction: { type: 'customer.approve', payload: { name } } },
+            ] },
+          ],
+        },
+      }])),
+    },
+  },
   invalid: 'This is not a widget',
 } as const;
 

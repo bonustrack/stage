@@ -13,6 +13,7 @@ export const FRAME_LIMITS = {
   maxDepth: 16,
   maxNodes: 500,
   maxChildren: 200,
+  maxScreens: 50,
 } as const;
 
 const MAX_CHART_ROWS = 200;
@@ -22,7 +23,7 @@ const MAX_TYPE_NAME = 60;
 const SUMMARY_SCAN = 80;
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
-export type FrameError = 'invalid' | 'too-large' | 'too-deep' | 'too-many-nodes';
+export type FrameError = 'invalid' | 'too-large' | 'too-deep' | 'too-many-nodes' | 'too-many-screens';
 
 export type FrameParseResult = { ok: true; root: FrameNode } | { ok: false; error: FrameError };
 
@@ -112,6 +113,86 @@ export function parseFrame(raw: unknown): FrameParseResult {
   const walk: Walk = { nodes: 0 };
   const root = normalizeNode(raw, 0, walk);
   return walk.error === undefined ? { ok: true, root } : { ok: false, error: walk.error };
+}
+
+export const FRAME_OPEN = 'frame.open';
+export const FRAME_BACK = 'frame.back';
+
+const MAX_SCREEN_ID = 120;
+const MAX_SCREEN_TITLE = 200;
+const MAX_STACK = 50;
+
+export interface FrameScreen {
+  title?: string;
+  root: FrameNode;
+}
+
+export interface FrameDoc {
+  start: string;
+  screens: ReadonlyMap<string, FrameScreen>;
+  multi: boolean;
+}
+
+export type FrameDocResult = { ok: true; doc: FrameDoc } | { ok: false; error: FrameError };
+
+export type FrameNav = { kind: 'open'; screen: string } | { kind: 'back' };
+
+function screenTitle(raw: unknown): string | undefined {
+  const title = typeof raw === 'string' ? raw.trim().slice(0, MAX_SCREEN_TITLE) : '';
+  return title === '' ? undefined : title;
+}
+
+function parseScreen(raw: unknown): FrameParseResult & { title?: string } {
+  const wrapped = isRecord(raw) && isRecord(raw.widget) && raw.type === undefined;
+  const parsed = parseFrame(wrapped ? raw.widget : raw);
+  const title = wrapped ? screenTitle(raw.title) : undefined;
+  return parsed.ok && title !== undefined ? { ...parsed, title } : parsed;
+}
+
+function screenEntries(raw: Record<string, unknown>): [string, unknown][] | FrameError {
+  const chars = jsonChars(raw);
+  if (chars === undefined) return 'invalid';
+  if (chars > FRAME_LIMITS.maxChars) return 'too-large';
+  const entries = Object.entries(raw).filter(([id]) => id !== '' && id.length <= MAX_SCREEN_ID);
+  if (entries.length === 0) return 'invalid';
+  return entries.length > FRAME_LIMITS.maxScreens ? 'too-many-screens' : entries;
+}
+
+function parseScreens(raw: Record<string, unknown>, start: unknown): FrameDocResult {
+  const entries = screenEntries(raw);
+  if (typeof entries === 'string') return { ok: false, error: entries };
+  const screens = new Map<string, FrameScreen>();
+  for (const [id, value] of entries) {
+    const parsed = parseScreen(value);
+    if (!parsed.ok) return parsed;
+    screens.set(id, parsed.title === undefined ? { root: parsed.root } : { title: parsed.title, root: parsed.root });
+  }
+  const first = entries[0]?.[0] ?? '';
+  return { ok: true, doc: { start: typeof start === 'string' ? start : first, screens, multi: true } };
+}
+
+export function parseFrameDoc(raw: unknown): FrameDocResult {
+  if (isRecord(raw) && isRecord(raw.screens)) return parseScreens(raw.screens, raw.start);
+  const parsed = parseFrame(raw);
+  if (!parsed.ok) return parsed;
+  return { ok: true, doc: { start: '', screens: new Map([['', { root: parsed.root }]]), multi: false } };
+}
+
+export function frameNavOf(action: FrameAction | undefined): FrameNav | undefined {
+  if (action?.type === FRAME_BACK) return { kind: 'back' };
+  if (action?.type !== FRAME_OPEN) return undefined;
+  const screen = action.payload?.screen;
+  return { kind: 'open', screen: typeof screen === 'string' ? screen : '' };
+}
+
+export function navigateFrame(stack: readonly string[], nav: FrameNav): readonly string[] {
+  if (nav.kind === 'back') return stack.length > 1 ? stack.slice(0, -1) : stack;
+  if (stack[stack.length - 1] === nav.screen) return stack;
+  return [...stack, nav.screen].slice(-MAX_STACK);
+}
+
+export function withScreen(action: FrameAction, screen: string): FrameAction {
+  return { type: action.type, payload: { screen, ...action.payload } };
 }
 
 export interface FrameSummary {

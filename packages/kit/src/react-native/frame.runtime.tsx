@@ -1,7 +1,10 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react';
-import { missingRequired, resolveFrameColor, withFormValues, type FrameAction, type FrameColor } from '../frame';
+import {
+  frameNavOf, missingRequired, resolveFrameColor, withFormValues, withScreen, type FrameAction, type FrameColor,
+  type FrameNav,
+} from '../frame';
 import { FRAME_ROOT_FLOW, type FrameFlow } from '../frame.flow';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
 import { KitThemeProvider, useKitPalette } from './theme-context';
@@ -19,6 +22,7 @@ interface FrameRuntime {
   enabled: boolean;
   busy: boolean;
   dispatch: (action: FrameAction, source: FrameActionSource) => Promise<void>;
+  usable: (action: FrameAction | undefined) => boolean;
   openUrl?: (url: string) => void;
 }
 
@@ -26,6 +30,7 @@ const idle = (): Promise<void> => Promise.resolve();
 
 const RuntimeContext = createContext<FrameRuntime>({
   dark: false, scheme: 'light', palette: kitPalette('light'), enabled: false, busy: false, dispatch: idle,
+  usable: () => false,
 });
 
 export function useFrameRuntime(): FrameRuntime {
@@ -37,11 +42,13 @@ export function useFrameColor(): (c: FrameColor | undefined) => string | undefin
   return (c) => resolveFrameColor(c, scheme, palette);
 }
 
-export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, children }: {
+export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, navigate, screen, children }: {
   dark: boolean;
   onAction?: FrameActionHandler;
   disabled?: boolean;
   onOpenUrl?: (url: string) => void;
+  navigate?: (nav: FrameNav) => void;
+  screen?: string;
   children: ReactNode;
 }): React.ReactElement {
   const palette = useKitPalette();
@@ -49,19 +56,27 @@ export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, chil
   const busyRef = useRef(false);
   const enabled = onAction !== undefined && disabled !== true;
   const dispatch = useCallback(async (action: FrameAction, source: FrameActionSource): Promise<void> => {
+    const nav = frameNavOf(action);
+    if (nav !== undefined) {
+      navigate?.(nav);
+      return;
+    }
     if (!enabled || onAction === undefined || busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     try {
-      await onAction(action, source);
+      await onAction(screen === undefined ? action : withScreen(action, screen), source);
     } finally {
       busyRef.current = false;
       setBusy(false);
     }
-  }, [enabled, onAction]);
+  }, [enabled, onAction, navigate, screen]);
+  const usable = useCallback((action: FrameAction | undefined): boolean => (
+    frameNavOf(action) === undefined ? enabled && !busy : navigate !== undefined
+  ), [enabled, busy, navigate]);
   const value = useMemo<FrameRuntime>(() => ({
-    dark, scheme: dark ? 'dark' : 'light', palette, enabled, busy, dispatch, openUrl: onOpenUrl,
-  }), [dark, palette, enabled, busy, dispatch, onOpenUrl]);
+    dark, scheme: dark ? 'dark' : 'light', palette, enabled, busy, dispatch, usable, openUrl: onOpenUrl,
+  }), [dark, palette, enabled, busy, dispatch, usable, onOpenUrl]);
   return <RuntimeContext.Provider value={value}>{children}</RuntimeContext.Provider>;
 }
 

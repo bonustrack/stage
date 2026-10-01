@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
-import { frameSummary, parseFrame, type FrameAction } from '@stage-labs/kit/frame';
+import { frameSummary, parseFrameDoc, type FrameAction, type FrameDocResult } from '@stage-labs/kit/frame';
 
 export const FRAME_ROUTE = '/frame';
 
@@ -26,9 +26,14 @@ function filled(value: string | undefined): string | undefined {
   return trimmed === undefined || trimmed === '' ? undefined : trimmed;
 }
 
+export function frameInputOf(frame: FrameContent): unknown {
+  return frame.screens === undefined ? frame.widget : { screens: frame.screens, start: frame.start };
+}
+
 export function frameCardModel(frame: FrameContent): FrameCardModel {
-  const parsed = parseFrame(frame.widget);
-  const derived = parsed.ok ? frameSummary(parsed.root) : {};
+  const parsed = parseFrameDoc(frameInputOf(frame));
+  const root = parsed.ok ? parsed.doc.screens.get(parsed.doc.start)?.root : undefined;
+  const derived = root === undefined ? {} : frameSummary(root);
   const title = filled(frame.title) ?? filled(derived.title) ?? 'Frame';
   const description = filled(frame.description) ?? filled(derived.description);
   return description === undefined || description === title ? { title } : { title, description };
@@ -43,4 +48,8 @@ export function frameActionContent(frameId: string, action: FrameAction, label: 
   const act = action.payload === undefined ? { type: action.type } : { type: action.type, payload: action.payload };
   const parsed = frameActionSchema.safeParse(name === undefined ? { frameId, action: act } : { frameId, action: act, label: name });
   return parsed.success ? parsed.data : null;
+}
+
+export function frameScreenTitle(frame: FrameContent, parsed: FrameDocResult, screen: string): string {
+  return (parsed.ok ? parsed.doc.screens.get(screen)?.title : undefined) ?? frameCardModel(frame).title;
 }

@@ -127,18 +127,17 @@ export function FrameBasic({ node, children, fill }: FrameNodeProps<'Basic'>): R
 type CardAction = NonNullable<FrameNodeOf<'Card'>['props']['confirm']>;
 
 function CardFooter({ confirm, cancel, asForm }: { confirm?: CardAction; cancel?: CardAction; asForm: boolean }): React.ReactElement | null {
-  const { dark, enabled, busy } = useFrameRuntime();
+  const { dark, usable } = useFrameRuntime();
   const scope = useFormScope();
   if (confirm === undefined && cancel === undefined) return null;
-  const off = !enabled || busy;
   return (
     <Row justify="end" gap={8} margin={{ top: 4 }}>
       {cancel ? (
-        <Button color="secondary" size="sm" label={cancel.label} dark={dark} disabled={off}
+        <Button color="secondary" size="sm" label={cancel.label} dark={dark} disabled={!usable(cancel.action)}
           onPress={() => { void scope?.run(cancel.action, { label: cancel.label }); }} />
       ) : null}
       {confirm ? (
-        <Button size="sm" label={confirm.label} dark={dark} disabled={off}
+        <Button size="sm" label={confirm.label} dark={dark} disabled={!usable(confirm.action)}
           onPress={() => { void (asForm ? scope?.submit({ label: confirm.label }) : scope?.run(confirm.action, { label: confirm.label })); }} />
       ) : null}
     </Row>
@@ -214,10 +213,10 @@ export function FrameListView({ node, children, fill }: FrameNodeProps<'ListView
 }
 
 export function FrameListViewItem({ node, children }: FrameNodeProps<'ListViewItem'>): React.ReactElement {
-  const { dark, enabled, busy } = useFrameRuntime();
+  const { dark, usable } = useFrameRuntime();
   const scope = useFormScope();
   const { onClickAction, gap, align } = node.props;
-  const pressable = onClickAction !== undefined && enabled && !busy;
+  const pressable = onClickAction !== undefined && usable(onClickAction);
   const label = useMemo(() => frameSummary(node).title, [node]);
   return (
     <ListViewItem dark={dark} gap={gap} align={align === 'baseline' || align === 'stretch' ? undefined : align}

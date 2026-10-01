@@ -6,10 +6,11 @@ import { usePalette } from '../../lib/theme';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { ScreenHeader } from './ScreenHeader';
 
-export function StackHeader({ title, trailing, backTo, inline, bordered = true }: {
+export function StackHeader({ title, trailing, backTo, onBack, inline, bordered = true }: {
   title: string;
   trailing?: ReactNode;
   backTo?: string;
+  onBack?: () => void;
   inline?: boolean;
   bordered?: boolean;
 }): React.ReactElement {
@@ -20,10 +21,10 @@ export function StackHeader({ title, trailing, backTo, inline, bordered = true }
     <ScreenHeader
       title={title}
       titleStyle={{ kind: 'title', size: 'sm', color: head }}
-      onBack={() => {
+      onBack={onBack ?? (() => {
         if (backTo === undefined) capabilities.back();
         else capabilities.backTo(backTo);
-      }}
+      })}
       backColor={fg}
       safeTop={top}
       padTop={0}

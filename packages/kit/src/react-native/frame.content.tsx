@@ -136,7 +136,7 @@ function iconNode(name: FrameIconName | undefined, color: string, size: number):
 }
 
 export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.ReactElement {
-  const { dark, enabled, busy } = useFrameRuntime();
+  const { dark, usable } = useFrameRuntime();
   const scope = useFormScope();
   const [loading, setLoading] = useState(false);
   const { label, onClickAction, submit, iconStart, iconEnd, style, variant, size, pill, uniform, block, disabled } = node.props;
@@ -154,7 +154,7 @@ export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.Re
   };
   return (
     <Button label={label} color={tone} variant={kind} size={controlSize(size)} pill={pill} uniform={uniform} block={block}
-      disabled={disabled === true || !acts || !enabled || busy} loading={loading} dark={dark}
+      disabled={disabled === true || !acts || !usable(submit === true ? undefined : onClickAction)} loading={loading} dark={dark}
       iconStart={iconNode(iconStart, fg, FONT_SIZE.lg)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.lg)}
       onPress={() => { void press(); }} />
   );

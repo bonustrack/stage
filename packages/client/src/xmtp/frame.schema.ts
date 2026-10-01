@@ -8,6 +8,8 @@ const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 1000;
 const MAX_ID = 200;
 const MAX_ACTION_TYPE = 120;
+const MAX_SCREENS = 50;
+const MAX_SCREEN_ID = 120;
 
 function jsonChars(value: unknown): number {
   try {
@@ -23,11 +25,19 @@ const widgetSchema = z.record(z.string(), z.unknown())
   .refine(w => typeof w.type === 'string' && w.type !== '', { message: 'widget needs a type' })
   .refine(w => jsonChars(w) <= FRAME_MAX_CHARS, { message: `widget is larger than ${FRAME_MAX_CHARS} characters` });
 
+const screenSchema = z.union([widgetSchema, z.object({ title: clipped(MAX_TITLE).optional(), widget: widgetSchema })]);
+
+const screensSchema = z.record(z.string().min(1).max(MAX_SCREEN_ID), screenSchema)
+  .refine(s => Object.keys(s).length > 0 && Object.keys(s).length <= MAX_SCREENS, { message: `a frame has 1 to ${MAX_SCREENS} screens` })
+  .refine(s => jsonChars(s) <= FRAME_MAX_CHARS, { message: `screens are larger than ${FRAME_MAX_CHARS} characters` });
+
 export const frameContentSchema = z.object({
   title: clipped(MAX_TITLE).optional(),
   description: clipped(MAX_DESCRIPTION).optional(),
-  widget: widgetSchema,
-});
+  widget: widgetSchema.optional(),
+  screens: screensSchema.optional(),
+  start: z.string().min(1).max(MAX_SCREEN_ID).optional(),
+}).refine(f => (f.widget === undefined) !== (f.screens === undefined), { message: 'a frame has a widget or screens' });
 
 export type FrameContent = z.infer<typeof frameContentSchema>;
 

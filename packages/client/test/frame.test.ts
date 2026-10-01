@@ -53,6 +53,17 @@ describe('frame content types', () => {
     }
   });
 
+  test('a frame holds a widget or up to 50 screens, not both', () => {
+    const card = { type: 'Card' };
+    const screens = { home: card, s1: { title: ' Story ', widget: card } };
+    expect(frameContentSchema.parse({ screens, start: 'home' })).toEqual({ screens: { home: card, s1: { title: 'Story', widget: card } }, start: 'home' });
+    for (const bad of [
+      {}, { widget: card, screens }, { screens: {} }, { screens: { '': card } }, { screens: { home: { type: '' } } },
+      { screens: Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`s${i}`, card])) },
+      { screens: { a: { type: 'Text', value: 'x'.repeat(FRAME_MAX_CHARS / 2) }, b: { type: 'Text', value: 'x'.repeat(FRAME_MAX_CHARS / 2) } } },
+    ]) expect(frameContentSchema.safeParse(bad).success).toBe(false);
+  });
+
   test('a frame action needs a frame id and an action type', () => {
     expect(frameActionSchema.safeParse({ action: { type: 'a' } }).success).toBe(false);
     expect(frameActionSchema.safeParse({ frameId: 'f', action: {} }).success).toBe(false);

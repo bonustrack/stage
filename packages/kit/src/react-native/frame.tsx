@@ -1,5 +1,8 @@
-import { Component, useMemo, type ComponentType, type ReactNode } from 'react';
-import { parseFrame, type FrameError, type FrameFill, type FrameNode, type FrameNodeOf } from '../frame';
+import { Component, useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react';
+import {
+  navigateFrame, parseFrameDoc, type FrameDocResult, type FrameError, type FrameFill, type FrameNav, type FrameNode,
+  type FrameNodeOf,
+} from '../frame';
 import { frameChildFlow } from '../frame.flow';
 import { kitPalette } from '../tokens';
 import { Box } from './box';
@@ -21,7 +24,7 @@ import {
 } from './frame.runtime';
 
 export type { FrameActionHandler, FrameActionSource } from './frame.runtime';
-export type { FrameAction, FrameFill } from '../frame';
+export type { FrameAction, FrameFill, FrameNav } from '../frame';
 
 type NodeRenderers = {
   [T in FrameNode['type']]: ComponentType<{ node: FrameNodeOf<T>; children?: ReactNode; fill?: FrameFill }>
@@ -57,15 +60,19 @@ function FrameRoot({ node, fill }: { node: FrameNode; fill?: FrameFill }): React
   return <FrameFillBox fill={fill}><FrameNodeView node={node} /></FrameFillBox>;
 }
 
-const NOTICE: Record<FrameError | 'render', string> = {
+type NoticeReason = FrameError | 'render' | 'no-screen';
+
+const NOTICE: Record<NoticeReason, string> = {
   invalid: 'This frame could not be read.',
   'too-large': 'This frame is too large to show.',
   'too-deep': 'This frame is too complex to show.',
   'too-many-nodes': 'This frame is too complex to show.',
+  'too-many-screens': 'This frame has too many screens to show.',
   render: 'This frame could not be shown.',
+  'no-screen': 'This screen is not in the frame.',
 };
 
-function FrameNotice({ reason }: { reason: FrameError | 'render' }): React.ReactElement {
+function FrameNotice({ reason }: { reason: NoticeReason }): React.ReactElement {
   const { palette } = useFrameRuntime();
   const side = { width: 1, color: palette.border };
   return (
@@ -91,6 +98,21 @@ class FrameBoundary extends Component<{ resetKey: unknown; fallback: ReactNode; 
   }
 }
 
+export interface FrameNavigation {
+  screen: string;
+  depth: number;
+  navigate: (nav: FrameNav) => void;
+}
+
+export function useFrameNavigation(start: string): FrameNavigation {
+  const [state, setState] = useState<{ start: string; stack: readonly string[] }>({ start, stack: [start] });
+  const stack = state.start === start ? state.stack : [start];
+  const navigate = useCallback((nav: FrameNav): void => {
+    setState((prev) => ({ start, stack: navigateFrame(prev.start === start ? prev.stack : [start], nav) }));
+  }, [start]);
+  return { screen: stack[stack.length - 1] ?? start, depth: stack.length - 1, navigate };
+}
+
 export interface FrameProps {
   widget: unknown;
   dark?: boolean;
@@ -98,26 +120,32 @@ export interface FrameProps {
   onOpenUrl?: (url: string) => void;
   disabled?: boolean;
   fill?: FrameFill;
+  navigation?: FrameNavigation;
 }
 
-function FrameBody({ widget, fill }: { widget: unknown; fill?: FrameFill }): React.ReactElement {
-  const parsed = useMemo(() => parseFrame(widget), [widget]);
-  if (!parsed.ok) return <Filled fill={fill}><FrameNotice reason={parsed.error} /></Filled>;
+function FrameBody({ parsed, screen, fill }: { parsed: FrameDocResult; screen: string; fill?: FrameFill }): React.ReactElement {
+  const root = parsed.ok ? parsed.doc.screens.get(screen)?.root : undefined;
+  if (root === undefined) return <Filled fill={fill}><FrameNotice reason={parsed.ok ? 'no-screen' : parsed.error} /></Filled>;
   return (
-    <FrameBoundary resetKey={parsed} fallback={<Filled fill={fill}><FrameNotice reason="render" /></Filled>}>
-      <FrameFormScope>
-        <FrameRoot node={parsed.root} fill={fill} />
+    <FrameBoundary resetKey={root} fallback={<Filled fill={fill}><FrameNotice reason="render" /></Filled>}>
+      <FrameFormScope key={screen}>
+        <FrameRoot node={root} fill={fill} />
       </FrameFormScope>
     </FrameBoundary>
   );
 }
 
-export function Frame({ widget, dark, onAction, onOpenUrl, disabled, fill }: FrameProps): React.ReactElement {
+export function Frame({ widget, dark, onAction, onOpenUrl, disabled, fill, navigation }: FrameProps): React.ReactElement {
   const contextScheme = useKitScheme();
   const scheme = dark === undefined ? contextScheme : dark ? 'dark' : 'light';
+  const parsed = useMemo(() => parseFrameDoc(widget), [widget]);
+  const own = useFrameNavigation(parsed.ok ? parsed.doc.start : '');
+  const nav = navigation ?? own;
+  const screen = parsed.ok && parsed.doc.multi ? nav.screen : undefined;
   const body = (
-    <FrameRuntimeProvider dark={scheme === 'dark'} onAction={onAction} onOpenUrl={onOpenUrl} disabled={disabled}>
-      <FrameBody widget={widget} fill={fill} />
+    <FrameRuntimeProvider dark={scheme === 'dark'} onAction={onAction} onOpenUrl={onOpenUrl} disabled={disabled}
+      navigate={nav.navigate} screen={screen}>
+      <FrameBody parsed={parsed} screen={nav.screen} fill={fill} />
     </FrameRuntimeProvider>
   );
   if (scheme === contextScheme) return body;
