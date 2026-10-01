@@ -4,7 +4,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient } from './xmtp.client';
 import { feedCache } from './xmtp.state.core';
-import { holdFeedLine } from './feedLines';
+import { holdFeedLine, isFeedLoaded } from './feedLines';
 import { ensureGlobalStream } from './xmtp.stream';
 import { getQueryClient } from './queryClient';
 import { messagingKeys } from '../modules/messaging/queries';
@@ -26,7 +26,7 @@ function feedStatus(active: boolean, failed: boolean, ready: boolean): XmtpFeedS
 
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
-  loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
+  loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean; retry: () => void;
 } {
   const accountEpoch = useAccountEpoch();
   const firstId = useFeedStartId(line);
@@ -60,7 +60,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     queryKey,
     enabled: enabled && !!line,
     queryFn: () => loadFeedFirstPage(line ?? ''),
-    initialData: () => (line ? feedCache.get(line) ?? EMPTY : EMPTY),
+    initialData: () => (line && isFeedLoaded(line) ? feedCache.get(line) ?? EMPTY : EMPTY),
     staleTime: 0,
   });
   const events = query.data ?? EMPTY;
@@ -68,6 +68,8 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
 
   const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
   const error = query.error ? (query.error).message : null;
+  const { refetch } = query;
+  const retry = useCallback(() => { void refetch(); }, [refetch]);
 
   const loadOlder = useCallback(async (): Promise<void> => {
     const ln = lineRef.current;
@@ -91,5 +93,5 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     }
   }, []);
 
-  return { events, status, error, inboxId, loadOlder, hasMore: !reachedStart, loadingOlder };
+  return { events, status, error, inboxId, loadOlder, hasMore: !reachedStart, loadingOlder, retry };
 }

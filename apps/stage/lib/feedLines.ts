@@ -1,6 +1,7 @@
 export const activeFeedLines = new Set<string>();
 
 const feedLineHolds = new Map<string, number>();
+const loadedFeedLines = new Set<string>();
 let feedHoldEpoch = 0;
 
 export function holdFeedLine(line: string): () => void {
@@ -21,8 +22,17 @@ export function holdFeedLine(line: string): () => void {
   };
 }
 
+export function markFeedLoaded(line: string): void {
+  loadedFeedLines.add(line);
+}
+
+export function isFeedLoaded(line: string): boolean {
+  return loadedFeedLines.has(line);
+}
+
 export function resetFeedLines(): void {
   feedHoldEpoch += 1;
   feedLineHolds.clear();
   activeFeedLines.clear();
+  loadedFeedLines.clear();
 }

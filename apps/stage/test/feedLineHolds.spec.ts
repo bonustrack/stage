@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { activeFeedLines, holdFeedLine, resetFeedLines } from '../lib/feedLines';
+import { activeFeedLines, holdFeedLine, isFeedLoaded, markFeedLoaded, resetFeedLines } from '../lib/feedLines';
 
 describe('holdFeedLine', () => {
   test('a line stays active until its last holder lets go', () => {
@@ -20,5 +20,13 @@ describe('holdFeedLine', () => {
     expect(activeFeedLines.has('line-b')).toBe(true);
     fresh();
     expect(activeFeedLines.has('line-b')).toBe(false);
+  });
+
+  test('a line counts as loaded only after its first page, until a reset', () => {
+    expect(isFeedLoaded('line-c')).toBe(false);
+    markFeedLoaded('line-c');
+    expect(isFeedLoaded('line-c')).toBe(true);
+    resetFeedLines();
+    expect(isFeedLoaded('line-c')).toBe(false);
   });
 });

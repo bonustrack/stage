@@ -5,12 +5,14 @@ import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { PAGE_SIZE, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache } from '../../lib/xmtp.state.core';
+import { isFeedLoaded, markFeedLoaded } from '../../lib/feedLines';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
 import { reconcileOnOpen } from './feedReconcile';
 import { report, ignored } from '../../lib/errorPolicy';
 
 function mirrorSlice(line: string, slice: HistoryEntry[] | undefined): void {
+  if (!isFeedLoaded(line)) return;
   const key = messagingKeys.messages(getAccountEpoch(), line);
   getQueryClient().setQueryData<HistoryEntry[]>(key, slice ?? []);
 }
@@ -49,9 +51,11 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   if (!conv) {
     perfLog('feed.coldPath: conversation not local, awaiting network');
     await perfTime('feed.revalidate', () => revalidateFeed(line));
+    markFeedLoaded(line);
     return feedCache.get(line) ?? [];
   }
   mergePageIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
+  markFeedLoaded(line);
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }

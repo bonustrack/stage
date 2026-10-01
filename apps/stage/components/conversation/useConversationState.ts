@@ -179,7 +179,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     () => (peerAddr === null ? xmtpFeed.events : entriesAfterClear(xmtpFeed.events.filter(e => !isSystemEntry(e)), clearedAt)),
     [xmtpFeed.events, peerAddr, clearedAt],
   );
-  const { loadOlder, loadingOlder } = xmtpFeed;
+  const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
   useEffect(() => {
     if (!convId) return;
@@ -236,7 +236,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   }, [activeLine]);
 
   return {
-    activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, status, myUri,
+    activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, retryFeed, status, myUri,
     showJump, setShowJump, scrollToNewest,
     replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,

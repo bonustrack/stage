@@ -2,12 +2,11 @@
 import { useCallback, useState } from 'react';
 
 import { Animated as RNAnimated } from 'react-native';
-import { Button } from '@stage-labs/kit/react-native/button';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, RIGHT_PANE_PAD } from '../../components/layout';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
+import { RetryNotice } from '../../components/chrome/RetryNotice';
 import { ConversationFeed } from '../../components/conversation/ConversationFeed';
 import { ConversationSearch } from '../../components/conversation/ConversationSearch';
 import { useConversationState } from '../../components/conversation/useConversationState';
@@ -47,11 +46,8 @@ function UnresolvedConversation({ resolved }: {
     );
   }
   return (
-    <Col surface="surface" flex={1} align="center" justify="center" gap={16} padding={24}>
-      <Text role="secondary" textAlign="center">
-        {resolveErrorMessage(resolved.error, resolved.detail)}
-      </Text>
-      <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={resolved.retry}/>
+    <Col surface="surface" flex={1} align="center" justify="center">
+      <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
     </Col>
   );
 }

@@ -18,6 +18,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { attempt } from '../../lib/errorPolicy';
 import { ChatGalleryProvider } from '../bubble/ChatGallery';
 import { useChatColumnFill } from './ConversationSidebar';
+import { RetryNotice } from '../chrome/RetryNotice';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
@@ -204,6 +205,17 @@ function useSlowOpen(waiting: boolean): boolean {
   return slow || !feedShownOnce;
 }
 
+function FeedPending({ failed, slow, color, style, onRetry }: {
+  failed: boolean; slow: boolean; color: string; style: ReturnType<typeof useChatColumnFill>; onRetry: () => void;
+}): React.ReactElement {
+  return (
+    <Col flex={1} align="center" justify="center" style={style}>
+      {failed ? <RetryNotice message="Could not load messages." onRetry={onRetry} />
+        : slow ? <Spinner size={28} color={color} /> : null}
+    </Col>
+  );
+}
+
 export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   c: ConvState;
   convId: string;
@@ -226,11 +238,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   }
 
   if (empty) {
-    return (
-      <Col flex={1} align="center" justify="center" style={loaderFill}>
-        {slowOpen ? <Spinner size={28} color={head} /> : null}
-      </Col>
-    );
+    return <FeedPending failed={status === 'error'} slow={slowOpen} color={head} style={loaderFill} onRetry={c.retryFeed} />;
   }
 
   const olderEdge = (
