@@ -183,7 +183,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
           visible={editOpen}
           onClose={() => { setEditOpen(false); }}
           convId={convId} name={c.groupName} description={c.groupDescription} imageUrl={c.groupImage} rights={rights}
-          labels={c.groupLabels} onLabelsSaved={c.setGroupLabels}
+          labels={c.groupLabels}
         />
       ) : null}
       <BubbleActionMenu

@@ -4,12 +4,18 @@ import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { report } from './errorPolicy';
 import { mergeFeedEntries, type FeedMerge } from './feedOrder.model';
 import { markFeedStart } from './feedStart';
+import { makeListeners } from './storeCore';
 
 export const PAGE_SIZE = 20;
+
+const channelUpdates = makeListeners<string>();
+
+export const subscribeChannelUpdates = channelUpdates.subscribe;
 
 export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {
   const merged = mergeFeedEntries(feedCache.get(line) ?? [], entries.filter(e => !isControlBody(e.text)));
   if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
+  if (merged.channelUpdated) channelUpdates.notify(line);
   return merged;
 }
 

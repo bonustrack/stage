@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -12,12 +12,11 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, getCachedRows, getGroupLabels, LabelPermissionError, lineOfConv, MAX_LABEL_LEN, MAX_LABELS, removeGroupLabel,
+  addGroupLabel, getCachedRows, LabelPermissionError, lineOfConv, MAX_LABEL_LEN, MAX_LABELS, removeGroupLabel,
   subscribeCachedRows,
 } from '../../modules/messaging';
 import { useStoreValue } from '../../lib/storeCore';
 import { suggestLabels } from '../../modules/messaging';
-import { reported } from '../../lib/errorPolicy';
 import { useChannelEditRights } from './channel.detail';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
@@ -30,23 +29,13 @@ export function toastLabelError(e: unknown): void {
   else capabilities.toast('Could not update labels. Try again.');
 }
 
-export function useChannelLabels(line: string): [string[], (labels: string[]) => void] {
-  const [labels, setLabels] = useState<string[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('channel.labels'));
-    return (): void => { cancelled = true; };
-  }, [line]);
-  return [labels, setLabels];
-}
-
 const NO_LABELS: string[] = [];
 
 function isLabelList(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((label) => typeof label === 'string');
 }
 
-export function useLiveChannelLabels(convId: string): string[] {
+export function useLiveChannelLabels(convId: string | undefined): string[] {
   const read = useCallback((): string[] => {
     const labels = getCachedRows()?.find((row) => row.convId === convId)?.labels;
     return isLabelList(labels) ? labels : NO_LABELS;
@@ -186,19 +175,13 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
   );
 }
 
-export function ChannelLabels({ convId, labels, onSaved }: {
-  convId: string; labels: string[]; onSaved?: (labels: string[]) => void;
+export function ChannelLabels({ convId, labels }: {
+  convId: string; labels: string[];
 }): React.ReactElement | null {
   const rights = useChannelEditRights(convId);
   if (labels.length === 0 && !rights.appData) return null;
   const commit = (edits: ListEdits): void => {
-    const line = lineOfConv(convId);
-    void writeLabels(line, edits)
-      .then((saved) => { if (saved) onSaved?.(saved); })
-      .catch((err: unknown) => {
-        toastLabelError(err);
-        if (onSaved) void getGroupLabels(line).then(onSaved).catch(reported('channel.labels'));
-      });
+    void writeLabels(lineOfConv(convId), edits).catch(toastLabelError);
   };
   return (
     <SidebarSection title="Labels" icon={IconTag} count={labels.length} editLabel="Edit labels" canEdit={rights.appData} current={labels}

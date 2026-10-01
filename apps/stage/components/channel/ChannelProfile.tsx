@@ -16,14 +16,14 @@ import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberL
 import { ChannelProfileHeader, ChannelTitle } from './channel.header';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
-import { ChannelLabels, useChannelLabels } from './channel.labels';
+import { ChannelLabels, useLiveChannelLabels } from './channel.labels';
 
 export function ChannelProfile({ convId }: { convId: string }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const g = useChannelDetail(convId);
-  const [labels, setLabels] = useChannelLabels(g.line);
+  const labels = useLiveChannelLabels(convId);
   const [selfAddress, setSelfAddress] = useState<string>('');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -57,7 +57,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}
-        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels} onSaved={setLabels}/></>}
+        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
       />
@@ -65,7 +65,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         visible={editOpen}
         onClose={() => { setEditOpen(false); }}
         convId={convId} name={g.name} description={g.description} imageUrl={g.imageUrl} rights={g.rights}
-        labels={labels} onLabelsSaved={setLabels}
+        labels={labels}
       />
       <ImageViewer
         uri={g.imageUrl ? avatarRenderUrl('', g.imageUrl, 1024) : ''}

@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress, useConvMeta, markConvRead,
-  getCachedRows, getGroupLabels, useConvConsentState,
+  useConvConsentState,
 } from '../../modules/messaging';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/readSyncRegistry';
@@ -20,6 +20,7 @@ import { deletedMessages, type DeletedMessages } from '@stage-labs/client/xmtp/d
 import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { useChannelRoles } from '../channel/channel.detail';
+import { useLiveChannelLabels } from '../channel/channel.labels';
 import type { MenuAnchor } from '../bubble/props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -32,7 +33,6 @@ import {
   entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
-import { reported } from '../../lib/errorPolicy';
 
 function useActiveConvSuppression(convId: string | undefined): void {
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
@@ -82,23 +82,6 @@ function useConsentGate(convId: string | undefined): ConsentGate {
     consentKnown: allowedHere || streamed !== undefined,
     markAllowed,
   };
-}
-
-function cachedLabels(cid?: string): string[] {
-  const v = getCachedRows()?.find(r => r.convId === cid)?.labels;
-  return Array.isArray(v) ? v.filter((l): l is string => typeof l === 'string') : [];
-}
-
-function useConvLabels(convId: string | undefined, activeLine: string, isGroup: boolean): [string[], (labels: string[]) => void] {
-  const [groupLabels, setGroupLabels] = useState<string[]>(() => cachedLabels(convId));
-  useEffect(() => {
-    if (!isGroup) { setGroupLabels([]); return; }
-    setGroupLabels(cachedLabels(convId));
-    let cancelled = false;
-    void getGroupLabels(activeLine).then(v => { if (!cancelled) setGroupLabels(v); }).catch(reported('conversation.labels'));
-    return () => { cancelled = true; };
-  }, [convId, activeLine, isGroup]);
-  return [groupLabels, setGroupLabels];
 }
 
 interface ScrollPersistence {
@@ -214,7 +197,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
   const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
-  const [groupLabels, setGroupLabels] = useConvLabels(convId, activeLine, isGroup);
+  const groupLabels = useLiveChannelLabels(convId);
 
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback((from: string): string | null => {
@@ -260,7 +243,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     overflowAnchor, setOverflowAnchor,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, setGroupLabels, isGroup, senderEthOf,
+    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, deletedIds, isSuperAdmin,

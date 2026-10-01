@@ -7,10 +7,6 @@ import { convOfLine } from './xmtp.sdk';
 
 export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, groupLabelsOf };
 
-export async function getGroupLabels(line: string): Promise<string[]> {
-  return groupLabelsOf(await convOfLine(line), true);
-}
-
 async function mutate(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);

@@ -13,8 +13,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import { getGroupLabels, invalidateConvMeta, lineOfConv, updateGroupMeta } from '../../modules/messaging';
-import { reported } from '../../lib/errorPolicy';
+import { invalidateConvMeta, lineOfConv, updateGroupMeta } from '../../modules/messaging';
 import { useConvMetaPatch } from './channel.detail';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import {
@@ -59,17 +58,15 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
 }
 
-async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<{
-  written: GroupMetaPatch; labels: string[] | null;
-}> {
+async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<GroupMetaPatch> {
   const written = await writeChannel(convId, patch, picture);
-  const labels = await writeLabels(lineOfConv(convId), edits);
-  return { written, labels };
+  await writeLabels(lineOfConv(convId), edits);
+  return written;
 }
 
-function EditChannelSection({ convId, current, rights, picture, labels, onLabelsSaved, onSaved }: {
+function EditChannelSection({ convId, current, rights, picture, labels, onSaved }: {
   convId: string; current: ChannelCurrent; rights: GroupEditRights; picture: PictureChoice;
-  labels: string[]; onLabelsSaved: (labels: string[]) => void; onSaved: () => void;
+  labels: string[]; onSaved: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const patchMeta = useConvMetaPatch(convId);
@@ -90,15 +87,13 @@ function EditChannelSection({ convId, current, rights, picture, labels, onLabels
     setBusy(true);
     setStatus(null);
     void saveChannel(convId, changes, picture, edits)
-      .then(({ written, labels: saved }) => {
+      .then((written) => {
         patchMeta(channelMetaCachePatch(written));
-        if (saved) onLabelsSaved(saved);
         onSaved();
         capabilities.toast('Channel saved.');
       })
       .catch((err: unknown) => {
         invalidateConvMeta(convId);
-        void getGroupLabels(lineOfConv(convId)).then(onLabelsSaved).catch(reported('channel.labels'));
         setStatus(`Could not save: ${errorText(err)}`);
       })
       .finally(() => { setBusy(false); });
@@ -121,10 +116,10 @@ function EditChannelSection({ convId, current, rights, picture, labels, onLabels
   );
 }
 
-export function EditChannelModal({ visible, onClose, convId, name, description, imageUrl, rights, labels, onLabelsSaved }: {
+export function EditChannelModal({ visible, onClose, convId, name, description, imageUrl, rights, labels }: {
   visible: boolean; onClose: () => void; convId: string;
   name: string | null; description: string; imageUrl: string; rights: GroupEditRights;
-  labels: string[]; onLabelsSaved: (labels: string[]) => void;
+  labels: string[];
 }): React.ReactElement {
   const [picture, setPicture] = useState<PictureChoice>({ kind: 'keep' });
   const close = (): void => { setPicture({ kind: 'keep' }); onClose(); };
@@ -136,7 +131,7 @@ export function EditChannelModal({ visible, onClose, convId, name, description, 
         <PictureEditor avatar={avatar} editable={rights.image} removable={removable} onChange={setPicture} />
       </Col>
       <EditChannelSection convId={convId} current={{ name, description }} rights={rights} picture={picture}
-        labels={labels} onLabelsSaved={onLabelsSaved} onSaved={close} />
+        labels={labels} onSaved={close} />
     </AppModal>
   );
 }

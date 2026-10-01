@@ -43,9 +43,7 @@ export { subscribeAllMessages } from '../../lib/xmtp.stream';
 export { useXmtpFeed } from '../../lib/xmtp.feed';
 
 export { conversationIsSyncGroup } from '../../lib/xmtp.readSync';
-export {
-  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, getGroupLabels,
-} from '../../lib/xmtp.labels';
+export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError } from '../../lib/xmtp.labels';
 export { suggestLabels } from '../../lib/xmtp.labels.suggest';
 
 export { AccountManager, useActiveAccount, useActiveAccountRecord } from './account';

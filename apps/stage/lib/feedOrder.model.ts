@@ -1,10 +1,12 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
+import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
 
 export interface FeedMerge {
   entries: HistoryEntry[];
   added: number;
   replaced: number;
+  channelUpdated: boolean;
 }
 
 interface Keyed {
@@ -66,6 +68,6 @@ export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readon
     seen.add(e.id);
     return true;
   });
-  if (fresh.length === 0) return { entries: [...base], added: 0, replaced };
-  return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced };
+  if (fresh.length === 0) return { entries: [...base], added: 0, replaced, channelUpdated: false };
+  return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced, channelUpdated: fresh.some(isSystemEntry) };
 }

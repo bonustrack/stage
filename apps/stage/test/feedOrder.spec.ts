@@ -55,4 +55,11 @@ describe('feed merge order', () => {
     expect(ids(olderPage.entries)).toEqual(['fix-posted', 'in-review', 'early', 'in-progress', 'context', 'added-you']);
     expect(ids(mergeFeedEntries([inReview, early], [inProgress]).entries)).toEqual(['in-review', 'early', 'in-progress']);
   });
+
+  test('flags a channel update only when a new system line arrives', () => {
+    const labeled = { ...entry('labeled', '2026-09-25T14:23:00.000Z'), payload: { system: true } };
+    expect(mergeFeedEntries([fixPosted], [labeled, fixPosted]).channelUpdated).toBe(true);
+    expect(mergeFeedEntries([labeled, fixPosted], [labeled, screenshot]).channelUpdated).toBe(false);
+    expect(mergeFeedEntries([fixPosted], [screenshot]).channelUpdated).toBe(false);
+  });
 });
