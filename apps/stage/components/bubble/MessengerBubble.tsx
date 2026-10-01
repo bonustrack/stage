@@ -7,10 +7,9 @@ import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
 import { Col, PAGE_GUTTER } from '../layout';
 import type { MessengerBubbleProps } from './props';
-import type { MenuPoint } from '../AnchoredMenu.model';
 import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
-import { contextMenuProps, holdMenuProps } from '../../lib/contextMenu';
+import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { useBubbleGestures } from './gestures';
@@ -65,12 +64,10 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
   const g = useBubbleGestures(props);
-  const openMenu = (point: MenuPoint): void => { g.openMenu(point); };
   const row = (
     <Animated.View
       ref={g.rowRef}
-      {...contextMenuProps(openMenu)}
-      {...holdMenuProps(openMenu)}
+      {...contextMenuProps(point => { g.openMenu(point); })}
       style={[g.swipeStyle, {
         flexDirection: 'row', alignItems: 'flex-start',
         paddingHorizontal: PAGE_GUTTER, paddingVertical: 6, gap: 10,
