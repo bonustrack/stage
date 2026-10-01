@@ -1,12 +1,13 @@
 import type { FrameNodeOf } from '../frame';
 import type { ControlSize, ControlVariant } from '../control.styles';
+import { frameFieldStyle, type FrameFieldStyle, type FrameFieldVariant } from '../frame.flow';
 import { Checkbox } from './checkbox';
 import { DatePicker } from './date-picker';
 import { Input } from './input';
 import { RadioGroup } from './radio-group';
 import { Select } from './select';
 import { Textarea } from './textarea';
-import { useFormField, useFrameRuntime } from './frame.runtime';
+import { useFormField, useFrameFlow, useFrameRuntime } from './frame.runtime';
 
 type FrameControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
@@ -25,59 +26,69 @@ function useLocked(disabled: boolean | undefined): { dark: boolean; locked: bool
   return { dark, locked: disabled === true || !enabled };
 }
 
+function useFieldStyle(grow: boolean, variant: FrameFieldVariant | undefined): FrameFieldStyle {
+  return frameFieldStyle(useFrameFlow(), grow, variant);
+}
+
 export function FrameTextField({ name, value, placeholder, required }: {
   name: string; value: string | undefined; placeholder?: string; required?: boolean;
 }): React.ReactElement {
   const { dark, locked } = useLocked(undefined);
+  const style = useFieldStyle(true, undefined);
   const scope = useFormField(name, value ?? '', required);
   return (
     <Input name={name} defaultValue={value} placeholder={placeholder} disabled={locked} dark={dark}
-      onChangeText={(t) => { scope?.set(name, t); }} />
+      style={style} onChangeText={(t) => { scope?.set(name, t); }} />
   );
 }
 
 export function FrameInput({ node }: { node: FrameNodeOf<'Input'> }): React.ReactElement {
   const { name, defaultValue, placeholder, required, disabled, size, inputType, variant, pill } = node.props;
   const { dark, locked } = useLocked(disabled);
+  const style = useFieldStyle(true, variant);
   const scope = useFormField(name ?? '', defaultValue ?? '', required);
   return (
     <Input name={name} defaultValue={defaultValue} placeholder={placeholder} inputType={inputType}
       variant={variant} size={controlSize(size)} pill={pill} disabled={locked} dark={dark}
-      onChangeText={(t) => { scope?.set(name ?? '', t); }} />
+      style={style} onChangeText={(t) => { scope?.set(name ?? '', t); }} />
   );
 }
 
 export function FrameTextarea({ node }: { node: FrameNodeOf<'Textarea'> }): React.ReactElement {
   const { name, defaultValue, placeholder, required, disabled, size, variant, rows, autoResize, maxRows } = node.props;
   const { dark, locked } = useLocked(disabled);
+  const style = useFieldStyle(true, variant);
   const scope = useFormField(name ?? '', defaultValue ?? '', required);
   return (
     <Textarea name={name} defaultValue={defaultValue} placeholder={placeholder} variant={variant}
       size={controlSize(size)} rows={rows} autoResize={autoResize} maxRows={maxRows} disabled={locked} dark={dark}
-      onChangeText={(t) => { scope?.set(name ?? '', t); }} />
+      style={style} onChangeText={(t) => { scope?.set(name ?? '', t); }} />
   );
 }
 
 export function FrameSelect({ node }: { node: FrameNodeOf<'Select'> }): React.ReactElement {
   const { name = '', options = [], defaultValue, placeholder, required, disabled, size, variant, pill, block, clearable, onChangeAction } = node.props;
   const { dark, locked } = useLocked(disabled);
+  const style = useFieldStyle(block === true, variant);
   const scope = useFormField(name, defaultValue, required);
   return (
     <Select name={name} options={options.map((o) => ({ label: o.label, value: o.value }))}
       defaultValue={defaultValue} placeholder={placeholder} variant={fieldVariant(variant)} size={controlSize(size)}
       pill={pill} block={block} clearable={clearable} disabled={locked} dark={dark}
-      onChange={(v) => { void scope?.change(name, v, onChangeAction); }} />
+      style={style} onChange={(v) => { void scope?.change(name, v, onChangeAction); }} />
   );
 }
 
 export function FrameDatePicker({ node }: { node: FrameNodeOf<'DatePicker'> }): React.ReactElement {
   const { name = '', defaultValue, placeholder, required, disabled, size, variant, pill, block, clearable, min, max, onChangeAction } = node.props;
   const { dark, locked } = useLocked(disabled);
+  const style = useFieldStyle(block === true, variant);
   const scope = useFormField(name, defaultValue, required);
   return (
     <DatePicker name={name} defaultValue={defaultValue} placeholder={placeholder} variant={fieldVariant(variant)}
       size={controlSize(size)} pill={pill} block={block} clearable={clearable} min={min} max={max}
-      disabled={locked} dark={dark} onChange={(v) => { void scope?.change(name, v, onChangeAction); }} />
+      disabled={locked} dark={dark} style={style}
+      onChange={(v) => { void scope?.change(name, v, onChangeAction); }} />
   );
 }
 

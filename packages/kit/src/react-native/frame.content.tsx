@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { View, type DimensionValue } from 'react-native';
 import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
 import { frameFlex, type FrameIconName, type FrameNodeOf } from '../frame';
+import { frameBlockSize } from '../frame.flow';
 import { httpsUrl } from '../frame.values';
 import { resolveColors, type ButtonColor, type ButtonControlVariant } from '../button.styles';
 import { spacingEntries } from '../layout';
@@ -115,7 +116,8 @@ export function FrameIcon({ node }: { node: FrameNodeOf<'Icon'> }): React.ReactE
 
 export function FrameImage({ node }: { node: FrameNodeOf<'Image'> }): React.ReactElement | null {
   const color = useFrameColor();
-  const { src, alt, fit, frame, flush, radius, size, width, height, minWidth, maxWidth, minHeight, maxHeight, aspectRatio, margin } = node.props;
+  const { src, alt, fit, frame, flush, radius, size, width, height, aspectRatio, margin } = node.props;
+  const { minWidth, maxWidth, minHeight, maxHeight } = frameBlockSize(node.props);
   const [failed, setFailed] = useState(false);
   if (src === undefined || failed) return null;
   const sized = size !== undefined || height !== undefined;

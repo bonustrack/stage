@@ -2,6 +2,7 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react';
 import { missingRequired, resolveFrameColor, withFormValues, type FrameAction, type FrameColor } from '../frame';
+import { FRAME_ROOT_FLOW, type FrameFlow } from '../frame.flow';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
 import { KitThemeProvider, useKitPalette } from './theme-context';
 
@@ -62,6 +63,14 @@ export function FrameRuntimeProvider({ dark, onAction, disabled, onOpenUrl, chil
     dark, scheme: dark ? 'dark' : 'light', palette, enabled, busy, dispatch, openUrl: onOpenUrl,
   }), [dark, palette, enabled, busy, dispatch, onOpenUrl]);
   return <RuntimeContext.Provider value={value}>{children}</RuntimeContext.Provider>;
+}
+
+const FlowContext = createContext<FrameFlow>(FRAME_ROOT_FLOW);
+
+export const FrameFlowProvider = FlowContext.Provider;
+
+export function useFrameFlow(): FrameFlow {
+  return useContext(FlowContext);
 }
 
 export function FrameThemeScope({ theme, children }: { theme?: Scheme; children: ReactNode }): React.ReactElement {

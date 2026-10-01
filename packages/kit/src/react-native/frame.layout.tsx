@@ -3,6 +3,7 @@ import type { ViewStyle } from 'react-native';
 import {
   FRAME_SPACING_UNIT, frameFillPadding, frameFlex, frameSummary, type FrameColor, type FrameFill, type FrameNode, type FrameNodeOf,
 } from '../frame';
+import { frameBlockSize, frameSpacerStyle } from '../frame.flow';
 import type { FrameBorder, FrameBorderSide } from '../frame.values';
 import { spacingEntries, type BoxBaseProps, type ResolvedBoxBorder, type ResolvedBoxBorderSide } from '../layout';
 import { BLOCK_RADIUS_DEFAULT, DENSITY_DEFAULT, DENSITY_SCALE } from '../tokens';
@@ -15,7 +16,9 @@ import { ListView, ListViewItem } from './list-view';
 import { Spacer } from './spacer';
 import { Table, TableCell, TableRow } from './table';
 import { Text } from './text';
-import { FrameFormScope, FrameThemeScope, useFormScope, useFrameColor, useFrameRuntime } from './frame.runtime';
+import {
+  FrameFormScope, FrameThemeScope, useFormScope, useFrameColor, useFrameFlow, useFrameRuntime,
+} from './frame.runtime';
 
 export interface FrameNodeProps<T extends FrameNode['type']> {
   node: FrameNodeOf<T>;
@@ -64,7 +67,7 @@ function useBoxProps(props: BoxNode['props']): BoxBaseProps {
   const { palette } = useFrameRuntime();
   const { wrap, background, border, ...rest } = props;
   return {
-    ...rest,
+    ...frameBlockSize(rest),
     wrap: wrap === undefined ? undefined : wrap !== 'nowrap',
     background: color(background),
     border: resolveBorder(border, color, palette.border),
@@ -225,7 +228,8 @@ export function FrameListViewItem({ node, children }: FrameNodeProps<'ListViewIt
 }
 
 export function FrameSpacer({ node }: FrameNodeProps<'Spacer'>): React.ReactElement {
-  return <Spacer minSize={node.props.minSize} />;
+  const { direction } = useFrameFlow();
+  return <Spacer style={frameSpacerStyle(direction, node.props.minSize) as ViewStyle} />;
 }
 
 export function FrameDivider({ node }: FrameNodeProps<'Divider'>): React.ReactElement {
@@ -246,8 +250,13 @@ export function FrameTableRow({ node, children }: FrameNodeProps<'Table.Row'>): 
 }
 
 export function FrameTableCell({ node, children }: FrameNodeProps<'Table.Cell'>): React.ReactElement {
-  const { width, align, vAlign, colSpan } = node.props;
-  return <TableCell width={width} align={align} vAlign={vAlign} colSpan={colSpan}>{children}</TableCell>;
+  const { width, padding, align, vAlign, colSpan } = node.props;
+  return (
+    <TableCell width={width} align={align} vAlign={vAlign} colSpan={colSpan}
+      style={padding === undefined ? undefined : spacingEntries('padding', padding)}>
+      {children}
+    </TableCell>
+  );
 }
 
 export function FrameChart({ node }: FrameNodeProps<'Chart'>): React.ReactElement {

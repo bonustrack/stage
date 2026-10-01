@@ -37,8 +37,8 @@ const ICON = oneOf(FRAME_ICONS);
 const FLEX: Validator<number> = (raw) => (typeof raw === 'number' && raw >= 0 && raw <= 100 ? raw : undefined);
 
 const BLOCK = {
-  height: length, width: length, size: length, minHeight: length, minWidth: length,
-  maxHeight: length, maxWidth: length, aspectRatio: ratio, radius: RADIUS, margin: padding,
+  height: length, width: length, size: length, minHeight: length, minWidth: length, minSize: length,
+  maxHeight: length, maxWidth: length, maxSize: length, aspectRatio: ratio, radius: RADIUS, margin: padding,
 };
 
 const BOX = {
@@ -152,7 +152,7 @@ export const FRAME_NODE_SCHEMAS = {
   Table: { props: {}, children: 'nodes' },
   'Table.Row': { props: { header: bool }, children: 'nodes' },
   'Table.Cell': {
-    props: { width: length, align: TEXT_ALIGN, vAlign: TEXT_ALIGN, colSpan: int(1, 12) },
+    props: { width: length, padding, align: TEXT_ALIGN, vAlign: TEXT_ALIGN, colSpan: int(1, 12) },
     children: 'nodes',
   },
 } as const satisfies Record<string, NodeSchema>;

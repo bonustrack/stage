@@ -206,8 +206,12 @@ function keepsWidth(value: string): boolean {
   return word.length <= KEEP_MAX_CHARS && !/\s/.test(word);
 }
 
+function hasOwnMinWidth(props: object): boolean {
+  return ('minWidth' in props && props.minWidth !== undefined) || ('minSize' in props && props.minSize !== undefined);
+}
+
 export function frameFlex(node: FrameNode): FrameFlex {
-  if (BOX_TYPES.has(node.type)) return 'minWidth' in node.props && node.props.minWidth !== undefined ? SHRINK_OWN_MIN : SHRINK;
+  if (BOX_TYPES.has(node.type)) return hasOwnMinWidth(node.props) ? SHRINK_OWN_MIN : SHRINK;
   const value = 'value' in node.props ? node.props.value : undefined;
   return typeof value === 'string' && !keepsWidth(value) ? SHRINK : KEEP;
 }

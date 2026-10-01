@@ -1,5 +1,6 @@
 import { Component, useMemo, type ComponentType, type ReactNode } from 'react';
 import { parseFrame, type FrameError, type FrameFill, type FrameNode, type FrameNodeOf } from '../frame';
+import { frameChildFlow } from '../frame.flow';
 import { kitPalette } from '../tokens';
 import { Box } from './box';
 import { Caption } from './caption';
@@ -15,7 +16,9 @@ import {
 import {
   FrameCheckbox, FrameDatePicker, FrameInput, FrameRadioGroup, FrameSelect, FrameTextarea,
 } from './frame.controls';
-import { FrameFormScope, FrameRuntimeProvider, useFrameRuntime, type FrameActionHandler } from './frame.runtime';
+import {
+  FrameFlowProvider, FrameFormScope, FrameRuntimeProvider, useFrameFlow, useFrameRuntime, type FrameActionHandler,
+} from './frame.runtime';
 
 export type { FrameActionHandler, FrameActionSource } from './frame.runtime';
 export type { FrameAction, FrameFill } from '../frame';
@@ -36,8 +39,11 @@ const RENDERERS: NodeRenderers = {
 
 function FrameNodeView({ node, fill }: { node: FrameNode; fill?: FrameFill }): React.ReactElement {
   const Render = RENDERERS[node.type] as ComponentType<{ node: FrameNode; children?: ReactNode; fill?: FrameFill }>;
+  const parent = useFrameFlow();
+  const flow = useMemo(() => frameChildFlow(node, parent), [node, parent]);
   if (node.children.length === 0) return <Render node={node} fill={fill} />;
-  return <Render node={node} fill={fill}>{node.children.map((child, i) => <FrameNodeView key={i} node={child} />)}</Render>;
+  const kids = node.children.map((child, i) => <FrameNodeView key={i} node={child} />);
+  return <Render node={node} fill={fill}>{flow === undefined ? kids : <FrameFlowProvider value={flow}>{kids}</FrameFlowProvider>}</Render>;
 }
 
 const FILL_ROOTS = new Set<FrameNode['type']>(['Card', 'ListView', 'Basic']);
