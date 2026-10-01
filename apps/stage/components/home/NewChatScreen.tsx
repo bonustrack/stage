@@ -28,7 +28,8 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  convIdOfLine, createGroup, getConvConsentState, shortAddress, subscribeCachedRows, uploadAttachments, useActiveAccountRecord,
+  convIdOfLine, createGroup, getConvConsentState, rememberOwnGroup, shortAddress, subscribeCachedRows, uploadAttachments,
+  useActiveAccountRecord,
 } from '../../modules/messaging';
 
 interface Recipients {
@@ -101,6 +102,7 @@ function useStartChat(draft: ComposerState, onOpened: (convId: string) => void):
     try {
       const convId = convIdOfLine((await createGroup([...addresses])).line);
       if (convId === null) return;
+      rememberOwnGroup(convId);
       handDraftTo(convId, handed);
       draft.setText('');
       draft.setPending([]);

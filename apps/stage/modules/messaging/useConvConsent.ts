@@ -5,6 +5,10 @@ import { report, recover, attempt } from '../../lib/errorPolicy';
 
 const knownConsent = new Map<string, XmtpConsent | null>();
 
+export function rememberOwnGroup(convId: string): void {
+  knownConsent.set(convId, 'allowed');
+}
+
 function lastKnownConsent(convId: string | undefined): XmtpConsent | null | undefined {
   return convId ? knownConsent.get(convId) : undefined;
 }

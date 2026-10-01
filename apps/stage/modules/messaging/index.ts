@@ -54,7 +54,7 @@ export {
   markConvRead, markConvUnread, patchRowSent, getXmtpBootstrapPhase, useXmtpBootstrapPhase,
 } from './cache';
 export { summarizeConversation, type ConversationView } from './conversation';
-export { useConvConsentState } from './useConvConsent';
+export { rememberOwnGroup, useConvConsentState } from './useConvConsent';
 export { useGroupAccess } from './useGroupAccess';
 
 export { messagingKeys, fetchGroupRoles, useConvMeta, useConvMetas, invalidateConvMeta } from './queries';
