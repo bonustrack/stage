@@ -4,7 +4,7 @@ import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col, PAGE_GUTTER } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
-import { useHandedDraft } from './handoff';
+import { useHandedSend } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import { DropOverlay } from './dropOverlay';
@@ -114,7 +114,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   useComposerDrafts(convId, s.text, mention.restore);
-  useHandedDraft(convId, (draft) => { void actions.sendDraft(draft); });
+  useHandedSend(convId, (started) => { void actions.adoptSend(started); });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId ?? '');
 

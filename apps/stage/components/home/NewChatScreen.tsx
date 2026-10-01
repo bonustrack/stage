@@ -7,7 +7,8 @@ import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
-import { handDraftTo } from '../composer/handoff';
+import { handSendTo } from '../composer/handoff';
+import { startSend } from '../composer/sendRun';
 import { fileInputs } from '../composer/send.model';
 import { useForgetOnUnmount } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
@@ -104,13 +105,13 @@ function useStartChat(draft: ComposerState, onOpened: (convId: string) => void):
     setCreating(true);
     uploadAttachments(fileInputs(draft.pending));
     try {
-      const convId = convIdOfLine((await createGroup([...addresses])).line);
+      const { line } = await createGroup([...addresses]);
+      const convId = convIdOfLine(line);
       if (convId === null) return;
       rememberOwnGroup(convId);
       const { text, pending } = latest.current;
-      uploadAttachments(fileInputs(pending));
       pending.forEach(at => handedUrls.current.add(at.url));
-      handDraftTo(convId, { text, pending });
+      handSendTo(convId, startSend(line, text, pending));
       draft.setText('');
       draft.setPending([]);
       onOpened(convId);

@@ -8,19 +8,12 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
-import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
-import { planSendSteps, type SendStep } from './send';
+import { stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { fileInputs } from './send.model';
-import { prepareAttachments, uploadAttachments } from '../../modules/messaging';
-import { unsentDraft } from './draft.model';
+import { prepareAttachments } from '../../modules/messaging';
+import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
-
-type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
-  & Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {
-  replyingTo?: { id: string };
-  onClearReply?: () => void;
-};
 
 type ComposerActionsArgs = DraftArgs & PostHooks
   & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
@@ -96,61 +89,18 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   } catch (e) { a.setErr((e as Error).message); }
 }
 
-async function runStep(a: DraftArgs, s: SendStep): Promise<string | undefined> {
-  try {
-    const id = await s.run();
-    const localUris = s.attachments.map((at) => at.url);
-    if (localUris.length > 0) rememberLocalAttachments(id, localUris);
-    a.onSent?.(s.localId, undefined, id);
-    return undefined;
-  } catch (e) {
-    const msg = (e as Error).message;
-    a.setErr(msg);
-    a.onSent?.(s.localId, msg);
-    return msg;
-  }
-}
-
-async function runSendSteps(a: DraftArgs, steps: SendStep[]): Promise<SendStep[]> {
-  const unsent: SendStep[] = [];
-  let sendErr: string | undefined;
-  for (const s of steps) {
-    if (sendErr) { a.onSent?.(s.localId, sendErr); unsent.push(s); continue; }
-    sendErr = await runStep(a, s);
-    if (sendErr) unsent.push(s);
-  }
-  return unsent;
-}
-
-function beginSend(a: DraftArgs, line: string, body: string): SendStep[] {
-  const sendingAttachments = a.pending;
-  uploadAttachments(fileInputs(sendingAttachments));
-  const sendingReplyTo = a.replyingTo?.id;
-  const steps = planSendSteps(line, body, sendingAttachments, sendingReplyTo);
-  steps.forEach((s, i) => a.onOptimistic?.({
-    localId: s.localId, text: s.text, attachments: s.attachments,
-    replyTo: i === 0 ? sendingReplyTo : undefined,
-  }));
-  a.setText(''); a.setPending([]); a.onClearReply?.();
-  a.setErr(null);
-  return steps;
-}
-
 async function performSend(a: ComposerActionsArgs, current: () => ComposerActionsArgs): Promise<void> {
-  const body = a.text.trim();
-  if (!body && a.pending.length === 0) return;
+  if (!a.text.trim() && a.pending.length === 0) return;
   const line = await a.openLine();
   if (line === null) return;
-  const originalText = a.text;
-  const originalPending = a.pending;
-  const steps = beginSend(a, line, body);
-  const unsent = await runSendSteps(a, steps);
-  const draft = current();
-  if (unsent.length > 0 && draft.text.trim().length === 0 && draft.pending.length === 0) {
-    const kept = unsentDraft(originalText, originalPending, unsent);
-    a.setText(kept.text);
-    a.setPending(kept.pending);
-  }
+  const started = startSend(line, a.text, a.pending, a.replyingTo?.id);
+  showSend(a, started);
+  await finishSend(a, started, current);
+}
+
+function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => ComposerActionsArgs): Promise<void> {
+  showSend(a, started);
+  return finishSend(a, started, current);
 }
 
 const KEYBOARD_HIDE_WAIT_MS = 500;
@@ -191,6 +141,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a, () => current.current),
-    sendDraft: (draft: Pick<ComposerState, 'text' | 'pending'>) => performSend({ ...a, ...draft }, () => current.current),
+    adoptSend: (started: StartedSend) => adoptSend(current.current, started, () => current.current),
   };
 }
