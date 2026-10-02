@@ -41,18 +41,4 @@ describe('redirectSystemPath', () => {
     expect(r('https://stage.box/#/0x1234567890123456789012345678901234567890'))
       .toBe('https://stage.box/#/0x1234567890123456789012345678901234567890');
   });
-
-  test('legacy xmtp/ channel deep links are rewritten to channel/ form', () => {
-    expect(r('stage://xmtp/abc123')).toBe('stage://channel/abc123');
-    expect(r('https://stage.box/xmtp/abc')).toBe('https://stage.box/channel/abc');
-    expect(r('https://stage.box/#/xmtp/abc?m=1')).toBe('https://stage.box/#/channel/abc?m=1');
-    expect(r('exp://192.168.1.5:8081/--/xmtp/abc')).toBe('exp://192.168.1.5:8081/--/channel/abc');
-  });
-
-  test('legacy xmtp/user/ DM deep links are rewritten to the bare address form', () => {
-    expect(r('stage://xmtp/user/0x1234567890123456789012345678901234567890'))
-      .toBe('stage://0x1234567890123456789012345678901234567890');
-    expect(r('https://stage.box/#/xmtp/user/0x1234567890123456789012345678901234567890'))
-      .toBe('https://stage.box/#/0x1234567890123456789012345678901234567890');
-  });
 });

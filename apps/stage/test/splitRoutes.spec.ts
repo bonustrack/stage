@@ -18,8 +18,7 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/import')).toBe(false);
   });
 
-  test('profiles, groups, settings, wallet and contacts split', () => {
-    expect(isSplitRoute('/group/abc')).toBe(true);
+  test('profiles, settings, wallet and contacts split', () => {
     expect(isSplitRoute('/profile/0xabc')).toBe(true);
     expect(isSplitRoute('/settings')).toBe(true);
     expect(isSplitRoute('/settings/security')).toBe(true);

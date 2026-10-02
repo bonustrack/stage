@@ -60,10 +60,8 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);
 
-const PROFILE_HEADS = new Set(['profile', 'group', 'user']);
-
 function entityRoute(head: string, second: string | undefined): ParsedRoute | null | undefined {
-  if (!PROFILE_HEADS.has(head)) return undefined;
+  if (head !== 'profile') return undefined;
   return second ? { pathname: '/profile/[id]', params: { id: second } } : null;
 }
 
