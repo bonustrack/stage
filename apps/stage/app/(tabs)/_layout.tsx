@@ -20,6 +20,8 @@ import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
 import { TEXT_11PX } from '../../components/smallText';
 import { useAccountGate } from '../../lib/accountGate';
+import { useOpenNewChat } from '../../components/home/newChatFocus';
+import { chatsTabOpensNewChat } from '../../components/tabs/chatsTab.model';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
 
@@ -56,6 +58,17 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
   );
 }
 
+function useChatsTabListeners(pathname: string, wide: boolean): { tabPress: (e: { preventDefault: () => void }) => void } {
+  const openNewChat = useOpenNewChat();
+  return {
+    tabPress: (e) => {
+      if (!chatsTabOpensNewChat(pathname, wide)) return;
+      e.preventDefault();
+      openNewChat();
+    },
+  };
+}
+
 function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: number) {
   return {
     backgroundColor: pal.toolbarBg,
@@ -81,6 +94,7 @@ export default function TabsLayout(): React.ReactElement {
   const web = Platform.OS === 'web';
   const rail = useWebTabRail();
   const gate = useAccountGate();
+  const chatsTabListeners = useChatsTabListeners(pathname, rail);
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
   const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
@@ -110,6 +124,7 @@ export default function TabsLayout(): React.ReactElement {
           <Tabs.Screen
             key={name}
             name={name}
+            listeners={name === 'index' ? chatsTabListeners : undefined}
             options={{
               tabBarIcon: ({ focused }) => (
                 <Glyph icon={icon} size={24} color={focused ? active : inactive}/>

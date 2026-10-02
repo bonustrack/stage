@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { HomeOverflowMenu } from './overflow';
-import { requestNewChatFocus } from './newChatFocus';
+import { useOpenNewChat } from './newChatFocus';
 import { IconBubbleSparkle } from '../IconBubbleSparkle';
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
@@ -13,7 +13,6 @@ import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
 import { getPeerHandle } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
-import { useWebTabRail } from '../../lib/webLayout';
 
 type HomeView = 'chats' | 'board';
 
@@ -32,12 +31,7 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
   const { link } = usePalette();
   const search = useHover();
   const compose = useHover();
-  const wide = useWebTabRail();
-  const openCompose = (): void => {
-    requestNewChatFocus();
-    if (wide) router.replace('/');
-    else router.push('/new');
-  };
+  const openCompose = useOpenNewChat();
   return (
     <>
       {onOpenSearch === undefined ? null : <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
+import { useWebTabRail } from '../../lib/webLayout';
 
 let requested = 0;
 let handled = 0;
@@ -12,6 +13,16 @@ const NEW_CHAT_PATHS: ReadonlySet<string> = new Set(['/', '/new']);
 export function requestNewChatFocus(): void {
   requested += 1;
   listeners.notify();
+}
+
+export function useOpenNewChat(): () => void {
+  const router = useRouter();
+  const wide = useWebTabRail();
+  return () => {
+    requestNewChatFocus();
+    if (wide) router.replace('/');
+    else router.push('/new');
+  };
 }
 
 function useFocusOnOpen(): void {

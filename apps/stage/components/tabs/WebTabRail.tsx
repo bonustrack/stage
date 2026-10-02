@@ -16,7 +16,8 @@ import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { TEXT_11PX } from '../smallText';
 import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from './tabBadge';
-import { requestNewChatFocus } from '../home/newChatFocus';
+import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
+import { chatsTabOpensNewChat } from './chatsTab.model';
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
@@ -58,12 +59,17 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
   vertical: boolean;
 }): React.ReactElement {
   const router = useRouter();
+  const openNewChat = useOpenNewChat();
   const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
   return (
     <>
       {TAB_ICONS.map(([name, icon], i) => {
         const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
         const go = (): void => {
+          if (name === 'index' && chatsTabOpensNewChat(pathname, vertical)) {
+            openNewChat();
+            return;
+          }
           if (name === 'index') requestNewChatFocus();
           router.navigate(TAB_HREF[name]);
         };
