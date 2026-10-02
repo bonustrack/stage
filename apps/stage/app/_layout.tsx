@@ -35,7 +35,7 @@ import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
-import { reported } from '../lib/errorPolicy';
+import { ignored, reported } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
 
@@ -49,6 +49,9 @@ const APP_FONTS = {
 applyWebGlobalStyles();
 installAlertShim();
 void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
+if (Platform.OS === 'web' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
+  void ensureActiveAccount().then(() => getOrCreateXmtpClient('production')).catch(ignored(undefined, 'optional'));
+}
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
