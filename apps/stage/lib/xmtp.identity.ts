@@ -23,10 +23,21 @@ function resolve(client: IdentityClient, ids: string[]): Promise<InboxEthMap> {
   return resolveInboxEthCached(inboxEthCache, fetchInboxEth(client), ids);
 }
 
+const memberIdsByConv = new WeakMap<IdentityConv, Promise<string[]>>();
+
+function memberIdsOf(conv: IdentityConv): Promise<string[]> {
+  const known = memberIdsByConv.get(conv);
+  if (known) return known;
+  const ids = conv.members().then(ms => ms.map(m => m.inboxId));
+  memberIdsByConv.set(conv, ids);
+  ids.catch(() => { memberIdsByConv.delete(conv); });
+  return ids;
+}
+
 export async function primeConversationMembers(client: IdentityClient, convs: IdentityConv[]): Promise<void> {
   try {
     const memberLists = await Promise.all(convs.map(c =>
-      c.members().then(ms => ms.map(m => m.inboxId)).catch(recover<string[]>('xmtp.primeMembers', [])),
+      memberIdsOf(c).catch(recover<string[]>('xmtp.primeMembers', [])),
     ));
     await primeInboxEthCache(inboxEthCache, fetchInboxEth(client), memberLists.flat());
   } catch (err) {
@@ -52,8 +63,7 @@ export async function inboxEthAddresses(inboxIds: string[]): Promise<InboxEthMap
 
 export async function memberInboxToAddressMap(conv: IdentityConv): Promise<InboxEthMap> {
   try {
-    const members = await conv.members();
-    return await resolve(await sdk.client(), members.map(m => m.inboxId));
+    return await resolve(await sdk.client(), await memberIdsOf(conv));
   } catch (err) {
     report('xmtp.memberInboxToAddressMap', err);
     return {};
@@ -64,7 +74,7 @@ export async function groupMemberEthAddresses(conv: IdentityConv): Promise<strin
   if (!sdk.isGroup(conv)) return [];
   try {
     const client = await sdk.client();
-    const otherIds = (await conv.members()).map(m => m.inboxId).filter(id => id !== client.inboxId);
+    const otherIds = (await memberIdsOf(conv)).filter(id => id !== client.inboxId);
     const map = await resolve(client, otherIds);
     return otherIds.map(id => map[id]).filter((a): a is string => !!a);
   } catch (err) {
