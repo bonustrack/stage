@@ -255,7 +255,7 @@ export function TxReceiptCard({ receipt, ts, dark }: {
   receipt: TransactionReferenceContent; ts: string; dark: boolean;
 }): React.ReactElement {
   const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
-  const minedAt = useTxTime(receipt.networkId, receipt.reference);
+  const minedAt = useTxTime(receipt.networkId, receipt.reference, ts);
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
       <Text size="sm" role="secondary">

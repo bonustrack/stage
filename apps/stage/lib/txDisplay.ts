@@ -41,13 +41,18 @@ export function useDecodedCall(
   return { call: call ?? null, pending: hasData && isPending };
 }
 
-export function useTxTime(chainId: string | number, reference: string): string | null {
+const FRESH_RECEIPT_MS = 10 * 60_000;
+const UNMINED_RETRY_MS = 15_000;
+
+export function useTxTime(chainId: string | number, reference: string, sentAt: string): string | null {
   const chainNum = chainIdToNumber(chainId);
+  const fresh = Date.now() - Date.parse(sentAt) < FRESH_RECEIPT_MS;
   const { data } = useQuery({
     queryKey: ['txTime', chainNum, reference],
     queryFn: () => fetchTxTime(chainNum, reference).catch(recover('bubble.txTime', null)),
-    enabled: isHash(reference),
-    staleTime: Infinity,
+    enabled: isHash(reference) && Number.isFinite(chainNum),
+    staleTime: (query) => (query.state.data ? Infinity : UNMINED_RETRY_MS),
+    refetchInterval: (query) => (!query.state.data && fresh ? UNMINED_RETRY_MS : false),
   });
   return data ?? null;
 }
