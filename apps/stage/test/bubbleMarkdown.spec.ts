@@ -1,12 +1,13 @@
 import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
 import type { MarkdownIt } from 'react-native-markdown-display';
-import { literalStars, taskLists, taskStateOf } from '../components/bubble/markdown.model';
+import { keepIndent, literalStars, taskLists, taskStateOf } from '../components/bubble/markdown.model';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 
 const createParser = createRequire(import.meta.url)('markdown-it') as (options: object) => MarkdownIt;
-const md = createParser({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists);
+const md = createParser({ typographer: false, linkify: true, breaks: true })
+  .use(literalStars).use(taskLists).use(keepIndent);
 registerDeepLinkSchemas(md.linkify);
 
 function inline(text: string): string {
@@ -84,5 +85,43 @@ describe('taskLists', () => {
       { task: 'done', text: 'Ship' },
       { task: 'todo', text: 'Nested' },
     ]);
+  });
+});
+
+describe('keepIndent', () => {
+  const pad = (n: number): string => '\u00a0'.repeat(n);
+  const render = (source: string): string => md.render(source);
+
+  test('keeps the indent of lines inside a paragraph', () => {
+    expect(render('Plan\n  step one\n    detail')).toBe(`<p>Plan<br>\n${pad(2)}step one<br>\n${pad(4)}detail</p>\n`);
+    expect(render('a  \n   b')).toBe(`<p>a<br>\n${pad(3)}b</p>\n`);
+  });
+
+  test('keeps the indent of a first line and after a blank line, with no code block', () => {
+    expect(render('  first\n\n    second')).toBe(`<p>${pad(2)}first</p>\n<p>${pad(4)}second</p>\n`);
+    expect(render('\tTabbed')).toBe(`<p>${pad(4)}Tabbed</p>\n`);
+  });
+
+  test('keeps sub-bullets typed with spaces or an ideographic space', () => {
+    expect(render('• Parent\n  ◦ Child\n    ◦ Grandchild')).toBe(`<p>• Parent<br>\n${pad(2)}◦ Child<br>\n${pad(4)}◦ Grandchild</p>\n`);
+    expect(render('• Parent\n\u3000◦ Child')).toBe('<p>• Parent<br>\n\u3000◦ Child</p>\n');
+  });
+
+  test('keeps Markdown lists, nesting and spacing between words', () => {
+    expect(render('- a\n  - b\n- c')).toBe('<ul>\n<li>a\n<ul>\n<li>b</li>\n</ul>\n</li>\n<li>c</li>\n</ul>\n');
+    expect(render('1. one\n2. two')).toBe('<ol>\n<li>one</li>\n<li>two</li>\n</ol>\n');
+    expect(render('- item\n  more')).toBe('<ul>\n<li>item<br>\nmore</li>\n</ul>\n');
+    expect(render('a    b')).toBe('<p>a    b</p>\n');
+  });
+
+  test('leaves code untouched', () => {
+    expect(render('```\n  indented()\n```')).toBe('<pre><code>  indented()\n</code></pre>\n');
+    expect(render('use `  x`')).toBe('<p>use <code>  x</code></p>\n');
+  });
+
+  test('renders the hourly summary format with its links and sub-bullets', () => {
+    const conv = 'fda13c194b1bc848b43e60805a57a10b';
+    const html = render(`Follow-up 18:15\nWaiting on you\n• https://stage.box/#/channel/${conv}\n  ◦ Install the new dev APK and test\nOther open issues: no change since 17:15`);
+    expect(html).toBe(`<p>Follow-up 18:15<br>\nWaiting on you<br>\n• <a href="https://stage.box/#/channel/${conv}">https://stage.box/#/channel/${conv}</a><br>\n${pad(2)}◦ Install the new dev APK and test<br>\nOther open issues: no change since 17:15</p>\n`);
   });
 });

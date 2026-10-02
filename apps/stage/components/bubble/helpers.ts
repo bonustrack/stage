@@ -12,11 +12,12 @@ import { formatEther } from 'viem';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
-import { literalStars, taskLists } from './markdown.model';
+import { keepIndent, literalStars, taskLists } from './markdown.model';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
-export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists);
+export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true })
+  .use(literalStars).use(taskLists).use(keepIndent);
 
 registerDeepLinkSchemas(mdParser.linkify);
 

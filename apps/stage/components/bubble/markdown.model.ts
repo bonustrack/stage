@@ -2,6 +2,8 @@ import type { MarkdownIt } from 'react-native-markdown-display';
 
 const STAR = 0x2a;
 const TASK_RE = /^\[([ xX])\][ \t]+/;
+const LINE_INDENT_RE = /^[ \t]+/gm;
+const NBSP = '\u00a0';
 
 export type TaskState = 'todo' | 'done';
 
@@ -41,6 +43,27 @@ export function taskLists(md: MarkdownIt): void {
       if (!opensListItemText(tokens, index)) return;
       const task = stripTaskMarker(token);
       if (task) tokens[index - 2]?.attrSet('task', task);
+    });
+  });
+}
+
+function shownIndent(text: string): string {
+  return text.replace(LINE_INDENT_RE, run => run.replaceAll('\t', '    ').replaceAll(' ', NBSP));
+}
+
+function trimmedLead(state: { src: string; tokens: CoreTokens }, index: number): string {
+  const open = state.tokens[index - 1];
+  const map = state.tokens[index]?.map;
+  if (open?.type !== 'paragraph_open' || open.level !== 0 || !map) return '';
+  const line = state.src.split('\n')[map[0]] ?? '';
+  return line.slice(0, line.length - line.trimStart().length);
+}
+
+export function keepIndent(md: MarkdownIt): void {
+  md.disable('code');
+  md.core.ruler.before('inline', 'keep_indent', state => {
+    state.tokens.forEach((token, index) => {
+      if (token.type === 'inline') token.content = shownIndent(trimmedLead(state, index) + token.content);
     });
   });
 }
