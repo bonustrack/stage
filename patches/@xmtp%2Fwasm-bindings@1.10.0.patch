@@ -7,7 +7,7 @@ index 859e4a4a5e831c22b41ac23abb34830fc29980db..089990ceaad5416dafe4da6ef1ba5dd3
  
      if (module_or_path === undefined) {
 -        module_or_path = new URL('bindings_wasm_bg.wasm', import.meta.url);
-+        module_or_path = '/bindings_wasm_bg.wasm';
++        module_or_path = '/wasm/1.10.0/bindings_wasm_bg.wasm';
      }
      const imports = __wbg_get_imports();
  
