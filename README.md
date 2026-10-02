@@ -119,8 +119,8 @@ rate-limit and rotate it.
 
 ## CI / quality gates
 
-CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`),
-delegating to the reusable `.github/workflows/_ci.yml` workflow. The gates, in
+CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
+The gates, in
 order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
 `1.4.0` with a frozen lockfile.
 
