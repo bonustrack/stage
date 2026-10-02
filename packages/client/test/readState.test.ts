@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
-  parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
+  parseClearState, parsePinState, parseReadState, shouldApplyReadState, syncGroupName,
   collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isSearchStateType, parseSearchState,
 } from '../src/xmtp/readState';
 
@@ -29,16 +29,6 @@ describe('sync group identity', () => {
     expect(isSyncGroupName(syncGroupName('0xabc'))).toBe(true);
     expect(isSyncGroupName('Team chat')).toBe(false);
     expect(isSyncGroupName(undefined)).toBe(false);
-  });
-
-  test('picks the oldest group, then the lowest id, so every device agrees', () => {
-    const groups = [
-      { id: 'b', createdAtNs: 20 },
-      { id: 'c', createdAtNs: 10 },
-      { id: 'a', createdAtNs: 10 },
-    ];
-    expect(pickSyncGroup(groups)?.id).toBe('a');
-    expect(pickSyncGroup([])).toBeNull();
   });
 });
 

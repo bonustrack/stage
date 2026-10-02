@@ -1,52 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import type { ArchiveNamespace, ArchiveStorage } from '../src/historyStore.ts';
 import {
   MAX_TRANSFER_DOWNLOADS, TRANSFER_TTL_MS, handleTransfer, isTransferPath, parseTransferRoute, transferObjectFetch,
   type LookupLimiter,
 } from '../src/historyTransfer.ts';
+import { memoryNamespace } from './memoryArchive.ts';
 
 const ID = 'a'.repeat(64);
 const OTHER_ID = 'b'.repeat(64);
 const BASE = 'https://proxy.stage.box/xmtp-history';
 const NOW = 5_000;
-
-type MemoryStorage = ArchiveStorage & { alarm: number | null; data: Map<string, unknown> };
-
-function memoryStorage(): MemoryStorage {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    alarm: null,
-    get: (keys) => Promise.resolve(new Map(keys.filter((key) => data.has(key)).map((key) => [key, data.get(key)]))),
-    put(entries) {
-      for (const [key, value] of Object.entries(entries)) data.set(key, value);
-      return Promise.resolve();
-    },
-    setAlarm(time) {
-      this.alarm = time;
-      return Promise.resolve();
-    },
-    deleteAll() {
-      data.clear();
-      return Promise.resolve();
-    },
-  };
-}
-
-function memoryNamespace(): ArchiveNamespace<string> & { objects: Map<string, MemoryStorage> } {
-  const objects = new Map<string, MemoryStorage>();
-  return {
-    objects,
-    idFromName: (name) => name,
-    get: (id) => ({
-      fetch: (input, init) => {
-        const storage = objects.get(id) ?? memoryStorage();
-        objects.set(id, storage);
-        return transferObjectFetch(new Request(input, init), storage, NOW);
-      },
-    }),
-  };
-}
 
 function countingLimiter(max: number): LookupLimiter & { calls: string[] } {
   const calls: string[] = [];
@@ -59,7 +21,7 @@ function countingLimiter(max: number): LookupLimiter & { calls: string[] } {
   };
 }
 
-function deps(ns = memoryNamespace(), limiter: LookupLimiter | undefined = countingLimiter(100), clientIp = '1.2.3.4') {
+function deps(ns = memoryNamespace(transferObjectFetch, NOW), limiter: LookupLimiter | undefined = countingLimiter(100), clientIp = '1.2.3.4') {
   return { ns, limiter, clientIp };
 }
 
@@ -134,7 +96,7 @@ describe('handleTransfer', () => {
 
   test('rate limits lookups per client ip', async () => {
     const limiter = countingLimiter(2);
-    const d = deps(memoryNamespace(), limiter, '9.9.9.9');
+    const d = deps(memoryNamespace(transferObjectFetch, NOW), limiter, '9.9.9.9');
     expect((await handleTransfer(get(ID), d)).status).toBe(404);
     expect((await handleTransfer(get(ID), d)).status).toBe(404);
     const blocked = await handleTransfer(get(ID), d);

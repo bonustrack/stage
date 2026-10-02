@@ -34,7 +34,3 @@ export function deriveOwner(mnemonic: string, index: number): HDAccount {
   }
   return mnemonicToAccount(phrase, { path: ownerDerivationPath(index) });
 }
-
-export function ownerAddress(mnemonic: string, index: number): string {
-  return deriveOwner(mnemonic, index).address.toLowerCase();
-}

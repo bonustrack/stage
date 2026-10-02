@@ -1,12 +1,5 @@
 import { validMemberAddresses } from './groups';
 
-export interface LabelsBlob {
-  v: 1;
-  labels: string[];
-  github?: string;
-  assigned?: string[];
-}
-
 export const MAX_LABELS = 16;
 export const MAX_LABEL_LEN = 24;
 

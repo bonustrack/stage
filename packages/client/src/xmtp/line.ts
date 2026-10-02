@@ -17,9 +17,6 @@ const LINK_PREFIX =
 const DM_PEER_RE = new RegExp(
   LINK_PREFIX + '(?:xmtp\\/)?(?:user\\/)?(0x[a-fA-F0-9]{40})(?![a-fA-F0-9])',
 );
-const CONV_ID_RE = new RegExp(
-  LINK_PREFIX + '(?:xmtp\\/|channel\\/)(?!user\\/)([^\\s/?#]+)',
-);
 
 export function stageDmPeerOf(text?: string | null): string | null {
   if (!text) return null;
@@ -29,12 +26,6 @@ export function stageDmPeerOf(text?: string | null): string | null {
 
 export function convIdOfLine(line: string): string | null {
   const m = /^(?:metro|stage):\/\/xmtp\/([^/]+)$/.exec(line);
-  return m?.[1] ?? null;
-}
-
-export function stageConvIdOf(text?: string | null): string | null {
-  if (!text) return null;
-  const m = CONV_ID_RE.exec(text);
   return m?.[1] ?? null;
 }
 

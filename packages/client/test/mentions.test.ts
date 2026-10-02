@@ -2,22 +2,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
   parseMentions,
-  formatMention,
   hasMention,
   matchMembers,
   computeMentionQuery,
-  applyMention,
   MENTION_RE,
 } from '../src/xmtp/mentions';
 
 const A = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
 const B = '0xabc0000000000000000000000000000000000def';
-
-describe('formatMention', () => {
-  test('lowercases the address and appends a trailing space', () => {
-    expect(formatMention(A.toUpperCase())).toBe(`@${A} `);
-  });
-});
 
 describe('hasMention', () => {
   test('detects a valid mention and ignores non-address @ tokens', () => {
@@ -109,19 +101,5 @@ describe('computeMentionQuery', () => {
 
   test('no range without candidates', () => {
     expect(computeMentionQuery('hi @a', 5, undefined).range).toBeNull();
-  });
-});
-
-describe('applyMention', () => {
-  test('replaces the @query range with the encoded mention and returns the caret', () => {
-    const text = 'hi @al rest';
-    const { next, cursor } = applyMention(text, { start: 3, end: 6 }, A);
-    expect(next).toBe(`hi @${A}  rest`);
-    expect(next.slice(0, cursor)).toBe(`hi @${A} `);
-  });
-
-  test('round-trips through parseMentions', () => {
-    const { next } = applyMention('@al', { start: 0, end: 3 }, A);
-    expect(parseMentions(next.trim())).toEqual([{ type: 'mention', address: A }]);
   });
 });

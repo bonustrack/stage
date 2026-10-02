@@ -1,6 +1,7 @@
 import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
+import { MENTION_RE } from './mentions';
 import {
   DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deletedByOfContent,
   deletedTextOf,
@@ -92,8 +93,6 @@ export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer
   const parts = [...changeClauses(g, nameOf), leftClause(g.leftInboxes ?? [], nameOf)].filter(Boolean);
   return parts.length ? parts.join(' • ') : 'updated the channel';
 }
-
-const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
 export function humanizeMentions(text: string): string {
   const named = withChannelLabels(text);

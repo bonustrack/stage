@@ -20,12 +20,6 @@ export function tokenStampArgs(chainId: number, token: string | null | undefined
   return { chainId, contract: token };
 }
 
-export function isUnknownToken(chainId: number, token: string | null | undefined): boolean {
-  const isNative = !token || token.toLowerCase() === NATIVE_TOKEN_SENTINEL.toLowerCase();
-  if (isNative) return false;
-  return !assetFor(chainId, token);
-}
-
 export type PriceKey =
   | { kind: 'native'; cgId: string }
   | { kind: 'erc20'; platform: string; contract: string }
