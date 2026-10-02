@@ -29,7 +29,7 @@ import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 import { useClearedChats } from '../../lib/clearedChats';
 import {
-  entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
+  entriesAfterClear, feedReachedClear, countFromOthers, reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
 import { reported } from '../../lib/errorPolicy';
@@ -192,13 +192,14 @@ export function useConversationState(convId: string | undefined, focus: string |
   );
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
+  const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
+  const fromOthers = countFromOthers(events, myUri);
   useEffect(() => {
     if (!convId) return;
     void markConvRead(convId);
-  }, [convId, events.length]);
+  }, [convId, fromOthers]);
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
-  const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
 
   const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);

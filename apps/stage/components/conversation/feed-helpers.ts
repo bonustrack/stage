@@ -160,3 +160,7 @@ export function entriesAfterClear(events: HistoryEntry[], clearedAtMs: number | 
 export function feedReachedClear(events: HistoryEntry[], clearedAtMs: number | undefined): boolean {
   return clearedAtMs !== undefined && events.some((e) => sentAtMs(e) <= clearedAtMs);
 }
+
+export function countFromOthers(events: readonly HistoryEntry[], myUri: string): number {
+  return events.reduce((n, e) => (e.from === myUri ? n : n + 1), 0);
+}
