@@ -1,6 +1,6 @@
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getCurrentPrices, getPriceChanges, type UsdQuote } from '../api/defillama';
-import { ASSETS, MULTICALL3, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { MULTICALL3, WALLET_ASSETS, WALLET_CHAIN_ID, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
 import { publicClientFor } from './client';
 
 export type TokenLogoResolver = (chainId: number, contract: string, displayPx: number) => string;
@@ -28,19 +28,12 @@ export function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions):
 }
 
 async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices: boolean): Promise<WalletPortfolio> {
-  const chainIds = [...new Set(ASSETS.map(a => a.chainId))];
-  const balancesByChain = new Map<number, bigint[]>();
-  await Promise.all(chainIds.map(async cid => {
-    const chainAssets = ASSETS.filter(a => a.chainId === cid);
-    const pub = publicClientFor(cid);
-    const calls = chainAssets.map(a => a.address === null
-      ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
-      : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
-    const results = await pub.multicall({ contracts: calls, allowFailure: false });
-    balancesByChain.set(cid, results);
-  }));
+  const calls = WALLET_ASSETS.map(a => a.address === null
+    ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
+    : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
+  const balances = await publicClientFor(WALLET_CHAIN_ID).multicall({ contracts: calls, allowFailure: false });
 
-  const ids = [...new Set([...ASSETS.map(assetPriceId).filter((id): id is string => id !== null), 'coingecko:bitcoin'])];
+  const ids = [...new Set([...WALLET_ASSETS.map(assetPriceId).filter((id): id is string => id !== null), 'coingecko:bitcoin'])];
   const emptyPrices = (): Record<string, UsdQuote> => ({});
   const emptyChanges = (): Record<string, number> => ({});
   const currentPrices = getCurrentPrices(ids);
@@ -49,20 +42,18 @@ async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, require
     getPriceChanges(ids).catch(emptyChanges),
   ]);
   return {
-    rows: ASSETS.map(a => buildAssetRow(a, balancesByChain, prices, changes, opts.tokenLogo)),
+    rows: WALLET_ASSETS.map((a, i) => buildAssetRow(a, balances[i] ?? 0n, prices, changes, opts.tokenLogo)),
     prices: { ethereum: prices['coingecko:ethereum'], bitcoin: prices['coingecko:bitcoin'] },
   };
 }
 
 function buildAssetRow(
   a: Asset,
-  balancesByChain: Map<number, bigint[]>,
+  raw: bigint,
   prices: Record<string, UsdQuote>,
   changes: Record<string, number>,
   tokenLogo: TokenLogoResolver,
 ): AssetRow {
-  const idx = ASSETS.filter(x => x.chainId === a.chainId).indexOf(a);
-  const raw = balancesByChain.get(a.chainId)?.[idx] ?? 0n;
   const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
   const priceId = assetPriceId(a);
   const price = priceId === null ? undefined : prices[priceId];

@@ -6,6 +6,7 @@ const realFetch = globalThis.fetch;
 const address = '0x0000000000000000000000000000000000000001';
 const options = { tokenLogo: () => '' };
 const priceRequests: string[] = [];
+const rpcPaths: string[] = [];
 let ethereumPrice = 4000;
 
 type BalanceFixture = 'funded' | 'zero' | 'reverted' | 'rpc-error';
@@ -22,7 +23,6 @@ function priceResponse(url: URL, pricing: PriceFixture): Response {
   return Response.json({ coins: {
     'coingecko:ethereum': quote(ethereumPrice),
     'coingecko:bitcoin': quote(80000),
-    'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': quote(1),
     'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': quote(0.99),
   } });
 }
@@ -32,6 +32,7 @@ function mockBalances(mode: BalanceFixture, pricing: PriceFixture = 'missing'): 
     const request = new Request(input, init);
     const url = new URL(request.url);
     if (url.hostname === 'coins.llama.fi') return priceResponse(url, pricing);
+    rpcPaths.push(url.pathname);
     const body = await request.json() as { id: number; params: [{ data: Hex }] };
     if (mode === 'rpc-error' && url.pathname === '/8453') {
       return Response.json({ id: body.id, jsonrpc: '2.0', error: { code: -32602, message: 'Fixture RPC unavailable' } });
@@ -49,33 +50,32 @@ function mockBalances(mode: BalanceFixture, pricing: PriceFixture = 'missing'): 
   };
 }
 
-afterEach(() => { globalThis.fetch = realFetch; priceRequests.length = 0; ethereumPrice = 4000; });
+afterEach(() => { globalThis.fetch = realFetch; priceRequests.length = 0; rpcPaths.length = 0; ethereumPrice = 4000; });
 
 describe('fetchAssetRows balance failures', () => {
   test('loads genuine balances even when price quotes are missing', async () => {
     mockBalances('funded');
     const rows = await fetchAssetRows(address, options);
-    expect(rows.filter(row => row.symbol === 'ETH').map(row => row.balance)).toEqual(['1', '1', '1']);
+    expect(rows.map(row => `${row.chainId}:${row.symbol}:${row.balance}`)).toEqual(['8453:ETH:1', '8453:USDC:1000000000000']);
+    expect(rpcPaths).toEqual(['/8453']);
     expect(rows.every(row => row.priceUsd === null)).toBe(true);
   });
 
   test('successful zero reads remain a genuine empty wallet', async () => {
     mockBalances('zero');
     const rows = await fetchAssetRows(address, options);
-    expect(rows.length).toBe(7);
+    expect(rows.length).toBe(2);
     expect(rows.every(row => row.balance === '0')).toBe(true);
   });
 
-  test('maps native ETH and each USDC contract without sending the wallet address', async () => {
+  test('maps Base ETH and Base USDC without sending the wallet address', async () => {
     mockBalances('funded', 'live');
     const rows = await fetchAssetRows(address, options);
-    expect(rows.filter(row => row.symbol === 'ETH').map(row => row.priceUsd)).toEqual([4000, 4000, 4000]);
-    expect(rows.filter(row => row.symbol === 'USDC').map(row => row.priceUsd)).toEqual([1, 1, 0.99]);
-    expect(rows.find(row => row.symbol === 'STAGE')?.priceUsd).toBeNull();
+    expect(rows.map(row => row.priceUsd)).toEqual([4000, 0.99]);
     expect(rows.find(row => row.symbol === 'ETH')?.change24h).toBe(2);
     expect(priceRequests).toHaveLength(2);
     expect(priceRequests.every(url => !url.includes(address) && !url.includes('api_key'))).toBe(true);
-    expect(priceRequests[0]).toContain('coingecko:ethereum,ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913');
+    expect(priceRequests[0]).toContain('coingecko:ethereum,base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913,coingecko:bitcoin');
   });
 
   test('price transport failures do not hide funded tokens from selection', async () => {
@@ -99,7 +99,7 @@ describe('fetchAssetRows balance failures', () => {
     const next = await fetchWalletPortfolio(address, options);
     expect(next.prices.ethereum?.usd).toBe(5000);
     expect(next.prices.bitcoin?.usd).toBe(80000);
-    expect(next.rows.filter(row => row.symbol === 'ETH').map(row => row.priceUsd)).toEqual([5000, 5000, 5000]);
+    expect(next.rows.filter(row => row.symbol === 'ETH').map(row => row.priceUsd)).toEqual([5000]);
     const requests = priceRequests.filter(url => url.includes('/prices/current/'));
     expect(requests).toHaveLength(2);
     expect(requests.every(url => url.includes('coingecko:ethereum') && url.includes('coingecko:bitcoin') && url.includes('base:'))).toBe(true);

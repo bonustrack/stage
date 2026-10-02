@@ -15,8 +15,8 @@ import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
-import { fallbackSendToken, listedSendableRows } from './TokenSelector.model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
+import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 
 export interface TokenChoice { symbol: string; chainId: number }
@@ -25,33 +25,10 @@ function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
 }
 
-function usdValue(r: AssetRow): number {
-  const bal = Number.parseFloat(r.balance);
-  if (!Number.isFinite(bal) || r.priceUsd == null) return 0;
-  return bal * r.priceUsd;
-}
-
-function byValueDesc(rows: AssetRow[]): AssetRow[] {
-  return [...rows].sort((a, b) => usdValue(b) - usdValue(a));
-}
-
-function useSelectorRows(): { rows: AssetRow[]; loading: boolean; smart: boolean } {
+function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
   const record = useActiveAccountRecord();
-  const smart = record?.type === 'smart';
-  const publicRows = useAssetRows(record?.address ?? '').data ?? null;
-  const sendable = listedSendableRows(publicRows ?? [], smart);
-  return { rows: byValueDesc(sendable), loading: record === null || publicRows === null, smart };
-}
-
-export function useTopToken(): TokenChoice | null {
-  const { rows, loading, smart } = useSelectorRows();
-  const top = rows[0];
-  if (top) return { symbol: top.symbol, chainId: top.chainId };
-  return loading ? null : fallbackSendToken(smart);
-}
-
-function rowKey(r: AssetRow): string {
-  return `${r.chainId}:${r.symbol}`;
+  const rows = useAssetRows(record?.address ?? '').data;
+  return { rows: rows ?? [], loading: record === null || rows === undefined };
 }
 
 function TokenChoiceList({ rows, onPick }: {
@@ -66,7 +43,7 @@ function TokenChoiceList({ rows, onPick }: {
         const price = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
         return (
           <ListViewItem
-            key={rowKey(r)}
+            key={tokenRowId(r)}
             align="center"
             gap={12}
             dark={dark}

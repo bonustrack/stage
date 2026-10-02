@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -18,7 +18,8 @@ import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../..
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 
 const RESOLVING_SPINNER = 24;
-import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from '../../components/wallet/TokenSelector';
+import { TokenSelector, useSelectedBalance, type TokenChoice } from '../../components/wallet/TokenSelector';
+import { sendTokenFor } from '../../components/wallet/TokenSelector.model';
 
 function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,
@@ -141,30 +142,14 @@ export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string }>();
 
-  const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
-  const initial = useMemo<TokenChoice>(() => {
-    const symbol = typeof params.symbol === 'string' && params.symbol.length > 0 ? params.symbol : 'ETH';
-    const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
-      ? Number(params.chainId) : 1;
-    return { symbol, chainId };
-  }, [params.symbol, params.chainId]);
-
-  const [token, setToken] = useState<TokenChoice>(initial);
-  const topToken = useTopToken();
-  const touched = useRef(hasParamToken);
-  useEffect(() => {
-    if (touched.current || !topToken) return;
-    touched.current = true;
-    setToken(topToken);
-  }, [topToken]);
-  const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
+  const [token, setToken] = useState<TokenChoice>(() => sendTokenFor(params.symbol, params.chainId));
   const initialTo = typeof params.to === 'string' ? params.to : '';
 
   return (
     <Col surface="surface" flex={1}>
       <WalletHeader title="Send token" />
       <SendForm key={`${token.chainId}:${token.symbol}`} token={token} initialTo={initialTo} onCancel={() => { router.back(); }}
-        selector={<TokenSelector value={token} onChange={onChange}/>} />
+        selector={<TokenSelector value={token} onChange={setToken}/>} />
     </Col>
   );
 }

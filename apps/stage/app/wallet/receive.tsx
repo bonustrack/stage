@@ -17,8 +17,7 @@ import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outli
 import { TEXT_12PX } from '../../components/smallText';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
-const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
-const SMART_ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
+const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
 
 const QR_FIXED_FOREGROUND = '#000000';
 const QR_FIXED_BACKGROUND = '#ffffff';
@@ -78,7 +77,6 @@ export default function WalletReceive(): React.ReactElement {
     queryFn: getActiveAccount,
   });
   const address = active?.address ?? '';
-  const hint = active?.type === 'smart' ? SMART_ADDRESS_HINT : ADDRESS_HINT;
 
   const onCopy = (): void => {
     if (!address) return;
@@ -93,7 +91,7 @@ export default function WalletReceive(): React.ReactElement {
         <Col width="100%">
           <Col align="center" gap={16}>
             <QrPanel address={address} border={border} />
-            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={hint} onCopy={onCopy} />
+            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={ADDRESS_HINT} onCopy={onCopy} />
           </Col>
         </Col>
       </ScreenScroll>

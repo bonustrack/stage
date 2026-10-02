@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useActiveAccountRecord } from '../../../modules/messaging';
 import { useWalletPortfolio } from './data';
 import type { BalancePrices } from './balance.model';
@@ -16,7 +16,6 @@ import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
 import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../../layout';
 import { TokensList } from './tokens';
-import { listedNativeChains } from '../TokenSelector.model';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
 
 interface WalletBalances {
@@ -48,8 +47,8 @@ export function useWalletBalances(focused: boolean): WalletBalances {
   };
 }
 
-function WalletTokens({ rows, err, nativeChainIds, c }: {
-  rows: WalletBalances['rows']; err: boolean; nativeChainIds: readonly number[];
+function WalletTokens({ rows, err, c }: {
+  rows: WalletBalances['rows']; err: boolean;
   c: { head: string; sub: string; border: string; bg: string };
 }): React.ReactElement {
   if (err && rows === null) {
@@ -66,7 +65,7 @@ function WalletTokens({ rows, err, nativeChainIds, c }: {
   }
   return (
     <Box margin={{ top: 16 }}>
-      <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg} nativeChainIds={nativeChainIds}/>
+      <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>
     </Box>
   );
 }
@@ -80,9 +79,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const currency = useBalanceCurrency();
   usePeerProfiles([address]);
   const pull = usePullToRefresh(refreshing, onRefresh, head);
-
-  const smart = useActiveAccountRecord()?.type === 'smart';
-  const nativeChainIds = useMemo(() => listedNativeChains(smart), [smart]);
 
   const totalUsd = walletTotalUsd(rows);
   const c = { head, sub, border, bg };
@@ -116,7 +112,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         border={border} onAction={onWalletAction}
       />
 
-      <WalletTokens rows={rows} err={!!err} nativeChainIds={nativeChainIds} c={c} />
+      <WalletTokens rows={rows} err={!!err} c={c} />
     </ScreenScroll>
     </Col>
   );
