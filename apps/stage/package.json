@@ -49,6 +49,7 @@
     "expo-updates": "~57.0.23",
     "expo-video": "~57.0.5",
     "firebase": "12.19.0",
+    "jsqr": "^1.4.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",

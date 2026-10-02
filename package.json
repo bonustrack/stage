@@ -25,11 +25,7 @@
     "lint:changed": "stage lint --changed",
     "madge": "stage madge",
     "knip": "stage knip",
-    "check": "bun run lint && turbo run typecheck",
-    "report:deps": "bun run madge || true; bun run knip || true",
-    "served:reset": "bash scripts/served-reset.sh",
-    "served:drift-check": "bash scripts/served-drift-check.sh",
-    "worktree:prune": "bash scripts/worktree-prune.sh"
+    "check": "bun run lint && bun run typecheck"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
@@ -57,8 +53,5 @@
     "@react-native-masked-view/masked-view@0.3.2": "patches/@react-native-masked-view%2Fmasked-view@0.3.2.patch",
     "react-native-webrtc@124.0.8": "patches/react-native-webrtc@124.0.8.patch",
     "expo-dev-launcher@57.0.20": "patches/expo-dev-launcher@57.0.20.patch"
-  },
-  "dependencies": {
-    "jsqr": "^1.4.0"
   }
 }
