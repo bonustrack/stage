@@ -29,7 +29,20 @@ function groupStories(stories: StoryEntry[], filter: string): Group[] {
   return [...groups.values()];
 }
 
-function GroupRows({ group, activeId, onSelect }: { group: Group; activeId: string | null; onSelect: (id: string) => void }): React.ReactElement {
+export function SchemeToggle({ pad }: { pad: number }): React.ReactElement {
+  const { scheme, setScheme } = useScheme();
+  const pal = useKitPalette();
+  const dark = scheme === 'dark';
+  return (
+    <Pressable onPress={() => { setScheme(dark ? 'light' : 'dark'); }} accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+      <Box padding={pad} radius="sm">
+        <Glyph icon={dark ? IconSun : IconMoon} size={20} color={pal.sub} />
+      </Box>
+    </Pressable>
+  );
+}
+
+function GroupRows({ group, activeId, onSelect, touch }: { group: Group; activeId: string | null; onSelect: (id: string) => void; touch: boolean }): React.ReactElement {
   const pal = useKitPalette();
   const open = group.stories.some((s) => s.id === activeId);
   const first = group.stories[0];
@@ -37,14 +50,14 @@ function GroupRows({ group, activeId, onSelect }: { group: Group; activeId: stri
   return (
     <Col>
       <Pressable onPress={() => { if (first) onSelect(first.id); }}>
-        <Row align="center" gap={6} padding={{ x: 12, y: 6 }} radius="sm">
+        <Row align="center" gap={6} padding={{ x: 12, y: touch ? 13 : 6 }} radius="sm">
           {foldable ? <Glyph icon={open ? IconChevronBottom : IconChevronRight} size={CHEVRON} color={pal.sub} /> : <Box width={CHEVRON} />}
           <Text size="xs" weight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
         </Row>
       </Pressable>
       {open && foldable ? group.stories.map((story) => (
         <Pressable key={story.id} onPress={() => { onSelect(story.id); }}>
-          <Row padding={{ left: 32, right: 12, y: 4 }}>
+          <Row padding={{ left: 32, right: 12, y: touch ? 13 : 4 }}>
             <Text size="2xs" color={story.id === activeId ? pal.link : pal.sub}>{story.name}</Text>
           </Row>
         </Pressable>
@@ -53,27 +66,21 @@ function GroupRows({ group, activeId, onSelect }: { group: Group; activeId: stri
   );
 }
 
-export function Sidebar({ stories, activeId, onSelect }: { stories: StoryEntry[]; activeId: string | null; onSelect: (id: string) => void }): React.ReactElement {
-  const { scheme, setScheme } = useScheme();
-  const pal = useKitPalette();
-  const dark = scheme === 'dark';
+export function Sidebar({ stories, activeId, onSelect, touch = false }: { stories: StoryEntry[]; activeId: string | null; onSelect: (id: string) => void; touch?: boolean }): React.ReactElement {
+  const dark = useScheme().scheme === 'dark';
   const [filter, setFilter] = useState('');
   const groups = useMemo(() => groupStories(stories, filter), [stories, filter]);
   return (
     <Col flex={1} gap={8}>
       <Row padding={{ x: 12, top: 12 }} align="center" gap={8}>
         <Box flex={1}>
-          <Input dark={dark} size="md" placeholder="Search components" value={filter} onChangeText={setFilter} />
+          <Input dark={dark} size={touch ? 'lg' : 'md'} placeholder="Search components" value={filter} onChangeText={setFilter} />
         </Box>
-        <Pressable onPress={() => { setScheme(dark ? 'light' : 'dark'); }} accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
-          <Box padding={8} radius="sm">
-            <Glyph icon={dark ? IconSun : IconMoon} size={20} color={pal.sub} />
-          </Box>
-        </Pressable>
+        {touch ? null : <SchemeToggle pad={8} />}
       </Row>
       <Col flex={1} style={SCROLL_Y}>
         <Col padding={{ x: 4, bottom: 12 }}>
-          {groups.map((group) => <GroupRows key={group.componentId} group={group} activeId={activeId} onSelect={onSelect} />)}
+          {groups.map((group) => <GroupRows key={group.componentId} group={group} activeId={activeId} onSelect={onSelect} touch={touch} />)}
         </Col>
       </Col>
     </Col>

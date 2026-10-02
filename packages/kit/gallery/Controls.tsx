@@ -1,6 +1,7 @@
 import { Box, Col, Row } from '../src/react-native/box';
 import { Input } from '../src/react-native/input';
 import { Select } from '../src/react-native/select';
+import type { ControlSize } from '../src/control.styles';
 import { Switch } from '../src/react-native/switch';
 import { Text } from '../src/react-native/text';
 import { Button } from '../src/react-native/button';
@@ -13,21 +14,22 @@ interface ControlProps {
   name: string;
   argType: ArgType;
   value: unknown;
+  size: ControlSize;
   onChange: (next: unknown) => void;
 }
 
-function SelectControl({ argType, value, onChange }: ControlProps): React.ReactElement {
+function SelectControl({ argType, value, size, onChange }: ControlProps): React.ReactElement {
   const dark = useDark();
   const options = (argType.options ?? []).map((o) => ({ label: String(o), value: String(o) }));
   return (
     <Select
-      dark={dark} size="md" block options={options} value={argToText(value)} placeholder="—"
+      dark={dark} size={size} block options={options} value={argToText(value)} placeholder="—"
       onChange={(next) => { onChange(next === '' ? undefined : argType.options?.find((o) => String(o) === next)); }}
     />
   );
 }
 
-function NumberControl({ argType, value, onChange }: ControlProps): React.ReactElement {
+function NumberControl({ argType, value, size, onChange }: ControlProps): React.ReactElement {
   const dark = useDark();
   const { min, max, step } = argType.control;
   const hint = min !== undefined && max !== undefined ? `${min}–${max}${step !== undefined && step !== 1 ? ` · ${step}` : ''}` : '';
@@ -35,7 +37,7 @@ function NumberControl({ argType, value, onChange }: ControlProps): React.ReactE
     <Row gap={8} align="center">
       <Box flex={1}>
         <Input
-          dark={dark} size="md" inputType="number" value={argToText(value)} placeholder={hint || 'number'}
+          dark={dark} size={size} inputType="number" value={argToText(value)} placeholder={hint || 'number'}
           onChangeText={(text) => { onChange(text === '' ? undefined : Number(text)); }}
         />
       </Box>
@@ -44,7 +46,7 @@ function NumberControl({ argType, value, onChange }: ControlProps): React.ReactE
   );
 }
 
-function ColorControl({ value, onChange }: ControlProps): React.ReactElement {
+function ColorControl({ value, size, onChange }: ControlProps): React.ReactElement {
   const dark = useDark();
   const pal = useKitPalette();
   const swatch = typeof value === 'string' && value !== '' ? value : 'transparent';
@@ -53,7 +55,7 @@ function ColorControl({ value, onChange }: ControlProps): React.ReactElement {
     <Row gap={8} align="center">
       <Box size={32} radius="sm" background={swatch} border={{ top: edge, right: edge, bottom: edge, left: edge }} />
       <Box flex={1}>
-        <Input dark={dark} size="md" value={argToText(value)} placeholder="#rrggbb" onChangeText={(text) => { onChange(text === '' ? undefined : text); }} />
+        <Input dark={dark} size={size} value={argToText(value)} placeholder="#rrggbb" onChangeText={(text) => { onChange(text === '' ? undefined : text); }} />
       </Box>
     </Row>
   );
@@ -66,26 +68,27 @@ function Control(props: ControlProps): React.ReactElement {
   if (type === 'select') return <SelectControl {...props} />;
   if (type === 'number' || type === 'range') return <NumberControl {...props} />;
   if (type === 'color') return <ColorControl {...props} />;
-  return <Input dark={dark} size="md" value={argToText(props.value)} onChangeText={(text) => { props.onChange(text); }} />;
+  return <Input dark={dark} size={props.size} value={argToText(props.value)} onChangeText={(text) => { props.onChange(text); }} />;
 }
 
-export function ControlsPanel({ argTypes, values, onChange, onReset }: {
+export function ControlsPanel({ argTypes, values, onChange, onReset, touch = false }: {
   argTypes: Record<string, ArgType>;
   values: Record<string, unknown>;
   onChange: (name: string, next: unknown) => void;
   onReset: () => void;
+  touch?: boolean;
 }): React.ReactElement {
   const dark = useDark();
   return (
     <Col gap={14} padding={16}>
       <Row align="center" justify="between">
         <Text weight="semibold" size="xl">Controls</Text>
-        <Button dark={dark} size="sm" variant="ghost" color="secondary" label="Reset" onPress={onReset} />
+        <Button dark={dark} size={touch ? 'md' : 'sm'} variant="ghost" color="secondary" label="Reset" onPress={onReset} />
       </Row>
       {Object.entries(argTypes).map(([name, argType]) => (
         <Col key={name} gap={4}>
           <Text size="3xs" role="secondary">{name}</Text>
-          <Control name={name} argType={argType} value={values[name]} onChange={(next) => { onChange(name, next); }} />
+          <Control name={name} argType={argType} value={values[name]} size={touch ? 'lg' : 'md'} onChange={(next) => { onChange(name, next); }} />
         </Col>
       ))}
     </Col>

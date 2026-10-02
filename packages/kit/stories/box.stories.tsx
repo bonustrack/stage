@@ -34,6 +34,6 @@ export const RowAndCol: Story = () => (
   <Col gap={16}>
     <Row gap={8}><Cell label="Row" /><Cell label="a" /><Cell label="b" /></Row>
     <Col gap={8} width={160}><Cell label="Col" /><Cell label="a" /><Cell label="b" /></Col>
-    <Row gap={8}>{SURFACE.map((s) => <Box key={s} surface={s} padding={12} radius="md"><Text size="2xs">{s}</Text></Box>)}</Row>
+    <Row gap={8} wrap>{SURFACE.map((s) => <Box key={s} surface={s} padding={12} radius="md"><Text size="2xs">{s}</Text></Box>)}</Row>
   </Col>
 );

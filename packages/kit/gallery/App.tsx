@@ -5,7 +5,9 @@ import { Text } from '../src/react-native/text';
 import { KitThemeProvider, type KitPalette } from '../src/react-native/theme-context';
 import { fontFamily, kitPalette } from '../src/tokens';
 import { ControlsPanel } from './Controls';
+import { useGalleryLayout } from './layout';
 import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
 import { argToText, coerceArgs, parseHash, serializeRoute, type ArgValue } from './route';
 import { SchemeContext, type Scheme } from './scheme';
 import type { ArgType, StoryEntry } from './story';
@@ -39,14 +41,16 @@ function useHashRoute(): [ReturnType<typeof parseHash>, (hash: string) => void] 
   return [route, navigate];
 }
 
-function StoryStage({ story, args }: { story: StoryEntry; args: Record<string, unknown> }): React.ReactElement {
+function StoryStage({ story, args, scroll, compact }: { story: StoryEntry; args: Record<string, unknown>; scroll: boolean; compact: boolean }): React.ReactElement {
   const Render = story.render;
   return (
-    <Col flex={1} gap={16} padding={24} style={SCROLL_Y}>
-      <Row align="baseline" gap={8}>
-        <Text weight="semibold" size="2xl">{story.component}</Text>
-        <Text size="lg" role="secondary">{story.name}</Text>
-      </Row>
+    <Col flex={scroll ? 1 : undefined} gap={16} padding={compact ? 16 : 24} style={scroll ? SCROLL_Y : undefined}>
+      {compact ? null : (
+        <Row align="baseline" gap={8}>
+          <Text weight="semibold" size="2xl">{story.component}</Text>
+          <Text size="lg" role="secondary">{story.name}</Text>
+        </Row>
+      )}
       <Box><Render {...args} /></Box>
     </Col>
   );
@@ -59,6 +63,8 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
     try { localStorage.setItem(SCHEME_KEY, next); } catch { }
   }, []);
   const [route, navigate] = useHashRoute();
+  const { menu, stacked } = useGalleryLayout();
+  const [menuOpen, setMenuOpen] = useState(false);
   const story = stories.find((s) => s.id === route.storyId) ?? stories[0] ?? null;
   const argTypes = useMemo(() => (story?.render.argTypes ?? {}) as Record<string, ArgType>, [story]);
   const defaults = useMemo(() => story?.render.args ?? {}, [story]);
@@ -75,21 +81,38 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
     navigate(serializeRoute(story.id, nextArgs));
   };
 
+  const select = (id: string): void => {
+    setMenuOpen(false);
+    navigate(serializeRoute(id, {}));
+    window.scrollTo(0, 0);
+  };
+  const activeId = story?.id ?? null;
+  const stage = story ? <StoryStage key={story.id} story={story} args={args} scroll={!stacked} compact={menu} /> : <Text size="2xs">No stories found</Text>;
+  const controls = story && Object.keys(argTypes).length > 0
+    ? <ControlsPanel argTypes={argTypes} values={args} onChange={setArg} onReset={() => { navigate(serializeRoute(story.id, {})); }} touch={menu} />
+    : null;
+  const controlsBelow = controls ? <Col surface="toolbar" border={{ top: { width: 1, color: palette.border } }}>{controls}</Col> : null;
+
   return (
     <SchemeContext.Provider value={{ scheme, setScheme }}>
       <SafeAreaProvider>
         <KitThemeProvider value={palette} scheme={scheme}>
-          <Row surface="surface" height="100vh">
-            <Col width={SIDEBAR_WIDTH} surface="toolbar" border={{ right: { width: 1, color: palette.border } }}>
-              <Sidebar stories={stories} activeId={story?.id ?? null} onSelect={(id) => { navigate(serializeRoute(id, {})); }} />
+          {menu ? (
+            <Col surface="surface" minHeight="100%">
+              <TopBar story={story} open={menuOpen} onToggle={() => { setMenuOpen(!menuOpen); window.scrollTo(0, 0); }} />
+              {menuOpen ? <Sidebar stories={stories} activeId={activeId} onSelect={select} touch /> : <>{stage}{controlsBelow}</>}
             </Col>
-            {story ? <StoryStage key={story.id} story={story} args={args} /> : <Text size="2xs">No stories found</Text>}
-            {story && Object.keys(argTypes).length > 0 ? (
-              <Col width={CONTROLS_WIDTH} surface="toolbar" border={{ left: { width: 1, color: palette.border } }} style={SCROLL_Y}>
-                <ControlsPanel argTypes={argTypes} values={args} onChange={setArg} onReset={() => { navigate(serializeRoute(story.id, {})); }} />
+          ) : (
+            <Row surface="surface" height="100vh">
+              <Col width={SIDEBAR_WIDTH} surface="toolbar" border={{ right: { width: 1, color: palette.border } }}>
+                <Sidebar stories={stories} activeId={activeId} onSelect={select} />
               </Col>
-            ) : null}
-          </Row>
+              {stacked ? <Col flex={1} style={SCROLL_Y}>{stage}{controlsBelow}</Col> : stage}
+              {!stacked && controls ? (
+                <Col width={CONTROLS_WIDTH} surface="toolbar" border={{ left: { width: 1, color: palette.border } }} style={SCROLL_Y}>{controls}</Col>
+              ) : null}
+            </Row>
+          )}
         </KitThemeProvider>
       </SafeAreaProvider>
     </SchemeContext.Provider>
