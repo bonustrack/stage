@@ -1,5 +1,5 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   getOrCreateXmtpClient, NoAccountError,
   syncPreferences, getXmtpBootstrapPhase,
@@ -208,9 +208,11 @@ function makeRefreshers(
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      const local = await perfTime('channels.listLocal', listVisibleConversations);
-      perfLog('channels.localCount', { count: local.length });
-      if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
+      if (!(Platform.OS === 'web' && hasHomeRows())) {
+        const local = await perfTime('channels.listLocal', listVisibleConversations);
+        perfLog('channels.localCount', { count: local.length });
+        if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
+      }
       await perfTime('channels.syncNetwork', syncConversationsFromNetwork);
       if (run.cancelled) return;
       const fresh = await listVisibleConversations();
