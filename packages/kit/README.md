@@ -107,6 +107,7 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 - Unknown props are dropped. An unknown node type, or a node without a required prop (`Text.value`, `Image.src`, `Select.options`, ...), shows a small "Unsupported" box. Nothing throws, and an error boundary catches render errors.
 - `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs.
 - Icons (`Icon.name`, `Button.iconStart`, `Button.iconEnd`) take ChatKit's 63 icon names, plus nine Stage names that ChatKit does not have: `arrow-up`, `chevron-down`, `chevron-up`, `copy`, `mic`, `send`, `share`, `thumbs-down` and `thumbs-up`. Any other name makes an `Icon` unsupported, and a `Button` drops it.
+- Text sizes are the kit's own, with no frame scale of their own: `size` on `Text`, `Title`, `Caption`, `Label` and `Icon` takes any `FONT_SIZE` name (`2xs` 13px to `6xl` 40px; ChatKit's names are all among them) and renders that `FONT_SIZE`, `md` (16px) when not set. `Markdown` text is `md` too. `Badge`, `Button` and the fields keep their control sizes.
 - Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
 - Actions: `Button.onClickAction`, `ListViewItem.onClickAction`, `Card` `confirm`/`cancel`, `Form.onSubmitAction` and the controls' `onChangeAction` call `onAction({ type, payload }, { label })`. The values of the fields in the same `Form` (or `Card asForm`, or the whole frame) are added to `payload` by `name` (`todo.title` nests), and a key already in the payload wins. A submit is blocked while a `required` field is empty. `handler` and `loadingBehavior` are ignored. While `onAction` runs, every button is disabled. Without `onAction`, or with `disabled`, the frame is read only.
 - `dark` picks the scheme (default: the `KitThemeProvider` scheme); a root's `theme` overrides it for its subtree.
@@ -181,7 +182,6 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 - The default `Text` size (`FONT_SIZE_DEFAULT`, used when `size` is not set) is now `md`, 16px. It was 15px. To keep 15px, pass `size="sm"`. `caption` text keeps 13px.
 - `Title` `hero` sizes moved the same way: `5xl` is 44px (was `6xl`) and `6xl` is 60px (was `7xl`). `7xl` was removed.
 - `SMALL_FONT_SIZE` moved the same way: `3xs` is 12px (was `2xs`) and `4xs` is 11px (was `3xs`). `BadgeFontToken` is now `4xs`, `3xs` or `2xs`. `Badge` sizes did not change.
-- `Frame` keeps ChatKit's own `Text` sizes (`xs` to `xl`, `md` when not set) and maps them to the new names, so a widget renders at the same size as before.
 
 #### Smaller bundles
 
@@ -194,6 +194,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 #### Visual changes
 
+- `Frame` text uses the kit sizes: a `size` is the `FONT_SIZE` of the same name, `md` (16px) when not set, on `Text`, `Title`, `Caption`, `Label` and `Icon`, and `Markdown` text is 16px. Frames had their own scales before: `Text` `md` was 15px, `Title` `md` 18px, `Caption` 13px, `Label` 15px and `Markdown` 15px. `size` also takes every other kit name, such as `2xs`.
 - `Spinner` is the Stage app spinner: a ring that fades into its tail and turns once every 0.5s. On web it spins with a CSS animation. Without `color` it takes the heading colour of the theme, black in light and white in dark (it was `#888888`).
 - `Button` `loading` shows `Spinner` instead of the platform `ActivityIndicator`.
 

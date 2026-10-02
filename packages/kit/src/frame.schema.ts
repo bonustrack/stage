@@ -2,6 +2,7 @@ import {
   action, bool, border, cardAction, color, editable, fieldName, httpsUrl, int, label, length, oneOf, options,
   padding, px, ratio, space, status, text, type Validator,
 } from './frame.values';
+import { FONT_SIZE, type FontSizeName } from './tokens';
 
 const CHATKIT_ICONS = [
   'agent', 'analytics', 'atom', 'batch', 'bolt', 'book-open', 'book-closed', 'book-clock', 'bug',
@@ -27,7 +28,7 @@ const JUSTIFY = oneOf(['start', 'center', 'end', 'between', 'around', 'evenly'])
 const DIRECTION = oneOf(['row', 'col']);
 const WEIGHT = oneOf(['normal', 'medium', 'semibold', 'bold']);
 const TEXT_ALIGN = oneOf(['start', 'center', 'end']);
-const TEXT_SIZE = oneOf(['xs', 'sm', 'md', 'lg', 'xl']);
+const FONT_SIZE_NAME = oneOf(Object.keys(FONT_SIZE) as FontSizeName[]);
 const RADIUS = oneOf(['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full', '100%', 'none']);
 const CONTROL_SIZE = oneOf(['3xs', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']);
 const CONTROL_VARIANT = oneOf(['solid', 'soft', 'outline', 'ghost']);
@@ -77,13 +78,13 @@ export const FRAME_NODE_SCHEMAS = {
   Col: { props: BOX, children: 'nodes' },
   Form: { props: { ...BOX, direction: DIRECTION, onSubmitAction: action }, children: 'nodes' },
   Text: {
-    props: { ...TEXT_BASE, size: TEXT_SIZE, italic: bool, lineThrough: bool, width: length, editable },
+    props: { ...TEXT_BASE, size: FONT_SIZE_NAME, italic: bool, lineThrough: bool, width: length, editable },
     required: ['value'],
   },
-  Title: { props: { ...TEXT_BASE, size: oneOf(['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']) }, required: ['value'] },
-  Caption: { props: { ...TEXT_BASE, size: oneOf(['sm', 'md', 'lg']) }, required: ['value'] },
+  Title: { props: { ...TEXT_BASE, size: FONT_SIZE_NAME }, required: ['value'] },
+  Caption: { props: { ...TEXT_BASE, size: FONT_SIZE_NAME }, required: ['value'] },
   Label: {
-    props: { value: label, fieldName, size: TEXT_SIZE, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
+    props: { value: label, fieldName, size: FONT_SIZE_NAME, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
     required: ['value'],
   },
   Markdown: { props: { value: text }, required: ['value'] },
@@ -94,7 +95,7 @@ export const FRAME_NODE_SCHEMAS = {
     },
     required: ['label'],
   },
-  Icon: { props: { name: ICON, color, size: oneOf(['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']) }, required: ['name'] },
+  Icon: { props: { name: ICON, color, size: FONT_SIZE_NAME }, required: ['name'] },
   Image: {
     props: {
       ...BLOCK, src: httpsUrl, alt: label, fit: oneOf(['cover', 'contain', 'fill', 'scale-down', 'none']),

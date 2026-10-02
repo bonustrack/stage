@@ -3,7 +3,7 @@ import {
   FRAME_ICONS, FRAME_LIMITS, frameFillPadding, frameFlex, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
   type FrameNode,
 } from '../src/frame';
-import { kitPalette } from '../src/tokens';
+import { FONT_SIZE, kitPalette } from '../src/tokens';
 
 function root(widget: unknown): FrameNode {
   const parsed = parseFrame(widget);
@@ -116,6 +116,19 @@ describe('parseFrame: text and content nodes', () => {
     expect(only({ type: 'Caption', value: 'c', size: 'sm' }).props).toEqual({ value: 'c', size: 'sm' });
     expect(only({ type: 'Label', value: 'Name', fieldName: 'name' }).props).toEqual({ value: 'Name', fieldName: 'name' });
     expect(only({ type: 'Markdown', value: '**b**' }).props).toEqual({ value: '**b**' });
+  });
+
+  test('text and icon sizes are Kit FONT_SIZE names, ChatKit names included', () => {
+    const chatkit: Record<string, string[]> = {
+      Text: ['xs', 'sm', 'md', 'lg', 'xl'], Title: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'],
+      Caption: ['sm', 'md', 'lg'], Label: ['xs', 'sm', 'md', 'lg', 'xl'], Icon: ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'],
+    };
+    for (const [type, names] of Object.entries(chatkit)) {
+      const base = type === 'Icon' ? { name: 'sparkle' } : { value: 'a' };
+      for (const size of names) expect(Object.keys(FONT_SIZE)).toContain(size);
+      for (const size of Object.keys(FONT_SIZE)) expect(only({ type, ...base, size }).props).toEqual({ ...base, size });
+      expect(only({ type, ...base, size: '7xl' }).props).toEqual(base);
+    }
   });
 
   test('a required prop missing makes the node unsupported', () => {
