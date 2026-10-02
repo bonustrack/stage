@@ -6,6 +6,7 @@ import { shortAddress } from '../../modules/messaging';
 import { fmtSigValue } from './helpers';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette } from '../../lib/theme';
+import { timeAgo } from '../../lib/format';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
@@ -134,7 +135,7 @@ export function ReceiptBox({ dark, title, children }: {
     <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconCheckmark1} size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
-        <Text weight="semibold" size="2xs" color={dark ? '#ffffff' : '#000000'}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
           {title}
         </Text>
       </Row>
@@ -143,14 +144,16 @@ export function ReceiptBox({ dark, title, children }: {
   );
 }
 
-export function SigReferenceCard({ ref, dark }: {
-  ref: SignatureReferenceContent; dark: boolean;
+export function SigReferenceCard({ ref, ts, dark }: {
+  ref: SignatureReferenceContent; ts: string; dark: boolean;
 }): React.ReactElement {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
   return (
     <ReceiptBox dark={dark} title="Signed ✓">
-      {ref.signer ? <Text size="4xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
-      <Text size="4xs" role="secondary">{short(ref.signature)}</Text>
+      <Text size="sm" role="secondary">
+        {timeAgo(ts, Date.now())}{ref.signer ? ` · by ${shortAddress(ref.signer)}` : ''}
+      </Text>
+      <Text size="sm" role="secondary">{short(ref.signature)}</Text>
     </ReceiptBox>
   );
 }

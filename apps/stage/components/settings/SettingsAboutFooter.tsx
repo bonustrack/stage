@@ -9,7 +9,7 @@ import { GithubLogo } from '../bubble/linkCards';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { usePalette } from '../../lib/theme';
-import { timeAgo } from '../../lib/buildInfo.model';
+import { timeAgo } from '../../lib/format';
 import { capabilities } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';

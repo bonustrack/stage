@@ -9,6 +9,7 @@ import { shortAddress } from '../../modules/messaging';
 import { ethFromWeiHex } from './helpers';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { usePalette, withAlpha } from '../../lib/theme';
+import { timeAgo } from '../../lib/format';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
@@ -250,17 +251,18 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
     </Box>
   );
 }
-export function TxReceiptCard({ receipt, dark }: {
-  receipt: TransactionReferenceContent; dark: boolean;
+export function TxReceiptCard({ receipt, ts, dark }: {
+  receipt: TransactionReferenceContent; ts: string; dark: boolean;
 }): React.ReactElement {
   const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
-      <Pressable {...bubbleLinkProps(url, openInBubbleLink)}>
-        <Text size="4xs" color={pal.link}>
+      <Text size="sm" role="secondary">
+        {timeAgo(ts, Date.now())} ·{' '}
+        <Text size="sm" color={pal.link} {...bubbleLinkProps(url, openInBubbleLink)} suppressHighlighting>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
-      </Pressable>
+      </Text>
     </ReceiptBox>
   );
 }
