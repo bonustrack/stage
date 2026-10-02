@@ -222,7 +222,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}
-        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels}/><ChannelCategory convId={convId}/></>}
+        footer={<><ChannelAssignees convId={convId}/><ChannelCategory convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
       />
