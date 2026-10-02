@@ -70,7 +70,7 @@ describe('applyInbound', () => {
 });
 
 describe('applyGroupMeta', () => {
-  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'] };
+  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null };
   const rows: Row[] = [
     { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
     { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
@@ -84,6 +84,7 @@ describe('applyGroupMeta', () => {
     ['title', { title: 'Renamed' }],
     ['avatarUri', { avatarUri: 'https://x/y.png' }],
     ['avatarAddress', { avatarAddress: null }],
+    ['category', { category: 'Work' }],
   ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
     const out = applyGroupMeta(rows, 'a', { ...meta, ...change });
     expect(out?.[0]).toEqual({ ...rows[0], convId: 'a', ...change });
@@ -96,6 +97,11 @@ describe('applyGroupMeta', () => {
 
   test('returns null when nothing changed', () => {
     expect(applyGroupMeta(rows, 'a', { ...meta, labels: ['Todo'] })).toBeNull();
+  });
+
+  test('reads a cached row without a category as no category', () => {
+    const old: Row = { convId: 'a', unreadCount: 0, lastReadNs: 0, title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'] };
+    expect(applyGroupMeta([old], 'a', meta)).toBeNull();
   });
 
   test('treats a label reorder as a change', () => {

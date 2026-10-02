@@ -4,7 +4,7 @@ import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
 import { sdk } from '../../lib/xmtp.sdk';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
-import { groupLabelsOf } from '@stage-labs/client/xmtp/labels';
+import { groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import { isControlBody } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -39,6 +39,7 @@ export interface ConversationView {
   markedUnread: boolean;
   selfInboxId: string;
   labels: string[];
+  category: string | null;
 }
 
 function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
@@ -94,19 +95,19 @@ function previewOfMessage(
 interface GroupRowData {
   memberAddresses: string[];
   groupMeta: { name: string; imageUrl: string };
-  labels: Awaited<ReturnType<typeof groupLabelsOf>>;
+  tags: GroupTags;
 }
 
 async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
   if (peerAddress) {
-    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, labels: [] };
+    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: { labels: [], category: null } };
   }
-  const [memberAddresses, groupMeta, labels] = await Promise.all([
+  const [memberAddresses, groupMeta, tags] = await Promise.all([
     groupMemberEthAddresses(conv),
     sdk.groupInfo(conv),
-    groupLabelsOf(conv),
+    groupTagsOf(conv),
   ]);
-  return { memberAddresses, groupMeta, labels };
+  return { memberAddresses, groupMeta, tags };
 }
 
 function rowAvatar(
@@ -124,7 +125,7 @@ function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRo
     memberCount: data.memberAddresses.length,
     fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
   });
-  return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), labels: data.labels };
+  return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), ...data.tags };
 }
 
 export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
@@ -156,7 +157,7 @@ export async function summarizeConversation(
   const last = pickLastMessage(msgs, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
-  const { title, groupName, avatarUri, avatarAddress, labels } = rowMetaOf(
+  const { title, groupName, avatarUri, avatarAddress, labels, category } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
   );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
@@ -184,5 +185,6 @@ export async function summarizeConversation(
     selfInboxId,
     markedUnread,
     labels,
+    category,
   };
 }

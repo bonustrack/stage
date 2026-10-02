@@ -20,9 +20,10 @@ export function uniqueKeys(list: readonly string[]): string[] {
   return uniqueBy(list, keyOf);
 }
 
-export function toggleKey(list: readonly string[], value: string): string[] {
+export function toggleKey(list: readonly string[], value: string, single = false): string[] {
   const key = keyOf(value);
-  return includesKey(list, value) ? list.filter((item) => keyOf(item) !== key) : [...list, value];
+  if (includesKey(list, value)) return list.filter((item) => keyOf(item) !== key);
+  return single ? [value] : [...list, value];
 }
 
 function missingFrom(list: readonly string[], other: readonly string[]): string[] {
@@ -48,6 +49,10 @@ export function matchesQuery(query: string, ...texts: string[]): boolean {
 
 export function selectedFirst(list: readonly string[], selected: readonly string[]): string[] {
   return uniqueKeys([...list.filter((item) => includesKey(selected, item)), ...list]);
+}
+
+export function pickerWidth(anchored: boolean, anchor: PickerAnchor | null): number | undefined {
+  return anchored && anchor !== null ? anchor.width : undefined;
 }
 
 export function pickerAnchorOf(rect: Rect | undefined, viewportWidth: number, gutter: number): PickerAnchor | null {

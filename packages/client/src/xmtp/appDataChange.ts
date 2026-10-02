@@ -1,4 +1,4 @@
-import { assignedAddresses, parseObject, stringList } from './labels';
+import { assignedAddresses, categoryOf, parseObject, stringList } from './labels';
 import { mentionToken } from './mentions';
 
 function stringOf(value: unknown): string {
@@ -17,6 +17,12 @@ function labelClauses(before: string[], after: string[]): string[] {
     added.length ? `added label${added.length === 1 ? '' : 's'} ${quotedList(added)}` : '',
     removed.length ? `removed label${removed.length === 1 ? '' : 's'} ${quotedList(removed)}` : '',
   ].filter(Boolean);
+}
+
+function categoryClause(before: string | null, after: string | null): string {
+  if (after === null) return before === null ? '' : `removed category "${before}"`;
+  if (before === after) return '';
+  return before === null ? `set category "${after}"` : `changed category to "${after}"`;
 }
 
 function githubClause(before: string, after: string): string {
@@ -47,6 +53,7 @@ export function describeAppDataChange(oldValue: string | undefined, newValue: st
   const after = parseObject(newValue);
   const clauses = [
     ...labelClauses(stringList(before?.labels), stringList(after?.labels)),
+    categoryClause(categoryOf(before?.category), categoryOf(after?.category)),
     githubClause(stringOf(before?.github), stringOf(after?.github)),
     ...assigneeClauses(before, after),
   ].filter(Boolean);

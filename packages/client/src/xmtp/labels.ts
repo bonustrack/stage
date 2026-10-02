@@ -4,8 +4,8 @@ export const MAX_LABELS = 16;
 export const MAX_LABEL_LEN = 24;
 
 export class LabelPermissionError extends Error {
-  constructor() {
-    super("You don't have permission to edit labels in this channel.");
+  constructor(what = 'labels') {
+    super(`You don't have permission to edit ${what} in this channel.`);
     this.name = 'LabelPermissionError';
   }
 }
@@ -75,14 +75,22 @@ function readLabels(blob: Record<string, unknown>): string[] {
   return out;
 }
 
-export async function groupLabelsOf(conv: unknown, sync = false): Promise<string[]> {
+export function categoryOf(value: unknown): string | null {
+  return typeof value === 'string' ? cleanLabel(value) || null : null;
+}
+
+export interface GroupTags { labels: string[]; category: string | null }
+
+const NO_TAGS: GroupTags = { labels: [], category: null };
+
+export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
   const group = asGroup(conv);
-  if (!group) return [];
+  if (!group) return NO_TAGS;
   try {
-    if (sync) await group.sync?.();
-    return readLabels(parseBlob(await readAppData(group)));
+    const blob = parseBlob(await readAppData(group));
+    return { labels: readLabels(blob), category: categoryOf(blob.category) };
   } catch {
-    return [];
+    return NO_TAGS;
   }
 }
 
@@ -148,20 +156,30 @@ async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) =>
   }
 }
 
+async function writeTags(group: Group, what: string, patch: (blob: Record<string, unknown>) => Record<string, unknown>): Promise<void> {
+  try {
+    await writeBlob(group, (existing) => Promise.resolve(patch(existing)));
+  } catch (e) {
+    if (isLabelPermissionDenied(e)) throw new LabelPermissionError(what);
+    throw e;
+  }
+}
+
 export async function writeLabels(
   group: Group,
   fn: (labels: string[]) => string[],
 ): Promise<string[]> {
   let next: string[] = [];
-  try {
-    await writeBlob(group, (existing) => {
-      next = readLabels({ labels: fn(readLabels(existing)) });
-      return Promise.resolve({ labels: next });
-    });
-  } catch (e) {
-    if (isLabelPermissionDenied(e)) throw new LabelPermissionError();
-    throw e;
-  }
+  await writeTags(group, 'labels', (existing) => {
+    next = readLabels({ labels: fn(readLabels(existing)) });
+    return { labels: next };
+  });
+  return next;
+}
+
+export async function writeCategory(group: Group, category: string | null): Promise<string | null> {
+  const next = categoryOf(category);
+  await writeTags(group, 'the category', () => ({ category: next ?? undefined }));
   return next;
 }
 

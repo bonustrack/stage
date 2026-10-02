@@ -14,7 +14,7 @@ import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole, type M
 import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberListSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
-import { ChannelLabels, useLiveChannelLabels } from './channel.labels';
+import { ChannelCategory, ChannelLabels, useLiveChannelLabels } from './channel.labels';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -222,7 +222,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
       <ChannelMembersList
         members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
         selfAddress={selfAddress} removing={g.removing} dark={dark}
-        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
+        footer={<><ChannelAssignees convId={convId}/><ChannelLabels convId={convId} labels={labels}/><ChannelCategory convId={convId}/></>}
         onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { void g.removeMember(item); }}
       />

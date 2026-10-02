@@ -14,7 +14,7 @@ import { useHover } from '../hover';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
 import {
-  hasListEdits, listEdits, pickerAnchorOf, toggleKey, type ListEdits, type PickerAnchor,
+  hasListEdits, listEdits, pickerAnchorOf, pickerWidth, toggleKey, type ListEdits, type PickerAnchor,
 } from './SidebarSection.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
@@ -127,8 +127,8 @@ export function PickerRow({ selected, disabled = false, label, onPress, children
   );
 }
 
-export function SidebarSection({ title, icon, count, editLabel, canEdit, current, onCommit, renderPicker, children }: {
-  title: string; icon: CentralIcon; count?: number; editLabel: string; canEdit: boolean; current: string[];
+export function SidebarSection({ title, icon, count, editLabel, canEdit, current, single, onCommit, renderPicker, children }: {
+  title: string; icon: CentralIcon; count?: number; editLabel: string; canEdit: boolean; current: string[]; single?: boolean;
   onCommit: (edits: ListEdits) => void; renderPicker: (draft: SectionDraft) => ReactNode; children?: ReactNode;
 }): React.ReactElement {
   const viewport = useWindowDimensions();
@@ -145,12 +145,16 @@ export function SidebarSection({ title, icon, count, editLabel, canEdit, current
     setDraft([...current]);
     setOpen(true);
   };
-  const close = (): void => {
+  const finish = (next: string[]): void => {
     setOpen(false);
-    const edits = listEdits(opened, draft);
+    const edits = listEdits(opened, next);
     if (hasListEdits(edits)) setTimeout(() => { onCommit(edits); }, 0);
   };
-  const toggle = (key: string): void => { setDraft(list => toggleKey(list, key)); };
+  const close = (): void => { finish(draft); };
+  const toggle = (key: string): void => {
+    if (single === true) finish(toggleKey(draft, key, true));
+    else setDraft(list => toggleKey(list, key));
+  };
   const penShown = open || hovered || focused || isCoarsePointer();
   return (
     <Box onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
@@ -159,7 +163,7 @@ export function SidebarSection({ title, icon, count, editLabel, canEdit, current
       {children}
       {open ? (
         <AnchoredMenu visible onClose={close} anchor={anchor?.point ?? null}>
-          <Col width={anchored && anchor !== null ? anchor.width : undefined}>{renderPicker({ draft, toggle })}</Col>
+          <Col width={pickerWidth(anchored, anchor)}>{renderPicker({ draft, toggle })}</Col>
         </AnchoredMenu>
       ) : null}
     </Box>

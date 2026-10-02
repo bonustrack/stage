@@ -10,7 +10,7 @@ import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
 import { assignedEntries, memberChanges, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
 import { confirmMemberRemoval, useChannelRoles, useChannelEditRights, useConvMetaPatch } from '../channel/channel.detail';
-import { ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
+import { ChannelCategory, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
@@ -160,6 +160,7 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
       ListFooterComponent={<>
         <AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>
         <ChannelLabels convId={convId} labels={labels}/>
+        <ChannelCategory convId={convId}/>
       </>}
       renderItem={({ item }) => (
         <MemberListRow entry={item} onPress={() => { router.push(profileLinkOf(item.address)); }}/>

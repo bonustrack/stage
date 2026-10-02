@@ -27,7 +27,7 @@ export {
 export { createGroup, leaveGroupConv, groupEditRights } from '../../lib/xmtp.groups';
 export {
   addGroupMembers, removeGroupMembers, updateGroupMeta, addGroupLabel, removeGroupLabel, moveGroupLabel,
-  renameGroupLabel, updateGroupAssigned, suggestLabels,
+  renameGroupLabel, updateGroupAssigned, suggestLabels, setGroupCategory, knownCategories,
 } from './groupRow';
 
 export {
@@ -43,7 +43,7 @@ export {
 export { subscribeAllMessages } from '../../lib/xmtp.stream';
 export { useXmtpFeed } from '../../lib/xmtp.feed';
 
-export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, cleanLabel } from '@stage-labs/client/xmtp/labels';
+export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, categoryOf, cleanLabel } from '@stage-labs/client/xmtp/labels';
 
 export { AccountManager, useActiveAccount, useActiveAccountRecord } from './account';
 export {

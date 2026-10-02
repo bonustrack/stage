@@ -1,8 +1,9 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  addLabel, asGroup, moveLabel, removeLabel, renameLabels, stringList, writeLabels,
+  addLabel, asGroup, categoryOf, moveLabel, removeLabel, renameLabels, stringList, writeCategory, writeLabels,
+  type Group,
 } from '@stage-labs/client/xmtp/labels';
-import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
+import { getCachedRows, setCachedRows, type CachedRow } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
 import {
   addGroupMembers as addMembers, removeGroupMembers as removeMembers, updateGroupMeta as updateMeta,
@@ -35,11 +36,15 @@ export function refreshGroupRow(convId: string | null): void {
   void loadGroupRow(convId, refreshSeq).catch(reported('messaging.refreshGroupRow'));
 }
 
-function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
+function patchRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
   const rows = getCachedRows();
   const cur = rows?.find(r => r.convId === convId);
   if (!rows || !cur) return;
-  setCachedRows(rows.map(r => (r === cur ? { ...r, labels: next(stringList(r.labels)) } : r)));
+  setCachedRows(rows.map(r => (r === cur ? { ...r, ...patch(r) } : r)));
+}
+
+function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
+  patchRow(convId, r => ({ labels: next(stringList(r.labels)) }));
 }
 
 interface LabelWrites { base: string[]; pending: number; failed: boolean }
@@ -66,11 +71,14 @@ function settleLabelWrite(convId: string | null, writes: LabelWrites | null): vo
   if (writes.failed) patchRowLabels(convId, () => writes.base);
 }
 
-async function writeGroupLabels(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
-  const conv = await convOfLine(line);
-  const group = asGroup(conv);
+async function groupOfLine(line: string): Promise<Group> {
+  const group = asGroup(await convOfLine(line));
   if (!group) throw new Error('Not a channel');
-  return writeLabels(group, fn);
+  return group;
+}
+
+async function writeGroupLabels(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
+  return writeLabels(await groupOfLine(line), fn);
 }
 
 async function writeRowLabels(line: string, next: (labels: string[]) => string[]): Promise<string[]> {
@@ -106,26 +114,39 @@ export async function renameGroupLabel(line: string, from: string, to: string): 
   return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
 }
 
-function getAllKnownLabels(): string[] {
+export async function setGroupCategory(line: string, category: string | null): Promise<string | null> {
+  const convId = convIdOfLine(line);
+  patchRow(convId, () => ({ category: categoryOf(category) }));
+  try { return await writeCategory(await groupOfLine(line), category); } finally { refreshGroupRow(convId); }
+}
+
+function knownTags(tagsOf: (row: CachedRow) => string[]): string[] {
   const rows = getCachedRows();
   if (!rows) return [];
   const seen = new Set<string>();
   const out: string[] = [];
   for (const row of rows) {
-    for (const label of stringList(row.labels)) {
-      const key = label.toLowerCase();
+    for (const tag of tagsOf(row)) {
+      const key = tag.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push(label);
+      out.push(tag);
     }
   }
   return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
+export function knownCategories(): string[] {
+  return knownTags(row => {
+    const category = categoryOf(row.category);
+    return category === null ? [] : [category];
+  });
+}
+
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();
-  return getAllKnownLabels().filter((label) => {
+  return knownTags(row => stringList(row.labels)).filter((label) => {
     const key = label.toLowerCase();
     if (appliedKeys.has(key)) return false;
     if (!q) return true;

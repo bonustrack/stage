@@ -12,21 +12,22 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, cleanLabel, getCachedRows, LabelPermissionError, lineOfConv, MAX_LABEL_LEN, MAX_LABELS, removeGroupLabel,
-  subscribeCachedRows,
+  addGroupLabel, categoryOf, cleanLabel, getCachedRows, knownCategories, LabelPermissionError, lineOfConv, MAX_LABEL_LEN,
+  MAX_LABELS, removeGroupLabel, setGroupCategory, subscribeCachedRows,
 } from '../../modules/messaging';
 import { useStoreValue } from '../../lib/storeCore';
 import { suggestLabels } from '../../modules/messaging';
 import { useChannelEditRights } from './channel.detail';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 
 const MAX_SUGGESTIONS = 8;
 
-export function toastLabelError(e: unknown): void {
+export function toastLabelError(e: unknown, what = 'labels'): void {
   if (e instanceof LabelPermissionError) capabilities.toast(e.message);
-  else capabilities.toast('Could not update labels. Try again.');
+  else capabilities.toast(`Could not update ${what}. Try again.`);
 }
 
 const NO_LABELS: string[] = [];
@@ -42,6 +43,14 @@ export function useLiveChannelLabels(convId: string | undefined): string[] {
   }, [convId]);
   const key = useStoreValue(subscribeCachedRows, read);
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
+}
+
+export function useLiveChannelCategory(convId: string | undefined): string | null {
+  const read = useCallback(
+    (): string | null => categoryOf(getCachedRows()?.find((row) => row.convId === convId)?.category),
+    [convId],
+  );
+  return useStoreValue(subscribeCachedRows, read);
 }
 
 export async function writeLabels(line: string, edits: ListEdits): Promise<string[] | null> {
@@ -134,18 +143,15 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
   );
 }
 
-function LabelPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
+function TagPicker({ draft, options, noun, pick }: {
+  draft: string[]; options: string[]; noun: string; pick: (tag: string) => void;
+}): React.ReactElement {
   const { text: fg, bg } = usePalette();
   const [query, setQuery] = useState('');
-  const [base] = useState(() => selectedFirst(uniqueKeys([...current, ...suggestLabels('', current)]), current));
-  const all = uniqueKeys([...base, ...draft]);
+  const all = uniqueKeys([...options, ...draft]);
   const shown = all.filter(label => matchesQuery(query, label));
   const typed = cleanLabel(query);
   const creatable = typed !== '' && !includesKey(all, typed);
-  const pick = (label: string): void => {
-    if (!includesKey(draft, label) && draft.length >= MAX_LABELS) { capabilities.toast(`A channel can have up to ${MAX_LABELS} labels.`); return; }
-    toggle(label);
-  };
   const create = (): void => {
     if (!creatable) return;
     pick(typed);
@@ -161,15 +167,29 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
           </PickerRow>
         ))}
         {creatable ? (
-          <PickerRow selected={false} label={`Create label ${typed}`} onPress={create}>
+          <PickerRow selected={false} label={`Create ${noun} ${typed}`} onPress={create}>
             <Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>
             <Text size="2xs" numberOfLines={1} style={{ flexShrink: 1 }}>{`Create "${typed}"`}</Text>
           </PickerRow>
         ) : null}
-        {shown.length === 0 && !creatable ? <PickerNote text="Type to create a label."/> : null}
+        {shown.length === 0 && !creatable ? <PickerNote text={`Type to create a ${noun}.`}/> : null}
       </PickerList>
     </>
   );
+}
+
+function LabelPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
+  const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...suggestLabels('', current)]), current));
+  const pick = (label: string): void => {
+    if (!includesKey(draft, label) && draft.length >= MAX_LABELS) { capabilities.toast(`A channel can have up to ${MAX_LABELS} labels.`); return; }
+    toggle(label);
+  };
+  return <TagPicker draft={draft} options={options} noun="label" pick={pick}/>;
+}
+
+function CategoryPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
+  const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...knownCategories()]), current));
+  return <TagPicker draft={draft} options={options} noun="category" pick={toggle}/>;
 }
 
 export function ChannelLabels({ convId, labels }: {
@@ -187,6 +207,24 @@ export function ChannelLabels({ convId, labels }: {
         <Row gap={8} wrap align="center" padding={{ x: PAGE_GUTTER, bottom: 8 }}>
           {labels.map((label) => <LabelChip key={label} label={label}/>)}
         </Row>
+      )}
+    </SidebarSection>
+  );
+}
+
+export function ChannelCategory({ convId }: { convId: string }): React.ReactElement | null {
+  const rights = useChannelEditRights(convId);
+  const category = useLiveChannelCategory(convId);
+  if (category === null && !rights.appData) return null;
+  const current = category === null ? [] : [category];
+  const commit = (edits: ListEdits): void => {
+    void setGroupCategory(lineOfConv(convId), edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, 'the category'); });
+  };
+  return (
+    <SidebarSection title="Category" icon={IconFolder1} editLabel="Edit category" canEdit={rights.appData} current={current} single
+      onCommit={commit} renderPicker={(draft) => <CategoryPicker {...draft} current={current}/>}>
+      {category === null ? <SectionNote text="No category yet"/> : (
+        <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><LabelChip label={category}/></Row>
       )}
     </SidebarSection>
   );
