@@ -360,6 +360,7 @@ exports[`resolveColors full matrix snapshot (color x variant x dark) 1`] = `
 exports[`SIZES snapshot 1`] = `
 {
   "lg": {
+    "fontFamily": "Calibre-Semibold",
     "fontSize": 17,
     "gap": 8,
     "height": 48,
@@ -367,6 +368,7 @@ exports[`SIZES snapshot 1`] = `
     "spinner": "small",
   },
   "md": {
+    "fontFamily": "Calibre-Semibold",
     "fontSize": 15,
     "gap": 8,
     "height": 40,
@@ -374,6 +376,7 @@ exports[`SIZES snapshot 1`] = `
     "spinner": "small",
   },
   "sm": {
+    "fontFamily": "Calibre-Semibold",
     "fontSize": 14,
     "gap": 6,
     "height": 32,
@@ -381,13 +384,16 @@ exports[`SIZES snapshot 1`] = `
     "spinner": "small",
   },
   "xl": {
-    "fontSize": 18,
+    "fontFamily": "Calibre-Medium",
+    "fontSize": 19,
     "gap": 8,
-    "height": 56,
+    "height": 53,
+    "lineHeight": 29,
     "paddingHorizontal": 24,
     "spinner": "small",
   },
   "xs": {
+    "fontFamily": "Calibre-Semibold",
     "fontSize": 13,
     "gap": 6,
     "height": 30,

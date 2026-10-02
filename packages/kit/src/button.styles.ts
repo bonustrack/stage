@@ -20,16 +20,18 @@ export interface SizeSpec {
   height: number;
   paddingHorizontal: number;
   fontSize: number;
+  lineHeight?: number;
+  fontFamily: string;
   gap: number;
   spinner: 'small' | 'large';
 }
 
 export const SIZES: Record<ButtonSize, SizeSpec> = {
-  xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE['4xs'], gap: 6, spinner: 'small' },
-  sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE['3xs'], gap: 6, spinner: 'small' },
-  md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE['2xs'], gap: 8, spinner: 'small' },
-  lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.sm, gap: 8, spinner: 'small' },
-  xl: { height: 56, paddingHorizontal: 24, fontSize: FONT_SIZE.md, gap: 8, spinner: 'small' },
+  xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE['4xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
+  sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
+  md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.head, gap: 8, spinner: 'small' },
+  lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.sm, fontFamily: fontName.head, gap: 8, spinner: 'small' },
+  xl: { height: 53, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, lineHeight: 29, fontFamily: fontName.sans, gap: 8, spinner: 'small' },
 };
 
 export interface VariantColors {
@@ -136,7 +138,8 @@ export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
   return {
     color,
     fontSize: spec.fontSize,
-    fontFamily: fontName.head,
+    lineHeight: spec.lineHeight,
+    fontFamily: spec.fontFamily,
     textAlign: 'center',
   };
 }

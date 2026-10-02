@@ -38,8 +38,6 @@ export const HERO_LAYOUT = {
   logoPadX: 32,
   logoPadY: 14,
   boxFrameHeight: 600,
-  ctaPadX: 24,
-  ctaPadY: 12,
 } as const;
 
 export const HERO_LOGO_SIZE = HERO_LAYOUT.logoHeight - 2 * HERO_LAYOUT.logoPadY;
@@ -48,7 +46,6 @@ export const HERO_TYPE = {
   eyebrow: { size: 17, letterSpacing: 1.7 },
   title: { size: 76, lineHeight: 83.6 },
   paragraph: { size: 26, lineHeight: 31.2 },
-  cta: { size: 19, lineHeight: 29 },
 } as const;
 
 export interface HeroBox {

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Platform, useWindowDimensions } from 'react-native';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row, ScreenScroll } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -59,17 +59,10 @@ function HeroAction(): React.ReactElement {
             {HERO_COPY.paragraph}
           </Text>
         </Box>
-        <Pressable
-          onPress={() => { router.navigate(SIGNUP_ROUTE); }}
-          accessibilityRole="button" accessibilityLabel="Get started"
-          style={{ alignSelf: 'flex-start' }}
-        >
-          <Box background={HERO_BLACK} radius="full" padding={{ x: HERO_LAYOUT.ctaPadX, y: HERO_LAYOUT.ctaPadY }}>
-            <Text color={HERO_WHITE} style={{ fontSize: HERO_TYPE.cta.size, lineHeight: HERO_TYPE.cta.lineHeight }}>
-              {HERO_COPY.cta}
-            </Text>
-          </Box>
-        </Pressable>
+        <Button
+          size="xl" label={HERO_COPY.cta} tintBg={HERO_BLACK} tintFg={HERO_WHITE}
+          accessibilityLabel="Get started" onPress={() => { router.navigate(SIGNUP_ROUTE); }}
+        />
       </Col>
     </Row>
   );
