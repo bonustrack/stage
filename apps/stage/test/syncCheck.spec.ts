@@ -56,6 +56,10 @@ describe('syncCheckResult', () => {
     expect(result).toEqual({ ok: false, title: 'Not on this device', message: 'This device has no copy of this channel yet.' });
   });
 
+  test('a channel whose sync state cannot be read says so', () => {
+    expect(syncCheckResult({ ...HEALTHY, state: null }).message).toContain('Could not read the sync state.');
+  });
+
   test('a channel with no messages says so', () => {
     expect(syncCheckResult({ ...HEALTHY, newest: '' }).message).toContain('No messages on this device.');
   });

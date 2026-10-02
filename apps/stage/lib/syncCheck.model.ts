@@ -40,7 +40,7 @@ function details(input: SyncCheckInput): string[] {
   if (!input.found) return [];
   return [
     input.newest === '' ? 'No messages on this device.' : `Newest message here: ${input.newest}`,
-    input.state ? `Epoch: ${input.state.epoch}` : '',
+    input.state ? `Epoch: ${input.state.epoch}` : 'Could not read the sync state.',
     input.syncError === '' ? '' : `Error: ${clip(input.syncError)}`,
     input.state && input.state.forkDetails !== '' ? `Details: ${clip(input.state.forkDetails)}` : '',
   ].filter(line => line !== '');
