@@ -9,22 +9,20 @@ import {
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
-import { getCachedRows, setCachedRows, setLastReadNs, setMarkedUnreadFlag } from './channelsCache';
-import { applyRemotePinState, loadPinnedOrder } from './pins';
-import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
-import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
-import { applyRemoteCategoryOrder, loadCategoryOrder } from './channelGroups';
-import { applyRemoteSearchState, loadSearchState } from './searchState';
-import { applyRemoteHomeView, loadHomeView } from './homeView';
 import {
-  isHiddenConv, onBoardOrderChanged, onCategoryOrderChanged, onClearedChatsChanged, onHomeViewChanged, onPinChanged,
-  onReadStateChanged, onSearchStateChanged, registerHiddenConv, type AccountOrderChange, type HomeViewChange, type PinChange,
-  type ReadStateChange, type SearchStateChange,
-} from './readSyncRegistry';
+  getCachedRows, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
+} from './channelsCache';
+import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
+import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats, onClearedChatsChanged } from './clearedChats';
+import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
+import { applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
+import { applyRemoteSearchState, loadSearchState, onSearchStateChanged, type SearchStateChange } from './searchState';
+import { applyRemoteHomeView, loadHomeView, onHomeViewChanged, type HomeViewChange } from './homeView';
 import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
+import { isHiddenConv, registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';

@@ -1,7 +1,7 @@
 import { movedPinOrder, pinOrderAfterRemote, toggledPinOrder, type PinOrder } from '@stage-labs/client/xmtp/pinOrder';
 import type { PinStateContent } from '@stage-labs/client/xmtp/readState';
 import { createValueStore } from './persistedStore';
-import { notifyPinChanged } from './readSyncRegistry';
+import { makeListeners } from './storeCore';
 
 function parseOrder(raw: string): PinOrder | undefined {
   try {
@@ -9,6 +9,15 @@ function parseOrder(raw: string): PinOrder | undefined {
     return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : undefined;
   } catch { return undefined; }
 }
+
+export interface PinChange {
+  convId: string;
+  pinned: boolean;
+  order: readonly string[];
+}
+
+const pinChanges = makeListeners<PinChange>();
+export const onPinChanged = pinChanges.subscribe;
 
 const store = createValueStore<PinOrder>({
   key: 'channels.pinned', default: [], serialize: (v) => JSON.stringify(v), deserialize: parseOrder,
@@ -20,7 +29,7 @@ export const loadPinnedOrder = (): Promise<PinOrder> => store.load();
 
 function commit(convId: string, next: PinOrder): PinOrder {
   store.set(next);
-  notifyPinChanged({ convId, pinned: next.includes(convId), order: next });
+  pinChanges.notify({ convId, pinned: next.includes(convId), order: next });
   return next;
 }
 

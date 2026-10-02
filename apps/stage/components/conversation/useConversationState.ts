@@ -10,7 +10,7 @@ import { markConvRead } from '../../lib/channelsCache';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
-import { setActiveConvId } from '../../lib/readSyncRegistry';
+import { setActiveConvId } from '../../lib/xmtp.state.core';
 import {
   markConvAtBottom, convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset, getFeedAnchor, peekFeedAnchor,
   type FeedAnchor,

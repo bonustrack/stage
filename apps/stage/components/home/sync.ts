@@ -2,7 +2,7 @@ import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState, Platform } from 'react-native';
 import { getOrCreateXmtpClient, syncPreferences } from '../../lib/xmtp.client';
 import { NoAccountError } from '../../lib/xmtp.client.core';
-import { getXmtpBootstrapPhase } from '../../lib/xmtp.state.core';
+import { getXmtpBootstrapPhase, isActiveConv, registerHiddenConv } from '../../lib/xmtp.state.core';
 import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
@@ -20,7 +20,6 @@ import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
 import { homeRows, updateHomeRows } from './state';
 import { mergePaintedRows, visibleRowsDiff, type Row } from './model';
-import { registerHiddenConv, isActiveConv } from '../../lib/readSyncRegistry';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 import { presentInboundNotification } from '../../lib/pushNotify';

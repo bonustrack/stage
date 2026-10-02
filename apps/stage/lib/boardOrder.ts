@@ -3,7 +3,6 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { reported } from './errorPolicy';
-import { notifyBoardOrderChanged } from './readSyncRegistry';
 import { makeListeners, useStoreValue } from './storeCore';
 
 type BoardOrder = readonly string[];
@@ -15,6 +14,14 @@ let accountId: string | null = null;
 let order: BoardOrder = EMPTY;
 let loading: Promise<void> | null = null;
 const listeners = makeListeners();
+
+export interface AccountOrderChange {
+  accountId: string;
+  order: readonly string[];
+}
+
+const localChanges = makeListeners<AccountOrderChange>();
+export const onBoardOrderChanged = localChanges.subscribe;
 
 function parseOrder(raw: string | null): BoardOrder {
   if (raw === null) return EMPTY;
@@ -56,7 +63,7 @@ export function setBoardOrder(next: BoardOrder): void {
   order = next;
   listeners.notify();
   void persist(accountId, next).catch(reported('boardOrder.save'));
-  notifyBoardOrderChanged({ accountId, order: next });
+  localChanges.notify({ accountId, order: next });
 }
 
 export async function loadBoardOrder(forAccount: string): Promise<BoardOrder> {

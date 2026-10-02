@@ -4,7 +4,7 @@ import { convOfLine, sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
-import { registerHiddenConv } from './readSyncRegistry';
+import { registerHiddenConv } from './xmtp.state.core';
 import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';

@@ -1,11 +1,10 @@
 import { isControlBody, type StreamMsg, type StreamStatus } from './xmtp.types';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { sdk } from './xmtp.sdk';
-import { activeFeedLines, feedCache, registerGlobalStreamTeardown } from './xmtp.state.core';
+import { activeFeedLines, feedCache, isHiddenConv, registerGlobalStreamTeardown } from './xmtp.state.core';
 import type { MessageDeletion } from './xmtp.sdk.core';
 import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
-import { isHiddenConv } from './readSyncRegistry';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
 import { report, reported } from './errorPolicy';

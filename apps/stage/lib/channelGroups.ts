@@ -1,14 +1,18 @@
 import { toggleKey } from '../components/conversation/SidebarSection.model';
 import { NO_GROUPS_PREFS, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs } from './channelGroups.model';
 import { reported } from './errorPolicy';
+import type { AccountOrderChange } from './boardOrder';
 import { createValueStore } from './persistedStore';
-import { notifyCategoryOrderChanged } from './readSyncRegistry';
+import { makeListeners } from './storeCore';
 
 const prefs = createValueStore<ChannelGroupsPrefs>({
   key: 'channels.groups.', default: NO_GROUPS_PREFS, deserialize: parseChannelGroupsPrefs, serialize: JSON.stringify, perAccount: true,
 });
 
 export const useChannelGroups = prefs.use;
+
+const categoryOrderChanges = makeListeners<AccountOrderChange>();
+export const onCategoryOrderChanged = categoryOrderChanges.subscribe;
 
 function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor?: string): Promise<void> {
   return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
@@ -30,7 +34,7 @@ export function moveCategory(key: string, targetKey: string, visible: readonly s
   const accountId = prefs.accountId();
   if (accountId === null) return;
   void save(current => withOrder(current, movedCategoryOrder(current.order, visible, key, targetKey)), accountId)
-    .then(() => { if (prefs.accountId() === accountId) notifyCategoryOrderChanged({ accountId, order: prefs.get().order }); });
+    .then(() => { if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, order: prefs.get().order }); });
 }
 
 export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {

@@ -1,7 +1,6 @@
 import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
-import { notifyReadStateChanged } from './readSyncRegistry';
 import {
   applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
@@ -10,6 +9,15 @@ import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
 
 export type CachedRow = CachedChannelRow;
+
+export interface ReadStateChange {
+  convId: string;
+  lastReadNs: number;
+  markedUnread: boolean;
+}
+
+const readChanges = makeListeners<ReadStateChange>();
+export const onReadStateChanged = readChanges.subscribe;
 
 const stores = new Map<string, PersistentStore<CachedRow[]>>();
 
@@ -110,7 +118,7 @@ async function markConvUnreadSynced(convId: string): Promise<void> {
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
-  notifyReadStateChanged({ convId, lastReadNs: nowNs, markedUnread: false });
+  readChanges.notify({ convId, lastReadNs: nowNs, markedUnread: false });
   const rows = getCachedRows();
   if (!rows) return;
   const next = applyRead(rows, convId, nowNs);
@@ -122,7 +130,7 @@ export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
   const rows = getCachedRows();
   const current = rows?.find((r) => r.convId === convId);
-  notifyReadStateChanged({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
+  readChanges.notify({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
   if (!rows) return;
   const next = applyUnread(rows, convId);
   if (next === null) return;

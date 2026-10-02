@@ -2,7 +2,7 @@ import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewE
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
-import { notifyHomeViewChanged } from './readSyncRegistry';
+import { makeListeners } from './storeCore';
 
 const KEY_PREFIX = 'home.view.';
 
@@ -19,11 +19,19 @@ const prefs = createValueStore<HomeViewContent>({
 
 export const useHomeView = prefs.use;
 
+export interface HomeViewChange {
+  accountId: string;
+  state: HomeViewContent;
+}
+
+const localChanges = makeListeners<HomeViewChange>();
+export const onHomeViewChanged = localChanges.subscribe;
+
 export function setHomeView(edit: HomeViewEdit): void {
   void prefs.update(current => ({ ...current, ...edit, at: Math.max(Date.now(), current.at + 1) }))
     .then(() => {
       const accountId = prefs.accountId();
-      if (accountId !== null) notifyHomeViewChanged({ accountId, state: prefs.get() });
+      if (accountId !== null) localChanges.notify({ accountId, state: prefs.get() });
     })
     .catch(reported('homeView.save'));
 }
