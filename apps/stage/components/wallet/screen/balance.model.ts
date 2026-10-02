@@ -34,11 +34,16 @@ export interface BalanceDisplayInput {
   pricesLoading: boolean;
 }
 
+function isBalanceLoading(input: BalanceDisplayInput, value: number | null): boolean {
+  if (input.error) return false;
+  return input.loading || (input.totalUsd !== null && value === null && input.pricesLoading);
+}
+
 function balanceStatus(input: BalanceDisplayInput, value: number | null): string | undefined {
   if (input.error) return input.loading ? 'Couldn’t load balances' : 'Couldn’t refresh balances';
-  if (input.loading) return 'Loading balances';
+  if (isBalanceLoading(input, value)) return undefined;
   if (input.totalUsd === null) return 'Some token prices are unavailable';
-  if (value === null) return input.pricesLoading ? 'Loading price' : `${input.currency} price unavailable`;
+  if (value === null) return `${input.currency} price unavailable`;
   return undefined;
 }
 
@@ -51,7 +56,7 @@ function balanceParts(value: number, currency: BalanceCurrency): { int: string; 
 }
 
 export function walletBalanceDisplay(input: BalanceDisplayInput): {
-  total: string; decimals: string; unit: string; subtitle?: string;
+  total: string; decimals: string; unit: string; subtitle?: string; spinner: boolean;
 } {
   const value = balanceValue(input.totalUsd, input.currency, input.prices);
   const parts = value === null ? { int: '-', dec: '' } : balanceParts(value, input.currency);
@@ -60,5 +65,6 @@ export function walletBalanceDisplay(input: BalanceDisplayInput): {
     decimals: parts.dec,
     unit: input.currency === 'USD' ? '' : ` ${input.currency}`,
     subtitle: balanceStatus(input, value),
+    spinner: isBalanceLoading(input, value),
   };
 }

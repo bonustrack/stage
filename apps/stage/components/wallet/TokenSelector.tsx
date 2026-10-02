@@ -121,10 +121,6 @@ export function TokenSelector({ value, onChange }: {
           <Row padding={{ y: 24 }} align="center" justify="center">
             <Spinner size={28} color={fg}/>
           </Row>
-        ) : rows.length === 0 ? (
-          <Text size="sm" role="secondary" style={{ paddingVertical: 16 }}>
-            No tokens.
-          </Text>
         ) : (
           <TokenChoiceList rows={rows} onPick={onPick} />
         )}

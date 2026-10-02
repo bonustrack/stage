@@ -10,6 +10,7 @@ import { type AssetRow } from '@stage-labs/client/wallet/assets';
 import { usePullToRefresh } from '../../tabs/PullToRefresh';
 import type { SimultaneousRefs } from '../../SwipeTabs.types';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { walletTotalUsd } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
@@ -17,6 +18,8 @@ import { DANGER, usePalette } from '../../../lib/theme';
 import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../../layout';
 import { TokensList } from './tokens';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
+
+const TOKENS_SPINNER = 28;
 
 interface WalletBalances {
   address: string;
@@ -60,7 +63,7 @@ function WalletTokens({ rows, err, c }: {
   }
   if (rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Text size="sm" color="secondary">Loading tokens</Text></Col>
+      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Spinner size={TOKENS_SPINNER} /></Col>
     );
   }
   return (

@@ -105,14 +105,16 @@ describe('wallet display currency', () => {
 });
 
 describe('wallet loading and refresh display', () => {
-  test('initial loading is not a false zero', () => {
+  test('initial loading shows a spinner, no text and no false zero', () => {
     const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true });
+    expect(display.spinner).toBe(true);
     expect(display.total).toBe('-');
-    expect(display.subtitle).toBe('Loading balances');
+    expect(display.subtitle).toBeUndefined();
   });
 
   test('initial error is explicit without a numeric balance', () => {
     const display = walletBalanceDisplay({ ...loaded, totalUsd: null, loading: true, error: true });
+    expect(display.spinner).toBe(false);
     expect(display.total).toBe('-');
     expect(display.subtitle).toBe('Couldn’t load balances');
   });
@@ -125,6 +127,7 @@ describe('wallet loading and refresh display', () => {
 
   test('refetch keeps cached total without a progress caption', () => {
     const display = walletBalanceDisplay({ ...loaded, refreshing: true });
+    expect(display.spinner).toBe(false);
     expect(display.total).toBe('$8,000');
     expect(display.subtitle).toBeUndefined();
   });
@@ -133,13 +136,17 @@ describe('wallet loading and refresh display', () => {
     expect(walletBalanceDisplay({ ...loaded, totalUsd: null }).subtitle).toBe('Some token prices are unavailable');
   });
 
-  test('missing conversion quotes indicate loading only while fetching', () => {
+  test('missing conversion quotes show a spinner only while fetching', () => {
     const display = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: undefined, pricesLoading: true });
-    expect(display.total).toBe('-');
-    expect(display.subtitle).toBe('Loading price');
+    expect(display.spinner).toBe(true);
+    expect(display.subtitle).toBeUndefined();
+    const settled = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices: undefined });
+    expect(settled.spinner).toBe(false);
+    expect(settled.subtitle).toBe('ETH price unavailable');
   });
 
   test('successful loaded balance has no status text', () => {
     expect(walletBalanceDisplay(loaded).subtitle).toBeUndefined();
+    expect(walletBalanceDisplay(loaded).spinner).toBe(false);
   });
 });
