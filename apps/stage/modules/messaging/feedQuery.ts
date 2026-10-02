@@ -1,7 +1,7 @@
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { convOfLine } from '../../lib/xmtp.sdk';
+import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { PAGE_SIZE, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
@@ -102,12 +102,12 @@ export function ensureFeedQueryBridge(): void {
 
 const bgSyncInFlight = new Map<string, Promise<void>>();
 
-function revalidateFeed(line: string): Promise<void> {
+function revalidateFeed(line: string, wholeInbox: boolean): Promise<void> {
   const existing = bgSyncInFlight.get(line);
   if (existing) return existing;
   const run = (async (): Promise<void> => {
     try {
-      await syncInboxOnce(0);
+      if (wholeInbox) await syncInboxOnce(0);
       const page = await refreshLatestPage(line);
       if (!page) return;
       mergePageIntoFeed(line, page);
@@ -126,13 +126,13 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   const conv = await perfTime('feed.convOfLine', () => convOfLine(line));
   if (!conv) {
     perfLog('feed.coldPath: conversation not local, awaiting network');
-    await perfTime('feed.revalidate', () => revalidateFeed(line));
+    await perfTime('feed.revalidate', () => revalidateFeed(line, true));
     markFeedLoaded(line);
     return feedCache.get(line) ?? [];
   }
   mergePageIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
   markFeedLoaded(line);
-  void revalidateFeed(line);
+  void revalidateFeed(line, !sdk.isGroup(conv));
   return feedCache.get(line) ?? [];
 }
 
