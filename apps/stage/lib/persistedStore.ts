@@ -58,6 +58,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   const hydration = hydrateOnce(async (): Promise<boolean> => {
+    if (opts.perAccount) return read();
     try {
       return await read();
     } catch (err) {
@@ -72,15 +73,15 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   async function load(): Promise<T> {
-    if (hydration.done()) return cache;
+    if (opts.perAccount ? accountId !== undefined : hydration.done()) return cache;
     if (opts.perAccount) return reload();
     await hydration.run();
     return cache;
   }
 
   function loadAsync(): void {
-    if (hydration.done()) return;
-    void reload();
+    if (opts.perAccount ? accountId !== undefined : hydration.done()) return;
+    void reload().catch(reported(`store.${opts.key}`));
   }
 
   function get(): T { return cache; }
@@ -109,13 +110,13 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   async function update(next: (current: T) => T, onlyFor?: string): Promise<void> {
-    const current = await (opts.perAccount ? reload() : load());
+    await (opts.perAccount ? reload() : load());
     if (onlyFor !== undefined && onlyFor !== accountId) return;
-    const value = next(current);
-    if (value !== current) await setAsync(value);
+    const value = next(cache);
+    if (value !== cache) await setAsync(value);
   }
 
-  if (opts.perAccount) subscribeAccountEpoch(() => { void reload(); });
+  if (opts.perAccount) subscribeAccountEpoch(() => { void reload().catch(reported(`store.${opts.key}`)); });
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
 
