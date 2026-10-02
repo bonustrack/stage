@@ -17,10 +17,11 @@ describe('routeForUrl', () => {
     expect(routeForUrl('https://stage.box/#/profile')).toBeNull();
   });
 
-  test('old /user and /group links are not routes', () => {
+  test('old /user, /group and /embed links are not routes', () => {
     expect(routeForUrl(`https://stage.box/#/user/${ADDR}`)).toBeNull();
     expect(routeForUrl(`https://stage.box/#/group/${CHANNEL}`)).toBeNull();
     expect(routeForUrl(`stage://group/${CHANNEL}`)).toBeNull();
+    expect(routeForUrl(`https://stage.box/#/embed/${CHANNEL}`)).toBeNull();
   });
 
   test('keeps static routes ahead of handles and rejects junk', () => {

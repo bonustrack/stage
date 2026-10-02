@@ -58,7 +58,7 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
   board: { pathname: '/board' },
 };
 
-const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);
+const CONVERSATION_HEADS = new Set(['xmtp', 'channel']);
 
 function entityRoute(head: string, second: string | undefined): ParsedRoute | null | undefined {
   if (head !== 'profile') return undefined;
