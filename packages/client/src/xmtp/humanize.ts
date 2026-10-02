@@ -7,6 +7,7 @@ import {
   deletedTextOf, shortTypeId,
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
+import { parseOpenVote, parseVoteKey } from './poll-tally';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -116,6 +117,15 @@ function previewPoll(decoded: unknown): string {
   return title ? `Poll: ${title}` : '[poll]';
 }
 
+const POLL_VOTE_PREVIEW = 'Voted in a poll';
+const POLL_ANSWER_PREVIEW = 'Answered a poll';
+
+function previewReaction(decoded: unknown): string {
+  const content = (decoded as { content?: string } | null)?.content ?? '👍';
+  if (parseOpenVote(content)) return POLL_ANSWER_PREVIEW;
+  return parseVoteKey(content) ? POLL_VOTE_PREVIEW : content;
+}
+
 function previewFrame(decoded: unknown): string {
   const title = (decoded as { title?: unknown } | null)?.title;
   return typeof title === 'string' && title.trim() !== '' ? `Frame: ${title.trim()}` : 'Frame';
@@ -131,7 +141,7 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
-  reaction: decoded => (decoded as { content?: string }).content ?? '👍',
+  reaction: previewReaction,
   poll: previewPoll,
   frame: previewFrame,
   frameAction: previewFrameAction,
