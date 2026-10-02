@@ -1,6 +1,6 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, pinnedBottom, PAGE_GUTTER } from '../layout';
-import { MENU_SHADOW } from '../menuStyle';
+import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
 import { useToastRequest } from '../../lib/toastHost';
 import { useFloatingBottom } from '../layout/floatingBottom';
@@ -25,7 +25,7 @@ export function ToastHost(): React.ReactElement | null {
         background={pal.link}
         radius={DROPDOWN_MENU.radius}
         padding={{ x: 16, y: 10 }}
-        style={{ maxWidth: 420, ...MENU_SHADOW }}
+        style={{ maxWidth: 420, ...OVERLAY_SHADOW }}
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
       >

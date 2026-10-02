@@ -36,6 +36,20 @@ export function makeListeners<T = void>(): {
   return { notify, subscribe, size: () => listeners.size };
 }
 
+export function makeValue<T>(initial: T): { get: () => T; set: (next: T) => void; use: () => T } {
+  let value = initial;
+  const { notify, subscribe } = makeListeners();
+  const get = (): T => value;
+  return {
+    get,
+    set: (next) => {
+      value = next;
+      notify();
+    },
+    use: () => useStoreValue(subscribe, get),
+  };
+}
+
 export function makeSharedSource<S, T = void>(
   open: (source: S, emit: (value: T) => void) => () => void,
 ): (source: S, cb: (value: T) => void) => () => void {
@@ -79,11 +93,13 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
   };
 }
 
+const READY_CAP_MS = 60_000;
+
 interface ClientSlot<C> {
   get: () => C | null;
   set: (client: C | null) => void;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
-  waitForReady: (capMs?: number) => Promise<boolean>;
+  waitForReady: () => Promise<boolean>;
   reset: () => void;
 }
 
@@ -100,9 +116,9 @@ export function createClientSlot<C>(onReset: () => void): ClientSlot<C> {
       inFlight = pending;
       try { return await pending; } finally { if (inFlight === pending) inFlight = null; }
     },
-    waitForReady: async (capMs = 60_000) => {
+    waitForReady: async () => {
       const start = Date.now();
-      while (cached === null && Date.now() - start < capMs) await new Promise((r) => setTimeout(r, 250));
+      while (cached === null && Date.now() - start < READY_CAP_MS) await new Promise((r) => setTimeout(r, 250));
       return cached !== null;
     },
     reset: () => {

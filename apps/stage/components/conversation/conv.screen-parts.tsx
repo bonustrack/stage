@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
+import { Box, Row, pinnedTop, PAGE_GUTTER, Col } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { usePathname, useRouter } from 'expo-router';
@@ -13,17 +12,14 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
-import { getCachedRows, useGroupAccess } from '../../modules/messaging';
-import { ChannelAccessNotice } from './ChannelAccessNotice';
+import { getCachedRows, useGroupAccess, xmtpDeleteMessage } from '../../modules/messaging';
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
 import { CallButtons } from '../call/CallButtons';
-import { HoverTooltip } from '../HoverTooltip';
 import { capabilities } from '../../lib/capabilities';
 import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
-import { canDeleteMessage, isAdminDelete } from './messageDeletion.model';
-import { confirmDeleteMessage } from './deleteMessage';
+import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { RequestActionBar } from '../RequestActionBar';
 import type { useConversationState } from './useConversationState';
@@ -35,9 +31,38 @@ import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { EditChannelModal } from '../channel/EditChannelModal';
 import { useChannelEditRights } from '../channel/channel.detail';
 import { shareUrlFor } from '@stage-labs/client/routing/handles';
-import { useHover } from '../hover';
+import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
+import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
+import { report } from '../../lib/errorPolicy';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
+
+async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
+  if (!await capabilities.confirm(deleteConfirmOf(asAdmin))) return;
+  await markOwnDelete(messageId);
+  try {
+    await xmtpDeleteMessage(messageId);
+  } catch (err) {
+    report('message.delete', err);
+    await unmarkOwnDelete(messageId);
+    capabilities.toast('Couldn’t delete the message');
+  }
+}
+
+function ChannelAccessNotice({ outside }: { outside: boolean }): React.ReactElement {
+  const { border, text: fg } = usePalette();
+  return (
+    <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Col width={'100%'} padding={{ x: PAGE_GUTTER, top: 14, bottom: 14 }} align="stretch" style={{ alignSelf: 'stretch' }}>
+        <Text size="md" color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
+          {outside ? OUTSIDE_CHANNEL_NOTICE : CHANNEL_WAITING_NOTICE}
+        </Text>
+      </Col>
+    </Box>
+  );
+}
 
 type Conv = ReturnType<typeof useConversationState>;
 
@@ -47,7 +72,6 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
-  const more = useHover();
   const back = (): void => { if (onBoard) capabilities.backTo('/board'); else router.replace('/'); };
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={back}>
@@ -62,17 +86,10 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
       <Row align="center" gap={18} padding={{ right: PAGE_GUTTER }}>
         <CallButtons convId={convId} isGroup={isGroup}/>
         <ConversationSidebarToggle/>
-        <HoverTooltip label="More" placement="below">
-          <Pressable
-            onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
-            accessibilityRole="button"
-            accessibilityLabel="More"
-            hitSlop={8}
-            {...more.hoverProps}
-          >
-            <Glyph icon={IconDotGrid1x3Vertical} size={24} color={more.hovered ? head : fg}/>
-          </Pressable>
-        </HoverTooltip>
+        <HoverIconButton
+          icon={IconDotGrid1x3Vertical} label="More" color={fg} placement="below" role="button"
+          onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
+        />
       </Row>
     </ConvTopnavShell>
   );

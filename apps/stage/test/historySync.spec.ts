@@ -2,7 +2,7 @@ import { describe, expect, jest, test } from 'bun:test';
 import {
   historyProblemMessage, historySyncIsActive, historySyncPhaseLabel, isMissingArchive, settleBy, timeLeftLabel, within,
   HISTORY_COPY, HistoryProblem,
-} from '../lib/historySync.model';
+} from '../lib/history.model';
 
 function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
   jest.useFakeTimers();

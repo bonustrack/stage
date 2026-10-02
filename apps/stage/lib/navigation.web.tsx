@@ -4,9 +4,11 @@ import {
   type NavigationState, type ParamListBase, type StackActionHelpers, type StackNavigationState,
   type StackRouterOptions, type TabActionHelpers, type TabNavigationState, type TabRouterOptions,
 } from 'expo-router/react-navigation';
+import { useEffect, useLayoutEffect } from 'react';
+import { usePathname, withLayoutContext } from 'expo-router';
 import { Box } from '@stage-labs/kit/react-native/box';
 
-export type FlowScreenOptions = Record<string, unknown>;
+type FlowScreenOptions = Record<string, unknown>;
 
 type FlowNavigation<State extends NavigationState> =
   NavigationProp<ParamListBase, string, string | undefined, State, FlowScreenOptions, EventMapBase>;
@@ -38,7 +40,7 @@ function stackScreens<State extends NavigationState>(
   ));
 }
 
-export function FlowStackNavigator({
+function FlowStackNavigator({
   id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout,
 }: FlowProps<StackNavigationState<ParamListBase>, StackRouterOptions>): React.ReactElement {
   const { state, descriptors, NavigationContent } = useNavigationBuilder<
@@ -48,7 +50,7 @@ export function FlowStackNavigator({
   return <NavigationContent>{stackScreens(state, descriptors)}</NavigationContent>;
 }
 
-export function FlowTabNavigator({
+function FlowTabNavigator({
   id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout, backBehavior,
 }: FlowProps<TabNavigationState<ParamListBase>, TabRouterOptions>): React.ReactElement {
   const { state, descriptors, NavigationContent } = useNavigationBuilder<
@@ -56,4 +58,32 @@ export function FlowTabNavigator({
     FlowScreenOptions, EventMapBase
   >(TabRouter, { id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout, backBehavior });
   return <NavigationContent>{focusedScreen(state, descriptors)}</NavigationContent>;
+}
+
+export const RootStack = withLayoutContext(FlowStackNavigator);
+
+export function rootStackScreenOptions(): FlowScreenOptions {
+  return {};
+}
+
+export const TABS_SCREEN_OPTIONS: FlowScreenOptions = {};
+
+export const BOARD_SCREEN_OPTIONS: FlowScreenOptions = {};
+
+export const Tabs = withLayoutContext(FlowTabNavigator);
+
+const positions = new Map<string, number>();
+
+if (typeof history !== 'undefined') history.scrollRestoration = 'manual';
+
+export function useDocumentScrollRestore(): void {
+  const pathname = usePathname();
+  useEffect(() => {
+    const remember = (): void => { positions.set(pathname, window.scrollY); };
+    window.addEventListener('scroll', remember, { passive: true });
+    return () => { window.removeEventListener('scroll', remember); };
+  }, [pathname]);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: positions.get(pathname) ?? 0, behavior: 'instant' });
+  }, [pathname]);
 }

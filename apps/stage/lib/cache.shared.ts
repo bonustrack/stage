@@ -30,10 +30,9 @@ export class PersistentStore<T> {
 
   constructor(
     private readonly fileName: string,
-    private readonly debounced = false,
     private readonly flushDelayMs = FLUSH_DEBOUNCE_MS,
   ) {
-    if (debounced && !flushSignalWired) {
+    if (!flushSignalWired) {
       flushSignalWired = true;
       backend.onFlushSignal(flushDirtyStores);
     }
@@ -70,7 +69,6 @@ export class PersistentStore<T> {
     this.value = next;
     this.hydration.markDone();
     this.notify(this.value);
-    if (!this.debounced) { this.writeBacking(); return; }
     this.dirty = true;
     dirtyStores.add(this);
     if (this.flushTimer) clearTimeout(this.flushTimer);

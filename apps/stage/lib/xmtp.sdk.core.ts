@@ -44,7 +44,6 @@ export interface SendOps<C> {
   reaction: (conv: C, reaction: ReactionPayload) => Promise<string>;
   reply: (conv: C, replyTo: string, text: string) => Promise<string>;
   json: <T>(conv: C, codec: JsonCodec<T>, content: T) => Promise<string>;
-  attachment: (conv: C, filename: string, mimeType: string, dataB64: string) => Promise<string>;
 }
 
 export interface MessageDeletion { convId: string; messageId: string }

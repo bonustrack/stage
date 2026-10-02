@@ -1,9 +1,8 @@
 
 import { useState } from 'react';
-
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../lib/safeArea';
-import { shortAddress } from '../modules/messaging';
+import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
@@ -11,13 +10,40 @@ import { Avatar } from './Avatar';
 import { Box, Col, ScreenScroll, PAGE_GUTTER } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { profileDisplayName } from './ProfileScreen.model';
+import { PEER_PROFILE_MENU, profileDisplayName } from './ProfileScreen.model';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
-import { PROFILE_AVATAR_SIZE, ProfileCover, ProfileCoverBar } from './ProfileCover';
+import { PROFILE_AVATAR_SIZE, ProfileCover, ProfileCoverBar, ProfileCoverMenu } from './ProfileCover';
 import { CommonChannels } from './CommonChannels';
-import { ProfileMenu } from './ProfileMenu';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { EditProfileModal } from './settings/EditProfileModal';
+import { CENTERED } from './RoundIconButton';
+
+function EditProfileButton({ background }: { background: string }): React.ReactElement {
+  const address = useActiveAccountRecord()?.address ?? null;
+  const handle = getPeerHandle(address);
+  const dark = useEffectiveColorScheme() === 'dark';
+  const [editing, setEditing] = useState(false);
+  const onEdit = (): void => {
+    if (address && handle) setEditing(true);
+    else capabilities.navigate('/settings/profile');
+  };
+  return (
+    <>
+      <Button label="Edit profile" color="secondary" variant="solid" dark={dark} tintBg={background} tintPressedBg={background} style={{ ...CENTERED, borderColor: background }} onPress={onEdit} />
+      {address && handle ? (
+        <EditProfileModal visible={editing} onClose={() => { setEditing(false); }} address={address} handle={handle} />
+      ) : null}
+    </>
+  );
+}
+
+function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: string) => void }): React.ReactElement {
+  const { bg } = usePalette();
+  if (isSelf) return <EditProfileButton background={bg} />;
+  return <ProfileCoverMenu items={PEER_PROFILE_MENU} onSelect={onSelect} />;
+}
 
 function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
   addr: string; isSelf: boolean; dark: boolean;

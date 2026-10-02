@@ -1,3 +1,5 @@
+import type { CallStream } from '../../lib/calls.types';
+
 interface CallGrid { cols: number; rows: number }
 
 export function callGrid(count: number, wide: boolean): CallGrid {
@@ -22,4 +24,11 @@ export function callSubtitle(connected: number, elapsedMs: number): string {
   if (connected === 0) return 'Calling…';
   const people = connected + 1;
   return `${people} people · ${callDuration(elapsedMs)}`;
+}
+
+export interface CallMediaViewProps {
+  stream: CallStream | null;
+  kind: 'video' | 'audio';
+  mirrored?: boolean;
+  contain?: boolean;
 }

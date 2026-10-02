@@ -1,11 +1,6 @@
-import type { AppIconName } from '../appIcons';
+import type { MenuItem } from '../appIcons';
 
-interface BubbleMenuItem {
-  id: 'reply' | 'copy' | 'select' | 'shareLink' | 'delete';
-  icon: AppIconName;
-  label: string;
-  danger?: boolean;
-}
+type BubbleMenuItem = MenuItem<'reply' | 'copy' | 'select' | 'shareLink' | 'delete'>;
 
 export function bubbleMenuItems(
   hasText: boolean, { selectText, canDelete = false }: { selectText: boolean; canDelete?: boolean },

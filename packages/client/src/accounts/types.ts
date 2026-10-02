@@ -16,6 +16,5 @@ export interface AccountRecord {
   phraseId?: string;
   ownerAddress?: string;
   deployed?: boolean;
-  scwXmtp?: boolean;
 
 }

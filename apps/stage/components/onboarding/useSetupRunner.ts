@@ -3,8 +3,7 @@ import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
-import { syncHistoryToEnd } from '../../lib/historySync';
-import { receiveHistoryWithCode } from '../../lib/historyTransfer';
+import { receiveHistoryWithCode, syncHistoryToEnd } from '../../lib/history';
 import {
   createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, abandonAccount, XmtpSetupError,
   type SetupWarning, type Stage,

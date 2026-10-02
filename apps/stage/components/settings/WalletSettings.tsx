@@ -1,10 +1,159 @@
+import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@stage-labs/kit/react-native/badge';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { walletAccountRows, walletDeployLabel } from './WalletSettings.model';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
+import {
+  WALLET_ROLE_BADGE, walletAccountRows, walletDeployLabel, type WalletDeployState, type WalletModuleRole,
+} from './WalletSettings.model';
+import type { AccountRecord } from '../../lib/accounts';
+import { useActiveAccountRecord } from '../../modules/messaging';
+import { makePublicClient } from '../../lib/zerodev/client';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
-import { useWalletModel } from './WalletSettings.parts';
-import { SmartAccountSections, WalletCopyRow, WalletInfoRow } from './WalletSettings.sections';
+import { Col, Row } from '../layout';
+import { AppIcon } from '../widgets';
 import { SettingsGroup, SettingsPage } from './SettingsPage';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+
+interface WalletModule {
+  name: string;
+  role: WalletModuleRole;
+  status: string;
+}
+
+interface WalletModel {
+  rec: AccountRecord;
+  isSmart: boolean;
+  address: string;
+  label: string;
+  hdIndex: number | null;
+  activeSigner: 'Recovery key';
+  ownerAddress: string | null;
+  xmtpAddress: string;
+  modules: WalletModule[];
+  chainId: number;
+  kernelVersion: string;
+  entryPointVersion: string;
+}
+
+function modelFromRecord(rec: AccountRecord): WalletModel {
+  const isSmart = rec.type === 'smart';
+  return {
+    rec,
+    isSmart,
+    address: rec.address,
+    label: rec.label ?? 'Account',
+    hdIndex: rec.hdIndex ?? null,
+    activeSigner: 'Recovery key',
+    ownerAddress: rec.ownerAddress ?? null,
+    xmtpAddress: rec.address,
+    modules: isSmart ? [{ name: 'ECDSA owner key', role: 'sudo', status: 'Main key (recovery phrase)' }] : [],
+    chainId: SCW_CHAIN_ID,
+    kernelVersion: KERNEL_VERSION_STRING,
+    entryPointVersion: ENTRY_POINT_VERSION,
+  };
+}
+
+async function fetchDeployState(rec: AccountRecord): Promise<WalletDeployState> {
+  if (rec.type !== 'smart') return 'unknown';
+  try {
+    const code = await makePublicClient().getCode({ address: rec.address as `0x${string}` });
+    return code && code !== '0x' ? 'deployed' : 'counterfactual';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function useWalletModel(): { model: WalletModel | null; deploy: WalletDeployState } {
+  const rec = useActiveAccountRecord();
+  const { data: deploy } = useQuery({
+    queryKey: ['walletDeployState', rec?.id ?? '', rec?.address ?? ''],
+    queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<WalletDeployState>('unknown')),
+    enabled: !!rec,
+    staleTime: 60_000,
+  });
+  return { model: rec ? modelFromRecord(rec) : null, deploy: deploy ?? 'loading' };
+}
+
+function WalletInfoRow({ label, value }: {
+  label: string;
+  value: string;
+}): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <ListViewItem align="center" gap={12} dark={dark}>
+      <Col flex={1}>
+        <Text value={label} size="2xs" color="secondary" />
+      </Col>
+      <Text value={value} size="2xs" color="text" />
+    </ListViewItem>
+  );
+}
+
+function WalletCopyRow({ label, value, onCopy }: {
+  label: string;
+  value: string;
+  onCopy: () => void;
+}): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
+      <Col flex={1} gap={4}>
+        <Text value={label} size="4xs" color="secondary" />
+        <Text value={value} size="2xs" color="text" />
+      </Col>
+      <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
+    </ListViewItem>
+  );
+}
+
+function WalletModuleRow({ name, role, status }: {
+  name: string;
+  role: WalletModuleRole;
+  status: string;
+}): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <ListViewItem align="start" gap={12} dark={dark}>
+      <Col flex={1} gap={3}>
+        <Row align="center" gap={8}>
+          <Text value={name} size="2xs" color="text" />
+          <Badge label={role.toUpperCase()} color={WALLET_ROLE_BADGE[role]} />
+        </Row>
+        <Text value={status} size="4xs" color="secondary" />
+      </Col>
+    </ListViewItem>
+  );
+}
+
+function SmartAccountSections({ model, onCopy }: {
+  model: WalletModel;
+  onCopy: (label: string, value: string) => void;
+}): React.ReactElement {
+  const owner = model.ownerAddress;
+  return (
+    <>
+      <SettingsGroup title="Validators">
+        {model.modules.map((m) => (
+          <WalletModuleRow key={m.name} name={m.name} role={m.role} status={m.status} />
+        ))}
+      </SettingsGroup>
+
+      <SettingsGroup title="Identity">
+        <WalletCopyRow label="XMTP identity" value={model.xmtpAddress} onCopy={() => { onCopy('XMTP identity', model.xmtpAddress); }} />
+        {owner ? <WalletCopyRow label="Owner key" value={owner} onCopy={() => { onCopy('Owner key', owner); }} /> : null}
+      </SettingsGroup>
+
+      <SettingsGroup title="Network">
+        <WalletInfoRow label="Chain" value={`Base (${model.chainId})`} />
+        <WalletInfoRow label="Kernel" value={`v${model.kernelVersion}`} />
+        <WalletInfoRow label="EntryPoint" value={`v${model.entryPointVersion}`} />
+      </SettingsGroup>
+    </>
+  );
+}
 
 export function WalletSettings(): React.ReactElement {
   const { text: fg } = usePalette();

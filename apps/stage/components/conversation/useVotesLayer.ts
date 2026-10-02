@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { xmtpVote, xmtpOpenAnswer } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { pollQuestionsInFeed } from './feed-helpers';
+import type { PollOpenAnswers, PollOwnVotes, PollVotes } from '../bubble/poll.model';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import { useStableCallback } from '../../lib/useStableCallback';
 
-type Votes = Map<string, Map<number, Map<number, Set<string>>>>;
-type Own = Map<string, Map<number, Set<number>>>;
-type OpenAnswers = Map<string, Map<number, Map<string, { text: string; ts: string }>>>;
+type Votes = Map<string, PollVotes>;
+type Own = Map<string, PollOwnVotes>;
+type OpenAnswers = Map<string, PollOpenAnswers>;
 type PollsInFeed = ReturnType<typeof pollQuestionsInFeed>;
 
 const ck = (pollId: string, q: number): string => `${pollId}:${q}`;

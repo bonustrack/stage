@@ -1,4 +1,5 @@
-import type { AppIconName } from '../appIcons';
+import type { MenuItem } from '../appIcons';
+import { EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM } from '../ChannelMenu.model';
 
 export type ChannelMemberRole = 'owner' | 'admin' | 'member' | undefined;
 
@@ -37,10 +38,6 @@ export function memberRowModel(input: MemberRowInput): MemberRowModel {
   };
 }
 
-interface ChannelProfileMenuItem { id: 'edit' | 'leave'; label: string; icon: AppIconName; danger?: boolean }
-
-const LEAVE_CHANNEL_ITEM: ChannelProfileMenuItem = { id: 'leave', label: 'Leave channel', icon: 'IconArrowLeft', danger: true };
-
-export function channelProfileMenuItems(canEdit: boolean): ChannelProfileMenuItem[] {
-  return canEdit ? [{ id: 'edit', label: 'Edit channel', icon: 'IconPencil' }, LEAVE_CHANNEL_ITEM] : [LEAVE_CHANNEL_ITEM];
+export function channelProfileMenuItems(canEdit: boolean): MenuItem<'edit' | 'leave'>[] {
+  return canEdit ? [EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM] : [LEAVE_CHANNEL_ITEM];
 }

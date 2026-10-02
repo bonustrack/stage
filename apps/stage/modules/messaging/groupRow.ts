@@ -1,6 +1,6 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  addLabel as withLabel, moveLabel, removeLabel as withoutLabel, renameLabels,
+  addLabel, asGroup, moveLabel, removeLabel, renameLabels, writeLabels,
 } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
@@ -8,10 +8,6 @@ import {
   addGroupMembers as addMembers, removeGroupMembers as removeMembers, updateGroupMeta as updateMeta,
   updateGroupAssigned as updateAssigned,
 } from '../../lib/xmtp.groups';
-import {
-  addGroupLabel as addLabel, moveGroupLabel as moveRemoteLabel, removeGroupLabel as removeLabel,
-  renameGroupLabel as renameRemoteLabel,
-} from '../../lib/xmtp.labels';
 import { convOfLine } from '../../lib/xmtp.sdk';
 import { convIdOfLine, lineOfConv } from '../../lib/xmtp.types';
 import { groupRowMeta } from './conversation';
@@ -74,14 +70,19 @@ function settleLabelWrite(convId: string | null, writes: LabelWrites | null): vo
   if (writes.failed) patchRowLabels(convId, () => writes.base);
 }
 
-async function writeRowLabels(
-  line: string, next: (labels: string[]) => string[], write: () => Promise<string[]>,
-): Promise<string[]> {
+async function writeGroupLabels(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
+  const conv = await convOfLine(line);
+  const group = asGroup(conv);
+  if (!group) throw new Error('Not a channel');
+  return writeLabels(group, fn);
+}
+
+async function writeRowLabels(line: string, next: (labels: string[]) => string[]): Promise<string[]> {
   const convId = convIdOfLine(line);
   const writes = startLabelWrite(convId);
   patchRowLabels(convId, next);
   try {
-    const written = await write();
+    const written = await writeGroupLabels(line, next);
     if (writes) writes.base = written;
     return written;
   } catch (err) {
@@ -94,19 +95,47 @@ async function writeRowLabels(
 }
 
 export async function addGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => withLabel(labels, label), () => addLabel(line, label));
+  return writeRowLabels(line, (labels) => addLabel(labels, label));
 }
 
 export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
-  return writeRowLabels(line, (labels) => moveLabel(labels, from, to), () => moveRemoteLabel(line, from, to));
+  return writeRowLabels(line, (labels) => moveLabel(labels, from, to));
 }
 
 export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => withoutLabel(labels, label), () => removeLabel(line, label));
+  return writeRowLabels(line, (labels) => removeLabel(labels, label));
 }
 
 export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => renameLabels(labels, from, to), () => renameRemoteLabel(line, from, to));
+  return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
+}
+
+function getAllKnownLabels(): string[] {
+  const rows = getCachedRows();
+  if (!rows) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const row of rows) {
+    for (const label of rowLabels(row.labels)) {
+      const key = label.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(label);
+    }
+  }
+  return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
+export function suggestLabels(query: string, applied: string[]): string[] {
+  const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
+  const q = query.trim().toLowerCase();
+  return getAllKnownLabels().filter((label) => {
+    const key = label.toLowerCase();
+    if (appliedKeys.has(key)) return false;
+    if (!q) return true;
+    if (key === q) return false;
+    return key.includes(q);
+  });
 }
 
 export async function updateGroupMeta(convId: string, patch: Parameters<typeof updateMeta>[1]): Promise<void> {

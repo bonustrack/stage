@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
@@ -18,14 +18,12 @@ export interface Member {
   label: string;
 }
 
-
 interface MemberPickerState {
   members: Member[];
   entry: string;
   setEntry: (v: string) => void;
   adding: boolean;
   addMember: () => Promise<void>;
-  removeMember: (address: string) => void;
   toggleContact: (contact: Contact) => void;
   selectedAddresses: Set<string>;
 }
@@ -64,11 +62,6 @@ export function useMemberPicker(): MemberPickerState {
     }
   }, [entry, adding, members]);
 
-  const removeMember = useCallback((address: string): void => {
-    const lower = address.toLowerCase();
-    setMembers(prev => prev.filter(m => m.address.toLowerCase() !== lower));
-  }, []);
-
   const toggleContact = useCallback((contact: Contact): void => {
     setMembers(prev => togglePick(prev, { address: contact.address, label: contact.name }));
     setEntry('');
@@ -80,16 +73,15 @@ export function useMemberPicker(): MemberPickerState {
   );
 
   return {
-    members, entry, setEntry, adding, addMember, removeMember,
+    members, entry, setEntry, adding, addMember,
     toggleContact, selectedAddresses,
   };
 }
 
-export function MemberPicker({ state, dark, exclude = [], children }: {
+export function MemberPicker({ state, dark, exclude = [] }: {
   state: MemberPickerState;
   dark: boolean;
   exclude?: string[];
-  children?: ReactNode;
 }): React.ReactElement {
   const { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses } = state;
   const contacts = useContacts(exclude, entry);
@@ -106,7 +98,6 @@ export function MemberPicker({ state, dark, exclude = [], children }: {
       <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
         onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
         inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
-      {children}
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
     </Col>
   );

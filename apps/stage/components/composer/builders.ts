@@ -8,9 +8,9 @@ import {
 } from '@stage-labs/client/xmtp/sign';
 import { type WalletSendCallsContent, walletSendCallsFallbackText } from '@stage-labs/client/xmtp/tx';
 import { getActiveAccount } from '../../lib/accounts';
-import { setLastAttachment } from '../../lib/lastAttachment';
+import { setLastAttachment } from '../../lib/drafts';
 import type { PostHooks } from './types';
-import { mintLocalId } from './send';
+import { mintLocalId } from './sendRun';
 
 export interface PostCtx extends PostHooks { close: () => void }
 

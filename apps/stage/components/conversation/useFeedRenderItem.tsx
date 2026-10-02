@@ -1,4 +1,3 @@
-
 import { useCallback, useMemo } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
@@ -13,10 +12,25 @@ import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
 import { XMTP_USER_PREFIX } from '../../modules/messaging';
 import { memberNamer, withMemberNames } from './systemNames.model';
-import { useReactorNames } from './useReactorNames';
+import { getPeerName } from '../../lib/peerProfiles';
+import { useReconciledMap } from '../../lib/mapReconcile';
+import { reactorNamer, reactorNamesByMessage } from './reactors.model';
 
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
+
+function useReactorNames(
+  reactions: Map<string, Map<string, string[]>>,
+  myUri: string,
+  addressOf: (uri: string) => string | null,
+  profilesVersion: number,
+): Map<string, Map<string, string[]>> {
+  const named = useMemo(
+    () => reactorNamesByMessage(reactions, myUri, reactorNamer(addressOf, getPeerName)),
+    [reactions, myUri, addressOf, profilesVersion],
+  );
+  return useReconciledMap(named);
+}
 
 function signHandlerOf(item: HistoryEntry, myUri: string, onSign: ConvState['onSign']): (() => void) | undefined {
   const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;

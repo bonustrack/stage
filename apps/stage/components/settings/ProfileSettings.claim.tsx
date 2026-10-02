@@ -7,7 +7,7 @@ import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 import { normalizeLabel } from './ProfileSettings.claim.model';
 import { OnboardingCard } from '../onboarding/OnboardingCard';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
+import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/profile';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);

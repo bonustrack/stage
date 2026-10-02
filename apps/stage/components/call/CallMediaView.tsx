@@ -1,12 +1,5 @@
 import { RTCView } from 'react-native-webrtc';
-import type { CallStream } from '../../lib/calls.types';
-
-interface CallMediaViewProps {
-  stream: CallStream | null;
-  kind: 'video' | 'audio';
-  mirrored?: boolean;
-  contain?: boolean;
-}
+import type { CallMediaViewProps } from './CallScreen.model';
 
 export function CallMediaView({ stream, kind, mirrored = false, contain = false }: CallMediaViewProps): React.ReactElement | null {
   if (kind === 'audio' || stream?.platform !== 'native') return null;

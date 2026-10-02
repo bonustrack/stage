@@ -1,25 +1,20 @@
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
-type PushPhase = 'idle' | 'unsupported' | 'disabled' | 'no-token' | 'registering' | 'registered' | 'failed';
+type PushPhase = 'idle' | 'disabled' | 'no-token' | 'registering' | 'registered' | 'failed';
 
 interface PushStatus { phase: PushPhase; detail: string; at: number }
 
-let current: PushStatus = { phase: 'idle', detail: '', at: 0 };
-const { notify, subscribe } = makeListeners();
+const status = makeValue<PushStatus>({ phase: 'idle', detail: '', at: 0 });
 
 export function setPushStatus(phase: PushPhase, detail = ''): void {
-  current = { phase, detail, at: Date.now() };
-  notify();
+  status.set({ phase, detail, at: Date.now() });
 }
 
-export function usePushStatus(): PushStatus {
-  return useStoreValue(subscribe, () => current);
-}
+export const usePushStatus = status.use;
 
 export function describePushStatus(status: PushStatus): string {
   switch (status.phase) {
     case 'idle': return 'Push registration has not run yet.';
-    case 'unsupported': return 'Push is only available in the mobile app.';
     case 'disabled': return 'Push is turned off on this device.';
     case 'no-token': return 'No device push token: check the system notification permission.';
     case 'registering': return 'Registering with the push server…';

@@ -4,7 +4,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { HoverTooltip } from './HoverTooltip';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 
-const CENTERED = { alignSelf: 'center' } as const;
+export const CENTERED = { alignSelf: 'center' } as const;
 
 export function RoundIconButton({ icon, label, loading, background, onPress }: {
   icon: CentralIcon; label: string; loading?: boolean; background?: string;

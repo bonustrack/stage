@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box } from './layout';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Box, Col, Row } from './layout';
 import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { mediaMaxWidth } from './bubble/imageBox.model';
@@ -36,5 +38,24 @@ export function MediaCard({ onPress, url, aspectRatio = 1, children }: Props): R
         </Pressable>
       ) : <Box style={style}>{children}</Box>}
     </Box>
+  );
+}
+
+const TABULAR_NUMS = { fontVariant: ['tabular-nums' as const] };
+
+export function IconTileRow({ icon, title, titleColor, subtitle, tabular = false, testID, children }: {
+  icon: ReactNode; title: string; titleColor: string; subtitle?: string; tabular?: boolean; testID?: string; children?: ReactNode;
+}): React.ReactElement {
+  return (
+    <Row testID={testID} align="center" gap={12}>
+      <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
+        {icon}
+      </Box>
+      <Col flex={1} minWidth={0} gap={2}>
+        <Text size="2xs" weight="semibold" color={titleColor} numberOfLines={1}>{title}</Text>
+        {subtitle ? <Text size="3xs" role="secondary" numberOfLines={1} style={tabular ? TABULAR_NUMS : undefined}>{subtitle}</Text> : null}
+      </Col>
+      {children}
+    </Row>
   );
 }

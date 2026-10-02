@@ -8,7 +8,7 @@ import {
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
-import { getCachedRows, setCachedRows } from './channelsCache';
+import { getCachedRows, setCachedRows, setLastReadNs, setMarkedUnreadFlag } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder } from './pins';
 import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
 import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
@@ -17,12 +17,9 @@ import {
   isHiddenConv, onBoardOrderChanged, onClearedChatsChanged, onPinChanged, onReadStateChanged, onSearchStateChanged,
   registerHiddenConv, type BoardOrderChange, type PinChange, type ReadStateChange, type SearchStateChange,
 } from './readSyncRegistry';
-import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
-import { rowIdOfConv } from './xmtp.conv';
+import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
-import {
-  createSyncGroup, isOwnSyncGroup, listSyncGroups, recentSyncMessages, syncConversation,
-} from './xmtp.readSync';
+import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
@@ -39,7 +36,6 @@ const PUBLISH_DEBOUNCE_MS = 800;
 const SEARCH_KEY = 'search';
 const SEARCH_DEBOUNCE_MS = 1000;
 
-let started = false;
 let bootToken = 0;
 let groupId: string | null = null;
 const localAt = new Map<string, number>();
@@ -51,6 +47,47 @@ function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
 const BOARD_ORDER_KEY = 'boardOrder';
 const STATE_TYPES = [isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isSearchStateType];
+
+type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
+
+async function listSyncGroups(): Promise<SyncGroupState[]> {
+  const all = await sdk.listConvs(await sdk.client());
+  const out: SyncGroupState[] = [];
+  for (const conv of all) {
+    if (!(await conversationIsSyncGroup(conv))) continue;
+    const active = await sdk.isActive(conv).catch(recover('readSync.isActive', false));
+    out.push({ id: conv.id, createdAtNs: sdk.createdAtNs(conv), active });
+  }
+  return out;
+}
+
+async function isOwnSyncGroup(convId: string, address: string): Promise<boolean> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (conv?.id !== convId || (await sdk.groupName(conv)) !== syncGroupName(address)) return false;
+  const selfInboxId = (await sdk.client()).inboxId;
+  return (await conv.members()).every((m) => m.inboxId === selfInboxId);
+}
+
+async function createSyncGroup(name: string): Promise<string> {
+  const group = await sdk.newGroup(await sdk.client(), [], { name });
+  return group.id;
+}
+
+async function requireConv(convId: string): Promise<SyncConv> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) throw new Error('Sync conversation not found');
+  return conv;
+}
+
+async function syncConversation(convId: string): Promise<void> {
+  const conv = await requireConv(convId);
+  await conv.sync();
+}
+
+async function recentSyncMessages(convId: string, limit: number): Promise<RowMessage[]> {
+  const conv = await requireConv(convId);
+  return (await sdk.messages(conv, { limit, order: 'desc' })).map(sdk.rowOf);
+}
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
   const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
@@ -274,8 +311,6 @@ function onStreamMessage(m: StreamMsg): void {
 }
 
 export function startReadSync(): void {
-  if (started) return;
-  started = true;
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
   onClearedChatsChanged(queueClearedPublish);

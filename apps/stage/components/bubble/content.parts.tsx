@@ -1,12 +1,9 @@
-import { Component, cloneElement, isValidElement, useMemo } from 'react';
+import { cloneElement, isValidElement, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown, { renderRules, type RenderRules } from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from '../MediaEmbeds';
-import { ChannelCard } from '../ChannelCard';
-import { GitHubLinkCard } from '../GitHubLinkCard';
-import { PreviewLinkCard } from '../PreviewLinkCard';
-import { LinkPreviewCard } from '../LinkPreviewCard';
+import { ChannelCard, GitHubLinkCard, LinkPreviewCard, PreviewLinkCard } from './linkCards';
 import type { CardLink } from '../../lib/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
@@ -23,9 +20,10 @@ import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from './codeBlock.model';
 import { taskStateOf } from './markdown.model';
 import { TaskMark } from './TaskMark';
+import { ResetBoundary } from './boundary';
 import { useRouter } from 'expo-router';
-import { shortAddress } from '../../modules/messaging';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
+import { mentionLabelOf } from '../conversation/convTitle';
 import { profileLinkOf } from '../../lib/links';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 import { ChannelLink, useChannelLinkNames } from './ChannelLink';
@@ -33,12 +31,8 @@ import { channelFallbackLabel, channelLinkText, markdownLabelText } from '../../
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
-  bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, type BodySegment, type LinkFinder,
+  bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment, type LinkFinder,
 } from './mention.model';
-
-function mentionDisplay(address: string): string {
-  return mentionLabel(getPeerName(address) ?? shortAddress(address));
-}
 
 function MentionLink({ address, fg }: { address: string; fg: string }): React.ReactElement {
   const router = useRouter();
@@ -47,7 +41,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
     <Text size="lg" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
-      {mentionDisplay(address)}
+      {mentionLabelOf(address)}
     </Text>
   );
 }
@@ -142,27 +136,12 @@ export function BubbleAttachments({ atts, entryId, fg }: {
   );
 }
 
-interface SafeMarkdownProps { body: string; fg: string; markdownProps: MarkdownProps }
-interface SafeMarkdownState { failed: boolean }
-
-class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
-  override state: SafeMarkdownState = { failed: false };
-
-  static getDerivedStateFromError(): SafeMarkdownState {
-    return { failed: true };
-  }
-
-  override componentDidUpdate(prev: SafeMarkdownProps): void {
-    if (prev.body !== this.props.body && this.state.failed) this.setState({ failed: false });
-  }
-
-  override render(): React.ReactNode {
-    const { body, fg, markdownProps } = this.props;
-    if (this.state.failed) {
-      return <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
-    }
-    return <Markdown {...markdownProps}>{body}</Markdown>;
-  }
+function SafeMarkdown({ body, fg, markdownProps }: { body: string; fg: string; markdownProps: MarkdownProps }): React.ReactElement {
+  return (
+    <ResetBoundary resetKey={body} fallback={() => <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>}>
+      <Markdown {...markdownProps}>{body}</Markdown>
+    </ResetBoundary>
+  );
 }
 
 interface PlainBodyProps { body: string; fg: string; query?: string }
@@ -177,7 +156,7 @@ function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement
   const segments = bodySegments(body, findLinks, true);
   const convIds = [...new Set(segments.flatMap(seg => seg.type === 'channel' ? [seg.convId] : []))];
   const names = useChannelLinkNames(convIds);
-  const text = namedPlainText(segments, mentionDisplay, seg => {
+  const text = namedPlainText(segments, mentionLabelOf, seg => {
     const meta = names.get(seg.convId);
     return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddr ? seg.raw ?? seg.text : seg.text);
   });

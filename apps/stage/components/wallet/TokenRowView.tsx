@@ -5,8 +5,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { changeColor } from '../../lib/uiColors';
 import { Col, Row } from '../layout';
-import { AppIcon } from '../widgets';
-import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 
 export interface TokenRowViewParams {
   symbol: string;
@@ -17,7 +15,6 @@ export interface TokenRowViewParams {
   logoUri: string;
   chainBadgeUri?: string;
   showAvatar?: boolean;
-  trailingChevron?: boolean;
 }
 
 function TokenRowAvatar({ logoUri, chainBadgeUri }: {
@@ -56,9 +53,6 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
           {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="2xs" />}
         </Row>
       </Col>
-      {params.trailingChevron !== false ? (
-        <AppIcon name={IconChevronRight} color={color} size={16} />
-      ) : null}
     </Row>
   );
 }

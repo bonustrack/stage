@@ -1,6 +1,5 @@
-
 import '../cryptoShim';
-import { http, createPublicClient, type Chain, type PublicClient } from 'viem';
+import { http, createPublicClient, type Chain, type Hex, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 import {
   createKernelAccountClient, createZeroDevPaymasterClient, getUserOperationGasPrice,
@@ -8,22 +7,52 @@ import {
 } from '@zerodev/sdk';
 import type { KernelSmartAccountImplementation } from '@zerodev/sdk';
 import type { SmartAccount } from 'viem/account-abstraction';
-import { zerodevRpcUrl } from './env';
+import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
+import type { AccountRecord } from '../accounts';
+import { smartOwnerSigner } from './keyring';
 
-export function makePublicClient(): PublicClient {
+const RAW_ENV: Record<string, string | undefined> = {
+  EXPO_PUBLIC_ZERODEV_PROJECT_ID: process.env.EXPO_PUBLIC_ZERODEV_PROJECT_ID as string | undefined,
+  EXPO_PUBLIC_ZERODEV_RPC: process.env.EXPO_PUBLIC_ZERODEV_RPC as string | undefined,
+};
+
+function envString(name: string): string | undefined {
+  const value = RAW_ENV[name];
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const PROJECT_ID: string = envString('EXPO_PUBLIC_ZERODEV_PROJECT_ID') ?? '';
+
+function zerodevRpcUrl(): string | null {
+  const override = envString('EXPO_PUBLIC_ZERODEV_RPC');
+  if (override) return override;
+  if (!PROJECT_ID) return null;
+  return `https://rpc.zerodev.app/api/v3/${PROJECT_ID}/chain/8453`;
+}
+
+export function zerodevConfigured(): boolean {
+  return zerodevRpcUrl() != null;
+}
+
+function configuredRpcUrl(): string {
   const rpc = zerodevRpcUrl();
   if (!rpc) throw new Error('ZeroDev project not configured (EXPO_PUBLIC_ZERODEV_PROJECT_ID).');
+  return rpc;
+}
+
+export function makePublicClient(): PublicClient {
+  const rpc = configuredRpcUrl();
   const chain: Chain = base;
   return createPublicClient({ chain, transport: http(rpc) });
 }
 
-
-export function makeKernelClient(
+function makeKernelClient(
   account: SmartAccount<KernelSmartAccountImplementation>,
   publicClient: PublicClient,
 ): KernelAccountClient {
-  const rpc = zerodevRpcUrl();
-  if (!rpc) throw new Error('ZeroDev project not configured (EXPO_PUBLIC_ZERODEV_PROJECT_ID).');
+  const rpc = configuredRpcUrl();
   const paymasterClient = createZeroDevPaymasterClient({ chain: base, transport: http(rpc) });
   return createKernelAccountClient({
     account,
@@ -38,4 +67,12 @@ export function makeKernelClient(
       estimateFeesPerGas: async ({ bundlerClient }) => getUserOperationGasPrice(bundlerClient),
     },
   });
+}
+
+export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelAccountClient> {
+  if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
+  const publicClient = makePublicClient();
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
+  const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex, rec.address as Hex);
+  return makeKernelClient(account, publicClient);
 }

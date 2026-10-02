@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { deriveSignSummary, signConfirmMessage } from '../lib/signConfirm';
+import { deriveSignSummary, signConfirmMessage } from '../lib/txConfirm';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 
 const SPENDER = '0xAttackerSpender0000000000000000000000001';

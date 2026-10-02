@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Box, PAGE_GUTTER } from './layout';
-import { OverlayHeader } from './chrome/OverlayHeader';
+import { Box, Row, pinnedTop, PAGE_GUTTER } from './layout';
+import { RoundIconButton } from './RoundIconButton';
 import { RoundOverflowMenu, type OverflowMenuItem } from './MenuRows';
 import { capabilities } from '../lib/capabilities';
 import { usePalette } from '../lib/theme';
+import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 
 export const PROFILE_AVATAR_SIZE = 88;
 
@@ -14,7 +15,17 @@ const AVATAR_SLOT = { marginTop: -PROFILE_AVATAR_SIZE * 0.8, zIndex: 1 } as cons
 
 export function ProfileCoverBar({ insetTop, trailing }: { insetTop: number; trailing?: ReactNode }): React.ReactElement {
   const { bg } = usePalette();
-  return <OverlayHeader onBack={() => { capabilities.back(); }} background={bg} safeTop={insetTop} trailing={trailing} />;
+  return (
+      <Row
+        align="center"
+        justify="between"
+        padding={{ x: PAGE_GUTTER, top: insetTop + PAGE_GUTTER }}
+        style={pinnedTop(2)}
+      >
+        <RoundIconButton icon={IconArrowLeft} label="Back" background={bg} onPress={() => { capabilities.back(); }} />
+        {trailing}
+      </Row>
+  );
 }
 
 export function ProfileCover({ insetTop, avatar, children, centered = false }: {

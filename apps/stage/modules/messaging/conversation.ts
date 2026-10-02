@@ -1,10 +1,10 @@
 
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from '../../lib/xmtp.identity';
-import { getLastReadNs, getMarkedUnread } from '../../lib/xmtp.client';
-import { groupNameImage } from '../../lib/xmtp.groups';
+import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
+import { sdk } from '../../lib/xmtp.sdk';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
-import { groupLabelsOf } from '../../lib/xmtp.labels';
+import { groupLabelsOf } from '@stage-labs/client/xmtp/labels';
 import { isControlBody } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -103,7 +103,7 @@ async function gatherGroupRowData(conv: Conversation, peerAddress: string | null
   }
   const [memberAddresses, groupMeta, labels] = await Promise.all([
     groupMemberEthAddresses(conv),
-    groupNameImage(conv),
+    sdk.groupInfo(conv),
     groupLabelsOf(conv),
   ]);
   return { memberAddresses, groupMeta, labels };

@@ -9,14 +9,13 @@ import {
   type SignatureRequestContent, buildSignatureReference, personalMessageForRequest, typedDataForRequest,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
-import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
-import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
+import { deriveConfirmSummary, confirmMessage, deriveSignSummary, signConfirmMessage } from '../../lib/txConfirm';
 import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
 import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
-import { kernelClientForRecord } from '../../lib/zerodev';
+import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { paymentBlocker } from './pay.model';
 
 function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {

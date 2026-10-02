@@ -1,16 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { FormField } from './FormField';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RailTooltip } from './tabs/RailTooltip';
 import { usePalette } from '../lib/theme';
 import { randomUsername } from '../lib/randomUsername';
-import { useNameAvailability } from './settings/useNameAvailability';
-import { claimStatusTone, normalizeLabel, sanitizeLabelInput, type ClaimState } from './settings/ProfileSettings.claim.model';
+import {
+  claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput, type ClaimState,
+} from './settings/ProfileSettings.claim.model';
 import { usernameHint, usernameStatus } from './UsernameField.model';
 import { IconArrowLeftRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeftRight';
 import { IconCircleCheck } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleCheck';
 import { IconCircleX } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleX';
+import { errorMessage } from '@stage-labs/client/errors';
+import { checkStageName } from '../lib/profile';
+
+const CHECK_DEBOUNCE_MS = 400;
+
+function useNameAvailability(label: string, setState: (next: ClaimState) => void): void {
+  useEffect(() => {
+    if (label === '') { setState({ label, phase: 'idle' }); return; }
+    const problem = localLabelProblem(label);
+    if (problem) { setState({ label, phase: 'invalid', detail: problem }); return; }
+    setState({ label, phase: 'checking' });
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void checkStageName(label).then((check) => {
+        if (cancelled) return;
+        if (!check.valid) setState({ label, phase: 'invalid', detail: check.reason });
+        else setState({ label, phase: check.available ? 'available' : 'unavailable' });
+      }).catch((err: unknown) => {
+        if (!cancelled) setState({ label, phase: 'failed', detail: errorMessage(err) });
+      });
+    }, CHECK_DEBOUNCE_MS);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [label]);
+}
 
 type Pal = ReturnType<typeof usePalette>;
 

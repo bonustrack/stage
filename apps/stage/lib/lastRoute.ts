@@ -72,7 +72,7 @@ export function useRestoreGate(): RestoreGate {
         ]);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
-        const willRestore = Platform.OS !== 'web' && !!saved && restorable && !deepLink && accounts.length > 0;
+        const willRestore = Platform.OS !== 'web' && restorable && !deepLink && accounts.length > 0;
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;

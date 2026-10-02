@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Input } from '@stage-labs/kit/react-native/input';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -13,7 +12,7 @@ import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
 import { CountTag } from '../CountTag';
 import { OverflowMenu } from '../MenuRows';
-import { useHover } from '../hover';
+import { HoverIconButton, useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
   BOARD_COLUMN_WIDTH, addColumnProblem, draftEdit, draftNote, renameEdit, renameNote, type BoardColumn, type TitleCommit,
@@ -140,14 +139,9 @@ export function RenameHeading({ label, columns, count, onRename, onClose }: {
 }
 
 function CancelButton({ onCancel }: { onCancel: () => void }): React.ReactElement {
-  const { text, link } = usePalette();
-  const hover = useHover();
+  const { text } = usePalette();
   return (
-    <HoverTooltip label="Cancel" placement="below">
-      <Pressable onPointerDown={onCancel} onPress={onCancel} hitSlop={8} accessibilityLabel="Cancel" {...hover.hoverProps}>
-        <Glyph icon={IconCrossMedium} size={20} color={hover.hovered ? link : text}/>
-      </Pressable>
-    </HoverTooltip>
+    <HoverIconButton icon={IconCrossMedium} label="Cancel" color={text} size={20} placement="below" onPointerDown={onCancel} onPress={onCancel} />
   );
 }
 

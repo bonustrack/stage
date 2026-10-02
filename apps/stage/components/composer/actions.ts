@@ -6,7 +6,7 @@ import { Alert, Platform } from 'react-native';
 import { KeyboardController } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { setLastAttachment } from '../../lib/lastAttachment';
+import { setLastAttachment } from '../../lib/drafts';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { fileInputs } from './send.model';

@@ -430,7 +430,6 @@
     {
       "files": [
         "apps/stage/components/landing/**",
-        "apps/stage/components/chrome/PageIntro.tsx",
         "apps/stage/components/chrome/PageIntro.model.ts",
         "apps/stage/components/smallText.ts"
       ],
@@ -507,12 +506,10 @@
         "apps/stage/components/bubble/ImageAttachment.tsx",
         "apps/stage/components/bubble/attachments.tsx",
         "apps/stage/components/bubble/content.parts.tsx",
-        "apps/stage/components/bubble/poll.open.tsx",
         "apps/stage/components/bubble/poll.tsx",
         "apps/stage/components/bubble/question.tsx",
         "apps/stage/components/bubble/reactions.tsx",
         "apps/stage/components/home/labelbar.tsx",
-        "apps/stage/components/home/overflow.tsx",
         "apps/stage/components/home/topnavRight.tsx"
       ],
       "rules": {

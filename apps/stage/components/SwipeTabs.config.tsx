@@ -1,12 +1,8 @@
-
 import type { Href } from 'expo-router';
-
 import { HomeScreen } from './home/HomeScreen';
 import { ContactsScreen } from './ContactsScreen';
 import { WalletScreen } from './wallet/screen/WalletScreen';
-import { SettingsMenu } from './settings/SettingsMenu';
-
-export type { SimultaneousRefs } from './SwipeTabs.types';
+import { SettingsMenu } from './settings/SettingsHub';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 
 export const TAB_ORDER = ['index', 'contacts', 'wallet', 'settings'] as const;

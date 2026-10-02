@@ -8,15 +8,15 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
-import { revealActiveRecoveryPhrase } from '../../lib/zerodev';
+import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 import { Box, Col, Row } from '../layout';
-import { SettingsButtonRow } from './rows';
 import {
   BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
   phrasePanelActions, phraseRowCopy, type PhraseRowMode,
 } from './SecuritySettings.model';
 import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldCheck';
+import { SettingsButtonRow } from './SettingsPage';
 
 const BACKED_UP_KEY = ['walletBackedUp'] as const;
 

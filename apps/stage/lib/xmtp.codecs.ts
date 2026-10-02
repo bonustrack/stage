@@ -4,12 +4,7 @@ import {
   MultiRemoteAttachmentCodec, GroupUpdatedCodec, DeleteMessageCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
-import {
-  POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, READ_STATE_CODEC, PIN_STATE_CODEC, CLEAR_STATE_CODEC,
-  BOARD_STATE_CODEC, SEARCH_STATE_CODEC, CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, FRAME_CODEC, FRAME_ACTION_CODEC,
-  DELETE_REQUEST_CODEC,
-} from './xmtpJsonCodecs';
+import { STAGE_JSON_CODECS, TRANSACTION_REFERENCE_CODEC } from './xmtpJsonCodecs';
 import type { AccountRecord } from './accounts';
 import { signingKeyForRecord } from './xmtp.signing.core';
 
@@ -21,21 +16,8 @@ export const XMTP_CODECS = [
   new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
   new DeleteMessageCodec(),
-  POLL_CODEC,
-  SIGNATURE_REQUEST_CODEC,
-  SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC,
+  ...STAGE_JSON_CODECS,
   TRANSACTION_REFERENCE_CODEC,
-  READ_STATE_CODEC,
-  PIN_STATE_CODEC,
-  CLEAR_STATE_CODEC,
-  BOARD_STATE_CODEC,
-  SEARCH_STATE_CODEC,
-  CALL_INVITE_CODEC,
-  CALL_SIGNAL_CODEC,
-  FRAME_CODEC,
-  FRAME_ACTION_CODEC,
-  DELETE_REQUEST_CODEC,
 ];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {

@@ -31,15 +31,14 @@ interface ChannelRowDomain {
   lastPreview?: string | null;
   subtitle?: string | null;
   timestampLabel: string;
-  hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
   highlightQuery?: string;
   pinned?: boolean;
 }
 
-function resolveDraft(hasDraft?: boolean, draftText?: string | null): string | null {
-  return hasDraft && draftText && draftText.trim().length > 0 ? withChannelLabels(draftText.trim()) : null;
+function resolveDraft(draftText?: string | null): string | null {
+  return draftText && draftText.trim().length > 0 ? withChannelLabels(draftText.trim()) : null;
 }
 
 function resolvePreview(
@@ -75,7 +74,7 @@ function resolveTitleSegments(
 }
 
 export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
-  const draft = resolveDraft(d.hasDraft, d.draftText);
+  const draft = resolveDraft(d.draftText);
   return {
     title: d.title,
     placeholderTitle: d.placeholderTitle,

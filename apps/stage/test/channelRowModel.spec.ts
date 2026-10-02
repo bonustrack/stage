@@ -18,7 +18,7 @@ describe('channelRowModel', () => {
   test('draft wins over preview and adds Draft: prefix, suppressing chips', () => {
     const p = channelRowModel({
       title: 'Alice',
-      lastPreview: 'hello', hasDraft: true, draftText: '  wip  ',
+      lastPreview: 'hello', draftText: '  wip  ',
       labels: ['a', 'b', 'c'], timestampLabel: '9:15 AM',
     });
     expect(p.preview).toBe('wip');
@@ -29,7 +29,7 @@ describe('channelRowModel', () => {
 
   test('a draft sharing a channel shows the channel name, not its link', () => {
     const p = channelRowModel({
-      title: 'Alice', hasDraft: true, timestampLabel: '',
+      title: 'Alice', timestampLabel: '',
       draftText: 'see [#Ops night shift](https://stage.box/#/channel/2e793fb8087052ca59109ca900e53de9) ',
     });
     expect(p.preview).toBe('see #Ops night shift');

@@ -166,13 +166,14 @@ export function withContactCandidates(
   return [...first, ...extra];
 }
 
-export function activeMentionIndex(
-  shown: MentionCandidate[],
+export function activeSuggestIndex<T>(
+  shown: T[],
   key: string,
-  active: { key: string; address: string },
+  active: { key: string; id: string },
+  idOf: (candidate: T) => string,
 ): number {
   if (active.key !== key) return 0;
-  return Math.max(0, shown.findIndex(c => c.address === active.address));
+  return Math.max(0, shown.findIndex(c => idOf(c) === active.id));
 }
 
 export function mentionKeyAction(key: string, shift: boolean, count: number, active: number): MentionKeyAction | null {

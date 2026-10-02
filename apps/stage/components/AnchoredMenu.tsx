@@ -6,18 +6,10 @@ import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/me
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
 import { documentScroll, isCoarsePointer, useWebTabRail } from '../lib/webLayout';
-import { MENU_GAP, MENU_SHADOW } from './menuStyle';
+import { MENU_GAP } from './menuStyle';
 
 const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
-
-export { MENU_SHADOW };
-
-export function MenuSurface({ maxHeight, children }: {
-  maxHeight?: number; children: ReactNode;
-}): React.ReactElement {
-  return <DropdownMenu maxHeight={maxHeight}>{children}</DropdownMenu>;
-}
 
 export function useAnchoredMenus(): boolean {
   const { width } = useWindowDimensions();
@@ -30,9 +22,9 @@ export function menuPointOf(event: GestureResponderEvent): MenuPoint {
   return { x: pageX - scroll.x, y: pageY - scroll.y };
 }
 
-interface AnchorRect { left: number; right: number; top: number; bottom: number }
+interface AnchorRect { left: number; right: number; top: number; bottom: number; width: number }
 
-function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
+export function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
   const target = event.currentTarget as unknown as { getBoundingClientRect?: () => AnchorRect };
   return target.getBoundingClientRect?.();
 }
@@ -96,7 +88,7 @@ export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, ch
         onPress={(e) => { e.stopPropagation(); }}
         style={{ position: 'absolute', ...position }}
       >
-        <MenuSurface maxHeight={maxHeight}>{children}</MenuSurface>
+        <DropdownMenu maxHeight={maxHeight}>{children}</DropdownMenu>
       </Pressable>
     </AnchoredOverlay>
   );

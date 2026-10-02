@@ -12,8 +12,8 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { QrScanner } from '../accounts/QrScanner';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { sendHistoryWithCode, useTransferStep } from '../../lib/historyTransfer';
-import { transferStepLabel } from '../../lib/historyTransfer.model';
+import { sendHistoryWithCode, useTransferStep } from '../../lib/history';
+import { transferStepLabel } from '../../lib/history.model';
 import {
   RECEIVE_COPY, SEND_COPY, canSubmitCode, codeFromScan, displayCode, expiryLabel, type SendSheetState,
 } from './HistoryTransferSheets.model';

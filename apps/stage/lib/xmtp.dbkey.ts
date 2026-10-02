@@ -1,8 +1,7 @@
 import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
-import { deleteDbFiles } from './xmtp.dbkeyFs';
+import { XMTP_APP_GROUP, deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
 import type { DeviceBoundAccessOptions } from '../platform/types';
-import { XMTP_APP_GROUP } from './xmtp.appGroup';
 import { recover, ignored } from './errorPolicy';
 
 const STORE_OPTS: DeviceBoundAccessOptions = XMTP_APP_GROUP

@@ -3,7 +3,7 @@ import {
 } from 'expo-router/js-stack';
 import { withLayoutContext } from 'expo-router';
 import { Platform } from 'react-native';
-import { PAGE_GUTTER } from '../../components/layout/gutter';
+import { PAGE_GUTTER } from '../components/layout/gutter';
 
 export const RootStack = withLayoutContext(createStackNavigator().Navigator);
 
@@ -27,3 +27,9 @@ export const TABS_SCREEN_OPTIONS: StackNavigationOptions = { animation: 'none', 
 export const BOARD_SCREEN_OPTIONS: StackNavigationOptions = Platform.OS === 'android'
   ? { gestureEnabled: false }
   : { gestureResponseDistance: PAGE_GUTTER };
+
+export function useDocumentScrollRestore(): void {
+  return undefined;
+}
+
+export { Tabs } from 'expo-router';

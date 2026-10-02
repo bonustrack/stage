@@ -6,7 +6,7 @@ import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
-import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
+import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
 import { report, reported } from './errorPolicy';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];

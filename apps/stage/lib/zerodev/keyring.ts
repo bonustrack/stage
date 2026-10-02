@@ -142,17 +142,8 @@ async function ownerFor(ref: SmartKeyRef): Promise<HDAccount> {
   return owner;
 }
 
-export async function smartOwnerAddress(ref: SmartKeyRef): Promise<string> {
-  return (await ownerFor(ref)).address.toLowerCase();
-}
-
 export async function smartOwnerSigner(ref: SmartKeyRef): Promise<HDAccount> {
   return ownerFor(ref);
-}
-
-export async function signOwnerMessage(ref: SmartKeyRef, message: string): Promise<Hex> {
-  const owner = await ownerFor(ref);
-  return owner.signMessage({ message });
 }
 
 async function loadPrivateKey(id: string): Promise<Hex | null> {

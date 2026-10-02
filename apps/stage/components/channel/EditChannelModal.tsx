@@ -25,7 +25,7 @@ const AVATAR_PX = 96;
 
 function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoice): string {
   if (picture.kind === 'new') return picture.file.uri;
-  if (picture.kind === 'keep' && imageUrl.trim()) return avatarRenderUrl('', imageUrl, AVATAR_PX * 2);
+  if (picture.kind === 'keep' && imageUrl.trim()) return avatarRenderUrl(imageUrl);
   return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
 }
 

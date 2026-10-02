@@ -1,58 +1,70 @@
 import { Component } from 'react';
-
 import type { ReactNode } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, PAGE_GUTTER } from '../layout';
 import { bubbleFallbackText, bubbleFallbackShape } from './boundary.model';
 
-interface Props {
+interface ResetBoundaryProps {
+  resetKey: unknown;
+  fallback: () => ReactNode;
+  onError?: (error: unknown) => void;
   children: ReactNode;
-  sub: string;
-  entry: HistoryEntry;
 }
 interface State { failed: boolean }
 
-const LAST_RESORT = '(this message could not be displayed)';
-
-export class BubbleErrorBoundary extends Component<Props, State> {
+export class ResetBoundary extends Component<ResetBoundaryProps, State> {
   override state: State = { failed: false };
 
   static getDerivedStateFromError(): State {
     return { failed: true };
   }
 
-  override componentDidUpdate(prev: Props): void {
-    if (prev.entry !== this.props.entry && this.state.failed) this.setState({ failed: false });
+  override componentDidUpdate(prev: ResetBoundaryProps): void {
+    if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false });
   }
 
   override componentDidCatch(error: unknown): void {
-    const { entry } = this.props;
-    console.warn(
-      'MessengerBubble render failed; rendered fallback content',
-      { id: entry.id, ...bubbleFallbackShape(entry) },
-      error,
-    );
-  }
-
-  private fallbackText(): string {
-    try {
-      return bubbleFallbackText(this.props.entry);
-    } catch {
-      return LAST_RESORT;
-    }
+    this.props.onError?.(error);
   }
 
   override render(): ReactNode {
-    if (this.state.failed) {
-      return (
+    return this.state.failed ? this.props.fallback() : this.props.children;
+  }
+}
+
+const LAST_RESORT = '(this message could not be displayed)';
+
+function fallbackText(entry: HistoryEntry): string {
+  try {
+    return bubbleFallbackText(entry);
+  } catch {
+    return LAST_RESORT;
+  }
+}
+
+export function BubbleErrorBoundary({ children, sub: fallbackColor, entry }: {
+  children: ReactNode; sub: string; entry: HistoryEntry;
+}): React.ReactElement {
+  return (
+    <ResetBoundary
+      resetKey={entry}
+      onError={(error) => {
+        console.warn(
+          'MessengerBubble render failed; rendered fallback content',
+          { id: entry.id, ...bubbleFallbackShape(entry) },
+          error,
+        );
+      }}
+      fallback={() => (
         <Box padding={{ x: PAGE_GUTTER, y: 6 }}>
-          <Text size="sm" selectable color={this.props.sub} style={{ opacity: 0.85, lineHeight: 21 }}>
-            {this.fallbackText()}
+          <Text size="sm" selectable color={fallbackColor} style={{ opacity: 0.85, lineHeight: 21 }}>
+            {fallbackText(entry)}
           </Text>
         </Box>
-      );
-    }
-    return this.props.children;
-  }
+      )}
+    >
+      {children}
+    </ResetBoundary>
+  );
 }

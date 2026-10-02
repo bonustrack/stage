@@ -2,7 +2,7 @@
 import { Box, Col } from '../../components/layout';
 import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
-import { Tabs } from '../../lib/navigation/tabs';
+import { Tabs } from '../../lib/navigation';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -10,8 +10,9 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
-import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
-import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from '../../components/tabs/tabBadge';
+import {
+  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail,
+} from '../../components/tabs/WebTabRail';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';

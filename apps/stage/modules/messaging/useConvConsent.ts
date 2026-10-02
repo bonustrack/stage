@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getConvConsentState, streamConvConsent } from '../../lib/xmtp.conv';
+import { getConvConsentState, groupAccessOf, streamConvConsent, type GroupAccess } from '../../lib/xmtp.conv';
 import type { XmtpConsent } from '../../lib/xmtp.types';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 
 const knownConsent = new Map<string, XmtpConsent | null>();
@@ -37,4 +38,29 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
     };
   }, [convId]);
   return consent;
+}
+
+const RECHECK_MS = 10_000;
+
+export function useGroupAccess(convId: string | undefined, isGroup: boolean): GroupAccess {
+  const [access, setAccess] = useState<GroupAccess>('member');
+  const epoch = useAccountEpoch();
+  useEffect(() => {
+    setAccess('member');
+    if (!convId || !isGroup) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const check = async (): Promise<void> => {
+      const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'member'));
+      if (cancelled) return;
+      setAccess(next);
+      if (next !== 'member') timer = setTimeout(() => { void check(); }, RECHECK_MS);
+    };
+    void check();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [convId, isGroup, epoch]);
+  return access;
 }

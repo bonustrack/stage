@@ -17,6 +17,7 @@ import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { ConvTopnavIdentity, ConvTopnavShell } from './conversation/parts';
 import { profileLinkOf } from '../lib/links';
+import { peerLabel } from './conversation/convTitle';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -87,7 +88,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
   const [queued, setQueued] = useState<OutboxItem[]>(() => queuedDmsFor(address));
   const myAddress = getActiveAccountIdSync();
   usePeerProfiles([address, myAddress]);
-  const peerName = getPeerName(address) ?? shortAddress(address);
+  const peerName = peerLabel(address);
   const myName = getPeerName(myAddress ?? '') ?? null;
 
   useEffect(() => {

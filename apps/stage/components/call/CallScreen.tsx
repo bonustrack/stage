@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
@@ -12,8 +11,7 @@ import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-s
 import { IconVideoOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideoOff';
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
-import { HoverTooltip } from '../HoverTooltip';
-import { useHover } from '../hover';
+import { HoverIconButton } from '../hover';
 import { Box, Col, Row, PAGE_GUTTER, viewportFill } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
@@ -79,14 +77,9 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
 }
 
 function MinimizeButton(): React.ReactElement {
-  const { text, link } = usePalette();
-  const hover = useHover();
+  const { text } = usePalette();
   return (
-    <HoverTooltip label={MINIMIZE} placement="below">
-      <Pressable accessibilityRole="button" accessibilityLabel={MINIMIZE} onPress={() => { setCallMinimized(true); }} hitSlop={8} {...hover.hoverProps}>
-        <Glyph icon={IconMinimize} size={24} color={hover.hovered ? link : text}/>
-      </Pressable>
-    </HoverTooltip>
+    <HoverIconButton icon={IconMinimize} label={MINIMIZE} color={text} placement="below" role="button" onPress={() => { setCallMinimized(true); }} />
   );
 }
 

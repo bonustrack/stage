@@ -1,6 +1,7 @@
 import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
+import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
@@ -13,7 +14,8 @@ import { useWebTabRail } from '../../lib/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { bubbleMenuItems } from './bubbleMenu.model';
-import { AnchoredOverlay, MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
+import { AnchoredOverlay, MENU_WIDTH, useAnchoredMenus } from '../AnchoredMenu';
+import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import type { MenuAnchor } from '../bubble/props';
@@ -80,7 +82,7 @@ function ReactionStrip({ stripBg, onReact }: {
   stripBg: string; onReact: (e: string) => void;
 }): React.ReactElement {
   return (
-    <Row background={stripBg} radius="full" padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ alignSelf: 'flex-start', ...MENU_SHADOW }}>
+    <Row background={stripBg} radius="full" padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ alignSelf: 'flex-start', ...OVERLAY_SHADOW }}>
       {REACT_PRESETS.map(e => (
         <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
           <Text size="2xl">{e}</Text>
@@ -100,11 +102,11 @@ function ActionDropdown({ hasText, canDelete, on }: {
   hasText: boolean; canDelete: boolean; on: BubbleActions;
 }): React.ReactElement {
   return (
-    <MenuSurface>
+    <DropdownMenu>
       {bubbleMenuItems(hasText, { selectText: SELECT_TEXT, canDelete }).map(item => (
         <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
       ))}
-    </MenuSurface>
+    </DropdownMenu>
   );
 }
 

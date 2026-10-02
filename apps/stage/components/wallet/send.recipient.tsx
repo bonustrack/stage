@@ -6,10 +6,11 @@ import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
 import { Row, Col } from '../layout';
 import { shortAddress } from '../../modules/messaging';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
+import { peerLabel } from '../conversation/convTitle';
 
 export function RecipientRow({ address, label, onPress }: {
   address: string;
@@ -18,7 +19,7 @@ export function RecipientRow({ address, label, onPress }: {
 }): React.ReactElement {
   const { link: head, border } = usePalette();
   usePeerProfiles([address]);
-  const name = label ?? getPeerName(address) ?? shortAddress(address);
+  const name = label ?? peerLabel(address);
   const showAddrLine = name !== shortAddress(address);
 
   const inner = (

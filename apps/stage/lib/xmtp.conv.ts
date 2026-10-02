@@ -1,8 +1,8 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
-import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
@@ -12,6 +12,10 @@ import { resyncActiveFeeds } from './xmtp.resync';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
+
+export async function conversationIsSyncGroup(conv: Conv): Promise<boolean> {
+  return isSyncGroupName(await sdk.groupName(conv));
+}
 
 async function shownDmId(client: ConvClient, dmId: string): Promise<string> {
   const shown = await sdk.findConv(client, dmId).catch(recover('xmtp.shownDm', null));

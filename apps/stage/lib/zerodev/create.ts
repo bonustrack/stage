@@ -3,12 +3,11 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import { addSmartAccount, loadAccounts, nextSmartHdIndex, setActiveAccountId, type AccountRecord } from '../accounts';
-import { isXmtpRegistered } from '../xmtp.registered';
+import { isXmtpRegistered } from '../xmtp.client';
 import { ensurePrimaryPhrase, smartOwnerSigner } from './keyring';
 import { reserveSmartHdIndex } from './hdIndexStore';
-import { makePublicClient } from './client';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
-import { zerodevConfigured } from './env';
+import { makePublicClient, zerodevConfigured } from './client';
 
 export interface CreateSmartAccountOpts {
   label?: string;
@@ -63,7 +62,6 @@ async function storeSmartAccount(phraseId: string, candidate: Candidate, label?:
     phraseId,
     ownerAddress: owner.address.toLowerCase(),
     deployed: false,
-    scwXmtp: true,
   };
   return addSmartAccount(rec);
 }

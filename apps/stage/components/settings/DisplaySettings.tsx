@@ -5,8 +5,7 @@ import {
 } from '../../lib/theme';
 import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
-import { SettingsGroup, SettingsPage, SettingsSectionLabel } from './SettingsPage';
-import { SettingsThemeRow } from './rows';
+import { SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow } from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 
 export function DisplaySettings(): React.ReactElement {

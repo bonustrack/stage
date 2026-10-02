@@ -11,10 +11,11 @@ import { Box, Row, Col } from '../layout';
 import { Eyebrow } from '../Eyebrow';
 import { AppModal } from '../AppModal';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { TokenRowBody } from '../wallet/TokenRowView';
+import { TokenRowBody } from './TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
+import { tokenChangeText, tokenPriceText } from './screen/model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
@@ -39,8 +40,8 @@ function TokenChoiceList({ rows, onPick }: {
   return (
     <ListView dark={dark}>
       {rows.map((r) => {
-        const change = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
-        const price = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
+        const change = tokenChangeText(r.change24h);
+        const price = tokenPriceText(r, fmtUsd);
         return (
           <ListViewItem
             key={tokenRowId(r)}
@@ -58,7 +59,6 @@ function TokenChoiceList({ rows, onPick }: {
               logoUri={r.logoUrl}
               chainBadgeUri={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
               showAvatar
-              trailingChevron={false}
             />
           </ListViewItem>
         );

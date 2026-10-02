@@ -15,7 +15,7 @@ import {
 
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
-import { isHex } from '../../lib/colorOverrides';
+import { isHex } from '../../lib/theme';
 import type { AccentLevel, GrayscaleShade, GrayscaleTint } from '@stage-labs/kit/theme-derive';
 import {
   fontSize, type Density, type RadiusName, type BaseSize,

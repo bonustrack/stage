@@ -1,22 +1,76 @@
-import { useCallback, useMemo } from 'react';
-import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState, type RefObject, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Frame, type FrameAction, type FrameActionSource, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
+import { Frame, type FrameAction, type FrameActionSource, type FrameNavigation, useFrameNavigation } from '@stage-labs/kit/react-native/frame';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
-import { View } from '../layout/native';
+import { View, type ViewType } from '../layout/native';
 import { lineOfConv, useConvConsentState, useXmtpFeed, xmtpSendFrameAction } from '../../modules/messaging';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { capabilities } from '../../lib/capabilities';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { report } from '../../lib/errorPolicy';
-import { frameActionContent, frameInputOf, frameOf } from './frame.model';
-import { useFillViewport } from './useFillViewport';
-import { useFrameScreens } from './useFrameScreens';
+import { frameActionContent, frameInputOf, frameOf, frameScreenTitle } from './frame.model';
+import { Platform, useWindowDimensions, BackHandler } from 'react-native';
+import { documentScroll } from '../../lib/webLayout';
+import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
+import type { ScreenScrollHandle } from '../layout/ScreenScroll.types';
+
+function useFillViewport(): { ref: RefObject<ViewType | null>; onLayout: () => void; minHeight?: number } {
+  const ref = useRef<ViewType>(null);
+  const { height } = useWindowDimensions();
+  const [top, setTop] = useState<number | null>(null);
+  const onLayout = useCallback(() => {
+    if (Platform.OS !== 'web') return;
+    ref.current?.measureInWindow((_x, y) => { setTop(y + documentScroll().y); });
+  }, []);
+  return { ref, onLayout, minHeight: top === null ? undefined : Math.max(0, height - top) };
+}
+
+interface FrameScreens {
+  title: string;
+  navigation: FrameNavigation;
+  onBack?: () => void;
+  scrollRef: RefObject<ScreenScrollHandle | null>;
+}
+
+function useFrameScreens(frame: FrameContent | null, leave: () => void): FrameScreens {
+  const parsed = useMemo(() => parseFrameDoc(frame === null ? undefined : frameInputOf(frame)), [frame]);
+  const nav = useFrameNavigation(parsed.ok ? parsed.doc.start : '');
+  const { screen, depth, navigate: step } = nav;
+  const back = useCallback((): boolean => {
+    if (depth === 0) return false;
+    step({ kind: 'back' });
+    return true;
+  }, [depth, step]);
+  const navigate = useCallback((next: FrameNav): void => {
+    if (next.kind === 'back' && depth === 0) leave();
+    else step(next);
+  }, [depth, step, leave]);
+  useFocusEffect(useCallback(() => {
+    if (Platform.OS !== 'android') return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', back);
+    return () => { sub.remove(); };
+  }, [back]));
+  const scrollRef = useRef<ScreenScrollHandle>(null);
+  const shown = useRef(screen);
+  useEffect(() => {
+    if (shown.current === screen) return;
+    shown.current = screen;
+    scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [screen]);
+  const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, parsed, screen)), [frame, parsed, screen]);
+  return {
+    title,
+    navigation: { screen, depth, navigate },
+    onBack: depth > 0 ? () => { back(); } : undefined,
+    scrollRef,
+  };
+}
 
 const FILL_STYLE = { flexGrow: 1 } as const;
 

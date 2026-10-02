@@ -6,13 +6,12 @@ import { Box, Row, PAGE_GUTTER } from './layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
-import { getPeerName } from '../lib/peerProfiles';
 import { useCommonChannels } from '../lib/useCommonChannels';
-import { shortAddress } from '../modules/messaging';
-import { hasDraft, getDraft } from '../lib/drafts';
+import { getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { Palette } from '../lib/theme';
 import { channelTimestamp } from '../lib/format';
+import { peerLabel } from './conversation/convTitle';
 
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;
@@ -39,7 +38,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
       {channels.map(ch => {
         const hasMsg = ch.lastPreview.length> 0;
         const preview = hasMsg
-          ? `${ch.lastSenderAddress ? `${getPeerName(ch.lastSenderAddress) ?? shortAddress(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
+          ? `${ch.lastSenderAddress ? `${peerLabel(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
           : null;
         const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;
         return (
@@ -56,7 +55,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
             unreadCount={ch.unreadCount}
             markedUnread={ch.markedUnread}
             pinned={isPinned(ch.convId)}
-            hasDraft={hasDraft(ch.convId)}
             draftText={getDraft(ch.convId)}
             onPress={() => { router.push({ pathname: '/channel/[convId]', params: { convId: ch.convId } }); }}
           />
