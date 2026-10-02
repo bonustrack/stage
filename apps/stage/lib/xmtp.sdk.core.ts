@@ -49,6 +49,8 @@ export interface SendOps<C> {
 
 export interface MessageDeletion { convId: string; messageId: string }
 
+export interface SyncState { epoch: number; forked: boolean; forkDetails: string; pausedForVersion: string }
+
 export interface MessageTarget<C> { conv: C; contentTypeId: string }
 
 export interface HistoryOps<Cl> {
@@ -88,6 +90,7 @@ interface ClientPrimitives<Cl, C, M> {
 interface ConvPrimitives<C, M> {
   isGroup: (conv: C) => boolean;
   isActive: (conv: C) => Promise<boolean>;
+  syncState: (conv: C) => Promise<SyncState>;
   dmPeerInboxId: (conv: C) => (() => Promise<string>) | null;
   groupName: (conv: C) => Promise<string | undefined>;
   groupInfo: (conv: C) => Promise<GroupInfo>;

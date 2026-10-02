@@ -188,6 +188,15 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   },
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
+  syncState: async (conv) => {
+    const [info, paused] = await Promise.all([conv.getDebugInformation(), conv.pausedForVersion()]);
+    return {
+      epoch: info.epoch,
+      forked: info.maybeForked || (info.commitLogForkStatus as string) === 'forked',
+      forkDetails: info.forkDetails,
+      pausedForVersion: paused ?? '',
+    };
+  },
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
   groupName: (conv) => (conv instanceof Group ? conv.name().catch(recover('xmtp.groupName', '')) : Promise.resolve('')),
   groupInfo: groupInfoOf,

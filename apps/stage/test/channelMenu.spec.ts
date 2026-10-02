@@ -13,6 +13,7 @@ describe('channelMenuItems', () => {
       { id: 'toggle-read', label: 'Mark as read', icon: 'IconCheckmark1' },
       { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
       { id: 'info', label: 'Channel info', icon: 'IconGroup1' },
+      { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
       { id: 'leave', label: 'Leave channel', icon: 'IconArrowLeft', danger: true },
     ]);
   });
@@ -22,7 +23,7 @@ describe('channelMenuItems', () => {
       { isGroup: true, hasPeer: false, isUnread: false, isPinned: false },
       { search: true, edit: true },
     );
-    expect(items.map(i => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'edit', 'leave']);
+    expect(items.map(i => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'sync', 'edit', 'leave']);
     expect(items.find(i => i.id === 'edit')).toEqual({ id: 'edit', label: 'Edit channel', icon: 'IconPencil' });
   });
 

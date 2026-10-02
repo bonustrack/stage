@@ -200,6 +200,15 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   },
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
+  syncState: async (conv) => {
+    const [info, paused] = await Promise.all([conv.debugInfo(), conv.pausedForVersion()]);
+    return {
+      epoch: Number(info.epoch),
+      forked: info.maybeForked || info.isCommitLogForked === true,
+      forkDetails: info.forkDetails,
+      pausedForVersion: paused ?? '',
+    };
+  },
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
   groupName: (conv) => Promise.resolve(conv instanceof Group ? conv.name : undefined),
   groupInfo: (conv) => Promise.resolve(conv instanceof Group

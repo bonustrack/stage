@@ -6,7 +6,9 @@ import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
-import { ignored, report, reported, recover } from './errorPolicy';
+import { describeError, ignored, report, reported, recover } from './errorPolicy';
+import { syncCheckResult, type SyncCheckResult } from './syncCheck.model';
+import { resyncActiveFeeds } from './xmtp.resync';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -105,6 +107,22 @@ export async function groupAccessOf(convId: string): Promise<GroupAccess> {
   ]);
   const memberListKnown = members.length > 0;
   return memberListKnown && !members.some(m => m.inboxId === client.inboxId) ? 'outside' : 'waiting';
+}
+
+export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return syncCheckResult({ found: false, active: false, syncError: '', state: null, newest: '' });
+  const active = await sdk.isActive(conv).catch(recover('xmtp.syncCheck', true));
+  const syncError = active ? await conv.sync().then(() => '', describeError) : '';
+  const [state, latest] = await Promise.all([
+    sdk.syncState(conv).catch(recover('xmtp.syncState', null)),
+    sdk.messages(conv, { limit: 1, order: 'desc' }).catch(recover('xmtp.syncCheck', [])),
+  ]);
+  const newestMs = latest[0] ? sdk.sentNsOf(latest[0]) / 1_000_000 : 0;
+  void resyncActiveFeeds();
+  return syncCheckResult({
+    found: true, active, syncError, state, newest: newestMs > 0 ? new Date(newestMs).toLocaleString() : '',
+  });
 }
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {

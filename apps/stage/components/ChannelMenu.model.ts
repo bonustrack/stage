@@ -40,6 +40,7 @@ export function channelMenuItems(
     { id: 'toggle-read', label: isUnread ? 'Mark as read' : 'Mark as unread', icon: isUnread ? 'IconCheckmark1' : 'IconEmail1' },
     { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'IconThumbtack' },
     infoItem(state),
+    isGroup && { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
     ...closingItems(state, edit),
   ];
   return items.filter((item): item is MenuSheetItem => item !== null && item !== false);

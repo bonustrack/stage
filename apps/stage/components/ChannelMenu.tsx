@@ -8,7 +8,8 @@ import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
-import { blockRequestConv, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
+import { blockRequestConv, checkConvSync, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
+import { capabilities } from '../lib/capabilities';
 import { markChatCleared } from '../lib/clearedChats';
 import { profileLinkOf } from '../lib/links';
 import { channelProfileLinkOf } from '../lib/conversationLink';
@@ -57,6 +58,16 @@ function confirmLeaveChannel(
   );
 }
 
+async function checkSync(convId: string): Promise<void> {
+  capabilities.toast('Checking sync…');
+  try {
+    const { title, message } = await checkConvSync(convId);
+    Alert.alert(title, message);
+  } catch (e) {
+    Alert.alert('Couldn’t check sync', (e as Error).message ?? 'Unknown error');
+  }
+}
+
 const DELETE_CHAT_MESSAGE = 'The chat is removed from all your devices. If they write again, it comes back with only the new messages. Delete and block also stops their messages for good.';
 
 function confirmDeleteChat(
@@ -100,6 +111,7 @@ export function ChannelMenu({
       if (isGroup) router.push(channelProfileLinkOf(convId));
       else if (peerAddress) router.push(profileLinkOf(peerAddress));
     }); },
+    sync: () => { run(() => { void checkSync(convId); }); },
     edit: () => { onClose(); setTimeout(() => onEdit?.(), 0); },
     leave: () => { confirmLeaveChannel(convId, context, router, onClose, onAfterLeave); },
     delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
