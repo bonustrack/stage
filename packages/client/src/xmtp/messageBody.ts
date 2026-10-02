@@ -29,13 +29,17 @@ export function withMentionLabels(text: string, labelOf: (address: string) => st
   return parseMentions(withChannelLabels(text)).map(seg => (seg.type === 'mention' ? labelOf(seg.address) : seg.text)).join('');
 }
 
+const MARKDOWN_SYNTAX = /[*_~`#>|\\<[\]]|&#?\w+;|^\s*(?:[-+]|\d+[.)])\s|\w\.[a-z]{2,}/im;
+
 export function bodyView(body: string, plain: boolean, findLinks?: LinkFinder): BodyView {
   const segments = bodySegments(body, findLinks ?? (() => null));
   const mentions = segments.some(s => s.type === 'mention' || (s.type === 'channel' && !s.url)
     || (s.type === 'link' && parseMentions(s.text).some(part => part.type === 'mention')));
   const channels = segments.some(s => s.type === 'channel');
   if (plain) return mentions || channels ? 'namedPlain' : 'plain';
-  return mentions ? 'mention' : 'markdown';
+  if (mentions) return 'mention';
+  const links = segments.some(s => s.type === 'link');
+  return links || channels || MARKDOWN_SYNTAX.test(body) ? 'markdown' : 'plain';
 }
 
 function splitSpans(text: string, spans: Span[], between: (text: string) => BodySegment[]): BodySegment[] {

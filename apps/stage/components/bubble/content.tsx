@@ -96,12 +96,12 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
   const textSize = d.poll ? 'md' : 'lg';
   const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
-  const markdownProps: MarkdownProps = {
+  const markdownProps = useMemo((): MarkdownProps => ({
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),
     rules: markdownRules,
     style: mdStyle,
-  };
+  }), [mdStyle]);
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>

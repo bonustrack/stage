@@ -35,6 +35,16 @@ describe('mention labels', () => {
     expect(bodyView('**hello**', false)).toBe('markdown');
   });
 
+  test('plain text skips the markdown renderer, anything that could be markdown or a link keeps it', () => {
+    for (const body of ['hello there', 'a well-known fact, 3.14 and more\nsecond line', 'Done 10 of 12', 'e.g. this']) {
+      expect(bodyView(body, false)).toBe('plain');
+    }
+    for (const body of ['**hello**', 'see stage.box', 'mail me at a@b.co', '1. one', '- item', '> quote', 'Tom &amp; Jerry',
+      '# title', 'x_y_z', '`code`', 'a | b', '[docs](https://example.com)', 'https://stage.box']) {
+      expect(bodyView(body, false, findLinks)).toBe('markdown');
+    }
+  });
+
   test('shows a channel ref as its hash label in plain views', () => {
     expect(withMentionLabels(`join ${OPS} with @${A}`, () => '@chen')).toBe('join #Ops with @chen');
   });
