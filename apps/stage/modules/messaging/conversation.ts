@@ -5,7 +5,7 @@ import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
 import { sdk } from '../../lib/xmtp.sdk';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
-import { isControlBody } from '../../lib/xmtp.types';
+import { isControlBody, type XmtpConsent } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -40,6 +40,7 @@ export interface ConversationView {
   selfInboxId: string;
   labels: string[];
   category: string | null;
+  consent: XmtpConsent | null;
 }
 
 function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
@@ -149,6 +150,7 @@ export async function summarizeConversation(
   conv: Conversation, selfInboxId: string, alreadySynced = false, knownDmIds = NO_KNOWN_DMS,
 ): Promise<ConversationView> {
   if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
+  const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));
   const peerAddress = await peerEthAddressOfDm(conv);
   await dmRoutesReady().catch(reported('conversation.dmRoutes'));
   const convId = dmRowIdOf(conv.id, peerAddress, knownDmIds);
@@ -186,5 +188,6 @@ export async function summarizeConversation(
     markedUnread,
     labels,
     category,
+    consent: await consent,
   };
 }

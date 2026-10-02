@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getConvConsentState, groupAccessOf, streamConvConsent, type GroupAccess } from '../../lib/xmtp.conv';
 import type { XmtpConsent } from '../../lib/xmtp.types';
+import { getCachedRows, patchRowConsent, subscribeCachedRows } from '../../lib/channelsCache';
+import { useStoreValue } from '../../lib/storeCore';
+import type { ConversationView } from './conversation';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 
@@ -14,16 +17,23 @@ function lastKnownConsent(convId: string | undefined): XmtpConsent | null | unde
   return convId ? knownConsent.get(convId) : undefined;
 }
 
+function listedConsent(convId: string | undefined): XmtpConsent | undefined {
+  const rows = getCachedRows() as ConversationView[] | null;
+  return (convId ? rows?.find(r => r.convId === convId)?.consent : null) ?? undefined;
+}
+
 export function useConvConsentState(convId: string | undefined): XmtpConsent | null | undefined {
-  const [consent, setConsent] = useState<XmtpConsent | null | undefined>(() => lastKnownConsent(convId));
+  const listed = useStoreValue(subscribeCachedRows, () => listedConsent(convId));
+  const [checked, setChecked] = useState<XmtpConsent | null | undefined>(() => lastKnownConsent(convId));
   useEffect(() => {
-    setConsent(lastKnownConsent(convId));
+    setChecked(lastKnownConsent(convId));
     if (!convId) return;
     let cancelled = false;
     const resolve = async (): Promise<void> => {
       const state = await getConvConsentState(convId).catch(recover('conversation.consent', null));
       knownConsent.set(convId, state);
-      if (!cancelled) setConsent(state);
+      if (state) patchRowConsent(convId, state);
+      if (!cancelled) setChecked(state);
     };
     void resolve();
     let cancelConsent: (() => void) | null = null;
@@ -37,7 +47,7 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
       if (cancelConsent) attempt(cancelConsent, 'cleanup');
     };
   }, [convId]);
-  return consent;
+  return checked === undefined ? listed : checked;
 }
 
 const RECHECK_MS = 10_000;

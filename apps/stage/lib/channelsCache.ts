@@ -6,6 +6,7 @@ import {
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
+import type { XmtpConsent } from './xmtp.types';
 
 export type CachedRow = CachedChannelRow;
 
@@ -136,4 +137,11 @@ export function patchRowSent(convId: string, preview: string): void {
   const next = applySentPatch(rows, convId, preview, Date.now());
   if (next === null) return;
   setCachedRows(next);
+}
+
+export function patchRowConsent(convId: string, consent: XmtpConsent): void {
+  const rows = getCachedRows();
+  const current = rows?.find((r) => r.convId === convId);
+  if (!rows || !current || current.consent === consent) return;
+  setCachedRows(rows.map((r) => (r === current ? { ...r, consent } : r)));
 }
