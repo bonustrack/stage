@@ -58,9 +58,9 @@ export default defineConfig({
     'packages/config': {
       type: 'library',
       knip: {
-        entry: ['eslint/*.js', 'knip/*.js', 'oxlint/*.js', 'bin/*.js'],
+        entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'],
         project: ['**/*.js'],
-        ignoreDependencies: ['madge', 'eslint-plugin-vue', 'vue-eslint-parser'],
+        ignoreDependencies: ['madge'],
       },
     },
   },

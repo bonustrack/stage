@@ -9,14 +9,6 @@ const library = ({ entry = ['src/**/*.ts'], project = ['src/**'], ...rest } = {}
   ...rest,
 });
 
-const vueApp = ({ entry = ['index.html'], project = ['src/**'], vite = true, vue = true, ...rest } = {}) => ({
-  entry,
-  project,
-  vite,
-  vue,
-  ...rest,
-});
-
 const rnApp = ({
   entry = ['app/**/*.{ts,tsx}'],
   project = ['app/**', 'components/**', 'lib/**', 'modules/**'],
@@ -49,7 +41,6 @@ const single = (opts) => ({ ...base, ...library(opts) });
 
 const KNIP_HELPERS = {
   library,
-  vue: vueApp,
   'react-native': rnApp,
   worker: cloudflareWorker,
   scripts: scriptsWorkspace,
@@ -68,4 +59,4 @@ const buildKnipConfig = (stageConfig) => {
   return { ...base, ...repoKnip, workspaces: map };
 };
 
-export { base, library, vueApp, rnApp, cloudflareWorker, scriptsWorkspace, workspaces, single, buildKnipConfig };
+export { base, library, rnApp, cloudflareWorker, scriptsWorkspace, workspaces, single, buildKnipConfig };
