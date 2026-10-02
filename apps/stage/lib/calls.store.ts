@@ -40,3 +40,19 @@ export function setCallView(patch: Partial<CallView>): void {
 export function useCallView(): CallView {
   return useStoreValue(listeners.subscribe, callView);
 }
+
+let minimizedPeerId: string | null = null;
+
+function callMinimized(): boolean {
+  const session = view.calls.session;
+  return session?.phase === 'joined' && session.selfPeerId !== null && session.selfPeerId === minimizedPeerId;
+}
+
+export function setCallMinimized(minimized: boolean): void {
+  minimizedPeerId = minimized ? view.calls.session?.selfPeerId ?? null : null;
+  listeners.notify();
+}
+
+export function useCallMinimized(): boolean {
+  return useStoreValue(listeners.subscribe, callMinimized);
+}

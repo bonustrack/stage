@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Button } from '@stage-labs/kit/react-native/button';
-import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconMicrophoneOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophoneOff';
+import { IconMinimize } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMinimize';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
 import { IconShareScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShareScreen';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
@@ -12,12 +13,13 @@ import { IconVideoOff } from '@central-icons-react-native/round-outlined-radius-
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
+import { useHover } from '../hover';
 import { Box, Col, Row, PAGE_GUTTER, viewportFill } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../../lib/webLayout';
 import { leaveCall, screenShareSupported, toggleCamera, toggleMic, toggleScreen } from '../../lib/calls';
-import type { CallLinkStatus, CallMedia, CallView } from '../../lib/calls.store';
+import { setCallMinimized, type CallLinkStatus, type CallMedia, type CallView } from '../../lib/calls.store';
 import { ignore } from '../../lib/errorPolicy';
 import { CallMediaView } from './CallMediaView';
 import { CallScreenPicker } from './CallScreenPicker';
@@ -25,6 +27,7 @@ import type { CallStream } from '../../lib/calls.types';
 import { callPerson, callTitle } from './callPeople';
 import { TitleText } from '../TitleText';
 import { callGrid, callSubtitle } from './CallScreen.model';
+import { CallControl } from './CallControl';
 
 interface TileData {
   key: string;
@@ -34,6 +37,8 @@ interface TileData {
   status: CallLinkStatus;
   self: boolean;
 }
+
+const MINIMIZE = 'Minimize';
 
 const STATUS_TEXT: Record<CallLinkStatus, string | null> = {
   connecting: 'Connecting…',
@@ -73,20 +78,14 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
   );
 }
 
-function Control({ icon, label, active, danger, onPress }: {
-  icon: CentralIcon; label: string; active: boolean; danger?: boolean; onPress: () => void;
-}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { link, bg, danger: red } = usePalette();
-  const fg = danger === true || active ? bg : link;
+function MinimizeButton(): React.ReactElement {
+  const { text, link } = usePalette();
+  const hover = useHover();
   return (
-    <HoverTooltip label={label} placement="above">
-      <Button
-        size="xl" uniform pill dark={dark} accessibilityLabel={label} aria-pressed={active}
-        color="secondary" variant={active || danger === true ? 'solid' : 'soft'}
-        tintBg={danger === true ? red : active ? link : undefined}
-        icon={<Glyph icon={icon} size={22} color={fg}/>} onPress={onPress}
-      />
+    <HoverTooltip label={MINIMIZE} placement="below">
+      <Pressable accessibilityRole="button" accessibilityLabel={MINIMIZE} onPress={() => { setCallMinimized(true); }} hitSlop={8} {...hover.hoverProps}>
+        <Glyph icon={IconMinimize} size={24} color={hover.hovered ? link : text}/>
+      </Pressable>
     </HoverTooltip>
   );
 }
@@ -95,16 +94,16 @@ function Controls({ media, people, onPeople }: { media: CallMedia; people: boole
   const bottom = useSafeAreaInsets().bottom;
   return (
     <Row align="center" justify="center" gap={14} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
-      <Control icon={media.audio ? IconMicrophone : IconMicrophoneOff} label={media.audio ? 'Mute' : 'Unmute'} active={!media.audio} onPress={toggleMic}/>
-      <Control
+      <CallControl icon={media.audio ? IconMicrophone : IconMicrophoneOff} label={media.audio ? 'Mute' : 'Unmute'} active={!media.audio} onPress={toggleMic}/>
+      <CallControl
         icon={media.video && !media.screen ? IconVideo : IconVideoOff} label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
         active={media.video && !media.screen} onPress={() => { ignore(toggleCamera(), 'ui'); }}
       />
       {screenShareSupported ? (
-        <Control icon={IconShareScreen} label={media.screen ? 'Stop sharing' : 'Share screen'} active={media.screen} onPress={() => { ignore(toggleScreen(), 'ui'); }}/>
+        <CallControl icon={IconShareScreen} label={media.screen ? 'Stop sharing' : 'Share screen'} active={media.screen} onPress={() => { ignore(toggleScreen(), 'ui'); }}/>
       ) : null}
-      <Control icon={IconPeople} label="Participants" active={people} onPress={onPeople}/>
-      <Control icon={IconCallCancel} label="Leave call" active={false} danger onPress={leaveCall}/>
+      <CallControl icon={IconPeople} label="Participants" active={people} onPress={onPeople}/>
+      <CallControl icon={IconCallCancel} label="Leave call" active={false} danger onPress={leaveCall}/>
     </Row>
   );
 }
@@ -139,10 +138,13 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   return (
     <Col surface="surface" style={viewportFill(60)}>
       <CallScreenPicker/>
-      <Col padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
-        <TitleText weight="semibold" size="md" title={callTitle(session.convId)} maxLines={1}/>
-        <Text size="xs" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
-      </Col>
+      <Row align="center" gap={14} padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
+        <MinimizeButton/>
+        <Col flex={1}>
+          <TitleText weight="semibold" size="md" title={callTitle(session.convId)} maxLines={1}/>
+          <Text size="xs" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
+        </Col>
+      </Row>
       <Row flex={1}>
         <Row flex={1} wrap padding={{ x: 8 }}>
           {tiles.map((t) => (
@@ -151,7 +153,6 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
         </Row>
         {people ? <Participants tiles={tiles} convId={session.convId} selfInboxId={view.selfInboxId}/> : null}
       </Row>
-      {view.peers.map((p) => <CallMediaView key={p.peerId} stream={p.stream} kind="audio"/>)}
       <Controls media={view.media} people={people} onPeople={() => { setPeople(!people); }}/>
     </Col>
   );

@@ -1,9 +1,11 @@
 import { Platform, useWindowDimensions } from 'react-native';
+import { useCallMinimized } from './calls.store';
 
 const WEB_SIDEBAR_MIN_WIDTH = 1100;
 const WEB_TOP_BAND = 12;
 
 export const WEB_TAB_RAIL_WIDTH = 72;
+export const CALL_BAR_HEIGHT = 44;
 
 interface DesktopBridge { titleBarInset?: unknown }
 
@@ -33,11 +35,16 @@ export function useWebTabRail(): boolean {
   return Platform.OS === 'web' && width >= WEB_SIDEBAR_MIN_WIDTH;
 }
 
-export function useTopChromeInset(): number {
+export function useTopBandInset(): number {
   const wide = useWebTabRail();
   const desktop = desktopTitleBarInset();
   if (desktop > 0) return desktop;
   return wide ? WEB_TOP_BAND : 0;
+}
+
+export function useTopChromeInset(): number {
+  const band = useTopBandInset();
+  return useCallMinimized() ? band + CALL_BAR_HEIGHT : band;
 }
 
 let scrollLocks = 0;
