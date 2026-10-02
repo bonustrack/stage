@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelProfileLinkOf, isActiveConversationPath, profileKindOf, profileLinkOf } from '../lib/conversationLink';
+import { channelProfileLinkOf, isActiveConversationPath, profileKindOf, profileLinkOf } from '../lib/links';
 
 const PEER = '0x1234567890AbcdEF1234567890aBcDeF12345678';
 const CHANNEL = '449ce5e585c1ed5db256b6fd7cbd60e7';

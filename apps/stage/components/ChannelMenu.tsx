@@ -11,8 +11,7 @@ import { blockRequestConv, checkConvSync, unacceptConv } from '../lib/xmtp.conv'
 import { leaveGroupConv } from '../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { markChatCleared } from '../lib/clearedChats';
-import { profileLinkOf } from '../lib/links';
-import { channelProfileLinkOf } from '../lib/conversationLink';
+import { channelProfileLinkOf, profileLinkOf } from '../lib/links';
 import { openAddMembers } from '../lib/memberList';
 import { capabilities } from '../lib/capabilities';
 

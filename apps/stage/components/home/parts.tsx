@@ -20,7 +20,7 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
-import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';
+import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
 import type { Row as RowT } from './model';
 import type { RowMenu } from './state';
 import { channelTimestamp } from '../../lib/format';
@@ -161,7 +161,7 @@ export function useChannelRowRenderer(
         avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
         pinned={pinned.includes(item.convId)}
         draftText={getDraft(item.convId)}
-        active={menuConvId === item.convId || isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
+        active={menuConvId === item.convId || isActiveConversationPath(activePath, item.convId, item.peerAddress)}
         pinDrag={pinDrag}
         hideAvatar={hideAvatar}
       />

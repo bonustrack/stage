@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from '../layout/native';
+import { View } from 'react-native';
 import { ignore } from '../../lib/errorPolicy';
 import type { CallMediaViewProps } from './CallScreen.model';
 

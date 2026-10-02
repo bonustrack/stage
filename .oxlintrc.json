@@ -330,7 +330,17 @@
     },
     {
       "files": [
-        "apps/stage/components/layout/**"
+        "apps/stage/components/layout/**",
+        "apps/stage/app/_layout.tsx",
+        "apps/stage/components/HoverTooltip.web.tsx",
+        "apps/stage/components/accounts/QrScanner.web.tsx",
+        "apps/stage/components/bubble/ReactionTooltip.tsx",
+        "apps/stage/components/bubble/gestures.ts",
+        "apps/stage/components/call/CallButtons.tsx",
+        "apps/stage/components/call/CallMediaView.web.tsx",
+        "apps/stage/components/frame/FramePreview.tsx",
+        "apps/stage/components/frame/FrameScreen.tsx",
+        "apps/stage/components/landing/AsciiField.web.tsx"
       ],
       "rules": {
         "no-restricted-imports": "off"

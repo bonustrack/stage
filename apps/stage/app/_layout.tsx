@@ -3,14 +3,13 @@ import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
-import { Text, TextInput } from '../components/layout/native';
 import { Col, PANE_LEFT_PAD, viewportFill } from '../components/layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Platform } from 'react-native';
+import { Platform, Text, TextInput } from 'react-native';
 import {
   RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore,
 } from '../lib/navigation';

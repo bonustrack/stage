@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
-import { View } from '../layout/native';
+import { View } from 'react-native';
 import { ignored, recover } from '../../lib/errorPolicy';
 
 export interface QrScannerProps {

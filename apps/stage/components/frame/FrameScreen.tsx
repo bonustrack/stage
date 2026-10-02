@@ -7,7 +7,6 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
-import { View, type ViewType } from '../layout/native';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
@@ -18,13 +17,13 @@ import { capabilities } from '../../lib/capabilities';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { report } from '../../lib/errorPolicy';
 import { frameActionContent, frameInputOf, frameOf, frameScreenTitle } from './frame.model';
-import { Platform, useWindowDimensions, BackHandler } from 'react-native';
+import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
 import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
 import type { ScreenScrollHandle } from '../layout/ScreenScroll.types';
 
-function useFillViewport(): { ref: RefObject<ViewType | null>; onLayout: () => void; minHeight?: number } {
-  const ref = useRef<ViewType>(null);
+function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void; minHeight?: number } {
+  const ref = useRef<View>(null);
   const { height } = useWindowDimensions();
   const [top, setTop] = useState<number | null>(null);
   const onLayout = useCallback(() => {

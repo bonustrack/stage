@@ -6,7 +6,7 @@ import { ChannelProfile } from '../../components/channel/ChannelProfile';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useResolvedHandle } from '../../lib/resolveHandle';
-import { profileKindOf } from '../../lib/conversationLink';
+import { profileKindOf } from '../../lib/links';
 
 function UserProfile({ handle }: { handle: string }): React.ReactElement {
   const resolved = useResolvedHandle(handle);

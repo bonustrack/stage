@@ -1,6 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { Platform, type GestureResponderEvent } from 'react-native';
-import { View, type ViewType } from '../layout/native';
+import { Platform, View, type GestureResponderEvent } from 'react-native';
 import { MENU_GAP } from '../menuStyle';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -23,7 +22,7 @@ function CallMenu({ convId, isGroup, disabled }: {
   convId: string; isGroup: boolean; disabled: boolean;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const trigger = useRef<ViewType>(null);
+  const trigger = useRef<View>(null);
   const opening = useRef(0);
   const { text, link, sub } = usePalette();
   const hover = useHover();
