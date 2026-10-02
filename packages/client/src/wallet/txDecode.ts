@@ -50,29 +50,41 @@ function fmtArg(v: unknown): string {
   return String(v);
 }
 
+interface SourcifyContract {
+  abi?: Abi;
+  match?: string | null;
+  proxyResolution?: { isProxy?: boolean; implementations?: { address?: string }[] };
+}
+
+function implementationOf(meta: SourcifyContract): string | undefined {
+  return meta.proxyResolution?.isProxy ? meta.proxyResolution.implementations?.[0]?.address : undefined;
+}
+
+async function sourcifyContract(chainId: number, address: string): Promise<SourcifyContract | null> {
+  try {
+    const res = await fetch(`${SOURCIFY_BASE}/${chainId}/${address}?fields=abi,proxyResolution`);
+    return res.ok ? (await res.json()) as SourcifyContract : null;
+  } catch { return null; }
+}
+
+async function verifiedAbiOf(meta: SourcifyContract | null, chainId: number, followProxy: boolean): Promise<Abi | null> {
+  const abi: Abi | undefined = meta?.abi;
+  if (!meta?.match || abi === undefined || abi.length === 0) return null;
+  const impl = followProxy ? implementationOf(meta) : undefined;
+  const implAbi = impl ? await fetchSourcifyAbi(chainId, impl, false) : null;
+  return implAbi ? [...abi, ...implAbi.abi] : abi;
+}
+
 async function fetchSourcifyAbi(
-  chainId: number, address: string,
+  chainId: number, address: string, followProxy = true,
 ): Promise<{ abi: Abi; verified: boolean } | null> {
   const key = `${chainId}:${address.toLowerCase()}`;
   const hit = abiCache.get(key);
   if (hit !== undefined) return hit;
-  try {
-    const url = `${SOURCIFY_BASE}/${chainId}/${address}?fields=abi`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const meta = (await res.json()) as {
-        abi?: Abi; match?: string | null;
-      };
-      const abi = meta?.abi;
-      if (Array.isArray(abi) && abi.length && meta.match) {
-        const out = { abi, verified: true };
-        abiCache.set(key, out);
-        return out;
-      }
-    }
-  } catch { }
-  abiCache.set(key, null);
-  return null;
+  const abi = await verifiedAbiOf(await sourcifyContract(chainId, address), chainId, followProxy);
+  const out = abi ? { abi, verified: true } : null;
+  abiCache.set(key, out);
+  return out;
 }
 
 async function fetch4byteSig(selector: string): Promise<string | null> {

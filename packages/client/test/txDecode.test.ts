@@ -97,6 +97,24 @@ describe('decodeCall selector mismatch detection', () => {
     expect(w).toMatch(/do not sign/i);
   });
 
+  test('(d) proxy contract -> decodes with the implementation ABI, no mismatch', async () => {
+    const proxy = '0x000000000000000000000000000000000000aaa4';
+    const impl = '0x000000000000000000000000000000000000aaa5';
+    const proxyAbi = parseAbi(['function implementation() view returns (address)']);
+    mockFetch((url) => ({
+      ok: true,
+      json: () => Promise.resolve(url.includes(impl)
+        ? { abi: POSTER_ABI, match: 'exact_match' }
+        : { abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } }),
+    }));
+    const r = await decodeCall(proxy, postStringStringData, 8453);
+    expect(r.source).toBe('sourcify');
+    expect(r.decoded).toBe(true);
+    expect(r.functionName).toBe('post');
+    expect(r.args.map(a => a.value)).toEqual(['hello', 'stage']);
+    expect(spoofWarning(r, 'post a message')).toBeUndefined();
+  });
+
   test('(c) non-Sourcify contract + 4byte hit -> neutral note, no scary warning', async () => {
     mockFetch((url) => (url.includes('sourcify')
       ? { ok: false, json: () => Promise.resolve({}) }

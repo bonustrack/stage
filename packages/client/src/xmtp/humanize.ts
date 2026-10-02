@@ -8,6 +8,7 @@ import {
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 import { parseOpenVote, parseVoteKey } from './poll-tally';
+import { paymentRequestPreview, receiptTitle, type TransactionReferenceContent, type WalletSendCallsContent } from './tx';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -155,6 +156,10 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   [STAGE_DELETE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
   [CALL_INVITE_CONTENT_TYPE.typeId]: callPreviewText,
   [CALL_SIGNAL_CONTENT_TYPE.typeId]: callPreviewText,
+  walletSendCalls: decoded => paymentRequestPreview(decoded as WalletSendCallsContent | null),
+  transactionReference: decoded => receiptTitle(decoded as TransactionReferenceContent | null),
+  signatureRequest: () => 'Signature request',
+  signatureReference: () => 'Signed',
 };
 
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {

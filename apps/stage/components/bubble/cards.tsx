@@ -13,7 +13,9 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useUsdValue } from '../../lib/txDisplay';
-import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
+import {
+  chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount,
+} from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from './linkProps';
@@ -31,8 +33,9 @@ import { peerLabel } from '../conversation/convTitle';
 interface TxCardModel {
   target?: string;
   eth?: string;
-  amount?: number;
-  currency?: string;
+  amount?: TxAmount;
+  balanceSymbol?: string;
+  needed?: number;
   amountLabel?: string;
   chainNum: number;
   logoUrl: string;
@@ -72,7 +75,7 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
       detail={<TxRequestDetail m={m} sub={pal.text} />}
       balance={{
         show: m.showBalance, chainId: req.chainId, token: m.tokenAddr,
-        symbol: m.currency ?? (m.eth ? 'ETH' : undefined), needed: m.amount,
+        symbol: m.balanceSymbol, needed: m.needed,
       }}
       action={action}
       footer={onPay && gated ? (
@@ -83,20 +86,17 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
 }
 interface TxCallFields {
   target?: string; data?: string; value?: string; eth?: string;
-  amount?: number; currency?: string; desc: string; rawDesc?: string;
-  amountValue?: string; amountUnit?: string;
+  amount?: TxAmount; balanceSymbol?: string; needed?: number; desc: string; rawDesc?: string;
   recipient?: string; tokenAddr?: string; chainNum: number;
   isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
 }
 
-function amountDisplay(amount: string | number | undefined, currency: string | undefined, eth: string | undefined): {
-  amountValue?: string; amountUnit?: string;
-} {
-  if (amount != null) return { amountValue: String(amount), amountUnit: currency ?? 'ETH' };
-  return { amountValue: eth, amountUnit: eth ? 'ETH' : undefined };
+function balanceNeed(amount: TxAmount | undefined, eth: string | undefined): { balanceSymbol?: string; needed?: number } {
+  if (amount) return { balanceSymbol: amount.unit, needed: Number(amount.value) };
+  return { balanceSymbol: eth ? 'ETH' : undefined, needed: undefined };
 }
 
-function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: string; eth?: string }): {
+function txCallFlags(args: { data?: string; tokenAddr?: string; amount?: TxAmount; eth?: string }): {
   isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
 } {
   const isErc20Transfer = !!args.tokenAddr;
@@ -104,7 +104,7 @@ function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: strin
   return {
     isErc20Transfer,
     showDecodedBlock: hasCalldata && !isErc20Transfer,
-    showBalance: !!args.currency || !!args.eth || !!args.tokenAddr,
+    showBalance: !!args.amount || !!args.eth || !!args.tokenAddr,
   };
 }
 
@@ -118,30 +118,31 @@ function rawCall(req: WalletSendCallsContent): {
 
 function txCallFields(req: WalletSendCallsContent): TxCallFields {
   const { target, data, value, meta } = rawCall(req);
-  const { amount, currency, toAddress, description } = meta;
+  const { toAddress, description } = meta;
   const eth = ethFromWeiHex(value);
+  const amount = requestAmountOf(req);
   const tokenAddr = toAddress ? target : undefined;
   const desc = description ?? 'Payment request';
   const recipient = toAddress ?? target;
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   return {
-    target, data, value, eth, amount, currency,
+    target, data, value, eth, amount,
     desc, rawDesc: description, recipient, tokenAddr, chainNum,
-    ...amountDisplay(amount, currency, eth),
-    ...txCallFlags({ data, tokenAddr, currency, eth }),
+    ...balanceNeed(amount, eth),
+    ...txCallFlags({ data, tokenAddr, amount, eth }),
   };
 }
 
 function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
   const f = txCallFields(req);
   const logoUrl = tokenLogoUrl(f.chainNum, f.tokenAddr ?? null, 36);
-  const amountUsd = useUsdValue(f.chainNum, f.tokenAddr ?? null, f.amountValue);
-  const amountLabel = f.amountValue && f.amountUnit
-    ? `${f.amountValue} ${f.amountUnit}${amountUsd ? ` (${amountUsd})` : ''}` : undefined;
+  const amountUsd = useUsdValue(f.chainNum, f.tokenAddr ?? null, f.amount?.value);
+  const label = txAmountLabel(f.amount);
+  const amountLabel = label ? `${label}${amountUsd ? ` (${amountUsd})` : ''}` : undefined;
   const { call: decoded, pending: decoding } = useDecodedCall(f.target, f.data, f.chainNum);
   const { result: sim, pending: simulating } = useTxSimulation(f.target, f.data, f.value, f.chainNum);
   return {
-    target: f.target, eth: f.eth, amount: f.amount, currency: f.currency,
+    target: f.target, eth: f.eth, amount: f.amount, balanceSymbol: f.balanceSymbol, needed: f.needed,
     amountLabel, chainNum: f.chainNum, logoUrl, desc: f.desc,
     recipient: f.recipient, tokenAddr: f.tokenAddr, decoded, decoding, sim, simulating,
     showDecodedBlock: f.showDecodedBlock,
@@ -252,13 +253,9 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
 export function TxReceiptCard({ receipt, dark }: {
   receipt: TransactionReferenceContent; dark: boolean;
 }): React.ReactElement {
-  const amountLabel = receipt.metadata?.amount != null
-    ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
-    : undefined;
-  const successLabel = amountLabel ? `Payment sent · ${amountLabel}` : 'Transaction sent';
   const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
   return (
-    <ReceiptBox dark={dark} title={successLabel}>
+    <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
       <Pressable {...bubbleLinkProps(url, openInBubbleLink)}>
         <Text size="4xs" color={pal.link}>
           {shortAddress(receipt.reference)} · View on explorer
