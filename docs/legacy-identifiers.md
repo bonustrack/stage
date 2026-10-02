@@ -16,4 +16,3 @@ ones under `stage`.
 | Firebase project `metro-e47f6` | `google-services*.json`, `lib/firebaseWeb.ts`, `apps/push/fly.toml` | GCP project id, immutable. |
 | `METRO_CTRL:` | `lib/xmtp.types.ts` | Wire prefix of push control messages; must match the push server. |
 | Notification channels `metro-conversations` / `metro-messages`, prefs `metro_pill`, category `box.metro.pill.category.CONVERSATION` | `modules/stage-pill/android` | Android persists per-channel user settings and preferences under these ids. |
-| `metro:lastRoute:v1`, documents dir `metro/` | `lib/lastRoute.ts`, `lib/cache.ts` | Read once and migrated to the `stage` equivalents on first launch; the constants only survive as the migration source. |

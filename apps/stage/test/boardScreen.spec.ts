@@ -3,7 +3,7 @@ import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
   BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardsRightPadding, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
-  addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, namedBoardOrder, orderedColumns, renameEdit, renameNote,
+  addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
 } from '../components/board/BoardScreen.model';
 
@@ -313,37 +313,6 @@ describe('typing a column title in place', () => {
     expect(renameNote(columns, 'Todo', long, false)).toBe('Use at most 24 characters.');
     expect(renameNote(columns, 'Todo', 'done', false)).toBe('Channels move into the Done column.');
     expect(renameNote(columns, 'Todo', 'Doing', true)).toBeNull();
-  });
-});
-
-describe('board order saved with label ids', () => {
-  const registry = JSON.stringify([
-    { id: 'todo', name: 'Doing', aliases: ['Todo'], at: 5 },
-    { id: 'todo~2', name: 'Todo', aliases: [], at: 6 },
-    { id: 'done', name: 'Done', aliases: [], at: 0 },
-    { id: 'backlog', name: 'Later', aliases: ['Backlog'], at: 3 },
-  ]);
-
-  test('turns every id back into the label name', () => {
-    expect(namedBoardOrder(['label:todo~2', 'unlabeled', 'label:todo', 'label:done'], registry))
-      .toEqual(['label:Todo', 'unlabeled', 'label:Doing', 'label:Done']);
-  });
-
-  test('keeps keys it does not know and drops the ones that end up twice', () => {
-    expect(namedBoardOrder(['label:Blocked', 'label:done', 'label:Done'], registry)).toEqual(['label:Blocked', 'label:Done']);
-  });
-
-  test('reads a key in another case as a label name first and as an id after', () => {
-    expect(namedBoardOrder(['label:Todo', 'label:Backlog', 'label:DONE', 'label:Doing', 'unlabeled'], registry))
-      .toEqual(['label:Todo', 'label:Later', 'label:Done', 'label:Doing', 'unlabeled']);
-  });
-
-  test('leaves the order alone when the saved ids cannot be read', () => {
-    const order = ['label:todo', 'unlabeled'];
-    expect(namedBoardOrder(order, '{')).toEqual(order);
-    expect(namedBoardOrder(order, '{"id":"todo","name":"Doing"}')).toEqual(order);
-    expect(namedBoardOrder(['label:1', 'label:todo'], '[{"id":"todo"},{"id":1,"name":"Doing"}]'))
-      .toEqual(['label:1', 'label:todo']);
   });
 });
 
