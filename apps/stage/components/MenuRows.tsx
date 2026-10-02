@@ -11,15 +11,15 @@ import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator } from '@stage-l
 import { useHover } from './hover';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 
-export function MenuRow({ icon, label, onPress, danger, divider = danger === true }: {
-  icon?: AppIconRef; label: string; onPress: () => void; danger?: boolean; divider?: boolean;
+export function MenuRow({ icon, label, onPress, danger, divider = danger === true, selected }: {
+  icon?: AppIconRef; label: string; onPress: () => void; danger?: boolean; divider?: boolean; selected?: boolean;
 }): React.ReactElement {
   const tone = danger === true ? 'danger' : 'link';
   return (
     <>
       {divider ? <DropdownMenuSeparator /> : null}
       <DropdownMenuItem
-        label={label} danger={danger} onPress={onPress}
+        label={label} danger={danger} selected={selected} onPress={onPress}
         icon={icon === undefined ? undefined : <AppIcon name={icon} size={DROPDOWN_MENU.icon} color={tone} />}
       />
     </>
@@ -34,7 +34,7 @@ function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
       {items.map((item, index) => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger}
+        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} selected={item.selected}
           divider={item.danger === true && index > 0} onPress={() => { onClose(); onSelect(item.id); }} />
       ))}
     </AnchoredMenu>

@@ -12,6 +12,7 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
+import type { HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { isSearchFocused, setSearchFocused } from '../../lib/searchState';
@@ -24,7 +25,7 @@ const HEADER_LAYER = { zIndex: 1 };
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
-  sortedRows: Row[];
+  items: HomeListItem[];
   barLabels: string[];
   showFilterBar: boolean;
   enabledLabels: Set<string>;
@@ -37,7 +38,7 @@ interface ChannelsListProps {
   onFilterMenu: (open: boolean) => void;
   listExtraData: readonly unknown[];
   scroll: ScrollRefs;
-  renderRow: ({ item }: { item: Row }) => React.ReactElement;
+  renderRow: ({ item }: { item: HomeListItem }) => React.ReactElement;
   pane: boolean;
 }
 
@@ -128,13 +129,13 @@ function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsLis
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
-    panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
+    panRef, items, query, setQuery, pane, listExtraData, renderRow,
   } = props;
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
   const wide = useWebTabRail();
   const search = useSearchOpen(query, setQuery, wide);
   const slot = useHomeTopnav(props, search, wide);
-  const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
+  const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [items]);
   useScrollTopOnFilter(props);
 
   return (
@@ -146,7 +147,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           ref={listRef}
           scroll={pane ? 'self' : 'window'}
           simultaneousHandlers={panRef}
-          data={sortedRows}
+          data={items}
           onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
           scrollEventThrottle={16}
           onContentSizeChange={(_w, h) => {
@@ -170,7 +171,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           keyboardShouldPersistTaps="handled"
           ListHeaderComponentStyle={wide ? undefined : HEADER_LAYER}
           ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
-          ListFooterComponent={<ListFooter query={query} noChannels={sortedRows.length === 0} knownPeers={knownPeers}/>}
+          ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers}/>}
           renderItem={renderRow}
         />
       </Box>

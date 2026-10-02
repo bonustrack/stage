@@ -11,6 +11,9 @@ import { ChannelRow } from '../ChannelRow';
 import { ChannelMenu } from '../ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { PinnedDraggable, type PinDrag } from './pinDrag';
+import { GroupHeader } from './GroupHeader';
+import { isGroupHeader, type HomeListItem } from './groups.model';
+import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetActiveXmtpStore, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
@@ -131,9 +134,10 @@ export function useChannelRowRenderer(
     pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: PinDrag;
     hideAvatar: boolean;
   },
-): ({ item }: { item: RowT }) => React.ReactElement {
+): ({ item }: { item: HomeListItem }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, hideAvatar } = deps;
-  return useCallback(({ item }: { item: RowT }): React.ReactElement => {
+  return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
+    if (isGroupHeader(item)) return <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}/>;
     const title = rowTitle(item);
     return (
       <ChannelRowItem

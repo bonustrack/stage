@@ -72,13 +72,20 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
+export const GROUP_BY_CATEGORY_ITEM = 'group-by-category';
+
+const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
   { id: 'board', label: 'Board view', icon: 'IconColumns3Wide' },
   { id: 'chats', label: 'Chats view', icon: 'IconBubble3' },
+  { id: GROUP_BY_CATEGORY_ITEM, label: 'Group by category', icon: 'IconFolder1' },
   COPY_ADDRESS_ITEM,
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },
 ];
+
+export function channelsOverflowItems(groupedByCategory: boolean): MenuItem[] {
+  return CHANNELS_OVERFLOW_ITEMS.map(item => (item.id === GROUP_BY_CATEGORY_ITEM ? { ...item, selected: groupedByCategory } : item));
+}
 
 interface SortInputs {
   rows: Row[] | null;

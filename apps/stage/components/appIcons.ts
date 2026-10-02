@@ -9,6 +9,7 @@ import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-rad
 import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDevices';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
+import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconImac } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImac';
 import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconKey2';
@@ -40,6 +41,7 @@ export const APP_ICONS = {
   IconDevices,
   IconEmail1,
   IconFileBend,
+  IconFolder1,
   IconGroup1,
   IconImac,
   IconKey2,
@@ -62,4 +64,6 @@ export const APP_ICONS = {
 
 export type AppIconName = keyof typeof APP_ICONS;
 
-export interface MenuItem<Id extends string = string, Icon = AppIconName> { id: Id; label: string; icon: Icon; danger?: boolean }
+export interface MenuItem<Id extends string = string, Icon = AppIconName> {
+  id: Id; label: string; icon: Icon; danger?: boolean; selected?: boolean;
+}

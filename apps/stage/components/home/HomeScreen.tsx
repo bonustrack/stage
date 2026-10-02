@@ -20,6 +20,7 @@ import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
 import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useGroupedRows } from '../../lib/channelGroups';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useHomeState } from './state';
 import { usePinDrag } from './pinDrag';
@@ -71,6 +72,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
     [sortedRows, matches, cleared],
   );
+  const list = useGroupedRows(visibleRows, search.text);
   const accountEpoch = useActiveAccount();
   const paneAtMin = channelsPaneWidth.useAtMin();
   const hideAvatar = pane && paneAtMin;
@@ -89,9 +91,12 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
       : router),
     [pane, router],
   );
-  const visiblePinned = useMemo(() => visibleRows.map(r => r.convId).filter(id => pinned.includes(id)), [visibleRows, pinned]);
+  const visiblePinned = useMemo(
+    () => (list.grouped ? [] : visibleRows.map(r => r.convId).filter(id => pinned.includes(id))),
+    [list.grouped, visibleRows, pinned],
+  );
   const pinDrag = usePinDrag(pinned, visiblePinned);
-  useRowArrows({ rows: visibleRows, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
+  useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, hideAvatar,
   });
@@ -102,7 +107,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   return (
     <Col flex={1} surface="surface">
       <ChannelsList
-        panRef={panRef} sortedRows={visibleRows}
+        panRef={panRef} items={list.items}
         barLabels={barLabels} showFilterBar={showFilterBar}
         enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
         unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}

@@ -3,6 +3,7 @@ import { lineOfConv, prefetchFeed } from '../../modules/messaging';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import type { VirtualListHandle } from '../layout';
+import type { HomeListItem } from './groups.model';
 import type { Row } from './model';
 
 interface RowRouter {
@@ -11,8 +12,9 @@ interface RowRouter {
 
 export const rowDataSet = (convId: string): MarkedNode => ({ dataSet: { channelrow: convId } });
 
-export function useRowArrows({ rows, activePath, router, listRef, paused }: {
+export function useRowArrows({ rows, items, activePath, router, listRef, paused }: {
   rows: readonly Row[];
+  items: readonly HomeListItem[];
   activePath: string;
   router: RowRouter;
   listRef: React.RefObject<VirtualListHandle | null>;
@@ -24,6 +26,6 @@ export function useRowArrows({ rows, activePath, router, listRef, paused }: {
     if (next === null) return;
     prefetchFeed(lineOfConv(next.convId));
     router.push(conversationLinkOf(next.convId, next.peerAddress));
-    if (!revealMarked(rowDataSet(next.convId))) listRef.current?.scrollToIndex({ index: rows.indexOf(next), viewPosition: 0.5 });
+    if (!revealMarked(rowDataSet(next.convId))) listRef.current?.scrollToIndex({ index: items.indexOf(next), viewPosition: 0.5 });
   });
 }
