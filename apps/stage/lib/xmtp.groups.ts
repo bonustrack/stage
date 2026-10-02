@@ -4,7 +4,7 @@ import {
 } from '@stage-labs/client/xmtp/groups';
 import { asGroup, assignedAddresses, writeAssigned } from '@stage-labs/client/xmtp/labels';
 import { convOfLine, sdk } from './xmtp.sdk';
-import { notAGroup, type GroupAdmins, type GroupInfo, type GroupMeta } from './xmtp.sdk.core';
+import { notAGroup, type GroupMeta } from './xmtp.sdk.core';
 import { lineOfConv } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 
@@ -65,14 +65,6 @@ export async function groupEditRights(convId: string): Promise<GroupEditRights> 
   const group = await requireGroup(lineOfConv(convId));
   const [client, policy, staff] = await Promise.all([sdk.client(), sdk.groupMetaPolicy(group), sdk.groupAdmins(group)]);
   return groupEditRightsOf(policy, groupRoleOf(client.inboxId ?? '', staff));
-}
-
-export function groupAdminInboxIds(conv: GroupConv): Promise<GroupAdmins> {
-  return sdk.groupAdmins(conv);
-}
-
-export function groupNameImage(conv: GroupConv): Promise<GroupInfo> {
-  return sdk.groupInfo(conv);
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {

@@ -4,11 +4,9 @@ module.exports = [
   'components/bubble/ImageAttachment.tsx',
   'components/bubble/attachments.tsx',
   'components/bubble/content.parts.tsx',
-  'components/bubble/poll.open.tsx',
   'components/bubble/poll.tsx',
   'components/bubble/question.tsx',
   'components/bubble/reactions.tsx',
   'components/home/labelbar.tsx',
-  'components/home/overflow.tsx',
   'components/home/topnavRight.tsx',
 ];

@@ -15,7 +15,6 @@ interface Props {
   address?: string | null;
   imageUri?: string | null;
   size?: AvatarSize | number;
-  cacheBuster?: number | string;
   square?: boolean;
   style?: StyleProp<ImageStyle>;
   onPress?: (fullUri: string | null) => void;
@@ -24,30 +23,25 @@ interface Props {
 function resolveAvatarUri(
   address: string | null | undefined,
   imageUri: string | null | undefined,
-  renderPx: number,
   stampPx: number,
-  cacheBuster?: number | string,
 ): string | null {
-  if (imageUri?.trim()) return avatarRenderUrl(address ?? '', imageUri, renderPx);
+  if (imageUri?.trim()) return avatarRenderUrl(imageUri);
   if (!address) return null;
-  return stampAvatarUrl(address, stampPx, cacheBuster ?? avatarCacheKey(getPeerAvatar(address)));
+  return stampAvatarUrl(address, stampPx, avatarCacheKey(getPeerAvatar(address)));
 }
 
 export function Avatar({
-  address, imageUri, size = 'md', cacheBuster, square, style, onPress,
+  address, imageUri, size = 'md', square, style, onPress,
 }: Props): React.ReactElement {
   usePeerProfiles([imageUri?.trim() ? null : address]);
   const px = typeof size === 'number' ? size : SIZE_PX[size];
-  const fetchPx = px * 2;
-  const uri = resolveAvatarUri(address, imageUri, fetchPx, px, cacheBuster);
+  const uri = resolveAvatarUri(address, imageUri, px);
 
   const inner = <AvatarView src={uri} size={px} square={square} style={style} />;
 
   if (!onPress) return inner;
 
-  const fullUri = resolveAvatarUri(
-    address, imageUri, FULLSCREEN_FETCH_PX, FULLSCREEN_FETCH_PX / 2, cacheBuster,
-  );
+  const fullUri = resolveAvatarUri(address, imageUri, FULLSCREEN_FETCH_PX / 2);
 
   return (
     <Pressable onPress={() => { onPress(fullUri); }} hitSlop={8}>

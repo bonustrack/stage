@@ -9,7 +9,6 @@ import { loadAccounts } from './accounts';
 import { ignore, ignored } from './errorPolicy';
 
 const STORAGE_KEY = 'stage:lastRoute:v1';
-const LEGACY_STORAGE_KEY = 'metro:lastRoute:v1';
 
 let restoreState: 'idle' | 'restoring' | 'done' = 'idle';
 
@@ -31,10 +30,9 @@ function isRestorable(path: string): boolean {
 }
 
 async function readSavedRoute(): Promise<string | null> {
-  const [current, legacy] = await Promise.all([appStorage.get(STORAGE_KEY), appStorage.get(LEGACY_STORAGE_KEY)]);
+  const saved = await appStorage.get(STORAGE_KEY);
   ignore(appStorage.delete(STORAGE_KEY), 'cleanup');
-  ignore(appStorage.delete(LEGACY_STORAGE_KEY), 'cleanup');
-  return current ?? legacy;
+  return saved;
 }
 
 function persist(path: string): void {
@@ -72,7 +70,7 @@ export function useRestoreGate(): RestoreGate {
         ]);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
-        const willRestore = Platform.OS !== 'web' && !!saved && restorable && !deepLink && accounts.length > 0;
+        const willRestore = Platform.OS !== 'web' && restorable && !deepLink && accounts.length > 0;
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;

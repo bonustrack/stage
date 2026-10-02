@@ -19,8 +19,8 @@ export function useSelfAddress(): string {
   return data ?? '';
 }
 
-function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }: {
-  icon: CentralIcon; label: string; disabled?: boolean;
+function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
+  icon: CentralIcon; label: string;
   border: string; fg: string; dark: boolean; onPress: () => void;
 }): React.ReactElement {
   return (
@@ -33,7 +33,6 @@ function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }
         uniform
         tintBg={border}
         tintFg={fg}
-        disabled={disabled}
         dark={dark}
         iconStart={<Glyph icon={icon} size={24} color={fg} dark={dark} />}
         onPress={onPress}

@@ -4,9 +4,6 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
-import {
-  ContinueWithoutHistoryLink, EnterCodeWhileWaitingLink, HistoryStalledActions, useHistoryStepHint,
-} from './Onboarding.history';
 import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
@@ -16,6 +13,64 @@ import {
 } from './Onboarding.setup.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleX';
+import { useEffect, useState } from 'react';
+import { ReceiveCodeSheet } from '../settings/HistoryTransferSheets';
+import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
+import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
+
+const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Messenger.';
+const ENTER_CODE = 'Enter a code from my other device';
+const ENTER_CODE_WHILE_WAITING = 'Or enter a code from your other device';
+
+function useNow(running: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => { setNow(Date.now()); }, 1_000);
+    return (): void => { clearInterval(id); };
+  }, [running]);
+  return now;
+}
+
+function useHistoryStepHint(active: boolean, stalled: boolean): string | null {
+  const phase = useHistorySyncPhase();
+  const counting = active && !stalled && historySyncIsActive(phase);
+  const now = useNow(counting);
+  if (!active) return null;
+  const label = historySyncPhaseLabel(phase, historySyncProblem());
+  const deadline = historySyncDeadline();
+  if (counting && label !== null && deadline !== null) return `${label} ${timeLeftLabel(deadline - now)}`;
+  if (!stalled) return label;
+  return label === null ? CONTINUE_HINT : `${label} ${CONTINUE_HINT}`;
+}
+
+function HistoryStalledActions({ dark, history }: {
+  dark: boolean; history: HistoryControls;
+}): React.ReactElement {
+  const [codeOpen, setCodeOpen] = useState(false);
+  return (
+    <Col gap={10} width="100%">
+      <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} />
+      <Button dark={dark} size="lg" fullWidth pill color="secondary" variant="solid"
+        label={ENTER_CODE} onPress={() => { setCodeOpen(true); }} />
+      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
+    </Col>
+  );
+}
+
+function EnterCodeWhileWaitingLink({ history }: { history: HistoryControls }): React.ReactElement {
+  const [codeOpen, setCodeOpen] = useState(false);
+  return (
+    <>
+      <SkipLink label={ENTER_CODE_WHILE_WAITING} onPress={() => { setCodeOpen(true); }} />
+      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
+    </>
+  );
+}
+
+function ContinueWithoutHistoryLink({ history }: { history: HistoryControls }): React.ReactElement {
+  return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
+}
 
 const ROW_HEIGHT = 40;
 const ROW_ICON = 16;

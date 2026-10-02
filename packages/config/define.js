@@ -1,10 +1,10 @@
-const TYPES = ['vue', 'react-native', 'worker', 'library'];
+const TYPES = ['react-native', 'worker', 'library'];
 
 function normalizeWorkspace(path, raw) {
   if (!raw || typeof raw !== 'object') {
     throw new Error(`defineConfig: workspace "${path}" must be an object with a "type".`);
   }
-  const { type, knip = {}, eslint = {}, src, vue = false } = raw;
+  const { type, knip = {}, src } = raw;
   if (!TYPES.includes(type)) {
     throw new Error(`defineConfig: workspace "${path}" has invalid type "${String(type)}". Expected one of ${TYPES.join(', ')}.`);
   }
@@ -14,9 +14,7 @@ function normalizeWorkspace(path, raw) {
   return Object.freeze({
     type,
     knip: knip ?? {},
-    eslint: eslint ?? {},
     src: src ?? null,
-    vue: Boolean(vue) || type === 'vue',
   });
 }
 
@@ -28,7 +26,7 @@ function resolveWorkspaces(config) {
     return { '.': config.root };
   }
   if (TYPES.includes(config.type)) {
-    const { workspaces: _w, eslint: _e, madge: _m, knip: _k, ...ws } = config;
+    const { workspaces: _w, madge: _m, knip: _k, ...ws } = config;
     return { '.': ws };
   }
   throw new Error('defineConfig: missing "workspaces". Provide a workspaces map, a "root" workspace, or a top-level single-package shorthand with a "type".');
@@ -49,7 +47,6 @@ export function defineConfig(config) {
   }
   return Object.freeze({
     workspaces: Object.freeze(workspaces),
-    eslint: config.eslint ?? {},
     madge: config.madge ?? {},
     knip: config.knip ?? {},
   });

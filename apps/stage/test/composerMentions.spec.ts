@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   applyDisplayEdit, editRegion, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
-  activeMentionIndex, withContactCandidates,
+  activeSuggestIndex, withContactCandidates,
 } from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
@@ -196,14 +196,15 @@ describe('composer mention contacts', () => {
 describe('composer mention highlight', () => {
   const alice = { address: ALICE, name: 'alice' };
   const bob = { address: BOB, name: 'bob' };
+  const byAddress = (c: { address: string }): string => c.address;
 
   test('follows the highlighted person when the list reorders', () => {
-    expect(activeMentionIndex([alice, bob], '0:@', { key: '0:@', address: BOB })).toBe(1);
-    expect(activeMentionIndex([bob, alice], '0:@', { key: '0:@', address: BOB })).toBe(0);
+    expect(activeSuggestIndex([alice, bob], '0:@', { key: '0:@', id: BOB }, byAddress)).toBe(1);
+    expect(activeSuggestIndex([bob, alice], '0:@', { key: '0:@', id: BOB }, byAddress)).toBe(0);
   });
 
   test('starts at the top for a new query or a person no longer listed', () => {
-    expect(activeMentionIndex([alice, bob], '0:@b', { key: '0:@', address: BOB })).toBe(0);
-    expect(activeMentionIndex([alice], '0:@', { key: '0:@', address: BOB })).toBe(0);
+    expect(activeSuggestIndex([alice, bob], '0:@b', { key: '0:@', id: BOB }, byAddress)).toBe(0);
+    expect(activeSuggestIndex([alice], '0:@', { key: '0:@', id: BOB }, byAddress)).toBe(0);
   });
 });

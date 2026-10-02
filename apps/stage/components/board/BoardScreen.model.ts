@@ -219,33 +219,6 @@ export function deleteColumnConfirm(label: string, carriers: number): { title: s
   };
 }
 
-function labelIds(raw: string): { id: string; name: string }[] {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.flatMap((e: unknown) => (
-      typeof e === 'object' && e !== null && 'id' in e && 'name' in e
-        && typeof e.id === 'string' && typeof e.name === 'string' ? [{ id: e.id, name: e.name }] : []
-    ));
-  } catch { return []; }
-}
-
-export function namedBoardOrder(order: readonly string[], registry: string): string[] {
-  const entries = labelIds(registry).map(e => ({ id: labelColumnKey(e.id), name: labelColumnKey(e.name) }));
-  const named = (key: string): string | undefined => {
-    const lower = key.toLowerCase();
-    return (entries.find(e => e.id === key) ?? entries.find(e => e.name.toLowerCase() === lower)
-      ?? entries.find(e => e.id.toLowerCase() === lower))?.name;
-  };
-  const seen = new Set<string>();
-  return order.flatMap((key) => {
-    const next = named(key) ?? key;
-    if (seen.has(next.toLowerCase())) return [];
-    seen.add(next.toLowerCase());
-    return [next];
-  });
-}
-
 export function activeColumnIndex(
   columns: readonly { key: string; rows: readonly { convId: string }[] }[], convId: string | null, from: string | null = null,
 ): number {

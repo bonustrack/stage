@@ -43,11 +43,18 @@ export interface TokenRowModelParams {
   logoUri: string;
 }
 
+export function tokenPriceText(r: Pick<TokenRowAsset, 'priceUsd' | 'symbol'>, fmtUsd: TokenRowFormat['fmtUsd']): string {
+  return r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
+}
+
+export function tokenChangeText(change24h: number | null): string {
+  return change24h === null ? '' : `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
+}
+
 export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowModelParams {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  const priceText = r.priceUsd === null ? r.symbol : f.fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
-  const changeText =
-    r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
+  const priceText = tokenPriceText(r, f.fmtUsd);
+  const changeText = tokenChangeText(r.change24h);
   return {
     tokenId: `${r.chainId}:${r.symbol}`,
     symbol: r.name,

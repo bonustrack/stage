@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, resolve, join } from 'node:path';
+import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
@@ -82,10 +82,7 @@ const LINT_VALUE_FLAGS = new Set([
   '--cache-location', '--cache-strategy', '--suppress-rule', '--suppressions-location', '--print-config',
   '--flag', '--concurrency',
 ]);
-const LANE_FORWARDED_FLAGS = new Set(['--fix', '--fix-dry-run', '--fix-type', '--stats']);
-const LANE_REPORT_FLAGS = new Set(['-f', '--format', '-o', '--output-file', '--max-warnings', '--color', '--no-color']);
 const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue)$/;
-const FORMATS_WITHOUT_RULES_META = new Set(['stylish', 'json']);
 
 function parseLintArgs(argv) {
   const paths = [];
@@ -102,10 +99,6 @@ function parseLintArgs(argv) {
     flags.push({ name, raw, value: takesValue ? raw[1] : arg.slice(name.length + 1) });
   }
   return { paths, flags };
-}
-
-function flagValue(flags, names) {
-  return flags.filter((flag) => names.includes(flag.name)).map((flag) => flag.value).pop();
 }
 
 function git(args) {
@@ -129,111 +122,6 @@ function changedFiles() {
   return [...files].filter((file) => LINTABLE.test(file) && existsSync(resolve(cwd, file)));
 }
 
-function lintableCount(dir) {
-  return nulSplit(git(['ls-files', '-z', '--', dir]) ?? '').filter((file) => LINTABLE.test(file)).length;
-}
-
-function lintProjects(temp) {
-  const script = join(dirname(temp), 'workspaces.mjs');
-  writeFileSync(script, `import cfg from ${JSON.stringify(configUrl())};\nprocess.stdout.write(JSON.stringify(Object.keys(cfg.workspaces)));\n`);
-  const res = spawnSync(process.execPath, [script], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  if (res.status !== 0) return null;
-  return JSON.parse(res.stdout.trim().split('\n').pop() ?? '[]')
-    .filter((path) => path !== '.' && existsSync(resolve(cwd, path, 'tsconfig.json')))
-    .map((path) => ({ path, size: lintableCount(path) }))
-    .sort((a, b) => b.size - a.size)
-    .map(({ path }) => path);
-}
-
-function repoTasks(projects) {
-  const nested = (dir) => projects.filter((path) => dir === '.' || path.startsWith(`${dir}/`));
-  return [...projects, '.'].map((dir) => [
-    dir,
-    '--no-error-on-unmatched-pattern',
-    ...nested(dir).flatMap((path) => ['--ignore-pattern', `${path}/**`]),
-  ]);
-}
-
-function changedTasks(projects, files) {
-  const groups = new Map();
-  for (const file of files) {
-    const owner = projects.filter((path) => file.startsWith(`${path}/`)).sort((a, b) => b.length - a.length)[0] ?? '.';
-    groups.set(owner, [...(groups.get(owner) ?? []), file]);
-  }
-  return [...groups.values()].map((group) => [...group, '--no-warn-ignored']);
-}
-
-function lintJobs() {
-  const jobs = Number.parseInt(process.env.STAGE_LINT_JOBS ?? '', 10);
-  return jobs > 0 ? jobs : 2;
-}
-
-function spawnLane(args) {
-  const nodeOptions = `${process.env.NODE_OPTIONS ?? ''} --disable-warning=MODULE_TYPELESS_PACKAGE_JSON`.trim();
-  return new Promise((done) => {
-    const child = spawn(localBin('eslint'), args, { stdio: 'inherit', cwd, env: { ...process.env, NODE_OPTIONS: nodeOptions } });
-    child.on('error', (error) => {
-      process.stderr.write(`stage lint: ${error.message}\n`);
-      done(2);
-    });
-    child.on('close', (code) => done(code ?? 2));
-  });
-}
-
-async function reportLint(temp, results, flags) {
-  const { ESLint } = await import(resolvePkg('eslint'));
-  const engine = new ESLint({ cwd, overrideConfigFile: temp });
-  const format = flagValue(flags, ['-f', '--format']) ?? 'stylish';
-  const formatter = await engine.loadFormatter(format);
-  for (const result of FORMATS_WITHOUT_RULES_META.has(format) ? [] : results) {
-    if (result.messages.length + result.suppressedMessages.length > 0) await engine.calculateConfigForFile(result.filePath);
-  }
-  const errors = results.reduce((sum, result) => sum + result.errorCount, 0);
-  const warnings = results.reduce((sum, result) => sum + result.warningCount, 0);
-  const maxWarnings = Number(flagValue(flags, ['--max-warnings']) ?? -1);
-  const tooManyWarnings = maxWarnings >= 0 && warnings > maxWarnings;
-  const color = flags.filter((flag) => flag.name === '--color' || flag.name === '--no-color').pop();
-  const meta = {};
-  if (color) meta.color = color.name === '--color';
-  if (tooManyWarnings) meta.maxWarningsExceeded = { maxWarnings, foundWarnings: warnings };
-  const output = await formatter.format(results, meta);
-  const outputFile = flagValue(flags, ['-o', '--output-file']);
-  if (outputFile) {
-    mkdirSync(dirname(resolve(cwd, outputFile)), { recursive: true });
-    writeFileSync(resolve(cwd, outputFile), output);
-  } else if (output) {
-    await new Promise((done) => process.stdout.write(`${output}\n`, done));
-  }
-  if (!errors && tooManyWarnings) console.error('ESLint found too many warnings (maximum: %s).', maxWarnings);
-  return errors || tooManyWarnings ? 1 : 0;
-}
-
-async function runLintLanes(temp, tasks, flags) {
-  const forwarded = flags.filter((flag) => LANE_FORWARDED_FLAGS.has(flag.name)).flatMap((flag) => flag.raw);
-  const outputs = tasks.map((_, i) => join(dirname(temp), `lane-${i}.json`));
-  const queue = tasks.map((targets, i) => ['--config', temp, ...targets, '--format', 'json', '--output-file', outputs[i], ...forwarded]);
-  const codes = [];
-  const lane = async () => {
-    for (let args = queue.shift(); args; args = queue.shift()) codes.push(await spawnLane(args));
-  };
-  await Promise.all(Array.from({ length: Math.min(lintJobs(), queue.length) }, lane));
-  const failed = codes.find((code) => code > 1);
-  if (failed !== undefined) return failed;
-  if (!outputs.every((file) => existsSync(file))) return 2;
-  const results = outputs.flatMap((file) => JSON.parse(readFileSync(file, 'utf8')));
-  try {
-    return await reportLint(temp, results, flags);
-  } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    return 2;
-  }
-}
-
-function lintTargets(paths, files) {
-  if (files) return [...files, '--no-warn-ignored'];
-  return paths.length > 0 ? [] : ['.'];
-}
-
 function oxlintTargets(paths, files) {
   if (files) return [...files, '--no-error-on-unmatched-pattern'];
   return paths.length > 0 ? [] : ['.'];
@@ -249,30 +137,11 @@ async function cmdLint(argv) {
     process.stdout.write('stage lint: no changed files to lint\n');
     return 0;
   }
-  if (existsSync(resolve(cwd, '.oxlintrc.json'))) {
-    return run(localBin('oxlint'), ['--type-aware', ...oxlintTargets(paths, files), ...rest]);
+  if (!existsSync(resolve(cwd, '.oxlintrc.json'))) {
+    process.stderr.write(`stage lint: no .oxlintrc.json found in ${cwd}\n`);
+    return 1;
   }
-  const native = firstExisting(['eslint.config.js', 'eslint.config.mjs', 'eslint.config.cjs', 'eslint.config.ts']);
-  if (native) {
-    process.stderr.write(`stage lint: deferring to native ${native}\n`);
-    return run(localBin('eslint'), [...lintTargets(paths, files), ...rest]);
-  }
-  const temp = writeTemp('stage-lint-', [
-    `import { buildLintConfig } from ${JSON.stringify(resolvePkg('@stage-labs/config/lint'))};`,
-    `import cfg from ${JSON.stringify(configUrl())};`,
-    `export default await buildLintConfig(cfg, ${JSON.stringify(cwd)});`,
-    '',
-  ].join('\n'));
-  const laned = paths.length === 0 && flags.every((flag) =>
-    flag.name === '--changed' || LANE_FORWARDED_FLAGS.has(flag.name) || LANE_REPORT_FLAGS.has(flag.name));
-  try {
-    if (!laned) return run(localBin('eslint'), ['--config', temp, ...lintTargets(paths, files), ...rest]);
-    const projects = lintProjects(temp);
-    if (!projects) return 2;
-    return await runLintLanes(temp, files ? changedTasks(projects, files) : repoTasks(projects), flags);
-  } finally {
-    rmSync(dirname(temp), { recursive: true, force: true });
-  }
+  return run(localBin('oxlint'), ['--type-aware', ...oxlintTargets(paths, files), ...rest]);
 }
 
 function cmdKnip(argv) {
@@ -348,8 +217,7 @@ function spawnCaptured(bin, args) {
   });
 }
 
-function typecheckCompiler(workspace, useTsc) {
-  if (workspace.vue === true || workspace.type === 'vue') return 'vue-tsc';
+function typecheckCompiler(useTsc) {
   return !useTsc && findLocalBin('tsgo') ? 'tsgo' : 'tsc';
 }
 
@@ -357,7 +225,7 @@ async function cmdTypecheck(stageConfig, argv) {
   const useTsc = argv.includes('--tsc');
   const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv.filter((arg) => arg !== '--tsc')];
   const queue = Object.entries(stageConfig.workspaces)
-    .map(([path, workspace]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`, compiler: typecheckCompiler(workspace, useTsc) }))
+    .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`, compiler: typecheckCompiler(useTsc) }))
     .filter(({ project }) => existsSync(resolve(cwd, project)));
   const failures = [];
   const lane = async () => {

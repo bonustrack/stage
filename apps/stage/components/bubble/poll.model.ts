@@ -14,8 +14,9 @@ export interface PollQuestionBlock {
   options: PollOptionRow[];
 }
 
-type PollVotesByQuestion = Map<number, Map<number, Set<string>>>;
-type PollOwnVotesByQuestion = Map<number, Set<number>>;
+export type PollVotes = Map<number, Map<number, Set<string>>>;
+export type PollOwnVotes = Map<number, Set<number>>;
+export type PollOpenAnswers = Map<number, Map<string, { text: string; ts: string }>>;
 
 function optionRow(
   option: PollOption,
@@ -69,8 +70,8 @@ function questionBlock(
 
 export function pollQuestionBlocks(
   questions: PollQuestion[],
-  votes: PollVotesByQuestion | undefined,
-  ownVotes: PollOwnVotesByQuestion | undefined,
+  votes: PollVotes | undefined,
+  ownVotes: PollOwnVotes | undefined,
 ): PollQuestionBlock[] {
   const multiQuestion = questions.length > 1;
   return questions.map((q, qi) =>

@@ -1,5 +1,6 @@
 import { asFileUri } from './localAttachmentCache';
 import { File, Paths } from 'expo-file-system';
+import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import {
   MultiRemoteAttachmentCodec,
   type MultiRemoteAttachmentContent, type RemoteAttachmentInfo,
@@ -9,15 +10,70 @@ import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { type LocalAttachmentInput } from './xmtp.types';
-import {
-  materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
-  type SanitizedFileUri,
-} from './xmtp.swarm';
+import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
 import { attempt } from './errorPolicy';
 
-export { swarmToHttp } from './xmtp.swarm';
+declare const sanitizedBrand: unique symbol;
+export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
+
+async function materializeFileUri(src: string): Promise<string> {
+  if (src.startsWith('file://')) return src;
+  if (src.startsWith('/')) return `file://${src}`;
+  const ext = src.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+  const dest = freshCacheFile('xmtp-send', ext.length <= 5 ? ext : 'bin');
+  const blob = await (await fetch(src)).blob();
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  dest.create();
+  dest.write(buf);
+  return asFileUri(dest.uri);
+}
+
+function freshCacheFile(prefix: string, ext: string): File {
+  const tmpName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const dest = new File(Paths.cache, tmpName);
+  if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
+  return dest;
+}
+
+export async function sanitizeFileUri(
+  uri: string, mimeType: string | undefined, filename: string | undefined,
+): Promise<SanitizedFileUri> {
+  if (!isStrippableImage(mimeType, filename)) return uri as SanitizedFileUri;
+  try {
+    const blob = await (await fetch(uri)).blob();
+    const input = new Uint8Array(await blob.arrayBuffer());
+    const { bytes, stripped } = stripMetadataBytes(input);
+    if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
+      return uri as SanitizedFileUri;
+    }
+    return writeCleanImage(bytes, filename, uri);
+  } catch {
+    return uri as SanitizedFileUri;
+  }
+}
+
+function writeCleanImage(
+  bytes: Uint8Array, filename: string | undefined, uri: string,
+): SanitizedFileUri {
+  const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
+  const dest = freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img');
+  dest.create();
+  dest.write(bytes);
+  return asFileUri(dest.uri) as SanitizedFileUri;
+}
+
+async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
+  const response = await fetch(encryptedFileUri);
+  if (!response.ok) {
+    throw new Error(`Couldn't send "${filename}": the encrypted file could not be read. Try attaching it again.`);
+  }
+  const blob = await response.blob();
+  const form = new FormData();
+  form.append('file', blob.slice(0, blob.size, 'application/octet-stream'), 'a.bin');
+  return await uploadFormToSwarmy(form, filename);
+}
 
 interface AttachmentEncryptor {
   encryptAttachment: (file: {
@@ -63,9 +119,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
   fileUri: string; mimeType?: string; filename?: string;
 }> {
   const client = await xmtpClient();
-  const tmpName = `xmtp-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
-  const dest = new File(Paths.cache, tmpName);
-  if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
+  const dest = freshCacheFile('xmtp-att', 'bin');
   await File.downloadFileAsync(swarmToHttp(info.url), dest, { idempotent: true });
   const metadata: RemoteAttachmentMetadata = {
     secret: info.secret, salt: info.salt, nonce: info.nonce,

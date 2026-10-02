@@ -11,7 +11,7 @@ import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpSto
 import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
 import { makeClientLifecycle } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
-import { forgetPushAccount, recordPushAccount } from './xmtp.appGroup';
+import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
@@ -75,5 +75,7 @@ export const {
   bumpEpoch: bumpAccountEpoch,
 });
 
-export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
-export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
+export async function isXmtpRegistered(address: string): Promise<boolean> {
+  const result = await Client.canMessage('production', [new PublicIdentity(address, 'ETHEREUM')]);
+  return Object.values(result).some(Boolean);
+}

@@ -1,4 +1,4 @@
-import { Client } from '@xmtp/browser-sdk';
+import { Client, IdentifierKind } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
   getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord,
@@ -118,5 +118,8 @@ export const {
   bumpEpoch: bumpAccountEpoch,
 });
 
-export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
-export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
+export async function isXmtpRegistered(address: string): Promise<boolean> {
+  const identifier = { identifier: address.toLowerCase(), identifierKind: IdentifierKind.Ethereum };
+  const result = await withMainThreadWasm(() => Client.canMessage([identifier], 'production'));
+  return [...result.values()].some(Boolean);
+}

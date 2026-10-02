@@ -1,10 +1,15 @@
 import { describe, expect, test } from 'bun:test';
+import { pbkdf2Async } from '@noble/hashes/pbkdf2';
+import { sha256 } from '@noble/hashes/sha2';
 import {
-  TRANSFER_CODE_LENGTH, chunkedPbkdf2, deriveTransferSecrets, formatTransferCode, noblePbkdf2, normalizeTransferCode,
-  transferCodeFromRandom, unwrapTransferArchive, webCryptoPbkdf2, wrapTransferArchive,
+  TRANSFER_CODE_LENGTH, chunkedPbkdf2, deriveTransferSecrets, formatTransferCode, normalizeTransferCode,
+  transferCodeFromRandom, unwrapTransferArchive, webCryptoPbkdf2, wrapTransferArchive, type Pbkdf2,
 } from '../src/xmtp/historyTransfer';
 
 const FAST_ITERATIONS = 1_000;
+
+const noblePbkdf2: Pbkdf2 = (password, salt, iterations) =>
+  pbkdf2Async(sha256, password, salt, { c: iterations, dkLen: 32 });
 
 describe('transfer codes', () => {
   test('encode 50 random bits as 10 Crockford base32 characters', () => {
@@ -65,7 +70,7 @@ describe('deriveTransferSecrets', () => {
   });
 
   test('uses the production iteration count by default', async () => {
-    const secrets = await deriveTransferSecrets('K7M29QX4TR');
+    const secrets = await deriveTransferSecrets('K7M29QX4TR', webCryptoPbkdf2(crypto.subtle));
     expect(secrets.id).toBe('f067ba98849292273f2de53c744739ca3cc71cfea9a438ab5da309085aa83789');
   });
 

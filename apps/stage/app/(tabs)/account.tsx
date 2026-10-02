@@ -1,4 +1,1 @@
-
-export default function TabRoutePlaceholder(): null {
-  return null;
-}
+export { default } from './index';

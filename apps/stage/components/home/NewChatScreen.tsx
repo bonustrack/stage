@@ -27,15 +27,15 @@ import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/clearedChats';
-import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useTopChromeInset, useWebTabRail } from '../../lib/webLayout';
 import {
-  convIdOfLine, createGroup, getConvConsentState, rememberOwnGroup, shortAddress, subscribeCachedRows, uploadAttachments,
-  useActiveAccountRecord,
+  convIdOfLine, createGroup, getConvConsentState, rememberOwnGroup, subscribeCachedRows, uploadAttachments, useActiveAccountRecord,
 } from '../../modules/messaging';
+import { peerLabel } from '../conversation/convTitle';
 
 interface Recipients {
   shown: string[];
@@ -148,7 +148,7 @@ interface FormProps {
 function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded }: FormProps & { rounded?: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const focusNonce = useNewChatFocusNonce();
-  const mentionCandidates = recipients.picked.map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }));
+  const mentionCandidates = recipients.picked.map(address => ({ address, name: peerLabel(address) }));
   return (
     <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
       <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}

@@ -1,23 +1,47 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { Box } from '../layout';
+import { Box, Col } from '../layout';
 import { RailTooltip } from '../tabs/RailTooltip';
 import { pageTopPadding } from '../chrome/PageIntro.model';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
-import { UsernameStep } from './Onboarding.username';
 import { useOnboardingFlow } from './useOnboardingFlow';
-import { safeNextRoute } from './nextRoute.model';
+import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { UsernameField, useUsernameInput } from '../UsernameField';
+import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 
 export interface OnboardingProps {
   onDone: () => void;
+}
+
+function UsernameStep({ dark, busy, onContinue }: {
+  dark: boolean; busy: boolean;
+  onContinue: (label: string) => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  const router = useRouter();
+  const input = useUsernameInput();
+  const footer = (
+    <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
+      label="Continue" disabled={busy || !usernameReady(input.state, input.label)}
+      onPress={() => { onContinue(input.label); }} />
+  );
+  return (
+    <OnboardingCard
+      title={USERNAME_COPY.title} about={USERNAME_COPY.about} footer={footer}
+      after={<SkipLink label="Or import" disabled={busy} onPress={() => { router.navigate(IMPORT_ROUTE); }} />}
+    >
+      <UsernameField input={input} busy={busy} />
+    </OnboardingCard>
+  );
 }
 
 const STEP_ICON_INSET = 16;

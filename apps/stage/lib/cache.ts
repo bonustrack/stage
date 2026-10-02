@@ -1,7 +1,14 @@
 import { AppState } from 'react-native';
-import { File } from 'expo-file-system';
-import { appDocumentsDir } from './appDocuments';
+import { Directory, File, Paths } from 'expo-file-system';
 import { attempt } from './errorPolicy';
+
+const DIR_NAME = 'stage';
+
+function appDocumentsDir(): Directory {
+  const dir = new Directory(Paths.document, DIR_NAME);
+  if (!dir.exists) dir.create({ intermediates: true });
+  return dir;
+}
 
 export const persistenceBackend = {
   async read<T>(name: string): Promise<T | null> {

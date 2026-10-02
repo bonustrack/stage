@@ -6,7 +6,7 @@ import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { usePalette } from '../lib/theme';
-import { useAllContacts, type Contact } from '../lib/useAllContacts';
+import { useAllContacts, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { SuggestedContacts } from './SuggestedContacts';

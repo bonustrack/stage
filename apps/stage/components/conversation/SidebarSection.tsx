@@ -9,7 +9,7 @@ import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { FormField } from '../FormField';
-import { AnchoredMenu, useAnchoredMenus } from '../AnchoredMenu';
+import { AnchoredMenu, anchorRect, useAnchoredMenus } from '../AnchoredMenu';
 import { useHover } from '../hover';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
@@ -26,13 +26,6 @@ const TITLE_SIZE = '3xs';
 const TITLE_ICON_SIZE = 15;
 
 export interface SectionDraft { draft: string[]; toggle: (key: string) => void }
-
-interface DomRect { left: number; right: number; bottom: number; width: number }
-
-function rectOf(event: GestureResponderEvent): DomRect | undefined {
-  const target = event.currentTarget as unknown as { getBoundingClientRect?: () => DomRect };
-  return target.getBoundingClientRect?.();
-}
 
 function HeaderContent({ title, icon, count, tint, pen }: {
   title: string; icon: CentralIcon; count?: number; tint?: string; pen: 'none' | 'hidden' | 'shown';
@@ -147,7 +140,7 @@ export function SidebarSection({ title, icon, count, editLabel, canEdit, current
   const [opened, setOpened] = useState<string[]>([]);
   const [draft, setDraft] = useState<string[]>([]);
   const start = (event: GestureResponderEvent): void => {
-    setAnchor(pickerAnchorOf(rectOf(event), viewport.width, PAGE_GUTTER));
+    setAnchor(pickerAnchorOf(anchorRect(event), viewport.width, PAGE_GUTTER));
     setOpened([...current]);
     setDraft([...current]);
     setOpen(true);

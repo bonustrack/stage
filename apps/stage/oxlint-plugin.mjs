@@ -70,7 +70,7 @@ const keyringGuardRule = {
             if (src === '@stage-labs/client/zerodev/derive') {
               for (const s of node.specifiers) {
                 const name = s.imported?.name;
-                if (name === 'deriveOwner' || name === 'generateWalletMnemonic' || name === 'ownerAddress') {
+                if (name === 'deriveOwner' || name === 'generateWalletMnemonic') {
                   fail(node, `'${name}' from @stage-labs/client/zerodev/derive`);
                 }
               }

@@ -1,5 +1,4 @@
 import { boardOrderSchema } from '@stage-labs/client/xmtp/readState';
-import { namedBoardOrder } from '../components/board/BoardScreen.model';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
@@ -10,15 +9,12 @@ import { makeListeners, useStoreValue } from './storeCore';
 type BoardOrder = readonly string[];
 
 const KEY_PREFIX = 'board.columnOrder.';
-const LEGACY_KEY = 'board.columnOrder';
-const REGISTRY_PREFIX = 'labels.registry.';
 const EMPTY: BoardOrder = [];
 
 let accountId: string | null = null;
 let order: BoardOrder = EMPTY;
 let loading: Promise<void> | null = null;
 const listeners = makeListeners();
-const legacyRegistries = new Map<string, string>();
 
 function parseOrder(raw: string | null): BoardOrder {
   if (raw === null) return EMPTY;
@@ -32,34 +28,14 @@ async function storedOrder(id: string): Promise<BoardOrder> {
   return parseOrder(await appStorage.get(KEY_PREFIX + id));
 }
 
-async function adoptLegacyOrder(id: string): Promise<BoardOrder> {
-  const legacy = await appStorage.get(LEGACY_KEY);
-  if (legacy === null) return EMPTY;
-  await appStorage.set(KEY_PREFIX + id, legacy);
-  await appStorage.delete(LEGACY_KEY);
-  return parseOrder(legacy);
-}
-
 function persist(id: string, next: BoardOrder): Promise<void> {
   return appStorage.set(KEY_PREFIX + id, JSON.stringify(next));
-}
-
-async function namedOrder(id: string, loaded: BoardOrder): Promise<BoardOrder> {
-  const registry = await appStorage.get(REGISTRY_PREFIX + id);
-  if (registry === null) return loaded;
-  legacyRegistries.set(id, registry);
-  const next = namedBoardOrder(loaded, registry);
-  await persist(id, next);
-  await appStorage.delete(REGISTRY_PREFIX + id);
-  return next;
 }
 
 async function loadForActiveAccount(): Promise<void> {
   const id = (await getActiveAccount())?.id ?? null;
   if (id === accountId) return;
-  const saved = id === null ? null : await appStorage.get(KEY_PREFIX + id);
-  const loaded = id === null || saved !== null ? parseOrder(saved) : await adoptLegacyOrder(id);
-  const next = id === null ? loaded : await namedOrder(id, loaded);
+  const next = id === null ? EMPTY : await storedOrder(id);
   accountId = id;
   order = next;
   listeners.notify();
@@ -90,13 +66,11 @@ export async function loadBoardOrder(forAccount: string): Promise<BoardOrder> {
 
 export async function applyRemoteBoardOrder(forAccount: string, incoming: BoardOrder): Promise<void> {
   await ensureLoaded();
-  const registry = legacyRegistries.get(forAccount);
-  const next = registry === undefined ? incoming : namedBoardOrder(incoming, registry);
   if (forAccount === accountId) {
-    order = next;
+    order = incoming;
     listeners.notify();
   }
-  await persist(forAccount, next);
+  await persist(forAccount, incoming);
 }
 
 const getBoardOrder = (): BoardOrder => order;

@@ -1,5 +1,5 @@
 import { Alert, Platform, type AlertButton } from 'react-native';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
 export interface AlertRequest {
   title: string;
@@ -7,28 +7,21 @@ export interface AlertRequest {
   buttons: AlertButton[];
 }
 
-let current: AlertRequest | null = null;
-const { notify, subscribe } = makeListeners();
+const alert = makeValue<AlertRequest | null>(null);
 
-function get(): AlertRequest | null { return current; }
-
-export function presentAlert(title: string, message?: string, buttons?: AlertButton[]): void {
-  current = {
+function presentAlert(title: string, message?: string, buttons?: AlertButton[]): void {
+  alert.set({
     title,
     message,
     buttons: buttons !== undefined && buttons.length > 0 ? buttons : [{ text: 'OK' }],
-  };
-  notify();
+  });
 }
 
 export function dismissAlert(): void {
-  current = null;
-  notify();
+  alert.set(null);
 }
 
-export function useAlertRequest(): AlertRequest | null {
-  return useStoreValue(subscribe, get);
-}
+export const useAlertRequest = alert.use;
 
 export function installAlertShim(): boolean {
   if (Platform.OS !== 'web') return false;

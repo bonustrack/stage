@@ -9,7 +9,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col, ScreenScroll } from '../../components/layout';
 import { Eyebrow } from '../../components/Eyebrow';
-import { WalletHeader } from '../../components/wallet/WalletHeader';
+import { StackHeader } from '../../components/chrome/StackHeader';
 import { AppIcon } from '../../components/widgets';
 import { getActiveAccount } from '../../lib/accounts';
 import { usePalette } from '../../lib/theme';
@@ -85,7 +85,7 @@ export default function WalletReceive(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <WalletHeader title="Receive" />
+      <StackHeader title="Receive" wallet />
 
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <Col width="100%">

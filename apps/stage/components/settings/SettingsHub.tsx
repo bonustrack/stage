@@ -9,6 +9,7 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { MenuSheet } from '../MenuSheet';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
@@ -24,8 +25,8 @@ import { accountDisplayName } from './SettingsAccountHeader.model';
 import { EditProfileModal } from './EditProfileModal';
 import { useWalletBackedUp } from './RecoveryPhraseRow';
 import { applyPush } from './NotificationsSettings';
-import { SettingsGroup } from './SettingsPage';
-import { SettingsNavRow, SettingsToggleRow } from './rows';
+import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow } from './SettingsPage';
+import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { THEME_OPTIONS } from './themeOptions.model';
 import { settingsSection } from './settingsCatalog.model';
 import { protectionSteps, protectionTitle, type ProtectionStep } from './protection.model';
@@ -130,7 +131,7 @@ function PreferencesGroup(): React.ReactElement {
             onChange={(v) => { if (!isThemePreference(v)) return; setCustomTheme(false); void setThemePreference(v); }} />
         </Box>
       </ListViewItem>
-      <SettingsToggleRow label="Push notifications" name="push" checked={push} control="switch" onChange={(next) => { void applyPush(next); }} />
+      <SettingsToggleRow label="Push notifications" name="push" checked={push} onChange={(next) => { void applyPush(next); }} />
       <SettingsNavRow label="Custom colors" value={custom ? 'On' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
     </SettingsGroup>
   );
@@ -153,7 +154,7 @@ function MoreGroup(): React.ReactElement {
   );
 }
 
-export function SettingsHub(): React.ReactElement {
+function SettingsHub(): React.ReactElement {
   return (
     <Col>
       <IdentityHero />
@@ -161,5 +162,14 @@ export function SettingsHub(): React.ReactElement {
       <PreferencesGroup />
       <MoreGroup />
     </Col>
+  );
+}
+
+export function SettingsMenu({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
+  return (
+    <SettingsPage title="Settings" root panRef={panRef}>
+      <SettingsHub />
+      <SettingsAboutFooter />
+    </SettingsPage>
   );
 }

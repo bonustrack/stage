@@ -1,3 +1,4 @@
+import { voteKey } from './poll-tally';
 
 export interface ReactionPayload {
   reference: string;
@@ -9,12 +10,6 @@ export interface ReactionPayload {
 export interface ReplyPayload {
   reference: string;
   content: { text: string };
-}
-
-export interface StaticAttachmentPayload {
-  filename: string;
-  mimeType: string;
-  data: string;
 }
 
 export function buildReaction(
@@ -31,8 +26,7 @@ export function buildVote(
   action: 'added' | 'removed' = 'added',
   questionIndex = 0,
 ): ReactionPayload {
-  const content = questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
-  return { reference: pollMessageId, action, content, schema: 'custom' };
+  return { reference: pollMessageId, action, content: voteKey(questionIndex, optionIndex), schema: 'custom' };
 }
 
 export function buildOpenAnswer(
@@ -45,12 +39,4 @@ export function buildOpenAnswer(
 
 export function buildReply(replyTo: string, text: string): ReplyPayload {
   return { reference: replyTo, content: { text } };
-}
-
-export function buildStaticAttachment(
-  filename: string,
-  mimeType: string,
-  dataB64: string,
-): StaticAttachmentPayload {
-  return { filename, mimeType, data: dataB64 };
 }

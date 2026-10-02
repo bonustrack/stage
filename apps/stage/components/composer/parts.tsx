@@ -2,7 +2,6 @@
 import { useMemo, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { mapCoordsOf } from '@stage-labs/client/embed/detect';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -22,7 +21,7 @@ import { shortAddress } from '../../modules/messaging';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
 import { isLocation } from './location.model';
-import type { ChannelCandidate } from './channels.model';
+import type { Suggest } from './mentions';
 import { usePalette } from '../../lib/theme';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -68,49 +67,25 @@ export const keepInputFocus = Platform.OS === 'web'
   ? { onMouseDown: (event: { preventDefault: () => void }) => { event.preventDefault(); } }
   : {};
 
-function SuggestionMenu({ children }: { children: React.ReactNode }): React.ReactElement {
+export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: Suggest<T> }): React.ReactElement | null {
+  if (suggest.matches.length === 0) return null;
   return (
     <Box margin={{ bottom: 8 }} style={{ position: 'absolute', bottom: '100%', left: PAGE_GUTTER, zIndex: 4 }} {...keepInputFocus}>
-      <DropdownMenu style={{ width: MENU_WIDTH }}>{children}</DropdownMenu>
+      <DropdownMenu style={{ width: MENU_WIDTH }}>
+        {suggest.matches.map((c, i) => {
+          const avatar = suggest.avatarOf(c);
+          return (
+            <DropdownMenuItem
+              key={suggest.idOf(c)}
+              label={c.name}
+              highlighted={i === suggest.active}
+              icon={<Avatar address={avatar.address} imageUri={avatar.imageUri} square={avatar.square} size={DROPDOWN_MENU.icon}/>}
+              onPress={() => { suggest.pick(c); }}
+            />
+          );
+        })}
+      </DropdownMenu>
     </Box>
-  );
-}
-
-export function MentionMenu({ matches, active, onPick }: {
-  matches: MentionCandidate[]; active: number; onPick: (candidate: MentionCandidate) => void;
-}): React.ReactElement | null {
-  if (matches.length === 0) return null;
-  return (
-    <SuggestionMenu>
-      {matches.map((c, i) => (
-        <DropdownMenuItem
-          key={c.address}
-          label={c.name}
-          highlighted={i === active}
-          icon={<Avatar address={c.address} size={DROPDOWN_MENU.icon}/>}
-          onPress={() => { onPick(c); }}
-        />
-      ))}
-    </SuggestionMenu>
-  );
-}
-
-export function ChannelSuggestMenu({ matches, active, onPick }: {
-  matches: ChannelCandidate[]; active: number; onPick: (candidate: ChannelCandidate) => void;
-}): React.ReactElement | null {
-  if (matches.length === 0) return null;
-  return (
-    <SuggestionMenu>
-      {matches.map((c, i) => (
-        <DropdownMenuItem
-          key={c.convId}
-          label={c.name}
-          highlighted={i === active}
-          icon={<Avatar address={c.avatarAddress} imageUri={c.avatarUri} square size={DROPDOWN_MENU.icon}/>}
-          onPress={() => { onPick(c); }}
-        />
-      ))}
-    </SuggestionMenu>
   );
 }
 

@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { feedStartOf, isAtFeedStart, parseFeedStarts, withFeedStart } from '../lib/feedStart.model';
+import { FEED_START_LIMIT, feedStartOf, isAtFeedStart, parseFeedStarts, withFeedStart, type FeedStart } from '../lib/feedStart.model';
 
 describe('feed start memory', () => {
   test('keeps one first message per chat and only the most recent chats', () => {
     expect(withFeedStart([['a', 'm1']], 'a', 'm2')).toEqual([['a', 'm2']]);
-    expect(withFeedStart([['a', 'm1'], ['b', 'm2']], 'c', 'm3', 2)).toEqual([['b', 'm2'], ['c', 'm3']]);
+    const full = Array.from({ length: FEED_START_LIMIT }, (_, i): FeedStart => [`l${i}`, `m${i}`]);
+    expect(withFeedStart(full, 'c', 'm3')).toEqual([...full.slice(1), ['c', 'm3']]);
     expect(feedStartOf([['a', 'm1'], ['b', 'm2']], 'b')).toBe('m2');
     expect(feedStartOf([['a', 'm1']], 'b')).toBeUndefined();
   });

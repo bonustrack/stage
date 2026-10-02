@@ -1,4 +1,3 @@
-
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
 } from '@xmtp/react-native-sdk';
@@ -50,18 +49,17 @@ type JsonSchema<T> = Parameters<typeof decodeJsonContent<T>>[1];
 function jsonCodec<T>(
   contentType: ContentTypeId,
   fallbackText: (content: T) => string | undefined,
-  schema?: JsonSchema<T>,
+  schema: JsonSchema<T>,
   boundary?: string,
+  push = true,
 ): JsonCodec<T> {
   return {
     contentType,
     encode: (content: T): EncodedContent =>
       encodeJsonContent(contentType, content, fallbackText(content)),
-    decode: (encoded: EncodedContent): T => (schema
-      ? decodeJsonContent<T>(encoded.content, schema, boundary)
-      : decodeJsonContent<T>(encoded.content)),
+    decode: (encoded: EncodedContent): T => decodeJsonContent<T>(encoded.content, schema, boundary),
     fallback: (content: T): string | undefined => fallbackText(content),
-    shouldPush: (): boolean => true,
+    shouldPush: (): boolean => push,
   };
 }
 
@@ -87,45 +85,53 @@ export const TRANSACTION_REFERENCE_CODEC = jsonCodec<TransactionReferenceContent
   transactionReferenceSchema, 'xmtp.transactionReference',
 );
 
-export const READ_STATE_CODEC: JsonCodec<ReadStateContent> = {
-  ...jsonCodec<ReadStateContent>(READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema),
-  shouldPush: (): boolean => false,
-};
+export const READ_STATE_CODEC = jsonCodec<ReadStateContent>(
+  READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, undefined, false,
+);
 
-export const PIN_STATE_CODEC: JsonCodec<PinStateContent> = {
-  ...jsonCodec<PinStateContent>(PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema),
-  shouldPush: (): boolean => false,
-};
+export const PIN_STATE_CODEC = jsonCodec<PinStateContent>(PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, undefined, false);
 
-export const CLEAR_STATE_CODEC: JsonCodec<ClearStateContent> = {
-  ...jsonCodec<ClearStateContent>(CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema),
-  shouldPush: (): boolean => false,
-};
+export const CLEAR_STATE_CODEC = jsonCodec<ClearStateContent>(
+  CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, undefined, false,
+);
 
-export const BOARD_STATE_CODEC: JsonCodec<BoardStateContent> = {
-  ...jsonCodec<BoardStateContent>(BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema),
-  shouldPush: (): boolean => false,
-};
+export const BOARD_STATE_CODEC = jsonCodec<BoardStateContent>(
+  BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, undefined, false,
+);
 
-export const SEARCH_STATE_CODEC: JsonCodec<SearchStateContent> = {
-  ...jsonCodec<SearchStateContent>(SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema),
-  shouldPush: (): boolean => false,
-};
+export const SEARCH_STATE_CODEC = jsonCodec<SearchStateContent>(
+  SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, undefined, false,
+);
 
 export const CALL_INVITE_CODEC = jsonCodec<CallInvite>(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');
 
-export const CALL_SIGNAL_CODEC: JsonCodec<CallSignal> = {
-  ...jsonCodec<CallSignal>(CALL_SIGNAL_CONTENT_TYPE, () => undefined, callSignalSchema, 'xmtp.callSignal'),
-  shouldPush: (): boolean => false,
-};
+export const CALL_SIGNAL_CODEC = jsonCodec<CallSignal>(
+  CALL_SIGNAL_CONTENT_TYPE, () => undefined, callSignalSchema, 'xmtp.callSignal', false,
+);
 
-export const FRAME_CODEC = jsonCodec<FrameContent>(FRAME_CONTENT_TYPE, frameFallbackText, frameContentSchema, 'xmtp.frame');
+const FRAME_CODEC = jsonCodec<FrameContent>(FRAME_CONTENT_TYPE, frameFallbackText, frameContentSchema, 'xmtp.frame');
 
 export const FRAME_ACTION_CODEC = jsonCodec<FrameActionContent>(
   FRAME_ACTION_CONTENT_TYPE, frameActionFallbackText, frameActionSchema, 'xmtp.frameAction',
 );
 
-export const DELETE_REQUEST_CODEC: JsonCodec<DeleteMessageContent> = {
-  ...jsonCodec<DeleteMessageContent>(STAGE_DELETE_CONTENT_TYPE, () => undefined, deleteMessageSchema, 'xmtp.deleteRequest'),
-  shouldPush: (): boolean => false,
-};
+export const DELETE_REQUEST_CODEC = jsonCodec<DeleteMessageContent>(
+  STAGE_DELETE_CONTENT_TYPE, () => undefined, deleteMessageSchema, 'xmtp.deleteRequest', false,
+);
+
+export const STAGE_JSON_CODECS = [
+  POLL_CODEC,
+  SIGNATURE_REQUEST_CODEC,
+  SIGNATURE_REFERENCE_CODEC,
+  WALLET_SEND_CALLS_CODEC,
+  READ_STATE_CODEC,
+  PIN_STATE_CODEC,
+  CLEAR_STATE_CODEC,
+  BOARD_STATE_CODEC,
+  SEARCH_STATE_CODEC,
+  CALL_INVITE_CODEC,
+  CALL_SIGNAL_CODEC,
+  FRAME_CODEC,
+  FRAME_ACTION_CODEC,
+  DELETE_REQUEST_CODEC,
+];

@@ -38,7 +38,6 @@ interface ChannelRowProps {
   unreadCount?: number;
   markedUnread?: boolean;
   pinned?: boolean;
-  hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
   active?: boolean;
@@ -223,7 +222,7 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
 function ChannelRowBase({
   title, placeholderTitle, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
-  pinned, hasDraft, draftText, active,
+  pinned, draftText, active,
   onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
@@ -233,7 +232,6 @@ function ChannelRowBase({
     highlightQuery,
     lastPreview,
     subtitle,
-    hasDraft,
     draftText,
     labels,
     pinned,

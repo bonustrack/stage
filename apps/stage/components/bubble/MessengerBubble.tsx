@@ -34,18 +34,11 @@ function rowBackground(replyTarget: boolean | undefined, dark: boolean): string 
 function BubbleColumn({ p, fg, sub, pillBg }: {
   p: MessengerBubbleProps; fg: string; sub: string; pillBg: string;
 }): React.ReactElement {
-  const { dark, pending } = p;
+  const { pending } = p;
   return (
     <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
       <Col>
-        <BubbleContent
-          entry={p.entry} dark={dark} pending={pending} fg={fg} sub={sub}
-          replyPreview={p.replyPreview} onReplyPreviewPress={p.onReplyPreviewPress}
-          onAnswer={p.onAnswer} votes={p.votes} ownVotes={p.ownVotes}
-          onVote={p.onVote} openAnswers={p.openAnswers} onOpenAnswer={p.onOpenAnswer} myUri={p.myUri} call={p.call}
-          onPay={p.onPay} paying={p.paying} onSign={p.onSign} signing={p.signing}
-          consentAllowed={p.consentAllowed} selectable={p.selectable} highlight={p.highlight}
-        />
+        <BubbleContent {...p} fg={fg} sub={sub} />
       </Col>
       {pending ? null : (
         <ReactionsRow

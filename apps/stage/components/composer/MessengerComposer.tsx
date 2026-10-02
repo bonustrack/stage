@@ -1,18 +1,15 @@
-
 import { Text } from '@stage-labs/kit/react-native/text';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
-import { Col, PAGE_GUTTER } from '../layout';
+import { Col, PAGE_GUTTER, Row } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
 import { useHandedSend } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import type { DropZone } from './droppedFiles.model';
-import { DropOverlay } from './dropOverlay';
 import { useComposerDrafts, useComposerFocus, useCaretToEnd, useLastAttachment } from './hooks';
-import { useMentionEditor } from './mentions';
-import { ReplyBanner, MentionMenu, ChannelSuggestMenu, PendingRow } from './parts';
-import { useChannelSuggest } from './channels';
+import { useChannelSuggest, useMentionEditor } from './mentions';
+import { ReplyBanner, SuggestMenu, PendingRow } from './parts';
 import { ComposerEditor, buildAttachActions, composerRadius } from './editor';
 import { DANGER, usePalette } from '../../lib/theme';
 import { convIdOfLine, forgetAttachments } from '../../modules/messaging';
@@ -20,6 +17,27 @@ import { fileInputs } from './send.model';
 import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
 import { TEXT_12PX } from '../smallText';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
+
+function DropOverlay({ head }: { head: string }): React.ReactElement {
+  const edge = { width: 2, color: head, style: 'dashed' };
+  return (
+    <Row
+      pointerEvents="none"
+      surface="surface"
+      align="center"
+      justify="center"
+      gap={8}
+      radius="lg"
+      border={{ top: edge, right: edge, bottom: edge, left: edge }}
+      style={{ position: 'absolute', top: 6, right: 6, bottom: 6, left: 6 }}
+    >
+      <Glyph icon={IconPaperclip3} size={20} color={head}/>
+      <Text weight="semibold" size="2xs" color={head}>Drop files to attach</Text>
+    </Row>
+  );
+}
 
 const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
 
@@ -136,8 +154,8 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   return (
     <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
-      <MentionMenu matches={mention.matches} active={mention.active} onPick={mention.pick}/>
-      <ChannelSuggestMenu matches={channels.matches} active={channels.active} onPick={channels.pick}/>
+      <SuggestMenu suggest={mention}/>
+      <SuggestMenu suggest={channels}/>
       <ComposerHeader
         dark={dark} fg={fg} sub={sub}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}

@@ -53,7 +53,7 @@ src/
   image/       # EXIF/metadata stripping before upload
   text/        # markdown helpers
   x402/        # x402 payment challenge parsing
-  validate.ts  # parseOrThrow / parseOrNull zod boundary helpers
+  validate.ts  # parseOrThrow zod boundary helper
   types.ts     # shared domain types
 ```
 

@@ -1,6 +1,7 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging';
-import type { AppIconName } from '../appIcons';
+import type { MenuItem } from '../appIcons';
+import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
 import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
@@ -71,16 +72,10 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-interface ChannelsOverflowItem {
-  id: string;
-  label: string;
-  icon: AppIconName;
-}
-
-export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
+export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
   { id: 'board', label: 'Board view', icon: 'IconColumns3Wide' },
   { id: 'chats', label: 'Chats view', icon: 'IconBubble3' },
-  { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' },
+  COPY_ADDRESS_ITEM,
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },
 ];

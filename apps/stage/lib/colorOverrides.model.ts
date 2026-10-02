@@ -1,6 +1,6 @@
 
 import {
-  DEFAULT_SEED, grayscaleFromHex, grayscaleHex,
+  DEFAULT_SEED, grayscaleHex,
   type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint,
 } from '@stage-labs/kit/theme-derive';
 import {
@@ -47,7 +47,6 @@ function num(v: unknown, fallback: number): number {
 }
 
 function migrateAccent(raw: unknown, fallback: ThemeSeed['accent']): ThemeSeed['accent'] {
-  if (typeof raw === 'string') return { primary: hex(raw, fallback.primary), level: fallback.level };
   if (!raw || typeof raw !== 'object') return { ...fallback };
   const o = raw as Record<string, unknown>;
   const level = num(o.level, fallback.level);
@@ -57,10 +56,7 @@ function migrateAccent(raw: unknown, fallback: ThemeSeed['accent']): ThemeSeed['
   };
 }
 
-function migrateGrayscale(
-  raw: unknown, scheme: Scheme, fallback: ThemeSeed['grayscale'],
-): ThemeSeed['grayscale'] {
-  if (typeof raw === 'string' && isHex(raw)) return grayscaleFromHex(raw, scheme);
+function migrateGrayscale(raw: unknown, fallback: ThemeSeed['grayscale']): ThemeSeed['grayscale'] {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ...fallback };
   const o = raw as Record<string, unknown>;
   return {
@@ -85,7 +81,7 @@ function migrateSeed(raw: unknown, scheme: Scheme): ThemeSeed {
   const o = raw as Record<string, unknown>;
   return {
     accent: migrateAccent(o.accent, fallback.accent),
-    grayscale: migrateGrayscale(o.grayscale, scheme, fallback.grayscale),
+    grayscale: migrateGrayscale(o.grayscale, fallback.grayscale),
     surface: migrateSurface(o.surface, fallback.surface),
   };
 }

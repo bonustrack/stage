@@ -19,6 +19,7 @@ import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from '
 import { FramePreview } from '../frame/FramePreview';
 import { CallCard } from './CallCard';
 import type { CallRecord } from './callCard.model';
+import type { MessengerBubbleProps } from './props';
 import { frameOf } from '../frame/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
@@ -38,21 +39,11 @@ function descriptorsOf(entry: HistoryEntry): {
   };
 }
 
-interface BubbleContentProps {
-  entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
-  replyPreview?: string; onReplyPreviewPress?: () => void;
-  onAnswer?: (label: string) => void;
-  votes?: Map<number, Map<number, Set<string>>>; ownVotes?: Map<number, Set<number>>;
-  onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
-  openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
-  onOpenAnswer?: (questionIndex: number, text: string) => void;
-  myUri?: string;
-  call?: CallRecord;
-  onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
-  consentAllowed?: boolean;
-  selectable?: boolean;
-  highlight?: string;
-}
+type BubbleContentProps = Pick<MessengerBubbleProps,
+  'entry' | 'dark' | 'pending' | 'replyPreview' | 'onReplyPreviewPress' | 'onAnswer' | 'votes' | 'ownVotes' | 'onVote'
+  | 'openAnswers' | 'onOpenAnswer' | 'myUri' | 'call' | 'onPay' | 'paying' | 'onSign' | 'signing' | 'consentAllowed'
+  | 'selectable' | 'highlight'
+> & { fg: string; sub: string };
 
 function BubbleMain({ d, entry, fg, call, selectable, highlight, markdownProps }: {
   d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; call?: CallRecord;

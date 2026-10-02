@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { CallRecord } from './callCard.model';
+import type { PollOpenAnswers, PollOwnVotes, PollVotes } from './poll.model';
 
 export interface MenuAnchor { y: number; height: number; point?: MenuPoint | null }
 
@@ -23,10 +24,10 @@ export interface MessengerBubbleProps {
   myUri: string;
   senderEthAddress?: string | null;
   onAvatarPress?: (address: string) => void;
-  votes?: Map<number, Map<number, Set<string>>>;
-  ownVotes?: Map<number, Set<number>>;
+  votes?: PollVotes;
+  ownVotes?: PollOwnVotes;
   onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
-  openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
+  openAnswers?: PollOpenAnswers;
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   call?: CallRecord;
   onPay?: () => void;

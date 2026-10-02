@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import {
-  activeChannelIndex, channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate,
+  channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate,
 } from '../components/composer/channels.model';
-import { applyDisplayEdit, insertToken, piecesOf, toDisplay } from '../components/composer/mentions.model';
+import {
+  activeSuggestIndex, applyDisplayEdit, insertToken, piecesOf, toDisplay,
+} from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
 const labelOf = (address: string): string => (address === ALICE ? '@alice' : '@someone');
@@ -98,8 +100,9 @@ describe('composer channel candidates', () => {
 
   test('keeps the highlight on the same channel while the list changes', () => {
     const list = [candidate('1', 'a'), candidate('2', 'b')];
-    expect(activeChannelIndex(list, '0:', { key: '0:', convId: '2' })).toBe(1);
-    expect(activeChannelIndex(list, '0:b', { key: '0:', convId: '2' })).toBe(0);
-    expect(activeChannelIndex(list, '0:', { key: '0:', convId: 'gone' })).toBe(0);
+    const byConvId = (c: ChannelCandidate): string => c.convId;
+    expect(activeSuggestIndex(list, '0:', { key: '0:', id: '2' }, byConvId)).toBe(1);
+    expect(activeSuggestIndex(list, '0:b', { key: '0:', id: '2' }, byConvId)).toBe(0);
+    expect(activeSuggestIndex(list, '0:', { key: '0:', id: 'gone' }, byConvId)).toBe(0);
   });
 });

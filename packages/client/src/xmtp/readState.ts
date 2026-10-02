@@ -177,11 +177,6 @@ export interface SyncGroupCandidate {
   createdAtNs: number;
 }
 
-export function pickSyncGroup<T extends SyncGroupCandidate>(groups: readonly T[]): T | null {
-  const sorted = [...groups].sort((a, b) => a.createdAtNs - b.createdAtNs || a.id.localeCompare(b.id));
-  return sorted[0] ?? null;
-}
-
 export function shouldApplyReadState(localAt: number | undefined, incomingAt: number): boolean {
   return localAt === undefined || incomingAt > localAt;
 }

@@ -58,11 +58,3 @@ export function matchChannels(candidates: ChannelCandidate[], query: string): Ch
     .map(m => m.candidate);
 }
 
-export function activeChannelIndex(
-  matches: ChannelCandidate[],
-  key: string,
-  active: { key: string; convId: string },
-): number {
-  if (active.key !== key) return 0;
-  return Math.max(0, matches.findIndex(c => c.convId === active.convId));
-}

@@ -4,19 +4,21 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
-import { Col, WebContentFrame, viewportFill } from '../components/layout';
+import { Col, PANE_LEFT_PAD, viewportFill } from '../components/layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
-import { BOARD_SCREEN_OPTIONS, RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
-import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
+import {
+  BOARD_SCREEN_OPTIONS, RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore,
+} from '../lib/navigation';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
+import { parseHex } from '@stage-labs/kit/theme-derive';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
@@ -59,12 +61,19 @@ void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
 })();
 
 function isDarkBg(hex: string): boolean {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  const hexDigits = m?.[1];
-  if (hexDigits === undefined) return true;
-  const n = parseInt(hexDigits, 16);
-  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  const rgb = parseHex(hex.trim().replace(/^#?/, '#'));
+  if (rgb === null) return true;
+  const [r, g, b] = rgb;
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
+function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <Col surface="surface" flex={1} width="100%" style={PANE_LEFT_PAD}>
+      {children}
+    </Col>
+  );
 }
 
 function useDocumentTheme(ready: boolean, dark: boolean, bg: string, sub: string): void {

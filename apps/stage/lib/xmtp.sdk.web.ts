@@ -2,21 +2,21 @@ import {
   BackupElementSelectionOption, ConsentEntityType, ConsentState, Dm, Group, IdentifierKind,
   ReactionAction, ReactionSchema, SortDirection, encodeText,
   type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
-  type Reaction,
+  type Reaction, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { bytesToBase64 } from '@stage-labs/client/text/base64';
+import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
-import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
-import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { withNestedReactions } from './nestedReactions.model';
 import { webGroupMetaPolicy } from './groupPolicyWeb.model';
-import type { XmtpConsent } from './xmtp.types';
+import { XMTP_USER_PREFIX, type XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
   type GroupMeta, type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
@@ -39,6 +39,43 @@ const ARCHIVE_OPTIONS: ArchiveOptions = {
   elements: [BackupElementSelectionOption.Messages, BackupElementSelectionOption.Consent],
   excludeDisappearingMessages: false,
 };
+
+function isRemovedAction(action: Reaction['action']): boolean {
+  return action === ReactionAction.Removed || (action as unknown) === 'removed';
+}
+
+function isCustomSchema(schema: Reaction['schema']): boolean {
+  return schema === ReactionSchema.Custom || (schema as unknown) === 'custom';
+}
+
+const webEnvelopeOptions: EnvelopeOptions = {
+  reactionRemoved: (action) => isRemovedAction(action as Reaction['action']),
+  reactionCustom: (schema) => isCustomSchema(schema as Reaction['schema']),
+  reactionCustomPayloadExtras: false,
+  replyReferenceOf: (decoded) => (decoded as { referenceId: string }).referenceId,
+  replyTextOf: (decoded) => {
+    const c = (decoded as { content: unknown }).content;
+    return typeof c === 'string' ? c : undefined;
+  },
+  attachmentNameOf: (decoded) => (decoded as AttachmentContent).filename,
+  attachmentLabelOf: (decoded) => (decoded as AttachmentContent).filename ?? 'attachment',
+  attachmentDataB64Of: (decoded) => bytesToBase64((decoded as AttachmentContent).content),
+  requireObjectForHandlers: true,
+};
+
+function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
+  const base: HistoryEntry = {
+    id: msg.id,
+    ts: msg.sentAt.toISOString(),
+    station: 'xmtp',
+    line,
+    from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`,
+    to: line,
+    messageId: msg.id,
+  };
+  const typeId = msg.contentType.typeId;
+  return envelopeFromContent(base, typeId, msg.content, msg.fallback, webEnvelopeOptions);
+}
 
 function identifierOf(address: string): Identifier {
   return { identifier: address.toLowerCase(), identifierKind: IdentifierKind.Ethereum };
@@ -245,8 +282,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     reaction: (conv, reaction) => conv.sendReaction(toWasmReaction(reaction)),
     reply: async (conv, replyTo, text) => conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeText(text)) }),
     json: (conv, codec, content) => conv.send(asEncoded(codec.encode(content)), { shouldPush: codec.shouldPush() }),
-    attachment: (conv, filename, mimeType, dataB64) =>
-      conv.sendAttachment({ filename, mimeType, content: base64ToBytes(dataB64) }),
   },
 };
 

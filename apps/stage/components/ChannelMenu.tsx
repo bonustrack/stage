@@ -1,19 +1,18 @@
 
 import { Alert } from 'react-native';
-
 import { useRouter } from 'expo-router';
 import { MenuRow } from './MenuRows';
-import { channelMenuItems } from './ChannelMenu.model';
+import { LEAVE_CHANNEL_CONFIRM, channelMenuItems } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
 import { blockRequestConv, checkConvSync, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
-import { capabilities } from '../lib/capabilities';
 import { markChatCleared } from '../lib/clearedChats';
 import { profileLinkOf } from '../lib/links';
 import { channelProfileLinkOf } from '../lib/conversationLink';
-import { openAddMembers } from '../lib/addMembersHost';
+import { openAddMembers } from '../lib/memberList';
+import { capabilities } from '../lib/capabilities';
 
 interface ChannelMenuProps {
   convId: string;
@@ -36,26 +35,16 @@ function confirmLeaveChannel(
   onClose: () => void, onAfterLeave?: (result: 'left' | 'hidden') => void,
 ): void {
   onClose();
-  Alert.alert(
-    'Leave channel',
-    'You’ll stop receiving messages from this channel. You can be re-added by a member later.',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Leave', style: 'destructive', onPress: () => {
-          void (async (): Promise<void> => {
-            try {
-              const result = await leaveGroupConv(lineOfConv(convId));
-              onAfterLeave?.(result);
-              if (context === 'view') router.replace('/');
-            } catch (e) {
-              Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
-            }
-          })();
-        },
-      },
-    ],
-  );
+  void capabilities.confirm(LEAVE_CHANNEL_CONFIRM).then(async (ok) => {
+    if (!ok) return;
+    try {
+      const result = await leaveGroupConv(lineOfConv(convId));
+      onAfterLeave?.(result);
+      if (context === 'view') router.replace('/');
+    } catch (e) {
+      Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+    }
+  });
 }
 
 async function checkSync(convId: string): Promise<void> {

@@ -1,10 +1,26 @@
 import { rememberLocalAttachments } from '../../lib/localAttachmentCache';
-import { uploadAttachments } from '../../modules/messaging';
-import { planSendSteps, type SendStep } from './send';
-import { fileInputs } from './send.model';
+import { uploadAttachments, xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../../modules/messaging';
+import { fileInputs, planSendSteps as plan, type SendStep } from './send.model';
 import { unsentDraft } from './draft.model';
 import type { ComposerState } from './state';
 import type { Attachment, PostHooks } from './types';
+
+let seq = 0;
+export const mintLocalId = (): string =>
+  `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+function planSendSteps(
+  xmtpLine: string,
+  body: string,
+  attachments: Attachment[],
+  replyTo: string | undefined,
+): SendStep[] {
+  return plan(xmtpLine, body, attachments, replyTo, {
+    text: xmtpSendText,
+    reply: xmtpReply,
+    attachments: xmtpSendMultiRemoteAttachment,
+  }, mintLocalId);
+}
 
 export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
   & Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {

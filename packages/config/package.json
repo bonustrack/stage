@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.2",
-  "description": "Shared ESLint and TypeScript config presets.",
+  "version": "0.1.0-beta.3",
+  "description": "Shared oxlint plugins, TypeScript, knip and madge presets, and the stage CLI.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,13 +11,11 @@
   "type": "module",
   "files": [
     "bin",
-    "eslint",
     "knip",
     "madge",
     "oxlint",
     "tsconfig",
     "define.js",
-    "lint.js",
     "README.md"
   ],
   "bin": {
@@ -30,18 +28,13 @@
   "exports": {
     ".": "./define.js",
     "./define": "./define.js",
-    "./lint": "./lint.js",
-    "./eslint/base": "./eslint/base.js",
-    "./eslint/vue": "./eslint/vue.js",
-    "./eslint/single": "./eslint/single.js",
     "./knip": "./knip/index.js",
     "./madge": "./madge/index.js",
     "./oxlint/comments": "./oxlint/comments.js",
     "./oxlint/core": "./oxlint/core.js",
     "./oxlint/text": "./oxlint/text.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/react-native.json": "./tsconfig/react-native.json",
-    "./tsconfig/vue.json": "./tsconfig/vue.json"
+    "./tsconfig/react-native.json": "./tsconfig/react-native.json"
   },
   "peerDependencies": {
     "eslint": "*",
@@ -49,13 +42,9 @@
     "madge": "*",
     "oxlint": "*",
     "oxlint-tsgolint": "*",
-    "typescript": ">=5.9",
-    "typescript-eslint": "*"
+    "typescript": ">=5.9"
   },
   "peerDependenciesMeta": {
-    "eslint-plugin-vue": {
-      "optional": true
-    },
     "knip": {
       "optional": true
     },
@@ -66,9 +55,6 @@
       "optional": true
     },
     "oxlint-tsgolint": {
-      "optional": true
-    },
-    "vue-eslint-parser": {
       "optional": true
     }
   }

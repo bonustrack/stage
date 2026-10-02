@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import {
-  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress, useConvMeta, markConvRead,
-  useConvConsentState,
+  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, useConvMeta, markConvRead, useConvConsentState, inboxEthAddresses,
 } from '../../modules/messaging';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/readSyncRegistry';
@@ -28,12 +27,30 @@ import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
-import { useSystemLineAddresses } from './useSystemLineAddresses';
 import { useClearedChats } from '../../lib/clearedChats';
 import {
   entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
+import { reported } from '../../lib/errorPolicy';
+import { unknownSystemLineInboxIds } from './systemNames.model';
+import { peerLabel } from './convTitle';
+
+function useSystemLineAddresses(
+  events: HistoryEntry[], inboxToAddr: Record<string, string>,
+): Record<string, string> {
+  const [resolved, setResolved] = useState<Record<string, string>>({});
+  const missingKey = useMemo(() => unknownSystemLineInboxIds(events, inboxToAddr).join(','), [events, inboxToAddr]);
+  useEffect(() => {
+    if (!missingKey) return;
+    let cancelled = false;
+    void inboxEthAddresses(missingKey.split(',')).then((found) => {
+      if (!cancelled && Object.keys(found).length > 0) setResolved(prev => ({ ...prev, ...found }));
+    }).catch(reported('conversation.systemLineAddresses'));
+    return () => { cancelled = true; };
+  }, [missingKey]);
+  return useMemo(() => ({ ...resolved, ...inboxToAddr }), [resolved, inboxToAddr]);
+}
 
 function useActiveConvSuppression(convId: string | undefined): void {
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
@@ -160,7 +177,7 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
       const k = addr.toLowerCase();
       if (seen.has(k)) return;
       seen.add(k);
-      out.push({ address: addr, name: getPeerName(addr) ?? shortAddress(addr) });
+      out.push({ address: addr, name: peerLabel(addr) });
     };
     if (isGroup) memberAddrs.forEach(add); else add(peerAddr);
     return out;

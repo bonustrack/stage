@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { transferStepLabel } from '../lib/historyTransfer.model';
+import { transferStepLabel } from '../lib/history.model';
 
 describe('transferStepLabel', () => {
   test('names each step and shows key progress as a percentage', () => {

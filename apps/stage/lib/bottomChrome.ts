@@ -1,19 +1,15 @@
 import { useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
-const { notify, subscribe } = makeListeners();
+const height = makeValue(0);
 const reports = new Map<symbol, number>();
-let height = 0;
 
 function publish(): void {
   const next = Math.max(0, ...reports.values());
-  if (next === height) return;
-  height = next;
-  notify();
+  if (next === height.get()) return;
+  height.set(next);
 }
-
-function get(): number { return height; }
 
 export function useReportBottomChrome(value: number): void {
   useFocusEffect(useCallback(() => {
@@ -27,6 +23,4 @@ export function useReportBottomChrome(value: number): void {
   }, [value]));
 }
 
-export function useBottomChromeHeight(): number {
-  return useStoreValue(subscribe, get);
-}
+export const useBottomChromeHeight = height.use;

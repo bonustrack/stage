@@ -6,7 +6,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../../components/layout';
-import { WalletHeader } from '../../components/wallet/WalletHeader';
+import { StackHeader } from '../../components/chrome/StackHeader';
 import { WalletFooter } from '../../components/wallet/wallet.form';
 import { FormField } from '../../components/FormField';
 import { TxStatus } from '../../components/wallet/send.fields';
@@ -147,7 +147,7 @@ export default function WalletSend(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <WalletHeader title="Send token" />
+      <StackHeader title="Send token" wallet />
       <SendForm key={`${token.chainId}:${token.symbol}`} token={token} initialTo={initialTo} onCancel={() => { router.back(); }}
         selector={<TokenSelector value={token} onChange={setToken}/>} />
     </Col>

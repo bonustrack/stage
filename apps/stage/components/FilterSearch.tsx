@@ -25,17 +25,18 @@ import { mentionKeyAction } from './composer/mentions.model';
 import { revealMarked } from './arrowKeys';
 import type { MarkedNode } from './arrowKeys.model';
 import { homeRows } from './home/state';
-import { shortAddress, subscribeCachedRows } from '../modules/messaging';
+import { subscribeCachedRows } from '../modules/messaging';
 import { useStoreValue } from '../lib/storeCore';
 import { useClearedChats } from '../lib/clearedChats';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { useWebTabRail } from '../lib/webLayout';
-import { getPeerDisplayName, getPeerHandle, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
+import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../lib/peerProfiles';
 import {
   HAS_OPTIONS, ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
   searchFilterMenu, searchFilterSources,
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
+import { peerLabel } from './conversation/convTitle';
 
 const MENU_MAX_HEIGHT = 360;
 const FILTER_LAYER = { zIndex: 5 };
@@ -66,7 +67,7 @@ function useFilterOptions(scope: FilterScope): FilterOptions {
     label: sources.labels.map(label => ({ key: label, label, value: label })),
     member: [ME_OPTION, ...sources.members.map(address => ({
       key: address,
-      label: getPeerName(address) ?? shortAddress(address),
+      label: peerLabel(address),
       value: memberTokenValue(address, getPeerHandle(address)),
     })).sort(byLabel)],
   };

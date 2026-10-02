@@ -21,13 +21,13 @@ export {
   listVisibleConversations,
   syncConversationsFromNetwork, acceptRequestConv,
   blockRequestConv, unacceptConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
-  checkConvSync,
+  checkConvSync, conversationIsSyncGroup,
 } from '../../lib/xmtp.conv';
 
 export { createGroup, leaveGroupConv, groupEditRights } from '../../lib/xmtp.groups';
 export {
   addGroupMembers, removeGroupMembers, updateGroupMeta, addGroupLabel, removeGroupLabel, moveGroupLabel,
-  renameGroupLabel, updateGroupAssigned,
+  renameGroupLabel, updateGroupAssigned, suggestLabels,
 } from './groupRow';
 
 export {
@@ -43,18 +43,16 @@ export {
 export { subscribeAllMessages } from '../../lib/xmtp.stream';
 export { useXmtpFeed } from '../../lib/xmtp.feed';
 
-export { conversationIsSyncGroup } from '../../lib/xmtp.readSync';
-export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError } from '../../lib/xmtp.labels';
-export { suggestLabels } from '../../lib/xmtp.labels.suggest';
+export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 
 export { AccountManager, useActiveAccount, useActiveAccountRecord } from './account';
 export {
   getActiveAccountIdSync, hydrateCachedRows, getCachedRows, setCachedRows, subscribeCachedRows,
-  markConvRead, markConvUnread, patchRowSent, getXmtpBootstrapPhase, useXmtpBootstrapPhase,
-} from './cache';
+  markConvRead, markConvUnread, patchRowSent,
+} from '../../lib/channelsCache';
+export { getXmtpBootstrapPhase, useXmtpBootstrapPhase } from '../../lib/xmtp.state.core';
 export { summarizeConversation, type ConversationView } from './conversation';
-export { rememberOwnGroup, useConvConsentState } from './useConvConsent';
-export { useGroupAccess } from './useGroupAccess';
+export { rememberOwnGroup, useConvConsentState, useGroupAccess } from './useConvConsent';
 
 export { messagingKeys, fetchGroupRoles, useConvMeta, useConvMetas, invalidateConvMeta } from './queries';
 export { ensureMessagingStreamSync } from './streamSync';

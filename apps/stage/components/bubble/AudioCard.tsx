@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Card } from '@stage-labs/kit/react-native/card';
-import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useAudioPlayback } from '@stage-labs/kit/react-native/audio-player';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -10,9 +9,8 @@ import { IconCloudDownload } from '@central-icons-react-native/round-outlined-ra
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPause } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlay';
-import { Box, Col, Row } from '../layout';
-import { HoverTooltip } from '../HoverTooltip';
-import { useHover } from '../hover';
+import { Col, Row } from '../layout';
+import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { report } from '../../lib/errorPolicy';
 import { capabilities } from '../../lib/capabilities';
@@ -20,23 +18,10 @@ import { downloadFile } from '../../lib/fileDownload';
 import { SEEK_THUMB } from '../../lib/uiColors';
 import { callOwnsAudio } from '../../lib/calls.audio.core';
 import { AudioSeekBar } from './AudioSeekBar';
+import { IconTileRow } from '../MediaCard';
 import { audioCardModel } from './audioCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import type { Attachment } from './helpers';
-
-function CardIconButton({ icon, label, color, onPress }: {
-  icon: CentralIcon; label: string; color: string; onPress: () => void;
-}): React.ReactElement {
-  const { link } = usePalette();
-  const { hovered, hoverProps } = useHover();
-  return (
-    <HoverTooltip label={label}>
-      <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} {...hoverProps}>
-        <Glyph icon={icon} size={20} color={hovered ? link : color}/>
-      </Pressable>
-    </HoverTooltip>
-  );
-}
 
 function useDownload(uri: string, name: string, mime?: string): () => void {
   const [saving, setSaving] = useState(false);
@@ -61,18 +46,14 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
   return (
     <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Col testID="audio-card" gap={8}>
+        <IconTileRow
+          title={model.title} titleColor={pal.text} subtitle={model.subtitle}
+          icon={<Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>}
+        >
+          <HoverIconButton icon={IconCloudDownload} label="Download" color={pal.sub} size={20} role="button" onPress={download}/>
+        </IconTileRow>
         <Row align="center" gap={12}>
-          <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
-            <Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>
-          </Box>
-          <Col flex={1} minWidth={0} gap={2}>
-            <Text size="2xs" weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>
-            {model.subtitle ? <Text size="3xs" role="secondary" numberOfLines={1}>{model.subtitle}</Text> : null}
-          </Col>
-          <CardIconButton icon={IconCloudDownload} label="Download" color={pal.sub} onPress={download}/>
-        </Row>
-        <Row align="center" gap={12}>
-          <CardIconButton icon={playing ? IconPause : IconPlay} label={playing ? 'Pause' : 'Play'} color={pal.text} onPress={() => { if (callOwnsAudio()) capabilities.toast('Leave the call before playing audio.'); else void toggle(); }}/>
+          <HoverIconButton icon={playing ? IconPause : IconPlay} label={playing ? 'Pause' : 'Play'} color={pal.text} size={20} role="button" onPress={() => { if (callOwnsAudio()) capabilities.toast('Leave the call before playing audio.'); else void toggle(); }}/>
           <AudioSeekBar
             progress={model.progress}
             enabled={duration > 0}

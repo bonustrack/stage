@@ -1,12 +1,11 @@
-
-import { PersistentStore } from './cache.shared';
-import { markConvReadSynced, markConvUnreadSynced } from './xmtp.client';
+import { secureStorage } from '../platform/storage';
+import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { notifyReadStateChanged } from './readSyncRegistry';
 import {
   applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
-import { attempt } from './errorPolicy';
+import { attempt, ignored } from './errorPolicy';
 
 export type CachedRow = CachedChannelRow;
 
@@ -36,7 +35,7 @@ function fileNameFor(id: string): string {
 
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
-  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id), true); stores.set(id, s); }
+  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id)); stores.set(id, s); }
   return s;
 }
 
@@ -74,6 +73,39 @@ export function setCachedRows(next: CachedRow[] | null): void { activeStore().se
 export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
   activeListeners.add(l);
   return () => { activeListeners.delete(l); };
+}
+
+const LAST_READ_PREFIX = 'unread.lastRead.';
+export async function getLastReadNs(convId: string): Promise<number> {
+  const raw = await getSecure(LAST_READ_PREFIX + convId);
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+export async function setLastReadNs(convId: string, ns: number): Promise<void> {
+  await setSecure(LAST_READ_PREFIX + convId, String(ns));
+}
+
+const MARKED_UNREAD_PREFIX = 'unread.marked.';
+export async function getMarkedUnread(convId: string): Promise<boolean> {
+  return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
+}
+export async function setMarkedUnreadFlag(convId: string, value: boolean): Promise<void> {
+  if (value) await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
+  else await clearMarkedUnread(convId);
+}
+
+async function clearMarkedUnread(convId: string): Promise<void> {
+  await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(ignored(undefined, 'cleanup'));
+}
+
+async function markConvReadSynced(convId: string): Promise<void> {
+  await setLastReadNs(convId, Date.now() * 1_000_000);
+  await clearMarkedUnread(convId);
+}
+
+async function markConvUnreadSynced(convId: string): Promise<void> {
+  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
 }
 
 export async function markConvRead(convId: string): Promise<void> {

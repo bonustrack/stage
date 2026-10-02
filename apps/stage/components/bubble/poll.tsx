@@ -1,17 +1,57 @@
-
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { pollQuestionBlocks, type PollOptionRow, type PollQuestionBlock } from './poll.model';
+import {
+  pollQuestionBlocks, type PollOpenAnswers, type PollOptionRow, type PollOwnVotes, type PollQuestionBlock, type PollVotes,
+} from './poll.model';
 import { Box, Col, Row } from '../layout';
 import type { Poll } from './helpers';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
-import { OpenAnswerBlock } from './poll.open';
+import { useState } from 'react';
+import { FormField } from '../FormField';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
-type PollVotes = Map<number, Map<number, Set<string>>>;
-type PollOwn = Map<number, Set<number>>;
-type OpenByQ = Map<number, Map<string, { text: string; ts: string }>>;
+function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
+  qi: number; dark: boolean;
+  answers?: Map<string, { text: string; ts: string }>;
+  mine?: string; onSubmit: (text: string) => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  const [draft, setDraft] = useState('');
+  const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
+  const submit = (): void => { onSubmit(draft); setDraft(''); };
+  return (
+    <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
+      <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
+        <Box flex={1}>
+          <FormField label="Your answer" placeholder="Type your answer" value={draft} onChangeText={setDraft} onSubmit={submit}
+            inputProps={{ returnKeyType: 'send' }} />
+        </Box>
+        <Button
+          size="md"
+          dark={dark}
+          disabled={draft.trim().length === 0}
+          onPress={submit}
+          label="Send"
+/>
+      </Row>
+      {list.map(([voter, a]) => (
+        <Box radius={BLOCK_RADIUS_DEFAULT} background={voter === mine
+              ? withAlpha(pal.link, dark ? 0.18 : 0.14)
+              : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')} padding={{ x: 12, y: 7 }}
+          key={`${qi}-${voter}`}
+          style={{ alignSelf: 'stretch' }}
+>
+          <Text size="xs" color={pal.text}>
+            {voter === mine ? 'You: ' : ''}{a.text}
+          </Text>
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 interface PollColors {
   fillBackground: string;
@@ -81,9 +121,9 @@ function PollQuestionView({ block, qi, colors, onVote }: {
 export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri }: {
   poll: Poll; dark: boolean;
   votes?: PollVotes;
-  ownVotes?: PollOwn;
+  ownVotes?: PollOwnVotes;
   onVote: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
-  openAnswers?: OpenByQ;
+  openAnswers?: PollOpenAnswers;
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
 }): React.ReactElement {

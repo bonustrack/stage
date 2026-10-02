@@ -37,7 +37,6 @@ export interface FormFieldProps {
   trailing?: ReactNode;
   labelTrailing?: ReactNode;
   hint?: string;
-  hintColor?: string;
   hintTone?: 'secondary' | 'success' | 'danger';
 }
 
@@ -117,7 +116,7 @@ function StackedFrame({ field, label, labelTrailing, leading, trailing, backgrou
 }
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, labelTrailing, hint, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -140,7 +139,7 @@ export function FormField({
       {inset
         ? <InsetFrame field={field} leading={leading} trailing={trailing} background={colors.background} disabled={disabled}/>
         : <StackedFrame field={field} label={label} labelTrailing={labelTrailing} leading={leading} trailing={trailing} background={colors.background} disabled={disabled}/>}
-      <FieldHint hint={hint} color={hintColor ?? toneColor} />
+      <FieldHint hint={hint} color={toneColor} />
     </Col>
   );
 }

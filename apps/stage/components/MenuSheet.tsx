@@ -11,7 +11,6 @@ import { Avatar } from './Avatar';
 import { AnchoredMenu } from './AnchoredMenu';
 import { MenuRow } from './MenuRows';
 import type { MenuPoint } from './AnchoredMenu.model';
-import { MENU_ROW } from './menuStyle';
 import { useHover } from './hover';
 import { usePalette, withAlpha } from '../lib/theme';
 import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
@@ -35,7 +34,7 @@ function AccountSwitchRow({ account, active, onSwitch }: {
       {...hoverProps}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        paddingHorizontal: MENU_ROW.padX, paddingVertical: MENU_ROW.padY,
+        paddingHorizontal: DROPDOWN_MENU.itemPadX, paddingVertical: DROPDOWN_MENU.itemPadY,
         backgroundColor: pressed ? withAlpha(head, DROPDOWN_MENU.pressedAlpha) : hovered ? withAlpha(head, DROPDOWN_MENU.hoverAlpha) : 'transparent',
       })}
     >

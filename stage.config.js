@@ -37,7 +37,7 @@ export default defineConfig({
     },
     'apps/proxy': {
       type: 'worker',
-      knip: { entry: ['src/**/*.ts'] },
+      knip: { entry: [] },
     },
     'apps/stage/desktop': {
       type: 'library',
@@ -45,7 +45,7 @@ export default defineConfig({
     },
     'packages/client': {
       type: 'library',
-      knip: { entry: ['src/**/*.ts'] },
+      knip: { entry: [], includeEntryExports: true },
     },
     'packages/kit': {
       type: 'library',
@@ -58,9 +58,9 @@ export default defineConfig({
     'packages/config': {
       type: 'library',
       knip: {
-        entry: ['eslint/*.js', 'knip/*.js', 'oxlint/*.js', 'bin/*.js'],
+        entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'],
         project: ['**/*.js'],
-        ignoreDependencies: ['madge', 'eslint-plugin-vue', 'vue-eslint-parser'],
+        ignoreDependencies: ['madge'],
       },
     },
   },

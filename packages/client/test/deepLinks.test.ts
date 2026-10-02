@@ -11,16 +11,17 @@ describe('routeForUrl', () => {
     expect(routeForUrl('https://stage.box/#/fabien.eth')).toEqual({ pathname: '/[convId]', params: { convId: 'fabien.eth' } });
   });
 
-  test('opens profiles under /profile and /user with any handle', () => {
+  test('opens user and channel profiles under /profile with any handle', () => {
     expect(routeForUrl('https://stage.box/#/profile/boorger')).toEqual({ pathname: '/profile/[id]', params: { id: 'boorger' } });
-    expect(routeForUrl(`https://stage.box/#/user/${ADDR}`)).toEqual({ pathname: '/profile/[id]', params: { id: ADDR } });
+    expect(routeForUrl(`https://stage.box/#/profile/${CHANNEL}`)).toEqual({ pathname: '/profile/[id]', params: { id: CHANNEL } });
+    expect(routeForUrl('https://stage.box/#/profile')).toBeNull();
   });
 
-  test('opens channel profiles under /profile and redirects old /group links there', () => {
-    expect(routeForUrl(`https://stage.box/#/profile/${CHANNEL}`)).toEqual({ pathname: '/profile/[id]', params: { id: CHANNEL } });
-    expect(routeForUrl(`https://stage.box/#/group/${CHANNEL}`)).toEqual({ pathname: '/profile/[id]', params: { id: CHANNEL } });
-    expect(routeForUrl(`stage://group/${CHANNEL}`)).toEqual({ pathname: '/profile/[id]', params: { id: CHANNEL } });
-    expect(routeForUrl('https://stage.box/#/group')).toBeNull();
+  test('old /user, /group and /embed links are not routes', () => {
+    expect(routeForUrl(`https://stage.box/#/user/${ADDR}`)).toBeNull();
+    expect(routeForUrl(`https://stage.box/#/group/${CHANNEL}`)).toBeNull();
+    expect(routeForUrl(`stage://group/${CHANNEL}`)).toBeNull();
+    expect(routeForUrl(`https://stage.box/#/embed/${CHANNEL}`)).toBeNull();
   });
 
   test('keeps static routes ahead of handles and rejects junk', () => {

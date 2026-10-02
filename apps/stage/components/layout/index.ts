@@ -1,5 +1,4 @@
 export { Box, Row, Col } from '@stage-labs/kit/react-native/box';
-export { WebContentFrame } from './WebContentFrame';
 export { ScreenScroll } from './ScreenScroll';
 export { VirtualList } from './VirtualList';
 export type { VirtualListHandle, VirtualListProps } from './VirtualList.types';

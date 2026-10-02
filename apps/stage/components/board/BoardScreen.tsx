@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
+import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
@@ -48,7 +48,6 @@ import {
 } from './BoardColumnEdit';
 
 const DRAGGING_OPACITY = 0.4;
-const BOARD_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 
 type BoardRouter = ReturnType<typeof useRouter>;
 
@@ -109,7 +108,6 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
         unreadCount={item.unreadCount}
         markedUnread={item.markedUnread}
         pinned={pinned}
-        hasDraft={draftText.trim().length > 0}
         draftText={draftText}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => {
@@ -148,7 +146,7 @@ function ColumnCards({ column, pinned, onOpen }: {
   if (column.rows.length === 0) return null;
   return (
     <Scroll
-      {...BOARD_SCROLLBAR}
+      {...SELF_SCROLLBAR}
       gap={CARD_GAP}
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
@@ -259,7 +257,7 @@ function BoardLanes({ columns, pinned, saved, actions, filtering }: {
     <Scroll
       ref={scroll}
       horizontal
-      {...BOARD_SCROLLBAR}
+      {...SELF_SCROLLBAR}
       gap={BOARD_GAP}
       keyboardShouldPersistTaps="handled"
       style={{ flex: 1 }}

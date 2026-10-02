@@ -14,10 +14,6 @@ export function mentionToken(address: string): string {
   return `@${address.toLowerCase()}`;
 }
 
-export function formatMention(address: string): string {
-  return `${mentionToken(address)} `;
-}
-
 export function hasMention(text: string): boolean {
   MENTION_RE.lastIndex = 0;
   const found = MENTION_RE.test(text);
@@ -76,14 +72,4 @@ export function matchMembers<T extends MentionCandidate>(
   const tiers: T[][] = [[], [], []];
   for (const c of candidates) tiers[matchTier(c, q)]?.push(c);
   return tiers.flat().slice(0, limit);
-}
-
-export function applyMention(
-  text: string,
-  range: { start: number; end: number },
-  address: string,
-): { next: string; cursor: number } {
-  const insert = formatMention(address);
-  const next = text.slice(0, range.start) + insert + text.slice(range.end);
-  return { next, cursor: range.start + insert.length };
 }

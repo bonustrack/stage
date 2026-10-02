@@ -1,31 +1,11 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
 import { DELETE_MESSAGE_CODEC } from '@stage-labs/client/xmtp/deleteMessage';
-import {
-  POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC,
-  READ_STATE_CODEC, PIN_STATE_CODEC, CLEAR_STATE_CODEC, BOARD_STATE_CODEC, SEARCH_STATE_CODEC,
-  CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, FRAME_CODEC, FRAME_ACTION_CODEC, DELETE_REQUEST_CODEC,
-} from './xmtpJsonCodecs';
+import { STAGE_JSON_CODECS } from './xmtpJsonCodecs';
 import type { AccountRecord } from './accounts';
 import { lazySigningKeyForRecord } from './xmtp.signing.core';
 
-export const XMTP_CODECS = [
-  POLL_CODEC,
-  WALLET_SEND_CALLS_CODEC,
-  SIGNATURE_REQUEST_CODEC,
-  SIGNATURE_REFERENCE_CODEC,
-  READ_STATE_CODEC,
-  PIN_STATE_CODEC,
-  CLEAR_STATE_CODEC,
-  BOARD_STATE_CODEC,
-  SEARCH_STATE_CODEC,
-  DELETE_MESSAGE_CODEC,
-  CALL_INVITE_CODEC,
-  CALL_SIGNAL_CODEC,
-  FRAME_CODEC,
-  FRAME_ACTION_CODEC,
-  DELETE_REQUEST_CODEC,
-];
+export const XMTP_CODECS = [...STAGE_JSON_CODECS, DELETE_MESSAGE_CODEC];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   const key = await lazySigningKeyForRecord(rec);

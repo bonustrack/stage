@@ -4,11 +4,30 @@ import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   useConvMeta, fetchGroupRoles, groupEditRights, messagingKeys, lineOfConv, leaveGroupConv, shortAddress,
+  convIdOfLine, convOfLine, memberInboxToAddressMap, removeGroupMembers,
 } from '../../modules/messaging';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
-import { removeChannelMember } from './channel.helpers';
+import { LEAVE_CHANNEL_CONFIRM } from '../ChannelMenu.model';
+
+function convIdOf(line: string): string {
+  const convId = convIdOfLine(line);
+  if (!convId) throw new Error('Conversation not found');
+  return convId;
+}
+
+async function sortedMembers(line: string): Promise<string[]> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error('Conversation not found');
+  const map = await memberInboxToAddressMap(conv);
+  return Object.values(map).sort((a, b) => a.localeCompare(b));
+}
+
+async function removeChannelMember(line: string, addr: string): Promise<string[]> {
+  await removeGroupMembers(convIdOf(line), [addr]);
+  return sortedMembers(line);
+}
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
@@ -122,12 +141,7 @@ export function useChannelDetail(convId: string | undefined) {
   };
 
   const leaveChannel = async (): Promise<void> => {
-    const ok = await capabilities.confirm({
-      title: 'Leave channel',
-      message: 'You’ll stop receiving messages from this channel. You can be re-added by a member later.',
-      confirmLabel: 'Leave',
-      destructive: true,
-    });
+    const ok = await capabilities.confirm(LEAVE_CHANNEL_CONFIRM);
     if (!ok) return;
     await run('leave', 'Couldn’t leave', async () => {
       const result = await leaveGroupConv(line);

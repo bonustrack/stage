@@ -20,8 +20,6 @@ export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: 
 
 registerDeepLinkSchemas(mdParser.linkify);
 
-export { hasMention } from '@stage-labs/client/xmtp/mentions';
-
 const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
 
 export function unescapeBody(text: string): string {

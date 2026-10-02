@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { AppIcon, type AppIconRef } from './widgets';
+import type { MenuItem } from './appIcons';
 import { AnchoredMenu, menuPointBelow, menuPointBelowEnd } from './AnchoredMenu';
 import { RoundIconButton } from './RoundIconButton';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -25,7 +26,7 @@ export function MenuRow({ icon, label, onPress, danger, divider = danger === tru
   );
 }
 
-export interface OverflowMenuItem { id: string; label: string; icon: AppIconRef; danger?: boolean }
+export type OverflowMenuItem = MenuItem<string, AppIconRef>;
 
 function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
   anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: (id: string) => void;

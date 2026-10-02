@@ -11,13 +11,11 @@ import { memberInboxToAddressMap } from '../../lib/xmtp.identity';
 import { recover } from '../../lib/errorPolicy';
 import { fetchSuperAdmins } from './convMeta.fetch';
 
-export type SearchHit = HistoryEntry;
-
 const SEARCH_MAX_PAGES = 25;
 const SEARCH_MAX_RESULTS = 50;
 
 export interface SearchScanResult {
-  hits: SearchHit[];
+  hits: HistoryEntry[];
   truncated: boolean;
 }
 
@@ -32,7 +30,7 @@ function yieldToEventLoop(): Promise<void> {
 }
 
 interface ScanState {
-  hits: SearchHit[];
+  hits: HistoryEntry[];
   seen: Set<string>;
   truncated: boolean;
   deleteRequests: HistoryEntry[];

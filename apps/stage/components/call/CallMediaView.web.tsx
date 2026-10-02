@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from '../layout/native';
 import { ignore } from '../../lib/errorPolicy';
-import type { CallStream } from '../../lib/calls.types';
-
-interface CallMediaViewProps {
-  stream: CallStream | null;
-  kind: 'video' | 'audio';
-  mirrored?: boolean;
-  contain?: boolean;
-}
+import type { CallMediaViewProps } from './CallScreen.model';
 
 function mediaElement(kind: CallMediaViewProps['kind'], mirrored: boolean, contain: boolean): HTMLMediaElement {
   const el = document.createElement(kind);

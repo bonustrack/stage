@@ -1,10 +1,9 @@
 
 import { lineOfConv } from '../../lib/xmtp.types';
-import { convOfLine } from '../../lib/xmtp.sdk';
+import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';
-import { groupAdminInboxIds, groupNameImage } from '../../lib/xmtp.groups';
 import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
 import { recover } from '../../lib/errorPolicy';
@@ -32,7 +31,7 @@ async function fetchGroupConvMeta(
 ): Promise<ConvMeta> {
   const [members, meta, assigned] = await Promise.all([
     groupMemberEthAddresses(conv),
-    groupNameImage(conv),
+    sdk.groupInfo(conv),
     groupAssignedOf(conv).catch(recover<string[] | null>('xmtp.groupAssigned', null)),
   ]);
   return {
@@ -58,7 +57,7 @@ export async function fetchGroupRoles(
 ): Promise<Record<string, 'owner' | 'admin' | 'member'>> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return {};
-  const { admins, superAdmins } = await groupAdminInboxIds(conv);
+  const { admins, superAdmins } = await sdk.groupAdmins(conv);
   const superSet = new Set(superAdmins.map(s => s.toLowerCase()));
   const adminSet = new Set(admins.map(a => a.toLowerCase()));
   const roles: Record<string, 'owner' | 'admin' | 'member'> = {};

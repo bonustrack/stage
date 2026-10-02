@@ -8,9 +8,9 @@ import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { AudioCard } from './AudioCard';
 import { ImageLoading, MessengerImageAttachment } from './ImageAttachment';
-import { Box, Col, Row } from '../layout';
-import { MediaCard } from '../MediaCard';
-import { useVideoAspectRatio } from '../useVideoAspectRatio';
+import { Col } from '../layout';
+import { IconTileRow, MediaCard } from '../MediaCard';
+import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
@@ -47,15 +47,10 @@ function AttachmentFile({ label, subtitle, fg, onPress, pending = false }: {
   const { bg } = usePalette();
   return (
     <Card dark={scheme === 'dark'} background={bg} padding={12} onPress={onPress} style={{ width: '100%' }}>
-      <Row testID="file-card" align="center" gap={12}>
-        <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
-          {pending ? <Spinner size={20} color={fg}/> : <Glyph icon={IconFileBend} size={24} color={fg}/>}
-        </Box>
-        <Col flex={1} minWidth={0} gap={2}>
-          <Text size="2xs" weight="semibold" color={fg} numberOfLines={1}>{label}</Text>
-          {subtitle ? <Text size="3xs" role="secondary" numberOfLines={1}>{subtitle}</Text> : null}
-        </Col>
-      </Row>
+      <IconTileRow
+        testID="file-card" title={label} titleColor={fg} subtitle={subtitle}
+        icon={pending ? <Spinner size={20} color={fg}/> : <Glyph icon={IconFileBend} size={24} color={fg}/>}
+      />
     </Card>
   );
 }

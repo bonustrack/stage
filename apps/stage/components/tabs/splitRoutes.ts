@@ -10,7 +10,7 @@ const BOARD_PANEL_PREFIX = `${BOARD_ROUTE}/`;
 const RAIL_ONLY_ROUTES = new Set([BOARD_ROUTE]);
 
 const SPLIT_PREFIXES = [
-  '/channel/', '/group/', '/profile/', '/settings', '/wallet', '/contacts', '/add-members', '/frame',
+  '/channel/', '/profile/', '/settings', '/wallet', '/contacts', '/add-members', '/frame',
 ];
 
 function isDmRoute(pathname: string): boolean {

@@ -6,7 +6,7 @@ import { base } from 'viem/chains';
 import { getSimplePrices, type CgPrice } from '@stage-labs/client/api/coingecko';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
-import { kernelClientForRecord } from '../../lib/zerodev';
+import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS } from '@stage-labs/client/wallet/assets';

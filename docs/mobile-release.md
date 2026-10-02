@@ -83,10 +83,10 @@ None of these identifiers are committed. The `ios` job writes them into the `sub
 
 What the app changes to make that possible (iOS only; Android and web are unchanged because they have no app group):
 
-- The XMTP database directory moves from `Documents/<dbDir>` to `<app group container>/<dbDir>` (`lib/xmtp.dbkeyFs.ts` via `lib/xmtp.appGroup.ts`).
+- The XMTP database directory moves from `Documents/<dbDir>` to `<app group container>/<dbDir>` (`lib/xmtp.dbkeyFs.ts`).
 - The per-account XMTP database key (`xmtp.dbEncryptionKey.<accountId>`) is stored with `accessGroup: group.<bundle id>` and `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY` instead of the app's private group and `WHEN_UNLOCKED_THIS_DEVICE_ONLY` (`lib/xmtp.dbkey.ts`). An app group identifier is a valid keychain access group, so no separate `keychain-access-groups` entitlement is needed. The item is still device-bound and never backed up. Only this key is shared: the keyring (recovery phrases, private keys, the Face ID sentinel) stays in the app's private group, so the extension cannot read wallet secrets. The trade-off is that the database key is readable while the phone is locked after the first unlock, which is what a notification extension needs and what every XMTP iOS client does.
 - Each account that opens a client records `{ id, address, inboxId, dbDir, env }` in `stage-push-accounts.json`; deleting the account removes it (`lib/xmtp.client.ts`).
-- When the app goes to the background it releases its database connection (`dropLocalDatabaseConnection`) and reconnects before the foreground resync (`lib/xmtp.dbConnection.ts`). iOS kills a suspended app that holds a SQLite lock in a shared container (`0xdead10cc`), and the extension needs the lock to write.
+- When the app goes to the background it releases its database connection (`dropLocalDatabaseConnection`) and reconnects before the foreground resync (`lib/xmtp.foreground.ts`). iOS kills a suspended app that holds a SQLite lock in a shared container (`0xdead10cc`), and the extension needs the lock to write.
 
 Migration impact: none for users, iOS has never shipped. A pre-release iOS dev build that already created a store under `Documents/` gets a fresh store and a new XMTP installation on first launch of the new build (the old key is not in the shared group, so the old database is not found); its history comes back through the history server like any new device. The orphaned `Documents/<dbDir>` folder is harmless.
 

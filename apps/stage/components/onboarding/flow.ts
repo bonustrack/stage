@@ -1,10 +1,10 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { createSmartAccount, restoreSmartAccount } from '../../lib/zerodev';
+import { createSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount, removeAccount } from '../../lib/accounts';
-import { applyProfileSetup } from '../../lib/claimName';
+import { applyProfileSetup } from '../../lib/profile';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Stage = 'wallet' | 'messaging' | 'profile' | 'history' | 'finishing';

@@ -3,9 +3,10 @@ import { useRouter } from 'expo-router';
 import { Eyebrow } from './Eyebrow';
 import { Box, PAGE_GUTTER } from './layout';
 import { ChannelRow } from './ChannelRow';
-import { getPeerDescription, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
-import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
+import { getPeerDescription, usePeerProfiles } from '../lib/peerProfiles';
+import { useActiveAccountRecord } from '../modules/messaging';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
+import { peerLabel } from './conversation/convTitle';
 
 export function SuggestedContacts({ known, headingTop = 16 }: { known: readonly string[]; headingTop?: number }): React.ReactElement | null {
   const router = useRouter();
@@ -21,7 +22,7 @@ export function SuggestedContacts({ known, headingTop = 16 }: { known: readonly 
       {addresses.map((address) => (
         <ChannelRow
           key={address}
-          title={getPeerName(address) ?? shortAddress(address)}
+          title={peerLabel(address)}
           avatarAddress={address}
           square={false}
           subtitle={suggestedSubtitle(getPeerDescription(address))}

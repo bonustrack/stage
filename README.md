@@ -28,7 +28,7 @@ packages/
               #   identity/names, wallet, accounts + zerodev, read-only APIs, x402)
   kit/        # @stage-labs/kit — design system: tokens, icons, theme contracts,
               #   and one React Native component family (renders on web via RNW)
-  config/     # @stage-labs/config — shared ESLint/TS/knip/madge presets, oxlint JS plugins + the stage CLI
+  config/     # @stage-labs/config — shared TS/knip/madge presets, oxlint JS plugins + the stage CLI
 ```
 
 Each workspace has its own README with details; `CLAUDE.md` is the
@@ -119,8 +119,8 @@ rate-limit and rotate it.
 
 ## CI / quality gates
 
-CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`),
-delegating to the reusable `.github/workflows/_ci.yml` workflow. The gates, in
+CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
+The gates, in
 order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
 `1.4.0` with a frozen lockfile.
 

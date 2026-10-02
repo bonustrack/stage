@@ -6,8 +6,7 @@ import {
   getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
 } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
-import { SettingsGroup, SettingsPage } from './SettingsPage';
-import { SettingsButtonRow, SettingsToggleRow } from './rows';
+import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsToggleRow } from './SettingsPage';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 
@@ -55,7 +54,6 @@ export function NotificationsSettings(): React.ReactElement {
           name="push"
           checked={enabled}
           description="Get notified about new messages even when Stage is closed."
-          control="switch"
           onChange={onToggle}
         />
       </SettingsGroup>

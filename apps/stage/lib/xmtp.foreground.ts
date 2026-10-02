@@ -1,10 +1,33 @@
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
 import { markBackgroundDelivered } from './pushNotify';
-import { reclaimSharedDb, releaseSharedDb } from './xmtp.dbConnection';
+import { XMTP_APP_GROUP } from './xmtp.dbkeyFs';
+import { getCachedXmtpClient } from './xmtp.state';
 import { resyncActiveFeeds, syncInboxOnce } from './xmtp.resync';
 import type { StreamStatus } from './xmtp.types';
-import { attempt } from './errorPolicy';
+import { attempt, reported } from './errorPolicy';
+
+const RELEASES_ON_BACKGROUND = Platform.OS === 'ios' && XMTP_APP_GROUP !== null;
+
+let released = false;
+
+async function releaseSharedDb(): Promise<void> {
+  if (!RELEASES_ON_BACKGROUND || released) return;
+  const client = getCachedXmtpClient();
+  if (!client) return;
+  released = true;
+  try {
+    await client.dropLocalDatabaseConnection();
+  } catch {
+    released = false;
+  }
+}
+
+async function reclaimSharedDb(): Promise<void> {
+  if (!released) return;
+  released = false;
+  await getCachedXmtpClient()?.reconnectLocalDatabase().catch(reported('xmtp.reconnectDb'));
+}
 
 const PUSH_RESYNC_DELAY_MS = 300;
 const MIN_FORCED_SYNC_SPACING_MS = 4_000;

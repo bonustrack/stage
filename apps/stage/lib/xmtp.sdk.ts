@@ -2,7 +2,7 @@ import {
   Dm, Group, PublicIdentity, addGroupMembers, staticKeyPackageStatuses,
   type Conversation, type ConversationId, type MessageId,
 } from '@xmtp/react-native-sdk';
-import { buildReply, buildStaticAttachment } from '@stage-labs/client/xmtp/builders';
+import { buildReply } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
@@ -226,8 +226,6 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     reaction: (conv, reaction) => conv.send({ reaction }),
     reply: (conv, replyTo, text) => conv.send({ reply: buildReply(replyTo, text) }),
     json: (conv, codec, content) => conv.send(content, { contentType: codec.contentType }),
-    attachment: (conv, filename, mimeType, dataB64) =>
-      conv.send({ attachment: buildStaticAttachment(filename, mimeType, dataB64) }),
   },
 };
 

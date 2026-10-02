@@ -9,7 +9,7 @@ import { shortAddress } from '../../modules/messaging';
 import { ethFromWeiHex } from './helpers';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { usePalette, withAlpha } from '../../lib/theme';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useUsdValue } from '../../lib/txDisplay';
@@ -26,6 +26,7 @@ import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radiu
 import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCodeBrackets';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
+import { peerLabel } from '../conversation/convTitle';
 
 interface TxCardModel {
   target?: string;
@@ -169,7 +170,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
 function TxToRow({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
-  const display = getPeerName(address) ?? shortAddress(address);
+  const display = peerLabel(address);
   return (
     <Pressable
       onPress={() => { router.push(profileLinkOf(address)); }}>

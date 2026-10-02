@@ -1,47 +1,9 @@
 
 import { describe, expect, test } from 'bun:test';
-import { convIdOfLine, lineOfConv, stageChannelIdOf, stageConvIdOf, stageDmPeerOf } from '../src/xmtp/line';
+import { convIdOfLine, lineOfConv, stageChannelIdOf, stageDmPeerOf } from '../src/xmtp/line';
 
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 const ADDR = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
-
-describe('stageConvIdOf', () => {
-  test('matches both app schemes', () => {
-    expect(stageConvIdOf(`metro://xmtp/${CONV}`)).toBe(CONV);
-    expect(stageConvIdOf(`stage://xmtp/${CONV}`)).toBe(CONV);
-  });
-
-  test('matches https permalinks, path- and hash-routed', () => {
-    expect(stageConvIdOf(`https://stage.box/xmtp/${CONV}`)).toBe(CONV);
-    expect(stageConvIdOf(`https://stage.box/#/xmtp/${CONV}?m=1`)).toBe(CONV);
-  });
-
-  test('matches a link embedded mid-text', () => {
-    expect(stageConvIdOf(`see metro://xmtp/${CONV} here`)).toBe(CONV);
-  });
-
-  test('does NOT read the DM user form as a conv id', () => {
-    expect(stageConvIdOf(`metro://xmtp/user/${ADDR}`)).toBeNull();
-    expect(stageConvIdOf(`https://stage.box/xmtp/user/${ADDR}`)).toBeNull();
-  });
-
-  test('matches the channel/ (no xmtp segment) conv form', () => {
-    expect(stageConvIdOf(`stage://channel/${CONV}`)).toBe(CONV);
-    expect(stageConvIdOf(`metro://channel/${CONV}`)).toBe(CONV);
-    expect(stageConvIdOf(`https://stage.box/channel/${CONV}`)).toBe(CONV);
-    expect(stageConvIdOf(`https://stage.box/#/channel/${CONV}?m=1`)).toBe(CONV);
-  });
-
-  test('does NOT read a bare address as a conv id', () => {
-    expect(stageConvIdOf(`stage://${ADDR}`)).toBeNull();
-    expect(stageConvIdOf(`https://stage.box/#/${ADDR}`)).toBeNull();
-  });
-
-  test('null for non-links', () => {
-    expect(stageConvIdOf('just text')).toBeNull();
-    expect(stageConvIdOf(null)).toBeNull();
-  });
-});
 
 describe('stageChannelIdOf', () => {
   test('recognizes whole supported channel URLs, including message and focus parameters', () => {

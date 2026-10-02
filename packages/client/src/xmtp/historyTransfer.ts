@@ -1,5 +1,4 @@
 import { hmac } from '@noble/hashes/hmac';
-import { pbkdf2Async } from '@noble/hashes/pbkdf2';
 import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, concatBytes, utf8ToBytes } from '@noble/hashes/utils';
 
@@ -56,9 +55,6 @@ export function formatTransferCode(code: string): string {
   return [code.slice(0, 4), code.slice(4, 8), code.slice(8)].filter((part) => part !== '').join('-');
 }
 
-export const noblePbkdf2: Pbkdf2 = (password, salt, iterations) =>
-  pbkdf2Async(sha256, password, salt, { c: iterations, dkLen: 32 });
-
 export function chunkedPbkdf2(
   pause: () => Promise<void>, onProgress: (share: number) => void = () => undefined, chunk = 2_000,
 ): Pbkdf2 {
@@ -87,13 +83,8 @@ export function webCryptoPbkdf2(subtle: SubtleCrypto): Pbkdf2 {
   };
 }
 
-export function defaultPbkdf2(): Pbkdf2 {
-  const subtle = (globalThis as { crypto?: { subtle?: SubtleCrypto } }).crypto?.subtle;
-  return subtle === undefined ? noblePbkdf2 : webCryptoPbkdf2(subtle);
-}
-
 export async function deriveTransferSecrets(
-  code: string, pbkdf2: Pbkdf2 = defaultPbkdf2(), iterations = TRANSFER_KDF_ITERATIONS,
+  code: string, pbkdf2: Pbkdf2, iterations = TRANSFER_KDF_ITERATIONS,
 ): Promise<TransferSecrets> {
   const master = await pbkdf2(utf8ToBytes(code), KDF_SALT, iterations);
   return {

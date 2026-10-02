@@ -12,8 +12,6 @@ import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
 
-export { swarmToHttp } from './swarmy';
-
 declare const sanitizedBrand: unique symbol;
 type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
 

@@ -8,7 +8,7 @@ import { IconMicrophoneOff } from '@central-icons-react-native/round-outlined-ra
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Col, Row, PAGE_GUTTER, pinnedBottom } from '../layout';
 import { useFloatingBottom } from '../layout/floatingBottom';
-import { MENU_SHADOW } from '../menuStyle';
+import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
 import { leaveCall, toggleMic } from '../../lib/calls';
 import { setCallMinimized, type CallView } from '../../lib/calls.store';
@@ -26,7 +26,7 @@ export function CallBubble({ view, session }: { view: CallView; session: CallSes
   const muted = !view.media.audio;
   return (
     <Row justify="end" padding={{ x: PAGE_GUTTER }} pointerEvents="box-none" style={[pinnedBottom(BUBBLE_LAYER), { bottom }]}>
-      <Row align="center" gap={8} maxWidth={320} padding={{ left: 14, right: 6, y: 6 }} radius="full" surface="raised" style={MENU_SHADOW}>
+      <Row align="center" gap={8} maxWidth={320} padding={{ left: 14, right: 6, y: 6 }} radius="full" surface="raised" style={OVERLAY_SHADOW}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open call" onPress={() => { setCallMinimized(false); }} style={SHRINK}>
           <Row align="center" gap={10} style={SHRINK}>
             <Glyph icon={IconCall} size={18} color={success}/>

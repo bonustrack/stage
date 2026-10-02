@@ -1,13 +1,12 @@
-import { cachedSelfEthAddress, shortAddress } from '../../modules/messaging';
-import { getPeerName } from '../../lib/peerProfiles';
+import { cachedSelfEthAddress } from '../../modules/messaging';
 import { homeRows } from '../home/state';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import type { ConvTitle } from '../conversation/convTitle';
+import { peerLabel, type ConvTitle } from '../conversation/convTitle';
 
 interface CallPerson { address: string | null; name: string }
 
 function nameOf(address: string | null): string {
-  return address ? getPeerName(address) ?? shortAddress(address) : 'Someone';
+  return address ? peerLabel(address) : 'Someone';
 }
 
 export function callPerson(convId: string, inboxId: string, selfInboxId: string | null): CallPerson {

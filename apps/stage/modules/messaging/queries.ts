@@ -3,10 +3,9 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';
 import { fetchConvMeta, fetchGroupRoles, type ConvMeta, EMPTY_CONV_META } from './convMeta.fetch';
 import { convMetaFromCachedRow } from './convMeta.model';
-import { getCachedRows } from './cache';
+import { getCachedRows } from '../../lib/channelsCache';
 
 export const messagingKeys = {
-  all: ['xmtp'] as const,
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
   groupEditRights: (convId: string | null | undefined) =>

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  channelRefLabel, channelRefToken, channelRefsOf, hasChannelRef, splitChannelRefs, withChannelLabels,
+  channelRefLabel, channelRefToken, channelRefsOf, splitChannelRefs, withChannelLabels,
 } from '../src/xmtp/channelRefs';
 import { humanizeMentions } from '../src/xmtp/humanize';
 
@@ -33,10 +33,10 @@ describe('channelRefsOf', () => {
   });
 
   test('ignores links that are not stage channel refs', () => {
-    expect(hasChannelRef('[#Ops](https://example.com/#/channel/abc)')).toBe(false);
-    expect(hasChannelRef('[Ops](https://stage.box/#/channel/abc)')).toBe(false);
-    expect(hasChannelRef(`https://stage.box/#/channel/${CONV}`)).toBe(false);
-    expect(hasChannelRef(`hi ${REF}`)).toBe(true);
+    expect(channelRefsOf('[#Ops](https://example.com/#/channel/abc)')).toEqual([]);
+    expect(channelRefsOf('[Ops](https://stage.box/#/channel/abc)')).toEqual([]);
+    expect(channelRefsOf(`https://stage.box/#/channel/${CONV}`)).toEqual([]);
+    expect(channelRefsOf(`hi ${REF}`)).toHaveLength(1);
   });
 });
 

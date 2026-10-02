@@ -11,7 +11,7 @@ import { ChannelRow } from '../ChannelRow';
 import { ChannelMenu } from '../ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { PinnedDraggable, type PinDrag } from './pinDrag';
-import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
+import { resetActiveXmtpStore, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
@@ -25,7 +25,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
 import { rowDataSet } from './rowArrows';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import type { ConvTitle } from '../conversation/convTitle';
+import { peerLabel, type ConvTitle } from '../conversation/convTitle';
 
 export function rowTitle(item: RowT): ConvTitle {
   if (item.peerAddress) return { text: getPeerName(item.peerAddress) ?? item.title, placeholder: false };
@@ -38,7 +38,7 @@ export function rowPreview(item: RowT): string {
     preview: item.lastPreview,
     dm: !!item.peerAddress,
     fromSelf: item.lastFromSelf,
-    senderLabel: sender ? getPeerName(sender) ?? shortAddress(sender) : null,
+    senderLabel: sender ? peerLabel(sender) : null,
   });
 }
 
@@ -110,7 +110,6 @@ function ChannelRowItemBase({
       unreadCount={item.unreadCount}
       markedUnread={item.markedUnread}
       pinned={pinned}
-      hasDraft={draftText.trim().length > 0}
       draftText={draftText}
       labels={isGroup ? item.labels : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}

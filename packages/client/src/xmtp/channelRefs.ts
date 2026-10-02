@@ -35,10 +35,6 @@ export function channelRefsOf(text: string): ChannelRef[] {
   }));
 }
 
-export function hasChannelRef(text: string): boolean {
-  return channelRefsOf(text).length > 0;
-}
-
 export function splitChannelRefs(text: string): ChannelRefSegment[] {
   const segments: ChannelRefSegment[] = [];
   let last = 0;

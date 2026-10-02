@@ -11,10 +11,9 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { Col, PAGE_GUTTER, Row } from '../layout';
 import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
 import { includesKey } from '../conversation/SidebarSection.model';
-import { getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '../../modules/messaging';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { peerLabel } from '../conversation/convTitle';
 
 const AVATAR_PX = 32;
 const AVATAR_GAP = 8;
@@ -30,7 +29,7 @@ function RecipientAvatar({ address, picked, onToggle }: {
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
-  const name = getPeerName(address) ?? shortAddress(address);
+  const name = peerLabel(address);
   return (
     <HoverTooltip label={name} placement="above">
       <Pressable

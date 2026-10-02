@@ -1,4 +1,3 @@
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
@@ -15,9 +14,14 @@ import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { TEXT_11PX } from '../smallText';
-import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from './tabBadge';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { chatsTabOpensNewChat } from './chatsTab.model';
+
+export const TAB_ICON_FRAME = { width: 31, height: 28 } as const;
+
+export const TAB_BADGE_SIZE = 18;
+
+export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } as const;
 
 const WEB_TAB_BAR_HEIGHT = 60;
 

@@ -19,10 +19,3 @@ export function parseOrThrow<T>(where: BoundaryName, schema: OutputSchema<T>, da
   console.warn(`[boundary:${where}] validation failed -> ${summarize(r.error)}`);
   throw new Error(`[boundary:${where}] invalid payload: ${summarize(r.error)}`);
 }
-
-export function parseOrNull<T>(where: BoundaryName, schema: OutputSchema<T>, data: unknown): T | null {
-  const r = schema.safeParse(data);
-  if (r.success) return r.data;
-  console.warn(`[boundary:${where}] validation failed -> ${summarize(r.error)}`);
-  return null;
-}

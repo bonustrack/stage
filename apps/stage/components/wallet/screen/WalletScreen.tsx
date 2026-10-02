@@ -1,23 +1,60 @@
-
-import { useCallback } from 'react';
+import { useCallback, memo } from 'react';
 import { useActiveAccountRecord } from '../../../modules/messaging';
 import { useWalletPortfolio } from './data';
 import type { BalancePrices } from './balance.model';
 import { WalletBalanceCard } from './BalanceCard';
 import { useBalanceCurrency } from './currency';
-import { type AssetRow } from '@stage-labs/client/wallet/assets';
-
+import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { usePullToRefresh } from '../../tabs/PullToRefresh';
 import type { SimultaneousRefs } from '../../SwipeTabs.types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { walletTotalUsd } from './model';
+import { walletTotalUsd, tokenRowModel } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../../layout';
-import { TokensList } from './tokens';
+import { Box, Col, ScreenScroll, PAGE_GUTTER, Row } from '../../layout';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
+import { tokenRowId } from '@stage-labs/client/wallet/tokens';
+import { TokenAvatar } from './tokenAvatar';
+import { TokenRowBody } from '../TokenRowView';
+import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+
+const TOKEN_AVATAR_SIZE = 44;
+const TOKEN_BADGE_SIZE = 20;
+
+const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border: string; bg: string }): React.ReactElement {
+  return (
+    <Row padding={{ y: 14 }} align="center" gap={12}>
+      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} size={TOKEN_AVATAR_SIZE} badgeSize={TOKEN_BADGE_SIZE} />
+      <Box flex={1}>
+        <TokenRowBody
+          {...tokenRowModel(r, { fmtUsd, fmtBalance })}
+          showAvatar={false}
+        />
+      </Box>
+    </Row>
+  );
+});
+
+function TokensList({
+  rows, border, bg,
+}: {
+  rows: AssetRow[];
+  border: string;
+  bg: string;
+}): React.ReactElement {
+  return (
+    <Col margin={{ x: PAGE_GUTTER }}>
+      {rows.map(r => (
+        <TokenRow
+          key={tokenRowId(r)}
+          r={r} border={border} bg={bg}
+        />
+      ))}
+    </Col>
+  );
+}
 
 const TOKENS_SPINNER = 28;
 
@@ -52,7 +89,7 @@ export function useWalletBalances(focused: boolean): WalletBalances {
 
 function WalletTokens({ rows, err, c }: {
   rows: WalletBalances['rows']; err: boolean;
-  c: { head: string; sub: string; border: string; bg: string };
+  c: { border: string; bg: string };
 }): React.ReactElement {
   if (err && rows === null) {
     return (
@@ -68,14 +105,14 @@ function WalletTokens({ rows, err, c }: {
   }
   return (
     <Box margin={{ top: 16 }}>
-      <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>
+      <TokensList rows={rows} border={c.border} bg={c.bg}/>
     </Box>
   );
 }
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { link: head, text: sub, bg, border } = usePalette();
+  const { link: head, bg, border } = usePalette();
   const focused = useWalletFocused();
 
   const { address, rows, prices, err, refreshing, onRefresh } = useWalletBalances(focused);
@@ -84,7 +121,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const pull = usePullToRefresh(refreshing, onRefresh, head);
 
   const totalUsd = walletTotalUsd(rows);
-  const c = { head, sub, border, bg };
+  const c = { border, bg };
 
   const onWalletAction = useCallback((action: string): void => {
     if (action === 'send') router.push('/wallet/send');

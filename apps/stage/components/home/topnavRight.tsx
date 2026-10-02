@@ -1,20 +1,43 @@
 import { usePathname, useRouter } from 'expo-router';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
-import { HomeOverflowMenu } from './overflow';
 import { useOpenNewChat } from './newChatFocus';
 import { IconBubbleSparkle } from '../IconBubbleSparkle';
-import { HoverTooltip } from '../HoverTooltip';
-import { useHover } from '../hover';
+import { HoverIconButton } from '../hover';
 import { homeRows } from './state';
+import { CHANNELS_OVERFLOW_ITEMS } from './model';
+import { OverflowMenu } from '../MenuRows';
 import { boardViewHref, chatsViewHref } from './viewSwitch.model';
 import { getActiveAccount } from '../../lib/accounts';
+import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
 import { getPeerHandle } from '../../lib/peerProfiles';
-import { usePalette } from '../../lib/theme';
 
 type HomeView = 'chats' | 'board';
+
+interface HomeOverflowMenuProps {
+  color: string;
+  onBoard?: () => void;
+  onChats?: () => void;
+  onProfile: () => void;
+  onSettings: () => void;
+}
+
+function copyActiveAddress(): void {
+  void getActiveAccount().then(acct => {
+    if (!acct?.address) return;
+    capabilities.copy('Address', acct.address);
+  });
+}
+
+function HomeOverflowMenu({ color, onBoard, onChats, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
+  const handlers: Record<string, (() => void) | undefined> = {
+    board: onBoard, chats: onChats, 'copy-address': copyActiveAddress, profile: onProfile, settings: onSettings,
+  };
+  return (
+    <OverflowMenu color={color} items={CHANNELS_OVERFLOW_ITEMS.filter(item => handlers[item.id] !== undefined)}
+      onSelect={(id) => { handlers[id]?.(); }} />
+  );
+}
 
 function useViewSwitch(view: HomeView): { onBoard?: () => void; onChats?: () => void } {
   const router = useRouter();
@@ -28,22 +51,13 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
 }): React.ReactElement {
   const router = useRouter();
   const switchView = useViewSwitch(view);
-  const { link } = usePalette();
-  const search = useHover();
-  const compose = useHover();
   const openCompose = useOpenNewChat();
   return (
     <>
-      {onOpenSearch === undefined ? null : <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={onOpenSearch}>
-        <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
-          <Glyph icon={IconMagnifyingGlass} size={24} color={search.hovered ? link : head}/>
-        </Pressable>
-      </HoverTooltip>}
-      <HoverTooltip label="New chat" placement="below" shortcut="c" onShortcut={openCompose}>
-        <Pressable onPress={openCompose} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
-          <Glyph icon={IconBubbleSparkle} size={24} color={compose.hovered ? link : head}/>
-        </Pressable>
-      </HoverTooltip>
+      {onOpenSearch === undefined ? null : (
+        <HoverIconButton icon={IconMagnifyingGlass} label="Search" color={head} placement="below" shortcut="/" onShortcut={onOpenSearch} onPress={onOpenSearch} />
+      )}
+      <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
       <HomeOverflowMenu
         color={head}
         onBoard={switchView.onBoard}

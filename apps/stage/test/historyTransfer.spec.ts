@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { HistoryProblem } from '../lib/historySync.model';
 import {
-  TRANSFER_COPY, TRANSFER_TTL_MS, downloadProblem, importProblem, transferExpiry, transferProblemMessage, uploadProblem,
-} from '../lib/historyTransfer.model';
+  HistoryProblem, TRANSFER_COPY, TRANSFER_TTL_MS, downloadProblem, importProblem, transferExpiry, transferProblemMessage, uploadProblem,
+} from '../lib/history.model';
 import {
   canSubmitCode, codeFromScan, displayCode, expiryLabel,
 } from '../components/settings/HistoryTransferSheets.model';

@@ -5,7 +5,7 @@ import {
   buildTypedData,
   buildPaymentHeader,
   randomNonce,
-} from '../lib/x402.payHeader';
+} from '../lib/x402';
 import type { X402Accept } from '../lib/useLinkPreview';
 
 const FIXTURE_ACCEPT: X402Accept = {

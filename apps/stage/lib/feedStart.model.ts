@@ -2,10 +2,8 @@ export const FEED_START_LIMIT = 500;
 
 export type FeedStart = readonly [line: string, firstId: string];
 
-export function withFeedStart(
-  starts: readonly FeedStart[], line: string, firstId: string, limit = FEED_START_LIMIT,
-): FeedStart[] {
-  return [...starts.filter(([known]) => known !== line), [line, firstId] as const].slice(-limit);
+export function withFeedStart(starts: readonly FeedStart[], line: string, firstId: string): FeedStart[] {
+  return [...starts.filter(([known]) => known !== line), [line, firstId] as const].slice(-FEED_START_LIMIT);
 }
 
 export function feedStartOf(starts: readonly FeedStart[], line: string): string | undefined {

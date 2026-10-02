@@ -8,7 +8,7 @@ import { Col, PAGE_GUTTER, Row } from './layout';
 import { RoundOverflowMenu } from './MenuRows';
 import { RoundIconButton } from './RoundIconButton';
 import { TooltipHost } from './system/TooltipHost';
-import { downloadImage } from '../lib/imageDownload';
+import { downloadImage } from '../lib/fileDownload';
 import { describeError } from '../lib/errorPolicy';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { isCoarsePointer, lockDocumentScroll } from '../lib/webLayout';

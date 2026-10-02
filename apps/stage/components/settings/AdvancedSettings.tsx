@@ -9,25 +9,21 @@ import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
-import { SettingsGroup, SettingsPage } from './SettingsPage';
-import { SettingsButtonRow, SettingsValueRow } from './rows';
+import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 function confirmReset(): void {
-  Alert.alert(
-    'Reset XMTP database',
-    'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: () => {
-          void (async (): Promise<void> => {
-            await resetActiveXmtpStore();
-            reloadApp();
-          })();
-        } },
-    ],
-  );
+  void capabilities.confirm({
+    title: 'Reset XMTP database',
+    message: 'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
+    confirmLabel: 'Reset',
+    destructive: true,
+  }).then(async (ok) => {
+    if (!ok) return;
+    await resetActiveXmtpStore();
+    reloadApp();
+  });
 }
 
 async function removeAndMoveOn(id: string): Promise<void> {
@@ -45,14 +41,12 @@ async function removeAndMoveOn(id: string): Promise<void> {
 
 function confirmRemove(rec: AccountRecord): void {
   const name = rec.label ?? shortAddress(rec.address);
-  Alert.alert(
-    'Remove account',
-    `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => { void removeAndMoveOn(rec.id); } },
-    ],
-  );
+  void capabilities.confirm({
+    title: 'Remove account',
+    message: `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
+    confirmLabel: 'Remove',
+    destructive: true,
+  }).then((ok) => { if (ok) void removeAndMoveOn(rec.id); });
 }
 
 interface XmtpIdentity { addr: string; inbox: string; install: string }

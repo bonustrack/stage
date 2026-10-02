@@ -6,7 +6,7 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { ChatImageViewer } from './ChatGallery';
-import { useImageAspectRatio } from '../useImageAspectRatio';
+import { useImageAspectRatio } from './mediaAspect';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 4 / 3 } as const;

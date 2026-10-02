@@ -1,4 +1,4 @@
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
 export type RailTooltipState =
   | { placement: 'beside'; label: string; shortcut?: string; anchorRight: number; centerY: number }
@@ -36,13 +36,9 @@ export function tooltipLabel(text: string): string {
   return text.replace(/\.+$/, '');
 }
 
-let current: RailTooltipState | null = null;
-const listeners = makeListeners();
+const tooltip = makeValue<RailTooltipState | null>(null);
 
-export function showRailTooltip(next: RailTooltipState): void { current = next; listeners.notify(); }
-export function hideRailTooltip(): void { if (current === null) return; current = null; listeners.notify(); }
-function getRailTooltip(): RailTooltipState | null { return current; }
+export function showRailTooltip(next: RailTooltipState): void { tooltip.set(next); }
+export function hideRailTooltip(): void { if (tooltip.get() !== null) tooltip.set(null); }
 
-export function useRailTooltip(): RailTooltipState | null {
-  return useStoreValue(listeners.subscribe, getRailTooltip);
-}
+export const useRailTooltip = tooltip.use;

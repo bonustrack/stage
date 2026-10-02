@@ -2,6 +2,8 @@
 import { Opfs } from '@xmtp/browser-sdk';
 import { report } from './errorPolicy';
 
+export const XMTP_APP_GROUP: string | null = null;
+
 export function deleteDbFiles(dbDirName: string): Promise<void> {
   return deleteOpfsDbFiles(dbDirName);
 }

@@ -73,7 +73,7 @@ diff --git a/build/fork/getPathFromState.js b/build/fork/getPathFromState.js
 diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-forks.js
 --- a/build/fork/getStateFromPath-forks.js
 +++ b/build/fork/getStateFromPath-forks.js
-@@ -45,7 +45,28 @@
+@@ -45,7 +45,23 @@
          return str;
      }
  }
@@ -88,14 +88,9 @@ diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-
 +    const before = path.slice(0, hashIndex);
 +    const fragment = path.slice(hashIndex + 1);
 +    if ((before === '' || before === '/') && fragment.startsWith('/')) {
-+        return rewriteLegacyConversationSegment(fragment);
++        return fragment;
 +    }
 +    return path;
-+}
-+function rewriteLegacyConversationSegment(path) {
-+    return path
-+        .replace(/(\/)xmtp\/user\//i, '$1')
-+        .replace(/(\/)xmtp\//i, '$1channel/');
 +}
  function getUrlWithReactNavigationConcessions(path, baseUrl = process.env.EXPO_BASE_URL) {
 +    path = unwrapHashRoutingPath(path);

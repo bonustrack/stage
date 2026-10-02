@@ -34,7 +34,7 @@ export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
 }
 
-const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json', true);
+const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json');
 let hydration: Promise<void> | null = null;
 
 async function hydrateAndMirror(): Promise<void> {

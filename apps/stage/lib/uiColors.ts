@@ -1,11 +1,7 @@
-import type { ThemeColor } from '@stage-labs/kit/tokens';
-
-export const DANGER_COLOR: ThemeColor = { dark: '#eb4c5b', light: '#eb4c5b' };
-
-export const SUCCESS_COLOR: ThemeColor = { dark: '#57b375', light: '#57b375' };
+import { semanticColors, type ThemeColor } from '@stage-labs/kit/tokens';
 
 export function changeColor(change: string): ThemeColor {
-  return change.trim().startsWith('-') ? DANGER_COLOR : SUCCESS_COLOR;
+  return change.trim().startsWith('-') ? semanticColors.dangerColor : semanticColors.successColor;
 }
 
 export const HIGHLIGHT_BG: ThemeColor = { dark: '#fde047', light: '#FFF200' };
