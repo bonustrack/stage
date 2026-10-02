@@ -50,7 +50,6 @@ interface TxCardModel {
   warning?: string;
   showBalance: boolean;
 }
-export { SigRequestCard, SigReferenceCard } from './cards.sig';
 export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
   req: WalletSendCallsContent; dark: boolean; paying?: boolean;
   onPay?: () => void;

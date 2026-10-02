@@ -16,7 +16,8 @@ import { getCachedXmtpClient } from './xmtp.state.web';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { withNestedReactions } from './nestedReactions.model';
 import { webGroupMetaPolicy } from './groupPolicyWeb.model';
-import { XMTP_USER_PREFIX, type XmtpConsent } from './xmtp.types';
+import { webConsentState, webListOptions } from './consentWeb.model';
+import { XMTP_USER_PREFIX } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
   type GroupMeta, type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
@@ -26,12 +27,6 @@ import { reported, recover, ignore, ignored } from './errorPolicy';
 type WebClient = Awaited<ReturnType<typeof xmtpClient>>;
 type WebMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
 type EncodedContentArg = Parameters<Conversation['send']>[0];
-
-const CONSENT_STATE: Record<XmtpConsent, ConsentState> = {
-  allowed: ConsentState.Allowed,
-  denied: ConsentState.Denied,
-  unknown: ConsentState.Unknown,
-};
 
 const VISIBLE_STATES: ConsentState[] = [ConsentState.Allowed, ConsentState.Unknown];
 
@@ -203,9 +198,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
   findConv: (client, convId) => client.conversations.getConversationById(convId),
-  listConvs: (client, consent) => (consent
-    ? client.conversations.list({ consentStates: consent.map(c => CONSENT_STATE[c]) })
-    : client.conversations.list()),
+  listConvs: (client, consent) => client.conversations.list(webListOptions(consent)),
   syncConvList: (client) => client.conversations.sync(),
   syncVisible: (client) => client.conversations.syncAll(VISIBLE_STATES),
   syncConsent: (client) => client.preferences.sync(),
@@ -261,7 +254,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   leaveOp: (conv) => (conv instanceof Group ? () => conv.requestRemoval() : null),
   createdAtNs: (conv) => (conv.createdAtNs === undefined ? 0 : Number(conv.createdAtNs)),
   consentOf: async (conv) => consentStateToString(await conv.consentState()),
-  setConsent: (conv, state) => conv.updateConsentState(CONSENT_STATE[state]),
+  setConsent: (conv, state) => conv.updateConsentState(webConsentState(state)),
   messages: async (conv, query) => withNestedReactions(
     await conv.messages(webQuery(query)), (m) => m.reactions, (m) => Number(m.sentAtNs),
   ),
@@ -274,7 +267,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   }),
   envelopeOf: envelopeOfXmtpMessage,
   sentNsOf: (m) => Number(m.sentAtNs),
-  sentNsText: (m) => String(m.sentAtNs),
   convIdOf: (m) => m.conversationId || null,
   deleteMessage: (conv, messageId) => conv.send(asEncoded(encodeDeleteMessage(messageId)), { shouldPush: false }),
   send: {

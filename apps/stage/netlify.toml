@@ -21,6 +21,10 @@
 [build.environment]
   BUN_VERSION = "1.4.0"
   NODE_VERSION = "22"
+  # Expo tree shaking for the web export. The @expo/metro-config patch keeps the
+  # two XMTP web workers in it; the desktop export-ui.mjs sets the same flags.
+  EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH = "1"
+  EXPO_UNSTABLE_TREE_SHAKING = "1"
   SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
 
 [[headers]]

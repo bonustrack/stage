@@ -10,3 +10,21 @@ diff --git a/build/serializer/serializeChunks.js b/build/serializer/serializeChu
                  for (const dep of chunk.deps) {
                      if (chunk2.deps.has(dep)) {
                          chunk.deps.delete(dep);
+diff --git a/build/transform-worker/collect-dependencies.js b/build/transform-worker/collect-dependencies.js
+--- a/build/transform-worker/collect-dependencies.js
++++ b/build/transform-worker/collect-dependencies.js
+@@ -97,9 +97,11 @@
+                     // Replace `new Worker` invocation with `asyncRequire.unstable_createWorker` helper call,
+                     // creating an Object URL with a shim script that remaps `importScripts` and `fetch`, while calling the entrypoint with `importScripts`.
+                     // This works around COEP/CORP issues, since worker entrypoint scripts aren't necessarily expected to match these headers
+-                    path.get('callee').replaceWith(makeCreateWorkerTemplate({
+-                        ASYNC_REQUIRE_MODULE_PATH: nullthrows(state.asyncRequireModulePathStringLiteral),
+-                    }));
++                    if (state.collectOnly !== true) {
++                        path.get('callee').replaceWith(makeCreateWorkerTemplate({
++                            ASYNC_REQUIRE_MODULE_PATH: nullthrows(state.asyncRequireModulePathStringLiteral),
++                        }));
++                    }
+                 }
+             }
+         },

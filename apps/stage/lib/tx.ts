@@ -1,25 +1,17 @@
 
 import {
-  isAddress, erc20Abi, encodeFunctionData,
-  createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient,
+  isAddress, createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient,
 } from 'viem';
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { parseSendAmount } from '@stage-labs/client/wallet/send';
-
-
-interface SendToken {
-  address: Hex;
-  decimals?: number;
-  symbol?: string;
-}
+import { buildPublicTransfer, type BuildTransferArgs } from '@stage-labs/client/wallet/send';
 
 interface SendParams {
   to: string;
   amount: string;
-  token?: SendToken;
-  chainId?: number;
+  asset: BuildTransferArgs['asset'];
+  chainId: number;
 }
 
 async function walletClientFor(chainId: number): Promise<{ client: WalletClient<Transport, Chain, Account>; chain: Chain }> {
@@ -30,23 +22,10 @@ async function walletClientFor(chainId: number): Promise<{ client: WalletClient<
   return { client: createWalletClient({ account: local, chain, transport: broviderTransport(chainId) }), chain };
 }
 
-export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
-  const { to, amount, token, chainId = 1 } = params;
-
-  if (!isAddress(to)) throw new Error('Invalid recipient address');
-  const value = parseSendAmount(amount, token ? token.decimals ?? 18 : 18);
-
+export async function sendNativeOrToken({ to, amount, asset, chainId }: SendParams): Promise<Hex> {
+  const call = buildPublicTransfer({ recipient: to, amount, asset });
   const { client, chain } = await walletClientFor(chainId);
-  if (token) {
-    return client.sendTransaction({
-      chain,
-      to: token.address,
-      data: encodeFunctionData({
-        abi: erc20Abi, functionName: 'transfer', args: [to, value],
-      }),
-    });
-  }
-  return client.sendTransaction({ chain, to: to, value });
+  return client.sendTransaction({ chain, ...call });
 }
 
 interface RawCall {

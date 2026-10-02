@@ -1,11 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { ownReactionsByMessage, reactionsByMessage } from '../components/conversation/feed-helpers';
-import { reactorNamesByMessage, type ReactorNamer } from '../components/conversation/reactors.model';
+import {
+  reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer,
+} from '../components/conversation/reactors.model';
 import { ownsReaction, reactionPills } from '../components/bubble/reactions.model';
 
 const ME = 'stage://xmtp/user/me';
 const EMMA = 'stage://xmtp/user/emma';
+const ALICE = 'stage://xmtp/user/alice';
 const BOB = 'stage://xmtp/user/bob';
 const NO_POLLS = new Map<string, number>();
 const nameOf: ReactorNamer = uri => uri.slice(uri.lastIndexOf('/') + 1);
@@ -78,5 +81,39 @@ describe('pending reactions on screen', () => {
     expect(ownsReaction(true, false, false)).toBe(true);
     expect(ownsReaction(true, false, true)).toBe(false);
     expect(ownsReaction(false, true, false)).toBe(true);
+  });
+});
+
+const addresses: Record<string, string> = {
+  [ALICE]: '0xa11ce00000000000000000000000000000000001',
+  [BOB]: '0xb0b0000000000000000000000000000000000002',
+};
+const tooltipNameOf = reactorNamer(uri => addresses[uri] ?? null, address => (address === addresses[ALICE] ? 'Alice' : undefined));
+
+describe('reaction tooltip', () => {
+  test('lists each reactor once, by their latest reaction', () => {
+    const events = [
+      react(1000, ALICE, '👍'), react(2000, BOB, '👍'), react(3000, BOB, '👍', true),
+      react(4000, ME, '👍'), react(5000, BOB, '🔥'), react(6000, ALICE, '👍'),
+    ];
+    const byEmoji = reactionsByMessage(events, new Map()).get('m1');
+    expect(byEmoji?.get('👍')).toEqual([ALICE, ME]);
+    expect(byEmoji?.get('🔥')).toEqual([BOB]);
+  });
+
+  test('names reactors with you first, then profile name, then a short address', () => {
+    expect(reactorNames([ALICE, BOB, ME], ME, tooltipNameOf)).toEqual(['You', 'Alice', '0xb0b0…0002']);
+    expect(reactorNames([BOB], ME, tooltipNameOf)).toEqual(['0xb0b0…0002']);
+    expect(tooltipNameOf('stage://xmtp/user/5f1e2d3c4b5a69788796a5b4c3d2e1f0')).toBe('5f1e2d…e1f0');
+    const named = reactorNamesByMessage(new Map([['m1', new Map([['👍', [BOB, ME]]])]]), ME, tooltipNameOf);
+    expect(named.get('m1')?.get('👍')).toEqual(['You', '0xb0b0…0002']);
+  });
+
+  test('caps the label and counts the rest', () => {
+    expect(reactorsLabel(['You'])).toBe('You');
+    expect(reactorsLabel(['You', 'Alice'])).toBe('You and Alice');
+    expect(reactorsLabel(['You', 'Alice', 'Bob'])).toBe('You, Alice and Bob');
+    expect(reactorsLabel(['You', 'Alice', 'Bob', 'Carol'])).toBe('You, Alice and 2 others');
+    expect(reactorsLabel(Array.from({ length: 10 }, (_, i) => `u${i}`))).toBe('u0, u1 and 8 others');
   });
 });

@@ -1,6 +1,6 @@
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  addLabel, asGroup, moveLabel, removeLabel, renameLabels, writeLabels,
+  addLabel, asGroup, moveLabel, removeLabel, renameLabels, stringList, writeLabels,
 } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { reported } from '../../lib/errorPolicy';
@@ -35,15 +35,11 @@ export function refreshGroupRow(convId: string | null): void {
   void loadGroupRow(convId, refreshSeq).catch(reported('messaging.refreshGroupRow'));
 }
 
-function rowLabels(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((l): l is string => typeof l === 'string') : [];
-}
-
 function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
   const rows = getCachedRows();
   const cur = rows?.find(r => r.convId === convId);
   if (!rows || !cur) return;
-  setCachedRows(rows.map(r => (r === cur ? { ...r, labels: next(rowLabels(r.labels)) } : r)));
+  setCachedRows(rows.map(r => (r === cur ? { ...r, labels: next(stringList(r.labels)) } : r)));
 }
 
 interface LabelWrites { base: string[]; pending: number; failed: boolean }
@@ -55,7 +51,7 @@ function startLabelWrite(convId: string | null): LabelWrites | null {
   if (!writes) {
     const row = getCachedRows()?.find(r => r.convId === convId);
     if (!row) return null;
-    writes = { base: rowLabels(row.labels), pending: 0, failed: false };
+    writes = { base: stringList(row.labels), pending: 0, failed: false };
     labelWrites.set(convId, writes);
   }
   writes.pending += 1;
@@ -116,7 +112,7 @@ function getAllKnownLabels(): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const row of rows) {
-    for (const label of rowLabels(row.labels)) {
+    for (const label of stringList(row.labels)) {
       const key = label.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);

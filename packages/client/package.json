@@ -8,6 +8,7 @@
   "exports": {
     "./types": "./src/types.ts",
     "./errors": "./src/errors.ts",
+    "./collections": "./src/collections.ts",
     "./profile/avatar": "./src/profile/avatar.ts",
     "./profile/upload": "./src/profile/upload.ts",
     "./xmtp/humanize": "./src/xmtp/humanize.ts",

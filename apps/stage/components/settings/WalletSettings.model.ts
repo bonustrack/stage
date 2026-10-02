@@ -1,7 +1,3 @@
-import type { BadgeColor } from '@stage-labs/kit/badge';
-
-export type WalletModuleRole = 'sudo' | 'backup' | 'session';
-
 export type WalletDeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 
 export interface WalletAccountModel {
@@ -11,10 +7,6 @@ export interface WalletAccountModel {
   rec: { type: string };
   activeSigner: string;
 }
-
-export const WALLET_ROLE_BADGE: Record<WalletModuleRole, BadgeColor> = {
-  sudo: 'success', backup: 'secondary', session: 'secondary',
-};
 
 export function walletDeployLabel(d: WalletDeployState): string {
   if (d === 'loading') return 'Checking…';

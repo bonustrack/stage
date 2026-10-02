@@ -1,7 +1,7 @@
-
 import type { HistoryEntry } from '../types';
 import {
-  humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT, type GroupUpdatedContent,
+  attachmentKindOf, humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT,
+  type GroupUpdatedContent,
 } from './humanize';
 import { type PollContent, pollFallbackText } from './poll';
 import {
@@ -19,6 +19,7 @@ import { XMTP_USER_PREFIX } from './line';
 import { parseCallInvite, parseCallSignal } from './call';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
+  shortTypeId,
 } from './deleteMessage';
 
 export interface DecodedMessageView {
@@ -41,8 +42,6 @@ interface StaticAttachmentView { filename: string; mimeType?: string; data: stri
 interface MultiRemoteAttachmentView {
   attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
-
-export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
 export interface EnvelopeOptions {
   reactionRemoved(action: unknown): boolean;
@@ -108,24 +107,9 @@ function replyEnvelope(
   };
 }
 
-function kindFromMime(mime?: string): AttachmentKind {
-  if (mime?.startsWith('image/')) return 'image';
-  if (mime?.startsWith('audio/')) return 'audio';
-  if (mime?.startsWith('video/')) return 'video';
-  return 'file';
-}
-
-function kindFromExt(name: string): AttachmentKind {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif'].includes(ext)) return 'image';
-  if (['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext)) return 'audio';
-  if (['mp4', 'mov', 'webm'].includes(ext)) return 'video';
-  return 'file';
-}
-
 function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
   const a = decoded as StaticAttachmentView;
-  const kind = kindFromMime(a.mimeType);
+  const kind = attachmentKindOf({ mimeType: a.mimeType });
   return {
     ...base,
     text: `[${kind}: ${opts.attachmentLabelOf(decoded)}]`,
@@ -144,7 +128,7 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   const m = decoded as MultiRemoteAttachmentView;
   const attachments = (m.attachments ?? []).map((info, i) => {
     const name = info.filename ?? `attachment-${i + 1}`;
-    return { kind: kindFromExt(name), name, remote: info };
+    return { kind: attachmentKindOf({ filename: name }), name, remote: info };
   });
   const first = attachments[0];
   const summary = first !== undefined && attachments.length === 1
@@ -261,7 +245,7 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
     id: msg.id, ts, station: 'xmtp', line,
     from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`, to: line, messageId: msg.id,
   };
-  const typeId = msg.contentTypeId.split('/').pop()?.split(':')[0] ?? 'unknown';
+  const typeId = shortTypeId(msg.contentTypeId);
   if (typeId === LEAVE_REQUEST_TYPE_ID) return leaveEnvelope(base, typeId);
   let decoded: unknown;
   try { decoded = msg.content(); }

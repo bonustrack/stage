@@ -4,7 +4,7 @@ import { withChannelLabels } from './channelRefs';
 import { MENTION_RE } from './mentions';
 import {
   DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deletedByOfContent,
-  deletedTextOf,
+  deletedTextOf, shortTypeId,
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
@@ -101,8 +101,7 @@ export function humanizeMentions(text: string): string {
 }
 
 function shortContentType(raw: string | undefined | null): string {
-  if (!raw) return 'unknown';
-  return raw.split('/').pop()?.split(':')[0] ?? raw;
+  return raw ? shortTypeId(raw) : 'unknown';
 }
 
 function previewReply(decoded: unknown): string {
@@ -155,11 +154,11 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   return handler ? handler(decoded) : `[${typeId}]`;
 }
 
-type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
+export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
 export interface AttachmentMeta { mimeType?: string | null; filename?: string | null }
 
-function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
+export function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
   const ext = a.filename?.split('.').pop()?.toLowerCase() ?? '';
   const mime = a.mimeType ?? '';
   if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return 'image';

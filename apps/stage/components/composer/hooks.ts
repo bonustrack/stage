@@ -5,8 +5,6 @@ import { loadDrafts, getDraftValue, setDraft, setDraftValue } from '../../lib/dr
 import type { ComposerState } from './state';
 import type { Attachment } from './types';
 
-export { useLastAttachment } from '../../lib/drafts';
-
 const keptAttachments = new Map<string, Attachment[]>();
 
 const TEXT_SAVE_DELAY_MS = 300;

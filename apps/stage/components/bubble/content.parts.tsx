@@ -18,8 +18,7 @@ import { ATTACHMENT_GAP, ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { HighlightText } from '../HighlightText';
 import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from './codeBlock.model';
-import { taskStateOf } from './markdown.model';
-import { TaskMark } from './TaskMark';
+import { taskStateOf, type TaskState } from './markdown.model';
 import { ResetBoundary } from './boundary';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../lib/peerProfiles';
@@ -28,11 +27,29 @@ import { profileLinkOf } from '../../lib/links';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 import { ChannelLink, useChannelLinkNames } from './ChannelLink';
 import { channelFallbackLabel, channelLinkText, markdownLabelText } from '../../lib/channelLinks';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
   bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment, type LinkFinder,
 } from './mention.model';
+import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareCheck';
+import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
+
+const LINE_HEIGHT = 23;
+
+function TaskMark({ task }: { task: TaskState }): React.ReactElement {
+  const pal = usePalette();
+  const done = task === 'done';
+  return (
+    <Box
+      justify="center" height={LINE_HEIGHT} margin={{ left: 2, right: 8 }}
+      accessibilityRole="checkbox" accessibilityState={{ checked: done }}
+    >
+      <Glyph icon={done ? IconSquareCheck : IconSquarePlaceholder} size={18} color={done ? pal.text : pal.sub}/>
+    </Box>
+  );
+}
 
 function MentionLink({ address, fg }: { address: string; fg: string }): React.ReactElement {
   const router = useRouter();

@@ -9,12 +9,35 @@ import { GithubLogo } from '../bubble/linkCards';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { usePalette } from '../../lib/theme';
-import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 import { timeAgo } from '../../lib/buildInfo.model';
 import { capabilities } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
+
+const STAGE_GITHUB_URL = 'https://github.com/bonustrack/stage';
+
+function commitUrl(gitHash: string): string | undefined {
+  return gitHash === 'dev' || gitHash.length === 0 ? undefined : `${STAGE_GITHUB_URL}/commit/${gitHash}`;
+}
+
+interface BuildMeta {
+  gitHash: string; commitTime: string; buildProfile: string;
+}
+
+function extraString(extra: Record<string, unknown>, key: string, fallback: string): string {
+  const v = extra[key];
+  return typeof v === 'string' && v.length > 0 ? v : fallback;
+}
+
+function buildMeta(): BuildMeta {
+  const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
+  return {
+    gitHash: extraString(extra, 'gitHash', 'dev'),
+    commitTime: extraString(extra, 'commitTime', ''),
+    buildProfile: extraString(extra, 'buildProfile', 'dev'),
+  };
+}
 
 const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: '3xs', weight: 'medium' } as const;
 const GITHUB_ICON_SIZE = 14;

@@ -11,18 +11,11 @@ import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { peopleLookup } from './contacts.model';
 import { homeRows } from './state';
+import { uniqueBy } from '@stage-labs/client/collections';
 
 function getExistingPeers(): { address: string; convId: string }[] {
-  const seen = new Set<string>();
-  const peers: { address: string; convId: string }[] = [];
-  for (const { peerAddress: a, convId: cid } of homeRows() ?? []) {
-    if (!a || !cid) continue;
-    const k = a.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    peers.push({ address: a, convId: cid });
-  }
-  return peers;
+  const peers = (homeRows() ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
+  return uniqueBy(peers, p => p.address.toLowerCase());
 }
 
 const LOOKUP_DEBOUNCE_MS = 300;

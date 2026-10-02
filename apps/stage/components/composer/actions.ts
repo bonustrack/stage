@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
-import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './voice';
+import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
+import { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
+import { useVoiceRecorder } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
 import { Alert, Platform } from 'react-native';
@@ -18,20 +20,13 @@ import { ignored } from '../../lib/errorPolicy';
 type ComposerActionsArgs = DraftArgs & PostHooks
   & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
-function kindOf(mime: string): 'image' | 'audio' | 'video' | 'file' {
-  if (mime.startsWith('image/')) return 'image';
-  if (mime.startsWith('audio/')) return 'audio';
-  if (mime.startsWith('video/')) return 'video';
-  return 'file';
-}
-
 const mintAttachmentId = (): string => `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: string, name?: string): Promise<void> {
   a.setUploading(true);
   try {
     const resolvedMime = mimeOf(mime, name ?? uri);
-    const kind = kindOf(resolvedMime);
+    const kind = attachmentKindOf({ mimeType: resolvedMime });
     const size = await fetch(uri).then(r => r.blob()).then(b => b.size).catch(ignored(0, 'optional'));
     const attachment = { id: mintAttachmentId(), url: stashLocalAttachment(uri), kind, mime: resolvedMime, size, name };
     a.setPending(prev => [...prev, attachment]);

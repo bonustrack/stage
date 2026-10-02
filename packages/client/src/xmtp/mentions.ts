@@ -14,13 +14,6 @@ export function mentionToken(address: string): string {
   return `@${address.toLowerCase()}`;
 }
 
-export function hasMention(text: string): boolean {
-  MENTION_RE.lastIndex = 0;
-  const found = MENTION_RE.test(text);
-  MENTION_RE.lastIndex = 0;
-  return found;
-}
-
 export function parseMentions(text: string): MentionSegment[] {
   const segments: MentionSegment[] = [];
   let last = 0;

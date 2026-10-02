@@ -4,20 +4,11 @@ import {
 } from '@stage-labs/client/xmtp/groups';
 import { asGroup, assignedAddresses, writeAssigned } from '@stage-labs/client/xmtp/labels';
 import { convOfLine, sdk } from './xmtp.sdk';
-import { notAGroup, type GroupMeta } from './xmtp.sdk.core';
+import { notAGroup } from './xmtp.sdk.core';
 import { lineOfConv } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
-
-function groupMeta(name?: string, imageUrl?: string): GroupMeta {
-  const meta: GroupMeta = {};
-  const trimmedName = name?.trim();
-  if (trimmedName) meta.name = trimmedName;
-  const trimmedImage = imageUrl?.trim();
-  if (trimmedImage) meta.imageUrl = trimmedImage;
-  return meta;
-}
 
 function requireConv<T>(conv: T | null): T {
   if (!conv) throw new Error('Conversation not found');
@@ -29,10 +20,9 @@ async function requireGroup(line: string): Promise<GroupConv> {
   return sdk.isGroup(conv) ? conv : notAGroup();
 }
 
-export async function createGroup(addresses: string[], name?: string, imageUrl?: string): Promise<CreateGroupResult> {
+export async function createGroup(addresses: string[]): Promise<CreateGroupResult> {
   const client = await sdk.client();
-  const meta = groupMeta(name, imageUrl);
-  return createGroupWith(addresses, lineOfConv, (members) => sdk.newGroup(client, members, meta));
+  return createGroupWith(addresses, lineOfConv, (members) => sdk.newGroup(client, members, {}));
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {

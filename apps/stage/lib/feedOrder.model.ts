@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
+import { uniqueBy } from '@stage-labs/client/collections';
 
 export interface FeedMerge {
   entries: HistoryEntry[];
@@ -62,12 +63,7 @@ function withDeletedPlaceholders(
 
 export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[]): FeedMerge {
   const { entries: base, replaced } = withDeletedPlaceholders(prev, incoming);
-  const seen = new Set(base.map(e => e.id));
-  const fresh = incoming.filter((e) => {
-    if (seen.has(e.id)) return false;
-    seen.add(e.id);
-    return true;
-  });
+  const fresh = uniqueBy(incoming, e => e.id, new Set(base.map(e => e.id)));
   if (fresh.length === 0) return { entries: [...base], added: 0, replaced, channelUpdated: false };
   return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced, channelUpdated: fresh.some(isSystemEntry) };
 }

@@ -16,7 +16,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { previewLinkOf } from '../../lib/cardLinks';
 import { githubLinkOf } from '@stage-labs/client/api/github';
-import { useGithubMeta } from '../../lib/useGithubMeta';
+import { useGithubMeta, type GithubMeta } from '../../lib/useGithubMeta';
 import { TEXT_11PX } from '../smallText';
 import type { SpacingValue } from '@stage-labs/kit/layout';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -126,8 +126,6 @@ const DOT: Record<string, string> = {
 };
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
-
-type GithubMeta = NonNullable<ReturnType<typeof useGithubMeta>>;
 
 function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | null {
   if (meta.kind !== 'pull' || (meta.additions == null && meta.deletions == null)) return null;

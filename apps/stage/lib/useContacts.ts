@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { Conversation } from '@xmtp/react-native-sdk';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv,
-  getActiveAccountIdSync, getCachedRows, shortAddress, xmtpClient,
+  getActiveAccountIdSync, getCachedRows, shortAddress,
 } from '../modules/messaging';
+import { sdk } from './xmtp.sdk';
 import { subscribeCachedRows, type CachedRow } from './channelsCache';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 
@@ -36,14 +36,14 @@ function seedAddresses(): string[] {
 }
 
 async function collectAddresses(): Promise<string[]> {
-  const client = await xmtpClient();
+  const client = await sdk.client();
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
-  const convs = await client.conversations.list(undefined, undefined, ['allowed']);
+  const convs = await sdk.listConvs(client, ['allowed']);
 
   await primeConversationMembers(client, convs);
 
   const set = new Set<string>();
-  await Promise.all(convs.map(async (c: Conversation) => {
+  await Promise.all(convs.map(async (c) => {
     const addrs = isGroupConv(c)
       ? await groupMemberEthAddresses(c)
       : [await peerEthAddressOfDm(c)].filter((a): a is string => !!a);

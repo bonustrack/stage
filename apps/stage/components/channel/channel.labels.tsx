@@ -12,7 +12,7 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, getCachedRows, LabelPermissionError, lineOfConv, MAX_LABEL_LEN, MAX_LABELS, removeGroupLabel,
+  addGroupLabel, cleanLabel, getCachedRows, LabelPermissionError, lineOfConv, MAX_LABEL_LEN, MAX_LABELS, removeGroupLabel,
   subscribeCachedRows,
 } from '../../modules/messaging';
 import { useStoreValue } from '../../lib/storeCore';
@@ -134,17 +134,13 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
   );
 }
 
-function cleanQuery(query: string): string {
-  return query.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
-}
-
 function LabelPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
   const { text: fg, bg } = usePalette();
   const [query, setQuery] = useState('');
   const [base] = useState(() => selectedFirst(uniqueKeys([...current, ...suggestLabels('', current)]), current));
   const all = uniqueKeys([...base, ...draft]);
   const shown = all.filter(label => matchesQuery(query, label));
-  const typed = cleanQuery(query);
+  const typed = cleanLabel(query);
   const creatable = typed !== '' && !includesKey(all, typed);
   const pick = (label: string): void => {
     if (!includesKey(draft, label) && draft.length >= MAX_LABELS) { capabilities.toast(`A channel can have up to ${MAX_LABELS} labels.`); return; }

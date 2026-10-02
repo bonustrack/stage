@@ -35,13 +35,6 @@ async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: stri
     : kernel.sendTransaction({ to: resolved as Hex, value } as Parameters<typeof kernel.sendTransaction>[0]);
 }
 
-async function sendLegacy(asset: SendAsset, resolved: string, tokStr: string, chainId: number): Promise<Hex> {
-  return sendNativeOrToken({
-    to: resolved, amount: tokStr, chainId,
-    token: asset.address ? { address: asset.address, decimals: asset.decimals } : undefined,
-  });
-}
-
 function secondaryLabelOf(amount: string, mode: 'eth' | 'usd', tokenPriceUsd: number | null, symbol: string): string {
   if (!amount.trim() || !tokenPriceUsd) return '';
   const n = Number(amount);
@@ -141,7 +134,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart
           ? await sendSmart(active, asset, resolved, tokStr, token.chainId)
-          : await sendLegacy(asset, resolved, tokStr, token.chainId);
+          : await sendNativeOrToken({ to: resolved, amount: tokStr, asset, chainId: token.chainId });
         setTxHash(hash); setTxChainId(receiptChainId); setTxState('pending');
         const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
         await pub.waitForTransactionReceipt({ hash });

@@ -1,4 +1,5 @@
 import type { MenuPoint } from '../AnchoredMenu.model';
+import { uniqueBy } from '@stage-labs/client/collections';
 
 export interface ListEdits { added: string[]; removed: string[] }
 
@@ -16,13 +17,7 @@ export function includesKey(list: readonly string[], value: string): boolean {
 }
 
 export function uniqueKeys(list: readonly string[]): string[] {
-  const seen = new Set<string>();
-  return list.filter((item) => {
-    const key = keyOf(item);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return uniqueBy(list, keyOf);
 }
 
 export function toggleKey(list: readonly string[], value: string): string[] {

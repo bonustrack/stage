@@ -12,7 +12,8 @@ import { useWebTabRail } from '../../lib/webLayout';
 import { HomeError, HomeSpinner, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
-import { deriveLabels, useHomeFilters } from './labelbar';
+import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
+import { useHomeFilters } from './labelbar';
 import { searchBarLabels } from './model';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
@@ -57,7 +58,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const boardOrder = useBoardOrder();
   const barLabels = useMemo(
-    () => searchBarLabels(deriveLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
+    () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
     [rows, matches, enabledLabels, boardOrder],
   );
   const showFilterBar = channelsFilterBarVisible({

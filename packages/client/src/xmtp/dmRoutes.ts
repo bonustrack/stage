@@ -1,3 +1,5 @@
+import { uniqueBy } from '../collections';
+
 export type ConvRoutes = Readonly<Record<string, string>>;
 
 export const NO_ROUTES: ConvRoutes = {};
@@ -48,12 +50,7 @@ export function dmRowId(
 }
 
 export function uniqueByConvId<R extends { convId: string }>(rows: readonly R[]): R[] {
-  const seen = new Set<string>();
-  return rows.filter((row) => {
-    if (seen.has(row.convId)) return false;
-    seen.add(row.convId);
-    return true;
-  });
+  return uniqueBy(rows, row => row.convId);
 }
 
 export function isImportReplay(sentNs: number, importedUntilNs: number): boolean {

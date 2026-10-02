@@ -13,9 +13,8 @@ export function bubbleTimestamp(ts: string): string {
   catch { return ts.slice(11, 16); }
 }
 
-export function unreadBadgeLabel(count: number, markedUnread = false): string | undefined {
+export function unreadBadgeLabel(count: number): string | undefined {
   if (count > 0) return count > 99 ? '99+' : String(count);
-  if (markedUnread) return '·';
   return undefined;
 }
 

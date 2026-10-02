@@ -4,7 +4,7 @@ import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';
-import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
+import { groupRoleOf, superAdminInboxIds, type GroupRole } from '@stage-labs/client/xmtp/groups';
 import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
 import { recover } from '../../lib/errorPolicy';
 
@@ -54,17 +54,12 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
 export async function fetchGroupRoles(
   convId: string,
   inboxToAddr: Record<string, string>,
-): Promise<Record<string, 'owner' | 'admin' | 'member'>> {
+): Promise<Record<string, GroupRole>> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return {};
-  const { admins, superAdmins } = await sdk.groupAdmins(conv);
-  const superSet = new Set(superAdmins.map(s => s.toLowerCase()));
-  const adminSet = new Set(admins.map(a => a.toLowerCase()));
-  const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
-  for (const [inboxId, addr] of Object.entries(inboxToAddr)) {
-    const iid = inboxId.toLowerCase();
-    roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
-  }
+  const staff = await sdk.groupAdmins(conv);
+  const roles: Record<string, GroupRole> = {};
+  for (const [inboxId, addr] of Object.entries(inboxToAddr)) roles[addr] = groupRoleOf(inboxId, staff);
   return roles;
 }
 

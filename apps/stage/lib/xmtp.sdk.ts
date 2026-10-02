@@ -218,7 +218,6 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   }),
   envelopeOf: (m, line) => mapDecodedToEnvelope(m, line),
   sentNsOf: (m) => m.sentNs,
-  sentNsText: (m) => String(m.sentNs),
   convIdOf: (m) => convIdFromTopic(m.topic) ?? conversationIdField(m),
   deleteMessage: (conv, messageId) => conv.deleteMessage(asMessageId(messageId)),
   send: {

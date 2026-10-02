@@ -31,8 +31,6 @@ export function useHomeFilters(): {
   };
 }
 
-export { deriveBarLabels as deriveLabels } from '@stage-labs/client/xmtp/channelsFilter';
-
 const CHIPS_PADDING = { x: PAGE_GUTTER, y: LIST_TOP_GAP };
 const STRETCH = { alignSelf: 'stretch' } as const;
 const WEB = Platform.OS === 'web';
