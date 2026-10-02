@@ -1,11 +1,11 @@
 
 import { useCallback, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { useRouter } from 'expo-router';
 import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
 import { Box, Row, PAGE_GUTTER } from './layout';
 import { useWebTabRail } from '../lib/webLayout';
+import { capabilities } from '../lib/capabilities';
 
 const FILL = { flex: 1 } as const;
 
@@ -17,7 +17,6 @@ interface RequestActionBarProps {
 
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement {
   const { convId, dark, onAccepted } = props;
-  const router = useRouter();
   const { bg, border, link } = usePalette();
   const [busy, setBusy] = useState(false);
   const wide = useWebTabRail();
@@ -37,10 +36,10 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     void blockRequestConv(convId)
       .then(() => {
         void syncConsent();
-        if (router.canGoBack()) router.back(); else router.replace('/');
+        capabilities.back();
       })
       .catch(() => { setBusy(false); });
-  }, [busy, convId, router]);
+  }, [busy, convId]);
 
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>

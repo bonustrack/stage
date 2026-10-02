@@ -42,7 +42,7 @@ function toast(message: string): void {
 
 export const capabilities: Capabilities = {
   navigate: (to) => { router.push(to); },
-  back: () => { router.back(); },
+  back: () => { if (router.canGoBack()) router.back(); else router.replace('/'); },
   backTo: (to) => { router.dismissTo(to); },
   copyToClipboard: async (text) => { await Clipboard.setStringAsync(text); },
   copy: (label, value) => { void Clipboard.setStringAsync(value); toast(`${label} copied`); },

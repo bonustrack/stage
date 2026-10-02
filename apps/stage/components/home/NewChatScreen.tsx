@@ -200,7 +200,7 @@ export function NewChatScreen(): React.ReactElement {
   return (
     <Col flex={1} surface="surface">
       <ChatColumn>{creating ? <ChatColumnSpinner bottomInset={footerH}/> : null}</ChatColumn>
-      <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}>
+      <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { capabilities.back(); }}>
         <Box flex={1}/>
         <Row align="center" padding={{ right: PAGE_GUTTER }}>
           <ConversationSidebarToggle/>
