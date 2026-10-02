@@ -7,7 +7,7 @@ import { usePalette } from '../lib/theme';
 
 export const PROFILE_AVATAR_SIZE = 88;
 
-const COVER_HEIGHT = 156;
+const COVER_HEIGHT = 188;
 const SHEET_RADIUS = 18;
 const SHEET = { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS, overflow: 'visible' } as const;
 const AVATAR_SLOT = { marginTop: -PROFILE_AVATAR_SIZE * 0.8, zIndex: 1 } as const;
