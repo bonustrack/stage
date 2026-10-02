@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { serializeErc6492Signature } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { deriveHpkeKeyPair, hpkeOpen, hpkeSeal } from '../src/mail/hpke';
 import {
@@ -95,6 +96,14 @@ describe('mail keys and messages', () => {
     expect(mailPublicKeyHex(again)).toBe(mailPublicKeyHex(first));
     expect(mailPublicKeyHex(other)).not.toBe(mailPublicKeyHex(first));
     expect(mailKeyMessage('alice1')).toBe('st.box mail key v1 for alice1.stage.base.eth');
+  });
+
+  test('derives the same key before and after a smart account is deployed', async () => {
+    const deployed = (message: string) => OWNER.signMessage({ message });
+    const undeployed = async (message: string) => serializeErc6492Signature({
+      address: '0x00000000000000000000000000000000DeaDBeef', data: '0x1234', signature: await deployed(message),
+    });
+    expect(mailPublicKeyHex(await deriveMailKey('alice1', undeployed))).toBe(mailPublicKeyHex(await deriveMailKey('alice1', deployed)));
   });
 
   test('refuses a signer that does not sign deterministically', async () => {

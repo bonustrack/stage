@@ -1,5 +1,5 @@
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { bytesToHex, hexToBytes, isHex, type Hex } from 'viem';
+import { bytesToHex, hexToBytes, isErc6492Signature, isHex, parseErc6492Signature, type Hex } from 'viem';
 import { z } from 'zod';
 import { stageNameOf, validateStageLabel } from '../identity/stageNames';
 import { parseOrThrow } from '../validate';
@@ -104,7 +104,8 @@ export async function deriveMailKey(label: string, signOwnerMessage: (message: s
   if (!isHex(first) || first.toLowerCase() !== second.toLowerCase()) {
     throw new Error('This signer does not give the same signature twice, so it cannot hold a mail key.');
   }
-  return deriveHpkeKeyPair(hexToBytes(first));
+  const stable = isErc6492Signature(first) ? parseErc6492Signature(first).signature : first;
+  return deriveHpkeKeyPair(hexToBytes(stable));
 }
 
 export function mailPublicKeyHex(keys: MailKeyPair): Hex {
