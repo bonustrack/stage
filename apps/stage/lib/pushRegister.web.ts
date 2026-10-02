@@ -1,9 +1,6 @@
 import type { Client } from '@xmtp/browser-sdk';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
-import { FIREBASE_WEB_CONFIG } from './firebaseWeb';
 import {
   makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
   type PushPermission, type PushTopics,
@@ -11,8 +8,6 @@ import {
 import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
-
-const PUSH_SERVICE_WORKER_PATH = '/push-sw.js';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
@@ -42,13 +37,8 @@ export async function requestPushPermission(): Promise<PushPermission> {
 
 async function webPushToken(): Promise<string | null> {
   if (!notificationsAvailable() || Notification.permission !== 'granted') return null;
-  if (!(await isSupported())) throw new Error('this browser does not support web push');
-  const registration = await navigator.serviceWorker.register(PUSH_SERVICE_WORKER_PATH);
-  await navigator.serviceWorker.ready;
-  const app = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_WEB_CONFIG);
-  return getToken(getMessaging(app), {
-    vapidKey: FIREBASE_WEB_CONFIG.vapidPublicKey, serviceWorkerRegistration: registration,
-  });
+  const { firebasePushToken } = await import('./firebaseWeb');
+  return firebasePushToken();
 }
 
 function groupTopic(groupId: string): string {
