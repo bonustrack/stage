@@ -77,6 +77,7 @@
     "./wallet/send": "./src/wallet/send.ts",
     "./wallet/txError": "./src/wallet/txError.ts",
     "./wallet/txSimulate": "./src/wallet/txSimulate.ts",
+    "./wallet/txTime": "./src/wallet/txTime.ts",
     "./wallet/txConfirm": "./src/wallet/txConfirm.ts",
     "./wallet/txWording": "./src/wallet/txWording.ts",
     "./wallet/txDecode": "./src/wallet/txDecode.ts",

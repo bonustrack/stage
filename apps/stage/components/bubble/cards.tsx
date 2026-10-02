@@ -13,7 +13,7 @@ import { timeAgo } from '../../lib/format';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
-import { tokenLogoUrl, useDecodedCall, useUsdValue } from '../../lib/txDisplay';
+import { tokenLogoUrl, useDecodedCall, useTxTime, useUsdValue } from '../../lib/txDisplay';
 import {
   chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount,
 } from '@stage-labs/client/xmtp/tx';
@@ -255,10 +255,11 @@ export function TxReceiptCard({ receipt, ts, dark }: {
   receipt: TransactionReferenceContent; ts: string; dark: boolean;
 }): React.ReactElement {
   const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
+  const minedAt = useTxTime(receipt.networkId, receipt.reference);
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
       <Text size="sm" role="secondary">
-        {timeAgo(ts, Date.now())} ·{' '}
+        {timeAgo(minedAt ?? ts, Date.now())} ·{' '}
         <Text size="sm" color={pal.link} {...bubbleLinkProps(url, openInBubbleLink)} suppressHighlighting>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
