@@ -5,13 +5,11 @@ import { switchToAccount } from '../../lib/xmtp.client';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 
+export { useAccountEpoch as useActiveAccount };
+
 export const AccountManager = {
   switch: async (id: string, env?: XmtpEnv): Promise<void> => { await switchToAccount(id, env); },
 } as const;
-
-export function useActiveAccount(): number {
-  return useAccountEpoch();
-}
 
 export function useActiveAccountRecord(): AccountRecord | null {
   const epoch = useAccountEpoch();

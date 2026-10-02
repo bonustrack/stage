@@ -1,6 +1,6 @@
 import { encodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { canExportPrivateKey, type AccountRecord } from './accounts';
-import { addPhrase, revealPrivateKey, revealRecoveryPhrase } from './zerodev/keyring';
+import { revealPrivateKey, revealRecoveryPhrase } from './zerodev/keyring';
 
 type TransferKind = AccountTransfer['kind'];
 
@@ -21,8 +21,4 @@ export async function transferPayloadFor(rec: AccountRecord): Promise<string | n
     return phrase ? encodeAccountTransfer({ kind: 'phrase', phrase }) : null;
   }
   return null;
-}
-
-export function adoptPhrase(phrase: string): Promise<string> {
-  return addPhrase(phrase);
 }

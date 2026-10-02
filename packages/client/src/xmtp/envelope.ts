@@ -19,6 +19,7 @@ import { XMTP_USER_PREFIX } from './line';
 import { parseCallInvite, parseCallSignal } from './call';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
+  shortTypeId,
 } from './deleteMessage';
 
 export interface DecodedMessageView {
@@ -244,7 +245,7 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
     id: msg.id, ts, station: 'xmtp', line,
     from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`, to: line, messageId: msg.id,
   };
-  const typeId = msg.contentTypeId.split('/').pop()?.split(':')[0] ?? 'unknown';
+  const typeId = shortTypeId(msg.contentTypeId);
   if (typeId === LEAVE_REQUEST_TYPE_ID) return leaveEnvelope(base, typeId);
   let decoded: unknown;
   try { decoded = msg.content(); }

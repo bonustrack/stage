@@ -15,7 +15,8 @@ import {
 } from './helpers';
 import { QuestionView } from './question';
 import { PollView } from './poll';
-import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
+import { TxRequestCard, TxReceiptCard } from './cards';
+import { SigRequestCard, SigReferenceCard } from './cards.sig';
 import { FramePreview } from '../frame/FramePreview';
 import { CallCard } from './CallCard';
 import type { CallRecord } from './callCard.model';

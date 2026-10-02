@@ -1,9 +1,9 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import { createSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
-import { adoptPhrase } from '../../lib/accountTransfer';
+import { addPhrase } from '../../lib/zerodev/keyring';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
-import { addPrivateKeyAccount, removeAccount } from '../../lib/accounts';
+import { addPrivateKeyAccount } from '../../lib/accounts';
 import { applyProfileSetup } from '../../lib/profile';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
@@ -33,10 +33,6 @@ export type SetupWarning = { title: string; message: string } | null;
 
 const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
 
-export async function abandonAccount(accountId: string): Promise<void> {
-  await removeAccount(accountId);
-}
-
 async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('profile');
   try {
@@ -57,7 +53,7 @@ export async function createWallet(onStage?: (s: Stage) => void, profile?: Profi
 
 export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('wallet');
-  const { record, alreadyImported } = await restoreSmartAccount(await adoptPhrase(phrase));
+  const { record, alreadyImported } = await restoreSmartAccount(await addPhrase(phrase));
   await bringMessagingOnline(record.id, onStage);
   if (!alreadyImported) return null;
   return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };

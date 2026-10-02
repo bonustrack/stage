@@ -26,7 +26,7 @@ import {
 } from '../lib/x402';
 import { payX402Exact } from '../lib/x402.pay';
 import { capabilities } from '../lib/capabilities';
-import type { X402Challenge } from '../lib/useLinkPreview';
+import type { X402Accept, X402Challenge } from '../lib/useLinkPreview';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
@@ -134,8 +134,6 @@ export function PaymentCard({
 }
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
-
-type X402Accept = X402Challenge['accepts'][number];
 
 function x402Description(challenge: X402Challenge, accept: X402Accept): string {
   if (accept.description != null && accept.description !== '') return accept.description;

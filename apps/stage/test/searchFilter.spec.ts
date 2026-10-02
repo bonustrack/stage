@@ -1,25 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  HAS_OPTIONS, ME_OPTION, memberNames, memberTokenValue, parseSearchFilter, pickSearchFilter,
+  HAS_OPTIONS, ME_OPTION, memberTokenValue, parseSearchFilter, pickSearchFilter,
   searchFilterMenu, searchFilterSources, searchFilterToken, searchFilterValues, searchRowMatcher,
   type FilterMenu, type FilterOptions, type FilterRow,
 } from '../components/searchFilter.model';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
-
-const SELF = '0xself';
-const ALICE = '0xa11ce00000000000000000000000000000000001';
-const BOB = '0xb0b0000000000000000000000000000000000002';
-
-function group(convId: string, labels: string[], members: string[] = []): FilterRow {
-  const inboxToAddr = Object.fromEntries([['self', SELF], ...members.map((address, i) => [`inbox-${i}`, address])]);
-  return { convId, title: convId, lastPreview: '', lastTs: 1, unreadCount: 0, labels, inboxToAddr, selfInboxId: 'self' };
-}
-
-const NAMES: Record<string, string[]> = {
-  [ALICE]: memberNames('alice123.stage.base.eth', 'Alice Doe'),
-  [BOB]: memberNames('bob.base.eth', undefined),
-};
+import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
 
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
 

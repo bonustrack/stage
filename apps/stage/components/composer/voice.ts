@@ -10,8 +10,6 @@ import { makeVoiceRecorder } from './voice.core';
 import { recordedVoiceFile } from './voiceFile';
 import { callOwnsAudio, registerCallRecorder } from '../../lib/calls.audio.core';
 
-export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
-
 const RECORDING_OPTIONS = { ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true };
 const METERING_INTERVAL_MS = 80;
 

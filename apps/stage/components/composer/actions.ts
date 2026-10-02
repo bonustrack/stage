@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
-import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './voice';
+import { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
+import { useVoiceRecorder } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
 import { Alert, Platform } from 'react-native';

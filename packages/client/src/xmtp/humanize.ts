@@ -4,7 +4,7 @@ import { withChannelLabels } from './channelRefs';
 import { MENTION_RE } from './mentions';
 import {
   DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deletedByOfContent,
-  deletedTextOf,
+  deletedTextOf, shortTypeId,
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
@@ -101,8 +101,7 @@ export function humanizeMentions(text: string): string {
 }
 
 function shortContentType(raw: string | undefined | null): string {
-  if (!raw) return 'unknown';
-  return raw.split('/').pop()?.split(':')[0] ?? raw;
+  return raw ? shortTypeId(raw) : 'unknown';
 }
 
 function previewReply(decoded: unknown): string {

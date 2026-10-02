@@ -68,10 +68,6 @@ function EnterCodeWhileWaitingLink({ history }: { history: HistoryControls }): R
   );
 }
 
-function ContinueWithoutHistoryLink({ history }: { history: HistoryControls }): React.ReactElement {
-  return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
-}
-
 const ROW_HEIGHT = 40;
 const ROW_ICON = 16;
 
@@ -109,7 +105,7 @@ const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { startOver: 'Start ove
 function SetupLink({ busy, setupErr, onBack, history, waiting }: {
   busy: boolean; setupErr: SetupErr | null; onBack: () => void; history: HistoryControls; waiting: boolean;
 }): React.ReactElement | null {
-  if (setupErr === null && history.stalled) return <ContinueWithoutHistoryLink history={history} />;
+  if (setupErr === null && history.stalled) return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
   if (setupErr === null) return waiting ? <EnterCodeWhileWaitingLink history={history} /> : null;
   const links = setupLinks(setupErr);
   if (links.length === 0) return null;

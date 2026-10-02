@@ -3,9 +3,10 @@ import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
+import { removeAccount } from '../../lib/accounts';
 import { receiveHistoryWithCode, syncHistoryToEnd } from '../../lib/history';
 import {
-  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, abandonAccount, XmtpSetupError,
+  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError,
   type SetupWarning, type Stage,
 } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
@@ -133,7 +134,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
 
   const startOver = (): void => {
     const accountId = setupErr?.accountId;
-    if (accountId !== undefined) void abandonAccount(accountId).catch(reported('onboarding.abandon'));
+    if (accountId !== undefined) void removeAccount(accountId).catch(reported('onboarding.abandon'));
     reset();
   };
 
