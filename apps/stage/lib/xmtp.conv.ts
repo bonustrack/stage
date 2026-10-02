@@ -4,6 +4,7 @@ import { convOfLine, sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { registerHiddenConv } from './readSyncRegistry';
+import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
 import { describeError, ignored, report, reported, recover } from './errorPolicy';
@@ -148,6 +149,7 @@ async function setConvConsent(convId: string, state: XmtpConsent): Promise<void>
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
   await sdk.setConsent(conv, state);
+  patchRowConsent(convId, state);
 }
 
 export function acceptRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'allowed'); }

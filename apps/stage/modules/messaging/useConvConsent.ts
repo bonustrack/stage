@@ -47,7 +47,7 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
       if (cancelConsent) attempt(cancelConsent, 'cleanup');
     };
   }, [convId]);
-  return checked === undefined ? listed : checked;
+  return checked ?? listed ?? checked;
 }
 
 const RECHECK_MS = 10_000;
