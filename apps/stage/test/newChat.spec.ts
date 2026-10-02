@@ -1,12 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients, recentDmPeers, recipientCandidates,
-  savedPicks, shownRecipients,
+  MAX_SHOWN_RECIPIENTS, NO_MEMBER_HISTORY, askPlaceholder, membersDraftKey, newChatDraftKey, parseMemberHistory, pickedRecipients,
+  rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients, startedChatWith,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';
 const POOL = [ALICE];
+const BOB = '0xB0B0000000000000000000000000000000000003';
+const CAROL = '0xCA10000000000000000000000000000000000004';
+const bob = BOB.toLowerCase();
+const carol = CAROL.toLowerCase();
+const alice = ALICE.toLowerCase();
 
 function dm(peer: string, lastTs: number): { convId: string; peerAddress: string; lastTs: number } {
   return { convId: `c-${peer}-${lastTs}`, peerAddress: peer, lastTs };
@@ -77,5 +82,44 @@ describe('new chat recipients', () => {
     expect(askPlaceholder(['Emma', 'Alice'])).toBe('Ask Emma and Alice');
     expect(askPlaceholder(['Emma', 'Alice', 'Tony'])).toBe('Ask Emma, Alice and Tony');
     expect(askPlaceholder(['Emma', 'Alice', 'Tony', 'Chen'])).toBe('Ask Emma, Alice and 2 others');
+  });
+});
+
+describe('new chat member memory', () => {
+  test('starting a chat remembers its members and counts one more chat for each of them', () => {
+    const once = startedChatWith(NO_MEMBER_HISTORY, [BOB], 10);
+    expect(once).toEqual({ last: [bob], stats: { [bob]: { count: 1, at: 10 } } });
+    const twice = startedChatWith(once, [CAROL, BOB, 'not-an-address'], 20);
+    expect(twice.last).toEqual([carol, bob]);
+    expect(twice.stats).toEqual({ [bob]: { count: 2, at: 20 }, [carol]: { count: 1, at: 20 } });
+    expect(startedChatWith(twice, ['nobody'], 30)).toBe(twice);
+  });
+
+  test('the members of the last chat are picked again, without the account itself or broken entries', () => {
+    const history = { last: [BOB, SELF, 'broken'], stats: {} };
+    expect(rememberedMembers(history, SELF.toUpperCase())).toEqual([bob]);
+    expect(rememberedMembers(NO_MEMBER_HISTORY, SELF)).toEqual([]);
+    expect(pickedRecipients(null, [alice], [bob])).toEqual([bob]);
+    expect(pickedRecipients(null, [alice], [])).toEqual([alice]);
+    expect(pickedRecipients([], [alice], [bob])).toEqual([]);
+  });
+
+  test('people rank by chats started, then by the latest chat, then by the usual order', () => {
+    const history = startedChatWith(startedChatWith(startedChatWith(NO_MEMBER_HISTORY, [BOB], 1), [CAROL], 2), [BOB], 3);
+    expect(rankedCandidates([alice, '0xd'], history, SELF)).toEqual([bob, carol, alice, '0xd']);
+    expect(rankedCandidates([alice, bob], history, SELF)).toEqual([bob, carol, alice]);
+    const tied = startedChatWith(startedChatWith(NO_MEMBER_HISTORY, [BOB], 1), [CAROL], 2);
+    expect(rankedCandidates([bob, carol], tied, SELF)).toEqual([carol, bob]);
+    const together = startedChatWith(NO_MEMBER_HISTORY, [BOB, CAROL], 1);
+    expect(rankedCandidates([carol, bob], together, SELF)).toEqual([carol, bob]);
+    expect(rankedCandidates([alice], { last: [], stats: { [SELF.toLowerCase()]: { count: 9, at: 9 } } }, SELF)).toEqual([alice]);
+  });
+
+  test('saved member history comes back as stored, anything else starts empty', () => {
+    const history = startedChatWith(NO_MEMBER_HISTORY, [BOB], 5);
+    expect(parseMemberHistory(JSON.stringify(history))).toEqual(history);
+    expect(parseMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
+    expect(parseMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
+    expect(parseMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
   });
 });

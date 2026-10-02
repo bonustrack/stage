@@ -19,9 +19,10 @@ import { includesKey, toggleKey } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
+import { rememberStartedChat, useNewChatMembers } from './newChatMembers';
 import {
   NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients,
-  recentDmPeers, recipientCandidates, savedPicks, shownRecipients, type DmPeer,
+  rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients, type DmPeer,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
@@ -69,26 +70,30 @@ function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
   return requests;
 }
 
-function useCandidates(): string[] {
+function useCandidates(): { candidates: string[]; remembered: string[] } {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
   const self = useActiveAccountRecord()?.address ?? null;
+  const history = useNewChatMembers();
   const peers = useMemo(
     () => (rows === null ? [] : recentDmPeers(rows.filter(r => !isRowCleared(cleared, r)), self)),
     [rows, cleared, self],
   );
   const requests = useRequestPeers(peers);
-  return useMemo(() => recipientCandidates(peers, self, requests), [peers, self, requests]);
+  return useMemo(() => ({
+    candidates: rankedCandidates(recipientCandidates(peers, self, requests), history, self),
+    remembered: rememberedMembers(history, self),
+  }), [peers, self, requests, history]);
 }
 
 function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
-  const candidates = useCandidates();
+  const { candidates, remembered } = useCandidates();
   const [picks, setPicks] = useState(NO_PICKS);
   useSavedDraft(membersDraftKey(draftKey), picks === NO_PICKS ? undefined : picks, (saved) => {
     const restored = savedPicks(saved);
     if (restored !== null) setPicks(restored);
   });
-  const picked = pickedRecipients(picks.chosen, candidates);
+  const picked = pickedRecipients(picks.chosen, candidates, remembered);
   const shown = shownRecipients(candidates, picks.added, picked);
   const latest = useRef({ picked, candidates });
   latest.current = { picked, candidates };
@@ -124,6 +129,7 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
       const convId = convIdOfLine(line);
       if (convId === null) return;
       rememberOwnGroup(convId);
+      rememberStartedChat(addresses);
       const { text, pending } = latest.current;
       handSendTo(convId, startSend(line, text, pending));
       clearNewChatDraft(draftKey);

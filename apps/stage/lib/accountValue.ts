@@ -2,11 +2,13 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { reported } from './errorPolicy';
+import { makeListeners } from './storeCore';
 
 export interface AccountValue<T> {
   ready: () => Promise<void>;
   get: () => T;
   update: (next: (current: T) => T) => Promise<void>;
+  subscribe: (cb: () => void) => () => void;
 }
 
 export function makeAccountValue<T>(
@@ -16,6 +18,7 @@ export function makeAccountValue<T>(
   let value = empty;
   let loaded = false;
   let loading: Promise<void> | null = null;
+  const { notify, subscribe } = makeListeners();
 
   async function load(): Promise<void> {
     const id = (await getActiveAccount())?.id ?? null;
@@ -24,6 +27,7 @@ export function makeAccountValue<T>(
     accountId = id;
     value = raw === null ? empty : parse(raw);
     loaded = true;
+    notify();
   }
 
   function reload(): Promise<void> {
@@ -41,9 +45,11 @@ export function makeAccountValue<T>(
       const updated = next(value);
       if (updated === value) return;
       value = updated;
+      notify();
       if (accountId !== null) {
         await appStorage.set(keyPrefix + accountId, serialize(updated)).catch(reported(`${keyPrefix}save`));
       }
     },
+    subscribe,
   };
 }
