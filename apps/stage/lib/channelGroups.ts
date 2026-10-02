@@ -1,15 +1,14 @@
 import { toggleKey } from '../components/conversation/SidebarSection.model';
-import { makeAccountValue } from './accountValue';
 import { NO_GROUPS_PREFS, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs } from './channelGroups.model';
 import { reported } from './errorPolicy';
+import { createValueStore } from './persistedStore';
 import { notifyCategoryOrderChanged } from './readSyncRegistry';
-import { useStoreValue } from './storeCore';
 
-const prefs = makeAccountValue<ChannelGroupsPrefs>('channels.groups.', NO_GROUPS_PREFS, parseChannelGroupsPrefs, JSON.stringify);
+const prefs = createValueStore<ChannelGroupsPrefs>({
+  key: 'channels.groups.', default: NO_GROUPS_PREFS, deserialize: parseChannelGroupsPrefs, serialize: JSON.stringify, perAccount: true,
+});
 
-function primeGroups(): void { void prefs.ready().catch(reported('channelGroups.load')); }
-
-export const useChannelGroups = (): ChannelGroupsPrefs => useStoreValue(prefs.subscribe, prefs.get, primeGroups);
+export const useChannelGroups = prefs.use;
 
 function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor?: string): Promise<void> {
   return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
@@ -39,6 +38,6 @@ export async function applyRemoteCategoryOrder(forAccount: string, order: readon
 }
 
 export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {
-  await prefs.ready();
+  await prefs.load();
   return prefs.accountId() === forAccount ? prefs.get().order : [];
 }

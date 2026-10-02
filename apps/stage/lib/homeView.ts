@@ -1,9 +1,8 @@
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
-import { makeAccountValue } from './accountValue';
 import { reported } from './errorPolicy';
+import { createValueStore } from './persistedStore';
 import { notifyHomeViewChanged } from './readSyncRegistry';
-import { useStoreValue } from './storeCore';
 
 const KEY_PREFIX = 'home.view.';
 
@@ -14,11 +13,11 @@ function parseHomeView(raw: string): HomeViewContent {
   } catch { return DEFAULT_HOME_VIEW; }
 }
 
-const prefs = makeAccountValue<HomeViewContent>(KEY_PREFIX, DEFAULT_HOME_VIEW, parseHomeView, JSON.stringify);
+const prefs = createValueStore<HomeViewContent>({
+  key: KEY_PREFIX, default: DEFAULT_HOME_VIEW, deserialize: parseHomeView, serialize: JSON.stringify, perAccount: true,
+});
 
-function primeHomeView(): void { void prefs.ready().catch(reported('homeView.load')); }
-
-export const useHomeView = (): HomeViewContent => useStoreValue(prefs.subscribe, prefs.get, primeHomeView);
+export const useHomeView = prefs.use;
 
 export function setHomeView(edit: HomeViewEdit): void {
   void prefs.update(current => ({ ...current, ...edit, at: Math.max(Date.now(), current.at + 1) }))
@@ -30,13 +29,13 @@ export function setHomeView(edit: HomeViewEdit): void {
 }
 
 export async function loadHomeView(forAccount: string): Promise<HomeViewContent | null> {
-  await prefs.ready();
+  await prefs.load();
   const state = forAccount === prefs.accountId() ? prefs.get() : parseHomeView(await appStorage.get(KEY_PREFIX + forAccount) ?? '');
   return state.at > 0 ? state : null;
 }
 
 export async function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
-  await prefs.ready();
+  await prefs.load();
   if (forAccount === prefs.accountId()) {
     await prefs.update(current => (incoming.at > current.at ? incoming : current));
     return;

@@ -1,5 +1,6 @@
 import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
+import { makeListeners } from './storeCore';
 import { notifyReadStateChanged } from './readSyncRegistry';
 import {
   applyRead, applyUnread, applySentPatch,
@@ -15,7 +16,7 @@ const stores = new Map<string, PersistentStore<CachedRow[]>>();
 const DEFAULT_KEY = '__default__';
 let activeId: string = DEFAULT_KEY;
 
-const activeListeners = new Set<(rows: CachedRow[] | null) => void>();
+const activeListeners = makeListeners<CachedRow[] | null>();
 let activeStoreUnsub: (() => void) | null = null;
 
 let notifyScheduled = false;
@@ -25,7 +26,7 @@ function notifyActive(): void {
   queueMicrotask(() => {
     notifyScheduled = false;
     const v = activeStore().get();
-    for (const l of activeListeners) l(v);
+    activeListeners.notify(v);
   });
 }
 
@@ -71,10 +72,7 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
 
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
-export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
-  activeListeners.add(l);
-  return () => { activeListeners.delete(l); };
-}
+export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export async function getLastReadNs(convId: string): Promise<number> {

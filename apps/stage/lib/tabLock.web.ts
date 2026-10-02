@@ -1,8 +1,8 @@
-import { useSyncExternalStore } from 'react';
 import { ACTIVE_TAB, createTabLock, type TabLock, type TabRole } from './tabLock.core';
 import { reloadApp } from './reloadApp';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { attempt } from './errorPolicy';
+import { useStoreValue } from './storeCore';
 
 const XMTP_TAB_LOCK = 'stage.xmtp';
 
@@ -23,7 +23,7 @@ function currentTabLock(): TabLock {
 
 export function useTabRole(): TabRole {
   const lock = currentTabLock();
-  return useSyncExternalStore(lock.subscribe, lock.role, lock.role);
+  return useStoreValue(lock.subscribe, lock.role);
 }
 
 export function takeOverTab(): void {

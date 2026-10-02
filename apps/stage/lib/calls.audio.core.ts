@@ -1,15 +1,14 @@
+import { makeListeners } from './storeCore';
+
 let owned = false;
 const recorders = new Set<() => Promise<void>>();
-const listeners = new Set<() => void>();
+const listeners = makeListeners();
 
-export function subscribeCallAudio(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => { listeners.delete(listener); };
-}
+export const subscribeCallAudio = listeners.subscribe;
 
 function setOwned(value: boolean): void {
   owned = value;
-  for (const listener of listeners) listener();
+  listeners.notify();
 }
 
 export function callOwnsAudio(): boolean {

@@ -1,13 +1,12 @@
-import { makeAccountValue } from '../../lib/accountValue';
 import { reported } from '../../lib/errorPolicy';
-import { useStoreValue } from '../../lib/storeCore';
+import { createValueStore } from '../../lib/persistedStore';
 import { NO_MEMBER_HISTORY, parseMemberHistory, startedChatWith, type MemberHistory } from './newChat.model';
 
-const memberHistory = makeAccountValue<MemberHistory>('new-chat.members.', NO_MEMBER_HISTORY, parseMemberHistory, JSON.stringify);
+const memberHistory = createValueStore<MemberHistory>({
+  key: 'new-chat.members.', default: NO_MEMBER_HISTORY, deserialize: parseMemberHistory, serialize: JSON.stringify, perAccount: true,
+});
 
-function primeMembers(): void { void memberHistory.ready().catch(reported('newChatMembers.load')); }
-
-export const useNewChatMembers = (): MemberHistory => useStoreValue(memberHistory.subscribe, memberHistory.get, primeMembers);
+export const useNewChatMembers = memberHistory.use;
 
 export function rememberStartedChat(members: readonly string[]): void {
   void memberHistory.update(current => startedChatWith(current, members, Date.now())).catch(reported('newChatMembers.save'));

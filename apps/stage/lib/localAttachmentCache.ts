@@ -1,8 +1,7 @@
 
 
-import { useSyncExternalStore } from 'react';
 import { File, Paths } from 'expo-file-system';
-import { makeListeners } from './storeCore';
+import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';
 
 const byMessageId = new Map<string, string[]>();
@@ -45,12 +44,12 @@ export function stashLocalAttachment(srcUri: string): string {
   }
 }
 
+const noSubscribe = (): (() => void) => () => undefined;
+
 export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
-  return useSyncExternalStore(
-    (cb) => {
-      if (messageId === undefined || index === undefined) return () => { return; };
-      return listeners.subscribe(cb);
-    },
+  const active = messageId !== undefined && index !== undefined;
+  return useStoreValue(
+    active ? listeners.subscribe : noSubscribe,
     () => (messageId !== undefined && index !== undefined ? getLocalAttachment(messageId, index) : undefined),
   );
 }

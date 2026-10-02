@@ -1,3 +1,5 @@
+import { makeListeners } from './storeCore';
+
 export type TabRole = 'pending' | 'active' | 'standby';
 
 type LockGranted = (lock: unknown) => Promise<void>;
@@ -26,11 +28,11 @@ export const ACTIVE_TAB: TabLock = {
 export function createTabLock(locks: LockRequester, name: string, onLost: () => void): TabLock {
   let current: TabRole = 'pending';
   let taking = false;
-  const listeners = new Set<() => void>();
+  const listeners = makeListeners();
   const set = (next: TabRole): void => {
     if (current === next) return;
     current = next;
-    for (const listener of listeners) listener();
+    listeners.notify();
   };
   const hold: LockGranted = () => {
     set('active');
@@ -48,10 +50,7 @@ export function createTabLock(locks: LockRequester, name: string, onLost: () => 
   void locks.request(name, { ifAvailable: true }, (lock) => (lock ? hold(lock) : wait())).catch(failed);
   return {
     role: () => current,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
     takeOver() {
       if (current !== 'standby' || taking) return;
       taking = true;
