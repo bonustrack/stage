@@ -259,7 +259,7 @@ export function TxReceiptCard({ receipt, ts, dark }: {
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
       <Text size="sm" role="secondary">
-        {timeAgo(minedAt ?? ts, Date.now())} ·{' '}
+        {minedAt ? `${timeAgo(minedAt, Date.now())} · ` : null}
         <Text size="sm" color={pal.link} {...bubbleLinkProps(url, openInBubbleLink)} suppressHighlighting>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
