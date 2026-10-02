@@ -106,7 +106,6 @@ interface ConvPrimitives<C, M> {
   rowOf: (m: M) => StreamedMessage;
   envelopeOf: (m: M, line: string) => HistoryEntry;
   sentNsOf: (m: M) => number;
-  sentNsText: (m: M) => string;
   convIdOf: (m: M) => string | null | undefined;
   deleteMessage: (conv: C, messageId: string) => Promise<string>;
   send: SendOps<C>;

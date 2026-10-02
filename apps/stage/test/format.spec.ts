@@ -2,9 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { bubbleTimestamp, channelTimestamp, unreadBadgeLabel } from '../lib/format';
 
 describe('unreadBadgeLabel', () => {
-  test('returns undefined when count is zero and not marked unread', () => {
+  test('returns undefined when count is zero', () => {
     expect(unreadBadgeLabel(0)).toBeUndefined();
-    expect(unreadBadgeLabel(0, false)).toBeUndefined();
   });
 
   test('returns the exact count as a string up to 99', () => {
@@ -15,14 +14,6 @@ describe('unreadBadgeLabel', () => {
   test('caps at 99+ above 99', () => {
     expect(unreadBadgeLabel(100)).toBe('99+');
     expect(unreadBadgeLabel(1000)).toBe('99+');
-  });
-
-  test('shows a dot when marked unread with zero count', () => {
-    expect(unreadBadgeLabel(0, true)).toBe('·');
-  });
-
-  test('count takes precedence over markedUnread', () => {
-    expect(unreadBadgeLabel(2, true)).toBe('2');
   });
 });
 

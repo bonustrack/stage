@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  WALLET_ROLE_BADGE,
-  walletAccountRows,
-  walletDeployLabel,
-} from '../components/settings/WalletSettings.model';
+import { walletAccountRows, walletDeployLabel } from '../components/settings/WalletSettings.model';
 
 describe('walletDeployLabel', () => {
   test('maps every deploy state to its label', () => {
@@ -11,14 +7,6 @@ describe('walletDeployLabel', () => {
     expect(walletDeployLabel('deployed')).toBe('Deployed on-chain');
     expect(walletDeployLabel('counterfactual')).toBe('Counterfactual (not yet deployed)');
     expect(walletDeployLabel('unknown')).toBe('Unknown');
-  });
-});
-
-describe('WALLET_ROLE_BADGE', () => {
-  test('maps roles to badge colors', () => {
-    expect(WALLET_ROLE_BADGE).toEqual({
-      sudo: 'success', backup: 'secondary', session: 'secondary',
-    });
   });
 });
 

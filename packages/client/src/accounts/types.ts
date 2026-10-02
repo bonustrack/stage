@@ -11,10 +11,7 @@ export interface AccountRecord {
   dbDir: string;
   registered?: boolean;
   createdAt: number;
-
   hdIndex?: number;
   phraseId?: string;
   ownerAddress?: string;
-  deployed?: boolean;
-
 }

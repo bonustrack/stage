@@ -20,11 +20,11 @@ export function fetchAssetRows(addr: string): Promise<AssetRow[]> {
   return sdkFetchAssetRows(addr, { tokenLogo: stampTokenUrl });
 }
 
-export function useAssetRows(address: string, enabled = true): UseQueryResult<AssetRow[]> {
+export function useAssetRows(address: string): UseQueryResult<AssetRow[]> {
   return useQuery({
     queryKey: ['assetRows', address.toLowerCase()],
     queryFn: () => fetchAssetRows(address),
-    enabled: enabled && !!address,
+    enabled: !!address,
     staleTime: 0,
   });
 }

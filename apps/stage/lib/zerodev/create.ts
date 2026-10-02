@@ -9,11 +9,6 @@ import { reserveSmartHdIndex } from './hdIndexStore';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { makePublicClient, zerodevConfigured } from './client';
 
-export interface CreateSmartAccountOpts {
-  label?: string;
-  phraseId?: string;
-}
-
 export interface RestoredSmartAccount { record: AccountRecord; alreadyImported: boolean }
 
 const FRESH_SEARCH_LIMIT = 32;
@@ -47,29 +42,27 @@ function requireConfigured(): void {
   if (!zerodevConfigured()) throw new Error('Smart wallet is not configured (missing ZeroDev project).');
 }
 
-async function storeSmartAccount(phraseId: string, candidate: Candidate, label?: string): Promise<AccountRecord> {
+async function storeSmartAccount(phraseId: string, candidate: Candidate): Promise<AccountRecord> {
   const { hdIndex, owner, address } = candidate;
   await reserveSmartHdIndex(phraseId, hdIndex);
   const rec: AccountRecord = {
     id: address.toLowerCase(),
     address,
     type: 'smart',
-    label,
     dbDir: `xmtp-${address.toLowerCase()}`,
     registered: false,
     createdAt: Date.now(),
     hdIndex,
     phraseId,
     ownerAddress: owner.address.toLowerCase(),
-    deployed: false,
   };
   return addSmartAccount(rec);
 }
 
-export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Promise<AccountRecord> {
+export async function createSmartAccount(): Promise<AccountRecord> {
   requireConfigured();
-  const phraseId = opts.phraseId ?? await ensurePrimaryPhrase();
-  return storeSmartAccount(phraseId, await pickFreshAccount(makePublicClient(), phraseId), opts.label);
+  const phraseId = await ensurePrimaryPhrase();
+  return storeSmartAccount(phraseId, await pickFreshAccount(makePublicClient(), phraseId));
 }
 
 type Restorable = { kind: 'local'; record: AccountRecord } | { kind: 'candidate'; candidate: Candidate };

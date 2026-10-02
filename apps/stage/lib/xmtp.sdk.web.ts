@@ -274,7 +274,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   }),
   envelopeOf: envelopeOfXmtpMessage,
   sentNsOf: (m) => Number(m.sentAtNs),
-  sentNsText: (m) => String(m.sentAtNs),
   convIdOf: (m) => m.conversationId || null,
   deleteMessage: (conv, messageId) => conv.send(asEncoded(encodeDeleteMessage(messageId)), { shouldPush: false }),
   send: {
