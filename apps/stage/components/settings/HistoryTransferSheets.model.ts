@@ -9,7 +9,7 @@ export const SEND_COPY = {
   title: 'Send history',
   preparing: 'Preparing your history...',
   preparingHint: 'This can take a moment on a long history. Keep Stage open.',
-  howTo: 'On your other device open Settings > Messenger > Receive history with a code, or choose Enter a code while it syncs history after sign in. Enter this code or scan it.',
+  howTo: 'On your other device open Settings > Devices and history > Receive history with a code, or choose Enter a code while it syncs history after sign in. Enter this code or scan it.',
   failedTitle: 'Could not send history',
 } as const;
 

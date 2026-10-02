@@ -18,7 +18,7 @@ import { ReceiveCodeSheet } from '../settings/HistoryTransferSheets';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
 
-const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Messenger.';
+const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Devices and history.';
 const ENTER_CODE = 'Enter a code from my other device';
 const ENTER_CODE_WHILE_WAITING = 'Or enter a code from your other device';
 
