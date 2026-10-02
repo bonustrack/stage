@@ -198,7 +198,8 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 - `Frame` text uses the kit sizes: a `size` is the `FONT_SIZE` of the same name, `md` (18px) when not set, on `Text`, `Title`, `Caption`, `Label` and `Icon`, and `Markdown` text is 18px. Frames had their own scales before: `Text` `md` was 15px, `Title` `md` 18px, `Caption` 13px, `Label` 15px and `Markdown` 15px. `size` also takes every other kit name, such as `2xs`. The ChatKit `Title` size `5xl` is not a kit name and is ignored.
 - `Spinner` is the Stage app spinner: a ring that fades into its tail and turns once every 0.5s. On web it spins with a CSS animation. Without `color` it takes the heading colour of the theme, black in light and white in dark (it was `#888888`).
 - `Button` `loading` shows `Spinner` instead of the platform `ActivityIndicator`.
-- `Button` `xl` is the Stage landing button: 53px high (was 56px), Calibre Medium (was Calibre Semibold) at `FONT_SIZE.lg` 19px (was 18px) with a 29px line height, still 24px side padding. Square `uniform` `xl` buttons are 53px too. The other sizes did not change.
+- `Button` `xl` is the Stage landing button: 53px high (was 56px), Calibre Medium (was Calibre Semibold) at `FONT_SIZE.lg` 19px (was 18px) with a 29px line height, still 24px side padding. Square `uniform` `xl` buttons are 53px too.
+- `Button` `md` labels are `FONT_SIZE.sm` 17px (were 15px) and `lg` labels are `FONT_SIZE.md` 18px (were 17px). Heights and padding did not change. `xs` and `sm` did not change.
 
 ### 0.1.0-beta.1
 

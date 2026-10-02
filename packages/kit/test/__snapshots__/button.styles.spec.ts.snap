@@ -361,7 +361,7 @@ exports[`SIZES snapshot 1`] = `
 {
   "lg": {
     "fontFamily": "Calibre-Semibold",
-    "fontSize": 17,
+    "fontSize": 18,
     "gap": 8,
     "height": 48,
     "paddingHorizontal": 20,
@@ -369,7 +369,7 @@ exports[`SIZES snapshot 1`] = `
   },
   "md": {
     "fontFamily": "Calibre-Semibold",
-    "fontSize": 15,
+    "fontSize": 17,
     "gap": 8,
     "height": 40,
     "paddingHorizontal": 16,

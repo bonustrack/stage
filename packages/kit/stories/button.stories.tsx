@@ -1,5 +1,6 @@
 import type { Story } from '../gallery/story';
 import { Button, type ButtonProps } from '../src/react-native/button';
+import { resolveColors } from '../src/button.styles';
 import { Glyph } from '../src/react-native/glyph';
 import { Col, Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
@@ -16,11 +17,12 @@ const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
 export const Controls: Story<ButtonProps & { withIconStart: boolean; withIconEnd: boolean }> = ({ withIconStart, withIconEnd, ...args }) => {
   const dark = useDark();
+  const fg = args.tintFg ?? resolveColors(args.color ?? 'primary', args.variant ?? 'solid', dark).text;
   return (
     <Button
       dark={dark} {...args}
-      iconStart={withIconStart ? <Glyph icon={IconCheckmark1} size={16} /> : undefined}
-      iconEnd={withIconEnd ? <Glyph icon={IconArrowRight} size={16} /> : undefined}
+      iconStart={withIconStart ? <Glyph icon={IconCheckmark1} size={16} color={fg} /> : undefined}
+      iconEnd={withIconEnd ? <Glyph icon={IconArrowRight} size={16} color={fg} /> : undefined}
     />
   );
 };
@@ -52,7 +54,7 @@ export const Matrix: Story = () => {
         <Button dark={dark} label="Disabled" disabled />
         <Button dark={dark} label="Loading" loading />
         <Button dark={dark} label="Pill" pill />
-        <Button dark={dark} uniform icon={<Glyph icon={IconPlusLarge} size={18} />} />
+        <Button dark={dark} uniform icon={<Glyph icon={IconPlusLarge} size={18} color={resolveColors('primary', 'solid', dark).text} />} />
       </Row>
     </Col>
   );
