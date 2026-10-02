@@ -3,6 +3,7 @@ import { decodeFunctionData, encodeAbiParameters, encodeFunctionResult, multical
 import { fetchAssetRows, fetchWalletPortfolio } from '../src/wallet/balances';
 
 const realFetch = globalThis.fetch;
+const ethId = 'ethereum:0x0000000000000000000000000000000000000000';
 const address = '0x0000000000000000000000000000000000000001';
 const options = { tokenLogo: () => '' };
 const priceRequests: string[] = [];
@@ -17,12 +18,12 @@ function priceResponse(url: URL, pricing: PriceFixture): Response {
   if (pricing === 'error') return new Response('', { status: 503 });
   if (pricing === 'missing') return Response.json({ coins: {} });
   if (url.pathname.startsWith('/percentage/')) {
-    return pricing === 'changes-error' ? new Response('', { status: 503 }) : Response.json({ coins: { 'coingecko:ethereum': 2 } });
+    return pricing === 'changes-error' ? new Response('', { status: 503 }) : Response.json({ coins: { [ethId]: 2 } });
   }
   const quote = (price: number) => ({ price, timestamp: Math.floor(Date.now() / 1000), confidence: 0.99 });
   return Response.json({ coins: {
-    'coingecko:ethereum': quote(ethereumPrice),
-    'coingecko:bitcoin': quote(80000),
+    [ethId]: quote(ethereumPrice),
+    'bitcoin:btc': quote(80000),
     'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': quote(0.99),
   } });
 }
@@ -75,7 +76,7 @@ describe('fetchAssetRows balance failures', () => {
     expect(rows.find(row => row.symbol === 'ETH')?.change24h).toBe(2);
     expect(priceRequests).toHaveLength(2);
     expect(priceRequests.every(url => !url.includes(address) && !url.includes('api_key'))).toBe(true);
-    expect(priceRequests[0]).toContain('coingecko:ethereum,base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913,coingecko:bitcoin');
+    expect(priceRequests[0]).toContain(`${ethId},base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913,bitcoin:btc`);
   });
 
   test('price transport failures do not hide funded tokens from selection', async () => {
@@ -102,7 +103,7 @@ describe('fetchAssetRows balance failures', () => {
     expect(next.rows.filter(row => row.symbol === 'ETH').map(row => row.priceUsd)).toEqual([5000]);
     const requests = priceRequests.filter(url => url.includes('/prices/current/'));
     expect(requests).toHaveLength(2);
-    expect(requests.every(url => url.includes('coingecko:ethereum') && url.includes('coingecko:bitcoin') && url.includes('base:'))).toBe(true);
+    expect(requests.every(url => url.includes(ethId) && url.includes('bitcoin:btc') && url.includes('base:'))).toBe(true);
   });
 
   test('optional change history failure does not hide current prices', async () => {

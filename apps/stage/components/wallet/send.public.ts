@@ -3,27 +3,20 @@ import {
   erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
 } from 'viem';
 import { base } from 'viem/chains';
-import { getSimplePrices, type CgPrice } from '@stage-labs/client/api/coingecko';
+import { fetchUsdPrice } from '@stage-labs/client/wallet/prices';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
-import { ASSETS } from '@stage-labs/client/wallet/assets';
+import { ASSETS, ETH_PRICE_ID } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './TokenSelector';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
   recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState,
 } from './recipient.model';
-import { ignored } from '../../lib/errorPolicy';
 
 const RESOLVE_DEBOUNCE_MS = 300;
-
-async function fetchEthPrice(): Promise<number | null> {
-  const prices = await getSimplePrices(['ethereum']).catch(ignored<Record<string, CgPrice>>({}, 'optional'));
-  const p = prices.ethereum?.usd;
-  return typeof p === 'number' ? p : null;
-}
 
 type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
@@ -93,9 +86,9 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
 
   useEffect(() => {
     let cancelled = false;
-    void fetchEthPrice().then((p) => {
-      if (!cancelled && typeof p === 'number') setEthPriceUsd(p);
-    }).catch(ignored(undefined, 'optional'));
+    void fetchUsdPrice(ETH_PRICE_ID).then((p) => {
+      if (!cancelled && p !== null) setEthPriceUsd(p);
+    });
     return () => { cancelled = true; };
   }, []);
 

@@ -1,6 +1,6 @@
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getCurrentPrices, getPriceChanges, type UsdQuote } from '../api/defillama';
-import { MULTICALL3, WALLET_ASSETS, WALLET_CHAIN_ID, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { ETH_PRICE_ID, MULTICALL3, WALLET_ASSETS, WALLET_CHAIN_ID, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
 import { publicClientFor } from './client';
 
 export type TokenLogoResolver = (chainId: number, contract: string, displayPx: number) => string;
@@ -14,10 +14,7 @@ export interface WalletPortfolio {
   prices: Partial<Record<'ethereum' | 'bitcoin', UsdQuote>>;
 }
 
-function assetPriceId(asset: Asset): string | null {
-  if (asset.address === null) return asset.cgId ? `coingecko:${asset.cgId}` : null;
-  return asset.cgPlatform ? `${asset.cgPlatform}:${(asset.priceAddress ?? asset.address).toLowerCase()}` : null;
-}
+const BTC_PRICE_ID = 'bitcoin:btc';
 
 export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions): Promise<AssetRow[]> {
   return (await fetchPortfolio(addr, opts, false)).rows;
@@ -33,7 +30,7 @@ async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, require
     : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
   const balances = await publicClientFor(WALLET_CHAIN_ID).multicall({ contracts: calls, allowFailure: false });
 
-  const ids = [...new Set([...WALLET_ASSETS.map(assetPriceId).filter((id): id is string => id !== null), 'coingecko:bitcoin'])];
+  const ids = [...new Set([...WALLET_ASSETS.flatMap(a => a.priceId ?? []), BTC_PRICE_ID])];
   const emptyPrices = (): Record<string, UsdQuote> => ({});
   const emptyChanges = (): Record<string, number> => ({});
   const currentPrices = getCurrentPrices(ids);
@@ -43,7 +40,7 @@ async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, require
   ]);
   return {
     rows: WALLET_ASSETS.map((a, i) => buildAssetRow(a, balances[i] ?? 0n, prices, changes, opts.tokenLogo)),
-    prices: { ethereum: prices['coingecko:ethereum'], bitcoin: prices['coingecko:bitcoin'] },
+    prices: { ethereum: prices[ETH_PRICE_ID], bitcoin: prices[BTC_PRICE_ID] },
   };
 }
 
@@ -55,9 +52,8 @@ function buildAssetRow(
   tokenLogo: TokenLogoResolver,
 ): AssetRow {
   const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
-  const priceId = assetPriceId(a);
-  const price = priceId === null ? undefined : prices[priceId];
-  const change24h = priceId === null ? null : changes[priceId] ?? null;
+  const price = a.priceId === undefined ? undefined : prices[a.priceId];
+  const change24h = a.priceId === undefined ? null : changes[a.priceId] ?? null;
   return {
     symbol: a.symbol, name: a.name, chainId: a.chainId, balance,
     priceUsd: price?.usd ?? null, change24h,

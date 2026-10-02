@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { WALLET_ASSETS, type AssetRow } from '../src/wallet/assets';
-import { priceKeyFor, priceKeyId, tokenRowId } from '../src/wallet/tokens';
+import { priceIdFor, tokenRowId } from '../src/wallet/tokens';
 
 const SEPOLIA = 11155111;
 const BASE = 8453;
@@ -41,26 +41,18 @@ describe('tokenRowId', () => {
   });
 });
 
-describe('priceKeyFor', () => {
-  test('native ETH -> native cgId', () => {
-    expect(priceKeyFor(BASE, null)).toMatchObject({ kind: 'native', cgId: 'ethereum' });
+describe('priceIdFor', () => {
+  test('native ETH -> DefiLlama native ETH id', () => {
+    expect(priceIdFor(BASE, null)).toBe('ethereum:0x0000000000000000000000000000000000000000');
+    expect(priceIdFor(SEPOLIA, null)).toBe('ethereum:0x0000000000000000000000000000000000000000');
   });
-  test('USDC on Base -> erc20 on base platform', () => {
-    const k = priceKeyFor(BASE, USDC_BASE);
-    expect(k).toMatchObject({ kind: 'erc20', platform: 'base' });
+  test('USDC on Base -> DefiLlama base contract id', () => {
+    expect(priceIdFor(BASE, USDC_BASE)).toBe('base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913');
   });
   test('STAGE (no listing) -> null (amount only, no fake $)', () => {
-    expect(priceKeyFor(SEPOLIA, STAGE)).toBeNull();
+    expect(priceIdFor(SEPOLIA, STAGE)).toBeNull();
   });
   test('unknown token -> null', () => {
-    expect(priceKeyFor(BASE, UNKNOWN)).toBeNull();
-  });
-});
-
-describe('priceKeyId', () => {
-  test('stable ids for native + erc20, null for null', () => {
-    expect(priceKeyId(priceKeyFor(BASE, null))).toBe('native:ethereum');
-    expect(priceKeyId(priceKeyFor(BASE, USDC_BASE))).toContain('erc20:base:');
-    expect(priceKeyId(null)).toBeNull();
+    expect(priceIdFor(BASE, UNKNOWN)).toBeNull();
   });
 });

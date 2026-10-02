@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { getCurrentPrices, getPriceChanges } from '../src/api/defillama';
 
 const realFetch = globalThis.fetch;
-const eth = 'coingecko:ethereum';
-const btc = 'coingecko:bitcoin';
+const eth = 'ethereum:0x0000000000000000000000000000000000000000';
+const btc = 'bitcoin:btc';
 const now = Math.floor(Date.now() / 1000);
 const quote = { price: 4000, timestamp: now, confidence: 0.99 };
 let requests: string[] = [];
@@ -23,7 +23,7 @@ describe('DefiLlama current quotes', () => {
     expect(await getCurrentPrices([eth, btc, eth])).toEqual({
       [eth]: { usd: 4000, timestamp: now }, [btc]: { usd: 80000, timestamp: now },
     });
-    expect(requests).toEqual(['https://coins.llama.fi/prices/current/coingecko%3Aethereum,coingecko%3Abitcoin']);
+    expect(requests).toEqual(['https://coins.llama.fi/prices/current/ethereum%3A0x0000000000000000000000000000000000000000,bitcoin%3Abtc']);
   });
 
   test.each([0, -1, null, '4000', 'Infinity'])('rejects invalid price %p', async (price) => {
@@ -68,6 +68,6 @@ describe('DefiLlama 24 hour changes', () => {
   test('preserves positive and negative changes without treating a missing coin as zero', async () => {
     respond({ coins: { [eth]: 2, [btc]: -3, bad: '4' } });
     expect(await getPriceChanges([eth, btc, 'missing', 'bad'])).toEqual({ [eth]: 2, [btc]: -3 });
-    expect(requests[0]).toContain('/percentage/coingecko%3Aethereum,coingecko%3Abitcoin');
+    expect(requests[0]).toContain('/percentage/ethereum%3A0x0000000000000000000000000000000000000000,bitcoin%3Abtc');
   });
 });

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { priceKeyFor, priceKeyId, tokenStampArgs } from '@stage-labs/client/wallet/tokens';
+import { priceIdFor, tokenStampArgs } from '@stage-labs/client/wallet/tokens';
 import { fetchUsdPrice, fmtUsdValue } from '@stage-labs/client/wallet/prices';
 import { decodeCall, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
@@ -14,10 +14,10 @@ export function tokenLogoUrl(
 export function useUsdValue(
   chainId: number, token: string | null | undefined, amount: string | undefined,
 ): string | null {
-  const id = priceKeyId(priceKeyFor(chainId, token));
+  const id = priceIdFor(chainId, token);
   const { data: usd } = useQuery({
     queryKey: ['usdPrice', id],
-    queryFn: () => fetchUsdPrice(priceKeyFor(chainId, token)),
+    queryFn: () => fetchUsdPrice(id),
     enabled: !!id,
   });
   if (!amount) return null;

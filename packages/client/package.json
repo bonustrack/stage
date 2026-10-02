@@ -52,7 +52,6 @@
     "./image/stripMetadata": "./src/image/stripMetadata.ts",
     "./api/ens": "./src/api/ens.ts",
     "./api/github": "./src/api/github.ts",
-    "./api/coingecko": "./src/api/coingecko.ts",
     "./text/markdown": "./src/text/markdown.ts",
     "./text/base64": "./src/text/base64.ts",
     "./identity/format": "./src/identity/format.ts",

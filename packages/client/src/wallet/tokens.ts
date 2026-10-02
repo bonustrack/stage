@@ -20,24 +20,8 @@ export function tokenStampArgs(chainId: number, token: string | null | undefined
   return { chainId, contract: token };
 }
 
-export type PriceKey =
-  | { kind: 'native'; cgId: string }
-  | { kind: 'erc20'; platform: string; contract: string }
-  | null;
-
-export function priceKeyFor(chainId: number, token: string | null | undefined): PriceKey {
-  const a = assetFor(chainId, token);
-  if (!a) return null;
-  if (a.address === null) return a.cgId ? { kind: 'native', cgId: a.cgId } : null;
-  if (a.cgPlatform) {
-    return { kind: 'erc20', platform: a.cgPlatform, contract: (a.priceAddress ?? a.address).toLowerCase() };
-  }
-  return null;
-}
-
-export function priceKeyId(k: PriceKey): string | null {
-  if (!k) return null;
-  return k.kind === 'native' ? `native:${k.cgId}` : `erc20:${k.platform}:${k.contract}`;
+export function priceIdFor(chainId: number, token: string | null | undefined): string | null {
+  return assetFor(chainId, token)?.priceId ?? null;
 }
 
 export function tokenRowId(r: AssetRow): string {
