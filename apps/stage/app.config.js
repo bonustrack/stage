@@ -206,6 +206,7 @@ const config = {
     './plugins/withBouncyCastleDedup',
     './plugins/withXmtpNotificationService',
     './plugins/withCalls',
+    ...(!IS_PROD ? ['./plugins/withCrashReport'] : []),
   ],
   notification: {
     icon: './assets/notification-icon.png',
