@@ -253,6 +253,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentifiers(identifiersOf(addresses)),
   leaveOp: (conv) => (conv instanceof Group ? () => conv.requestRemoval() : null),
   createdAtNs: (conv) => (conv.createdAtNs === undefined ? 0 : Number(conv.createdAtNs)),
+  addedByInboxId: (conv) => conv.addedByInboxId,
   consentOf: async (conv) => consentStateToString(await conv.consentState()),
   setConsent: (conv, state) => conv.updateConsentState(webConsentState(state)),
   messages: async (conv, query) => withNestedReactions(

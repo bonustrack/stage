@@ -100,6 +100,7 @@ interface ConvPrimitives<C, M> {
   removeMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   leaveOp: (conv: C) => (() => Promise<unknown>) | null;
   createdAtNs: (conv: C) => number;
+  addedByInboxId: (conv: C) => string | undefined;
   consentOf: (conv: C) => Promise<XmtpConsent>;
   setConsent: (conv: C, state: XmtpConsent) => Promise<unknown>;
   messages: (conv: C, query: MessageQuery) => Promise<M[]>;

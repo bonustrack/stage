@@ -5,7 +5,7 @@ import {
   syncPreferences, getXmtpBootstrapPhase,
   primeConversationMembers, subscribeAllMessages,
   listVisibleConversations, syncConversationsFromNetwork,
-  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup, getConvConsentState,
+  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup, getConvConsentState, createdBySelf,
 } from '../../modules/messaging';
 import { hydrateCachedRows, setCachedRows, summarizeConversation, isControlBody, shortAddress } from '../../modules/messaging';
 import { hydratePeerProfiles, getPeerName } from '../../lib/peerProfiles';
@@ -13,7 +13,7 @@ import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
 import { homeRows, updateHomeRows } from './state';
-import type { Row } from './model';
+import { visibleRowsDiff, type Row } from './model';
 import { registerHiddenConv, isActiveConv } from '../../lib/readSyncRegistry';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { report, recover, attempt } from '../../lib/errorPolicy';
@@ -181,6 +181,7 @@ interface SyncRun {
 interface Refreshers {
   refresh: () => Promise<void>;
   refreshThrottled: () => Promise<void>;
+  reconcile: () => Promise<void>;
 }
 
 function makeRefreshers(
@@ -220,14 +221,29 @@ function makeRefreshers(
     if (run.cancelled || Date.now() - lastRefreshAt < THROTTLE_MS) return;
     await refresh();
   };
-  return { refresh, refreshThrottled };
+  const reconcile = async (): Promise<void> => {
+    try {
+      const rows = homeRows();
+      if (rows === null) return;
+      const visible = await listVisibleConversations();
+      const { added, gone } = visibleRowsDiff(rows.map(r => r.convId), visible.map(c => c.id));
+      if (added.length === 0 && gone.length === 0) return;
+      const fresh = await Promise.all(visible.filter(c => added.includes(c.id))
+        .map(c => summarize(c, selfInboxId, createdBySelf(c, selfInboxId))));
+      if (run.cancelled) return;
+      updateHomeRows(prev => uniqueByConvId([...fresh, ...(prev ?? []).filter(r => !gone.includes(r.convId))]));
+    } catch (err) {
+      report('home.reconcile', err);
+    }
+  };
+  return { refresh, refreshThrottled, reconcile };
 }
 
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun): Promise<void> {
   schedulePushTopicRefresh();
   if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) { registerHiddenConv(conv.id); return; }
   if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
-  const row = await summarize(conv, selfInboxId).catch(recover('home.newConversation', null));
+  const row = await summarize(conv, selfInboxId, createdBySelf(conv, selfInboxId)).catch(recover('home.newConversation', null));
   if (!row || run.cancelled) return;
   updateHomeRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
 }
@@ -251,11 +267,7 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
     report('home.messageStream', err);
   }
   try {
-    run.cancelConsentStream = streamConvConsent(() => {
-      void (async (): Promise<void> => {
-        await syncConsent(); void r.refresh();
-      })();
-    });
+    run.cancelConsentStream = streamConvConsent(() => { void r.reconcile(); });
   } catch (err) {
     report('home.consentStream', err);
   }

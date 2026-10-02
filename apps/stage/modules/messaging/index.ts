@@ -21,7 +21,7 @@ export {
   listVisibleConversations,
   syncConversationsFromNetwork, acceptRequestConv,
   blockRequestConv, unacceptConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
-  checkConvSync, conversationIsSyncGroup,
+  checkConvSync, conversationIsSyncGroup, createdBySelf,
 } from '../../lib/xmtp.conv';
 
 export { createGroup, leaveGroupConv, groupEditRights } from '../../lib/xmtp.groups';

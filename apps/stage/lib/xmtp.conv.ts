@@ -13,6 +13,10 @@ import { resyncActiveFeeds } from './xmtp.resync';
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
 
+export function createdBySelf(conv: Conv, selfInboxId: string): boolean {
+  return selfInboxId !== '' && sdk.addedByInboxId(conv) === selfInboxId;
+}
+
 export async function conversationIsSyncGroup(conv: Conv): Promise<boolean> {
   return isSyncGroupName(await sdk.groupName(conv));
 }

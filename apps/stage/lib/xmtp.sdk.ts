@@ -210,6 +210,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     return () => group.leaveGroup();
   },
   createdAtNs: (conv) => (conv.createdAt ?? 0) * 1_000_000,
+  addedByInboxId: (conv) => (conv instanceof Group ? conv.addedByInboxId : undefined),
   consentOf: (conv) => conv.consentState(),
   setConsent: (conv, state) => conv.updateConsent(state),
   messages: (conv, query) => conv.messages(nativeQuery(query)),

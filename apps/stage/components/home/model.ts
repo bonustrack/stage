@@ -103,3 +103,12 @@ export function searchBarLabels(
   const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
   return orderedColumns(labels.map(label => ({ key: labelColumnKey(label), label })), boardOrder).map(c => c.label);
 }
+
+export function visibleRowsDiff(rowIds: readonly string[], visibleIds: readonly string[]): { added: string[]; gone: string[] } {
+  const rows = new Set(rowIds);
+  const visible = new Set(visibleIds);
+  return {
+    added: visibleIds.filter(id => !rows.has(id)),
+    gone: rowIds.filter(id => !visible.has(id)),
+  };
+}
