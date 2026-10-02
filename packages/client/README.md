@@ -6,7 +6,9 @@
 
 `@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
-It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev ECDSA accounts, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, DefiLlama prices, GitHub link detection), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
+The rule for what lives here: logic that needs no React, React Native, Expo or XMTP SDK value import, no env read and no storage. Hooks, SDK calls, env and storage stay in the app, which imports the logic from here.
+
+It covers the XMTP orchestration cores (content codecs and the JSON codecs table, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev ECDSA accounts, recovery), wallet formatting/balances/tx decoding, simulation and confirm summaries, message body, link card and code block parsing, read-only API clients (ENS, DefiLlama prices, GitHub link detection), x402 challenges and payments, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
 
 ## Install
 
@@ -40,19 +42,20 @@ There is no root barrel: every module is imported through its own subpath export
 
 ```
 src/
-  xmtp/        # codecs, humanize, builders, line routing, channelsFilter/channelsCache, summarizeRow,
-               # consent, groups, envelope, clientErrors, polls, signatures, tx requests, read state, push server
+  xmtp/        # codecs, JSON codecs table, humanize, builders, line routing, channelsFilter/channelsCache, summarizeRow,
+               # consent, groups, envelope, clientErrors, polls, signatures, tx requests, read state, push server,
+               # message body segments (mentions, channels, links), channel link labels
   identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
   profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
   accounts/    # account records, key storage constants, HD index, device transfer
   zerodev/     # Kernel smart accounts: configuration, ECDSA owner validator, HD derivation
-  wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error
+  wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error/confirm/wording
   api/         # read-only clients: ens, defillama, github link detection
   routing/     # deep links and handle parsing
-  embed/       # link/embed detection
+  embed/       # link/embed detection, link cards
   image/       # EXIF/metadata stripping before upload
-  text/        # markdown helpers
-  x402/        # x402 payment challenge parsing
+  text/        # markdown helpers, code blocks
+  x402/        # x402 payment challenge parsing, amounts and payment authorization
   validate.ts  # parseOrThrow zod boundary helper
   types.ts     # shared domain types
 ```
