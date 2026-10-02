@@ -20,8 +20,8 @@ export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions):
   return (await fetchPortfolio(addr, opts, false)).rows;
 }
 
-export function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions): Promise<WalletPortfolio> {
-  return fetchPortfolio(addr, opts, true);
+export function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices = true): Promise<WalletPortfolio> {
+  return fetchPortfolio(addr, opts, requirePrices);
 }
 
 async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices: boolean): Promise<WalletPortfolio> {

@@ -91,6 +91,14 @@ describe('fetchAssetRows balance failures', () => {
     await expect(fetchWalletPortfolio(address, options)).rejects.toThrow('defillama 503');
   });
 
+  test('a first portfolio load without prices still shows balances, with no USD values', async () => {
+    mockBalances('funded', 'error');
+    const portfolio = await fetchWalletPortfolio(address, options, false);
+    expect(portfolio.rows.map(row => `${row.symbol}:${row.balance}`)).toEqual(['ETH:1', 'USDC:1000000000000']);
+    expect(portfolio.rows.every(row => row.priceUsd === null)).toBe(true);
+    expect(portfolio.prices).toEqual({ ethereum: undefined, bitcoin: undefined });
+  });
+
   test('portfolio and denomination prices advance together in one quote request', async () => {
     mockBalances('funded', 'live');
     const first = await fetchWalletPortfolio(address, options);
