@@ -11,7 +11,7 @@ import { Box, Col, Row } from '../layout';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { joinCall } from '../../lib/calls';
-import { useCallView } from '../../lib/calls.store';
+import { setCallMinimized, useCallView } from '../../lib/calls.store';
 import { ignore } from '../../lib/errorPolicy';
 import { convIdOfLine } from '../../modules/messaging';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
@@ -42,14 +42,15 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
   const nowMs = Date.now();
   const model = callCardModel(record, callLiveOf(view.calls, convId ?? '', record, nowMs), nowMs);
   useTicking(model.tone === 'live');
-  const joinable = convId !== null && model.action === 'join';
+  const pressable = convId !== null && model.action !== null;
   const onPress = (): void => {
-    if (convId !== null && joinable) ignore(joinCall(convId, record.dm), 'ui');
+    if (convId !== null && model.action === 'join') ignore(joinCall(convId, record.dm), 'ui');
+    if (model.action === 'open') setCallMinimized(false);
   };
   return (
     <Pressable
       testID="call-card" accessibilityRole="button" accessibilityLabel={`${model.title}, ${model.status}`}
-      accessibilityState={{ disabled: !joinable }} disabled={!joinable} onPress={onPress}
+      accessibilityState={{ disabled: !pressable }} disabled={!pressable} onPress={onPress}
       pressedOpacity={0.85} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }} {...hoverProps}
     >
       <Card dark={scheme === 'dark'} background={pal.bg} padding={12}>
@@ -58,10 +59,10 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
             <Glyph icon={record.video ? IconVideo : IconCall} size={24} color={toneColor(model, pal)}/>
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
-            <Text size="sm" weight="semibold" color={hovered && joinable ? pal.link : pal.text} numberOfLines={1}>{model.title}</Text>
+            <Text size="sm" weight="semibold" color={hovered && pressable ? pal.link : pal.text} numberOfLines={1}>{model.title}</Text>
             <Text size="xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.status}</Text>
           </Col>
-          {joinable ? (
+          {pressable && model.action === 'join' ? (
             <Box pointerEvents="none" aria-hidden>
               <Button size="sm" pill label="Join" tintBg={pal.success} tintFg={pal.bg} focusable={false}/>
             </Box>
