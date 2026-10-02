@@ -45,6 +45,17 @@ describe('previewOfXmtpContent for payment requests', () => {
     expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 5 USDC');
   });
 
+  test('absurd decimals are not scaled', () => {
+    const req = request({ to: UNKNOWN_TOKEN, data: '0xdeadbeef', metadata: { currency: 'FOO', amount: 1, decimals: 5e8 } });
+    expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 1 FOO');
+  });
+
+  test('a bare call with no value shows the metadata amount or nothing, never 0 ETH', () => {
+    expect(previewOfXmtpContent(request({ to: PAYEE }), REQUEST)).toBe('Payment request');
+    expect(previewOfXmtpContent(request({ to: PAYEE, metadata: { currency: 'ETH', amount: 0.5 } }), REQUEST))
+      .toBe('Payment request: 0.5 ETH');
+  });
+
   test('no amount at all', () => {
     expect(previewOfXmtpContent(request({ to: UNKNOWN_TOKEN, data: '0xdeadbeef' }), REQUEST)).toBe('Payment request');
     expect(previewOfXmtpContent(null, REQUEST)).toBe('Payment request');

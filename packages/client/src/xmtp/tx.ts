@@ -17,8 +17,11 @@ export interface TxAmount { value: string; unit: string }
 
 interface AmountMeta { amount?: number; decimals?: number; currency?: string }
 
+const MAX_DECIMALS = 77;
+
 function scaledAmount(amount: number, decimals: number | undefined): string {
-  const atomic = decimals !== undefined && Number.isInteger(amount) && Number.isInteger(decimals) && decimals > 0;
+  const atomic = decimals !== undefined && Number.isInteger(amount) && Number.isInteger(decimals)
+    && decimals > 0 && decimals <= MAX_DECIMALS;
   return atomic ? formatUnits(BigInt(amount), decimals) : String(amount);
 }
 
@@ -28,14 +31,23 @@ function metaAmountOf(meta: AmountMeta | undefined): TxAmount | undefined {
   return { value: scaledAmount(amount, decimals), unit: currency ?? 'ETH' };
 }
 
+type Call = WalletSendCallsContent['calls'][number];
+
+function isBareCall(call: Call): boolean {
+  return call.value === undefined && (call.data === undefined || call.data === '0x');
+}
+
+function verifiedAmountOf(call: Call): TxAmount | undefined {
+  if (isBareCall(call)) return undefined;
+  const summary = deriveConfirmSummary(call);
+  if (!summary.verified || summary.amount == null || !summary.symbol) return undefined;
+  return { value: summary.amount, unit: summary.symbol };
+}
+
 export function requestAmountOf(req: WalletSendCallsContent | null | undefined): TxAmount | undefined {
   const call = req?.calls?.[0];
   if (!call) return undefined;
-  const summary = deriveConfirmSummary(call);
-  if (summary.verified && summary.amount != null && summary.symbol) {
-    return { value: summary.amount, unit: summary.symbol };
-  }
-  return metaAmountOf(call.metadata);
+  return verifiedAmountOf(call) ?? metaAmountOf(call.metadata);
 }
 
 function receiptAmountOf(receipt: TransactionReferenceContent | null | undefined): TxAmount | undefined {

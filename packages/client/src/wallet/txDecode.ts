@@ -71,14 +71,15 @@ async function verifiedAbiOf(meta: SourcifyContract | null, chainId: number, fol
   const abi: Abi | undefined = meta?.abi;
   if (!meta?.match || abi === undefined || abi.length === 0) return null;
   const impl = followProxy ? implementationOf(meta) : undefined;
-  const implAbi = impl ? await fetchSourcifyAbi(chainId, impl, false) : null;
-  return implAbi ? [...abi, ...implAbi.abi] : abi;
+  if (!impl) return abi;
+  const implAbi = await fetchSourcifyAbi(chainId, impl, false);
+  return implAbi ? [...abi, ...implAbi.abi] : null;
 }
 
 async function fetchSourcifyAbi(
   chainId: number, address: string, followProxy = true,
 ): Promise<{ abi: Abi; verified: boolean } | null> {
-  const key = `${chainId}:${address.toLowerCase()}`;
+  const key = `${chainId}:${address.toLowerCase()}:${followProxy ? 'proxy' : 'impl'}`;
   const hit = abiCache.get(key);
   if (hit !== undefined) return hit;
   const abi = await verifiedAbiOf(await sourcifyContract(chainId, address), chainId, followProxy);

@@ -115,6 +115,23 @@ describe('decodeCall selector mismatch detection', () => {
     expect(spoofWarning(r, 'post a message')).toBeUndefined();
   });
 
+  test('(e) proxy with an unverified implementation -> 4byte decode, no false mismatch', async () => {
+    const proxy = '0x000000000000000000000000000000000000aaa6';
+    const impl = '0x000000000000000000000000000000000000aaa7';
+    const proxyAbi = parseAbi(['function implementation() view returns (address)']);
+    mockFetch((url) => {
+      if (url.includes(impl)) return { ok: false, json: () => Promise.resolve({}) };
+      if (url.includes('sourcify')) {
+        return { ok: true, json: () => Promise.resolve({ abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } }) };
+      }
+      return { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string,string)' }] }) };
+    });
+    const r = await decodeCall(proxy, postStringStringData, 8453);
+    expect(r.source).toBe('4byte');
+    expect(r.functionName).toBe('post');
+    expect(spoofWarning(r, 'post a message')).toBeUndefined();
+  });
+
   test('(c) non-Sourcify contract + 4byte hit -> neutral note, no scary warning', async () => {
     mockFetch((url) => (url.includes('sourcify')
       ? { ok: false, json: () => Promise.resolve({}) }
