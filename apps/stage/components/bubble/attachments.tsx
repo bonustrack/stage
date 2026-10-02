@@ -12,11 +12,10 @@ import { Col } from '../layout';
 import { IconTileRow, MediaCard } from '../MediaCard';
 import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
-import { fileCardModel } from './fileCard.model';
+import { fileCardModel, resolvedAttachmentKind } from './fileCard.model';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
 import { useRemoteAttachment } from './attachmentUri';
-import { resolvedAttachmentKind } from './attachmentKind.model';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { mergeFeedEntries } from '../lib/feedOrder.model';
+import { mergeFeedEntries, withNestedReactions } from '../lib/feedOrder.model';
 
 function entry(id: string, ts: string, text = id): HistoryEntry {
   return { id, ts, text, station: 'xmtp', line: 'metro://xmtp/a/c', from: 'u', to: 'c' };
@@ -61,5 +61,35 @@ describe('feed merge order', () => {
     expect(mergeFeedEntries([fixPosted], [labeled, fixPosted]).channelUpdated).toBe(true);
     expect(mergeFeedEntries([labeled, fixPosted], [labeled, screenshot]).channelUpdated).toBe(false);
     expect(mergeFeedEntries([fixPosted], [screenshot]).channelUpdated).toBe(false);
+  });
+});
+
+interface Msg { id: string; ns: number; reactions: Msg[] }
+
+const msg = (id: string, ns: number, reactions: Msg[] = []): Msg => ({ id, ns, reactions });
+const reactionIds = (list: Msg[]): string[] => list.map((m) => m.id);
+const expand = (list: Msg[]): Msg[] => withNestedReactions(list, (m) => m.reactions, (m) => m.ns);
+
+describe('nested reactions in a history page', () => {
+  test('lists every reaction a message carries, including removals', () => {
+    const page = [
+      msg('m2', 20, [msg('add-m2', 25)]),
+      msg('m1', 10, [msg('add-m1', 30), msg('remove-m1', 40)]),
+    ];
+    expect(reactionIds(expand(page)).sort()).toEqual(['add-m1', 'add-m2', 'm1', 'm2', 'remove-m1']);
+  });
+
+  test('orders reactions and messages newest first across the page', () => {
+    const page = [
+      msg('m3', 30),
+      msg('m2', 20, [msg('r25', 25), msg('r45', 45)]),
+      msg('m1', 10, [msg('r35', 35)]),
+    ];
+    expect(reactionIds(expand(page))).toEqual(['r45', 'r35', 'm3', 'r25', 'm2', 'm1']);
+  });
+
+  test('keeps a reaction stamped before its message ahead of it, so the page still ends on its oldest message', () => {
+    const page = [msg('m2', 20), msg('m1', 10, [msg('early', 5)])];
+    expect(reactionIds(expand(page))).toEqual(['m2', 'early', 'm1']);
   });
 });

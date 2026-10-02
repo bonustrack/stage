@@ -13,8 +13,8 @@ import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/x
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
+import { withNestedReactions } from './feedOrder.model';
 import { withMainThreadWasm } from './xmtp.wasm.web';
-import { withNestedReactions } from './nestedReactions.model';
 import { webGroupMetaPolicy } from './groupPolicyWeb.model';
 import { webConsentState, webListOptions } from './consentWeb.model';
 import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';

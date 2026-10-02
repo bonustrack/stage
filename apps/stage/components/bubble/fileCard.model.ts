@@ -30,3 +30,10 @@ export function fileCardModel(a: { name?: string; mime?: string; size?: number; 
   const subtitle = [fileTypeLabel(a.name, a.mime), fileSizeLabel(a.size)].filter(Boolean).join(' · ');
   return { title, subtitle };
 }
+
+export function resolvedAttachmentKind(att: { kind: string; mime?: string }): string {
+  if (att.mime?.startsWith('image/')) return 'image';
+  if (att.mime?.startsWith('audio/')) return 'audio';
+  if (att.mime?.startsWith('video/')) return 'video';
+  return att.kind;
+}

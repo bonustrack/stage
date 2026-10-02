@@ -11,7 +11,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import {
-  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail,
+  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail, chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
@@ -22,7 +22,6 @@ import { Landing } from '../../components/landing/Landing';
 import { TEXT_11PX } from '../../components/smallText';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
-import { chatsTabOpensNewChat } from '../../components/tabs/chatsTab.model';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
 

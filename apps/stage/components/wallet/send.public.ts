@@ -10,7 +10,7 @@ import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS, ETH_PRICE_ID } from '@stage-labs/client/wallet/assets';
-import type { TokenChoice } from './TokenSelector';
+import type { TokenChoice } from './screen/model';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
   recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState,

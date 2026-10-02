@@ -15,12 +15,10 @@ import { TokenRowBody } from './TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { useAssetRows } from './screen/data';
-import { tokenChangeText, tokenPriceText } from './screen/model';
+import { tokenChangeText, tokenPriceText, type TokenChoice } from './screen/model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
-
-export interface TokenChoice { symbol: string; chainId: number }
 
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);

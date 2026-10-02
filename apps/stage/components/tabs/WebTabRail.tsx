@@ -15,7 +15,10 @@ import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { TEXT_11PX } from '../smallText';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
-import { chatsTabOpensNewChat } from './chatsTab.model';
+
+export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
+  return !wide && pathname === '/';
+}
 
 export const TAB_ICON_FRAME = { width: 31, height: 28 } as const;
 
