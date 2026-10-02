@@ -94,7 +94,8 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, selectable, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
   const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
-  const mdStyle = useMemo(() => markdownStyles(fg, dark), [fg, dark]);
+  const textSize = d.poll ? 'md' : 'lg';
+  const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
   const markdownProps: MarkdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),

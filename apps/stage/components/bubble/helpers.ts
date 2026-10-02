@@ -1,7 +1,7 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Platform } from 'react-native';
-import { fontFamily, fontSize } from '@stage-labs/kit/tokens';
+import { fontFamily, fontSize, type FontSizeName } from '@stage-labs/kit/tokens';
 import type { LinkClickEvent } from '@stage-labs/kit/link';
 import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
@@ -69,9 +69,9 @@ export const MONO_FONT = Platform.select({
   default: fontFamily.mono.join(', '),
 });
 
-export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
+export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
-  const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('lg'), lineHeight: 23, paragraphGap: 0 });
+  const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize(size), lineHeight: 23, paragraphGap: 0 });
   return {
     ...styles,
     body: { ...styles.body, gap: BLOCK_GAP },

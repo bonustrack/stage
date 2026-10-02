@@ -44,7 +44,7 @@ function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
           key={`${qi}-${voter}`}
           style={{ alignSelf: 'stretch' }}
 >
-          <Text size="xs" color={pal.text}>
+          <Text size="md" color={pal.text}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
         </Box>
@@ -83,7 +83,7 @@ function PollOptionView({ option, colors }: {
       />
       <Row align="center" justify="between" gap={8} padding={{ x: 12, y: 8 }}>
         <Col flex={1}>
-          <Text size="2xs" value={option.label} truncate />
+          <Text size="md" value={option.label} truncate />
         </Col>
         <Caption value={option.stats} color="secondary" weight="semibold" />
       </Row>
@@ -100,7 +100,7 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   return (
     <Col gap={6}>
       {block.question === undefined ? null : (
-        <Text value={block.question} weight="semibold" size="lg" />
+        <Text value={block.question} weight="semibold" size="md" />
       )}
       {block.header === undefined ? null : (
         <Caption value={block.header} color="secondary" weight="semibold" />
