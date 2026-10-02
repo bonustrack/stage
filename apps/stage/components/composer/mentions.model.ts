@@ -1,5 +1,6 @@
 import { channelRefsOf } from '@stage-labs/client/xmtp/channelRefs';
 import { MENTION_RE, computeMentionQuery, mentionToken, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
+import { uniqueBy } from '@stage-labs/client/collections';
 
 export interface Span { start: number; end: number }
 
@@ -157,12 +158,7 @@ export function withContactCandidates(
   self: string,
 ): MentionCandidate[] {
   const seen = new Set([self, ...first.map(c => c.address)].map(a => a.toLowerCase()));
-  const extra = contacts.filter((c) => {
-    const key = c.address.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const extra = uniqueBy(contacts, c => c.address.toLowerCase(), seen);
   return [...first, ...extra];
 }
 

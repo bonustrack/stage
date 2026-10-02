@@ -35,20 +35,27 @@ async function readAppData(group: Group): Promise<string> {
   return group.appData ?? '';
 }
 
-function cleanLabel(raw: string): string {
+export function cleanLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
 }
 
-function parseBlob(appData: string): Record<string, unknown> {
-  if (!appData?.trim()) return {};
+export function parseObject(raw: string | undefined): Record<string, unknown> | null {
+  if (raw === undefined) return null;
+  if (!raw.trim()) return {};
   try {
-    const parsed: unknown = JSON.parse(appData);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {};
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
   } catch {
-    return {};
+    return null;
   }
+}
+
+export function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
+
+function parseBlob(appData: string): Record<string, unknown> {
+  return parseObject(appData) ?? {};
 }
 
 function readLabels(blob: Record<string, unknown>): string[] {
@@ -159,8 +166,7 @@ export async function writeLabels(
 }
 
 export function assignedAddresses(value: unknown): string[] {
-  const raw = Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
-  return [...new Set(validMemberAddresses(raw).map(address => address.toLowerCase()))];
+  return [...new Set(validMemberAddresses(stringList(value)).map(address => address.toLowerCase()))];
 }
 
 export async function groupAssignedOf(conv: unknown): Promise<string[]> {

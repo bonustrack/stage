@@ -155,11 +155,11 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   return handler ? handler(decoded) : `[${typeId}]`;
 }
 
-type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
+export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
 export interface AttachmentMeta { mimeType?: string | null; filename?: string | null }
 
-function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
+export function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
   const ext = a.filename?.split('.').pop()?.toLowerCase() ?? '';
   const mime = a.mimeType ?? '';
   if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return 'image';

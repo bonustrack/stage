@@ -35,6 +35,7 @@ import {
 import { reported } from '../../lib/errorPolicy';
 import { unknownSystemLineInboxIds } from './systemNames.model';
 import { peerLabel } from './convTitle';
+import { uniqueBy } from '@stage-labs/client/collections';
 
 function useSystemLineAddresses(
   events: HistoryEntry[], inboxToAddr: Record<string, string>,
@@ -170,17 +171,8 @@ function feedStatus(s: string): 'idle' | 'connecting' | 'open' | 'error' {
 
 function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr: string | null, profilesVersion: number) {
   return useMemo(() => {
-    const seen = new Set<string>();
-    const out: { address: string; name: string }[] = [];
-    const add = (addr: string | null): void => {
-      if (!addr) return;
-      const k = addr.toLowerCase();
-      if (seen.has(k)) return;
-      seen.add(k);
-      out.push({ address: addr, name: peerLabel(addr) });
-    };
-    if (isGroup) memberAddrs.forEach(add); else add(peerAddr);
-    return out;
+    const addrs = (isGroup ? memberAddrs : [peerAddr]).filter((a): a is string => !!a);
+    return uniqueBy(addrs, a => a.toLowerCase()).map(address => ({ address, name: peerLabel(address) }));
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 }
 

@@ -7,12 +7,9 @@ import { appStorage } from '../platform/storage';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
 import { report, ignored } from './errorPolicy';
+import { envBaseUrl } from './env';
 
-const SERVER_URL_ENV: unknown = process.env.EXPO_PUBLIC_PUSH_SERVER_URL;
-const PUSH_SERVER_URL =
-  typeof SERVER_URL_ENV === 'string' && SERVER_URL_ENV !== ''
-    ? SERVER_URL_ENV.replace(/\/$/, '')
-    : 'https://push.stage.box';
+const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, 'https://push.stage.box');
 const PUSH_RPC_PATH = '/notifications.v1.Notifications/';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;

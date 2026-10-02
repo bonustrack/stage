@@ -1,7 +1,7 @@
-
 import type { HistoryEntry } from '../types';
 import {
-  humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT, type GroupUpdatedContent,
+  attachmentKindOf, humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT,
+  type GroupUpdatedContent,
 } from './humanize';
 import { type PollContent, pollFallbackText } from './poll';
 import {
@@ -41,8 +41,6 @@ interface StaticAttachmentView { filename: string; mimeType?: string; data: stri
 interface MultiRemoteAttachmentView {
   attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
-
-export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
 export interface EnvelopeOptions {
   reactionRemoved(action: unknown): boolean;
@@ -108,24 +106,9 @@ function replyEnvelope(
   };
 }
 
-function kindFromMime(mime?: string): AttachmentKind {
-  if (mime?.startsWith('image/')) return 'image';
-  if (mime?.startsWith('audio/')) return 'audio';
-  if (mime?.startsWith('video/')) return 'video';
-  return 'file';
-}
-
-function kindFromExt(name: string): AttachmentKind {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif'].includes(ext)) return 'image';
-  if (['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext)) return 'audio';
-  if (['mp4', 'mov', 'webm'].includes(ext)) return 'video';
-  return 'file';
-}
-
 function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
   const a = decoded as StaticAttachmentView;
-  const kind = kindFromMime(a.mimeType);
+  const kind = attachmentKindOf({ mimeType: a.mimeType });
   return {
     ...base,
     text: `[${kind}: ${opts.attachmentLabelOf(decoded)}]`,
@@ -144,7 +127,7 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   const m = decoded as MultiRemoteAttachmentView;
   const attachments = (m.attachments ?? []).map((info, i) => {
     const name = info.filename ?? `attachment-${i + 1}`;
-    return { kind: kindFromExt(name), name, remote: info };
+    return { kind: attachmentKindOf({ filename: name }), name, remote: info };
   });
   const first = attachments[0];
   const summary = first !== undefined && attachments.length === 1

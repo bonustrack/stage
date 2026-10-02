@@ -187,13 +187,9 @@ export function useTransferStep(): TransferStep {
   return useStoreValue(stepListeners.subscribe, currentStep);
 }
 
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, 0); });
-}
-
 function transferKdf(onShare: (share: number) => void): Pbkdf2 {
   const subtle = (globalThis as { crypto?: { subtle?: SubtleCrypto } }).crypto?.subtle;
-  return subtle === undefined ? chunkedPbkdf2(nextFrame, onShare) : webCryptoPbkdf2(subtle);
+  return subtle === undefined ? chunkedPbkdf2(() => sleep(0), onShare) : webCryptoPbkdf2(subtle);
 }
 
 export interface SentTransfer {
@@ -221,7 +217,7 @@ async function uploadTransfer(url: string, body: Uint8Array): Promise<number> {
 
 export async function sendHistoryWithCode(): Promise<SentTransfer> {
   try {
-    await nextFrame();
+    await sleep(0);
     await messagingReady();
     const code = randomCode();
     setStep({ kind: 'locking', share: 0 });
@@ -264,7 +260,7 @@ export async function receiveHistoryWithCode(input: string): Promise<void> {
   const code = normalizeTransferCode(input);
   if (code === null) throw new Error(TRANSFER_COPY.invalidCode);
   try {
-    await nextFrame();
+    await sleep(0);
     await messagingReady();
     setStep({ kind: 'unlocking', share: 0 });
     const { id, key } = await deriveTransferSecrets(code, transferKdf((share) => { setStep({ kind: 'unlocking', share }); }));

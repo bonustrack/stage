@@ -43,7 +43,7 @@ export {
 export { subscribeAllMessages } from '../../lib/xmtp.stream';
 export { useXmtpFeed } from '../../lib/xmtp.feed';
 
-export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError } from '@stage-labs/client/xmtp/labels';
+export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, cleanLabel } from '@stage-labs/client/xmtp/labels';
 
 export { AccountManager, useActiveAccount, useActiveAccountRecord } from './account';
 export {

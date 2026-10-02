@@ -1,20 +1,5 @@
-import { assignedAddresses } from './labels';
+import { assignedAddresses, parseObject, stringList } from './labels';
 import { mentionToken } from './mentions';
-
-function parseObject(raw: string | undefined): Record<string, unknown> | null {
-  if (raw === undefined) return null;
-  if (!raw.trim()) return {};
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-function stringList(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
-}
 
 function stringOf(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';

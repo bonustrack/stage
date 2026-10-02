@@ -1,15 +1,7 @@
 import { ignored } from './errorPolicy';
+import { envString } from './env';
 
-const RAW_ENV: Record<string, string | undefined> = {
-  EXPO_PUBLIC_SWARMY_KEY: process.env.EXPO_PUBLIC_SWARMY_KEY as string | undefined,
-};
-
-function envString(name: string): string | undefined {
-  const value = RAW_ENV[name];
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
+const SWARMY_KEY = envString(process.env.EXPO_PUBLIC_SWARMY_KEY);
 
 const SWARMY_UPLOAD_URL = 'https://api.swarmy.cloud/api/files';
 const SWARMY_UPLOAD_TIMEOUT_MS = 60_000;
@@ -20,10 +12,6 @@ export function swarmToHttp(url: string): string {
   if (!url.startsWith('swarm://')) return url;
   const ref = url.slice('swarm://'.length).replace(/\/+$/, '');
   return `${SWARM_GATEWAY}${ref}/`;
-}
-
-function swarmyKey(): string | undefined {
-  return envString('EXPO_PUBLIC_SWARMY_KEY');
 }
 
 export function resolveSwarmyResponse(
@@ -44,7 +32,7 @@ export function resolveSwarmyResponse(
 }
 
 export async function uploadFormToSwarmy(form: FormData, filename: string): Promise<string> {
-  const key = swarmyKey();
+  const key = SWARMY_KEY;
   if (!key) {
     throw new Error('Attachment upload is not configured (missing EXPO_PUBLIC_SWARMY_KEY).');
   }

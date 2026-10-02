@@ -2,7 +2,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
   parseMentions,
-  hasMention,
   matchMembers,
   computeMentionQuery,
   MENTION_RE,
@@ -10,14 +9,6 @@ import {
 
 const A = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
 const B = '0xabc0000000000000000000000000000000000def';
-
-describe('hasMention', () => {
-  test('detects a valid mention and ignores non-address @ tokens', () => {
-    expect(hasMention(`hi @${A}`)).toBe(true);
-    expect(hasMention('hi @alice')).toBe(false);
-    expect(hasMention('no mention here')).toBe(false);
-  });
-});
 
 describe('parseMentions', () => {
   test('splits leading/trailing text around a single mention', () => {

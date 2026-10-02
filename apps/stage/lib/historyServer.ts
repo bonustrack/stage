@@ -1,13 +1,9 @@
 import { secureStorage } from '../platform/storage';
 import { XMTP_ENV_KEY } from './xmtp.types';
 import { ignored } from './errorPolicy';
+import { envBaseUrl } from './env';
 
-const PROXY_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
-
-const PROXY_BASE =
-  typeof PROXY_BASE_ENV === 'string' && PROXY_BASE_ENV !== ''
-    ? PROXY_BASE_ENV.replace(/\/$/, '')
-    : 'https://proxy.stage.box';
+const PROXY_BASE = envBaseUrl(process.env.EXPO_PUBLIC_LINKPROXY_URL, 'https://proxy.stage.box');
 
 export function linkProxyBase(): string {
   return PROXY_BASE;

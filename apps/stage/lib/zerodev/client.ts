@@ -10,24 +10,13 @@ import type { SmartAccount } from 'viem/account-abstraction';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
+import { envString } from '../env';
 
-const RAW_ENV: Record<string, string | undefined> = {
-  EXPO_PUBLIC_ZERODEV_PROJECT_ID: process.env.EXPO_PUBLIC_ZERODEV_PROJECT_ID as string | undefined,
-  EXPO_PUBLIC_ZERODEV_RPC: process.env.EXPO_PUBLIC_ZERODEV_RPC as string | undefined,
-};
-
-function envString(name: string): string | undefined {
-  const value = RAW_ENV[name];
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
-const PROJECT_ID: string = envString('EXPO_PUBLIC_ZERODEV_PROJECT_ID') ?? '';
+const PROJECT_ID: string = envString(process.env.EXPO_PUBLIC_ZERODEV_PROJECT_ID) ?? '';
+const RPC_OVERRIDE = envString(process.env.EXPO_PUBLIC_ZERODEV_RPC);
 
 function zerodevRpcUrl(): string | null {
-  const override = envString('EXPO_PUBLIC_ZERODEV_RPC');
-  if (override) return override;
+  if (RPC_OVERRIDE) return RPC_OVERRIDE;
   if (!PROJECT_ID) return null;
   return `https://rpc.zerodev.app/api/v3/${PROJECT_ID}/chain/8453`;
 }
