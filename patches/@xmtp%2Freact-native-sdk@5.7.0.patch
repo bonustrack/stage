@@ -1,3 +1,16 @@
+diff --git a/android/build.gradle b/android/build.gradle
+index 5a9df29a21919ad30a44be7a04e4ea3f6d8c8c6c..cd7d68d04cd47d144a461716847d0f809eda7564 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -95,7 +95,7 @@ repositories {
+ dependencies {
+   implementation project(':expo-modules-core')
+   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+-  implementation "org.xmtp:android:4.10.0-rc2"
++  implementation "org.xmtp:android:4.11.0"
+   implementation 'com.google.code.gson:gson:2.10.1'
+   implementation 'com.facebook.react:react-native:0.71.3'
+   implementation "com.daveanthonythomas.moshipack:moshipack:1.0.1"
 diff --git a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt b/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
 index 53a935341dc4753a1f4a46046ed13b07cf0914f1..62c88803c2d06c5504d45b579a4f0669c4d75420 100644
 --- a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
