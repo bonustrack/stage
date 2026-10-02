@@ -136,7 +136,7 @@ function kvStore(kv: KVNamespace): NamesStore {
 
 let chain: NamesChain | null = null;
 
-function configuredChain(env: NamesEnv): NamesChain | null {
+export function configuredChain(env: NamesEnv): NamesChain | null {
   if (!env.NAMES_OPERATOR_KEY) return null;
   chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, env.NAMES_RPC_URL ?? broviderRpc(8453));
   return chain;

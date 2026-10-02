@@ -1,6 +1,7 @@
 import type { ArchiveNamespace, ArchiveStorage } from '../src/historyStore.ts';
+import type { MailStorage } from '../src/mailBox.ts';
 
-export type MemoryStorage = ArchiveStorage & { alarm: number | null; data: Map<string, unknown> };
+export type MemoryStorage = ArchiveStorage & MailStorage & { alarm: number | null; data: Map<string, unknown> };
 
 type ObjectFetch = (request: Request, storage: ArchiveStorage, now: number) => Promise<Response>;
 
@@ -10,10 +11,12 @@ export function memoryStorage(): MemoryStorage {
     data,
     alarm: null,
     get: (keys) => Promise.resolve(new Map(keys.filter((key) => data.has(key)).map((key) => [key, data.get(key)]))),
-    put(entries) {
+    put(entries: Record<string, unknown>) {
       for (const [key, value] of Object.entries(entries)) data.set(key, value);
       return Promise.resolve();
     },
+    delete: (keys) => Promise.resolve(keys.filter((key) => data.delete(key)).length),
+    list: ({ prefix }) => Promise.resolve(new Map([...data].filter(([key]) => key.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b)))),
     setAlarm(time) {
       this.alarm = time;
       return Promise.resolve();

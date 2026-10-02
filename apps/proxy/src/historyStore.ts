@@ -80,22 +80,22 @@ export async function handleHistory<Id>(request: Request, ns: ArchiveNamespace<I
   return route.kind === 'upload' ? upload(request, ns, route.env) : download(ns, route.env, route.id);
 }
 
-function chunkKey(index: number): string {
-  return `chunk:${index}`;
+function chunkKey(index: number, prefix: string): string {
+  return `${prefix}chunk:${index}`;
 }
 
-function chunkKeys(count: number): string[] {
-  return Array.from({ length: count }, (_, index) => chunkKey(index));
+function chunkKeys(count: number, prefix: string): string[] {
+  return Array.from({ length: count }, (_, index) => chunkKey(index, prefix));
 }
 
-export async function putChunks(storage: ArchiveStorage, bytes: Uint8Array): Promise<void> {
+export async function putChunks(storage: Pick<ArchiveStorage, 'put'>, bytes: Uint8Array, prefix = ''): Promise<void> {
   const entries: Record<string, ArrayBuffer | number> = {};
   let count = 0;
   for (let offset = 0; offset < bytes.byteLength; offset += CHUNK_BYTES) {
-    entries[chunkKey(count)] = bytes.slice(offset, offset + CHUNK_BYTES).buffer;
+    entries[chunkKey(count, prefix)] = bytes.slice(offset, offset + CHUNK_BYTES).buffer;
     count += 1;
   }
-  entries[COUNT_KEY] = count;
+  entries[`${prefix}${COUNT_KEY}`] = count;
   await storage.put(entries);
 }
 
@@ -122,15 +122,24 @@ function joined(chunks: Map<string, unknown>, keys: string[]): Uint8Array | null
 }
 
 export async function hasChunks(storage: ArchiveStorage): Promise<boolean> {
-  const count = (await storage.get([COUNT_KEY])).get(COUNT_KEY);
-  return typeof count === 'number' && count > 0;
+  return (await chunkCount(storage, '')) > 0;
 }
 
-export async function readChunks(storage: ArchiveStorage): Promise<Uint8Array | null> {
-  const count = (await storage.get([COUNT_KEY])).get(COUNT_KEY);
-  if (typeof count !== 'number' || count < 1) return null;
-  const keys = chunkKeys(count);
+async function chunkCount(storage: Pick<ArchiveStorage, 'get'>, prefix: string): Promise<number> {
+  const countKey = `${prefix}${COUNT_KEY}`;
+  const count = (await storage.get([countKey])).get(countKey);
+  return typeof count === 'number' && count > 0 ? count : 0;
+}
+
+export async function readChunks(storage: Pick<ArchiveStorage, 'get'>, prefix = ''): Promise<Uint8Array | null> {
+  const count = await chunkCount(storage, prefix);
+  if (count < 1) return null;
+  const keys = chunkKeys(count, prefix);
   return joined(await storage.get(keys), keys);
+}
+
+export async function storedChunkKeys(storage: Pick<ArchiveStorage, 'get'>, prefix: string): Promise<string[]> {
+  return [`${prefix}${COUNT_KEY}`, ...chunkKeys(await chunkCount(storage, prefix), prefix)];
 }
 
 async function readArchive(storage: ArchiveStorage): Promise<Response> {

@@ -9,7 +9,10 @@ import { SsrfError } from './ssrf.ts';
 import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
 import { handleTransfer, isTransferPath } from './historyTransfer.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
-import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
+import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
+import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
+import { mailboxStub } from './mailBox.ts';
+import { receiveMail, type IncomingMail } from './mailReceive.ts';
 import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
@@ -152,12 +155,33 @@ async function handleSettle(request: Request): Promise<Response> {
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
 export { HistoryTransfers } from './historyTransfer.ts';
+export { MailBoxes } from './mailBox.ts';
 
 type ProxyEnv = NamesEnv & {
   HISTORY_ARCHIVES?: DurableObjectNamespace;
   HISTORY_TRANSFERS?: DurableObjectNamespace;
   TRANSFER_LOOKUPS?: RateLimit;
+  MAIL_BOXES?: DurableObjectNamespace;
+  MAIL_REQUESTS?: RateLimit;
 };
+
+interface MailWiring { mailbox: (label: string) => ReturnType<typeof mailboxStub>; chain: MailChain }
+
+function mailWiring(env: ProxyEnv): MailWiring | null {
+  const chain = configuredChain(env);
+  const boxes = env.MAIL_BOXES;
+  if (chain === null || boxes === undefined) return null;
+  return {
+    mailbox: (label) => mailboxStub(boxes, label),
+    chain: { owner: (label) => chain.subnameOwner(label), verify: (address, message, signature) => chain.verifyClaim(address, message, signature) },
+  };
+}
+
+function routeMail(request: Request, env: ProxyEnv): Promise<Response> | Response {
+  const wiring = mailWiring(env);
+  if (wiring === null) return json({ error: 'mail is not configured' }, 503);
+  return handleMail(request, { ...wiring, limiter: env.MAIL_REQUESTS, clientIp: clientIp(request) });
+}
 
 const UPLOAD_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT']);
 const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
@@ -175,6 +199,15 @@ function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Resp
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 
+function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promise<Response> | Response | null {
+  if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
+  if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
+  if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);
+  if (!pathname.startsWith(NAMES_PREFIX)) return null;
+  if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  return handleNamesRequest(request, env);
+}
+
 export default {
   async fetch(request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);
@@ -184,12 +217,12 @@ export default {
     }
     const clientRoute = CLIENT_ROUTES.get(pathname);
     if (clientRoute) return request.method === 'OPTIONS' ? corsResponse(CLIENT_CORS, null, 204) : clientRoute(request, ctx);
-    if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
-    if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
-    if (pathname.startsWith(NAMES_PREFIX)) {
-      if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
-      return handleNamesRequest(request, env);
-    }
-    return json({ error: 'not found' }, 404);
+    return routePrefixed(request, env, pathname) ?? json({ error: 'not found' }, 404);
+  },
+
+  async email(message: IncomingMail, env: ProxyEnv): Promise<void> {
+    const wiring = mailWiring(env);
+    if (wiring === null) throw new Error('st.box mail is not configured');
+    await receiveMail(message, wiring);
   },
 };

@@ -43,6 +43,21 @@ runtime - no Express, no origin, no laptop dependency.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
+- **st.box mail (receive only):** Email Routing on `st.box` sends every mail
+  to this Worker's `email()` handler. `<label>+tag@st.box` maps to
+  `<label>.stage.base.eth` (lowercase, `+tag` dropped, role names such as
+  postmaster refused); unknown names get `No such mailbox`, names without a
+  registered key get `Mailbox not activated`, mail over 25 MiB is refused. The
+  mail is sealed at once with HPKE (DHKEM X25519, HKDF-SHA256, AES-128-GCM,
+  the MLS suite XMTP uses) to the owner's public mail key, and only the
+  ciphertext is stored: one `MailBoxes` Durable Object per mailbox, which also
+  holds the key record, sign-in nonces and sessions (512 MiB per mailbox).
+  The app derives the mail key from the recovery-phrase owner's signature of
+  `st.box mail key v1 for <name>` and registers the public half; reading
+  needs a session opened with a signature from the name's current onchain
+  owner (EOA, ERC-1271 or ERC-6492), checked again on every request, so a
+  sold name loses access at once. A new owner's key wipes the old mail. Client
+  helpers: `@stage-labs/client/mail/mailbox` and `/mail/api`.
 
 ## API
 
@@ -64,6 +79,14 @@ PUT  /xmtp-history/<env>/transfer/<id> -> { expiresAt }     409 exists   413 too
 GET  /xmtp-history/<env>/transfer/<id> -> transfer bytes    404 unknown, used or expired   429 rate limited
 DELETE /xmtp-history/<env>/transfer/<id> -> 204             429 rate limited
 *    /xmtp-push/*                -> relayed upstream
+POST /mail/key                   -> { label, publicKey, issuedAt, signature } -> { address }   401 not the owner   409 older key
+POST /mail/challenge             -> { label } -> { nonce, expiresAt }   (5 minutes, single use)
+POST /mail/session               -> { label, nonce, signature } -> { token, expiresAt }   (15 minutes)
+GET  /mail/list?label=<l>        -> { mails: [{ id, ts, size, index }] }   Bearer token
+GET  /mail/message?label=&id=    -> sealed mail bytes       Bearer token   404 not this owner's mail
+DELETE /mail/message?label=&id=  -> 204                     Bearer token
+DELETE /mail/box?label=<l>       -> 204, wipes the mailbox  Bearer token
+     /mail/* 401 bad or expired session   403 the name has a new owner   429 rate limited (30 a minute per IP)
 ```
 
 Every response carries `x-served-by: worker`.

@@ -67,3 +67,23 @@ new_sqlite_classes = ["HistoryTransfers"]
 name = "TRANSFER_LOOKUPS"
 namespace_id = "2419"
 simple = { limit = 10, period = 60 }
+
+# st.box mail (receive only). Email Routing sends every mail for <label>@st.box
+# to this Worker's email() handler, which checks <label>.stage.base.eth onchain,
+# seals the mail with HPKE to the owner's registered public mail key and stores
+# only ciphertext here: one object per mailbox, with the key record, sign-in
+# nonces and sessions. The /mail/* API serves a mailbox only to a session opened
+# with a signature from the name's current onchain owner.
+[[durable_objects.bindings]]
+name = "MAIL_BOXES"
+class_name = "MailBoxes"
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["MailBoxes"]
+
+# Mail API calls (key, sign-in, list, fetch) per client IP.
+[[ratelimits]]
+name = "MAIL_REQUESTS"
+namespace_id = "1080"
+simple = { limit = 30, period = 60 }
