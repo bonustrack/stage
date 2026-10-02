@@ -90,12 +90,17 @@ describe('createGroupWith', () => {
     expect(called).toBe(false);
   });
   test('names every member not on XMTP', async () => {
-    await expect(createGroupWith([ADDR_A, ADDR_B], id => id, async () => ({ id: 'x' }), async () => undefined))
+    let called = false;
+    await expect(createGroupWith([ADDR_A, ADDR_B], id => id, async () => { called = true; return { id: 'x' }; }, async () => undefined))
       .rejects.toThrow("0x0bA0…651A, 0x2539…79d5 aren't on XMTP yet, so they can't be added.");
+    expect(called).toBe(false);
   });
-  test('maps a failed member lookup', async () => {
-    await expect(createGroupWith([ADDR_A], id => id, async () => ({ id: 'x' }), async () => { throw new Error('boom'); }))
-      .rejects.toThrow("Couldn't create the channel: boom");
+  test('a failed member lookup is not reported as a missing inbox', async () => {
+    let called = false;
+    const lookupDown = async (): Promise<string | undefined> => { throw new Error('identity api unreachable'); };
+    await expect(createGroupWith([ADDR_A], id => id, async () => { called = true; return { id: 'x' }; }, lookupDown))
+      .rejects.toThrow("Couldn't create the channel: identity api unreachable");
+    expect(called).toBe(false);
   });
 });
 

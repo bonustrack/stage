@@ -39,12 +39,15 @@ function errorMessage(err: unknown): string {
   return (err as Error)?.message ?? String(err);
 }
 
+function createFailed(err: unknown): Error {
+  return new Error(`Couldn't create the channel: ${errorMessage(err)}`);
+}
+
 export function mapCreateGroupError(err: unknown): Error {
-  const msg = errorMessage(err);
-  if (isNoInboxError(msg)) {
+  if (isNoInboxError(errorMessage(err))) {
     return new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
   }
-  return new Error(`Couldn't create the channel: ${msg}`);
+  return createFailed(err);
 }
 
 export function mapAddMembersError(err: unknown): Error {
@@ -79,7 +82,7 @@ export async function createGroupWith(
   inboxIdOf: (address: string) => Promise<string | undefined>,
 ): Promise<CreateGroupResult> {
   const members = requireValidMembers(addresses);
-  const missing = await membersWithoutInbox(members, inboxIdOf).catch((err: unknown) => { throw mapCreateGroupError(err); });
+  const missing = await membersWithoutInbox(members, inboxIdOf).catch((err: unknown) => { throw createFailed(err); });
   if (missing.length > 0) throw notOnXmtpError(missing);
   try {
     const group = await create(members);
