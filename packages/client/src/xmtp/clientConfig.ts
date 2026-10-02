@@ -39,7 +39,7 @@ export interface PersistedClientDeps<C> {
   register: (client: C) => Promise<void>;
   installationIdOf: (client: C) => string;
   close: (client: C) => void;
-  savedInstallationId: string | null;
+  savedInstallationId: string | null | Promise<string | null>;
   retryable?: (error: unknown) => boolean;
   attempts?: number;
   sleep?: (ms: number) => Promise<void>;
@@ -55,8 +55,8 @@ function defaultSleep(ms: number): Promise<void> {
   return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C): boolean {
-  return deps.savedInstallationId === null || deps.installationIdOf(client) === deps.savedInstallationId;
+function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C, saved: string | null): boolean {
+  return saved === null || deps.installationIdOf(client) === saved;
 }
 
 type Attempt<C> =
@@ -76,7 +76,7 @@ async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: st
     deps.onEvent?.('open-failed', e);
     return { kind: deps.retryable?.(e) === true ? 'retry' : 'fail', error: e };
   }
-  if (matchesSavedInstallation(deps, client)) return { kind: 'ready', client };
+  if (matchesSavedInstallation(deps, client, await deps.savedInstallationId)) return { kind: 'ready', client };
   const installationId = deps.installationIdOf(client);
   if (mismatchIsPersistent(previousMismatch, installationId)) {
     deps.onEvent?.('installation-adopted');

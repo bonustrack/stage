@@ -64,10 +64,11 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   const [savedAddress, savedEnv, savedInstallation] = await Promise.all([
     getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)), getSecure(installationKeyFor(rec.id)),
   ]);
-  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env) && await opfsHasDatabase();
-  perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, savedInstallation, address, env });
-  const opened = await perfTime('xmtp.client.open', () =>
-    openClientForAccount(rec, env, opts, reusable ? savedInstallation : null));
+  const savedIfPersisted = canReuseSavedClient(savedAddress, savedEnv, address, env)
+    ? opfsHasDatabase().then((has) => (has ? savedInstallation : null))
+    : null;
+  perfLog('xmtp.client path', { savedAddress, savedEnv, savedInstallation, address, env });
+  const opened = await perfTime('xmtp.client.open', () => openClientForAccount(rec, env, opts, savedIfPersisted));
   perfLog('xmtp.client opened', { registered: opened.registered, installation: opened.client.installationId });
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);

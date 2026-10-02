@@ -39,7 +39,8 @@ const finalizeClient = clientFinalizer<WebXmtpClient>({
 });
 
 export async function openClientForAccount(
-  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedInstallationId: string | null, recovered = false,
+  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedInstallationId: string | null | Promise<string | null>,
+  recovered = false,
 ): Promise<OpenedClient<WebXmtpClient>> {
   const signer = await signerForRecord(rec);
   try {
@@ -55,7 +56,7 @@ export async function openClientForAccount(
       close: (client) => { client.close(); },
       savedInstallationId,
       retryable: isStoreLocked,
-      onEvent: (event, e) => { reportOpenEvent(event, savedInstallationId, e); },
+      onEvent: (event, e) => { void Promise.resolve(savedInstallationId).then((saved) => { reportOpenEvent(event, saved, e); }); },
     });
     await finalizeClient(opened.client, rec, env, { markRegistered: true });
     return opened;

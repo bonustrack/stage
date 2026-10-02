@@ -101,6 +101,15 @@ describe('openPersistedClient', () => {
     expect(calls).toEqual(['open', 'register', 'event:registered']);
   });
 
+  test('the saved installation may arrive later than the open, and a wiped store is treated as new', async () => {
+    const { d, calls } = deps({ savedInstallationId: Promise.resolve('inst-a') });
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
+    expect(calls).toEqual(['open']);
+    const wiped = deps({ savedInstallationId: Promise.resolve(null), isRegistered: () => Promise.resolve(false) });
+    expect(await openPersistedClient(wiped.d)).toEqual({ client: 'inst-a', registered: true });
+    expect(wiped.calls).toEqual(['open', 'register', 'event:registered']);
+  });
+
   test('a store that opens with a changing installation is closed and retried, never registered', async () => {
     let opens = 0;
     const { d, calls } = deps({ open: () => { opens += 1; return Promise.resolve(opens < 3 ? `inst-memory-${opens}` : 'inst-a'); } });
