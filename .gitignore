@@ -5,6 +5,7 @@ node_modules
 dist
 apps/stage/desktop/release
 apps/stage/desktop/web
+apps/stage/public/wasm
 *.tgz
 *.log
 .env

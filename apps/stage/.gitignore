@@ -44,4 +44,3 @@ yarn-error.*
 play-service-account.json
 dist-web
 public/*.wasm
-public/wasm/
