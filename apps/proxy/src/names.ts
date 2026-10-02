@@ -6,7 +6,7 @@ import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
-import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
+import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
 
 export const NAMES_PREFIX = '/names/';
 
@@ -16,8 +16,6 @@ export interface NamesEnv {
   NAMES_KV?: KVNamespace;
   NAMES_CLAIMS?: DurableObjectNamespace;
 }
-
-const CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, x-stage-client');
 
 const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;

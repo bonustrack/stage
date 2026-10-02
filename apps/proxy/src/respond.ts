@@ -11,6 +11,8 @@ export function corsHeaders(methods: string, allowHeaders = 'content-type'): Hea
   };
 }
 
+export const CLIENT_CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, x-stage-client');
+
 export function jsonResponse(body: unknown, status: number, headers: HeaderMap): Response {
   return new Response(JSON.stringify(body), {
     status, headers: { 'content-type': 'application/json; charset=utf-8', ...SERVED_BY, ...headers },

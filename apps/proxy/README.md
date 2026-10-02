@@ -53,6 +53,7 @@ GET  /preview?url=<encoded>      -> 200 { url, title, description, image, siteNa
     400 invalid/blocked url   422 no previewable content   429 rate limited   502 fetch failed
 GET  /img?url=<encoded>&w=<px>   -> resized image
 POST /x402-settle                -> settlement result
+OPTIONS /preview, /img, /x402-settle -> 204 CORS preflight (allows the x-stage-client header)
 GET  /names/check?label=<label>  -> { valid, available, reason? }
 GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)

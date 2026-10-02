@@ -10,7 +10,7 @@ import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
 import { handleTransfer, isTransferPath } from './historyTransfer.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
 import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
-import { jsonResponse, type HeaderMap } from './respond.ts';
+import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
@@ -160,6 +160,11 @@ type ProxyEnv = NamesEnv & {
 };
 
 const UPLOAD_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT']);
+const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
+  ['/preview', handlePreview],
+  ['/img', handleImg],
+  ['/x402-settle', handleSettle],
+]);
 
 function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
   const ip = clientIp(request);
@@ -177,9 +182,8 @@ export default {
     if (pathname === '/health') {
       return new Response('ok', { headers: { 'content-type': 'text/plain', ...BASE_HEADERS } });
     }
-    if (pathname === '/preview') return handlePreview(request, ctx);
-    if (pathname === '/img') return handleImg(request, ctx);
-    if (pathname === '/x402-settle') return handleSettle(request);
+    const clientRoute = CLIENT_ROUTES.get(pathname);
+    if (clientRoute) return request.method === 'OPTIONS' ? corsResponse(CLIENT_CORS, null, 204) : clientRoute(request, ctx);
     if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
     if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
     if (pathname.startsWith(NAMES_PREFIX)) {
