@@ -41,7 +41,7 @@ function SetPrimaryCard({ address, label, onDone }: { address: string; label: st
   );
   return (
     <OnboardingCard title={USERNAME_COPY.title} about={SET_PRIMARY_ABOUT} footer={footer}>
-      {error ? <Text value={error} size="sm" color="secondary" /> : null}
+      {error ? <Text value={error} size="2xs" color="secondary" /> : null}
     </OnboardingCard>
   );
 }

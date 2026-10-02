@@ -89,7 +89,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         placeholder={props.placeholder ?? 'Search'}
         placeholderTextColor={sub}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, onKeyPress }}
-        style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('2xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
+        style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('lg'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />
       <Pressable onPress={props.onClose} hitSlop={8} accessibilityLabel="Close search">

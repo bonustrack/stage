@@ -68,11 +68,11 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
           {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
         </Text>
       </Row>
-      <Text weight="semibold" size="3xl" numberOfLines={2}>
+      <Text weight="semibold" size="xl" numberOfLines={2}>
         {meta.title}
       </Text>
       {meta.description ? (
-        <Text size="sm" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
+        <Text size="2xs" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
           {meta.description}
         </Text>
       ) : null}

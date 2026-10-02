@@ -53,10 +53,10 @@ function CodeText({ code, fg, selectable, highlight }: {
   const scheme = useEffectiveColorScheme();
   const query = highlight?.trim() ?? '';
   return (
-    <Text variant="mono" size="xs" color={fg} selectable={selectable} style={CODE_TEXT}>
+    <Text variant="mono" size="3xs" color={fg} selectable={selectable} style={CODE_TEXT}>
       {query === '' ? code : highlightSegments(code, query).map((segment, index) => (
         segment.match ? (
-          <Text key={`${index}-${segment.value}`} size="sm" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
+          <Text key={`${index}-${segment.value}`} size="2xs" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
         ) : segment.value
       ))}
     </Text>

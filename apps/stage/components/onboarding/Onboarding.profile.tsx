@@ -52,7 +52,7 @@ export function ProfileStep({ dark, busy, onContinue }: {
       <PicturePicker image={details.image} busy={busy} onPick={(image) => { setDetails({ ...details, image }); }} />
       <FormField label="Name" placeholder="e.g. Alice" value={details.displayName} onChangeText={(displayName) => { setDetails({ ...details, displayName }); }} disabled={busy} />
       <FormField label="About" placeholder="A few words about you" multiline value={details.description} onChangeText={(description) => { setDetails({ ...details, description }); }} disabled={busy} />
-      {problem === null ? null : <Text size="2xs" color={pal.sub}>{problem}</Text>}
+      {problem === null ? null : <Text size="4xs" color={pal.sub}>{problem}</Text>}
     </OnboardingCard>
   );
 }

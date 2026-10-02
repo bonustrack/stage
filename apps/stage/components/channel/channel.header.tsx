@@ -42,12 +42,12 @@ export function ChannelTitle({ name, description }: { name: string | null; descr
   return (
     <>
       <Box padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <TitleText title={channelTitle(name)} weight="semibold" size="4xl" color={head} style={{ textAlign: 'left' }}/>
+        <TitleText title={channelTitle(name)} weight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }}/>
       </Box>
       {about ? (
         <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
           <Eyebrow>DESCRIPTION</Eyebrow>
-          <Text size="sm" color={fg} style={{ marginTop: 6 }}>{about}</Text>
+          <Text size="2xs" color={fg} style={{ marginTop: 6 }}>{about}</Text>
         </Box>
       ) : null}
     </>

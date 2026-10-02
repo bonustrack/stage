@@ -31,8 +31,8 @@ export function CallBubble({ view, session }: { view: CallView; session: CallSes
           <Row align="center" gap={10} style={SHRINK}>
             <Glyph icon={IconCall} size={18} color={success}/>
             <Col style={SHRINK}>
-              <Text size="sm" weight="semibold" value={callTitle(session.convId).text} maxLines={1}/>
-              <Text size="xs" role="success" value={callSubtitle(connected, Date.now() - session.startedMs)} maxLines={1}/>
+              <Text size="2xs" weight="semibold" value={callTitle(session.convId).text} maxLines={1}/>
+              <Text size="3xs" role="success" value={callSubtitle(connected, Date.now() - session.startedMs)} maxLines={1}/>
             </Col>
           </Row>
         </Pressable>

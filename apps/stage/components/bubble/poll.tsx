@@ -43,7 +43,7 @@ function PollOptionView({ option, colors }: {
       />
       <Row align="center" justify="between" gap={8} padding={{ x: 12, y: 8 }}>
         <Col flex={1}>
-          <Text size="sm" value={option.label} truncate />
+          <Text size="2xs" value={option.label} truncate />
         </Col>
         <Caption value={option.stats} color="secondary" weight="semibold" />
       </Row>
@@ -60,7 +60,7 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   return (
     <Col gap={6}>
       {block.question === undefined ? null : (
-        <Text value={block.question} weight="semibold" size="2xl" />
+        <Text value={block.question} weight="semibold" size="lg" />
       )}
       {block.header === undefined ? null : (
         <Caption value={block.header} color="secondary" weight="semibold" />

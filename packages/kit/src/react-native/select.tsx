@@ -73,7 +73,7 @@ function SelectMenu(props: {
               ))}
               {options.length === 0 ? (
                 <View style={{ paddingHorizontal: DROPDOWN_MENU.itemPadX, paddingVertical: DROPDOWN_MENU.itemPadY }}>
-                  <RNText style={{ color: placeholderColor, fontFamily: fontName.sans, fontSize: FONT_SIZE.sm }}>No options</RNText>
+                  <RNText style={{ color: placeholderColor, fontFamily: fontName.sans, fontSize: FONT_SIZE['2xs'] }}>No options</RNText>
                 </View>
               ) : null}
             </DropdownMenu>

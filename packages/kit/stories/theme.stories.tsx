@@ -38,16 +38,16 @@ export const Controls: Story<ThemeArgs> = (args) => {
           <Badge dark={dark} label="Badge" color="info" />
         </Row>
         <Input dark={dark} placeholder="Input on the derived palette" />
-        <Card dark={dark}><Text size="sm" color={palette.text}>Card on the derived surface. Sub text: <Text size="sm" color={palette.sub}>{palette.sub}</Text></Text></Card>
+        <Card dark={dark}><Text size="2xs" color={palette.text}>Card on the derived surface. Sub text: <Text size="2xs" color={palette.sub}>{palette.sub}</Text></Text></Card>
         <Row gap={8} wrap>
           {(Object.keys(palette) as (keyof typeof palette)[]).map((name) => (
             <Col key={name} align="center" gap={4}>
               <Col size={40} radius="md" background={palette[name]} border={{ top: { width: 1, color: palette.border }, right: { width: 1, color: palette.border }, bottom: { width: 1, color: palette.border }, left: { width: 1, color: palette.border } }} />
-              <Text color={palette.sub} style={{ fontSize: SMALL_FONT_SIZE['4xs'] }}>{name}</Text>
+              <Text color={palette.sub} style={{ fontSize: SMALL_FONT_SIZE['6xs'] }}>{name}</Text>
             </Col>
           ))}
         </Row>
-        <Text size="2xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
+        <Text size="4xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
       </Col>
     </KitThemeProvider>
   );

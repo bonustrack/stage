@@ -81,7 +81,7 @@ export const MONO_FONT = Platform.select({
 
 export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
-  const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('2xl'), lineHeight: 23, paragraphGap: 0 });
+  const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize('lg'), lineHeight: 23, paragraphGap: 0 });
   return {
     ...styles,
     body: { ...styles.body, gap: BLOCK_GAP },

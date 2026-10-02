@@ -56,7 +56,7 @@ function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: ()
 >
         <Avatar address={entry.address} size="md" style={{ backgroundColor: border }}/>
         <Row align="center" gap={6} flex={1}>
-          <Text size="md" weight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>{entry.name}</Text>
+          <Text size="xs" weight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>{entry.name}</Text>
           {entry.admin === undefined ? null : <AdminMark mark={entry.admin} color={sub}/>}
         </Row>
       </Pressable>

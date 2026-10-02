@@ -8,9 +8,9 @@ export default { title: 'Spacer' };
 
 export const Controls: Story<SpacerProps> = (args) => (
   <Row surface="sunken" padding={8} radius="md">
-    <Box padding={8} background="#5b8def" radius="sm"><Text size="sm" color="#fff">left</Text></Box>
+    <Box padding={8} background="#5b8def" radius="sm"><Text size="2xs" color="#fff">left</Text></Box>
     <Spacer {...args} />
-    <Box padding={8} background="#e06c75" radius="sm"><Text size="sm" color="#fff">right</Text></Box>
+    <Box padding={8} background="#e06c75" radius="sm"><Text size="2xs" color="#fff">right</Text></Box>
   </Row>
 );
 Controls.args = { flex: 1 };

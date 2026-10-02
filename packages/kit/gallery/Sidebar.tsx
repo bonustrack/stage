@@ -39,13 +39,13 @@ function GroupRows({ group, activeId, onSelect }: { group: Group; activeId: stri
       <Pressable onPress={() => { if (first) onSelect(first.id); }}>
         <Row align="center" gap={6} padding={{ x: 12, y: 6 }} radius="sm">
           {foldable ? <Glyph icon={open ? IconChevronBottom : IconChevronRight} size={CHEVRON} color={pal.sub} /> : <Box width={CHEVRON} />}
-          <Text size="md" weight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
+          <Text size="xs" weight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
         </Row>
       </Pressable>
       {open && foldable ? group.stories.map((story) => (
         <Pressable key={story.id} onPress={() => { onSelect(story.id); }}>
           <Row padding={{ left: 32, right: 12, y: 4 }}>
-            <Text size="sm" color={story.id === activeId ? pal.link : pal.sub}>{story.name}</Text>
+            <Text size="2xs" color={story.id === activeId ? pal.link : pal.sub}>{story.name}</Text>
           </Row>
         </Pressable>
       )) : null}

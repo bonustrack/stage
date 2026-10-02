@@ -18,7 +18,7 @@ function PersonRow({ option, draft, toggle }: { option: PersonOption } & Section
     <PickerRow selected={includesKey(draft, option.address)} disabled={option.disabled} label={option.name}
       onPress={() => { toggle(option.address.toLowerCase()); }}>
       <Avatar address={option.address} size="sm"/>
-      <Text size="md" numberOfLines={1} style={{ flexShrink: 1 }}>{option.name}</Text>
+      <Text size="xs" numberOfLines={1} style={{ flexShrink: 1 }}>{option.name}</Text>
     </PickerRow>
   );
 }
@@ -76,7 +76,7 @@ function LookupRow({ query, looking, onPress }: { query: string; looking: boolea
   return (
     <PickerRow selected={false} disabled={looking} label={`Add ${query}`} onPress={onPress}>
       <Glyph icon={IconPlusLarge} size={16} color={fg}/>
-      <Text size="md" numberOfLines={1} style={{ flexShrink: 1 }}>{looking ? 'Looking up…' : `Add "${query}"`}</Text>
+      <Text size="xs" numberOfLines={1} style={{ flexShrink: 1 }}>{looking ? 'Looking up…' : `Add "${query}"`}</Text>
     </PickerRow>
   );
 }

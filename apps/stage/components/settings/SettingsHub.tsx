@@ -49,8 +49,8 @@ function IdentityHero(): React.ReactElement | null {
       <Row align="center" gap={16}>
         <Avatar address={address} size={72} />
         <Col flex={1} gap={2}>
-          <Text value={accountDisplayName(getPeerName(address), rec.label, short)} size="4xl" weight="semibold" color="link" truncate />
-          <Text value={sub} size="sm" color="secondary" />
+          <Text value={accountDisplayName(getPeerName(address), rec.label, short)} size="2xl" weight="semibold" color="link" truncate />
+          <Text value={sub} size="2xs" color="secondary" />
         </Col>
       </Row>
       <Row gap={8}>
@@ -80,8 +80,8 @@ function StepRow({ step }: { step: ProtectionStep }): React.ReactElement {
   return (
     <Row align="center" gap={12} padding={{ y: 8 }}>
       <Glyph icon={step.done ? IconCircleCheck : IconCircleDashed} size={24} color={step.done ? success : sub} />
-      <Text value={step.label} size="md" color="link" style={{ flex: 1 }} />
-      {step.done ? <Text value={step.doneText} size="sm" color="secondary" /> : (
+      <Text value={step.label} size="xs" color="link" style={{ flex: 1 }} />
+      {step.done ? <Text value={step.doneText} size="2xs" color="secondary" /> : (
         <Button label={step.action} size="sm" color="primary" variant="solid" dark={dark}
           onPress={() => { capabilities.navigate(settingsSection('security').href); }} />
       )}
@@ -101,7 +101,7 @@ function ProtectionCard(): React.ReactElement | null {
   if (steps.length === 0) return null;
   return (
     <Box margin={{ x: PAGE_GUTTER, top: 24 }} padding={16} radius="sm" style={{ borderWidth: 1, borderColor: border }}>
-      <Text value={protectionTitle(steps)} size="lg" weight="semibold" color="link" />
+      <Text value={protectionTitle(steps)} size="sm" weight="semibold" color="link" />
       <Row gap={4} padding={{ top: 12, bottom: 8 }}>
         {steps.map((s) => <Box key={s.id} flex={1} height={4} radius="xs" background={s.done ? success : border} />)}
       </Row>
@@ -124,7 +124,7 @@ function PreferencesGroup(): React.ReactElement {
   return (
     <SettingsGroup title="Preferences">
       <ListViewItem align="center" gap={14} dark={dark} padding={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 16, paddingRight: 14 }}>
-        <Text value="Theme" size="md" color="link" style={{ flex: 1 }} />
+        <Text value="Theme" size="xs" color="link" style={{ flex: 1 }} />
         <Box width={260}>
           <Tabs value={custom ? 'custom' : pref} options={THEME_TABS} dark={dark}
             onChange={(v) => { if (!isThemePreference(v)) return; setCustomTheme(false); void setThemePreference(v); }} />

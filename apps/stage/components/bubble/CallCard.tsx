@@ -59,8 +59,8 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
             <Glyph icon={record.video ? IconVideo : IconCall} size={24} color={toneColor(model, pal)}/>
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
-            <Text size="sm" weight="semibold" color={hovered && pressable ? pal.link : pal.text} numberOfLines={1}>{model.title}</Text>
-            <Text size="xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.status}</Text>
+            <Text size="2xs" weight="semibold" color={hovered && pressable ? pal.link : pal.text} numberOfLines={1}>{model.title}</Text>
+            <Text size="3xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.status}</Text>
           </Col>
           {pressable && model.action === 'join' ? (
             <Box pointerEvents="none" aria-hidden>

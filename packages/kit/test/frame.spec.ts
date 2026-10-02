@@ -118,16 +118,16 @@ describe('parseFrame: text and content nodes', () => {
     expect(only({ type: 'Markdown', value: '**b**' }).props).toEqual({ value: '**b**' });
   });
 
-  test('text and icon sizes are Kit FONT_SIZE names, ChatKit names included', () => {
+  test('text and icon sizes are Kit FONT_SIZE names, ChatKit names up to 4xl included', () => {
     const chatkit: Record<string, string[]> = {
-      Text: ['xs', 'sm', 'md', 'lg', 'xl'], Title: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'],
+      Text: ['xs', 'sm', 'md', 'lg', 'xl'], Title: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'],
       Caption: ['sm', 'md', 'lg'], Label: ['xs', 'sm', 'md', 'lg', 'xl'], Icon: ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'],
     };
     for (const [type, names] of Object.entries(chatkit)) {
       const base = type === 'Icon' ? { name: 'sparkle' } : { value: 'a' };
       for (const size of names) expect(Object.keys(FONT_SIZE)).toContain(size);
       for (const size of Object.keys(FONT_SIZE)) expect(only({ type, ...base, size }).props).toEqual({ ...base, size });
-      expect(only({ type, ...base, size: '7xl' }).props).toEqual(base);
+      for (const size of ['5xl', '6xl', '7xl']) expect(only({ type, ...base, size }).props).toEqual(base);
     }
   });
 

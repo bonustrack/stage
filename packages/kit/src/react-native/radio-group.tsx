@@ -60,7 +60,7 @@ function RadioOptionRow(props: {
           <View style={{ width: size * 0.5, height: size * 0.5, borderRadius: size * 0.25, backgroundColor: head }} />
         ) : null}
       </View>
-      <RNText style={{ color: head, fontSize: FONT_SIZE.sm, fontFamily: fontName.sans }}>{opt.label}</RNText>
+      <RNText style={{ color: head, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{opt.label}</RNText>
     </Pressable>
   );
 }

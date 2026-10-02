@@ -98,7 +98,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         variant="plain"
         multiline
         autoGrow
-        fontSize={fontSize('2xl')}
+        fontSize={fontSize('lg')}
         fontFamily="Calibre-Medium"
         color={p.head}
         placeholderColor={p.sub}

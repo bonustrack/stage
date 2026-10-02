@@ -24,7 +24,7 @@ export const Controls: Story<FormProps> = (args) => {
       <Label dark={dark} value="Email" />
       <Input dark={dark} placeholder="ada@example.com" inputType="email" />
       <SubmitButton />
-      <Text role="secondary" size="xs">Submitted {submitted} times</Text>
+      <Text role="secondary" size="3xs">Submitted {submitted} times</Text>
     </Form>
   );
 };

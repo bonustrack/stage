@@ -146,7 +146,7 @@ export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.Re
   return (
     <Button label={label} color={tone} variant={kind} size={controlSize(size)} pill={pill} uniform={uniform} block={block}
       disabled={disabled === true || !acts || !usable(submit === true ? undefined : onClickAction)} loading={loading} dark={dark}
-      iconStart={iconNode(iconStart, fg, FONT_SIZE.md)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.md)}
+      iconStart={iconNode(iconStart, fg, FONT_SIZE.xs)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.xs)}
       onPress={() => { void press(); }} />
   );
 }

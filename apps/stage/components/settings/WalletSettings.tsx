@@ -13,7 +13,7 @@ export function WalletSettings(): React.ReactElement {
   return (
     <SettingsPage title="Wallet">
       {!model ? (
-        <Text size="sm" color={fg} style={{ padding: 24 }}>No active account.</Text>
+        <Text size="2xs" color={fg} style={{ padding: 24 }}>No active account.</Text>
       ) : (
         <>
           <SettingsGroup title="Address" footnote={model.isSmart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>

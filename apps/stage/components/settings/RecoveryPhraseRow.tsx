@@ -34,10 +34,10 @@ function RevealedPhrase({ mode, phrase, onHide, onSaved }: PanelProps): React.Re
   return (
     <ListViewItem align="start" gap={12} dark={dark}>
       <Col flex={1} gap={12}>
-        <Text value={copy.label} size="sm" weight="semibold" color="link" />
+        <Text value={copy.label} size="2xs" weight="semibold" color="link" />
         <Caption value={copy.revealed} color="secondary" />
         <Box padding={12} radius="lg" surface="surface">
-          <Text value={phrase} size="sm" variant="mono" color="text" selectable style={{ lineHeight: 24 }} />
+          <Text value={phrase} size="2xs" variant="mono" color="text" selectable style={{ lineHeight: 24 }} />
         </Box>
         <Row gap={8}>
           {actions.includes('hide') ? <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }} label="Hide" onPress={onHide} /> : null}

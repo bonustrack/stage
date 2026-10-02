@@ -12,11 +12,11 @@ export const Controls: Story<Pick<TableCellProps, 'align' | 'vAlign' | 'padding'
   return (
     <Table dark={dark}>
       <Table.Row header dark={dark}>
-        {['Name', 'Team', 'Items'].map((h) => <Table.Cell key={h} {...args}><Text size="sm" weight="semibold">{h}</Text></Table.Cell>)}
+        {['Name', 'Team', 'Items'].map((h) => <Table.Cell key={h} {...args}><Text size="2xs" weight="semibold">{h}</Text></Table.Cell>)}
       </Table.Row>
       {ROWS.map((r) => (
         <Table.Row key={r[0]} dark={dark}>
-          {r.map((c) => <Table.Cell key={c} {...args}><Text size="sm">{c}</Text></Table.Cell>)}
+          {r.map((c) => <Table.Cell key={c} {...args}><Text size="2xs">{c}</Text></Table.Cell>)}
         </Table.Row>
       ))}
     </Table>

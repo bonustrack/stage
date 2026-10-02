@@ -44,7 +44,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="2xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="lg" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionDisplay(address)}
@@ -94,7 +94,7 @@ function WebLink({ url, text, fg, onLinkPress }: {
   url: string; text: string; fg: string; onLinkPress: LinkPress;
 }): React.ReactElement {
   return (
-    <Text size="2xl" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="lg" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       {...bubbleLinkProps(url, onLinkPress)} suppressHighlighting>
       {text}
     </Text>
@@ -111,7 +111,7 @@ function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkP
 function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
   const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
   return (
-    <Text size="2xl" color={fg} style={{ lineHeight: 23 }}>
+    <Text size="lg" color={fg} style={{ lineHeight: 23 }}>
       {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}
     </Text>
   );
@@ -159,7 +159,7 @@ class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
   override render(): React.ReactNode {
     const { body, fg, markdownProps } = this.props;
     if (this.state.failed) {
-      return <Text size="2xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+      return <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
     }
     return <Markdown {...markdownProps}>{body}</Markdown>;
   }
@@ -169,7 +169,7 @@ interface PlainBodyProps { body: string; fg: string; query?: string }
 
 function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   if (query) return <HighlightText text={body} query={query} fg={fg} />;
-  return <Text size="2xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+  return <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
@@ -253,7 +253,7 @@ export function ReplyPreview({ preview, fg, sub, onPress }: {
         paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
       })}
     >
-      <Text size="lg" color={fg} numberOfLines={2}>{preview}</Text>
+      <Text size="sm" color={fg} numberOfLines={2}>{preview}</Text>
     </Pressable>
   );
 }

@@ -23,7 +23,7 @@ export function LabelChip({ label, selected = false, leading, trailing, backgrou
       background={selected ? link : background ?? border}
     >
       {leading}
-      <LabelText label={label} size="sm" color={selected ? bg : fg} truncate />
+      <LabelText label={label} size="2xs" color={selected ? bg : fg} truncate />
       {trailing}
     </Row>
   );

@@ -66,8 +66,8 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             <Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>
           </Box>
           <Col flex={1} minWidth={0} gap={2}>
-            <Text size="sm" weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>
-            {model.subtitle ? <Text size="xs" role="secondary" numberOfLines={1}>{model.subtitle}</Text> : null}
+            <Text size="2xs" weight="semibold" color={pal.text} numberOfLines={1}>{model.title}</Text>
+            {model.subtitle ? <Text size="3xs" role="secondary" numberOfLines={1}>{model.subtitle}</Text> : null}
           </Col>
           <CardIconButton icon={IconCloudDownload} label="Download" color={pal.sub} onPress={download}/>
         </Row>
@@ -81,7 +81,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             onScrub={setScrub}
             onSeek={seek}
           />
-          <Text size="xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
+          <Text size="3xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
         </Row>
       </Col>
     </Card>

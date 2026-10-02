@@ -44,8 +44,8 @@ function StoryStage({ story, args }: { story: StoryEntry; args: Record<string, u
   return (
     <Col flex={1} gap={16} padding={24} style={SCROLL_Y}>
       <Row align="baseline" gap={8}>
-        <Text weight="semibold" size="4xl">{story.component}</Text>
-        <Text size="2xl" role="secondary">{story.name}</Text>
+        <Text weight="semibold" size="2xl">{story.component}</Text>
+        <Text size="lg" role="secondary">{story.name}</Text>
       </Row>
       <Box><Render {...args} /></Box>
     </Col>
@@ -83,7 +83,7 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
             <Col width={SIDEBAR_WIDTH} surface="toolbar" border={{ right: { width: 1, color: palette.border } }}>
               <Sidebar stories={stories} activeId={story?.id ?? null} onSelect={(id) => { navigate(serializeRoute(id, {})); }} />
             </Col>
-            {story ? <StoryStage key={story.id} story={story} args={args} /> : <Text size="sm">No stories found</Text>}
+            {story ? <StoryStage key={story.id} story={story} args={args} /> : <Text size="2xs">No stories found</Text>}
             {story && Object.keys(argTypes).length > 0 ? (
               <Col width={CONTROLS_WIDTH} surface="toolbar" border={{ left: { width: 1, color: palette.border } }} style={SCROLL_Y}>
                 <ControlsPanel argTypes={argTypes} values={args} onChange={setArg} onReset={() => { navigate(serializeRoute(story.id, {})); }} />

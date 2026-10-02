@@ -116,7 +116,7 @@ export function QrScanner({ onScan }: QrScannerProps): React.ReactElement {
   if (error !== null) {
     return (
       <Col align="center" padding={{ y: 16 }}>
-        <Text size="xs" role="secondary" textAlign="center">{error}</Text>
+        <Text size="3xs" role="secondary" textAlign="center">{error}</Text>
       </Col>
     );
   }

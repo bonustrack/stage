@@ -7,14 +7,14 @@ export default { title: 'Title' };
 
 export const Controls: Story<TitleProps & { children: string }> = ({ children, ...args }) => <Title {...args}>{children}</Title>;
 Controls.args = { children: 'Title', level: 2 };
-Controls.argTypes = { children: text, level: select([1, 2, 3]), size: select(['sm', 'md', 'lg']), hero: select(['5xl', '6xl']), color: select(COLOR_TOKENS) };
+Controls.argTypes = { children: text, level: select([1, 2, 3]), size: select(['sm', 'md', 'lg']), hero: select(['3xl', '4xl']), color: select(COLOR_TOKENS) };
 
 export const Matrix: Story = () => (
   <Col gap={12}>
     <Title level={1}>Level 1</Title>
     <Title level={2}>Level 2</Title>
     <Title level={3}>Level 3</Title>
-    <Title hero="5xl">Hero 5xl</Title>
-    <Title hero="6xl">Hero 6xl</Title>
+    <Title hero="3xl">Hero 3xl</Title>
+    <Title hero="4xl">Hero 4xl</Title>
   </Col>
 );

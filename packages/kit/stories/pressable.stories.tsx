@@ -11,7 +11,7 @@ export const Controls: Story<Pick<KitPressableProps, 'pressedOpacity' | 'disable
   const [log, setLog] = useState('Press or long-press me');
   return (
     <Pressable {...args} onPress={() => { setLog(`pressed at ${new Date().toLocaleTimeString()}`); }} onLongPress={() => { setLog('long pressed'); }}>
-      <Box padding={16} background="#5b8def" radius="md"><Text size="sm" color="#fff">{log}</Text></Box>
+      <Box padding={16} background="#5b8def" radius="md"><Text size="2xs" color="#fff">{log}</Text></Box>
     </Pressable>
   );
 };

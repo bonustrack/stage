@@ -55,7 +55,7 @@ export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {
       onPress={onOpen}
       style={[box, triggerRowStyle(block, disabled), ...styleList(style)]}
     >
-      <RNText numberOfLines={1} style={triggerLabelStyle(hasValue ? headColor : placeholderColor, FONT_SIZE.sm)}>
+      <RNText numberOfLines={1} style={triggerLabelStyle(hasValue ? headColor : placeholderColor, FONT_SIZE['2xs'])}>
         {label}
       </RNText>
       {clearable && hasValue ? (

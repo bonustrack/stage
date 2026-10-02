@@ -12,7 +12,7 @@ export function WalletHeader({ title }: { title: string }): React.ReactElement {
       title={title}
       titleStyle={{
         kind: 'text',
-        size: 'lg',
+        size: 'sm',
         weight: 'semibold',
         color: head,
       }}

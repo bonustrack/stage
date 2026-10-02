@@ -77,7 +77,7 @@ function AddItemForm({ label, rows, onAdd }: {
     <Col gap={16}>
       <FormField label="Search" placeholder="Channel name" value={query} onChangeText={setQuery} inputRef={input}
         inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false }}/>
-      {shown.length === 0 ? <Text value="No channels found." size="xs" role="secondary"/> : (
+      {shown.length === 0 ? <Text value="No channels found." size="3xs" role="secondary"/> : (
         <Box margin={{ x: -MODAL.padding }}>
           {shown.map(item => (
             <ChannelChoice key={item.convId} item={item} picked={picked.includes(item.convId)} query={query} onToggle={toggle}/>

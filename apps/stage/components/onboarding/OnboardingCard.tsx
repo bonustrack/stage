@@ -28,7 +28,7 @@ export function SkipLink({ label = 'Skip for now', disabled, onPress }: {
 }): React.ReactElement {
   return (
     <Pressable onPress={onPress} disabled={disabled} hitSlop={8} style={{ alignSelf: 'center', opacity: disabled === true ? 0.5 : 1 }}>
-      <Text value={label} size="lg" role="secondary" />
+      <Text value={label} size="sm" role="secondary" />
     </Pressable>
   );
 }

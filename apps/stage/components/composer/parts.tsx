@@ -49,9 +49,9 @@ export function ReplyBanner({
       <Pressable onPress={onPress} disabled={!onPress}>
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
           <Glyph icon={IconArrowUndoUp} size={16} color={sub}/>
-          <Text size="lg" numberOfLines={1} style={{ flex: 1 }}>
-            <Text size="lg" role="secondary">Replying to </Text>
-            <Text size="lg" color={nameColor}>
+          <Text size="sm" numberOfLines={1} style={{ flex: 1 }}>
+            <Text size="sm" role="secondary">Replying to </Text>
+            <Text size="sm" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>

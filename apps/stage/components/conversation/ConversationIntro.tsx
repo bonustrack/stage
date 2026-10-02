@@ -21,7 +21,7 @@ function IntroLabelChips({ labels, fg }: {
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
         <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }} key={label.toLowerCase()}>
-          <Text size="sm" color={fg}>{label}</Text>
+          <Text size="2xs" color={fg}>{label}</Text>
         </Box>
       ))}
     </Row>
@@ -46,12 +46,12 @@ export function ConversationIntro({ c, convId }: {
           style={{ backgroundColor: border }}
 />
         <TitleText
-          title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="4xl" color={head}
+          title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
           style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         />
         <IntroLabelChips labels={groupLabels} fg={fg}/>
         {desc ? (
-          <Text size="3xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
+          <Text size="xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
           </Text>
         ) : null}
@@ -67,10 +67,10 @@ export function ConversationIntro({ c, convId }: {
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <TitleText
-        title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="4xl" color={head}
+        title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
         style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}
       />
-      <Text size="2xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+      <Text size="4xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
     </Pressable>

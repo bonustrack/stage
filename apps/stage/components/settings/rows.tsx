@@ -35,10 +35,10 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
         <AppIcon name={props.iconStart} color="link" size={24} />
       )}
       <Col flex={1}>
-        <Text value={props.label} size="md" color="link" truncate />
+        <Text value={props.label} size="xs" color="link" truncate />
       </Col>
       {props.value === undefined ? null : (
-        <Text value={props.value} size="sm" color={props.valueTone ?? 'secondary'} truncate style={{ flexShrink: 1 }} />
+        <Text value={props.value} size="2xs" color={props.valueTone ?? 'secondary'} truncate style={{ flexShrink: 1 }} />
       )}
       <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
     </ListViewItem>
@@ -59,7 +59,7 @@ export function SettingsToggleRow(props: SettingsToggleRowProps): React.ReactEle
   return (
     <ListViewItem align="center" gap={14} dark={dark} padding={ROW_PADDING}>
       <Col gap={2} flex={1}>
-        <Text value={props.label} size="md" color="link" />
+        <Text value={props.label} size="xs" color="link" />
         {props.description === undefined ? null : (
           <Caption value={props.description} color="secondary" />
         )}
@@ -89,9 +89,9 @@ export function SettingsValueRow(props: SettingsValueRowProps): React.ReactEleme
   return (
     <ListViewItem align="center" gap={14} dark={dark} onPress={props.onPress} padding={ROW_PADDING}>
       <Col flex={1}>
-        <Text value={props.label} size="md" color="link" />
+        <Text value={props.label} size="xs" color="link" />
       </Col>
-      <Text value={props.value} size="sm" color="secondary" truncate style={{ flexShrink: 1 }} />
+      <Text value={props.value} size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       {props.onPress === undefined ? null : (
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}
@@ -122,7 +122,7 @@ export function SettingsButtonRow(props: SettingsButtonRowProps): React.ReactEle
         <AppIcon name={props.iconStart} color={tone} size={24} />
       )}
       <Col gap={2} flex={1}>
-        <Text value={props.label} size="md" color={tone} />
+        <Text value={props.label} size="xs" color={tone} />
         {props.description === undefined ? null : (
           <Caption value={props.description} color="secondary" />
         )}
@@ -145,7 +145,7 @@ export function SettingsThemeRow(props: SettingsThemeRowProps): React.ReactEleme
     <ListViewItem align="center" gap={14} dark={dark} onPress={props.onPress} padding={ROW_PADDING}>
       <AppIcon name={props.iconName} color={props.iconColor ?? 'link'} size={24} />
       <Col flex={1}>
-        <Text value={props.label} size="md" color="link" truncate />
+        <Text value={props.label} size="xs" color="link" truncate />
       </Col>
       {props.selected ? <AppIcon name={IconCheckmark1} color="link" size={24} /> : null}
     </ListViewItem>

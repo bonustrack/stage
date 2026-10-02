@@ -39,7 +39,7 @@ function NumberControl({ argType, value, onChange }: ControlProps): React.ReactE
           onChangeText={(text) => { onChange(text === '' ? undefined : Number(text)); }}
         />
       </Box>
-      {hint ? <Text size="2xs" role="secondary">{hint}</Text> : null}
+      {hint ? <Text size="4xs" role="secondary">{hint}</Text> : null}
     </Row>
   );
 }
@@ -79,12 +79,12 @@ export function ControlsPanel({ argTypes, values, onChange, onReset }: {
   return (
     <Col gap={14} padding={16}>
       <Row align="center" justify="between">
-        <Text weight="semibold" size="3xl">Controls</Text>
+        <Text weight="semibold" size="xl">Controls</Text>
         <Button dark={dark} size="sm" variant="ghost" color="secondary" label="Reset" onPress={onReset} />
       </Row>
       {Object.entries(argTypes).map(([name, argType]) => (
         <Col key={name} gap={4}>
-          <Text size="xs" role="secondary">{name}</Text>
+          <Text size="3xs" role="secondary">{name}</Text>
           <Control name={name} argType={argType} value={values[name]} onChange={(next) => { onChange(name, next); }} />
         </Col>
       ))}

@@ -41,8 +41,8 @@ function codeStyles(dark: boolean, border: string, lineHeight: number, gap: numb
     borderRadius: BLOCK_RADIUS,
     padding: BLOCK_PAD,
     fontFamily: fontName.mono,
-    fontSize: FONT_SIZE['2xs'],
-    lineHeight: Math.round(FONT_SIZE['2xs'] * 1.5),
+    fontSize: FONT_SIZE['4xs'],
+    lineHeight: Math.round(FONT_SIZE['4xs'] * 1.5),
     marginTop: 0,
     marginBottom: gap,
   };
@@ -54,7 +54,7 @@ function codeStyles(dark: boolean, border: string, lineHeight: number, gap: numb
       paddingHorizontal: 4,
       paddingVertical: 1,
       fontFamily: fontName.mono,
-      fontSize: FONT_SIZE.xs,
+      fontSize: FONT_SIZE['3xs'],
       lineHeight,
     },
     code_block: block,
@@ -76,7 +76,7 @@ function tableStyles(border: string, gap: number): Record<string, object> {
 export function markdownStyles(options: MarkdownStyleOptions): Record<string, object> {
   const { fg, dark } = options;
   const pal = schemePalette(dark);
-  const base = options.fontSize ?? FONT_SIZE.sm;
+  const base = options.fontSize ?? FONT_SIZE['2xs'];
   const lineHeight = options.lineHeight ?? Math.round(base * 1.45);
   const gap = options.paragraphGap ?? 8;
   const link = options.link ?? (dark ? MARKDOWN_LINK.dark : MARKDOWN_LINK.light);

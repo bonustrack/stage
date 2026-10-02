@@ -18,7 +18,7 @@ const STYLES = ['line', 'solid'] as const;
 const NAMES = Object.keys(ICONS) as CentralName[];
 const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
 const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
-const CELL_TEXT = { fontSize: SMALL_FONT_SIZE['4xs'] };
+const CELL_TEXT = { fontSize: SMALL_FONT_SIZE['6xs'] };
 const BRAND_NAMES = ['brandX', 'brandGithub', 'pin', 'brandApple', 'brandAndroid', 'brandWindows', 'brandLinux'] as const;
 
 function aliasesByName(): Map<CentralName, string[]> {
@@ -64,8 +64,8 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
   return (
     <Col gap={24}>
       <Input dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" />
-      <Text size="sm" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
-      {names.length === 0 ? <Text size="sm" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
+      <Text size="2xs" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
+      {names.length === 0 ? <Text size="2xs" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
       <Row gap={8} wrap>
         {names.map((name) => (
           <IconCell key={name} icon={glyph(name, style)} label={name} detail={ALIASES_OF.get(name)?.join(', ')} dark={dark} />

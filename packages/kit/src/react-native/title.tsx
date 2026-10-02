@@ -5,7 +5,7 @@ import { useKitPalette, useKitScheme } from './theme-context';
 
 export type TitleLevel = 1 | 2 | 3;
 export type TitleSizeToken = 'sm' | 'md' | 'lg';
-export type TitleHeroSize = '5xl' | '6xl';
+export type TitleHeroSize = '3xl' | '4xl';
 
 export interface TitleProps extends Omit<RNTextProps, 'style'> {
   level?: TitleLevel;
@@ -17,7 +17,7 @@ export interface TitleProps extends Omit<RNTextProps, 'style'> {
 
 const LEVEL_SIZE: Record<TitleLevel, number> = { 1: 30, 2: 24, 3: 21 };
 const TOKEN_LEVEL: Record<TitleSizeToken, TitleLevel> = { lg: 1, md: 2, sm: 3 };
-const HERO_PX: Record<TitleHeroSize, number> = { '5xl': 44, '6xl': 60 };
+const HERO_PX: Record<TitleHeroSize, number> = { '3xl': 44, '4xl': 60 };
 
 function resolveHeroTitlePx(value: TitleHeroSize | undefined): number | undefined {
   return value === undefined ? undefined : HERO_PX[value];

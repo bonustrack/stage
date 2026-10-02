@@ -41,15 +41,15 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
         <Box padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
           <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
             <Col gap={6} align="start">
-              <Text value={displayName} weight="semibold" size="4xl" textAlign="start" />
-              {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="sm" color={c.text} /> : null}
-              {about ? <Text value={about} size="3xl" textAlign="start" /> : null}
+              <Text value={displayName} weight="semibold" size="2xl" textAlign="start" />
+              {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="2xs" color={c.text} /> : null}
+              {about ? <Text value={about} size="xl" textAlign="start" /> : null}
             </Col>
           </Box>
           {addr ? (
             <Box margin={{ top: 2 }}>
               <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
-                <Text value={shortAddress(addr)} size="sm" color={c.text} />
+                <Text value={shortAddress(addr)} size="2xs" color={c.text} />
               </GesturePressable>
             </Box>
           ) : null}

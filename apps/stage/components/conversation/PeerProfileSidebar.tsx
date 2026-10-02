@@ -29,8 +29,8 @@ export function PeerProfileSidebar({ address }: { address: string }): React.Reac
     >
       <Box padding={{ x: PAGE_GUTTER, bottom: PAGE_GUTTER }}>
         <Col gap={6} margin={{ top: 14 }}>
-          <Text value={name} weight="semibold" size="4xl" textAlign="center" numberOfLines={2}/>
-          {identity !== name ? <Text value={identity} size="sm" color={text} textAlign="center" numberOfLines={1}/> : null}
+          <Text value={name} weight="semibold" size="2xl" textAlign="center" numberOfLines={2}/>
+          {identity !== name ? <Text value={identity} size="2xs" color={text} textAlign="center" numberOfLines={1}/> : null}
         </Col>
       </Box>
     </ProfileCover>

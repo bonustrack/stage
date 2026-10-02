@@ -17,7 +17,7 @@ export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | 
     <ListViewItem dark={dark} onPress={() => { capabilities.openUrl(targetUrl); }}>
       <Col radius="lg">
         <Col gap={2} padding={{ x: 12, y: 10 }}>
-          <Text size="sm" value="Open preview build" weight="semibold" truncate />
+          <Text size="2xs" value="Open preview build" weight="semibold" truncate />
           <Caption value={`EAS Update · ${ref.shortGroup}`} color="secondary" maxLines={2} />
         </Col>
       </Col>

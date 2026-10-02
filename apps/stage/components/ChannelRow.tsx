@@ -88,7 +88,7 @@ function WrappedTitle({ texts, pinned, scheme }: {
 }): React.ReactElement {
   return (
     <Box flex={1} minWidth={0}>
-      <Text size="xl" weight="semibold" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
+      <Text size="md" weight="semibold" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
         {pinned ? <Box width={PIN_ICON_SIZE + PIN_GAP} height={1} /> : null}
         {texts}
       </Text>
@@ -111,7 +111,7 @@ function TitleLine({ params, scheme, wrap }: {
     <Text
       key={`${seg.text}-${i}`}
       value={seg.text}
-      size="xl"
+      size="md"
       weight="semibold"
       truncate={!wrap}
       {...titleTone(params.placeholderTitle)}
@@ -146,7 +146,7 @@ function TitleRow({ params, scheme, wrap }: {
   );
 }
 
-const CHIP_TEXT_SIZE = 'xs';
+const CHIP_TEXT_SIZE = '3xs';
 const CHIP_HEIGHT = 20;
 const CHIP_PADDING_X = 7;
 const CHIP_GAP = 3;
@@ -185,13 +185,13 @@ function PreviewParagraph({ params, fg, hasPrefix, lines = 2 }: {
   const chips = params.chips !== undefined && params.chips.length > 0 ? params.chips : null;
   return (
     <Box flex={1} minWidth={0}>
-      <Text size="sm" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
+      <Text size="2xs" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
         {chips === null ? null : (
           <Box height={1} padding={{ right: CHIP_GAP }} aria-hidden style={CHIP_SPACER_STYLE}>
             <PreviewChips chips={chips} fg={fg} />
           </Box>
         )}
-        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="sm" color="danger" /> : null}
+        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="2xs" color="danger" /> : null}
         {params.preview}
       </Text>
       {chips === null ? null : (

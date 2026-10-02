@@ -15,7 +15,7 @@ export const Controls: Story<Omit<FilePickerProps, 'openNonce' | 'onPick' | 'onC
     <Col gap={12}>
       <Button dark={useDark()} label="Pick files" onPress={() => { setNonce((n) => n + 1); }} />
       <FilePicker {...args} mediaTypes={videos ? ['images', 'videos'] : ['images']} openNonce={nonce} onPick={setPicked} onCancel={() => { setPicked([]); }} />
-      {picked.map((f) => <Text key={f.uri} size="xs" role="secondary">{f.name ?? f.uri.slice(0, 40)} · {f.mime}</Text>)}
+      {picked.map((f) => <Text key={f.uri} size="3xs" role="secondary">{f.name ?? f.uri.slice(0, 40)} · {f.mime}</Text>)}
     </Col>
   );
 };

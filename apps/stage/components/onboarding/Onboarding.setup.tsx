@@ -37,7 +37,7 @@ function StageRow({ label, state, failed }: {
       <Box width={ROW_ICON} align="center">
         <StageIndicator state={state} failed={failed} />
       </Box>
-      <Text size="2xl" color={state === 'pending' ? pal.sub : pal.link}>{label}</Text>
+      <Text size="lg" color={state === 'pending' ? pal.sub : pal.link}>{label}</Text>
     </Row>
   );
 }

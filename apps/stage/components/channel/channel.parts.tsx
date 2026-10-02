@@ -62,7 +62,7 @@ export function MemberRow({
         <Row align="center" gap={12} flex={1}>
           <Image src={stampAvatarUrl(item, 40)} size={40} radius="full" background={border} />
           <Col gap={2} flex={1}>
-            <Text size="sm" value={model.displayName} weight="semibold" truncate />
+            <Text size="2xs" value={model.displayName} weight="semibold" truncate />
             {model.addressLine === undefined ? null : (
               <Caption value={model.addressLine} color="secondary" truncate />
             )}

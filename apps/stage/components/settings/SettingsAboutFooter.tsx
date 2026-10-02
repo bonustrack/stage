@@ -11,7 +11,7 @@ import { timeAgo } from '../../lib/buildInfo.model';
 import { devClientInfo } from '../../lib/devClientUpdates';
 import { DevClientUpdate } from './DevClientUpdate';
 
-const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: 'xs', weight: 'medium' } as const;
+const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: '3xs', weight: 'medium' } as const;
 const GITHUB_ICON_SIZE = 14;
 
 function resolveNativeBuild(): string | null {

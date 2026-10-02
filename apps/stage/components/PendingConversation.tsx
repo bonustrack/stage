@@ -124,7 +124,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
             senderEthAddress={myAddress}
           />
         ))}
-        <Text size="xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
+        <Text size="3xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
           {pendingBanner(reason, peerName)}
         </Text>
       </Col>

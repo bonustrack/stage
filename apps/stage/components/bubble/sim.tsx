@@ -24,11 +24,11 @@ function SimOutcome({ sim, chainId }: {
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: accent }}>
       <Row align="center" gap={6}>
         <Glyph icon={fail ? IconShieldBreak : IconCircleCheck} size={14} color={accent} />
-        <Text size="2xs" weight="semibold" color={accent} numberOfLines={3}>{badge}</Text>
+        <Text size="4xs" weight="semibold" color={accent} numberOfLines={3}>{badge}</Text>
       </Row>
       {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" chainId={chainId} />)}
       {incoming.map((m, i) => <AssetMoveRow key={`i-${i}`} move={m} sign="+" color={pal.success} label="You receive" chainId={chainId} />)}
-      {!fail && noChange ? <Text size="2xs" role="secondary">No balance changes</Text> : null}
+      {!fail && noChange ? <Text size="4xs" role="secondary">No balance changes</Text> : null}
     </Box>
   );
 }
@@ -50,7 +50,7 @@ function SimNote({ text, sub, fill }: { text: string; sub: string; fill: string 
     <Col radius="md" background={fill} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconSparklesThree} size={14} color={sub} />
-        <Text size="2xs" role="secondary">{text}</Text>
+        <Text size="4xs" role="secondary">{text}</Text>
       </Row>
     </Col>
   );
@@ -63,12 +63,12 @@ function AssetMoveRow({ move, sign, color, label, chainId }: {
   const usd = useUsdValue(chainId, token, move.amount);
   return (
     <Row align="center" justify="between" gap={8}>
-      <Text size="2xs" role="secondary">{label}</Text>
+      <Text size="4xs" role="secondary">{label}</Text>
       <Row align="center" gap={6} style={{ flexShrink: 1 }}>
-        <Text size="xs" weight="semibold" color={color} numberOfLines={1}>
+        <Text size="3xs" weight="semibold" color={color} numberOfLines={1}>
           {sign}{move.amount} {move.symbol}
         </Text>
-        {usd ? <Text size="2xs" role="secondary" numberOfLines={1}>{usd}</Text> : null}
+        {usd ? <Text size="4xs" role="secondary" numberOfLines={1}>{usd}</Text> : null}
       </Row>
     </Row>
   );

@@ -20,7 +20,7 @@ export const Controls: Story = () => {
       <Row gap={8} wrap>
         {items.map((i) => (
           <Transition key={i}>
-            <Box padding={16} background={SWATCHES[i % SWATCHES.length]} radius="md"><Text size="sm" color="#fff">{i}</Text></Box>
+            <Box padding={16} background={SWATCHES[i % SWATCHES.length]} radius="md"><Text size="2xs" color="#fff">{i}</Text></Box>
           </Transition>
         ))}
       </Row>

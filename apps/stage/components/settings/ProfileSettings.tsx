@@ -25,7 +25,7 @@ function CopyableAddress({ address }: { address: string }): React.ReactElement {
   };
   return (
     <Pressable onPress={copy} hitSlop={8}>
-      <Text value={copied ? 'Copied' : shortAddress(address)} size="sm" color="secondary" />
+      <Text value={copied ? 'Copied' : shortAddress(address)} size="2xs" color="secondary" />
     </Pressable>
   );
 }
@@ -36,7 +36,7 @@ function ProfileHeader({ address, name, handle, children }: {
   return (
     <Col align="center" gap={12} padding={{ y: 24 }}>
       {children}
-      <Text value={name ?? (address ? shortAddress(address) : '')} size="xl" weight="semibold" />
+      <Text value={name ?? (address ? shortAddress(address) : '')} size="md" weight="semibold" />
       {handle && displayHandle(handle) !== name ? <Caption value={displayHandle(handle)} color="secondary" /> : null}
       {address ? <CopyableAddress address={address} /> : null}
     </Col>
@@ -65,7 +65,7 @@ function EditPane({ address, handle, view }: {
       </ProfileHeader>
       {view.explanation === '' ? null : (
         <Box padding={{ x: PAGE_GUTTER, bottom: 12 }}>
-          <Text value={view.explanation} size="sm" color="secondary" />
+          <Text value={view.explanation} size="2xs" color="secondary" />
         </Box>
       )}
       {editable ? (

@@ -21,12 +21,12 @@ const PALETTE: TextRolePalette = {
 
 describe('resolveTextSize', () => {
   test('explicit size wins over variant', () => {
-    expect(resolveTextSize('xl', 'caption')).toBe(FONT_SIZE.xl);
-    expect(resolveTextSize('xs', undefined)).toBe(FONT_SIZE.xs);
+    expect(resolveTextSize('md', 'caption')).toBe(FONT_SIZE.md);
+    expect(resolveTextSize('3xs', undefined)).toBe(FONT_SIZE['3xs']);
   });
 
-  test('caption variant falls back to 2xs', () => {
-    expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['2xs']);
+  test('caption variant falls back to 4xs', () => {
+    expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['4xs']);
   });
 
   test('default is md', () => {

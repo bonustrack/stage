@@ -29,11 +29,11 @@ export function RecipientRow({ address, label, onPress }: {
         style={{ backgroundColor: border }}
 />
       <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="sm" color={head} numberOfLines={1}>
+        <Text weight="semibold" size="2xs" color={head} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
-          <Text size="2xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text size="4xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
@@ -72,7 +72,7 @@ export function ContactsModal({ visible, onClose, onPick }: {
   return (
     <AppModal visible={visible} onClose={onClose} title="Contacts">
       {contacts.length === 0 ? (
-        <Text size="sm" role="secondary" style={{ paddingVertical: 16 }}>
+        <Text size="2xs" role="secondary" style={{ paddingVertical: 16 }}>
           No contacts yet. Start a DM to build your list.
         </Text>
       ) : (

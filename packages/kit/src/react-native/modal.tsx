@@ -52,7 +52,7 @@ function ModalHeader({ title, onClose, pal, dark, dismissable }: {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: MODAL.padding + insets.left, marginRight: MODAL.padding + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
       <View style={{ flex: 1, minWidth: 0, minHeight: SIZES.md.height, justifyContent: 'center' }}>
-        {title === undefined ? null : <Text accessibilityRole="header" value={title} size="4xl" weight="semibold" color={pal.link} />}
+        {title === undefined ? null : <Text accessibilityRole="header" value={title} size="2xl" weight="semibold" color={pal.link} />}
       </View>
       {dismissable ? (
         <View>

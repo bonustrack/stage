@@ -33,7 +33,7 @@ function SuggestionChips({ words, onPick }: {
             backgroundColor: pressed ? pal.border : 'transparent',
           })}
         >
-          <Text size="xs" color={pal.primary}>{word}</Text>
+          <Text size="3xs" color={pal.primary}>{word}</Text>
         </Pressable>
       ))}
     </Row>
@@ -98,7 +98,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
         }} />
       <SuggestionChips words={suggestions} onPick={pickSuggestion} />
       {hint === null ? null : (
-        <Text size="2xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
+        <Text size="4xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
       )}
     </>
   );
@@ -121,7 +121,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   return (
     <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
       {scanning ? <QrScanner dark={dark} onScan={onScan} /> : scanned ? (
-        <Text size="sm" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
+        <Text size="2xs" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
       ) : phraseField}
     </OnboardingCard>
   );

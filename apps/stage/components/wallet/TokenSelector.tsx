@@ -106,10 +106,10 @@ export function TokenSelector({ value, onChange }: {
           </Box>
         </Box>
         <Col minWidth={0} flex={1}>
-          <Text weight="semibold" size="sm" color={head} numberOfLines={1}>
+          <Text weight="semibold" size="2xs" color={head} numberOfLines={1}>
             {value.symbol}
           </Text>
-          <Text size="2xs" role="secondary" numberOfLines={1}>
+          <Text size="4xs" role="secondary" numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
         </Col>
