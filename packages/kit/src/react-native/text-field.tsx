@@ -54,6 +54,7 @@ export interface TextFieldProps {
   autoCorrect?: boolean;
   inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url' | 'none';
   dark?: boolean;
+  dataSet?: Record<string, string>;
 }
 
 function useNonce(nonce: number | undefined, run: () => void): void {
@@ -178,6 +179,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     autoCapitalize,
     autoCorrect,
     inputMode,
+    dataSet,
   } = props;
   const ref = useRef<TextInput>(null);
   useNonce(focusNonce, () => ref.current?.focus());
@@ -200,6 +202,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
 
   return (
     <TextInput
+      {...(dataSet === undefined ? null : { dataSet })}
       ref={ref}
       value={value}
       placeholder={placeholder}

@@ -8,7 +8,7 @@ import { BLOCK_RADIUS_DEFAULT, fontName, fontSize } from '@stage-labs/kit/tokens
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
-import { Col, Row } from '../layout';
+import { Col, Row, SCROLLBAR_ON_HOVER } from '../layout';
 import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
 import { CountTag } from '../CountTag';
@@ -25,8 +25,6 @@ export const COLUMN_PADDING = 10;
 export const CARD_GAP = 8;
 export const TITLE_SIZE = 'md';
 export const HEADER_PADDING = { left: 4, right: 4 + COLUMN_PADDING, y: 2 };
-
-const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
 
 type Columns = readonly BoardColumn<unknown>[];
 

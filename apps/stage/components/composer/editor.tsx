@@ -8,7 +8,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
-import { Box, Col, PAGE_GUTTER } from '../layout';
+import { Box, Col, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 import { AnchoredMenu, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
@@ -114,6 +114,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         selection={p.selection}
         dark={dark}
         disabled={p.busy}
+        dataSet={SELF_SCROLLBAR.dataSet}
         onChangeText={(text) => { p.setText(text); }}
         onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
       />
@@ -163,7 +164,7 @@ export function composerRadius(rounded: boolean | undefined): 'sm' | 'none' {
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
+    <Col {...SCROLLBAR_ON_HOVER} padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}

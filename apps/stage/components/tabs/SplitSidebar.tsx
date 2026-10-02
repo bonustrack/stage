@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
-import { Box, pinnedEdges } from '../layout';
+import { Box, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -12,8 +12,6 @@ import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/
 import { channelsPaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
 import { isBoardRoute, isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
-
-const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
 
 function usePaneScope(scope: string | null): void {
   useEffect(() => {

@@ -22,6 +22,8 @@ export const SELF_SCROLL: ViewStyle = WEB ? css({ overflowY: 'auto' }) : {};
 
 export const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 
+export const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
+
 export function stickyAt(top: string, zIndex: number): ViewStyle | null {
   return WEB ? css({ position: 'sticky', top, zIndex }) : null;
 }
