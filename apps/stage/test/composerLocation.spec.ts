@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { isLocation, locationAttachment, locationText, withLocation } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
-import { cardLinksOf } from '../lib/cardLinks';
+import { cardLinksOf } from '@stage-labs/client/embed/cardLinks';
 
 const photo: Attachment = { id: 'photo', url: 'blob:photo', kind: 'image', mime: 'image/png', size: 10, name: 'photo.png' };
 

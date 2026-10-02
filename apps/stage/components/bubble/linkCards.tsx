@@ -14,7 +14,7 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { previewLinkOf } from '../../lib/cardLinks';
+import { previewLinkOf } from '@stage-labs/client/embed/cardLinks';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta, type GithubMeta } from '../../lib/useGithubMeta';
 import { TEXT_11PX } from '../smallText';

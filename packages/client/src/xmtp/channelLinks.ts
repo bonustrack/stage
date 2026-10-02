@@ -1,4 +1,4 @@
-import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
+import { stageChannelIdOf } from './line';
 
 export const MARKDOWN_LINK_RE = /\[([^[\]\n]+)\]\(((?:[^\s()]|\([^\s()]*\))+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'|\([^\)\n]*\)))?\)/g;
 

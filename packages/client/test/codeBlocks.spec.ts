@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { splitCodeBlocks } from '../components/bubble/codeBlock.model';
+import { splitCodeBlocks } from '../src/text/codeBlocks';
 
 const POLICY = [
   '{"Version":"2012-10-17","Statement":[',

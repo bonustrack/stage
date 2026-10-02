@@ -1,6 +1,6 @@
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '../../modules/messaging';
-import { mentionLabel } from '../bubble/mention.model';
+import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
 
 export function peerLabel(address: string): string {
   return getPeerName(address) ?? shortAddress(address);

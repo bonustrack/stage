@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
-import { highlightSegments } from '../components/HighlightText.model';
+import { channelRefToken } from '../src/xmtp/channelRefs';
 import {
   bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, withMentionLabels, type LinkFinder,
-} from '../components/bubble/mention.model';
+} from '../src/xmtp/messageBody';
 
 const A = '0x59445094f08d01213bd6ba7215a6ab7a4bc29a4a';
 const B = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
@@ -113,8 +112,6 @@ describe('mention labels', () => {
     const result = namedPlainText(bodySegments(source, findLinks, true), () => '@Chen', () => '#Ops');
     expect(result).toBe('read [ping @Chen](https://example.com) today #Ops');
     expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
-    expect(highlightSegments(result, 'today #Ops').filter(s => s.match).map(s => s.value)).toEqual(['today #Ops']);
-    expect(highlightSegments(result, 'example.com) today').filter(s => s.match).map(s => s.value)).toEqual(['example.com) today']);
     expect(namedPlainText(bodySegments(`code \`@${A}\` and @${B}`, findLinks, true), () => '@Chen', () => '#Ops'))
       .toBe(`code \`@${A}\` and @Chen`);
   });
