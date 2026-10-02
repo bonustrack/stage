@@ -8,14 +8,11 @@ import { loadOrCreateDbKey, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import { isInstallationLimit, isStoreCorruption as isStoreCorruptionCore } from '@stage-labs/client/xmtp/clientErrors';
 import { XmtpInstallationLimitError, clientFinalizer, withCreateTimeout } from './xmtp.recover.core';
 
-export const FORK_RECOVERY = { enableRecoveryRequests: 'all' } as const;
-
 export interface CreateOpts {
   env: XmtpEnv;
   dbDirectory: string;
   dbEncryptionKey: Uint8Array;
   codecs: typeof XMTP_CODECS;
-  forkRecoveryOptions: typeof FORK_RECOVERY;
 }
 
 const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';

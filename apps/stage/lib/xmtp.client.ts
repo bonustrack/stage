@@ -8,7 +8,7 @@ import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } 
 import { whileRegistering } from './xmtp.state.core';
 import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
-import { FORK_RECOVERY, createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
+import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
 import { makeClientLifecycle } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
@@ -20,7 +20,7 @@ const REGISTERED_BUILD_TIMEOUT_MS = 20_000;
 async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
-  let opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS, forkRecoveryOptions: FORK_RECOVERY };
+  let opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
   if (rec.registered) {
     try {
       const built = await Promise.race<Client | null>([
@@ -33,7 +33,7 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
         await wipeXmtpStore(rec.id, rec.dbDir);
         const dir = await ensureDbDir(rec.dbDir);
         const key = await loadOrCreateDbKey(rec.id);
-        opts = { env, dbDirectory: dir, dbEncryptionKey: key, codecs: XMTP_CODECS, forkRecoveryOptions: FORK_RECOVERY };
+        opts = { env, dbDirectory: dir, dbEncryptionKey: key, codecs: XMTP_CODECS };
       }
     }
   }
