@@ -134,6 +134,7 @@ export async function markConvUnread(convId: string): Promise<void> {
 export function patchRowSent(convId: string, preview: string): void {
   const rows = getCachedRows();
   if (!rows) return;
+  if (rows.some((r) => r.convId === convId && r.markedUnread)) void markConvRead(convId);
   const next = applySentPatch(rows, convId, preview, Date.now());
   if (next === null) return;
   setCachedRows(next);

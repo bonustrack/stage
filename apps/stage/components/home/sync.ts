@@ -15,7 +15,7 @@ import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
 import { homeRows, updateHomeRows } from './state';
-import { visibleRowsDiff, type Row } from './model';
+import { mergePaintedRows, visibleRowsDiff, type Row } from './model';
 import { registerHiddenConv, isActiveConv } from '../../lib/readSyncRegistry';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { report, recover, attempt } from '../../lib/errorPolicy';
@@ -193,14 +193,14 @@ function makeRefreshers(
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
+    const beforeIds = (homeRows() ?? []).map(r => r.convId);
     await primeConversationMembers(client, convs);
     const previous = new Map((homeRows() ?? []).map(r => [r.convId, r]));
     const summarized = (await Promise.all(
       convs.map(c => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)),
     )).filter((r): r is Row => r !== null);
     if (run.cancelled) return false;
-    summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
-    setCachedRows(uniqueByConvId(summarized));
+    updateHomeRows(prev => mergePaintedRows(beforeIds, prev, uniqueByConvId(summarized)));
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
     return true;
