@@ -61,7 +61,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
       />
       <Row align="center" gap={18} padding={{ right: PAGE_GUTTER }}>
         <CallButtons convId={convId} isGroup={isGroup}/>
-        {isGroup || peerAddr ? <ConversationSidebarToggle/> : null}
+        <ConversationSidebarToggle/>
         <HoverTooltip label="More" placement="below">
           <Pressable
             onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
