@@ -1,5 +1,6 @@
-export const KEYBOARD_SETTLE_MS = 600;
+export const KEYBOARD_CHECK_MS = 500;
+export const KEYBOARD_MISSES_TO_DROP = 2;
 
-export function keyboardLiftIsStale(keyboardVisible: boolean, height: number, progress: number): boolean {
-  return !keyboardVisible && (height !== 0 || progress !== 0);
+export function keyboardMisses(misses: number, keyboardShown: boolean, fieldFocused: boolean): number {
+  return keyboardShown && fieldFocused ? 0 : misses + 1;
 }

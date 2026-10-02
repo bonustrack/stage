@@ -1,16 +1,22 @@
 import { describe, expect, test } from 'bun:test';
-import { keyboardLiftIsStale } from '../components/system/KeyboardResync.model';
+import { KEYBOARD_MISSES_TO_DROP, keyboardMisses } from '../components/system/KeyboardResync.model';
 
-describe('keyboardLiftIsStale', () => {
-  test('a hidden keyboard that still lifts the composer is stale', () => {
-    expect(keyboardLiftIsStale(false, -288, 0.8)).toBe(true);
-    expect(keyboardLiftIsStale(false, -288, 1)).toBe(true);
-    expect(keyboardLiftIsStale(false, 0, 1)).toBe(true);
+describe('keyboardMisses', () => {
+  test('an open keyboard on a focused field clears the count', () => {
+    expect(keyboardMisses(0, true, true)).toBe(0);
+    expect(keyboardMisses(1, true, true)).toBe(0);
   });
 
-  test('an open keyboard or a composer already at the bottom is left alone', () => {
-    expect(keyboardLiftIsStale(true, -288, 1)).toBe(false);
-    expect(keyboardLiftIsStale(true, 0, 0)).toBe(false);
-    expect(keyboardLiftIsStale(false, 0, 0)).toBe(false);
+  test('a hidden keyboard or no focused field counts a miss', () => {
+    expect(keyboardMisses(0, false, true)).toBe(1);
+    expect(keyboardMisses(0, true, false)).toBe(1);
+    expect(keyboardMisses(0, false, false)).toBe(1);
+  });
+
+  test('the lift drops only after misses in a row', () => {
+    const once = keyboardMisses(0, false, false);
+    expect(once).toBeLessThan(KEYBOARD_MISSES_TO_DROP);
+    expect(keyboardMisses(once, true, false)).toBe(KEYBOARD_MISSES_TO_DROP);
+    expect(keyboardMisses(keyboardMisses(once, true, true), false, true)).toBeLessThan(KEYBOARD_MISSES_TO_DROP);
   });
 });
