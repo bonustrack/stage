@@ -17,7 +17,11 @@ import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowT
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
 import type { Row as ChannelRowData } from '../home/model';
-import { lineOfConv, prefetchFeed, shortAddress, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { prefetchFeed } from '../../modules/messaging/feedQuery';
+import { subscribeCachedRows } from '../../lib/channelsCache';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useStoreValue } from '../../lib/storeCore';
 import { usePinnedOrder } from '../../lib/pins';
 import { useClearedChats } from '../../lib/clearedChats';
@@ -304,7 +308,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const { columnBy } = useHomeView();
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
-  useChannelsSync({ accountEpoch: useActiveAccount(), setError });
+  useChannelsSync({ accountEpoch: useAccountEpoch(), setError });
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(

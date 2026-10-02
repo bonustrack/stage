@@ -27,7 +27,8 @@ import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
-import { lineOfConv, type StreamMsg } from './xmtp.types';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import type { StreamMsg } from './xmtp.types';
 import {
   BOARD_STATE_CODEC, CATEGORY_ORDER_CODEC, CLEAR_STATE_CODEC, HOME_VIEW_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC,
   SEARCH_STATE_CODEC, type JsonCodec,

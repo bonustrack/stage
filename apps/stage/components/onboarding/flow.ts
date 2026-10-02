@@ -1,7 +1,7 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import { createSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
 import { addPhrase } from '../../lib/zerodev/keyring';
-import { AccountManager } from '../../modules/messaging';
+import { AccountManager } from '../../modules/messaging/account';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount } from '../../lib/accounts';
 import { applyProfileSetup } from '../../lib/profile';

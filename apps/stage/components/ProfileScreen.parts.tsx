@@ -5,7 +5,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row } from './layout';
 import type { Palette } from '../lib/theme';
-import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
+import { cachedSelfEthAddress, selfEthAddress } from '../lib/xmtp.client';
 import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 

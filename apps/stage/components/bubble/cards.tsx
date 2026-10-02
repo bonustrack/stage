@@ -5,7 +5,7 @@ import { Avatar } from '../Avatar';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row, Col, Box } from '../layout';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { ethFromWeiHex } from './helpers';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { usePalette, withAlpha } from '../../lib/theme';

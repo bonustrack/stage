@@ -1,5 +1,5 @@
 import { outgoingFileMeta } from '../../lib/attachmentFiles';
-import type { LocalAttachmentInput } from '../../modules/messaging';
+import type { LocalAttachmentInput } from '../../lib/xmtp.types';
 import { isLocation, locationText } from './location.model';
 import type { Attachment } from './types';
 

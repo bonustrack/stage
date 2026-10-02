@@ -5,7 +5,7 @@ import {
 import { asGroup, assignedAddresses, writeAssigned } from '@stage-labs/client/xmtp/labels';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup } from './xmtp.sdk.core';
-import { lineOfConv } from './xmtp.types';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { report, reported } from './errorPolicy';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;

@@ -4,7 +4,7 @@ import { Eyebrow } from './Eyebrow';
 import { Box, PAGE_GUTTER } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { getPeerDescription, usePeerProfiles } from '../lib/peerProfiles';
-import { useActiveAccountRecord } from '../modules/messaging';
+import { useActiveAccountRecord } from '../modules/messaging/account';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
 import { peerLabel } from './conversation/convTitle';
 

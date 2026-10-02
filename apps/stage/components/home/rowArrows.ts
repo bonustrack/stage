@@ -1,5 +1,6 @@
 import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';
-import { lineOfConv, prefetchFeed } from '../../modules/messaging';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import type { VirtualListHandle } from '../layout';

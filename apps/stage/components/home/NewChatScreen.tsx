@@ -33,9 +33,13 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useTopChromeInset, useWebTabRail } from '../../lib/webLayout';
-import {
-  convIdOfLine, createGroup, getConvConsentState, rememberOwnGroup, subscribeCachedRows, uploadAttachments, useActiveAccountRecord,
-} from '../../modules/messaging';
+import { convIdOfLine } from '@stage-labs/client/xmtp/line';
+import { createGroup } from '../../lib/xmtp.groups';
+import { getConvConsentState } from '../../lib/xmtp.conv';
+import { rememberOwnGroup } from '../../modules/messaging/useConvConsent';
+import { subscribeCachedRows } from '../../lib/channelsCache';
+import { uploadAttachments } from '../../lib/xmtp.attachments';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { peerLabel } from '../conversation/convTitle';
 
 interface Recipients {

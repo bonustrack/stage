@@ -7,7 +7,7 @@ import { Avatar } from '../Avatar';
 import { convTitle } from './convTitle';
 import { TitleText } from '../TitleText';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { useRouter } from 'expo-router';
 import { usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';

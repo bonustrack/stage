@@ -1,6 +1,6 @@
 import { flushDmOutbox } from '../../lib/dmOutbox';
 import { subscribeChannelUpdates } from '../../lib/xmtp.resync';
-import { convIdOfLine } from '../../lib/xmtp.types';
+import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { invalidateConvMeta } from './queries';
 import { refreshGroupRow } from './groupRow';
 import { startReadSync } from '../../lib/readSync';

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { startCallService } from '../../lib/calls';
-import { useActiveAccount } from '../../modules/messaging';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useCallMinimized, useCallView } from '../../lib/calls.store';
 import { CallBubble } from './CallBubble';
 import { CallMediaView } from './CallMediaView';
@@ -10,7 +10,7 @@ import { IncomingCall } from './IncomingCall';
 export function CallHost({ active }: { active: boolean }): React.ReactElement | null {
   const view = useCallView();
   const minimized = useCallMinimized();
-  const account = useActiveAccount();
+  const account = useAccountEpoch();
   useEffect(() => (active ? startCallService() : undefined), [active, account]);
   const session = view.calls.session;
   if (!active || session === null) return null;

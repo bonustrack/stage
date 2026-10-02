@@ -13,7 +13,7 @@ import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
-import { shortAddress } from '../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { domainOf } from '../lib/format';
 import {
   x402AmountLabel,

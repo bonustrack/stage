@@ -1,7 +1,8 @@
 import { Children, cloneElement, isValidElement, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { useConvMetas, getCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { useConvMetas } from '../../modules/messaging/queries';
+import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { cachedChannelName, channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
 import { conversationLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';

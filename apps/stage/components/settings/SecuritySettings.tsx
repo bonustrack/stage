@@ -6,7 +6,7 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { Col } from '../layout';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
-import { useActiveAccountRecord } from '../../modules/messaging';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
 import { securityRows, type SecurityRowKey } from './SecuritySettings.model';

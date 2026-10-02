@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { xmtpReact } from '../../modules/messaging';
+import { xmtpReact } from '../../lib/xmtp.messages';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { ownsReaction } from '../bubble/reactions.model';
 

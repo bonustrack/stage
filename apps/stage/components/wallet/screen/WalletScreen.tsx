@@ -1,5 +1,5 @@
 import { useCallback, memo } from 'react';
-import { useActiveAccountRecord } from '../../../modules/messaging';
+import { useActiveAccountRecord } from '../../../modules/messaging/account';
 import { useWalletPortfolio } from './data';
 import type { BalancePrices } from './balance.model';
 import { WalletBalanceCard } from './BalanceCard';

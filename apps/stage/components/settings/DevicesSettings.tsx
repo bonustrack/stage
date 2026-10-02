@@ -7,10 +7,11 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Col } from '../layout';
 import { AppIcon } from '../widgets';
-import {
-  listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount, useActiveAccountRecord,
-  type XmtpInstallation,
-} from '../../modules/messaging';
+import { listXmtpInstallations, revokeXmtpInstallation } from '../../lib/xmtp.client';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { useAccountEpoch } from '../../lib/accountEpoch';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
+import type { XmtpInstallation } from '../../lib/xmtp.client.core';
 import { capabilities } from '../../lib/capabilities';
 import { transferKindFor } from '../../lib/accountTransfer';
 import { historySyncProblem, receiveHistoryWithCode, runHistorySync, useHistorySyncPhase } from '../../lib/history';
@@ -49,7 +50,7 @@ function SessionRow({ inst, busy, onRevoke }: {
 }
 
 function useSessions(): { list: XmtpInstallation[] | null; error: boolean; reload: () => Promise<void> } {
-  const epoch = useActiveAccount();
+  const epoch = useAccountEpoch();
   const [list, setList] = useState<XmtpInstallation[] | null>(null);
   const [error, setError] = useState(false);
   const reload = useCallback(async (): Promise<void> => {

@@ -15,7 +15,7 @@ import { Avatar } from '../Avatar';
 import { PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
 import { profileDisplayName } from '../ProfileScreen.model';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 
 const sidebarWidth = createPaneWidth({
   key: 'web.memberListWidth',

@@ -5,7 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { DANGER, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';

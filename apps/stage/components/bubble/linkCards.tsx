@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { ChannelRow } from '../ChannelRow';
 import { Box, Col, Row } from '../layout';
-import { useConvMeta, shortAddress } from '../../modules/messaging';
+import { useConvMeta } from '../../modules/messaging/queries';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { usePalette, DANGER, SUCCESS } from '../../lib/theme';

@@ -17,7 +17,7 @@ import { HoverTooltip } from '../HoverTooltip';
 import { LocationTile } from '../MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
 import { Box, Row, Col, PAGE_GUTTER } from '../layout';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
 import { isLocation } from './location.model';

@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import { patchRowSent } from '../../modules/messaging';
+import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeleteRequest, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { VirtualListHandle } from '../layout';

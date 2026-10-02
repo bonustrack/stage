@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
-import { getOrCreateXmtpClient } from '../../modules/messaging';
+import { getOrCreateXmtpClient } from '../../lib/xmtp.client';
 import {
   getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
 } from '../../lib/pushRegister';

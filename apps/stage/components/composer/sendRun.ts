@@ -1,5 +1,6 @@
 import { rememberLocalAttachments } from '../../lib/localAttachmentCache';
-import { uploadAttachments, xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../../modules/messaging';
+import { uploadAttachments, xmtpSendMultiRemoteAttachment } from '../../lib/xmtp.attachments';
+import { xmtpReply, xmtpSendText } from '../../lib/xmtp.messages';
 import { fileInputs, planSendSteps as plan, type SendStep } from './send.model';
 import { unsentDraft } from './draft.model';
 import type { ComposerState } from './state';

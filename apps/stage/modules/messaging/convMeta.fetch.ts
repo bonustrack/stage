@@ -1,5 +1,5 @@
 
-import { lineOfConv } from '../../lib/xmtp.types';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,

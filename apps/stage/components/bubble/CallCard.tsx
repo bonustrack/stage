@@ -12,7 +12,7 @@ import { usePalette } from '../../lib/theme';
 import { joinCall } from '../../lib/calls';
 import { setCallMinimized, useCallView } from '../../lib/calls.store';
 import { ignore } from '../../lib/errorPolicy';
-import { convIdOfLine } from '../../modules/messaging';
+import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconTileRow } from '../MediaCard';

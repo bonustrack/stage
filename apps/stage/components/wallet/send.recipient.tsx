@@ -5,7 +5,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
 import { Row, Col } from '../layout';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';

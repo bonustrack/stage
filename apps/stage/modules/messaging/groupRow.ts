@@ -10,7 +10,7 @@ import {
   updateGroupAssigned as updateAssigned,
 } from '../../lib/xmtp.groups';
 import { convOfLine } from '../../lib/xmtp.sdk';
-import { convIdOfLine, lineOfConv } from '../../lib/xmtp.types';
+import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { groupRowMeta } from './conversation';
 
 const latestRefresh = new Map<string, number>();

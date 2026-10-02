@@ -1,15 +1,19 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState, Platform } from 'react-native';
+import { getOrCreateXmtpClient, syncPreferences } from '../../lib/xmtp.client';
+import { NoAccountError } from '../../lib/xmtp.client.core';
+import { getXmtpBootstrapPhase } from '../../lib/xmtp.state.core';
+import { primeConversationMembers } from '../../lib/xmtp.identity';
+import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
-  getOrCreateXmtpClient, NoAccountError,
-  syncPreferences, getXmtpBootstrapPhase,
-  primeConversationMembers, subscribeAllMessages,
-  listVisibleConversations, syncConversationsFromNetwork,
-  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup, getConvConsentState, createdBySelf,
-} from '../../modules/messaging';
-import {
-  hydrateCachedRows, setCachedRows, summarizeConversation, isControlBody, shortAddress, afterFirstPages,
-} from '../../modules/messaging';
+  listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent, syncConsent,
+  conversationIsSyncGroup, getConvConsentState, createdBySelf,
+} from '../../lib/xmtp.conv';
+import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
+import { summarizeConversation } from '../../modules/messaging/conversation';
+import { isControlBody } from '../../lib/xmtp.types';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { afterFirstPages } from '../../lib/feedLines';
 import { hydratePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';

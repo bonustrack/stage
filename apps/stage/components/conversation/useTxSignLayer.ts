@@ -1,6 +1,6 @@
 
 import { useCallback, useState } from 'react';
-import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../modules/messaging';
+import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp.messages';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
 } from '@stage-labs/client/xmtp/tx';

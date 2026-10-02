@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { addGroupMembers, invalidateConvMeta, useConvMeta } from '../../modules/messaging';
+import { addGroupMembers } from '../../modules/messaging/groupRow';
+import { invalidateConvMeta, useConvMeta } from '../../modules/messaging/queries';
 import { capabilities } from '../../lib/capabilities';
 import { closeAddMembers, useAddMembersConv } from '../../lib/memberList';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

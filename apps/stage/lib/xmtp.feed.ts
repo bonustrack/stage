@@ -11,7 +11,7 @@ import { messagingKeys } from '../modules/messaging/queries';
 import {
   ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage,
 } from '../modules/messaging/feedQuery';
-import { type XmtpFeedStatus } from './xmtp.types';
+import type { XmtpFeedStatus } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 import { feedStartId, useFeedStartId } from './feedStart';
 import { isAtFeedStart } from './feedStart.model';

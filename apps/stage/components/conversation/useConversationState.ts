@@ -2,9 +2,13 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import {
-  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, useConvMeta, markConvRead, useConvConsentState, inboxEthAddresses,
-} from '../../modules/messaging';
+import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
+import { useXmtpFeed } from '../../lib/xmtp.feed';
+import { xmtpReply } from '../../lib/xmtp.messages';
+import { useConvMeta } from '../../modules/messaging/queries';
+import { markConvRead } from '../../lib/channelsCache';
+import { useConvConsentState } from '../../modules/messaging/useConvConsent';
+import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/readSyncRegistry';
 import {

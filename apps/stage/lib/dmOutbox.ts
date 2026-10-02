@@ -2,7 +2,7 @@
 import { bytesToHex } from 'viem';
 import { createValueStore } from './persistedStore';
 import { resolveDmConvId } from './dmResolve';
-import { lineOfConv } from './xmtp.types';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { xmtpSendText } from './xmtp.messages';
 import { getActiveAccount } from './accounts';
 import { knownActiveAccountId } from './channelsCache';

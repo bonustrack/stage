@@ -4,7 +4,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import type { Contact } from '../../lib/useContacts';
 import { Box, Row } from '../layout';
 import { ChannelRow } from '../ChannelRow';

@@ -20,7 +20,10 @@ import {
   type ThemePreference,
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { listXmtpInstallations, shortAddress, useActiveAccount, useActiveAccountRecord } from '../../modules/messaging';
+import { listXmtpInstallations } from '../../lib/xmtp.client';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { useAccountEpoch } from '../../lib/accountEpoch';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { accountDisplayName } from './SettingsAccountHeader.model';
 import { EditProfileModal } from './EditProfileModal';
 import { useWalletBackedUp } from './RecoveryPhraseRow';
@@ -65,7 +68,7 @@ function IdentityHero(): React.ReactElement | null {
 }
 
 function useDeviceCount(): number | null {
-  const epoch = useActiveAccount();
+  const epoch = useAccountEpoch();
   const { data } = useQuery({
     queryKey: ['xmtpInstallations', epoch],
     queryFn: async () => (await listXmtpInstallations()).length,

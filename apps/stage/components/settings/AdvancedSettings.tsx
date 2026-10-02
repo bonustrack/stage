@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { errorMessage } from '@stage-labs/client/errors';
-import {
-  AccountManager, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress, shortAddress,
-  useActiveAccount, useActiveAccountRecord,
-} from '../../modules/messaging';
+import { AccountManager, useActiveAccountRecord } from '../../modules/messaging/account';
+import { deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
@@ -60,7 +60,7 @@ async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
 }
 
 function IdentityGroup(): React.ReactElement | null {
-  const epoch = useActiveAccount();
+  const epoch = useAccountEpoch();
   const { data: id = NO_IDENTITY } = useQuery({ queryKey: ['xmtpIdentity', epoch], queryFn: fetchXmtpIdentity, staleTime: Infinity });
   const rows = [
     { label: 'XMTP address', value: id.addr, short: shortAddress(id.addr) },

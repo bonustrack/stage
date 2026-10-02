@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync } from './channelsCache';
 import { convOfLine } from './xmtp.sdk';
 import { groupMemberEthAddresses } from './xmtp.identity';
-import { lineOfConv } from './xmtp.types';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
 import {

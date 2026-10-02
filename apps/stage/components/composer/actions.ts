@@ -12,7 +12,7 @@ import { setLastAttachment } from '../../lib/drafts';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { fileInputs } from './send.model';
-import { prepareAttachments } from '../../modules/messaging';
+import { prepareAttachments } from '../../lib/xmtp.attachments';
 import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
