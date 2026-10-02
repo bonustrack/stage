@@ -1,8 +1,8 @@
-import { youtubeIdOf, mapCoordsOf } from '@stage-labs/client/embed/detect';
-import { githubLinkOf } from '@stage-labs/client/api/github';
-import { stageChannelIdOf, stageDmPeerOf } from '@stage-labs/client/xmtp/line';
-import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
-import { singleChannelLinkOf } from './channelLinks';
+import { youtubeIdOf, mapCoordsOf } from './detect';
+import { githubLinkOf } from '../api/github';
+import { stageChannelIdOf, stageDmPeerOf } from '../xmtp/line';
+import { withChannelLabels } from '../xmtp/channelRefs';
+import { singleChannelLinkOf } from '../xmtp/channelLinks';
 
 export const MAX_CARDS = 5;
 

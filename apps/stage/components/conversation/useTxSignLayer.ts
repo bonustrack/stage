@@ -9,7 +9,7 @@ import {
   type SignatureRequestContent, buildSignatureReference, personalMessageForRequest, typedDataForRequest,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
-import { deriveConfirmSummary, confirmMessage, deriveSignSummary, signConfirmMessage } from '../../lib/txConfirm';
+import { deriveConfirmSummary, confirmMessage, deriveSignSummary, signConfirmMessage } from '@stage-labs/client/wallet/txConfirm';
 import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';

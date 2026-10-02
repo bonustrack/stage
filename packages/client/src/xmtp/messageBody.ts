@@ -1,7 +1,7 @@
-import { splitChannelRefs, withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
-import { parseMentions, type MentionSegment } from '@stage-labs/client/xmtp/mentions';
-import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
-import { channelFallbackLabel, MARKDOWN_LINK_RE } from '../../lib/channelLinks';
+import { splitChannelRefs, withChannelLabels } from './channelRefs';
+import { parseMentions, type MentionSegment } from './mentions';
+import { stageChannelIdOf } from './line';
+import { channelFallbackLabel, MARKDOWN_LINK_RE } from './channelLinks';
 
 export type BodyView = 'plain' | 'namedPlain' | 'mention' | 'markdown';
 

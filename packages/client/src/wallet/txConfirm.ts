@@ -1,7 +1,7 @@
 
 import { decodeFunctionData, erc20Abi, formatEther, formatUnits, isAddress, type Hex } from 'viem';
-import { selectorOf } from '@stage-labs/client/wallet/txDecode';
-import type { Eip712TypedData, SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
+import { selectorOf } from './txDecode';
+import type { Eip712TypedData, SignatureRequestContent } from '../xmtp/sign';
 
 export const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 },

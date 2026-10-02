@@ -2,7 +2,7 @@ import { Children, cloneElement, isValidElement, useSyncExternalStore, type Comp
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useConvMetas, getCachedRows, subscribeCachedRows } from '../../modules/messaging';
-import { cachedChannelName, channelLinkText } from '../../lib/channelLinks';
+import { cachedChannelName, channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
 import { conversationLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';

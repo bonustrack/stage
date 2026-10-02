@@ -1,7 +1,7 @@
 import { bytesToHex, type TypedDataDefinition, type Hex } from 'viem';
-import { utf8ToBase64 } from '@stage-labs/client/text/base64';
-import type { X402Accept } from './useLinkPreview';
-import { KNOWN_TOKENS } from './txConfirm';
+import { utf8ToBase64 } from '../text/base64';
+import type { X402Accept } from './challenge';
+import { KNOWN_TOKENS } from '../wallet/txConfirm';
 
 const NETWORKS: Record<string, { chainId: number; label: string }> = {
   'eip155:8453': { chainId: 8453, label: 'Base' },

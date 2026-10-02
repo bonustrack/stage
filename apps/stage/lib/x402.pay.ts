@@ -2,7 +2,7 @@
 import { getActiveViemAccount } from './accounts';
 import { LINK_PREVIEW_BASE } from './useLinkPreview';
 import type { X402Accept } from './useLinkPreview';
-import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from './x402';
+import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
 
 export interface X402PayResult {
   ok: boolean;

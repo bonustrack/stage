@@ -25,7 +25,7 @@ import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import {
   BOARD_STATE_CODEC, CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, SEARCH_STATE_CODEC, type JsonCodec,
-} from './xmtpJsonCodecs';
+} from '@stage-labs/client/xmtp/jsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
 const CURSOR_PREFIX = 'readSync.cursor.';

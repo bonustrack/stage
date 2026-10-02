@@ -4,7 +4,7 @@ import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContactList } from '../../lib/useContacts';
 import { getActiveAccountIdSync, getCachedRows } from '../../modules/messaging';
-import { mentionAddresses } from '../bubble/mention.model';
+import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
 import { mentionLabelOf as labelOf } from '../conversation/convTitle';
 import {
   activeSuggestIndex, applyDisplayEdit, displayOf, insertMention, insertToken, mentionKeyAction, mentionQuery, piecesOf,

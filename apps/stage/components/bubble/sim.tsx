@@ -3,7 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row, Col, Box } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
-import type { SimulateResult, AssetMove } from '../../lib/txSimulate';
+import type { SimulateResult, AssetMove } from '@stage-labs/client/wallet/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../../lib/txDisplay';
 import { IconCircleCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleCheck';

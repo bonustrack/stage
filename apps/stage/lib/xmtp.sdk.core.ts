@@ -2,7 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
-import type { JsonCodec } from './xmtpJsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
 import { convIdOfLine, type XmtpConsent } from './xmtp.types';
 import { registerDmRoute } from './dmRoutes';

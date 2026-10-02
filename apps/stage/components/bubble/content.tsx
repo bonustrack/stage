@@ -3,7 +3,7 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
-import { cardLinksOf } from '../../lib/cardLinks';
+import { cardLinksOf } from '@stage-labs/client/embed/cardLinks';
 import { isAttachmentSummary } from './fileCard.model';
 import { Box, Row } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';

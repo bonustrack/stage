@@ -23,7 +23,7 @@ import {
   x402CanPayInApp,
   x402AmountNumber,
   x402KnownAsset,
-} from '../lib/x402';
+} from '@stage-labs/client/x402/payment';
 import { payX402Exact } from '../lib/x402.pay';
 import { capabilities } from '../lib/capabilities';
 import type { X402Accept, X402Challenge } from '../lib/useLinkPreview';

@@ -28,4 +28,10 @@ describe('highlightSegments', () => {
       { value: ' here', match: false },
     ]);
   });
+
+  test('matches across a link label and a channel name in a named plain body', () => {
+    const body = 'read [ping @Chen](https://example.com) today #Ops';
+    expect(highlightSegments(body, 'today #Ops').filter(s => s.match).map(s => s.value)).toEqual(['today #Ops']);
+    expect(highlightSegments(body, 'example.com) today').filter(s => s.match).map(s => s.value)).toEqual(['example.com) today']);
+  });
 });

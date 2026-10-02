@@ -1,7 +1,7 @@
 
 import { describe, expect, test } from 'bun:test';
-import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
-import { cardLinksOf, MAX_CARDS, previewLinkOf } from '../lib/cardLinks';
+import { channelRefToken } from '../src/xmtp/channelRefs';
+import { cardLinksOf, MAX_CARDS, previewLinkOf } from '../src/embed/cardLinks';
 
 describe('cardLinksOf', () => {
   test('returns empty for no links / empty / null', () => {

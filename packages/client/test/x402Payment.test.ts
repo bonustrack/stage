@@ -5,8 +5,8 @@ import {
   buildTypedData,
   buildPaymentHeader,
   randomNonce,
-} from '../lib/x402';
-import type { X402Accept } from '../lib/useLinkPreview';
+} from '../src/x402/payment';
+import type { X402Accept } from '../src/x402/challenge';
 
 const FIXTURE_ACCEPT: X402Accept = {
   scheme: 'exact',

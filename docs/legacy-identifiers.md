@@ -10,7 +10,7 @@ ones under `stage`.
 | Identifier | Where | Why it stays |
 |---|---|---|
 | `authorityId: 'metro.box'` | `packages/client/src/xmtp/codecs.ts` | XMTP content-type ids are part of every message already sent; a new id makes old polls/signature requests undecodable. |
-| `metro:` / `metro://` as an *accepted* scheme | `xmtp/line.ts`, `text/markdown.ts`, `lib/safeOpenLink.ts`, `lib/cardLinks.ts` | Old links in chat history must still open. New links are always `stage://`. |
+| `metro:` / `metro://` as an *accepted* scheme | `xmtp/line.ts`, `text/markdown.ts`, `lib/safeOpenLink.ts`, `embed/cardLinks.ts` | Old links in chat history must still open. New links are always `stage://`. |
 | `box.metro.monitor` | `app.config.js` (dev variant), `.well-known/*`, `google-services.json` | iOS bundle id / Android application id of the **dev** variant (dev.stage.box), which existing testers already have installed. The prod variant is `box.stage`. |
 | EAS `slug: 'metro'` | `app.config.js` | Tied to the EAS project the builds and OTA updates belong to. |
 | Firebase project `metro-e47f6` | `google-services*.json`, `lib/firebaseWeb.ts`, `apps/push/fly.toml` | GCP project id, immutable. |

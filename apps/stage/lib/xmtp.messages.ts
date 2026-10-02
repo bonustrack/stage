@@ -11,7 +11,7 @@ import { withReadableSendError } from './xmtp.sdk.core';
 import {
   DELETE_REQUEST_CODEC, POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, FRAME_ACTION_CODEC, type JsonCodec,
-} from './xmtpJsonCodecs';
+} from '@stage-labs/client/xmtp/jsonCodecs';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 

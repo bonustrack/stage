@@ -1,53 +1,56 @@
-import type {
-  JSContentCodec, ContentTypeId, EncodedContent,
-} from '@xmtp/react-native-sdk';
-import { type PollContent, pollFallbackText } from '@stage-labs/client/xmtp/poll';
-import { pollContentSchema } from '@stage-labs/client/xmtp/poll.schema';
+import { type PollContent, pollFallbackText } from './poll';
+import { pollContentSchema } from './poll.schema';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
   signatureRequestFallbackText, signatureReferenceFallbackText,
-} from '@stage-labs/client/xmtp/sign';
+} from './sign';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
-} from '@stage-labs/client/xmtp/tx';
+} from './tx';
 import {
   POLL_CONTENT_TYPE, SIGNATURE_REQUEST_CONTENT_TYPE, SIGNATURE_REFERENCE_CONTENT_TYPE,
   WALLET_SEND_CALLS_CONTENT_TYPE, TRANSACTION_REFERENCE_CONTENT_TYPE,
-  encodeJsonContent, decodeJsonContent,
-} from '@stage-labs/client/xmtp/codecs';
+  encodeJsonContent, decodeJsonContent, type EncodedJsonContent, type XmtpContentTypeId,
+} from './codecs';
 import {
   signatureRequestSchema, signatureReferenceSchema,
-} from '@stage-labs/client/xmtp/sign.schema';
+} from './sign.schema';
 import {
   walletSendCallsSchema, transactionReferenceSchema,
-} from '@stage-labs/client/xmtp/tx.schema';
+} from './tx.schema';
 import {
   READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, type ReadStateContent,
   PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
   CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, type ClearStateContent,
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
-} from '@stage-labs/client/xmtp/readState';
+} from './readState';
 import {
   FRAME_CONTENT_TYPE, FRAME_ACTION_CONTENT_TYPE, frameFallbackText, frameActionFallbackText,
   type FrameContent, type FrameActionContent,
-} from '@stage-labs/client/xmtp/frame';
-import { frameContentSchema, frameActionSchema } from '@stage-labs/client/xmtp/frame.schema';
+} from './frame';
+import { frameContentSchema, frameActionSchema } from './frame.schema';
 import {
   STAGE_DELETE_CONTENT_TYPE, deleteMessageSchema, type DeleteMessageContent,
-} from '@stage-labs/client/xmtp/deleteMessage';
+} from './deleteMessage';
 import {
   CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callInviteSchema, callInviteText, callSignalSchema,
   type CallInvite, type CallSignal,
-} from '@stage-labs/client/xmtp/call';
+} from './call';
 
-export type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
+export interface JsonCodec<T> {
+  contentType: XmtpContentTypeId;
+  encode: (content: T) => EncodedJsonContent;
+  decode: (encoded: { content: Uint8Array }) => T;
+  fallback: (content: T) => string | undefined;
+  shouldPush: () => boolean;
+}
 
 type JsonSchema<T> = Parameters<typeof decodeJsonContent<T>>[1];
 
 function jsonCodec<T>(
-  contentType: ContentTypeId,
+  contentType: XmtpContentTypeId,
   fallbackText: (content: T) => string | undefined,
   schema: JsonSchema<T>,
   boundary?: string,
@@ -55,9 +58,9 @@ function jsonCodec<T>(
 ): JsonCodec<T> {
   return {
     contentType,
-    encode: (content: T): EncodedContent =>
+    encode: (content: T): EncodedJsonContent =>
       encodeJsonContent(contentType, content, fallbackText(content)),
-    decode: (encoded: EncodedContent): T => decodeJsonContent<T>(encoded.content, schema, boundary),
+    decode: (encoded: { content: Uint8Array }): T => decodeJsonContent<T>(encoded.content, schema, boundary),
     fallback: (content: T): string | undefined => fallbackText(content),
     shouldPush: (): boolean => push,
   };

@@ -7,7 +7,7 @@ import { subscribeAllMessages } from './xmtp.stream';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
-import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from './xmtpJsonCodecs';
+import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { capabilities } from './capabilities';
 import { NO_MEDIA, callView, setCallView, type CallMedia, type CallPeerView } from './calls.store';
 import { openPeer } from './calls.peer';

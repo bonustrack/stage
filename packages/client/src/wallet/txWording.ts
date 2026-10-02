@@ -1,5 +1,4 @@
-
-import type { DecodedCall } from '@stage-labs/client/wallet/txDecode';
+import type { DecodedCall } from './txDecode';
 
 const TRANSFER_FNS = new Set([
   'transfer', 'transferfrom', 'send', 'safetransferfrom', 'pay',
