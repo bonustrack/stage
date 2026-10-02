@@ -147,10 +147,20 @@ function isStateMessage(m: RowMessage): boolean {
   return STATE_TYPES.some((isType) => isType(m.contentTypeId));
 }
 
-async function knownSyncGroups(): Promise<SyncGroupState[]> {
-  const groups = await listSyncGroups();
-  for (const g of groups) registerHiddenConv(g.id);
-  return groups;
+let groupsLoading: Promise<SyncGroupState[]> | null = null;
+
+function knownSyncGroups(): Promise<SyncGroupState[]> {
+  groupsLoading ??= (async (): Promise<SyncGroupState[]> => {
+    try {
+      await afterFirstPages();
+      const groups = await listSyncGroups();
+      for (const g of groups) registerHiddenConv(g.id);
+      return groups;
+    } finally {
+      groupsLoading = null;
+    }
+  })();
+  return groupsLoading;
 }
 
 async function chooseGroup(address: string, groups: readonly SyncGroupState[]): Promise<string> {
@@ -192,7 +202,6 @@ async function boot(): Promise<void> {
   groupId = null;
   localAt.clear();
   if (!(await waitForXmtpReady())) return;
-  await afterFirstPages();
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   await ensureClearedChatsLoaded();

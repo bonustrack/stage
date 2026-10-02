@@ -6,6 +6,7 @@ import { EMPTY_CALLS, reduceCall, type CallEffect, type CallEndReason, type Call
 import { subscribeAllMessages } from './xmtp.stream';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
+import { afterFirstPages } from './feedLines';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { capabilities } from './capabilities';
@@ -180,6 +181,7 @@ function enqueue(convId: string, m: StreamMsg['msg'], epoch: number): void {
   ingestQueue = ingestQueue.then(() => ingest(convId, m, call, epoch)).catch(reported('calls.ingest'));
 }
 async function replayHistory(convId: string, epoch: number): Promise<void> {
+  await afterFirstPages();
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return;
   const recent = await sdk.messages(conv, { limit: HISTORY_LIMIT, order: 'desc' });
