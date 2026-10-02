@@ -7,6 +7,7 @@ import { appStorage } from '../platform/storage';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
 import { report, ignored } from './errorPolicy';
+import { afterFirstPages } from './feedLines';
 import { envBaseUrl } from './env';
 
 const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, 'https://push.stage.box');
@@ -107,6 +108,7 @@ async function pushEnabled(): Promise<boolean> {
 export async function runPushRegistration(input: PushRegistrationInput): Promise<void> {
   try {
     if (!(await pushEnabled())) return;
+    await afterFirstPages();
     const token = await input.getToken();
     if (!token) {
       setPushStatus('no-token');

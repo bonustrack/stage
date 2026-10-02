@@ -7,7 +7,9 @@ import {
   listVisibleConversations, syncConversationsFromNetwork,
   streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup, getConvConsentState, createdBySelf,
 } from '../../modules/messaging';
-import { hydrateCachedRows, setCachedRows, summarizeConversation, isControlBody, shortAddress } from '../../modules/messaging';
+import {
+  hydrateCachedRows, setCachedRows, summarizeConversation, isControlBody, shortAddress, afterFirstPages,
+} from '../../modules/messaging';
 import { hydratePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
@@ -285,6 +287,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     const selfInboxId = client.inboxId;
     const r = makeRefreshers(client, selfInboxId, run);
     await hydratePeerProfiles();
+    await afterFirstPages();
     await r.refresh();
     if (run.cancelled) return;
     subscribeConvStream(selfInboxId, run);

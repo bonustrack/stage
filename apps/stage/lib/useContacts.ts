@@ -6,6 +6,7 @@ import {
   getActiveAccountIdSync, getCachedRows, shortAddress,
 } from '../modules/messaging';
 import { sdk } from './xmtp.sdk';
+import { afterFirstPages } from './feedLines';
 import { subscribeCachedRows, type CachedRow } from './channelsCache';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 
@@ -37,6 +38,7 @@ function seedAddresses(): string[] {
 
 async function collectAddresses(): Promise<string[]> {
   const client = await sdk.client();
+  await afterFirstPages();
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
   const convs = await sdk.listConvs(client, ['allowed']);
 

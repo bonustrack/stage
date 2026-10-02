@@ -21,6 +21,7 @@ import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
+import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import {
@@ -191,6 +192,7 @@ async function boot(): Promise<void> {
   groupId = null;
   localAt.clear();
   if (!(await waitForXmtpReady())) return;
+  await afterFirstPages();
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   await ensureClearedChatsLoaded();

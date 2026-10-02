@@ -11,6 +11,7 @@ export {
 export { NoAccountError, type XmtpInstallation } from '../../lib/xmtp.client.core';
 export { ensureActiveAccount } from '../../lib/xmtp.recover.core';
 export { convOfLine } from '../../lib/xmtp.sdk';
+export { afterFirstPages } from '../../lib/feedLines';
 
 export {
   primeConversationMembers, isGroupConv,

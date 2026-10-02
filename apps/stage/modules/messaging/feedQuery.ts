@@ -6,7 +6,7 @@ import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { PAGE_SIZE, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
-import { isFeedLoaded, markFeedLoaded } from '../../lib/feedLines';
+import { isFeedLoaded, markFeedLoaded, trackFirstPageLoad } from '../../lib/feedLines';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
 import { report, ignored } from '../../lib/errorPolicy';
@@ -122,7 +122,7 @@ function revalidateFeed(line: string, wholeInbox: boolean): Promise<void> {
   return run;
 }
 
-export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
+async function loadFirstPage(line: string): Promise<HistoryEntry[]> {
   const conv = await perfTime('feed.convOfLine', () => convOfLine(line));
   if (!conv) {
     perfLog('feed.coldPath: conversation not local, awaiting network');
@@ -134,6 +134,10 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   markFeedLoaded(line);
   void revalidateFeed(line, !sdk.isGroup(conv));
   return feedCache.get(line) ?? [];
+}
+
+export function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
+  return trackFirstPageLoad(loadFirstPage(line));
 }
 
 export function prefetchFeed(line: string): void {
