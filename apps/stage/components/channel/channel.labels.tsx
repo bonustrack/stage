@@ -11,7 +11,9 @@ import {
 import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } from '../conversation/SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { addGroupLabel, knownCategories, removeGroupLabel, setGroupCategory, suggestLabels } from '../../modules/messaging/groupRow';
+import {
+  addGroupLabel, knownCategories, removeGroupLabel, setGroupCategory, suggestLabels,
+} from '../../lib/xmtp.groups';
 import {
   categoryOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
 } from '@stage-labs/client/xmtp/labels';

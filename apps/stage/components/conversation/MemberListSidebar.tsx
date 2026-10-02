@@ -14,7 +14,7 @@ import { ChannelCategory, ChannelLabels, useLiveChannelLabels } from '../channel
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
-import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../modules/messaging/groupRow';
+import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../lib/xmtp.groups';
 import { invalidateConvMeta, useConvMeta } from '../../modules/messaging/queries';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { capabilities } from '../../lib/capabilities';

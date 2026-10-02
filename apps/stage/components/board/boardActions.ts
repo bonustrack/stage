@@ -2,7 +2,7 @@ import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { setBoardOrder } from '../../lib/boardOrder';
 import { capabilities } from '../../lib/capabilities';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
-import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel } from '../../modules/messaging/groupRow';
+import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel } from '../../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../channel/channel.labels';
 import {
