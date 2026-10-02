@@ -42,7 +42,7 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
           entry={p.entry} dark={dark} pending={pending} fg={fg} sub={sub}
           replyPreview={p.replyPreview} onReplyPreviewPress={p.onReplyPreviewPress}
           onAnswer={p.onAnswer} votes={p.votes} ownVotes={p.ownVotes}
-          onVote={p.onVote} openAnswers={p.openAnswers} onOpenAnswer={p.onOpenAnswer} myUri={p.myUri}
+          onVote={p.onVote} openAnswers={p.openAnswers} onOpenAnswer={p.onOpenAnswer} myUri={p.myUri} call={p.call}
           onPay={p.onPay} paying={p.paying} onSign={p.onSign} signing={p.signing}
           consentAllowed={p.consentAllowed} selectable={p.selectable} highlight={p.highlight}
         />
@@ -90,7 +90,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
 const DATA_KEYS = [
   'entry', 'dark', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
-  'votes', 'ownVotes', 'openAnswers', 'signing', 'paying', 'selectable',
+  'votes', 'ownVotes', 'openAnswers', 'call', 'signing', 'paying', 'selectable',
   'highlight', 'senderEthAddress', 'myUri', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 

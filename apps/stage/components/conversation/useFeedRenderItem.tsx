@@ -50,7 +50,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     events, myUri, replyingTo, jumpHighlightId, menuFor,
     confirmedIds, optimisticReactions, optimisticRemovals,
     groupDescription, groupLabels, senderEthOf, profilesVersion,
-    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, jumpToMessage,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed, deletedIds,
   } = c;
@@ -63,8 +63,8 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
 
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
-    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
+    () => [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
+    [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
   );
 
   const eventsById = useMemo(() => {
@@ -120,6 +120,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
           onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}
           openAnswers={displayOpenAnswers.get(item.id)}
           onOpenAnswer={(qIdx, text) => { onOpenAnswer(item.id, qIdx, text); }}
+          call={unlessDeleted(deleted, callRecords, item.id)}
           signing={signingIds.has(item.id)}
           consentAllowed={consentAllowed}
           onSign={signHandlerOf(item, myUri, onSign)}
@@ -134,7 +135,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
   }, [
     dark, myUri, sub, senderEthOf, namedEntry, deletedIds, confirmedIds, replyingToId, jumpHighlightId, menuForId,
     reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
-    displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
+    displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,
     onAvatarPress, jumpToMessage, onVote, onOpenAnswer, onSign, onPay, onReact,
     setReplyTarget, setMenuAnchor, setMenuFor, onAnswer,

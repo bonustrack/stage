@@ -97,6 +97,14 @@ describe('envelopeFromContent ui-parity options', () => {
     expect(e.payload).toEqual({ contentType: 'group_updated', system: true, groupUpdate: update });
   });
 
+  test('call invites and signals keep their parsed content for the call card', () => {
+    const invite = { callId: 'call-0001', from: 'peer-aaaa', video: false };
+    const signal = { kind: 'join', callId: 'call-0001', from: 'peer-bbbb' };
+    expect(envelopeFromContent(base, 'callInvite', invite, 'fb', uiOptions)).toMatchObject({ text: 'fb', payload: { contentType: 'callInvite', callInvite: invite } });
+    expect(envelopeFromContent(base, 'callSignal', signal, 'fb', uiOptions).payload).toEqual({ contentType: 'callSignal', callSignal: signal });
+    expect(envelopeFromContent(base, 'callInvite', { callId: 'x' }, 'fb', uiOptions).payload).toEqual({ contentType: 'callInvite' });
+  });
+
   test('a leave request and a left member read as plain words', () => {
     expect(envelopeFromContent(base, 'leave_request', {}, undefined, uiOptions).text).toBe('left the channel');
     const update = { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], leftInboxes: [{ inboxId: 'y' }] };

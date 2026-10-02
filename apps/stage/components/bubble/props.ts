@@ -1,5 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { MenuPoint } from '../AnchoredMenu.model';
+import type { CallRecord } from './callCard.model';
 
 export interface MenuAnchor { y: number; height: number; point?: MenuPoint | null }
 
@@ -27,6 +28,7 @@ export interface MessengerBubbleProps {
   onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
   openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
   onOpenAnswer?: (questionIndex: number, text: string) => void;
+  call?: CallRecord;
   onPay?: () => void;
   paying?: boolean;
   onSign?: () => void;

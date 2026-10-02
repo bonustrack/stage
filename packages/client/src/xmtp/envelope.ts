@@ -16,6 +16,7 @@ import {
   type FrameActionContent, type FrameContent, frameActionText, frameFallbackText,
 } from './frame';
 import { XMTP_USER_PREFIX } from './line';
+import { parseCallInvite, parseCallSignal } from './call';
 import {
   DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deleteTargetOfContent, deletedByOfContent,
 } from './deleteMessage';
@@ -160,6 +161,16 @@ const deleteRequestEnvelope: Handler = (base, _typeId, decoded) => ({
   ...base, payload: { contentType: DELETE_MESSAGE_TYPE_ID, deletes: deleteTargetOfContent(decoded) },
 });
 
+function callEnvelope(key: 'callInvite' | 'callSignal', parse: (decoded: unknown) => unknown): Handler {
+  return (base, typeId, decoded, _opts, fallback) => {
+    const content = parse(decoded);
+    return {
+      ...base, text: fallback ?? `[${typeId} payload]`,
+      payload: content === null ? { contentType: typeId } : { contentType: typeId, [key]: content },
+    };
+  };
+}
+
 const ENVELOPE_HANDLERS: Record<string, Handler> = {
   reaction: reactionEnvelope,
   poll: (base, typeId, decoded) => ({
@@ -190,6 +201,8 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
     ...base, text: frameActionText(decoded as FrameActionContent),
     payload: { contentType: typeId, frameAction: decoded as FrameActionContent },
   }),
+  callInvite: callEnvelope('callInvite', parseCallInvite),
+  callSignal: callEnvelope('callSignal', parseCallSignal),
   reply: replyEnvelope,
   attachment: attachmentEnvelope,
   multiRemoteStaticAttachment: multiRemoteEnvelope,

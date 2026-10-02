@@ -22,6 +22,7 @@ import { useOwnDeletes } from '../../lib/ownDeletes';
 import { useChannelRoles } from '../channel/channel.detail';
 import { useLiveChannelLabels } from '../channel/channel.labels';
 import type { MenuAnchor } from '../bubble/props';
+import { callRecordsOf } from '../bubble/callCard.model';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
@@ -122,14 +123,15 @@ function useConvScrollPersistence(convId: string | undefined): ScrollPersistence
   return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
 }
 
-function useFeedDerivations(events: HistoryEntry[], myUri: string) {
+function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) {
   const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
   const reactions = useReconciledMap(useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]));
   const ownReactions = useReconciledMap(useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]));
   const votes = useReconciledMap(useMemo(() => votesByMessage(events), [events]));
   const ownVotes = useReconciledMap(useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]));
   const openAnswers = useReconciledMap(useMemo(() => openAnswersByMessage(events), [events]));
-  return { reactions, ownReactions, votes, ownVotes, openAnswers };
+  const callRecords = useReconciledMap(useMemo(() => callRecordsOf(events, dm, myUri), [events, dm, myUri]));
+  return { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords };
 }
 
 function useReplyTarget() {
@@ -213,7 +215,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const scroll = useConvScrollPersistence(convId);
   const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
 
-  const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
+  const { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords } = useFeedDerivations(events, myUri, !isGroup);
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, ownReactions);
@@ -246,7 +248,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
-    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, deletedIds, isSuperAdmin,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, deletedIds, isSuperAdmin,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     onOptimistic, onSent, markAtBottom, consent, consentKnown, consentAllowed, markConsentAllowed,

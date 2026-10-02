@@ -17,6 +17,8 @@ import { QuestionView } from './question';
 import { PollView } from './poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
 import { FramePreview } from '../frame/FramePreview';
+import { CallCard } from './CallCard';
+import type { CallRecord } from './callCard.model';
 import { frameOf } from '../frame/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
@@ -45,14 +47,15 @@ interface BubbleContentProps {
   openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
+  call?: CallRecord;
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
   consentAllowed?: boolean;
   selectable?: boolean;
   highlight?: string;
 }
 
-function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
-  d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string;
+function BubbleMain({ d, entry, fg, call, selectable, highlight, markdownProps }: {
+  d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; call?: CallRecord;
   selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
   if (isDeletedPlaceholder(entry)) {
@@ -63,7 +66,7 @@ function BubbleMain({ d, entry, fg, selectable, highlight, markdownProps }: {
       <Box style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Box>
     ) : null;
   }
-  if (d.txReq || d.txReceipt || d.frame) return null;
+  if (d.txReq || d.txReceipt || d.frame || call) return null;
   if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
   return <BubbleBody text={entry.text} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
 }
@@ -113,8 +116,9 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
-      <BubbleMain d={d} entry={entry} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
+      <BubbleMain d={d} entry={entry} fg={fg} call={props.call} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
+      {props.call ? <CallCard record={props.call} line={entry.line} /> : null}
       <BubbleCards d={d} p={props} />
     </>
   );
