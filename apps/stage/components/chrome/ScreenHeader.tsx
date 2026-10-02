@@ -63,17 +63,17 @@ function HeaderTitle({ title, titleStyle }: {
   );
 }
 
-export function BackButton({ onBack, backColor, hitSlop = 8, padding = 4 }: {
+const BACK_PAD = { padding: 4 } as const;
+
+function BackButton({ onBack, backColor }: {
   onBack: () => void;
   backColor: string;
-  hitSlop?: number;
-  padding?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { link } = usePalette();
   return (
-    <GesturePressable onPress={onBack} hitSlop={hitSlop}>
-      <HoverTint style={{ padding }}>
+    <GesturePressable onPress={onBack} hitSlop={8}>
+      <HoverTint style={BACK_PAD}>
         {(hovered) => (
           <Glyph
             icon={IconArrowLeft}

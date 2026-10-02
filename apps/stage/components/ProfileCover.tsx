@@ -13,8 +13,8 @@ const SHEET = { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_R
 const AVATAR_SLOT = { marginTop: -PROFILE_AVATAR_SIZE * 0.8, zIndex: 1 } as const;
 
 export function ProfileCoverBar({ insetTop, trailing }: { insetTop: number; trailing?: ReactNode }): React.ReactElement {
-  const { link } = usePalette();
-  return <OverlayHeader onBack={() => { capabilities.back(); }} backColor={link} safeTop={insetTop} trailing={trailing} />;
+  const { bg } = usePalette();
+  return <OverlayHeader onBack={() => { capabilities.back(); }} background={bg} safeTop={insetTop} trailing={trailing} />;
 }
 
 export function ProfileCover({ insetTop, avatar, children, centered = false }: {
