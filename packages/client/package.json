@@ -27,6 +27,7 @@
     "./xmtp/groups": "./src/xmtp/groups.ts",
     "./xmtp/builders": "./src/xmtp/builders.ts",
     "./xmtp/codecs": "./src/xmtp/codecs.ts",
+    "./xmtp/jsonCodecs": "./src/xmtp/jsonCodecs.ts",
     "./xmtp/readState": "./src/xmtp/readState.ts",
     "./xmtp/call": "./src/xmtp/call.ts",
     "./xmtp/callMachine": "./src/xmtp/callMachine.ts",

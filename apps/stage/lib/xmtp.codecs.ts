@@ -4,7 +4,7 @@ import {
   MultiRemoteAttachmentCodec, GroupUpdatedCodec, DeleteMessageCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
-import { STAGE_JSON_CODECS, TRANSACTION_REFERENCE_CODEC } from './xmtpJsonCodecs';
+import { STAGE_JSON_CODECS, TRANSACTION_REFERENCE_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
 import type { AccountRecord } from './accounts';
 import { signingKeyForRecord } from './xmtp.signing.core';
 

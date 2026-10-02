@@ -1,7 +1,7 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
 import { DELETE_MESSAGE_CODEC } from '@stage-labs/client/xmtp/deleteMessage';
-import { STAGE_JSON_CODECS } from './xmtpJsonCodecs';
+import { STAGE_JSON_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
 import type { AccountRecord } from './accounts';
 import { lazySigningKeyForRecord } from './xmtp.signing.core';
 
