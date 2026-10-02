@@ -224,7 +224,7 @@ export function ChannelCategory({ convId }: { convId: string }): React.ReactElem
     <SidebarSection title="Category" icon={IconFolder1} editLabel="Edit category" canEdit={rights.appData} current={current} single
       onCommit={commit} renderPicker={(draft) => <CategoryPicker {...draft} current={current}/>}>
       {category === null ? <SectionNote text="No category yet"/> : (
-        <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><LabelChip label={category}/></Row>
+        <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{category}</Text></Row>
       )}
     </SidebarSection>
   );
