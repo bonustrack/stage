@@ -4,9 +4,15 @@
 # built from this repo and would hijack the kit gallery site (base packages/kit,
 # configured in the UI only). command and publish resolve relative to the base
 # (bun install still installs the whole workspace).
+# Without an ignore command Netlify skips a build when nothing changed inside
+# the base directory, so a push that only touched packages/kit or
+# packages/client never reached stage.box. Build when the app, the packages it
+# imports, the root install files or the patches changed, and always when
+# there is no earlier build to compare with (exit 0 skips).
 [build]
   command = "bun install && bun run build:web"
   publish = "dist"
+  ignore = '[ -n "$CACHED_COMMIT_REF" ] && [ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ../../packages ../../patches ../../package.json ../../bun.lock ../../bunfig.toml'
 
 # google-services*.json are Firebase ANDROID CLIENT configs: the AIza key in
 # them is a public client identifier that ships inside every APK (Google
