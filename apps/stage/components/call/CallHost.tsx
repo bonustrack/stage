@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { startCallService } from '../../lib/calls';
 import { useActiveAccount } from '../../modules/messaging';
 import { useCallMinimized, useCallView } from '../../lib/calls.store';
-import { CallBar } from './CallBar';
+import { CallBubble } from './CallBubble';
 import { CallMediaView } from './CallMediaView';
 import { CallScreen } from './CallScreen';
 import { IncomingCall } from './IncomingCall';
@@ -19,7 +19,7 @@ export function CallHost({ active }: { active: boolean }): React.ReactElement | 
   }
   return (
     <>
-      {minimized ? <CallBar view={view} session={session}/> : <CallScreen view={view} session={session}/>}
+      {minimized ? <CallBubble view={view} session={session}/> : <CallScreen view={view} session={session}/>}
       {view.peers.map((p) => <CallMediaView key={p.peerId} stream={p.stream} kind="audio"/>)}
     </>
   );
