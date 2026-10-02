@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
   isTransferRequest, humanizeAction, txActionLabel,
-} from '../components/bubble/txwording';
-import type { DecodedCall } from '@stage-labs/client/wallet/txDecode';
+} from '../src/wallet/txWording';
+import type { DecodedCall } from '../src/wallet/txDecode';
 
 const call = (functionName: string, args: DecodedCall['args'] = []): DecodedCall => ({
   decoded: true, verified: true, source: 'sourcify', functionName,

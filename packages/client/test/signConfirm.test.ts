@@ -1,7 +1,7 @@
 
 import { describe, expect, test } from 'bun:test';
-import { deriveSignSummary, signConfirmMessage } from '../lib/txConfirm';
-import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
+import { deriveSignSummary, signConfirmMessage } from '../src/wallet/txConfirm';
+import type { SignatureRequestContent } from '../src/xmtp/sign';
 
 const SPENDER = '0xAttackerSpender0000000000000000000000001';
 const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';

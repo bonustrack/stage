@@ -20,7 +20,7 @@ import { bubbleLinkProps } from './linkProps';
 import { ReceiptBox } from './cards.sig';
 import { useTxSimulation } from '../../lib/txSimulate';
 import { SimulationBlock } from './sim';
-import { txActionLabel, isTransferRequest } from './txwording';
+import { txActionLabel, isTransferRequest } from '@stage-labs/client/wallet/txWording';
 import { profileLinkOf } from '../../lib/links';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCodeBrackets';
