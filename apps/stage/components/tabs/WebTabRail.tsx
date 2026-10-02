@@ -16,6 +16,7 @@ import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { TEXT_11PX } from '../smallText';
 import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME } from './tabBadge';
+import { requestNewChatFocus } from '../home/newChatFocus';
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
@@ -62,7 +63,10 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
     <>
       {TAB_ICONS.map(([name, icon], i) => {
         const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
-        const go = (): void => { router.navigate(TAB_HREF[name]); };
+        const go = (): void => {
+          if (name === 'index') requestNewChatFocus();
+          router.navigate(TAB_HREF[name]);
+        };
         return vertical ? (
           <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go} placement="beside"
             style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}>
