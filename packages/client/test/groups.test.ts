@@ -9,6 +9,8 @@ import {
 
 const ADDR_A = '0x0bA043c6F25085C68042bad079c29bD8f16a651A';
 const ADDR_B = '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5';
+const LIBXMTP_ADDRESS_NOT_FOUND = '[GroupError::AddressNotFound] Addresses not found []';
+const onXmtp = async (): Promise<string> => 'inbox';
 
 describe('validMemberAddresses', () => {
   test('trims and filters to valid hex addresses', () => {
@@ -23,6 +25,7 @@ describe('error classification', () => {
   test('isNoInboxError', () => {
     expect(isNoInboxError('no inbox found')).toBe(true);
     expect(isNoInboxError('cannot find user')).toBe(true);
+    expect(isNoInboxError(LIBXMTP_ADDRESS_NOT_FOUND)).toBe(true);
     expect(isNoInboxError('boom')).toBe(false);
   });
   test('isPermissionError', () => {
@@ -45,6 +48,10 @@ describe('error mappers', () => {
     expect(mapCreateGroupError(new Error('no inbox')).message)
       .toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
   });
+  test('create libxmtp address not found', () => {
+    expect(mapCreateGroupError(new Error(LIBXMTP_ADDRESS_NOT_FOUND)).message)
+      .toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
+  });
   test('create generic', () => {
     expect(mapCreateGroupError(new Error('boom')).message).toBe("Couldn't create the channel: boom");
   });
@@ -62,18 +69,33 @@ describe('error mappers', () => {
 
 describe('createGroupWith', () => {
   test('builds line + id from injected create', async () => {
-    const res = await createGroupWith([ADDR_A], id => `stage://xmtp/${id}`, async () => ({ id: 'gid' }));
+    const res = await createGroupWith([ADDR_A], id => `stage://xmtp/${id}`, async () => ({ id: 'gid' }), onXmtp);
     expect(res).toEqual({ line: 'stage://xmtp/gid', id: 'gid' });
   });
   test('maps create error', async () => {
-    await expect(createGroupWith([ADDR_A], id => id, async () => { throw new Error('no inbox'); }))
+    await expect(createGroupWith([ADDR_A], id => id, async () => { throw new Error('no inbox'); }, onXmtp))
       .rejects.toThrow("One or more addresses aren't on XMTP yet, so they can't be added.");
   });
   test('validates before calling create', async () => {
     let called = false;
-    await expect(createGroupWith(['bad'], id => id, async () => { called = true; return { id: 'x' }; }))
+    await expect(createGroupWith(['bad'], id => id, async () => { called = true; return { id: 'x' }; }, onXmtp))
       .rejects.toThrow('Add at least one valid member address.');
     expect(called).toBe(false);
+  });
+  test('names the member not on XMTP and creates nothing', async () => {
+    let called = false;
+    const inboxIdOf = async (address: string): Promise<string | undefined> => (address === ADDR_B ? undefined : 'inbox');
+    await expect(createGroupWith([ADDR_A, ADDR_B], id => id, async () => { called = true; return { id: 'x' }; }, inboxIdOf))
+      .rejects.toThrow("0x2539…79d5 isn't on XMTP yet, so they can't be added.");
+    expect(called).toBe(false);
+  });
+  test('names every member not on XMTP', async () => {
+    await expect(createGroupWith([ADDR_A, ADDR_B], id => id, async () => ({ id: 'x' }), async () => undefined))
+      .rejects.toThrow("0x0bA0…651A, 0x2539…79d5 aren't on XMTP yet, so they can't be added.");
+  });
+  test('maps a failed member lookup', async () => {
+    await expect(createGroupWith([ADDR_A], id => id, async () => ({ id: 'x' }), async () => { throw new Error('boom'); }))
+      .rejects.toThrow("Couldn't create the channel: boom");
   });
 });
 

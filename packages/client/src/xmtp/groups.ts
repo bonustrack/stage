@@ -1,6 +1,7 @@
+import { shortAddress } from '../identity/format';
 
 const MEMBER_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
-const NO_INBOX_RE = /inbox|identity|not.*regist|cannot.*find/i;
+const NO_INBOX_RE = /inbox|identity|not.*regist|cannot.*find|address.*not found/i;
 const PERMISSION_RE = /permission|admin|not.*allow|denied|unauthor/i;
 
 export function validMemberAddresses(addresses: string[]): string[] {
@@ -57,14 +58,29 @@ export function mapAddMembersError(err: unknown): Error {
   return new Error(`Couldn't add members: ${msg}`);
 }
 
+function notOnXmtpError(addresses: string[]): Error {
+  const who = addresses.map(shortAddress).join(', ');
+  return new Error(`${who} ${addresses.length === 1 ? "isn't" : "aren't"} on XMTP yet, so they can't be added.`);
+}
+
+async function membersWithoutInbox(
+  addresses: string[], inboxIdOf: (address: string) => Promise<string | undefined>,
+): Promise<string[]> {
+  const inboxIds = await Promise.all(addresses.map(inboxIdOf));
+  return addresses.filter((_, i) => !inboxIds[i]);
+}
+
 export interface CreateGroupResult { line: string; id: string }
 
 export async function createGroupWith(
   addresses: string[],
   lineOf: (id: string) => string,
   create: (members: string[]) => Promise<{ id: string }>,
+  inboxIdOf: (address: string) => Promise<string | undefined>,
 ): Promise<CreateGroupResult> {
   const members = requireValidMembers(addresses);
+  const missing = await membersWithoutInbox(members, inboxIdOf).catch((err: unknown) => { throw mapCreateGroupError(err); });
+  if (missing.length > 0) throw notOnXmtpError(missing);
   try {
     const group = await create(members);
     return { line: lineOf(group.id), id: group.id };

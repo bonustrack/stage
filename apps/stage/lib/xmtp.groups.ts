@@ -22,7 +22,9 @@ async function requireGroup(line: string): Promise<GroupConv> {
 
 export async function createGroup(addresses: string[]): Promise<CreateGroupResult> {
   const client = await sdk.client();
-  return createGroupWith(addresses, lineOfConv, (members) => sdk.newGroup(client, members, {}));
+  return createGroupWith(
+    addresses, lineOfConv, (members) => sdk.newGroup(client, members, {}), (address) => sdk.inboxIdOfAddress(client, address),
+  );
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
