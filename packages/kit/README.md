@@ -105,7 +105,7 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 
 - The JSON is checked first by `parseFrame` (`@stage-labs/kit/frame`, no React): at most 64K characters, depth 16, 500 nodes and 200 children per node. A frame over a limit, or not an object, shows a short notice instead.
 - Unknown props are dropped. An unknown node type, or a node without a required prop (`Text.value`, `Image.src`, `Select.options`, ...), shows a small "Unsupported" box. Nothing throws, and an error boundary catches render errors.
-- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs.
+- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs. On web, with `onOpenUrl`, such a link is a real link (`href`, new tab): middle-click, Ctrl or Cmd click and the browser link menu work, and a plain click still calls `onOpenUrl`.
 - Icons (`Icon.name`, `Button.iconStart`, `Button.iconEnd`) take ChatKit's 63 icon names, plus nine Stage names that ChatKit does not have: `arrow-up`, `chevron-down`, `chevron-up`, `copy`, `mic`, `send`, `share`, `thumbs-down` and `thumbs-up`. Any other name makes an `Icon` unsupported, and a `Button` drops it.
 - Text sizes are the kit's own, with no frame scale of their own: `size` on `Text`, `Title`, `Caption`, `Label` and `Icon` takes any `FONT_SIZE` name (`4xs` 13px to `4xl` 40px; ChatKit's names are among them, except the `Title` size `5xl`, which is ignored) and renders that `FONT_SIZE`, `md` (18px) when not set. `Markdown` text is `md` too. `Badge`, `Button` and the fields keep their control sizes.
 - Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
@@ -135,6 +135,7 @@ src/
   badge.ts           # badge style core
   markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
   text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
+  link.ts            # web link helpers: NEW_TAB (target _blank, rel noopener noreferrer) and isPlainClick, shared with the app's links
   react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
 stories/             # one story file per component (controls for every prop + variant matrices)

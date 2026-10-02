@@ -24,6 +24,7 @@ import { capabilities } from '../lib/capabilities';
 import type { X402Challenge } from '../lib/useLinkPreview';
 import { usePalette, withAlpha } from '../lib/theme';
 import { openInBubbleLink } from '../lib/safeOpenLink';
+import { bubbleLinkProps } from './bubble/linkProps';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
@@ -40,9 +41,8 @@ function x402Description(challenge: X402Challenge, accept: X402Accept): string {
   return 'Payment required';
 }
 
-function X402Detail({ accept, network, endpoint, pal, onOpen }: {
-  accept: X402Accept; network: string; endpoint: string;
-  pal: ReturnType<typeof usePalette>; onOpen: () => void;
+function X402Detail({ accept, network, endpoint, pal }: {
+  accept: X402Accept; network: string; endpoint: string; pal: ReturnType<typeof usePalette>;
 }): React.ReactElement {
   return (
     <>
@@ -58,7 +58,7 @@ function X402Detail({ accept, network, endpoint, pal, onOpen }: {
         <Text role="secondary" size="4xs">On</Text>
         <Text size="3xs" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
-      <Pressable onPress={onOpen}>
+      <Pressable {...bubbleLinkProps(endpoint, openInBubbleLink)}>
         <Row align="center" gap={6}>
           <Glyph icon={IconChainLink3} size={13} color={pal.sub}/>
           <Text size="4xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -95,8 +95,6 @@ export function X402Card({ challenge, dark }: {
 
   if (!accept) return null;
 
-  const openEndpoint = (): void => { if (endpoint) openInBubbleLink(endpoint); };
-
   const runPay = (): void => {
     setPhase('paying');
     void (async () => {
@@ -122,7 +120,7 @@ export function X402Card({ challenge, dark }: {
   };
 
   const buildAction = (bal: { insufficient: boolean } | null): {
-    label: string; onPress: () => void; disabled?: boolean; icon: React.ReactElement;
+    label: string; onPress?: () => void; url?: string; disabled?: boolean; icon: React.ReactElement;
   } => {
     const insufficient = canPay && bal?.insufficient === true;
     if (canPay) {
@@ -133,7 +131,7 @@ export function X402Card({ challenge, dark }: {
         icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg}/>,
       };
     }
-    return { label: 'Open endpoint', onPress: openEndpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
+    return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
   };
 
   const badge = (
@@ -150,7 +148,7 @@ export function X402Card({ challenge, dark }: {
       description={x402Description(challenge, accept)}
       badge={badge}
       amountLabel={amountLabel}
-      detail={<X402Detail accept={accept} network={network} endpoint={endpoint} pal={pal} onOpen={openEndpoint} />}
+      detail={<X402Detail accept={accept} network={network} endpoint={endpoint} pal={pal} />}
       balance={{
         show: !!accept.asset && chainNum > 0,
         chainId: chainNum,

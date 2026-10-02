@@ -8,6 +8,8 @@ import { usePayerBalance, type PayerBalance } from './bubble/balance';
 import { usePalette, withAlpha } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_WIDTH } from './bubble/imageBox.model';
+import { bubbleLinkProps } from './bubble/linkProps';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 
 interface PaymentBalanceArgs {
@@ -20,7 +22,8 @@ interface PaymentBalanceArgs {
 
 interface PaymentAction {
   label: string;
-  onPress: () => void;
+  onPress?: () => void;
+  url?: string;
   icon?: React.ReactElement;
   loading?: boolean;
   disabled?: boolean;
@@ -50,7 +53,8 @@ function PaymentActionButton({ action, dark, pal }: {
   return (
     <Button
       size="lg" fullWidth radius={24} dark={dark}
-      loading={action.loading} disabled={action.disabled} onPress={action.onPress}
+      loading={action.loading} disabled={action.disabled}
+      {...(action.url === undefined ? { onPress: action.onPress } : bubbleLinkProps(action.url, openInBubbleLink))}
       label={action.label}
       iconStart={action.icon ?? <Glyph icon={IconWallet4} size={18} color={pal.bg}/>}
       tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}

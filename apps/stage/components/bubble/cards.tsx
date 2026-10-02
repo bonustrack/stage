@@ -15,7 +15,8 @@ import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useUsdValue } from '../../lib/txDisplay';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
-import { capabilities } from '../../lib/capabilities';
+import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { bubbleLinkProps } from './linkProps';
 import { ReceiptBox } from './cards.sig';
 import { useTxSimulation } from '../../lib/txSimulate';
 import { SimulationBlock } from './sim';
@@ -258,7 +259,7 @@ export function TxReceiptCard({ receipt, dark }: {
   const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
   return (
     <ReceiptBox dark={dark} title={successLabel}>
-      <Pressable onPress={() => { capabilities.openUrl(url); }}>
+      <Pressable {...bubbleLinkProps(url, openInBubbleLink)}>
         <Text size="4xs" color={pal.link}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>

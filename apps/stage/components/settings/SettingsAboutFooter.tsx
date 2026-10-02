@@ -4,7 +4,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row, PAGE_GUTTER } from '../layout';
 import { GithubLogo } from '../GithubLogo';
-import { capabilities } from '../../lib/capabilities';
+import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { bubbleLinkProps } from '../bubble/linkProps';
 import { usePalette } from '../../lib/theme';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 import { timeAgo } from '../../lib/buildInfo.model';
@@ -34,7 +35,7 @@ function FooterLink({ href, label, children }: {
       disabled={!href}
       accessibilityRole="link"
       pressedOpacity={0.6}
-      onPress={() => { if (href) capabilities.openUrl(href); }}
+      {...(href ? bubbleLinkProps(href, openInBubbleLink) : {})}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
     >
       {children}

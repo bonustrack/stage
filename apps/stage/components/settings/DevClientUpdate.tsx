@@ -7,6 +7,8 @@ import { capabilities } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
+import { bubbleLinkProps } from '../bubble/linkProps';
+import { openInBubbleLink } from '../../lib/safeOpenLink';
 
 const COPY = { role: 'secondary', variant: 'caption', size: '3xs', weight: 'medium' } as const;
 
@@ -54,7 +56,7 @@ export function DevClientUpdate(): React.ReactElement | null {
       </Pressable>
       {status ? <Text {...COPY} style={{ textAlign: 'center' }} accessibilityLiveRegion="polite">{status}</Text> : null}
       {!info.runtime ? <Text {...COPY}>This dev client has no known native runtime.</Text> : null}
-      <Pressable accessibilityRole="link" onPress={() => { capabilities.openUrl('https://bundler.stage.box/'); }} pressedOpacity={0.6}>
+      <Pressable accessibilityRole="link" {...bubbleLinkProps('https://bundler.stage.box/', openInBubbleLink)} pressedOpacity={0.6}>
         <Text {...COPY} color="link" style={{ textDecorationLine: 'underline' }}>Dev-client downloads</Text>
       </Pressable>
     </Col>

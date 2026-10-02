@@ -31,6 +31,7 @@
     "./badge": "./src/badge.ts",
     "./markdown-styles": "./src/markdown.styles.ts",
     "./frame": "./src/frame.ts",
+    "./link": "./src/link.ts",
     "./react-native/button": "./src/react-native/button.tsx",
     "./react-native/text": "./src/react-native/text.tsx",
     "./react-native/title": "./src/react-native/title.tsx",

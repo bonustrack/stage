@@ -1,6 +1,5 @@
 
 import { useMemo } from 'react';
-import { capabilities } from '../lib/capabilities';
 
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -18,7 +17,7 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   const { bg } = usePalette();
   return (
-    <MediaCard onPress={() => { capabilities.openUrl(watchUrl); }}>
+    <MediaCard url={watchUrl}>
       <Box flex={1} style={{ position: 'relative', overflow: 'hidden' }}>
         <Image
           src={thumbUrl}
@@ -113,7 +112,7 @@ export function LocationEmbed({ lat, lng, dark }: {
   lat: number; lng: number; dark: boolean;
 }): React.ReactElement {
   return (
-    <MediaCard onPress={() => { capabilities.openUrl(googleMapsUrl(lat, lng)); }}>
+    <MediaCard url={googleMapsUrl(lat, lng)}>
       <Box flex={1} justify="center" style={{ overflow: 'hidden' }}>
         <LocationTile lat={lat} lng={lng} size="lg"/>
         <MapAttribution/>

@@ -2,6 +2,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Platform } from 'react-native';
 import { fontFamily, fontSize } from '@stage-labs/kit/tokens';
+import type { LinkClickEvent } from '@stage-labs/kit/link';
 import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-labs/client/xmtp/poll';
@@ -53,19 +54,9 @@ export const MESSAGE_LINK_STYLE = { textDecorationLine: 'none' } as const;
 
 export type LinkPress = ((url: string) => boolean) | undefined;
 
-export interface BubbleLinkEvent {
-  defaultPrevented: boolean;
-  preventDefault(): void;
-  button?: number;
-  metaKey?: boolean;
-  altKey?: boolean;
-  ctrlKey?: boolean;
-  shiftKey?: boolean;
-}
-
 export interface BubbleLinkProps {
   accessibilityRole?: 'link';
-  onPress?: (event?: BubbleLinkEvent) => void;
+  onPress?: (event?: LinkClickEvent) => void;
   href?: string;
   hrefAttrs?: { target: string; rel: string };
   ref?: (node: unknown) => void;

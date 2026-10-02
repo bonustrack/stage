@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
-import { View, type DimensionValue } from 'react-native';
-import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
+import { cloneElement, isValidElement, useMemo, useState } from 'react';
+import { Platform, View, type DimensionValue, type TextProps } from 'react-native';
+import RNMarkdown, { MarkdownIt, renderRules, type RenderRules } from 'react-native-markdown-display';
 import { frameFlex, type FrameIconName, type FrameNodeOf } from '../frame';
 import { frameBlockSize } from '../frame.flow';
 import { httpsUrl } from '../frame.values';
+import { NEW_TAB, isPlainClick, type LinkClickEvent } from '../link';
 import { resolveColors, type ButtonColor, type ButtonControlVariant } from '../button.styles';
 import { spacingEntries } from '../layout';
 import { markdownStyles } from '../markdown.styles';
@@ -22,6 +23,30 @@ import { controlSize, FrameTextField } from './frame.controls';
 import { useFormScope, useFrameColor, useFrameRuntime } from './frame.runtime';
 
 const markdownParser = MarkdownIt({ html: false, linkify: true, typographer: false }).disable(['image']);
+
+interface WebLinkProps {
+  href: string;
+  hrefAttrs: typeof NEW_TAB;
+  onPress: (event?: LinkClickEvent) => void;
+}
+
+const WEB_LINK_RULES: RenderRules = {
+  link: (node, children, parents, styles, onLinkPress) => {
+    const link = renderRules.link?.(node, children, parents, styles, onLinkPress);
+    const href = httpsUrl(node.attributes.href);
+    if (!isValidElement<TextProps>(link) || href === undefined) return link;
+    const props: WebLinkProps = {
+      href,
+      hrefAttrs: NEW_TAB,
+      onPress: (event) => {
+        if (!isPlainClick(event)) return;
+        event?.preventDefault();
+        onLinkPress?.(href);
+      },
+    };
+    return cloneElement(link, props);
+  },
+};
 
 export function FrameText({ node }: { node: FrameNodeOf<'Text'> }): React.ReactElement {
   const color = useFrameColor();
@@ -77,7 +102,7 @@ export function FrameMarkdown({ node }: { node: FrameNodeOf<'Markdown'> }): Reac
   const { dark, openUrl } = useFrameRuntime();
   const styles = useMemo(() => markdownStyles({ fg: schemePalette(dark).head, dark, fontSize: fontSize(FONT_SIZE_DEFAULT) }), [dark]);
   return (
-    <RNMarkdown markdownit={markdownParser} style={styles} onLinkPress={(url) => {
+    <RNMarkdown markdownit={markdownParser} style={styles} rules={openUrl && Platform.OS === 'web' ? WEB_LINK_RULES : undefined} onLinkPress={(url) => {
       const safe = httpsUrl(url);
       if (safe !== undefined) openUrl?.(safe);
       return false;
