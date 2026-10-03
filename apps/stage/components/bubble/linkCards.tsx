@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { ChannelRow } from '../ChannelRow';
 import { Box, Col, Row } from '../layout';
-import { useConvMeta } from '../../modules/messaging/queries';
+import { useConvRow } from '../../modules/messaging/queries';
+import { isGroupRow, memberAddressesOf, type ConvRow } from '../../modules/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -214,37 +215,39 @@ export function ChannelCard(
   return <ConvIdCard convId={convId} url={url} />;
 }
 
-function cardTitle(meta: ReturnType<typeof useConvMeta>, convId: string): ConvTitle {
-  if (meta.isGroup) return channelTitle(meta.groupName, 'Channel');
-  const peerName = getPeerName(meta.peerAddr);
+function cardTitle(row: ConvRow | null, convId: string): ConvTitle {
+  if (isGroupRow(row)) return channelTitle(row?.groupName ?? null, 'Channel');
+  const peerAddress = row?.peerAddress ?? null;
+  const peerName = getPeerName(peerAddress);
   if (peerName != null && peerName !== '') return { text: peerName, placeholder: false };
-  if (meta.peerAddr) return { text: shortAddress(meta.peerAddr), placeholder: false };
+  if (peerAddress) return { text: shortAddress(peerAddress), placeholder: false };
   return { text: `Channel ${convId.slice(0, 6)}…`, placeholder: true };
 }
 
-function convSubtitle(meta: ReturnType<typeof useConvMeta>): string {
-  if (meta.isGroup) return meta.memberAddrs.length ? `${meta.memberAddrs.length} members` : 'Channel';
-  return meta.peerAddr ? 'Direct message' : 'Open channel';
+function convSubtitle(row: ConvRow | null): string {
+  const count = memberAddressesOf(row).length;
+  if (isGroupRow(row)) return count ? `${count} members` : 'Channel';
+  return row?.peerAddress ? 'Direct message' : 'Open channel';
 }
 
 function convAvatar(
-  meta: ReturnType<typeof useConvMeta>, convId: string,
+  row: ConvRow | null, convId: string,
 ): { avatarUri: string | null; avatarAddress: string | null } {
-  const isGroup = meta.isGroup;
-  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : null;
-  const avatarSeed = isGroup ? (avatarUri ? null : channelStampSeed(convId)) : meta.peerAddr;
-  let avatarAddress: string | null = null;
-  if (!avatarUri && avatarSeed && (isGroup || isPeerResolved(avatarSeed))) avatarAddress = avatarSeed;
-  return { avatarUri, avatarAddress };
+  if (row === null || row.peerAddress !== null) {
+    const peer = row?.peerAddress ?? null;
+    return { avatarUri: null, avatarAddress: peer !== null && isPeerResolved(peer) ? peer : null };
+  }
+  const image = row.avatarUri?.trim() ?? '';
+  return image ? { avatarUri: image, avatarAddress: null } : { avatarUri: null, avatarAddress: channelStampSeed(convId) };
 }
 
 function ConvIdCard({ convId, url }: { convId: string; url: string }): React.ReactElement {
-  const meta = useConvMeta(convId);
-  usePeerProfiles([meta.peerAddr]);
+  const row = useConvRow(convId);
+  usePeerProfiles([row?.peerAddress ?? null]);
 
-  const title = cardTitle(meta, convId);
-  const subtitle = convSubtitle(meta);
-  const { avatarUri, avatarAddress } = convAvatar(meta, convId);
+  const title = cardTitle(row, convId);
+  const subtitle = convSubtitle(row);
+  const { avatarUri, avatarAddress } = convAvatar(row, convId);
 
   const open = (): void => {
     router.push({ pathname: '/channel/[convId]', params: { convId } });
@@ -258,7 +261,7 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
         subtitle={subtitle}
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
-        square={meta.isGroup}
+        square={isGroupRow(row)}
         onPress={open}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />

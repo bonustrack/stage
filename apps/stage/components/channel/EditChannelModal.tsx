@@ -13,13 +13,12 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import { invalidateConvMeta } from '../../modules/messaging/queries';
+import { refreshConv } from '../../modules/messaging/queries';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { updateGroupMeta } from '../../lib/xmtp.groups';
-import { useConvMetaPatch } from './channel.detail';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import {
-  channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch, type ChannelCurrent, type ChannelDraft,
+  channelChanges, channelDraftFrom, channelDraftProblem, type ChannelCurrent, type ChannelDraft,
 } from './EditChannelModal.model';
 import { hasListEdits, listEdits, type ListEdits } from '../conversation/SidebarSection.model';
 
@@ -31,12 +30,11 @@ function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoi
   return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
 }
 
-async function writeChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice): Promise<GroupMetaPatch> {
+async function writeChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice): Promise<void> {
   const full = { ...patch };
   if (picture.kind === 'new') full.imageUrl = await uploadAvatar(picture.file.uri, picture.file.mime, picture.file.name ?? 'channel-avatar');
   if (picture.kind === 'remove') full.imageUrl = '';
   if (Object.keys(full).length > 0) await updateGroupMeta(convId, full);
-  return full;
 }
 
 function useLabelDraft(labels: string[]): {
@@ -60,10 +58,9 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
 }
 
-async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<GroupMetaPatch> {
-  const written = await writeChannel(convId, patch, picture);
+async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {
+  await writeChannel(convId, patch, picture);
   await writeLabels(lineOfConv(convId), edits);
-  return written;
 }
 
 function EditChannelSection({ convId, current, rights, picture, labels, onSaved }: {
@@ -71,7 +68,6 @@ function EditChannelSection({ convId, current, rights, picture, labels, onSaved 
   labels: string[]; onSaved: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const patchMeta = useConvMetaPatch(convId);
   const [draft, setDraft] = useState<ChannelDraft>(() => channelDraftFrom(current));
   const labelDraft = useLabelDraft(labels);
   const [busy, setBusy] = useState(false);
@@ -89,13 +85,13 @@ function EditChannelSection({ convId, current, rights, picture, labels, onSaved 
     setBusy(true);
     setStatus(null);
     void saveChannel(convId, changes, picture, edits)
-      .then((written) => {
-        patchMeta(channelMetaCachePatch(written));
+      .then(() => {
+        refreshConv(convId);
         onSaved();
         capabilities.toast('Channel saved.');
       })
       .catch((err: unknown) => {
-        invalidateConvMeta(convId);
+        refreshConv(convId);
         setStatus(`Could not save: ${errorText(err)}`);
       })
       .finally(() => { setBusy(false); });

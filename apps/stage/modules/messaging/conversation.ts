@@ -2,7 +2,8 @@
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { convMembers, type ConvMembers } from '../../lib/xmtp.identity';
 import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
-import { sdk } from '../../lib/xmtp.sdk';
+import { convOfLine, sdk } from '../../lib/xmtp.sdk';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import { isControlBody, type XmtpConsent } from '../../lib/xmtp.types';
@@ -17,27 +18,23 @@ import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/dele
 import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { ownDeletesReady } from '../../lib/ownDeletes';
-import { fetchSuperAdmins } from './convMeta.fetch';
+import { fetchSuperAdmins } from './groupDetails';
+import type { ConvRow } from './convRow.model';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
-export interface ConversationView {
+export interface ConversationView extends ConvRow {
   convId: string;
   title: string;
-  groupName?: string;
   lastTs: number | null;
   lastBubbleTs: number | null;
   lastPreview: string;
   avatarAddress: string | null;
-  avatarUri: string | null;
-  peerAddress: string | null;
   lastSenderAddress: string | null;
   lastFromSelf: boolean;
-  inboxToAddr: Record<string, string>;
   unreadCount: number;
   lastReadNs: number;
   markedUnread: boolean;
-  selfInboxId: string;
   labels: string[];
   category: string | null;
   assigned: string[];
@@ -127,7 +124,17 @@ function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRo
 }
 
 export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
-  return rowMetaOf(conv, null, await gatherGroupRowData(conv, await convMembers(conv)));
+  const members = await convMembers(conv);
+  return { ...rowMetaOf(conv, null, await gatherGroupRowData(conv, members)), inboxToAddr: members.inboxToAddr };
+}
+
+export async function fetchConvRow(convId: string): Promise<ConvRow | null> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return null;
+  const members = await convMembers(conv);
+  const { groupName, avatarUri } = rowMetaOf(conv, members.peerAddress, await gatherGroupRowData(conv, members));
+  const selfInboxId = (await sdk.client()).inboxId ?? '';
+  return { peerAddress: members.peerAddress, groupName, avatarUri, inboxToAddr: members.inboxToAddr, selfInboxId };
 }
 
 function lastSenderAddressOf(last: RowMessage | undefined, inboxToAddr: Record<string, string>): string | null {

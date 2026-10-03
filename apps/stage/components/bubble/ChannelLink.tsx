@@ -1,23 +1,21 @@
 import { Children, cloneElement, isValidElement, type ComponentProps, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { useConvMetas } from '../../modules/messaging/queries';
-import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
-import { cachedChannelName, channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
+import { useConvRows } from '../../modules/messaging/queries';
+import { channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
 import { conversationLinkOf } from '../../lib/links';
-import { useStoreValue } from '../../lib/storeCore';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import { MESSAGE_LINK_STYLE, type LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
 
-export function useChannelLinkNames(convIds: readonly string[]) {
-  const metas = useConvMetas(convIds);
-  const rows = useStoreValue(subscribeCachedRows, getCachedRows);
-  return new Map(convIds.map((id, i) => [id, {
-    groupName: cachedChannelName(rows, id) ?? metas[i]?.groupName,
-    peerAddr: metas[i]?.peerAddr,
-  }]));
+interface LinkNames { groupName?: string; peerAddress?: string | null }
+
+const NO_NAMES: LinkNames = {};
+
+export function useChannelLinkNames(convIds: readonly string[]): Map<string, LinkNames> {
+  const rows = useConvRows(convIds);
+  return new Map(convIds.map((id, i) => [id, rows[i] ?? NO_NAMES]));
 }
 
 function namedChildren(children: ReactNode, name: string): ReactNode {
@@ -32,7 +30,7 @@ export function ChannelLink({ convId, label, url, text, fg, onLinkPress, element
 }): React.ReactElement {
   const router = useRouter();
   const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
-  const meta = useChannelLinkNames([convId]).get(convId) ?? {};
+  const meta = useChannelLinkNames([convId]).get(convId) ?? NO_NAMES;
   const name = channelLinkText(meta, label, url, text);
   const props = url ? bubbleLinkProps(url, onLinkPress) : {
     onPress: () => { router.push(conversationLinkOf(convId)); },

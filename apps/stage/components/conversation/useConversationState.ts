@@ -5,7 +5,8 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { xmtpReply } from '../../lib/xmtp.messages';
-import { useConvMeta } from '../../modules/messaging/queries';
+import { useConvDetails, useConvRow } from '../../modules/messaging/queries';
+import { isGroupRow, memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
@@ -173,6 +174,19 @@ function feedStatus(s: string): 'idle' | 'connecting' | 'open' | 'error' {
   return 'idle';
 }
 
+const NO_MAP: Record<string, string> = {};
+
+function useConvFields(convId: string | undefined) {
+  const row = useConvRow(convId);
+  const { description } = useConvDetails(convId, row);
+  const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
+  const isGroup = isGroupRow(row);
+  return {
+    peerAddr: row?.peerAddress ?? null, memberAddrs, inboxToAddr: row?.inboxToAddr ?? NO_MAP, isGroup,
+    groupName: isGroup ? row?.groupName ?? null : null, groupImage: row?.avatarUri ?? '', groupDescription: description,
+  };
+}
+
 function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr: string | null, profilesVersion: number) {
   return useMemo(() => {
     const addrs = (isGroup ? memberAddrs : [peerAddr]).filter((a): a is string => !!a);
@@ -188,7 +202,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   );
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
-  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
+  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvFields(convId);
   const clearedAt = useClearedChats()[peerAddr?.toLowerCase() ?? ''];
   const events = useMemo(
     () => (peerAddr === null ? xmtpFeed.events : entriesAfterClear(xmtpFeed.events.filter(e => !isSystemEntry(e)), clearedAt)),

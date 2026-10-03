@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { addGroupMembers } from '../../lib/xmtp.groups';
-import { invalidateConvMeta, useConvMeta } from '../../modules/messaging/queries';
+import { refreshConv, useConvRow } from '../../modules/messaging/queries';
+import { memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { capabilities } from '../../lib/capabilities';
 import { closeAddMembers, useAddMembersConv } from '../../lib/memberList';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -15,7 +16,8 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
   const { primary, bg } = usePalette();
   const picker = useMemberPicker();
   const { members } = picker;
-  const { memberAddrs } = useConvMeta(convId);
+  const row = useConvRow(convId);
+  const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
   const [submitting, setSubmitting] = useState(false);
   const count = members.length;
 
@@ -24,7 +26,7 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
     setSubmitting(true);
     try {
       await addGroupMembers(convId, members.map(m => m.address));
-      invalidateConvMeta(convId);
+      refreshConv(convId);
       onDone();
       capabilities.toast(count === 1 ? 'Member added' : `${count} members added`);
     } catch (err) {

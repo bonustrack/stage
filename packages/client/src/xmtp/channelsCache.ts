@@ -112,10 +112,18 @@ export interface GroupRowMeta {
   labels: string[];
   category: string | null;
   assigned: string[];
+  inboxToAddr?: Record<string, string>;
 }
 
 function sameLabels(cur: unknown, next: readonly string[]): boolean {
   return Array.isArray(cur) && cur.length === next.length && cur.every((l, i) => l === next[i]);
+}
+
+function sameMembers(cur: unknown, next: Record<string, string> | undefined): boolean {
+  if (next === undefined) return true;
+  if (cur === null || typeof cur !== 'object') return false;
+  const entries = Object.entries(cur);
+  return entries.length === Object.keys(next).length && entries.every(([k, v]) => next[k] === v);
 }
 
 function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
@@ -125,7 +133,8 @@ function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
     && cur.avatarAddress === meta.avatarAddress
     && sameLabels(cur.labels, meta.labels)
     && (cur.category ?? null) === meta.category
-    && sameLabels(cur.assigned ?? [], meta.assigned);
+    && sameLabels(cur.assigned ?? [], meta.assigned)
+    && sameMembers(cur.inboxToAddr, meta.inboxToAddr);
 }
 
 export function applyGroupMeta<R extends CachedChannelRow>(

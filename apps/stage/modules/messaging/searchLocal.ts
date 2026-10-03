@@ -10,7 +10,7 @@ import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { ownDeletesReady } from '../../lib/ownDeletes';
 import { convMembers } from '../../lib/xmtp.identity';
 import { recover } from '../../lib/errorPolicy';
-import { fetchSuperAdmins } from './convMeta.fetch';
+import { fetchSuperAdmins } from './groupDetails';
 
 const SEARCH_MAX_PAGES = 25;
 const SEARCH_MAX_RESULTS = 50;

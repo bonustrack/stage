@@ -9,13 +9,14 @@ import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
 import { assignedEntries, memberChanges, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
-import { confirmMemberRemoval, useChannelRoles, useChannelEditRights, useConvMetaPatch } from '../channel/channel.detail';
+import { confirmMemberRemoval, useChannelRoles, useChannelEditRights } from '../channel/channel.detail';
 import { ChannelCategory, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
 import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../lib/xmtp.groups';
-import { invalidateConvMeta, useConvMeta } from '../../modules/messaging/queries';
+import { patchConvDetails, refreshConv, useConvDetails, useConvRow } from '../../modules/messaging/queries';
+import { memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
@@ -64,9 +65,13 @@ function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: ()
   );
 }
 
+const NO_MAP: Record<string, string> = {};
+
 function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigned: string[]; assignedReady: boolean } {
-  const { memberAddrs, inboxToAddr, assigned, assignedReady } = useConvMeta(convId);
-  const roles = useChannelRoles(convId, inboxToAddr);
+  const row = useConvRow(convId);
+  const { assigned, assignedReady } = useConvDetails(convId, row);
+  const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
+  const roles = useChannelRoles(convId, row?.inboxToAddr ?? NO_MAP);
   const self = useSelfAddress();
   const addresses = useMemo(() => (self ? [self, ...memberAddrs] : memberAddrs), [self, memberAddrs]);
   const profiles = usePeerProfiles(addresses);
@@ -86,13 +91,12 @@ function AssigneesSection({ convId, entries, assigned, assignedReady }: {
 }): React.ReactElement {
   const router = useRouter();
   const rights = useChannelEditRights(convId);
-  const patchMeta = useConvMetaPatch(convId);
   const selected = assignedEntries(entries, assigned);
   const commit = (edits: ListEdits): void => {
     void updateGroupAssigned(convId, applyListEdits(assigned, edits))
-      .then(written => { patchMeta({ assigned: written }); })
+      .then(written => { patchConvDetails(convId, { assigned: written }); })
       .catch((err: unknown) => {
-        invalidateConvMeta(convId);
+        refreshConv(convId);
         capabilities.toast(errorLine(err, 'Could not save assignees.'));
       });
   };
@@ -119,7 +123,7 @@ async function applyMemberEdits(convId: string, entries: MemberListEntry[], want
   } catch (err) {
     capabilities.toast(errorLine(err, 'Could not update members.'));
   } finally {
-    invalidateConvMeta(convId);
+    refreshConv(convId);
   }
 }
 

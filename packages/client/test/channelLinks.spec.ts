@@ -1,25 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { cachedChannelName, channelLinkLabel, channelLinkText, channelFallbackLabel, markdownLabelText } from '../src/xmtp/channelLinks';
+import { channelLinkLabel, channelLinkText, channelFallbackLabel, markdownLabelText } from '../src/xmtp/channelLinks';
 
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 
 describe('channel link names', () => {
-  test('reuses real cached group names, never list fallback or direct-chat titles', () => {
-    const rows = [{ convId: CONV, title: 'Design', groupName: 'Design', peerAddress: null }, { convId: 'dm', groupName: 'Alice', peerAddress: '0xabc' }];
-    expect(cachedChannelName(rows, CONV)).toBe('Design');
-    expect(cachedChannelName(rows, 'dm')).toBeUndefined();
-    expect(cachedChannelName(null, CONV)).toBeUndefined();
-    expect(cachedChannelName([{ convId: CONV, groupName: 42 }], CONV)).toBeUndefined();
-    for (const title of ['3 members', CONV.slice(0, 6)]) {
-      expect(cachedChannelName([{ convId: CONV, title }], CONV)).toBeUndefined();
-      expect(channelLinkLabel(cachedChannelName([{ convId: CONV, title, groupName: '' }], CONV), 'Ops')).toBe('#Ops');
-    }
-  });
-
   test('known DM conversation links retain their original text instead of a hash label', () => {
     const url = `stage://xmtp/${CONV}`;
-    expect(channelLinkText({ peerAddr: '0xabc' }, undefined, url)).toBe(url);
-    expect(channelLinkText({ peerAddr: '0xabc' }, undefined, url, 'Alice')).toBe('Alice');
+    expect(channelLinkText({ peerAddress: '0xabc' }, undefined, url)).toBe(url);
+    expect(channelLinkText({ peerAddress: '0xabc' }, undefined, url, 'Alice')).toBe('Alice');
     expect(channelLinkText({ groupName: 'Ops' }, undefined, url)).toBe('#Ops');
   });
 

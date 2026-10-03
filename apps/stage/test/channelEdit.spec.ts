@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CHANNEL_DESCRIPTION_MAX, CHANNEL_NAME_MAX, channelChanges, channelDraftFrom, channelDraftProblem, channelMetaCachePatch,
+  CHANNEL_DESCRIPTION_MAX, CHANNEL_NAME_MAX, channelChanges, channelDraftFrom, channelDraftProblem,
 } from '../components/channel/EditChannelModal.model';
 
 describe('channel edit model', () => {
@@ -43,11 +43,5 @@ describe('channel edit model', () => {
     expect(channelDraftProblem(odd, { name: odd.name, description: 'New words' })).toBeNull();
     expect(channelDraftProblem(odd, { name: 'Team', description: odd.description })).toBeNull();
     expect(channelDraftProblem(odd, { name: 'Team\nBeta', description: odd.description })).toBe('Name cannot span several lines.');
-  });
-
-  test('maps a written patch onto the cached conversation meta', () => {
-    expect(channelMetaCachePatch({ name: 'Crew', imageUrl: '', description: 'x' }))
-      .toEqual({ groupName: 'Crew', groupImage: '', groupDescription: 'x' });
-    expect(channelMetaCachePatch({ description: '' })).toEqual({ groupDescription: '' });
   });
 });

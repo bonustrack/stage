@@ -10,15 +10,8 @@ export function singleChannelLinkOf(text: string): { url: string; convId: string
   return convId ? { url, convId } : null;
 }
 
-interface ChannelRow { convId: string; title?: unknown; groupName?: unknown; peerAddress?: unknown }
-
-export function cachedChannelName(rows: readonly ChannelRow[] | null, convId: string): string | undefined {
-  const row = rows?.find(r => r.convId === convId && r.peerAddress == null);
-  return typeof row?.groupName === 'string' ? row.groupName : undefined;
-}
-
-export function channelLinkText(meta: { groupName?: string | null; peerAddr?: string | null }, label?: string, url?: string, text?: string): string {
-  return meta.peerAddr ? text ?? url ?? channelLinkLabel(undefined, label) : channelLinkLabel(meta.groupName, label);
+export function channelLinkText(meta: { groupName?: string | null; peerAddress?: string | null }, label?: string, url?: string, text?: string): string {
+  return meta.peerAddress ? text ?? url ?? channelLinkLabel(undefined, label) : channelLinkLabel(meta.groupName, label);
 }
 
 export function channelFallbackLabel(text: string): string | undefined {

@@ -175,7 +175,7 @@ function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement
   const names = useChannelLinkNames(convIds);
   const text = namedPlainText(segments, mentionLabelOf, seg => {
     const meta = names.get(seg.convId);
-    return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddr ? seg.raw ?? seg.text : seg.text);
+    return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddress ? seg.raw ?? seg.text : seg.text);
   });
   return <PlainBody body={text} fg={fg} query={query} />;
 }

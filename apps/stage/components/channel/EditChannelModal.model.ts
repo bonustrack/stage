@@ -7,8 +7,6 @@ export interface ChannelDraft { name: string; description: string }
 
 export interface ChannelCurrent { name: string | null; description: string }
 
-export interface ChannelMetaCachePatch { groupName?: string; groupDescription?: string; groupImage?: string }
-
 export function channelDraftFrom(current: ChannelCurrent): ChannelDraft {
   return { name: current.name ?? '', description: current.description };
 }
@@ -35,12 +33,4 @@ export function channelDraftProblem(current: ChannelCurrent, draft: ChannelDraft
   }
   if (description !== undefined && byteLength(description) > CHANNEL_DESCRIPTION_MAX) return 'Description is too long.';
   return null;
-}
-
-export function channelMetaCachePatch(patch: GroupMetaPatch): ChannelMetaCachePatch {
-  const out: ChannelMetaCachePatch = {};
-  if (patch.name !== undefined) out.groupName = patch.name;
-  if (patch.description !== undefined) out.groupDescription = patch.description;
-  if (patch.imageUrl !== undefined) out.groupImage = patch.imageUrl;
-  return out;
 }

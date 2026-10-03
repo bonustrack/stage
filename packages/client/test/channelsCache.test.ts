@@ -86,6 +86,7 @@ describe('applyGroupMeta', () => {
     ['avatarAddress', { avatarAddress: null }],
     ['category', { category: 'Work' }],
     ['assignees', { assigned: ['0x1111111111111111111111111111111111111111'] }],
+    ['members', { inboxToAddr: { i1: '0x1111111111111111111111111111111111111111' } }],
   ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
     const out = applyGroupMeta(rows, 'a', { ...meta, ...change });
     expect(out?.[0]).toEqual({ ...rows[0], convId: 'a', ...change });
@@ -98,6 +99,13 @@ describe('applyGroupMeta', () => {
 
   test('returns null when nothing changed', () => {
     expect(applyGroupMeta(rows, 'a', { ...meta, labels: ['Todo'] })).toBeNull();
+  });
+
+  test('compares members by content', () => {
+    const members = { i1: '0x1', i2: '0x2' };
+    const withMembers: Row[] = [{ ...rows[0], convId: 'a', inboxToAddr: members }];
+    expect(applyGroupMeta(withMembers, 'a', { ...meta, inboxToAddr: { ...members } })).toBeNull();
+    expect(applyGroupMeta(withMembers, 'a', { ...meta, inboxToAddr: { i1: '0x1' } })?.[0]?.inboxToAddr).toEqual({ i1: '0x1' });
   });
 
   test('reads a cached row without a category as no category', () => {
