@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { Vibration, type ViewStyle } from 'react-native';
+import { Platform, Vibration, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
@@ -14,7 +14,7 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { GROUP_HEADER_HEIGHT } from './GroupHeader';
 import type { HomeListItem } from './groups.model';
 import {
-  NO_BLOCKS, NO_ZONES, blockShift, categoryZones, dragTarget, sectionBlocks, sectionShape, uniformBlocks, type DragBlocks,
+  NO_BLOCKS, NO_ZONES, blockShift, categoryZones, domElementOf, dragTarget, sectionBlocks, sectionShape, uniformBlocks, type DragBlocks,
 } from './listDrag.model';
 
 const HOLD_MS = 250;
@@ -85,17 +85,16 @@ function blockScroll(event: TouchEvent): void {
   if (lifted && event.cancelable) event.preventDefault();
 }
 
+const WEB = Platform.OS === 'web';
+
 function lockScrollOnLift(node: unknown): void {
-  if (typeof HTMLElement !== 'undefined' && node instanceof HTMLElement) {
-    node.addEventListener('touchmove', blockScroll, { passive: false });
-  }
+  domElementOf(node, WEB)?.addEventListener('touchmove', blockScroll, { passive: false });
 }
 
 let raisedCell: HTMLElement | null = null;
 
 function raiseCell(node: unknown): void {
-  if (typeof HTMLElement === 'undefined' || !(node instanceof HTMLElement)) return;
-  raisedCell = node.closest<HTMLElement>(LIST_CELL_SELECTOR);
+  raisedCell = domElementOf(node, WEB)?.closest<HTMLElement>(LIST_CELL_SELECTOR) ?? null;
   if (raisedCell !== null) raisedCell.style.zIndex = '1';
 }
 

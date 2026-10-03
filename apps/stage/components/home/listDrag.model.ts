@@ -25,6 +25,10 @@ function topsOf(heights: readonly number[]): number[] {
   return tops;
 }
 
+export function domElementOf(node: unknown, web: boolean): HTMLElement | null {
+  return web && typeof HTMLElement !== 'undefined' && node instanceof HTMLElement ? node : null;
+}
+
 export function uniformBlocks(ids: readonly string[], height: number): DragBlocks {
   const heights = ids.map(() => height);
   return { ids, tops: topsOf(heights), heights, blockOf: new Map(ids.map((id, i) => [id, i])), zones: [] };

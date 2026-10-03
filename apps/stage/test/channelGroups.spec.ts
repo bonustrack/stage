@@ -6,7 +6,7 @@ import {
   NO_GROUPS_PREFS, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
 } from '../lib/channelGroups.model';
 import {
-  blockShift, categoryZones, dragTarget, dropTarget, sectionBlocks, sectionShape, uniformBlocks, zoneTarget,
+  blockShift, categoryZones, domElementOf, dragTarget, dropTarget, sectionBlocks, sectionShape, uniformBlocks, zoneTarget,
 } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 
@@ -241,5 +241,22 @@ describe('moving a chat to another category', () => {
     const uniform = uniformBlocks(['a', 'b', 'c'], ROW);
     expect(dragTarget(uniform.tops, uniform.heights, uniform.zones, 1, ROW * 0.6)).toBe(2);
     expect(dragTarget(blocks.tops, blocks.heights, blocks.zones, 6, -200)).toBe(2);
+  });
+});
+
+describe('domElementOf', () => {
+  test('a native view is never a DOM node, even where HTMLElement exists', () => {
+    const saved = Object.getOwnPropertyDescriptor(globalThis, 'HTMLElement');
+    class NativeElement { readonly tagName = 'RN:View'; }
+    Object.defineProperty(globalThis, 'HTMLElement', { value: NativeElement, configurable: true, writable: true });
+    try {
+      const view = new NativeElement();
+      expect(domElementOf(view, false)).toBeNull();
+      expect(domElementOf(view, true)).toBe(view as HTMLElement);
+      expect(domElementOf(null, true)).toBeNull();
+    } finally {
+      if (saved === undefined) Reflect.deleteProperty(globalThis, 'HTMLElement');
+      else Object.defineProperty(globalThis, 'HTMLElement', saved);
+    }
   });
 });
