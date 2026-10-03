@@ -11,9 +11,9 @@ import { bubbleLinkProps } from '../bubble/linkProps';
 import { MONO_FONT } from '../bubble/helpers';
 import { useImageAspectRatio } from '../bubble/mediaAspect';
 
-const HEADING_SIZES: Readonly<Record<number, TextSizeToken>> = { 1: '2xl', 2: 'xl', 3: 'lg', 4: 'md', 5: 'sm', 6: 'sm' };
+const HEADING_SIZES: Readonly<Record<number, TextSizeToken>> = { 1: '3xl', 2: '2xl', 3: 'xl', 4: 'lg', 5: 'md', 6: 'md' };
 const QUOTE_INDENT = 12;
-const BODY_SIZE: TextSizeToken = 'xs';
+const BODY_SIZE: TextSizeToken = 'md';
 const CODE_STYLE: TextStyle = { fontFamily: MONO_FONT };
 const UNDERLINE_STYLE: TextStyle = { textDecorationLine: 'underline' };
 

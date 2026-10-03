@@ -72,7 +72,7 @@ function MailContent({ mail, id }: { mail: ParsedMail; id: string }): React.Reac
   return (
     <>
       <Col gap={16} padding={{ x: PAGE_GUTTER, top: 20 }}>
-        <Text value={subjectLabel(mail.subject)} size="xl" weight="semibold" color="link" selectable />
+        <Text value={subjectLabel(mail.subject)} size="2xl" weight="semibold" color="link" selectable />
         <Col gap={4}>
           <MetaLine label="From" value={mail.from} />
           <MetaLine label="To" value={mail.to} />
