@@ -124,6 +124,8 @@ export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
     find: () => sdk.findConv(client, convId),
     isActive: sdk.isActive,
     sync: (conv) => conv.sync(),
+    syncInvites: () => sdk.syncConvList(client),
+    device: client.installationId.slice(0, 8),
     details: async (conv) => {
       const [state, latest] = await Promise.all([
         sdk.syncState(conv), sdk.messages(conv, { limit: 1, order: 'desc' }),

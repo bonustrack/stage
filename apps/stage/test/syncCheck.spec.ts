@@ -65,6 +65,35 @@ describe('syncCheckResult', () => {
     ]);
   });
 
+  test('a restored copy whose invite sync failed shows that error and the device', () => {
+    const result = syncCheckResult({
+      ...HEALTHY, restored: true, active: false, inviteError: 'network unavailable', syncError: 'MLS Group bb4e Not Found', state: null, newest: '', device: 'a99e0b1c',
+    });
+    expect(result.title).toBe('Not in the channel yet');
+    expect(result.message.split('\n')).toEqual([
+      'This device only has a restored copy of this channel from the history import, so it is not a member yet. This device could not take in its channel invites.',
+      'Invite sync: network unavailable',
+      'Error: MLS Group bb4e Not Found',
+      'Device: a99e0b1c',
+    ]);
+  });
+
+  test('a restored copy left out by a clean invite sync says no invite reached this device', () => {
+    const result = syncCheckResult({ ...HEALTHY, restored: true, active: false, inviteError: '', syncError: 'MLS Group bb4e Not Found', state: null, newest: '' });
+    expect(result.message).toContain('The invite sync ran, but no invite for this channel reached this device.');
+    expect(result.message).not.toContain('Invite sync:');
+  });
+
+  test('a restored copy that became active has just joined', () => {
+    const result = syncCheckResult({ ...HEALTHY, restored: true, active: true, inviteError: '', syncError: '', state: null, newest: '' });
+    expect(result).toEqual({ ok: true, title: 'Joined now', message: 'This device just took in its invite to this channel. Open the channel again.' });
+  });
+
+  test('the device id is the last line when given', () => {
+    const lines = syncCheckResult({ ...HEALTHY, device: 'a99e0b1c' }).message.split('\n');
+    expect(lines[lines.length - 1]).toBe('Device: a99e0b1c');
+  });
+
   test('a channel whose sync state cannot be read says so', () => {
     expect(syncCheckResult({ ...HEALTHY, state: null }).message).toContain('Could not read the sync state.');
   });
@@ -117,6 +146,51 @@ describe('runSyncCheck', () => {
     expect(result.message).toContain('Error: [NotFound::MlsGroup]');
     expect(ops.isActive).not.toHaveBeenCalled();
     expect(ops.sync).not.toHaveBeenCalled();
+  });
+
+  test('a restored copy takes in the inbox invites and reports when it joined', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), device: 'a99e0b1c' };
+    let found = 0;
+    ops.find.mockImplementation(() => {
+      found += 1;
+      return found === 1 ? Promise.reject(new Error('MLS Group bb4e Not Found')) : Promise.resolve('channel');
+    });
+    const result = await runSyncCheck(ops);
+    expect(result).toEqual({ ok: true, title: 'Joined now', message: 'This device just took in its invite to this channel. Open the channel again.\nDevice: a99e0b1c' });
+    expect(ops.syncInvites).toHaveBeenCalledTimes(1);
+    expect(ops.isActive).toHaveBeenCalledWith('channel');
+    expect(ops.sync).not.toHaveBeenCalled();
+  });
+
+  test('a restored copy reports the invite sync error', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.reject(new Error('welcome decrypt failed'))), device: 'a99e0b1c' };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    const result = await runSyncCheck(ops);
+    expect(result.ok).toBe(false);
+    expect(result.title).toBe('Not in the channel yet');
+    expect(result.message).toContain('could not take in its channel invites');
+    expect(result.message).toContain('Invite sync: welcome decrypt failed');
+    expect(result.message).toContain('Device: a99e0b1c');
+    expect(ops.find).toHaveBeenCalledTimes(1);
+  });
+
+  test('a restored copy still without MLS state after the invite sync says no invite reached it', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()) };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    const result = await runSyncCheck(ops);
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('no invite for this channel reached this device');
+    expect(result.message).not.toContain('Invite sync:');
+    expect(ops.find).toHaveBeenCalledTimes(2);
+  });
+
+  test('an invite sync cannot leave the check pending', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => new Promise<never>(() => undefined)) };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    const result = await runSyncCheck(ops, 20);
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('Invite sync: ');
+    expect(result.message).toContain('timed out');
   });
 
   test('a membership read that fails for want of MLS state names the restored copy too', async () => {
