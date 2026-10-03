@@ -2,7 +2,7 @@ import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewE
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { makeListeners, useStoreValue } from './storeCore';
 
 const KEY_PREFIX = 'home.view.';
 
@@ -18,6 +18,10 @@ const prefs = createValueStore<HomeViewContent>({
 });
 
 export const useHomeView = prefs.use;
+
+const homeViewLoaded = (): boolean => prefs.accountId() !== null;
+
+export const useHomeViewLoaded = (): boolean => useStoreValue(prefs.subscribe, homeViewLoaded, prefs.loadAsync);
 
 export interface HomeViewChange {
   accountId: string;

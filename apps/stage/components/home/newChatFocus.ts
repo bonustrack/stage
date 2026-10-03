@@ -3,6 +3,8 @@ import { Platform } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { useWebTabRail } from '../../lib/webLayout';
+import { useHomeView } from '../../lib/homeView';
+import { newChatNav } from './newChat.model';
 
 let requested = 0;
 let handled = 0;
@@ -17,11 +19,11 @@ export function requestNewChatFocus(): void {
 
 export function useOpenNewChat(): () => void {
   const router = useRouter();
-  const wide = useWebTabRail();
+  const nav = newChatNav(useWebTabRail(), useHomeView().view === 'board', usePathname());
   return () => {
     requestNewChatFocus();
-    if (wide) router.replace('/');
-    else router.push('/new');
+    if (nav.push) router.push(nav.href);
+    else router.replace(nav.href);
   };
 }
 

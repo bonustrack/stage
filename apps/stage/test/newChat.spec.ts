@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  MAX_SHOWN_RECIPIENTS, NO_MEMBER_HISTORY, askPlaceholder, membersDraftKey, newChatDraftKey, parseMemberHistory, pickedRecipients,
+  MAX_SHOWN_RECIPIENTS, NO_MEMBER_HISTORY, askPlaceholder, membersDraftKey, newChatDraftKey, newChatNav, parseMemberHistory, pickedRecipients,
   rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients, startedChatWith,
 } from '../components/home/newChat.model';
 
@@ -121,5 +121,21 @@ describe('new chat member memory', () => {
     expect(parseMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
     expect(parseMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
     expect(parseMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
+  });
+});
+
+describe('newChatNav', () => {
+  test('phones push the new chat page', () => {
+    expect(newChatNav(false, false, '/')).toEqual({ href: '/new', push: true });
+    expect(newChatNav(false, true, '/')).toEqual({ href: '/new', push: true });
+  });
+
+  test('desktop chats view goes home, where the new chat lives', () => {
+    expect(newChatNav(true, false, '/channel/abc')).toEqual({ href: '/', push: false });
+  });
+
+  test('desktop board view opens it beside the board like a channel', () => {
+    expect(newChatNav(true, true, '/')).toEqual({ href: '/new', push: true });
+    expect(newChatNav(true, true, '/channel/abc')).toEqual({ href: '/new', push: false });
   });
 });

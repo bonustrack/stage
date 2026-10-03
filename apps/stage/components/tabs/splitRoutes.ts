@@ -27,6 +27,7 @@ export function isTabRoute(pathname: string): boolean {
 export function isSplitRoute(pathname: string, boardHome = false): boolean {
   if (isOnboardingRoute(pathname)) return false;
   if (pathname === '/') return !boardHome;
+  if (pathname === '/new') return true;
   if (isDmRoute(pathname)) return true;
   return SPLIT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }

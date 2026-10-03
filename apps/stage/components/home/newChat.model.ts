@@ -12,6 +12,14 @@ export function newChatDraftKey(account: { id: string } | null): string | null {
   return account === null ? null : `new-chat:${account.id}`;
 }
 
+interface NewChatNav { href: '/' | '/new'; push: boolean }
+
+export function newChatNav(wide: boolean, board: boolean, pathname: string): NewChatNav {
+  if (!wide) return { href: '/new', push: true };
+  if (!board) return { href: '/', push: false };
+  return { href: '/new', push: pathname === '/' };
+}
+
 export function membersDraftKey(draftKey: string | null): string | null {
   return draftKey === null ? null : `${draftKey}:members`;
 }

@@ -37,6 +37,7 @@ describe('isSplitRoute', () => {
   test('the home page takes the full width when the board is the home view, channels still split', () => {
     expect(isSplitRoute('/', true)).toBe(false);
     expect(isSplitRoute('/channel/abc', true)).toBe(true);
+    expect(isSplitRoute('/new', true)).toBe(true);
   });
 });
 
