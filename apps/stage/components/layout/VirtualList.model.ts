@@ -6,6 +6,8 @@ export interface ListScrollMetrics {
 
 export const DEFAULT_EDGE_THRESHOLD = 2;
 
+export const LIST_CELL_SELECTOR = '[data-index]';
+
 export function distanceFromStart(m: ListScrollMetrics): number {
   return Math.max(0, m.offset);
 }

@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-virtual';
 import { elementHost, whenShown, windowHost, type ScrollHost } from './VirtualList.web.host';
 import {
-  distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart, type ListScrollMetrics,
+  LIST_CELL_SELECTOR, distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart, type ListScrollMetrics,
 } from './VirtualList.model';
 import type { ListAnchor, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 import { SELF_SCROLL, SELF_SCROLLBAR } from './webChrome';
@@ -187,7 +187,7 @@ function useInitialPosition<T>(
 }
 
 function rowElements(refs: ListRefs): HTMLElement[] {
-  return Array.from(refs.items.current?.querySelectorAll<HTMLElement>('[data-index]') ?? []);
+  return Array.from(refs.items.current?.querySelectorAll<HTMLElement>(LIST_CELL_SELECTOR) ?? []);
 }
 
 function viewportTop(refs: ListRefs, scroll: VirtualListProps<unknown>['scroll']): number {

@@ -30,6 +30,10 @@ export function toastLabelError(e: unknown, what = 'labels'): void {
   else capabilities.toast(`Could not update ${what}. Try again.`);
 }
 
+export function setChannelCategory(convId: string, category: string | null): void {
+  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => { toastLabelError(e, 'the category'); });
+}
+
 const NO_LABELS: string[] = [];
 
 function isLabelList(value: unknown): value is string[] {
@@ -217,9 +221,7 @@ export function ChannelCategory({ convId }: { convId: string }): React.ReactElem
   const category = useLiveChannelCategory(convId);
   if (category === null && !rights.appData) return null;
   const current = category === null ? [] : [category];
-  const commit = (edits: ListEdits): void => {
-    void setGroupCategory(lineOfConv(convId), edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, 'the category'); });
-  };
+  const commit = (edits: ListEdits): void => { setChannelCategory(convId, edits.added[0] ?? null); };
   return (
     <SidebarSection title="Category" icon={IconFolder1} editLabel="Edit category" canEdit={rights.appData} current={current} single
       onCommit={commit} renderPicker={(draft) => <CategoryPicker {...draft} current={current}/>}>

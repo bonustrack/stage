@@ -1,10 +1,12 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { Vibration, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
 } from 'react-native-reanimated';
 import { CHANNEL_ROW_HEIGHT } from '../ChannelRow';
+import { setChannelCategory } from '../channel/channel.labels';
+import { LIST_CELL_SELECTOR } from '../layout/VirtualList.model';
 import { moveCategory } from '../../lib/channelGroups';
 import { movePin } from '../../lib/pins';
 import { usePalette } from '../../lib/theme';
@@ -12,7 +14,7 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { GROUP_HEADER_HEIGHT } from './GroupHeader';
 import type { HomeListItem } from './groups.model';
 import {
-  NO_BLOCKS, blockShift, dropTarget, sectionBlocks, sectionShape, uniformBlocks, type DragBlocks,
+  NO_BLOCKS, NO_ZONES, blockShift, categoryZones, dragTarget, sectionBlocks, sectionShape, uniformBlocks, type DragBlocks,
 } from './listDrag.model';
 
 const HOLD_MS = 250;
@@ -57,15 +59,30 @@ export function useSectionDrag(items: readonly HomeListItem[], grouped: boolean)
   return useListDrag(blocks, move);
 }
 
+export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: boolean): ListDrag {
+  const shape = byCategory ? sectionShape(items) : '';
+  const zones = useMemo(
+    () => (shape === '' ? NO_ZONES : categoryZones(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT)),
+    [shape],
+  );
+  const move = useCallback((convId: string, key: string) => {
+    const category = zones.categories.get(key);
+    if (category !== undefined) setChannelCategory(convId, category);
+  }, [zones]);
+  return useListDrag(zones.blocks, move);
+}
+
 function setDragging(on: boolean): void {
   if (typeof document === 'undefined') return;
   document.documentElement.classList.toggle('stage-dragging', on);
 }
 
-let scrollLocked = false;
+let lifted = false;
+
+export const isLifted = (): boolean => lifted;
 
 function blockScroll(event: TouchEvent): void {
-  if (scrollLocked && event.cancelable) event.preventDefault();
+  if (lifted && event.cancelable) event.preventDefault();
 }
 
 function lockScrollOnLift(node: unknown): void {
@@ -74,14 +91,25 @@ function lockScrollOnLift(node: unknown): void {
   }
 }
 
-function lift(): void {
-  scrollLocked = true;
+let raisedCell: HTMLElement | null = null;
+
+function raiseCell(node: unknown): void {
+  if (typeof HTMLElement === 'undefined' || !(node instanceof HTMLElement)) return;
+  raisedCell = node.closest<HTMLElement>(LIST_CELL_SELECTOR);
+  if (raisedCell !== null) raisedCell.style.zIndex = '1';
+}
+
+function lift(node: unknown): void {
+  lifted = true;
+  raiseCell(node);
   Vibration.vibrate(10);
 }
 
 function settle(): void {
-  scrollLocked = false;
+  lifted = false;
   setDragging(false);
+  if (raisedCell !== null) raisedCell.style.zIndex = '';
+  raisedCell = null;
 }
 
 function swallowClick(event: Event): void {
@@ -96,11 +124,14 @@ function suppressNextClick(): void {
 }
 
 function useBlockStyle(drag: ListDrag, index: number): AnimatedStyle<ViewStyle> {
-  const { border } = usePalette();
+  const { border, inputBg } = usePalette();
   return useAnimatedStyle(() => {
     const from = drag.from.value;
     if (from === -1) return { transform: [{ translateY: 0 }], zIndex: 0, backgroundColor: 'transparent' };
     if (from === index) return { transform: [{ translateY: drag.offset.value }], zIndex: 10, backgroundColor: border };
+    if (drag.zones.length > 0) {
+      return { transform: [{ translateY: 0 }], zIndex: 0, backgroundColor: drag.zones[index] === drag.to.value ? inputBg : 'transparent' };
+    }
     const shift = blockShift(index, from, drag.to.value, drag.heights[from] ?? 0);
     return { transform: [{ translateY: withTiming(shift, { duration: SHIFT_MS }) }], zIndex: 0, backgroundColor: 'transparent' };
   });
@@ -117,11 +148,18 @@ export function Draggable({ drag, index, onHold, children }: {
   drag: ListDrag; index: number; onHold?: (anchor: { x: number; y: number }) => void; children: ReactNode;
 }): React.ReactElement {
   const touch = isCoarsePointer();
-  const { tops, heights } = drag;
+  const { tops, heights, zones } = drag;
+  const node = useRef<unknown>(null);
+  const holdNode = useCallback((el: unknown) => { node.current = el; lockScrollOnLift(el); }, []);
   const gesture = useMemo(() => {
+    const onLift = (): void => { lift(node.current); };
     const dropped = (fromIndex: number, toIndex: number): void => {
       suppressNextClick();
       drag.drop(fromIndex, toIndex);
+    };
+    const held = (anchor: { x: number; y: number }): void => {
+      suppressNextClick();
+      onHold?.(anchor);
     };
     const pan = Gesture.Pan()
       .onBegin(() => { runOnJS(setDragging)(true); })
@@ -129,15 +167,15 @@ export function Draggable({ drag, index, onHold, children }: {
         drag.from.value = index;
         drag.to.value = index;
         drag.offset.value = 0;
-        runOnJS(lift)();
+        runOnJS(onLift)();
       })
       .onUpdate((e) => {
         drag.offset.value = e.translationY;
-        drag.to.value = dropTarget(tops, heights, index, e.translationY);
+        drag.to.value = dragTarget(tops, heights, zones, index, e.translationY);
       })
       .onEnd((e) => {
         if (Math.abs(e.translationY) >= MOVE_SLOP) runOnJS(dropped)(index, drag.to.value);
-        else if (touch && onHold !== undefined) runOnJS(onHold)({ x: e.absoluteX, y: e.absoluteY });
+        else if (touch && onHold !== undefined) runOnJS(held)({ x: e.absoluteX, y: e.absoluteY });
       })
       .onFinalize(() => {
         drag.from.value = -1;
@@ -149,13 +187,13 @@ export function Draggable({ drag, index, onHold, children }: {
     else pan.activeOffsetY([-MOVE_SLOP, MOVE_SLOP]);
     pan.config.touchAction = 'pan-y';
     return pan;
-  }, [drag, index, tops, heights, touch, onHold]);
+  }, [drag, index, tops, heights, zones, touch, onHold]);
   const style = useBlockStyle(drag, index);
 
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View style={style}>
-        <Animated.View ref={lockScrollOnLift}>{children}</Animated.View>
+        <Animated.View ref={holdNode}>{children}</Animated.View>
       </Animated.View>
     </GestureDetector>
   );
