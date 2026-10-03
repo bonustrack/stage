@@ -7,9 +7,8 @@ import { registerHiddenConv } from './readSyncRegistry';
 import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
-import { describeError, ignored, report, reported, recover } from './errorPolicy';
-import { syncCheckResult, type SyncCheckResult } from './syncCheck.model';
-import { resyncActiveFeeds } from './xmtp.resync';
+import { ignored, report, reported, recover } from './errorPolicy';
+import { runSyncCheck, type SyncCheckResult } from './syncCheck.model';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -119,18 +118,19 @@ export async function groupAccessOf(convId: string): Promise<GroupAccess> {
 }
 
 export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) return syncCheckResult({ found: false, active: false, syncError: '', state: null, newest: '' });
-  const active = await sdk.isActive(conv).catch(recover('xmtp.syncCheck', true));
-  const syncError = active ? await conv.sync().then(() => '', describeError) : '';
-  const [state, latest] = await Promise.all([
-    sdk.syncState(conv).catch(recover('xmtp.syncState', null)),
-    sdk.messages(conv, { limit: 1, order: 'desc' }).catch(recover('xmtp.syncCheck', [])),
-  ]);
-  const newestMs = latest[0] ? sdk.sentNsOf(latest[0]) / 1_000_000 : 0;
-  void resyncActiveFeeds();
-  return syncCheckResult({
-    found: true, active, syncError, state, newest: newestMs > 0 ? new Date(newestMs).toLocaleString() : '',
+  const client = sdk.cachedClient();
+  if (!client) return { ok: false, title: 'Messaging not ready', message: 'The messaging client has not finished opening on this device.' };
+  return runSyncCheck({
+    find: () => sdk.findConv(client, convId),
+    isActive: sdk.isActive,
+    sync: (conv) => conv.sync(),
+    details: async (conv) => {
+      const [state, latest] = await Promise.all([
+        sdk.syncState(conv), sdk.messages(conv, { limit: 1, order: 'desc' }),
+      ]);
+      const newestMs = latest[0] ? sdk.sentNsOf(latest[0]) / 1_000_000 : 0;
+      return { state, newest: newestMs > 0 ? new Date(newestMs).toLocaleString() : '' };
+    },
   });
 }
 

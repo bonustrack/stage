@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test';
-import { syncCheckResult, type SyncCheckInput } from '../lib/syncCheck.model';
+import { describe, expect, mock, test } from 'bun:test';
+import { runSyncCheck, syncCheckResult, type SyncCheckInput } from '../lib/syncCheck.model';
 
 const HEALTHY: SyncCheckInput = {
   found: true,
@@ -62,5 +62,93 @@ describe('syncCheckResult', () => {
 
   test('a channel with no messages says so', () => {
     expect(syncCheckResult({ ...HEALTHY, newest: '' }).message).toContain('No messages on this device.');
+  });
+});
+
+function syncOps() {
+  return {
+    find: mock((): Promise<string | null> => Promise.resolve('channel')),
+    isActive: mock(() => Promise.resolve(true)),
+    sync: mock(() => Promise.resolve()),
+    details: mock(() => Promise.resolve({ state: HEALTHY.state, newest: HEALTHY.newest })),
+  };
+}
+
+describe('runSyncCheck', () => {
+  test('checks only the chosen channel and reports its state', async () => {
+    const ops = syncOps();
+    expect(await runSyncCheck(ops)).toEqual(syncCheckResult(HEALTHY));
+    expect(ops.isActive).toHaveBeenCalledWith('channel');
+    expect(ops.sync).toHaveBeenCalledWith('channel');
+    expect(ops.details).toHaveBeenCalledWith('channel');
+  });
+
+  test('a missing local channel does not run network sync', async () => {
+    const ops = syncOps();
+    ops.find.mockResolvedValue(null);
+    expect((await runSyncCheck(ops)).title).toBe('Not on this device');
+    expect(ops.isActive).not.toHaveBeenCalled();
+    expect(ops.sync).not.toHaveBeenCalled();
+  });
+
+  test('lookup errors are not misreported as a missing channel', async () => {
+    const ops = syncOps();
+    ops.find.mockRejectedValue(new Error('lookup failed'));
+    expect(await runSyncCheck(ops)).toEqual({
+      ok: false, title: 'Couldn’t check sync', message: 'Local channel lookup: lookup failed',
+    });
+  });
+
+  test('an inactive channel is not synced', async () => {
+    const ops = syncOps();
+    ops.isActive.mockResolvedValue(false);
+    expect((await runSyncCheck(ops)).title).toBe('Not in the channel yet');
+    expect(ops.sync).not.toHaveBeenCalled();
+    expect(ops.details).toHaveBeenCalledTimes(1);
+  });
+
+  test('a sync rejection retains the available local diagnostics', async () => {
+    const ops = syncOps();
+    ops.sync.mockRejectedValue(new Error('network unavailable'));
+    const result = await runSyncCheck(ops);
+    expect(result.title).toBe('Sync failed');
+    expect(result.message).toContain('network unavailable');
+    expect(result.message).toContain('Epoch: 12');
+  });
+
+  for (const [method, phase] of [
+    ['find', 'Local channel lookup'],
+    ['isActive', 'Channel membership'],
+    ['sync', 'Channel network sync'],
+    ['details', 'Local sync state and newest message'],
+  ] as const) {
+    test(`${method} cannot leave the check pending`, async () => {
+      const ops = syncOps();
+      ops[method].mockImplementation(() => new Promise<never>(() => undefined));
+      const result = await runSyncCheck(ops, 20);
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain(phase);
+      expect(result.message).toContain('timed out');
+      if (method !== 'details') expect(ops.details).not.toHaveBeenCalled();
+    });
+
+    test(`${method} errors cannot report a healthy channel`, async () => {
+      const ops = syncOps();
+      ops[method].mockRejectedValue(new Error('operation failed'));
+      const result = await runSyncCheck(ops);
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain('operation failed');
+    });
+  }
+
+  test('a late lookup does not start more operations after timeout', async () => {
+    const ops = syncOps();
+    const lookup = Promise.withResolvers<string>();
+    ops.find.mockImplementation(() => lookup.promise);
+    expect((await runSyncCheck(ops, 20)).ok).toBe(false);
+    lookup.resolve('channel');
+    await lookup.promise;
+    expect(ops.isActive).not.toHaveBeenCalled();
+    expect(ops.sync).not.toHaveBeenCalled();
   });
 });

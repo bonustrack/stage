@@ -43,11 +43,17 @@ describe('channelMenuItems', () => {
     expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true });
   });
 
-  test('a direct chat without a peer only offers read and pin', () => {
+  test('an unresolved chat still offers the sync check', () => {
     const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false });
     expect(items).toEqual([
       { id: 'toggle-read', label: 'Mark as unread', icon: 'IconEmail1' },
       { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
+      { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
     ]);
+  });
+
+  test('the blank pinned conversation menu exposes diagnostics without channel actions', () => {
+    const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false, isPinned: true }, { search: true });
+    expect(items.map(i => i.label)).toEqual(['Search', 'Mark as unread', 'Unpin', 'Check sync']);
   });
 });

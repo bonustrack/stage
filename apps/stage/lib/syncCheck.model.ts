@@ -1,4 +1,6 @@
 import type { SyncState } from './xmtp.sdk.core';
+import { describeError } from './errorPolicy';
+import { within } from './history.model';
 
 export interface SyncCheckInput {
   found: boolean;
@@ -49,4 +51,32 @@ function details(input: SyncCheckInput): string[] {
 export function syncCheckResult(input: SyncCheckInput): SyncCheckResult {
   const { ok, title, summary } = verdict(input);
   return { ok, title, message: [summary, ...details(input)].join('\n') };
+}
+
+interface SyncCheckOps<C> {
+  find: () => Promise<C | null | undefined>;
+  isActive: (conv: C) => Promise<boolean>;
+  sync: (conv: C) => Promise<unknown>;
+  details: (conv: C) => Promise<Pick<SyncCheckInput, 'state' | 'newest'>>;
+}
+
+export async function runSyncCheck<C>(ops: SyncCheckOps<C>, timeoutMs = 15_000): Promise<SyncCheckResult> {
+  const deadline = Date.now() + timeoutMs;
+  let phase = 'Local channel lookup';
+  const step = <T>(label: string, work: () => Promise<T>): Promise<T> => {
+    const left = deadline - Date.now();
+    if (left <= 0) throw new Error('The check timed out.');
+    phase = label;
+    return within(work(), left, 'The check timed out.');
+  };
+  try {
+    const conv = await step('Local channel lookup', ops.find);
+    if (!conv) return syncCheckResult({ found: false, active: false, syncError: '', state: null, newest: '' });
+    const active = await step('Channel membership', () => ops.isActive(conv));
+    const syncError = active ? await step('Channel network sync', () => ops.sync(conv)).then(() => '', describeError) : '';
+    const detail = await step('Local sync state and newest message', () => ops.details(conv));
+    return syncCheckResult({ found: true, active, syncError, ...detail });
+  } catch (err) {
+    return { ok: false, title: 'Couldn’t check sync', message: `${phase}: ${clip(describeError(err))}` };
+  }
 }
