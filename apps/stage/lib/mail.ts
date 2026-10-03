@@ -9,6 +9,7 @@ import { useAccountEpoch } from './accountEpoch';
 import { linkProxyBase } from './historyServer';
 import { ownedStageLabel } from './mailKey';
 import { createValueStore } from './persistedStore';
+import { getQueryClient } from './queryClient';
 import { report, reported } from './errorPolicy';
 import { signingKeyForRecord } from './xmtp.signing.core';
 
@@ -26,6 +27,7 @@ export interface InboxState {
 
 const SESSION_MARGIN_MS = 30_000;
 const NO_KEYS: readonly string[] = [];
+const signerCache = new Map<string, Promise<SignMessage>>();
 const keyCache = new Map<string, Promise<MailKeyPair>>();
 const sessionCache = new Map<string, Promise<MailSession>>();
 const activated = new Set<string>();
@@ -47,10 +49,12 @@ function cached<T>(cache: Map<string, Promise<T>>, key: string, make: () => Prom
   return pending;
 }
 
-async function signerFor(box: Mailbox): Promise<SignMessage> {
-  const rec = (await loadAccounts()).find((account) => account.id === box.accountId);
-  if (rec === undefined) throw new Error('This account is no longer on this device.');
-  return (await signingKeyForRecord(rec)).signMessage;
+function signerFor(box: Mailbox): Promise<SignMessage> {
+  return cached(signerCache, box.accountId, async () => {
+    const rec = (await loadAccounts()).find((account) => account.id === box.accountId);
+    if (rec === undefined) throw new Error('This account is no longer on this device.');
+    return (await signingKeyForRecord(rec)).signMessage;
+  });
 }
 
 function mailKeyFor(box: Mailbox): Promise<MailKeyPair> {
@@ -92,9 +96,8 @@ function openIndex(keys: MailKeyPair, box: Mailbox, item: MailListItem): MailInd
 }
 
 async function listBox(box: Mailbox): Promise<InboxEntry[]> {
-  await activate(box);
-  const keys = await mailKeyFor(box);
-  const items = await withSession(box, listMail);
+  void activate(box).catch(reported('mail.activate'));
+  const [keys, items] = await Promise.all([mailKeyFor(box), withSession(box, listMail)]);
   return items.map((item) => ({ label: box.label, id: item.id, ts: item.ts, size: item.size, index: openIndex(keys, box, item) }));
 }
 
@@ -120,8 +123,7 @@ async function loadMailboxes(): Promise<Mailbox[]> {
 }
 
 async function openMail(box: Mailbox, id: string): Promise<ParsedMail> {
-  const keys = await mailKeyFor(box);
-  const sealed = await withSession(box, (session) => fetchMail(session, id));
+  const [keys, sealed] = await Promise.all([mailKeyFor(box), withSession(box, (session) => fetchMail(session, id))]);
   return parseMail(openMailPart(keys.secretKey, box.label, id, 'body', sealed));
 }
 
@@ -130,15 +132,27 @@ export function useMailboxes(): UseQueryResult<Mailbox[]> {
   return useQuery({ queryKey: ['mailboxes', epoch], queryFn: loadMailboxes, staleTime: 5 * 60_000 });
 }
 
+const INBOX_STALE_MS = 30_000;
+
+function inboxKey(boxes: readonly Mailbox[]): string[] {
+  return ['inbox', boxes.map(boxKey).join(',')];
+}
+
 export function useInbox(boxes: readonly Mailbox[] | undefined): UseQueryResult<InboxState> {
   const list = boxes ?? [];
   return useQuery({
-    queryKey: ['inbox', list.map(boxKey).join(',')],
+    queryKey: inboxKey(list),
     queryFn: () => loadInbox(list),
     enabled: list.length > 0,
-    staleTime: 30_000,
+    staleTime: INBOX_STALE_MS,
     retry: false,
   });
+}
+
+export function prefetchInbox(boxes: readonly Mailbox[]): void {
+  if (boxes.length === 0) return;
+  void getQueryClient().prefetchQuery({ queryKey: inboxKey(boxes), queryFn: () => loadInbox(boxes), staleTime: INBOX_STALE_MS })
+    .catch(reported('mail.prefetch'));
 }
 
 export function useMail(box: Mailbox | undefined, id: string): UseQueryResult<ParsedMail> {

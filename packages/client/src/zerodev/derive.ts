@@ -16,15 +16,11 @@ export function normalizeMnemonic(phrase: string): string {
   return phrase.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+const WORD_COUNTS: readonly number[] = [12, 15, 18, 21, 24];
+
 export function isValidMnemonic(phrase: string): boolean {
-  const words = normalizeMnemonic(phrase).split(' ');
-  if (![12, 15, 18, 21, 24].includes(words.length)) return false;
-  try {
-    mnemonicToAccount(normalizeMnemonic(phrase));
-    return true;
-  } catch {
-    return false;
-  }
+  const norm = normalizeMnemonic(phrase);
+  return WORD_COUNTS.includes(norm.split(' ').length) && WORD_COUNTS.includes(norm.normalize('NFKD').split(' ').length);
 }
 
 export function deriveOwner(mnemonic: string, index: number): HDAccount {

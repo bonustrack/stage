@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -21,7 +21,7 @@ import {
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { listXmtpInstallations } from '../../lib/xmtp.client';
-import { useMailboxes } from '../../lib/mail';
+import { prefetchInbox, useMailboxes } from '../../lib/mail';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
@@ -147,7 +147,9 @@ function PreferencesGroup(): React.ReactElement {
 function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
   const address = useActiveAccountRecord()?.address;
-  const hasMailbox = (useMailboxes().data?.length ?? 0) > 0;
+  const boxes = useMailboxes().data;
+  const hasMailbox = (boxes?.length ?? 0) > 0;
+  useEffect(() => { if (boxes !== undefined) prefetchInbox(boxes); }, [boxes]);
   const row = (id: 'inbox' | 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
     return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;

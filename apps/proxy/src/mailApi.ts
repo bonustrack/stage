@@ -100,11 +100,11 @@ const openSession: Handler = async (request, deps) => {
   const signature = text(body.signature);
   if (!isMailboxLabel(label) || !isSignature(signature)) return fail(400, 'label, nonce and signature required');
   const stub = deps.mailbox(label);
-  const consumed = await mailboxCall(stub, 'consume', { nonce });
+  const [consumed, owner] = await Promise.all([mailboxCall(stub, 'consume', { nonce }), deps.chain.owner(label)]);
   if (!consumed.ok) return fail(401, 'sign-in expired, start again');
   const { expiresAt } = (await consumed.json()) as { expiresAt: number };
-  const owner = await verifiedOwner(deps, label, mailSessionMessage({ label, nonce, expiresAt }), signature);
-  if (owner instanceof Response) return owner;
+  if (owner === null) return fail(404, 'no such name');
+  if (!(await deps.chain.verify(owner, mailSessionMessage({ label, nonce, expiresAt }), signature))) return fail(401, 'invalid signature');
   const session = await mailboxCall(stub, 'session', { owner: owner.toLowerCase() });
   return session.ok ? reply(await session.json()) : fail(502, 'could not open a session');
 };
@@ -116,10 +116,9 @@ async function access(request: Request, deps: MailDeps): Promise<Access | Respon
   if (!isMailboxLabel(label)) return fail(400, 'label required');
   if (token === '') return fail(401, 'sign in first');
   const stub = deps.mailbox(label);
-  const auth = await mailboxCall(stub, 'auth', { token });
+  const [auth, current] = await Promise.all([mailboxCall(stub, 'auth', { token }), deps.chain.owner(label)]);
   if (!auth.ok) return fail(401, 'session expired, sign in again');
   const { owner } = (await auth.json()) as { owner: string };
-  const current = await deps.chain.owner(label);
   if (current === null || current.toLowerCase() !== owner) return fail(403, 'this name has a new owner');
   return { stub, owner, id: params.get('id') ?? '' };
 }

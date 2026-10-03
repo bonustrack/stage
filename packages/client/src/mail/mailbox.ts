@@ -99,8 +99,7 @@ export function mailSessionMessage(challenge: MailChallenge): string {
 
 export async function deriveMailKey(label: string, signOwnerMessage: (message: string) => Promise<Hex>): Promise<MailKeyPair> {
   const message = mailKeyMessage(label);
-  const first = await signOwnerMessage(message);
-  const second = await signOwnerMessage(message);
+  const [first, second] = await Promise.all([signOwnerMessage(message), signOwnerMessage(message)]);
   if (!isHex(first) || first.toLowerCase() !== second.toLowerCase()) {
     throw new Error('This signer does not give the same signature twice, so it cannot hold a mail key.');
   }
