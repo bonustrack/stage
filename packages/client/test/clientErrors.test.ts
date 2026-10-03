@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, readableSendError,
+  CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, isMissingMlsState,
+  readableSendError,
 } from '../src/xmtp/clientErrors';
 
 const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
@@ -24,6 +25,23 @@ describe('inactive conversations', () => {
 
   test('the waiting notice says how the device gets added', () => {
     expect(CHANNEL_WAITING_NOTICE).toContain('sends a message');
+  });
+});
+
+const NATIVE_RESTORED = 'Call to function \'XMTP.findConversation\' has been rejected. \u2192 Caused by: '
+  + 'uniffi.xmtpv3.FfiException$Exception: [NotFound::MlsGroup] Group error: MLS Group bb4e76e238f67034feae85db784edfd6 Not Found';
+
+describe('restored copies without MLS state', () => {
+  test('recognises the native and plain libxmtp errors', () => {
+    expect(isMissingMlsState(new Error(NATIVE_RESTORED))).toBe(true);
+    expect(isMissingMlsState(new Error('MLS Group bb4e76e2 Not Found'))).toBe(true);
+    expect(isMissingMlsState('group error: MLS Group abc Not Found')).toBe(true);
+  });
+
+  test('leaves other lookup errors alone', () => {
+    expect(isMissingMlsState(new Error(NATIVE_INACTIVE))).toBe(false);
+    expect(isMissingMlsState(new Error('Group not found'))).toBe(false);
+    expect(isMissingMlsState(new Error('network error'))).toBe(false);
   });
 });
 

@@ -1,9 +1,11 @@
+import { isMissingMlsState } from '@stage-labs/client/xmtp/clientErrors';
 import type { SyncState } from './xmtp.sdk.core';
 import { describeError } from './errorPolicy';
 import { within } from './history.model';
 
 export interface SyncCheckInput {
   found: boolean;
+  restored?: boolean;
   active: boolean;
   syncError: string;
   state: SyncState | null;
@@ -20,6 +22,9 @@ const MAX_DETAIL = 300;
 
 function verdict(input: SyncCheckInput): Omit<SyncCheckResult, 'message'> & { summary: string } {
   if (!input.found) return { ok: false, title: 'Not on this device', summary: 'This device has no copy of this channel yet.' };
+  if (input.restored === true) {
+    return { ok: false, title: 'Not in the channel yet', summary: 'This device only has a restored copy of this channel from the history import, so it is not a member yet. It is added when a member next sends a message.' };
+  }
   const paused = input.state?.pausedForVersion ?? '';
   if (paused !== '') {
     return { ok: false, title: 'Update needed', summary: `This channel needs messaging version ${paused} or newer. This device skips new messages until it is updated.` };
@@ -38,11 +43,18 @@ function clip(text: string): string {
   return text.length > MAX_DETAIL ? `${text.slice(0, MAX_DETAIL)}…` : text;
 }
 
-function details(input: SyncCheckInput): string[] {
-  if (!input.found) return [];
+function localDetails(input: SyncCheckInput): string[] {
+  if (input.restored === true) return [];
   return [
     input.newest === '' ? 'No messages on this device.' : `Newest message here: ${input.newest}`,
     input.state ? `Epoch: ${input.state.epoch}` : 'Could not read the sync state.',
+  ];
+}
+
+function details(input: SyncCheckInput): string[] {
+  if (!input.found) return [];
+  return [
+    ...localDetails(input),
     input.syncError === '' ? '' : `Error: ${clip(input.syncError)}`,
     input.state && input.state.forkDetails !== '' ? `Details: ${clip(input.state.forkDetails)}` : '',
   ].filter(line => line !== '');
@@ -77,6 +89,9 @@ export async function runSyncCheck<C>(ops: SyncCheckOps<C>, timeoutMs = 15_000):
     const detail = await step('Local sync state and newest message', () => ops.details(conv));
     return syncCheckResult({ found: true, active, syncError, ...detail });
   } catch (err) {
+    if (isMissingMlsState(err)) {
+      return syncCheckResult({ found: true, restored: true, active: false, syncError: describeError(err), state: null, newest: '' });
+    }
     return { ok: false, title: 'Couldn’t check sync', message: `${phase}: ${clip(describeError(err))}` };
   }
 }

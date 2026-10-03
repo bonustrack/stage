@@ -72,6 +72,11 @@ export function isGroupInactive(err: unknown): boolean {
   return GROUP_INACTIVE.some(sig => msg.includes(sig));
 }
 
+export function isMissingMlsState(err: unknown): boolean {
+  const msg = errorMessage(err);
+  return msg.includes('NotFound::MlsGroup') || /\bMLS Group\b.*\bNot Found\b/i.test(msg);
+}
+
 export function readableSendError(err: unknown): Error {
   if (isGroupInactive(err)) return new Error(INACTIVE_SEND_MESSAGE);
   return err instanceof Error ? err : new Error(errorMessage(err));
