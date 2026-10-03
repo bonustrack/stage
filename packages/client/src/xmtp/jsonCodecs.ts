@@ -26,6 +26,7 @@ import {
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
   CATEGORY_ORDER_CONTENT_TYPE, categoryOrderFallbackText, type CategoryOrderContent,
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
+  HOME_VIEW_CONTENT_TYPE, homeViewFallbackText, homeViewSchema, type HomeViewContent,
 } from './readState';
 import {
   FRAME_CONTENT_TYPE, FRAME_ACTION_CONTENT_TYPE, frameFallbackText, frameActionFallbackText,
@@ -111,6 +112,10 @@ export const SEARCH_STATE_CODEC = jsonCodec<SearchStateContent>(
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, undefined, false,
 );
 
+export const HOME_VIEW_CODEC = jsonCodec<HomeViewContent>(
+  HOME_VIEW_CONTENT_TYPE, homeViewFallbackText, homeViewSchema, undefined, false,
+);
+
 export const CALL_INVITE_CODEC = jsonCodec<CallInvite>(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');
 
 export const CALL_SIGNAL_CODEC = jsonCodec<CallSignal>(
@@ -138,6 +143,7 @@ export const STAGE_JSON_CODECS = [
   BOARD_STATE_CODEC,
   CATEGORY_ORDER_CODEC,
   SEARCH_STATE_CODEC,
+  HOME_VIEW_CODEC,
   CALL_INVITE_CODEC,
   CALL_SIGNAL_CODEC,
   FRAME_CODEC,

@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, pinnedTop, PAGE_GUTTER, Col } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
-import { usePathname, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
 import { MessengerComposer } from '../composer/MessengerComposer';
@@ -16,7 +16,6 @@ import { getCachedRows, useGroupAccess, xmtpDeleteMessage } from '../../modules/
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
 import { CallButtons } from '../call/CallButtons';
 import { capabilities } from '../../lib/capabilities';
-import { boardPanelConvId } from '../tabs/splitRoutes';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
 import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
@@ -68,11 +67,10 @@ type Conv = ReturnType<typeof useConversationState>;
 
 export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
   const router = useRouter();
-  const onBoard = boardPanelConvId(usePathname()) !== null;
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
-  const back = (): void => { if (onBoard) capabilities.backTo('/board'); else router.replace('/'); };
+  const back = (): void => { router.replace('/'); };
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={back}>
       <ConvTopnavIdentity

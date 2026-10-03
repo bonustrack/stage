@@ -68,8 +68,6 @@ export function rootStackScreenOptions(): FlowScreenOptions {
 
 export const TABS_SCREEN_OPTIONS: FlowScreenOptions = {};
 
-export const BOARD_SCREEN_OPTIONS: FlowScreenOptions = {};
-
 export const Tabs = withLayoutContext(FlowTabNavigator);
 
 const positions = new Map<string, number>();

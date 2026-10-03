@@ -16,7 +16,6 @@ import {
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
-import { boardPanelConvId } from '../../components/tabs/splitRoutes';
 import { ChatColumn, FooterDock } from '../../components/conversation/FooterDock';
 import {
   ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown,
@@ -68,7 +67,7 @@ export default function XmtpConversation(): React.ReactElement {
   const { bg } = usePalette();
   const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const pathname = usePathname();
-  const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/') && boardPanelConvId(pathname) === null);
+  const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/'));
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;

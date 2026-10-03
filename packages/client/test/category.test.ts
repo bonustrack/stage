@@ -22,13 +22,16 @@ describe('channel category', () => {
     for (const value of [undefined, null, '', '   ', 7, ['Work'], { name: 'Work' }]) expect(categoryOf(value)).toBeNull();
   });
 
-  test('reads labels and category together, with old channels having none', async () => {
-    expect(await groupTagsOf(fixture(blob({ labels: ['Todo'], category: 'Work' })).group)).toEqual({ labels: ['Todo'], category: 'Work' });
-    expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() })).toEqual({ labels: [], category: 'Ops' });
+  test('reads labels, category and assignees together, with old channels having none', async () => {
+    const bob = '0x1111111111111111111111111111111111111111';
+    expect(await groupTagsOf(fixture(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group))
+      .toEqual({ labels: ['Todo'], category: 'Work', assigned: [bob] });
+    expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() }))
+      .toEqual({ labels: [], category: 'Ops', assigned: [] });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
       expect((await groupTagsOf(fixture(raw).group)).category).toBeNull();
     }
-    expect(await groupTagsOf({})).toEqual({ labels: [], category: null });
+    expect(await groupTagsOf({})).toEqual({ labels: [], category: null, assigned: [] });
   });
 
   test('sets, changes and clears one category while keeping the other fields', async () => {

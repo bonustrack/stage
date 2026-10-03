@@ -6,11 +6,10 @@ import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../layout';
-import { StackHeader } from '../chrome/StackHeader';
-import { TOPNAV_FADE, TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
+import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
-import { HomeTopnavRight } from '../home/topnavRight';
+import { useHomeTopnav, useSearchOpen } from '../home/list';
 import { ChannelRow } from '../ChannelRow';
 import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
@@ -18,11 +17,11 @@ import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowT
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
 import type { Row as ChannelRowData } from '../home/model';
-import { lineOfConv, prefetchFeed, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
+import { lineOfConv, prefetchFeed, shortAddress, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
 import { useStoreValue } from '../../lib/storeCore';
 import { usePinnedOrder } from '../../lib/pins';
 import { useClearedChats } from '../../lib/clearedChats';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
@@ -30,12 +29,14 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useHomeView } from '../../lib/homeView';
 import { capabilities } from '../../lib/capabilities';
+import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
-import { boardPanelConvId } from '../tabs/splitRoutes';
+import { channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, orderedColumns, revealScrollX,
-  searchedColumns, type BoardColumn, type BoardDrag,
+  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnsEditable, orderedColumns,
+  revealScrollX, searchedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
@@ -56,12 +57,15 @@ const cardDataSet = (columnKey: string, convId: string): MarkedNode => (
 );
 
 function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'replace'): void {
-  const panelLink = { pathname: '/board/[convId]', params: { convId } } as const;
-  if (press === 'push') router.push(panelLink);
-  else router.replace(panelLink);
+  const link = conversationLinkOf(convId, null);
+  if (press === 'push') router.push(link);
+  else router.replace(link);
 }
 
+const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
+
 interface ColumnActions {
+  editable: boolean;
   drop: (drag: BoardDrag, key: string) => void;
   rename: (from: string, to: string) => void;
   remove: (label: string) => void;
@@ -73,17 +77,16 @@ function columnMaxHeight(laneHeight: number): number | string | undefined {
   return laneHeight > 0 ? laneHeight : undefined;
 }
 
-function BoardCard({ item, pinned, columnKey, onOpen }: {
-  item: ChannelRowData; pinned: boolean; columnKey: string; onOpen: () => void;
+function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
+  item: ChannelRowData; pinned: boolean; columnKey: string; editable: boolean; onOpen: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const panel = useWebTabRail();
   const { border, link } = usePalette();
-  const openConvId = boardPanelConvId(pathname);
-  const isGroup = !item.peerAddress;
+  const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
-  const source = useBoardDragSource(isGroup ? { kind: 'card', convId: item.convId, from: columnKey } : null);
+  const source = useBoardDragSource(editable ? { kind: 'card', convId: item.convId, from: columnKey } : null);
   const [menu, setMenu] = useState<RowMenu | null>(null);
   const openMenu = rowMenuOpener(item, setMenu);
   const title = rowTitle(item);
@@ -117,7 +120,7 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
           }
           const press = boardCardPress(openConvId, item.convId);
           if (press === 'close') {
-            capabilities.backTo('/board');
+            capabilities.backTo('/');
             return;
           }
           onOpen();
@@ -131,16 +134,18 @@ function BoardCard({ item, pinned, columnKey, onOpen }: {
   );
 }
 
-function ColumnTitle({ label, onPress }: { label: string; onPress: () => void }): React.ReactElement {
+function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }): React.ReactElement {
+  const title = <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
+  if (onPress === undefined) return <Box style={{ flexShrink: 1 }}>{title}</Box>;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Rename column" style={{ flexShrink: 1 }}>
-      <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>
+      {title}
     </Pressable>
   );
 }
 
-function ColumnCards({ column, pinned, onOpen }: {
-  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; onOpen: (key: string) => void;
+function ColumnCards({ column, pinned, editable, onOpen }: {
+  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; editable: boolean; onOpen: (key: string) => void;
 }): React.ReactElement | null {
   const [width, setWidth] = useState({ scroll: 0, content: 0 });
   if (column.rows.length === 0) return null;
@@ -156,7 +161,7 @@ function ColumnCards({ column, pinned, onOpen }: {
     >
       {column.rows.map(item => (
         <BoardCard
-          key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key}
+          key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key} editable={editable}
           onOpen={() => { onOpen(column.key); }}
         />
       ))}
@@ -188,15 +193,15 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
       ) : (
         <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
           <Row nativeID={handle.nativeID} flex={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
-            <ColumnTitle label={label} onPress={() => { setEditing(true); }}/>
+            <ColumnTitle label={label} onPress={actions.editable ? () => { setEditing(true); } : undefined}/>
             <CountTag count={column.rows.length}/>
             <Box flex={1}/>
           </Row>
-          <ColumnMenu onDelete={() => { actions.remove(label); }}/>
+          {actions.editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
         </Row>
       )}
-      <ColumnCards column={column} pinned={pinned} onOpen={onOpen}/>
-      <AddItemButton onPress={() => { actions.add(label); }}/>
+      <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
+      {actions.editable ? <AddItemButton onPress={() => { actions.add(label); }}/> : null}
     </ColumnFrame>
   );
 }
@@ -236,7 +241,7 @@ function BoardLanes({ columns, pinned, saved, actions, filtering }: {
   const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
   const laneHeight = frame.height - padding.paddingTop - padding.paddingBottom;
   const [openedFrom, setOpenedFrom] = useState<string | null>(null);
-  const openConvId = boardPanelConvId(usePathname());
+  const openConvId = channelRouteConvId(usePathname());
   const openIndex = activeColumnIndex(columns, openConvId, openedFrom);
   const revealColumn = (index: number): void => {
     if (index === -1 || frame.width === 0) return;
@@ -278,14 +283,15 @@ function BoardLanes({ columns, pinned, saved, actions, filtering }: {
           onOpen={setOpenedFrom}
         />
       ))}
-      <AddColumn columns={columns} saved={saved} onReveal={() => { reveal.current = true; }}/>
+      {actions.editable ? <AddColumn columns={columns} saved={saved} onReveal={() => { reveal.current = true; }}/> : null}
     </Scroll>
   );
 }
 
-function useMemberProfiles(rows: ChannelRowData[] | null, query: string): number {
+function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
-  return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members]);
+  const assigned = assignees ? (rows ?? []).flatMap(r => r.assigned) : [];
+  return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members, ...assigned]);
 }
 
 function BoardBody({ query, filtering }: { query: string; filtering: boolean }): React.ReactElement {
@@ -295,14 +301,15 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
   const order = useBoardOrder();
+  const { columnBy } = useHomeView();
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
   useChannelsSync({ accountEpoch: useActiveAccount(), setError });
-  const profiles = useMemberProfiles(rows, query);
+  const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, r => isRowCleared(cleared, r)), order),
-    [rows, cleared, pinned, order],
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, assigneeName, r => isRowCleared(cleared, r)), order),
+    [rows, cleared, pinned, order, columnBy, profiles],
   );
   const shown = useMemo(
     () => searchedColumns(columns, query, memberNamesOf, getDraft),
@@ -311,6 +318,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {
+    editable: columnsEditable(columnBy),
     drop: (drag, key) => { dropOnBoard(columns, order, drag, key); },
     rename: (from, to) => { void renameBoardLabel(rows, columns, order, from, to).catch(reported('board.rename')); },
     remove: (label) => { void deleteBoardLabel(rows, columns, order, label).catch(reported('board.delete')); },
@@ -328,42 +336,27 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   );
 }
 
-function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
-  inline: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
+function BoardFrame({ pane, query, setQuery, onFilterMenu, children }: {
+  pane: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
   children: React.ReactNode;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
-  const safeTop = useSafeAreaInsets().top;
   const wide = useWebTabRail();
-  const [searchKey, setSearchKey] = useState(0);
+  const search = useSearchOpen(query, setQuery, wide);
+  const slot = useHomeTopnav({ scope: 'board', pane, query, setQuery, onFilterMenu }, search, wide);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
-  const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); setSearchKey(key => key + 1); };
-  const closeSearch = (): void => { setSearchKey(0); setQuery(''); };
-  const right = <HomeTopnavRight head={text} onOpenSearch={wide ? openSearch : undefined} view="board"/>;
-  if (wide && searchKey > 0) {
-    return <>
-      <FilterSearch
-        key={searchKey} scope="board" onMenu={onFilterMenu}
-        query={query} setQuery={setQuery} onClose={closeSearch}
-        head={link} sub={text} border={border} inline={inline} topInset={inline ? 0 : safeTop} trailing={right}
-      />
-      {children}
-    </>;
-  }
-  const header = <StackHeader title="Board" backTo="/" inline={inline} bordered={wide} trailing={<>
-    <Box flex={1}/>
-    <Row align="center" gap={18}>{right}</Row>
-  </>}/>;
-  if (wide) return <>{header}{children}</>;
+  const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); search.open(); };
+  const topnav = pane ? slot.override ?? <Topnav inline right={slot.right}/> : null;
+  if (wide) return <>{topnav}{children}</>;
   return <>
-    {header}
+    {topnav}
     <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
       <TopnavFade scroll="window" stickyTop={`${TOPNAV_HEIGHT}px`}/>
       <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
-          key={searchKey} scope="board" onMenu={onFilterMenu} autoFocus={searchKey > 0}
-          query={query} setQuery={setQuery} onClose={closeSearch} onOpen={openSearch}
+          key={search.key} scope="board" onMenu={onFilterMenu} autoFocus={search.key > 0}
+          query={query} setQuery={setQuery} onClose={search.close} onOpen={openSearch}
           head={link} sub={text} border={border}
         />
         <Col height={laneHeight}>{children}</Col>
@@ -372,16 +365,21 @@ function BoardFrame({ inline, query, setQuery, onFilterMenu, children }: {
   </>;
 }
 
-export function BoardScreen({ pane }: { pane?: boolean } = {}): React.ReactElement | null {
+function useBoardHeight(): number | undefined {
   const { height } = useWindowDimensions();
-  const docked = useWebTabRail();
+  const chrome = useBottomChromeHeight();
+  if (Platform.OS !== 'web') return undefined;
+  return height - TOPNAV_HEIGHT - chrome;
+}
+
+export function BoardScreen({ pane }: { pane: boolean }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [filtering, setFiltering] = useState(false);
-  const windowHeight = Platform.OS === 'web' && pane !== true;
-  if (docked && pane !== true) return null;
+  const height = useBoardHeight();
+  const windowHeight = !pane && height !== undefined;
   return (
     <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <BoardFrame inline={pane === true} query={query} setQuery={setQuery} onFilterMenu={setFiltering}>
+      <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering}>
         <BoardBody query={query} filtering={filtering}/>
       </BoardFrame>
     </Col>

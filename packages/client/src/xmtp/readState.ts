@@ -149,6 +149,40 @@ export function parseSearchState(content: unknown): SearchStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const HOME_VIEW_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'homeView', versionMajor: 1, versionMinor: 0,
+};
+
+export const GROUP_KEYS = ['assignee', 'category', 'label'] as const;
+
+export type GroupKey = (typeof GROUP_KEYS)[number];
+
+export const homeViewSchema = z.object({
+  view: z.enum(['chats', 'board']),
+  groupBy: z.enum(['none', ...GROUP_KEYS]),
+  columnBy: z.enum(GROUP_KEYS),
+  at: z.number().nonnegative(),
+});
+
+export type HomeViewContent = z.infer<typeof homeViewSchema>;
+
+export type HomeViewEdit = Partial<Omit<HomeViewContent, 'at'>>;
+
+export const DEFAULT_HOME_VIEW: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'label', at: 0 };
+
+export function homeViewFallbackText(): string {
+  return 'Stage home view';
+}
+
+export function isHomeViewType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(HOME_VIEW_CONTENT_TYPE.typeId);
+}
+
+export function parseHomeView(content: unknown): HomeViewContent | null {
+  const parsed = homeViewSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
   const merged: ClearedChats = {};
   for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
@@ -222,6 +256,7 @@ export interface SyncReplay {
   board: BoardStateContent | null;
   categoryOrder: CategoryOrderContent | null;
   search: SearchStateContent | null;
+  homeView: HomeViewContent | null;
   latestNs: number;
 }
 
@@ -273,6 +308,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     board: latestState(fresh, isBoardStateType, parseBoardState),
     categoryOrder: latestState(fresh, isCategoryOrderType, parseCategoryOrder),
     search: latestState(fresh, isSearchStateType, parseSearchState),
+    homeView: latestState(fresh, isHomeViewType, parseHomeView),
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
 }

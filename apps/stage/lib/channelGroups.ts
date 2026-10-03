@@ -15,10 +15,6 @@ function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor
   return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
 }
 
-export function toggleGroupByCategory(): void {
-  void save(current => ({ ...current, grouped: !current.grouped }));
-}
-
 export function toggleGroupCollapsed(key: string): void {
   void save(current => ({ ...current, collapsed: toggleKey(current.collapsed, key) }));
 }

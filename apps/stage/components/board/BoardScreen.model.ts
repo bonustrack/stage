@@ -1,7 +1,9 @@
-import {
-  deriveBarLabels, filterChannelRows, sortChannelRows, type ChannelListRow,
-} from '@stage-labs/client/xmtp/channelsFilter';
+import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
+import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import {
+  NO_GROUP_TITLES, compareNames, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf,
+} from '../home/groupBy.model';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
 export const BOARD_GAP = 12;
@@ -17,26 +19,49 @@ export interface BoardColumn<T> {
 
 export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label}`;
 
-function rememberedLabels(order: readonly string[], known: readonly string[]): string[] {
-  const seen = new Set(known.map(label => label.toLowerCase()));
+export const columnKeyOf = (by: GroupKey, value: string): string => (by === 'label' ? labelColumnKey(value) : `${by}:${value}`);
+
+export const columnsEditable = (by: GroupKey): boolean => by === 'label';
+
+function rememberedLabels(order: readonly string[], known: ReadonlySet<string>): BoardColumn<never>[] {
+  const seen = new Set(known);
   return order.flatMap((key) => {
     const label = key.startsWith(LABEL_PREFIX) ? key.slice(LABEL_PREFIX.length) : '';
     if (label === '' || seen.has(label.toLowerCase())) return [];
     seen.add(label.toLowerCase());
-    return [label];
+    return [{ key, label, rows: [] }];
   });
 }
 
-export function boardColumns<T extends ChannelListRow>(
-  rows: T[], pinned: readonly string[], order: readonly string[], hidden: (row: T) => boolean = () => false,
+function valueColumns<T extends GroupableRow>(
+  rows: readonly T[], by: GroupKey, nameOf: NameOf, hidden: (row: T) => boolean,
 ): BoardColumn<T>[] {
-  const chatLabels = deriveBarLabels(rows);
-  const sorted = sortChannelRows(rows.filter(row => !row.peerAddress && !hidden(row)), pinned);
-  return [...chatLabels, ...rememberedLabels(order, chatLabels)].map(label => ({
-    key: labelColumnKey(label),
-    label,
-    rows: filterChannelRows(sorted, { enabledLabels: new Set([label.toLowerCase()]) }),
-  }));
+  const columns = new Map<string, BoardColumn<T>>();
+  const none: BoardColumn<T> = { key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: [] };
+  for (const row of rows) {
+    const values = groupValuesOf(row, by);
+    if (values.length === 0 && !hidden(row)) none.rows.push(row);
+    for (const value of values) {
+      const id = value.toLowerCase();
+      let column = columns.get(id);
+      if (column === undefined) {
+        column = { key: columnKeyOf(by, value), label: groupTitleOf(by, value, nameOf), rows: [] };
+        columns.set(id, column);
+      }
+      if (!hidden(row)) column.rows.push(row);
+    }
+  }
+  const sorted = [...columns.values()].sort((a, b) => compareNames(a.label, b.label));
+  return [...sorted, ...(by !== 'label' && none.rows.length > 0 ? [none] : [])];
+}
+
+export function boardColumns<T extends ChannelListRow & GroupableRow>(
+  rows: T[], pinned: readonly string[], order: readonly string[], by: GroupKey = 'label',
+  nameOf: NameOf = value => value, hidden: (row: T) => boolean = () => false,
+): BoardColumn<T>[] {
+  const columns = valueColumns(sortChannelRows(rows.filter(row => !row.peerAddress), pinned), by, nameOf, hidden);
+  if (by !== 'label') return columns;
+  return [...columns, ...rememberedLabels(order, new Set(columns.map(column => column.label.toLowerCase())))];
 }
 
 export function searchedColumns<T extends FilterRow>(

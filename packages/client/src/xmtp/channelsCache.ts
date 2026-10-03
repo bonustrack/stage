@@ -111,6 +111,7 @@ export interface GroupRowMeta {
   avatarAddress: string | null;
   labels: string[];
   category: string | null;
+  assigned: string[];
 }
 
 function sameLabels(cur: unknown, next: readonly string[]): boolean {
@@ -123,7 +124,8 @@ function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
     && cur.avatarUri === meta.avatarUri
     && cur.avatarAddress === meta.avatarAddress
     && sameLabels(cur.labels, meta.labels)
-    && (cur.category ?? null) === meta.category;
+    && (cur.category ?? null) === meta.category
+    && sameLabels(cur.assigned ?? [], meta.assigned);
 }
 
 export function applyGroupMeta<R extends CachedChannelRow>(

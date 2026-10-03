@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { AppIcon, type AppIconRef } from './widgets';
+import { Box } from './layout';
+import { Eyebrow } from './Eyebrow';
 import type { MenuItem } from './appIcons';
 import { AnchoredMenu, menuPointBelow, menuPointBelowEnd } from './AnchoredMenu';
 import { RoundIconButton } from './RoundIconButton';
@@ -26,16 +28,27 @@ export function MenuRow({ icon, label, onPress, danger, divider = danger === tru
   );
 }
 
+export function MenuHeading({ text }: { text: string }): React.ReactElement {
+  return (
+    <Box padding={{ x: DROPDOWN_MENU.itemPadX, top: DROPDOWN_MENU.itemPadY + 2, bottom: 2 }}>
+      <Eyebrow>{text.toUpperCase()}</Eyebrow>
+    </Box>
+  );
+}
+
 export type OverflowMenuItem = MenuItem<string, AppIconRef>;
 
+type OverflowSelect = (id: string, anchor: MenuPoint) => void;
+
 function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
-  anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: (id: string) => void;
+  anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: OverflowSelect;
 }): React.ReactElement {
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
       {items.map((item, index) => (
         <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} selected={item.selected}
-          divider={item.danger === true && index > 0} onPress={() => { onClose(); onSelect(item.id); }} />
+          divider={item.danger === true && index > 0}
+          onPress={() => { onClose(); if (anchor !== null) onSelect(item.id, anchor); }} />
       ))}
     </AnchoredMenu>
   );
@@ -44,7 +57,7 @@ function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
 const OVERFLOW_TRIGGER_HIT = 40;
 
 export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
-  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void; label?: string; size?: number;
+  color: string; items: OverflowMenuItem[]; onSelect: OverflowSelect; label?: string; size?: number;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const { link } = usePalette();

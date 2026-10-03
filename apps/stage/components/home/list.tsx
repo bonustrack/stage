@@ -4,7 +4,7 @@ import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../l
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
 import { FilterSearch } from '../FilterSearch';
-import { parseSearchFilter } from '../searchFilter.model';
+import { parseSearchFilter, type FilterScope } from '../searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
@@ -12,7 +12,7 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
-import type { HomeListItem } from './groups.model';
+import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { isSearchFocused, setSearchFocused } from '../../lib/searchState';
@@ -75,7 +75,7 @@ function ListFooter({ query, noChannels, knownPeers }: {
   return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
 }
 
-interface SearchOpen {
+export interface SearchOpen {
   key: number;
   shown: boolean;
   open: () => void;
@@ -83,7 +83,7 @@ interface SearchOpen {
   onFocusChange: (focused: boolean) => void;
 }
 
-function useSearchOpen(query: string, setQuery: (query: string) => void, wide: boolean): SearchOpen {
+export function useSearchOpen(query: string, setQuery: (query: string) => void, wide: boolean): SearchOpen {
   const [key, setKey] = useState(0);
   const [held, setHeld] = useState(false);
   const reset = (): void => { setKey(0); setHeld(false); };
@@ -98,17 +98,25 @@ function useSearchOpen(query: string, setQuery: (query: string) => void, wide: b
   };
 }
 
-function useHomeTopnav(p: ChannelsListProps, search: SearchOpen, wide: boolean): TopnavSlot {
-  const { query, setQuery, onFilterMenu, pane } = p;
+interface HomeTopnavProps {
+  scope: FilterScope;
+  pane: boolean;
+  query: string;
+  setQuery: (query: string) => void;
+  onFilterMenu: (open: boolean) => void;
+}
+
+export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: boolean): TopnavSlot {
+  const { scope, query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} onOpenSearch={wide ? search.open : undefined} view="chats"/>,
+    () => <HomeTopnavRight head={sub} onOpenSearch={wide ? search.open : undefined}/>,
     [sub, wide, search.open],
   );
   const smallNav = useMemo(() => <Topnav inline={pane} right={right} bordered={false}/>, [pane, right]);
   const override = !wide ? smallNav : (search.shown ? (
     <FilterSearch
-      key={search.key} scope="chats" onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
+      key={search.key} scope={scope} onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
       query={query} setQuery={setQuery} onClose={search.close}
       head={head} sub={sub} border={border} inline={pane} trailing={right}
     />
@@ -134,7 +142,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
   const wide = useWebTabRail();
   const search = useSearchOpen(query, setQuery, wide);
-  const slot = useHomeTopnav(props, search, wide);
+  const slot = useHomeTopnav({ ...props, scope: 'chats' }, search, wide);
   const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [items]);
   useScrollTopOnFilter(props);
 
@@ -162,7 +170,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
             });
           }}
           extraData={listExtraData}
-          keyExtractor={r => r.convId}
+          keyExtractor={listKeyOf}
           windowSize={11}
           initialNumToRender={10}
           maxToRenderPerBatch={10}

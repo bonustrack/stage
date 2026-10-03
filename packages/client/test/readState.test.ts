@@ -3,7 +3,7 @@ import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, shouldApplyReadState, syncGroupName,
   collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isSearchStateType, parseSearchState,
-  isCategoryOrderType, parseCategoryOrder,
+  isCategoryOrderType, parseCategoryOrder, isHomeViewType, parseHomeView,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -76,6 +76,20 @@ describe('category order payload', () => {
     expect(isCategoryOrderType('stage.box/categoryOrderState:1.0')).toBe(true);
     expect(isCategoryOrderType('stage.box/boardState:1.0')).toBe(false);
     expect(isBoardStateType('stage.box/categoryOrderState:1.0')).toBe(false);
+  });
+});
+
+describe('home view payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
+    const ok = { view: 'board', groupBy: 'none', columnBy: 'category', at: 3 };
+    expect(parseHomeView(ok)).toEqual(ok);
+    expect(parseHomeView({ ...ok, view: 'table' })).toBeNull();
+    expect(parseHomeView({ ...ok, columnBy: 'none' })).toBeNull();
+    expect(parseHomeView({ ...ok, groupBy: 'owner' })).toBeNull();
+    expect(parseHomeView({ view: 'chats', at: 3 })).toBeNull();
+    expect(isHomeViewType('stage.box/homeView:1.0')).toBe(true);
+    expect(isHomeViewType('stage.box/boardState:1.0')).toBe(false);
+    expect(isBoardStateType('stage.box/homeView:1.0')).toBe(false);
   });
 });
 
@@ -228,6 +242,19 @@ describe('restored sync groups', () => {
     expect(replay.search).toEqual(search('b', 9));
     expect(replay.board).toBeNull();
     expect(collectSyncReplay([], 0).search).toBeNull();
+  });
+
+  test('keeps the newest home view by its own clock, not by arrival', () => {
+    const VIEW = 'stage.box/homeView:1.0';
+    const view = (groupBy: string, at: number): Record<string, unknown> => ({ view: 'chats', groupBy, columnBy: 'label', at });
+    const replay = collectSyncReplay([
+      { contentTypeId: VIEW, content: view('label', 5), sentNs: 1 },
+      { contentTypeId: VIEW, content: view('assignee', 9), sentNs: 2 },
+      { contentTypeId: VIEW, content: view('category', 7), sentNs: 3 },
+      { contentTypeId: VIEW, content: view('owner', 12), sentNs: 4 },
+    ], 0);
+    expect(replay.homeView).toEqual(view('assignee', 9));
+    expect(collectSyncReplay([], 0).homeView).toBeNull();
   });
 
   test('skips messages at or before the cursor', () => {

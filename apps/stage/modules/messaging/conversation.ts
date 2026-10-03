@@ -4,7 +4,7 @@ import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
 import { sdk } from '../../lib/xmtp.sdk';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
-import { groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
+import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import { isControlBody, type XmtpConsent } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -40,6 +40,7 @@ export interface ConversationView {
   selfInboxId: string;
   labels: string[];
   category: string | null;
+  assigned: string[];
   consent: XmtpConsent | null;
 }
 
@@ -101,7 +102,7 @@ interface GroupRowData {
 
 async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
   if (peerAddress) {
-    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: { labels: [], category: null } };
+    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
   }
   const [memberAddresses, groupMeta, tags] = await Promise.all([
     groupMemberEthAddresses(conv),
@@ -159,7 +160,7 @@ export async function summarizeConversation(
   const last = pickLastMessage(msgs, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
-  const { title, groupName, avatarUri, avatarAddress, labels, category } = rowMetaOf(
+  const { title, groupName, avatarUri, avatarAddress, labels, category, assigned } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
   );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
@@ -188,6 +189,7 @@ export async function summarizeConversation(
     markedUnread,
     labels,
     category,
+    assigned,
     consent: await consent,
   };
 }

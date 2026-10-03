@@ -1,12 +1,11 @@
 import { movedPinOrder, pinRank } from '@stage-labs/client/xmtp/pinOrder';
 
 export interface ChannelGroupsPrefs {
-  grouped: boolean;
   collapsed: string[];
   order: string[];
 }
 
-export const NO_GROUPS_PREFS: ChannelGroupsPrefs = { grouped: false, collapsed: [], order: [] };
+export const NO_GROUPS_PREFS: ChannelGroupsPrefs = { collapsed: [], order: [] };
 
 export const CATEGORY_KEY_PREFIX = 'category:';
 
@@ -46,8 +45,8 @@ export function parseChannelGroupsPrefs(raw: string): ChannelGroupsPrefs {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (parsed === null || typeof parsed !== 'object') return NO_GROUPS_PREFS;
-    const { grouped, collapsed, order } = parsed as Partial<Record<keyof ChannelGroupsPrefs, unknown>>;
-    return { grouped: grouped === true, collapsed: stringsOf(collapsed), order: stringsOf(order) };
+    const { collapsed, order } = parsed as Partial<Record<keyof ChannelGroupsPrefs, unknown>>;
+    return { collapsed: stringsOf(collapsed), order: stringsOf(order) };
   } catch {
     return NO_GROUPS_PREFS;
   }
