@@ -1,25 +1,23 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
-  parseClearState, parsePinState, parseReadState, shouldApplyReadState, syncGroupName,
-  collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isSearchStateType, parseSearchState,
-  isCategoryOrderType, parseCategoryOrder, isHomeViewType, parseHomeView,
+  isChatCleared, isRowCleared, revivesClearedChat, isSyncGroupName, isSyncType, mergeClearedChats, parseSyncState,
+  shouldApplyReadState, syncGroupName, collectSyncReplay, pickPublishGroup,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
   test('parses a valid payload and rejects a malformed one', () => {
     const ok = { convId: 'c1', lastReadNs: 10, markedUnread: false, at: 1 };
-    expect(parseReadState(ok)).toEqual(ok);
-    expect(parseReadState({ convId: '', lastReadNs: 10, markedUnread: false, at: 1 })).toBeNull();
-    expect(parseReadState('nope')).toBeNull();
-    expect(parseReadState({ convId: 'c1', lastReadNs: -1, markedUnread: false, at: 1 })).toBeNull();
+    expect(parseSyncState('read', ok)).toEqual(ok);
+    expect(parseSyncState('read', { convId: '', lastReadNs: 10, markedUnread: false, at: 1 })).toBeNull();
+    expect(parseSyncState('read', 'nope')).toBeNull();
+    expect(parseSyncState('read', { convId: 'c1', lastReadNs: -1, markedUnread: false, at: 1 })).toBeNull();
   });
 
   test('recognises the content type on native and web shapes', () => {
-    expect(isReadStateType('stage.box/readState:1.0')).toBe(true);
-    expect(isReadStateType('readState')).toBe(true);
-    expect(isReadStateType('xmtp.org/text:1.0')).toBe(false);
-    expect(isReadStateType(undefined)).toBe(false);
+    expect(isSyncType('stage.box/readState:1.0', 'read')).toBe(true);
+    expect(isSyncType('readState', 'read')).toBe(true);
+    expect(isSyncType('xmtp.org/text:1.0', 'read')).toBe(false);
+    expect(isSyncType(undefined, 'read')).toBe(false);
   });
 });
 
@@ -45,77 +43,77 @@ describe('shouldApplyReadState', () => {
 describe('pin state payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { convId: 'c1', pinned: true, at: 3 };
-    expect(parsePinState(ok)).toEqual(ok);
-    expect(parsePinState({ ...ok, order: ['c2', 'c1'] })?.order).toEqual(['c2', 'c1']);
-    expect(parsePinState({ ...ok, order: [''] })).toBeNull();
-    expect(parsePinState({ convId: 'c1', pinned: 'yes', at: 3 })).toBeNull();
-    expect(isPinStateType('stage.box/pinState:1.0')).toBe(true);
-    expect(isPinStateType('stage.box/readState:1.0')).toBe(false);
+    expect(parseSyncState('pin', ok)).toEqual(ok);
+    expect(parseSyncState('pin', { ...ok, order: ['c2', 'c1'] })?.order).toEqual(['c2', 'c1']);
+    expect(parseSyncState('pin', { ...ok, order: [''] })).toBeNull();
+    expect(parseSyncState('pin', { convId: 'c1', pinned: 'yes', at: 3 })).toBeNull();
+    expect(isSyncType('stage.box/pinState:1.0', 'pin')).toBe(true);
+    expect(isSyncType('stage.box/readState:1.0', 'pin')).toBe(false);
   });
 });
 
 describe('board state payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { order: ['label:done', 'unlabeled'], at: 3 };
-    expect(parseBoardState(ok)).toEqual(ok);
-    expect(parseBoardState({ order: [''], at: 3 })).toBeNull();
-    expect(parseBoardState({ order: ['label:done'], at: 0 })).toBeNull();
-    expect(parseBoardState({ at: 3 })).toBeNull();
-    expect(isBoardStateType('stage.box/boardState:1.0')).toBe(true);
-    expect(isBoardStateType('stage.box/pinState:1.0')).toBe(false);
-    expect(isPinStateType('stage.box/boardState:1.0')).toBe(false);
+    expect(parseSyncState('board', ok)).toEqual(ok);
+    expect(parseSyncState('board', { order: [''], at: 3 })).toBeNull();
+    expect(parseSyncState('board', { order: ['label:done'], at: 0 })).toBeNull();
+    expect(parseSyncState('board', { at: 3 })).toBeNull();
+    expect(isSyncType('stage.box/boardState:1.0', 'board')).toBe(true);
+    expect(isSyncType('stage.box/pinState:1.0', 'board')).toBe(false);
+    expect(isSyncType('stage.box/boardState:1.0', 'pin')).toBe(false);
   });
 });
 
 describe('category order payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises only its own type', () => {
     const ok = { order: ['category:work', 'category:home'], at: 3 };
-    expect(parseCategoryOrder(ok)).toEqual(ok);
-    expect(parseCategoryOrder({ order: [''], at: 3 })).toBeNull();
-    expect(parseCategoryOrder({ order: ['category:work'], at: 0 })).toBeNull();
-    expect(isCategoryOrderType('stage.box/categoryOrderState:1.0')).toBe(true);
-    expect(isCategoryOrderType('stage.box/boardState:1.0')).toBe(false);
-    expect(isBoardStateType('stage.box/categoryOrderState:1.0')).toBe(false);
+    expect(parseSyncState('categoryOrder', ok)).toEqual(ok);
+    expect(parseSyncState('categoryOrder', { order: [''], at: 3 })).toBeNull();
+    expect(parseSyncState('categoryOrder', { order: ['category:work'], at: 0 })).toBeNull();
+    expect(isSyncType('stage.box/categoryOrderState:1.0', 'categoryOrder')).toBe(true);
+    expect(isSyncType('stage.box/boardState:1.0', 'categoryOrder')).toBe(false);
+    expect(isSyncType('stage.box/categoryOrderState:1.0', 'board')).toBe(false);
   });
 });
 
 describe('home view payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { view: 'board', groupBy: 'none', columnBy: 'category', at: 3 };
-    expect(parseHomeView(ok)).toEqual(ok);
-    expect(parseHomeView({ ...ok, view: 'table' })).toBeNull();
-    expect(parseHomeView({ ...ok, columnBy: 'none' })).toBeNull();
-    expect(parseHomeView({ ...ok, groupBy: 'owner' })).toBeNull();
-    expect(parseHomeView({ view: 'chats', at: 3 })).toBeNull();
-    expect(isHomeViewType('stage.box/homeView:1.0')).toBe(true);
-    expect(isHomeViewType('stage.box/boardState:1.0')).toBe(false);
-    expect(isBoardStateType('stage.box/homeView:1.0')).toBe(false);
+    expect(parseSyncState('homeView', ok)).toEqual(ok);
+    expect(parseSyncState('homeView', { ...ok, view: 'table' })).toBeNull();
+    expect(parseSyncState('homeView', { ...ok, columnBy: 'none' })).toBeNull();
+    expect(parseSyncState('homeView', { ...ok, groupBy: 'owner' })).toBeNull();
+    expect(parseSyncState('homeView', { view: 'chats', at: 3 })).toBeNull();
+    expect(isSyncType('stage.box/homeView:1.0', 'homeView')).toBe(true);
+    expect(isSyncType('stage.box/boardState:1.0', 'homeView')).toBe(false);
+    expect(isSyncType('stage.box/homeView:1.0', 'board')).toBe(false);
   });
 });
 
 describe('search state payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { query: 'label:"to do" bob', labels: ['work'], unreadOnly: true, at: 3 };
-    expect(parseSearchState(ok)).toEqual(ok);
-    expect(parseSearchState({ ...ok, query: '' })?.query).toBe('');
-    expect(parseSearchState({ ...ok, labels: [''] })).toBeNull();
-    expect(parseSearchState({ ...ok, at: 0 })?.at).toBe(0);
-    expect(parseSearchState({ ...ok, at: -1 })).toBeNull();
-    expect(parseSearchState({ query: 'x', at: 3 })).toBeNull();
-    expect(isSearchStateType('stage.box/searchState:1.0')).toBe(true);
-    expect(isSearchStateType('stage.box/readState:1.0')).toBe(false);
-    expect(isReadStateType('stage.box/searchState:1.0')).toBe(false);
-    expect(isBoardStateType('stage.box/searchState:1.0')).toBe(false);
+    expect(parseSyncState('search', ok)).toEqual(ok);
+    expect(parseSyncState('search', { ...ok, query: '' })?.query).toBe('');
+    expect(parseSyncState('search', { ...ok, labels: [''] })).toBeNull();
+    expect(parseSyncState('search', { ...ok, at: 0 })?.at).toBe(0);
+    expect(parseSyncState('search', { ...ok, at: -1 })).toBeNull();
+    expect(parseSyncState('search', { query: 'x', at: 3 })).toBeNull();
+    expect(isSyncType('stage.box/searchState:1.0', 'search')).toBe(true);
+    expect(isSyncType('stage.box/readState:1.0', 'search')).toBe(false);
+    expect(isSyncType('stage.box/searchState:1.0', 'read')).toBe(false);
+    expect(isSyncType('stage.box/searchState:1.0', 'board')).toBe(false);
   });
 });
 
 describe('deleted chats', () => {
   test('the payload is a map of peer to deletion time', () => {
-    expect(parseClearState({ cleared: { '0xabc': 5 } })).toEqual({ cleared: { '0xabc': 5 } });
-    expect(parseClearState({ cleared: { '0xabc': -1 } })).toBeNull();
-    expect(parseClearState({ cleared: 'nope' })).toBeNull();
-    expect(isClearStateType('stage.box/clearState:1.0')).toBe(true);
-    expect(isClearStateType('stage.box/pinState:1.0')).toBe(false);
+    expect(parseSyncState('clear', { cleared: { '0xabc': 5 } })).toEqual({ cleared: { '0xabc': 5 } });
+    expect(parseSyncState('clear', { cleared: { '0xabc': -1 } })).toBeNull();
+    expect(parseSyncState('clear', { cleared: 'nope' })).toBeNull();
+    expect(isSyncType('stage.box/clearState:1.0', 'clear')).toBe(true);
+    expect(isSyncType('stage.box/pinState:1.0', 'clear')).toBe(false);
   });
 
   test('merging keeps the latest deletion per peer, so two devices never lose one', () => {
@@ -213,8 +211,8 @@ describe('restored sync groups', () => {
       { contentTypeId: BOARD, content: { order: ['label:c'], at: 7 }, sentNs: 3 },
       { contentTypeId: BOARD, content: { order: [''], at: 12 }, sentNs: 4 },
     ], 0);
-    expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
-    expect(collectSyncReplay([], 0).board).toBeNull();
+    expect(replay.latest.board).toEqual({ order: ['label:b'], at: 9 });
+    expect(collectSyncReplay([], 0).latest.board).toBeNull();
   });
 
   test('keeps the newest category order by its own clock, not by arrival', () => {
@@ -224,9 +222,9 @@ describe('restored sync groups', () => {
       { contentTypeId: CATEGORY, content: { order: ['category:b'], at: 9 }, sentNs: 2 },
       { contentTypeId: 'stage.box/boardState:1.0', content: { order: ['label:c'], at: 12 }, sentNs: 3 },
     ], 0);
-    expect(replay.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
-    expect(replay.board).toEqual({ order: ['label:c'], at: 12 });
-    expect(collectSyncReplay([], 0).categoryOrder).toBeNull();
+    expect(replay.latest.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
+    expect(replay.latest.board).toEqual({ order: ['label:c'], at: 12 });
+    expect(collectSyncReplay([], 0).latest.categoryOrder).toBeNull();
   });
 
   test('keeps the newest search by its own clock, not by arrival', () => {
@@ -240,9 +238,9 @@ describe('restored sync groups', () => {
       { contentTypeId: SEARCH, content: search('c', 7), sentNs: 3 },
       { contentTypeId: SEARCH, content: { query: 'd', at: 12 }, sentNs: 4 },
     ], 0);
-    expect(replay.search).toEqual(search('b', 9));
-    expect(replay.board).toBeNull();
-    expect(collectSyncReplay([], 0).search).toBeNull();
+    expect(replay.latest.search).toEqual(search('b', 9));
+    expect(replay.latest.board).toBeNull();
+    expect(collectSyncReplay([], 0).latest.search).toBeNull();
   });
 
   test('keeps the newest home view by its own clock, not by arrival', () => {
@@ -254,8 +252,8 @@ describe('restored sync groups', () => {
       { contentTypeId: VIEW, content: view('category', 7), sentNs: 3 },
       { contentTypeId: VIEW, content: view('owner', 12), sentNs: 4 },
     ], 0);
-    expect(replay.homeView).toEqual(view('assignee', 9));
-    expect(collectSyncReplay([], 0).homeView).toBeNull();
+    expect(replay.latest.homeView).toEqual(view('assignee', 9));
+    expect(collectSyncReplay([], 0).latest.homeView).toBeNull();
   });
 
   test('skips messages at or before the cursor', () => {

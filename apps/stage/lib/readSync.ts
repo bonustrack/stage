@@ -1,10 +1,8 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isBoardStateType, isCategoryOrderType, isClearStateType, isHomeViewType, isPinStateType, isReadStateType,
-  isSearchStateType,
-  pickPublishGroup, shouldApplyReadState, syncGroupName, type BoardStateContent, type PinStateContent, type ReadStateContent,
-  type SyncGroupState, type SyncReplay,
+  collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, syncGroupName, type BoardStateContent, type LatestKind,
+  type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
@@ -16,8 +14,8 @@ import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } fr
 import { applyRemoteClearedChats, getClearedChats, loadClearedChats, onClearedChatsChanged } from './clearedChats';
 import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
 import { applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
-import { applyRemoteSearchState, loadSearchState, onSearchStateChanged, type SearchStateChange } from './searchState';
-import { applyRemoteHomeView, loadHomeView, onHomeViewChanged, type HomeViewChange } from './homeView';
+import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
+import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
 import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
@@ -27,10 +25,7 @@ import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { StreamMsg } from './xmtp.types';
-import {
-  BOARD_STATE_CODEC, CATEGORY_ORDER_CODEC, CLEAR_STATE_CODEC, HOME_VIEW_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC,
-  SEARCH_STATE_CODEC, type JsonCodec,
-} from '@stage-labs/client/xmtp/jsonCodecs';
+import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
 const CURSOR_PREFIX = 'readSync.cursor.';
@@ -38,9 +33,7 @@ const REPLAY_LIMIT = 500;
 const FIRST_REPLAY_LIMIT = 5000;
 const CLEARED_KEY = 'cleared';
 const PUBLISH_DEBOUNCE_MS = 800;
-const SEARCH_KEY = 'search';
 const SEARCH_DEBOUNCE_MS = 1000;
-const HOME_VIEW_KEY = 'homeView';
 
 let bootToken = 0;
 let groupId: string | null = null;
@@ -51,11 +44,6 @@ const nudgedFrom = new Set<string>();
 function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
-const BOARD_ORDER_KEY = 'boardOrder';
-const CATEGORY_ORDER_KEY = 'categoryOrder';
-const STATE_TYPES = [
-  isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isCategoryOrderType, isSearchStateType, isHomeViewType,
-];
 
 type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -137,30 +125,15 @@ async function applyPinStates(remote: readonly PinStateContent[]): Promise<void>
   }
 }
 
-async function applyOrderState(
-  key: string, state: BoardStateContent, apply: (order: readonly string[]) => Promise<void>,
-): Promise<void> {
-  if (!shouldApplyReadState(localAt.get(key), state.at)) return;
-  localAt.set(key, state.at);
-  await apply(state.order);
-}
-
 async function applyReplay(accountId: string, replay: SyncReplay): Promise<void> {
   await applyReadStates(replay.reads);
   await applyPinStates(replay.pins);
   if (replay.cleared !== null) await applyRemoteClearedChats(accountId, replay.cleared);
-  if (replay.board !== null) {
-    await applyOrderState(BOARD_ORDER_KEY, replay.board, (order) => applyRemoteBoardOrder(accountId, order));
-  }
-  if (replay.categoryOrder !== null) {
-    await applyOrderState(CATEGORY_ORDER_KEY, replay.categoryOrder, (order) => applyRemoteCategoryOrder(accountId, order));
-  }
-  if (replay.search !== null) await applyRemoteSearchState(accountId, replay.search);
-  if (replay.homeView !== null) await applyRemoteHomeView(accountId, replay.homeView);
+  for (const setting of LATEST_WINS) await setting.apply(accountId, replay);
 }
 
 function isStateMessage(m: RowMessage): boolean {
-  return STATE_TYPES.some((isType) => isType(m.contentTypeId));
+  return isSyncType(m.contentTypeId);
 }
 
 let groupsLoading: Promise<SyncGroupState[]> | null = null;
@@ -251,28 +224,74 @@ function stampOrderState(key: string, order: readonly string[]): BoardStateConte
   return { order: [...order], at };
 }
 
-async function publishOrderSnapshot(
-  line: string, key: string, codec: JsonCodec<BoardStateContent>, order: readonly string[],
-): Promise<void> {
-  if (order.length === 0) return;
-  await xmtpSendJson(line, codec, stampOrderState(key, order));
+interface LatestWins {
+  start: () => void;
+  apply: (accountId: string, replay: SyncReplay) => Promise<void>;
+  publishTo: (line: string, accountId: string) => Promise<void>;
 }
+
+function latestWins<K extends LatestKind>(kind: K, setting: {
+  onLocal: (send: (accountId: string, state: SyncContents[K]) => void) => void;
+  apply: (accountId: string, state: SyncContents[K]) => Promise<void>;
+  load: (accountId: string) => Promise<SyncContents[K] | null>;
+  delayMs?: number;
+}): LatestWins {
+  const codec = SYNC_CODECS[kind];
+  return {
+    start: () => { setting.onLocal((accountId, state) => { debounce(kind, () => { publish(codec, state, accountId); }, setting.delayMs); }); },
+    apply: async (accountId, replay) => {
+      const state = replay.latest[kind];
+      if (state !== null) await setting.apply(accountId, state);
+    },
+    publishTo: async (line, accountId) => {
+      const state = await setting.load(accountId);
+      if (state !== null) await xmtpSendJson(line, codec, state);
+    },
+  };
+}
+
+function orderWins(kind: 'board' | 'categoryOrder', setting: {
+  onChanged: (cb: (change: AccountOrderChange) => void) => void;
+  apply: (accountId: string, order: readonly string[]) => Promise<void>;
+  load: (accountId: string) => Promise<readonly string[]>;
+}): LatestWins {
+  return latestWins(kind, {
+    onLocal: (send) => { setting.onChanged((change) => { send(change.accountId, stampOrderState(kind, change.order)); }); },
+    apply: async (accountId, state) => {
+      if (!shouldApplyReadState(localAt.get(kind), state.at)) return;
+      localAt.set(kind, state.at);
+      await setting.apply(accountId, state.order);
+    },
+    load: async (accountId) => {
+      const order = await setting.load(accountId);
+      return order.length === 0 ? null : stampOrderState(kind, order);
+    },
+  });
+}
+
+const LATEST_WINS: readonly LatestWins[] = [
+  orderWins('board', { onChanged: onBoardOrderChanged, apply: applyRemoteBoardOrder, load: loadBoardOrder }),
+  orderWins('categoryOrder', { onChanged: onCategoryOrderChanged, apply: applyRemoteCategoryOrder, load: loadCategoryOrder }),
+  latestWins('search', {
+    onLocal: (send) => { onSearchStateChanged((change) => { send(change.accountId, change.state); }); },
+    apply: applyRemoteSearchState, load: loadSearchState, delayMs: SEARCH_DEBOUNCE_MS,
+  }),
+  latestWins('homeView', {
+    onLocal: (send) => { onHomeViewChanged((change) => { send(change.accountId, change.state); }); },
+    apply: applyRemoteHomeView, load: loadHomeView,
+  }),
+];
 
 async function publishSnapshot(target: string, accountId: string): Promise<void> {
   const line = lineOfConv(target);
-  await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: await loadClearedChats(accountId) });
-  await publishOrderSnapshot(line, BOARD_ORDER_KEY, BOARD_STATE_CODEC, await loadBoardOrder(accountId));
-  await publishOrderSnapshot(line, CATEGORY_ORDER_KEY, CATEGORY_ORDER_CODEC, await loadCategoryOrder(accountId));
-  const search = await loadSearchState(accountId);
-  if (search !== null) await xmtpSendJson(line, SEARCH_STATE_CODEC, search);
-  const homeView = await loadHomeView(accountId);
-  if (homeView !== null) await xmtpSendJson(line, HOME_VIEW_CODEC, homeView);
+  await xmtpSendJson(line, SYNC_CODECS.clear, { cleared: await loadClearedChats(accountId) });
+  for (const setting of LATEST_WINS) await setting.publishTo(line, accountId);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
   const at = Date.now();
   localAt.set(PIN_ORDER_KEY, at);
-  await xmtpSendJson(line, PIN_STATE_CODEC, { convId: first, pinned: true, order: [...order], at });
+  await xmtpSendJson(line, SYNC_CODECS.pin, { convId: first, pinned: true, order: [...order], at });
 }
 
 function nudgeFrom(sourceId: string): void {
@@ -295,7 +314,7 @@ function queueReadPublish(change: ReadStateChange): void {
   const at = Date.now();
   localAt.set(readKey(change.convId), at);
   const content: ReadStateContent = { ...change, at };
-  debounce(readKey(change.convId), () => { publish(READ_STATE_CODEC, content); });
+  debounce(readKey(change.convId), () => { publish(SYNC_CODECS.read, content); });
 }
 
 function queuePinPublish(change: PinChange): void {
@@ -303,29 +322,11 @@ function queuePinPublish(change: PinChange): void {
   localAt.set(pinKey(change.convId), at);
   localAt.set(PIN_ORDER_KEY, at);
   const content: PinStateContent = { convId: change.convId, pinned: change.pinned, order: [...change.order], at };
-  debounce(PIN_ORDER_KEY, () => { publish(PIN_STATE_CODEC, content); });
-}
-
-function queueBoardPublish(change: AccountOrderChange): void {
-  const content = stampOrderState(BOARD_ORDER_KEY, change.order);
-  debounce(BOARD_ORDER_KEY, () => { publish(BOARD_STATE_CODEC, content, change.accountId); });
-}
-
-function queueCategoryOrderPublish(change: AccountOrderChange): void {
-  const content = stampOrderState(CATEGORY_ORDER_KEY, change.order);
-  debounce(CATEGORY_ORDER_KEY, () => { publish(CATEGORY_ORDER_CODEC, content, change.accountId); });
-}
-
-function queueSearchPublish(change: SearchStateChange): void {
-  debounce(SEARCH_KEY, () => { publish(SEARCH_STATE_CODEC, change.state, change.accountId); }, SEARCH_DEBOUNCE_MS);
-}
-
-function queueHomeViewPublish(change: HomeViewChange): void {
-  debounce(HOME_VIEW_KEY, () => { publish(HOME_VIEW_CODEC, change.state, change.accountId); });
+  debounce(PIN_ORDER_KEY, () => { publish(SYNC_CODECS.pin, content); });
 }
 
 function queueClearedPublish(): void {
-  debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
+  debounce(CLEARED_KEY, () => { publish(SYNC_CODECS.clear, { cleared: getClearedChats() }); });
 }
 
 async function adoptSyncGroup(convId: string): Promise<string | null> {
@@ -353,10 +354,7 @@ export function startReadSync(): void {
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
   onClearedChatsChanged(queueClearedPublish);
-  onBoardOrderChanged(queueBoardPublish);
-  onCategoryOrderChanged(queueCategoryOrderPublish);
-  onSearchStateChanged(queueSearchPublish);
-  onHomeViewChanged(queueHomeViewPublish);
+  for (const setting of LATEST_WINS) setting.start();
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
   void boot();

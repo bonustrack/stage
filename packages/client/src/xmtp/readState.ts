@@ -1,11 +1,8 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import type { OutputSchema } from '../validate';
 
-export const READ_STATE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'readState', versionMajor: 1, versionMinor: 0,
-};
-
-export const readStateSchema = z.object({
+const readStateSchema = z.object({
   convId: z.string().min(1),
   lastReadNs: z.number().nonnegative(),
   markedUnread: z.boolean(),
@@ -14,24 +11,7 @@ export const readStateSchema = z.object({
 
 export type ReadStateContent = z.infer<typeof readStateSchema>;
 
-export function readStateFallbackText(): string {
-  return 'Stage read state';
-}
-
-export function isReadStateType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(READ_STATE_CONTENT_TYPE.typeId);
-}
-
-export function parseReadState(content: unknown): ReadStateContent | null {
-  const parsed = readStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const PIN_STATE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'pinState', versionMajor: 1, versionMinor: 0,
-};
-
-export const pinStateSchema = z.object({
+const pinStateSchema = z.object({
   convId: z.string().min(1),
   pinned: z.boolean(),
   at: z.number().positive(),
@@ -40,92 +20,20 @@ export const pinStateSchema = z.object({
 
 export type PinStateContent = z.infer<typeof pinStateSchema>;
 
-export function pinStateFallbackText(): string {
-  return 'Stage pin state';
-}
-
-export function isPinStateType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(PIN_STATE_CONTENT_TYPE.typeId);
-}
-
-export function parsePinState(content: unknown): PinStateContent | null {
-  const parsed = pinStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const CLEAR_STATE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'clearState', versionMajor: 1, versionMinor: 0,
-};
-
 export type ClearedChats = Record<string, number>;
 
-export const clearStateSchema = z.object({
+const clearStateSchema = z.object({
   cleared: z.record(z.string().min(1), z.number().nonnegative()),
 });
 
-export type ClearStateContent = z.infer<typeof clearStateSchema>;
-
-export function clearStateFallbackText(): string {
-  return 'Stage deleted chats';
-}
-
-export function isClearStateType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(CLEAR_STATE_CONTENT_TYPE.typeId);
-}
-
-export function parseClearState(content: unknown): ClearStateContent | null {
-  const parsed = clearStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const BOARD_STATE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'boardState', versionMajor: 1, versionMinor: 0,
-};
-
 export const boardOrderSchema = z.array(z.string().min(1));
 
-export const boardStateSchema = z.object({
+const boardStateSchema = z.object({
   order: boardOrderSchema,
   at: z.number().positive(),
 });
 
 export type BoardStateContent = z.infer<typeof boardStateSchema>;
-
-export function boardStateFallbackText(): string {
-  return 'Stage board layout';
-}
-
-export function isBoardStateType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(BOARD_STATE_CONTENT_TYPE.typeId);
-}
-
-export function parseBoardState(content: unknown): BoardStateContent | null {
-  const parsed = boardStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const CATEGORY_ORDER_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'categoryOrderState', versionMajor: 1, versionMinor: 0,
-};
-
-export type CategoryOrderContent = z.infer<typeof boardStateSchema>;
-
-export function categoryOrderFallbackText(): string {
-  return 'Stage category order';
-}
-
-export function isCategoryOrderType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(CATEGORY_ORDER_CONTENT_TYPE.typeId);
-}
-
-export function parseCategoryOrder(content: unknown): CategoryOrderContent | null {
-  const parsed = boardStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const SEARCH_STATE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'searchState', versionMajor: 1, versionMinor: 0,
-};
 
 export const searchStateSchema = z.object({
   query: z.string(),
@@ -135,23 +43,6 @@ export const searchStateSchema = z.object({
 });
 
 export type SearchStateContent = z.infer<typeof searchStateSchema>;
-
-export function searchStateFallbackText(): string {
-  return 'Stage search';
-}
-
-export function isSearchStateType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(SEARCH_STATE_CONTENT_TYPE.typeId);
-}
-
-export function parseSearchState(content: unknown): SearchStateContent | null {
-  const parsed = searchStateSchema.safeParse(content);
-  return parsed.success ? parsed.data : null;
-}
-
-export const HOME_VIEW_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'homeView', versionMajor: 1, versionMinor: 0,
-};
 
 export const GROUP_KEYS = ['assignee', 'category', 'label'] as const;
 
@@ -170,16 +61,48 @@ export type HomeViewEdit = Partial<Omit<HomeViewContent, 'at'>>;
 
 export const DEFAULT_HOME_VIEW: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'label', at: 0 };
 
-export function homeViewFallbackText(): string {
-  return 'Stage home view';
+export interface SyncContents {
+  read: ReadStateContent;
+  pin: PinStateContent;
+  clear: z.infer<typeof clearStateSchema>;
+  board: BoardStateContent;
+  categoryOrder: BoardStateContent;
+  search: SearchStateContent;
+  homeView: HomeViewContent;
 }
 
-export function isHomeViewType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(HOME_VIEW_CONTENT_TYPE.typeId);
+export type SyncKind = keyof SyncContents;
+
+export type LatestKind = 'board' | 'categoryOrder' | 'search' | 'homeView';
+
+interface SyncType<T> {
+  contentType: XmtpContentTypeId;
+  schema: OutputSchema<T>;
+  fallback: string;
 }
 
-export function parseHomeView(content: unknown): HomeViewContent | null {
-  const parsed = homeViewSchema.safeParse(content);
+function syncType<T>(typeId: string, schema: OutputSchema<T>, fallback: string): SyncType<T> {
+  return { contentType: { authorityId: 'stage.box', typeId, versionMajor: 1, versionMinor: 0 }, schema, fallback };
+}
+
+export const SYNC_TYPES: { [K in SyncKind]: SyncType<SyncContents[K]> } = {
+  read: syncType('readState', readStateSchema, 'Stage read state'),
+  pin: syncType('pinState', pinStateSchema, 'Stage pin state'),
+  clear: syncType('clearState', clearStateSchema, 'Stage deleted chats'),
+  board: syncType('boardState', boardStateSchema, 'Stage board layout'),
+  categoryOrder: syncType('categoryOrderState', boardStateSchema, 'Stage category order'),
+  search: syncType('searchState', searchStateSchema, 'Stage search'),
+  homeView: syncType('homeView', homeViewSchema, 'Stage home view'),
+};
+
+export function isSyncType(contentTypeId: string | undefined, kind?: SyncKind): boolean {
+  if (typeof contentTypeId !== 'string') return false;
+  const types = kind === undefined ? Object.values(SYNC_TYPES) : [SYNC_TYPES[kind]];
+  return types.some(type => contentTypeId.includes(type.contentType.typeId));
+}
+
+export function parseSyncState<K extends SyncKind>(kind: K, content: unknown): SyncContents[K] | null {
+  const parsed = SYNC_TYPES[kind].schema.safeParse(content);
   return parsed.success ? parsed.data : null;
 }
 
@@ -253,17 +176,18 @@ export interface SyncReplay {
   reads: ReadStateContent[];
   pins: PinStateContent[];
   cleared: ClearedChats | null;
-  board: BoardStateContent | null;
-  categoryOrder: CategoryOrderContent | null;
-  search: SearchStateContent | null;
-  homeView: HomeViewContent | null;
+  latest: { [K in LatestKind]: SyncContents[K] | null };
   latestNs: number;
+}
+
+function stateOf<K extends SyncKind>(kind: K, m: SyncMessage): SyncContents[K] | null {
+  return isSyncType(m.contentTypeId, kind) ? parseSyncState(kind, m.content) : null;
 }
 
 function latestReads(messages: readonly SyncMessage[]): ReadStateContent[] {
   const byConv = new Map<string, ReadStateContent>();
   for (const m of messages) {
-    const state = isReadStateType(m.contentTypeId) ? parseReadState(m.content) : null;
+    const state = stateOf('read', m);
     const current = state === null ? undefined : byConv.get(state.convId);
     if (state !== null && (current === undefined || state.at > current.at)) byConv.set(state.convId, state);
   }
@@ -272,7 +196,7 @@ function latestReads(messages: readonly SyncMessage[]): ReadStateContent[] {
 
 function pinsSinceLastOrder(messages: readonly SyncMessage[]): PinStateContent[] {
   const pins = messages
-    .map((m) => (isPinStateType(m.contentTypeId) ? parsePinState(m.content) : null))
+    .map((m) => stateOf('pin', m))
     .filter((p): p is PinStateContent => p !== null)
     .sort((a, b) => a.at - b.at);
   const lastOrder = pins.map((p) => p.order !== undefined).lastIndexOf(true);
@@ -282,18 +206,16 @@ function pinsSinceLastOrder(messages: readonly SyncMessage[]): PinStateContent[]
 function mergedCleared(messages: readonly SyncMessage[]): ClearedChats | null {
   let merged: ClearedChats | null = null;
   for (const m of messages) {
-    const state = isClearStateType(m.contentTypeId) ? parseClearState(m.content) : null;
+    const state = stateOf('clear', m);
     if (state !== null) merged = mergeClearedChats(merged ?? {}, state.cleared);
   }
   return merged;
 }
 
-function latestState<T extends { at: number }>(
-  messages: readonly SyncMessage[], isType: (contentTypeId: string | undefined) => boolean, parse: (content: unknown) => T | null,
-): T | null {
-  let latest: T | null = null;
+function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K): SyncContents[K] | null {
+  let latest: SyncContents[K] | null = null;
   for (const m of messages) {
-    const state = isType(m.contentTypeId) ? parse(m.content) : null;
+    const state = stateOf(kind, m);
     if (state !== null && (latest === null || state.at > latest.at)) latest = state;
   }
   return latest;
@@ -305,10 +227,12 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     reads: latestReads(fresh),
     pins: pinsSinceLastOrder(fresh),
     cleared: mergedCleared(fresh),
-    board: latestState(fresh, isBoardStateType, parseBoardState),
-    categoryOrder: latestState(fresh, isCategoryOrderType, parseCategoryOrder),
-    search: latestState(fresh, isSearchStateType, parseSearchState),
-    homeView: latestState(fresh, isHomeViewType, parseHomeView),
+    latest: {
+      board: latestState(fresh, 'board'),
+      categoryOrder: latestState(fresh, 'categoryOrder'),
+      search: latestState(fresh, 'search'),
+      homeView: latestState(fresh, 'homeView'),
+    },
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
 }

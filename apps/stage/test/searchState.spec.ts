@@ -60,7 +60,7 @@ describe('two devices through the sync group', () => {
   test('filters converge, the search text stays on each device', () => {
     const log: { contentTypeId: string; content: SearchStateContent; sentNs: number }[] = [];
     const send = (content: SearchStateContent): void => { log.push({ contentTypeId: SEARCH_TYPE, content, sentNs: log.length + 1 }); };
-    const latest = (): SearchStateContent | null => collectSyncReplay(log, 0).search;
+    const latest = (): SearchStateContent | null => collectSyncReplay(log, 0).latest.search;
 
     let phone = editFilters({ ...EMPTY_SEARCH, query: 'bob' }, { labels: ['work'] }, 100);
     send(syncedSearch(phone));
@@ -80,7 +80,7 @@ describe('two devices through the sync group', () => {
 
   test('search text sent by an older version is ignored', () => {
     const log = [{ contentTypeId: SEARCH_TYPE, content: state('from old app', 300, ['home']), sentNs: 1 }];
-    const incoming = collectSyncReplay(log, 0).search;
+    const incoming = collectSyncReplay(log, 0).latest.search;
     expect(incoming).not.toBeNull();
     if (incoming === null) return;
     expect(receiveSearch(state('mine', 100), incoming)).toEqual(state('mine', 300, ['home']));

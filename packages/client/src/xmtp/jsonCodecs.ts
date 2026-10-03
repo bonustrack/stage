@@ -19,15 +19,7 @@ import {
 import {
   walletSendCallsSchema, transactionReferenceSchema,
 } from './tx.schema';
-import {
-  READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, type ReadStateContent,
-  PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
-  CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, type ClearStateContent,
-  BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
-  CATEGORY_ORDER_CONTENT_TYPE, categoryOrderFallbackText, type CategoryOrderContent,
-  SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
-  HOME_VIEW_CONTENT_TYPE, homeViewFallbackText, homeViewSchema, type HomeViewContent,
-} from './readState';
+import { SYNC_TYPES, type SyncContents, type SyncKind } from './readState';
 import {
   FRAME_CONTENT_TYPE, FRAME_ACTION_CONTENT_TYPE, frameFallbackText, frameActionFallbackText,
   type FrameContent, type FrameActionContent,
@@ -90,31 +82,20 @@ export const TRANSACTION_REFERENCE_CODEC = jsonCodec<TransactionReferenceContent
   transactionReferenceSchema, 'xmtp.transactionReference',
 );
 
-export const READ_STATE_CODEC = jsonCodec<ReadStateContent>(
-  READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, undefined, false,
-);
+function syncCodec<K extends SyncKind>(kind: K): JsonCodec<SyncContents[K]> {
+  const { contentType, schema, fallback } = SYNC_TYPES[kind];
+  return jsonCodec(contentType, () => fallback, schema, undefined, false);
+}
 
-export const PIN_STATE_CODEC = jsonCodec<PinStateContent>(PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, undefined, false);
-
-export const CLEAR_STATE_CODEC = jsonCodec<ClearStateContent>(
-  CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, undefined, false,
-);
-
-export const BOARD_STATE_CODEC = jsonCodec<BoardStateContent>(
-  BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, undefined, false,
-);
-
-export const CATEGORY_ORDER_CODEC = jsonCodec<CategoryOrderContent>(
-  CATEGORY_ORDER_CONTENT_TYPE, categoryOrderFallbackText, boardStateSchema, undefined, false,
-);
-
-export const SEARCH_STATE_CODEC = jsonCodec<SearchStateContent>(
-  SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, undefined, false,
-);
-
-export const HOME_VIEW_CODEC = jsonCodec<HomeViewContent>(
-  HOME_VIEW_CONTENT_TYPE, homeViewFallbackText, homeViewSchema, undefined, false,
-);
+export const SYNC_CODECS: { [K in SyncKind]: JsonCodec<SyncContents[K]> } = {
+  read: syncCodec('read'),
+  pin: syncCodec('pin'),
+  clear: syncCodec('clear'),
+  board: syncCodec('board'),
+  categoryOrder: syncCodec('categoryOrder'),
+  search: syncCodec('search'),
+  homeView: syncCodec('homeView'),
+};
 
 export const CALL_INVITE_CODEC = jsonCodec<CallInvite>(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');
 
@@ -137,13 +118,7 @@ export const STAGE_JSON_CODECS = [
   SIGNATURE_REQUEST_CODEC,
   SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC,
-  READ_STATE_CODEC,
-  PIN_STATE_CODEC,
-  CLEAR_STATE_CODEC,
-  BOARD_STATE_CODEC,
-  CATEGORY_ORDER_CODEC,
-  SEARCH_STATE_CODEC,
-  HOME_VIEW_CODEC,
+  ...Object.values(SYNC_CODECS),
   CALL_INVITE_CODEC,
   CALL_SIGNAL_CODEC,
   FRAME_CODEC,
