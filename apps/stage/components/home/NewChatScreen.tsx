@@ -19,15 +19,16 @@ import { includesKey, toggleKey } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
-import { rememberStartedChat, useNewChatMembers } from './newChatMembers';
 import {
-  NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients,
-  rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients, type DmPeer,
+  NO_MEMBER_HISTORY, NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients,
+  parseMemberHistory, rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients,
+  startedChatWith, type DmPeer, type MemberHistory,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/clearedChats';
+import { createValueStore } from '../../lib/persistedStore';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -50,6 +51,10 @@ interface Recipients {
 }
 
 const NO_REQUESTS: ReadonlySet<string> = new Set();
+
+const memberHistory = createValueStore<MemberHistory>({
+  key: 'new-chat.members.', default: NO_MEMBER_HISTORY, deserialize: parseMemberHistory, serialize: JSON.stringify, perAccount: true,
+});
 
 const CENTERED_MAX_WIDTH = 640;
 
@@ -78,7 +83,7 @@ function useCandidates(): { candidates: string[]; remembered: string[] } {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
   const self = useActiveAccountRecord()?.address ?? null;
-  const history = useNewChatMembers();
+  const history = memberHistory.use();
   const peers = useMemo(
     () => (rows === null ? [] : recentDmPeers(rows.filter(r => !isRowCleared(cleared, r)), self)),
     [rows, cleared, self],
@@ -133,7 +138,7 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
       const convId = convIdOfLine(line);
       if (convId === null) return;
       rememberOwnGroup(convId);
-      rememberStartedChat(addresses);
+      void memberHistory.update(current => startedChatWith(current, addresses, Date.now())).catch(reported('newChatMembers.save'));
       const { text, pending } = latest.current;
       handSendTo(convId, startSend(line, text, pending));
       clearNewChatDraft(draftKey);

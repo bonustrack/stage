@@ -43,3 +43,5 @@ export function domainOf(url: string): string {
     return url;
   }
 }
+
+export const compareNames = (a: string, b: string): number => a.localeCompare(b, undefined, { sensitivity: 'base' });

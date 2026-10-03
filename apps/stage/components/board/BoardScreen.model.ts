@@ -1,9 +1,8 @@
 import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
-import {
-  NO_GROUP_TITLES, compareNames, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf,
-} from '../home/groupBy.model';
+import { NO_GROUP_TITLES, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
+import { compareNames } from '../../lib/format';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
 export const BOARD_GAP = 12;

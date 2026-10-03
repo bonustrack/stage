@@ -24,5 +24,3 @@ export function groupValuesOf(row: GroupableRow, by: GroupKey): string[] {
 export function groupTitleOf(by: GroupKey, value: string, nameOf: NameOf): string {
   return by === 'assignee' ? nameOf(value) : value;
 }
-
-export const compareNames = (a: string, b: string): number => a.localeCompare(b, undefined, { sensitivity: 'base' });

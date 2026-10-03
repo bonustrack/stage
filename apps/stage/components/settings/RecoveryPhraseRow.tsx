@@ -9,7 +9,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
-import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
+import { createValueStore } from '../../lib/persistedStore';
 import { Box, Col, Row } from '../layout';
 import {
   BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
@@ -20,8 +20,15 @@ import { SettingsButtonRow } from './SettingsPage';
 
 const BACKED_UP_KEY = ['walletBackedUp'] as const;
 
+const backedUp = createValueStore<boolean>({
+  key: 'wallet.backupDone',
+  default: false,
+  serialize: (v) => (v ? '1' : '0'),
+  deserialize: (raw) => raw === '1',
+});
+
 export function useWalletBackedUp(): boolean | null {
-  const { data } = useQuery({ queryKey: BACKED_UP_KEY, queryFn: () => isWalletBackedUp(), staleTime: Infinity });
+  const { data } = useQuery({ queryKey: BACKED_UP_KEY, queryFn: () => backedUp.load(), staleTime: Infinity });
   return data ?? null;
 }
 
@@ -92,7 +99,7 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
 
   const saved = (): void => {
     void (async (): Promise<void> => {
-      await setWalletBackedUp(true);
+      await backedUp.setAsync(true);
       setPhrase(null);
       queryClient.setQueryData(BACKED_UP_KEY, true);
       capabilities.toast(BACKUP_PHRASE_COPY.saved);

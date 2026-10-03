@@ -1,6 +1,7 @@
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { compareCategoryKeys } from '../../lib/channelGroups.model';
-import { NO_GROUP_TITLES, compareNames, groupTitleOf, groupValuesOf, type NameOf } from './groupBy.model';
+import { compareNames } from '../../lib/format';
+import { NO_GROUP_TITLES, groupTitleOf, groupValuesOf, type NameOf } from './groupBy.model';
 import type { Row } from './model';
 
 export interface ChannelGroupHeader {

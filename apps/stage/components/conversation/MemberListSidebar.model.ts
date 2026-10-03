@@ -1,5 +1,6 @@
 import type { ChannelMemberRole } from '../channel/channel.parts.model';
 import { includesKey, type ListEdits } from './SidebarSection.model';
+import { compareNames } from '../../lib/format';
 
 type MemberAdminRole = 'superAdmin' | 'admin';
 
@@ -28,7 +29,7 @@ export function memberAdminMark(role: ChannelMemberRole): MemberAdminMark | unde
 
 function compareEntries(a: MemberListEntry, b: MemberListEntry): number {
   if (a.named !== b.named) return a.named ? -1 : 1;
-  const byName = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  const byName = compareNames(a.name, b.name);
   return byName === 0 ? a.address.toLowerCase().localeCompare(b.address.toLowerCase()) : byName;
 }
 

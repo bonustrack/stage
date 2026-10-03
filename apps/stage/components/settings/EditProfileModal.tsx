@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { errorLine } from '@stage-labs/client/errors';
 import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
@@ -43,7 +44,7 @@ function EditProfileSection({ address, name, picture, onSaved }: {
         setStatus(hash ? `Saved onchain (${hash.slice(0, 10)}…). It can take a minute to appear everywhere.` : 'Nothing to save.');
         capabilities.toast('Profile saved.');
       })
-      .catch((err: unknown) => { setStatus(`Could not save: ${err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err)}`); })
+      .catch((err: unknown) => { setStatus(`Could not save: ${errorLine(err)}`); })
       .finally(() => { setBusy(false); });
   };
 

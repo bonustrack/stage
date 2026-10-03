@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Frame } from '@stage-labs/kit/react-native/frame';
@@ -22,7 +22,7 @@ import {
   FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameInputOf,
   frameLinkOf, frameMoreBelow, framePreviewCap, frameScreenTitle,
 } from './frame.model';
-import { useFrameStack } from './frameStack';
+import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { useFrameAction } from './useFrameAction';
 
 const FADE_OVERLAY: ViewStyle = { position: 'absolute', left: 0, right: 0, bottom: 0 };
@@ -44,12 +44,7 @@ function useScrollFade(screen: string): {
     view.current = { ...view.current, ...patch };
     setMore(frameMoreBelow(view.current));
   };
-  const shown = useRef(screen);
-  useEffect(() => {
-    if (shown.current === screen) return;
-    shown.current = screen;
-    ref.current?.scrollTo({ y: 0, animated: false });
-  }, [screen]);
+  useTopOnScreenChange(screen, () => { ref.current?.scrollTo({ y: 0, animated: false }); });
   return {
     ref,
     more,

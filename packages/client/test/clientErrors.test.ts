@@ -3,6 +3,7 @@ import {
   CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, isMissingMlsState,
   pickNativeErrors, readableSendError,
 } from '../src/xmtp/clientErrors';
+import { errorLine } from '../src/errors';
 
 const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
   + 'uniffi.xmtpv3.FfiException$Exception: [GroupError::GroupInactive] Group error: Group is inactive';
@@ -93,5 +94,13 @@ describe('classifyKeyPackageStatuses', () => {
 
   test('no evidence at all is indeterminate', () => {
     expect(classifyKeyPackageStatuses([])).toBe('indeterminate');
+  });
+});
+
+describe('errorLine', () => {
+  test('keeps the first line of an error and falls back for anything else', () => {
+    expect(errorLine(new Error('Gas too low\nat call 2'))).toBe('Gas too low');
+    expect(errorLine('plain text')).toBe('plain text');
+    expect(errorLine({ code: 4 }, 'Could not save.')).toBe('Could not save.');
   });
 });

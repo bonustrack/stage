@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type RefObject, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
@@ -14,7 +14,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { frameInputOf, frameOf, frameScreenTitle } from './frame.model';
-import { useFrameStack } from './frameStack';
+import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { useFrameAction } from './useFrameAction';
 import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
@@ -58,12 +58,7 @@ function useFrameScreens(frame: FrameContent | null, messageId: string, leave: (
     return () => { sub.remove(); };
   }, [back]));
   const scrollRef = useRef<ScreenScrollHandle>(null);
-  const shown = useRef(screen);
-  useEffect(() => {
-    if (shown.current === screen) return;
-    shown.current = screen;
-    scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [screen]);
+  useTopOnScreenChange(screen, () => { scrollRef.current?.scrollToOffset({ offset: 0, animated: false }); });
   const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, parsed, screen)), [frame, parsed, screen]);
   return {
     title,

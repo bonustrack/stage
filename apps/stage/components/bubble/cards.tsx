@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Avatar } from '../Avatar';
@@ -21,7 +22,8 @@ import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDeco
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from './linkProps';
 import { ReceiptBox } from './cards.sig';
-import { useTxSimulation } from '../../lib/txSimulate';
+import { simulateTx, type SimulateResult } from '@stage-labs/client/wallet/txSimulate';
+import { getActiveAccount } from '../../lib/accounts';
 import { SimulationBlock } from './sim';
 import { txActionLabel, isTransferRequest } from '@stage-labs/client/wallet/txWording';
 import { profileLinkOf } from '../../lib/links';
@@ -132,6 +134,28 @@ function txCallFields(req: WalletSendCallsContent): TxCallFields {
     ...balanceNeed(amount, eth),
     ...txCallFlags({ data, tokenAddr, amount, eth }),
   };
+}
+
+function useTxSimulation(
+  to: string | undefined,
+  data: string | undefined,
+  value: string | undefined,
+  chainId: number,
+): { result: SimulateResult | null; pending: boolean } {
+  const { data: result, isPending } = useQuery({
+    queryKey: ['txSimulate', chainId, to ?? '', data ?? '', value ?? ''],
+    queryFn: async (): Promise<SimulateResult> => {
+      const from = (await getActiveAccount())?.address;
+      if (!from) {
+        return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
+      }
+      return simulateTx({ from, to: to ?? '', data, value, chainId });
+    },
+    enabled: !!to,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  return { result: result ?? null, pending: !!to && isPending };
 }
 
 function useTxCardModel(req: WalletSendCallsContent): TxCardModel {

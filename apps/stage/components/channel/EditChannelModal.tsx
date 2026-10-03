@@ -4,6 +4,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { AvatarView } from '@stage-labs/kit/react-native/avatar-view';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
+import { errorLine } from '@stage-labs/client/errors';
 import type { GroupEditRights, GroupMetaPatch } from '@stage-labs/client/xmtp/groups';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
@@ -54,10 +55,6 @@ function useLabelDraft(labels: string[]): {
   return { draft, input, setInput, add, remove, final };
 }
 
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
-}
-
 async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {
   await writeChannel(convId, patch, picture);
   await writeLabels(lineOfConv(convId), edits);
@@ -92,7 +89,7 @@ function EditChannelSection({ convId, current, rights, picture, labels, onSaved 
       })
       .catch((err: unknown) => {
         refreshConv(convId);
-        setStatus(`Could not save: ${errorText(err)}`);
+        setStatus(`Could not save: ${errorLine(err)}`);
       })
       .finally(() => { setBusy(false); });
   };

@@ -18,6 +18,7 @@ import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../
 import { patchConvDetails, refreshConv, useConvDetails, useConvRow } from '../../modules/messaging/queries';
 import { memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
+import { errorLine } from '@stage-labs/client/errors';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
@@ -80,10 +81,6 @@ function useMemberEntries(convId: string): { entries: MemberListEntry[]; assigne
     [addresses, profiles, roles],
   );
   return { entries, assigned, assignedReady };
-}
-
-function errorLine(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message.split('\n')[0] ?? fallback : fallback;
 }
 
 function AssigneesSection({ convId, entries, assigned, assignedReady }: {

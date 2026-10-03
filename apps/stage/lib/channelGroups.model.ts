@@ -1,4 +1,5 @@
 import { movedPinOrder, pinRank } from '@stage-labs/client/xmtp/pinOrder';
+import { compareNames } from './format';
 
 export interface ChannelGroupsPrefs {
   collapsed: string[];
@@ -20,7 +21,7 @@ export function compareCategoryKeys(order: readonly string[]): (a: string, b: st
     const rb = rank.get(b);
     if (ra !== undefined && rb !== undefined) return ra - rb;
     if (ra !== undefined || rb !== undefined) return ra === undefined ? 1 : -1;
-    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    return compareNames(a, b);
   };
 }
 
