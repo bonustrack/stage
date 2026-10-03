@@ -72,6 +72,15 @@ export function isGroupInactive(err: unknown): boolean {
   return GROUP_INACTIVE.some(sig => msg.includes(sig));
 }
 
+const NATIVE_ERROR_LINES = 3;
+
+export function pickNativeErrors(log: string): string {
+  const lines = log.split('\n').map((line) => line.trim()).filter((line) => line !== '');
+  const loading = lines.filter((line) => /loading group/i.test(line));
+  const picked = loading.length > 0 ? loading : lines.filter((line) => /\bERROR\b/.test(line));
+  return picked.slice(-NATIVE_ERROR_LINES).map((line) => line.replace(/^\S+\s+ERROR\s+/, '')).join(' | ');
+}
+
 export function isMissingMlsState(err: unknown): boolean {
   const msg = errorMessage(err);
   return msg.includes('NotFound::MlsGroup') || /\bMLS Group\b.*\bNot Found\b/i.test(msg);

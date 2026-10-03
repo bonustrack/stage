@@ -7,6 +7,7 @@ export interface SyncCheckInput {
   found: boolean;
   restored?: boolean;
   inviteError?: string;
+  nativeError?: string;
   active: boolean;
   syncError: string;
   state: SyncState | null;
@@ -59,6 +60,11 @@ function localDetails(input: SyncCheckInput): string[] {
   ];
 }
 
+function nativeDetail(nativeError: string | undefined): string {
+  if (nativeError === undefined) return '';
+  return `Native: ${nativeError === '' ? 'no error logged, the channel state is missing' : clip(nativeError)}`;
+}
+
 function details(input: SyncCheckInput): string[] {
   if (!input.found) return [];
   const inviteError = input.inviteError ?? '';
@@ -66,6 +72,7 @@ function details(input: SyncCheckInput): string[] {
     ...localDetails(input),
     inviteError === '' ? '' : `Invite sync: ${clip(inviteError)}`,
     input.syncError === '' ? '' : `Error: ${clip(input.syncError)}`,
+    nativeDetail(input.nativeError),
     input.state && input.state.forkDetails !== '' ? `Details: ${clip(input.state.forkDetails)}` : '',
     input.device === undefined || input.device === '' ? '' : `Device: ${input.device}`,
   ].filter(line => line !== '');
@@ -82,6 +89,7 @@ interface SyncCheckOps<C> {
   sync: (conv: C) => Promise<unknown>;
   details: (conv: C) => Promise<Pick<SyncCheckInput, 'state' | 'newest'>>;
   syncInvites?: () => Promise<unknown>;
+  nativeError?: (work: () => Promise<unknown>) => Promise<string>;
   device?: string;
 }
 
@@ -91,16 +99,21 @@ async function checkRestoredCopy<C>(ops: SyncCheckOps<C>, step: Step, lookupErro
   const restored: SyncCheckInput = {
     found: true, restored: true, active: false, syncError: lookupError, state: null, newest: '', device: ops.device,
   };
-  const { syncInvites } = ops;
+  const { syncInvites, nativeError } = ops;
   if (!syncInvites) return syncCheckResult(restored);
+  let input = restored;
   try {
     await step('Invite sync', syncInvites);
     const conv = await step('Local channel lookup after the invite sync', ops.find);
     const active = conv ? await step('Channel membership after the invite sync', () => ops.isActive(conv)) : false;
-    return syncCheckResult({ ...restored, inviteError: '', active, syncError: active ? '' : lookupError });
+    if (active) return syncCheckResult({ ...restored, inviteError: '', active, syncError: '' });
+    input = { ...restored, inviteError: '' };
   } catch (err) {
-    return syncCheckResult({ ...restored, inviteError: isMissingMlsState(err) ? '' : describeError(err) });
+    input = { ...restored, inviteError: isMissingMlsState(err) ? '' : describeError(err) };
   }
+  if (!nativeError) return syncCheckResult(input);
+  const captured = await step('Native error capture', () => nativeError(ops.find)).catch(describeError);
+  return syncCheckResult({ ...input, nativeError: captured });
 }
 
 export async function runSyncCheck<C>(ops: SyncCheckOps<C>, timeoutMs = 15_000): Promise<SyncCheckResult> {

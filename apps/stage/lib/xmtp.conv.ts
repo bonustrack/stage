@@ -125,6 +125,7 @@ export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
     isActive: sdk.isActive,
     sync: (conv) => conv.sync(),
     syncInvites: () => sdk.syncConvList(client),
+    nativeError: sdk.nativeErrorLog,
     device: client.installationId.slice(0, 8),
     details: async (conv) => {
       const [state, latest] = await Promise.all([

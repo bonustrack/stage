@@ -84,6 +84,7 @@ interface ClientPrimitives<Cl, C, M> {
   deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;
   messageTarget: (client: Cl, messageId: string) => Promise<MessageTarget<C> | null>;
   history: HistoryOps<Cl>;
+  nativeErrorLog?: (work: () => Promise<unknown>) => Promise<string>;
 }
 
 interface ConvPrimitives<C, M> {
