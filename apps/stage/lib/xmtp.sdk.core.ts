@@ -25,13 +25,7 @@ export function notAGroup(): never {
   throw new Error('Not a channel');
 }
 
-export interface ClientLike { inboxId: string | undefined }
-
-export interface ConvLike {
-  id: string;
-  sync: () => Promise<unknown>;
-  members: () => Promise<{ inboxId: string }[]>;
-}
+export interface ConvLike { id: string }
 
 export interface MessageQuery { limit: number; beforeMs?: number; order?: 'asc' | 'desc' }
 
@@ -114,9 +108,9 @@ interface ConvPrimitives<C, M> {
   send: SendOps<C>;
 }
 
-export type XmtpSdk<Cl extends ClientLike, C extends ConvLike, M> = ClientPrimitives<Cl, C, M> & ConvPrimitives<C, M>;
+export type XmtpSdk<Cl, C extends ConvLike, M> = ClientPrimitives<Cl, C, M> & ConvPrimitives<C, M>;
 
-export function convFinder<Cl extends ClientLike, C extends ConvLike, M>(
+export function convFinder<Cl, C extends ConvLike, M>(
   sdk: XmtpSdk<Cl, C, M>,
 ): (line: string) => Promise<C | null> {
   return async (line) => {
@@ -128,7 +122,7 @@ export function convFinder<Cl extends ClientLike, C extends ConvLike, M>(
   };
 }
 
-export function sendableFinder<Cl extends ClientLike, C extends ConvLike, M>(
+export function sendableFinder<Cl, C extends ConvLike, M>(
   sdk: XmtpSdk<Cl, C, M>,
 ): (line: string) => Promise<C> {
   const find = convFinder(sdk);

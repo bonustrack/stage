@@ -1,6 +1,6 @@
 import type { AppStorage, SecureStorage } from './types';
 import {
-  STORAGE_NAMESPACE, adoptLegacyKey, namespacedKey, readNamespaced, removeNamespaced,
+  adoptLegacyKey, namespacedKey, readNamespaced, removeNamespaced,
   type WebStorageLike,
 } from './storageNamespace';
 
@@ -36,14 +36,6 @@ function deleteKey(key: string): void {
   if (store) removeNamespaced(store, key);
 }
 
-function clearNamespaced(): void {
-  const store = webStorage();
-  if (!store) return;
-  for (const key of Object.keys(store)) {
-    if (key.startsWith(STORAGE_NAMESPACE)) store.removeItem(key);
-  }
-}
-
 export const secureStorage: SecureStorage = {
   get: (key) => Promise.resolve(readKey(SECURE_PREFIX + key)),
   set: (key, value) => {
@@ -64,10 +56,6 @@ export const appStorage: AppStorage = {
   },
   delete: (key) => {
     deleteKey(key);
-    return Promise.resolve();
-  },
-  clear: () => {
-    clearNamespaced();
     return Promise.resolve();
   },
 };

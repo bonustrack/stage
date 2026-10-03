@@ -1,4 +1,4 @@
-export const STORAGE_NAMESPACE = 'stage.';
+const STORAGE_NAMESPACE = 'stage.';
 
 export interface WebStorageLike {
   getItem: (key: string) => string | null;

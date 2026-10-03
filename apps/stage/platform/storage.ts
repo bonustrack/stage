@@ -25,5 +25,4 @@ export const appStorage: AppStorage = {
   get: (key) => AsyncStorage.getItem(key),
   set: (key, value) => AsyncStorage.setItem(key, value),
   delete: (key) => AsyncStorage.removeItem(key),
-  clear: () => AsyncStorage.clear(),
 };
