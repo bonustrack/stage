@@ -5,7 +5,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Box, Col, Row, ScreenScroll, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../layout';
+import {
+  Box, Col, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth,
+} from '../layout';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
@@ -151,17 +153,14 @@ function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }
 function ColumnCards({ column, pinned, editable, onOpen }: {
   column: BoardColumn<ChannelRowData>; pinned: readonly string[]; editable: boolean; onOpen: (key: string) => void;
 }): React.ReactElement | null {
-  const [width, setWidth] = useState({ scroll: 0, content: 0 });
   if (column.rows.length === 0) return null;
   return (
     <Scroll
-      {...SELF_SCROLLBAR}
+      {...GUTTER_SCROLLBAR}
       gap={CARD_GAP}
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
-      contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, width.scroll, width.content) }}
-      onLayout={(e) => { const scroll = e.nativeEvent.layout.width; setWidth(w => (w.scroll === scroll ? w : { ...w, scroll })); }}
-      onContentSizeChange={(content) => { setWidth(w => (w.content === content ? w : { ...w, content })); }}
+      contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, gutterScrollbarWidth()) }}
     >
       {column.rows.map(item => (
         <BoardCard

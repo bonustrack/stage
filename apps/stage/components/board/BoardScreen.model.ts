@@ -242,9 +242,8 @@ export function revealScrollX(index: number, scrollX: number, viewport: number, 
   return scrollX;
 }
 
-export function cardsRightPadding(padding: number, scrollWidth: number, contentWidth: number): number {
-  if (contentWidth <= 0) return padding;
-  return Math.max(0, padding - Math.max(0, scrollWidth - contentWidth));
+export function cardsRightPadding(padding: number, gutter: number): number {
+  return Math.max(0, padding - gutter);
 }
 
 export type BoardCardPress = 'push' | 'replace' | 'close';

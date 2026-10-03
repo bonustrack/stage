@@ -22,6 +22,23 @@ export const SELF_SCROLL: ViewStyle = WEB ? css({ overflowY: 'auto' }) : {};
 
 export const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
 
+export const GUTTER_SCROLLBAR = { dataSet: { stagescrollbar: '1', stagegutter: '1' } };
+
+let reservedGutter: number | undefined;
+
+export function gutterScrollbarWidth(): number {
+  if (!WEB || typeof document === 'undefined') return 0;
+  if (reservedGutter === undefined) {
+    const probe = document.createElement('div');
+    Object.assign(probe.dataset, GUTTER_SCROLLBAR.dataSet);
+    probe.style.cssText = 'position: absolute; visibility: hidden; width: 100px; overflow-y: auto';
+    document.body.append(probe);
+    reservedGutter = probe.offsetWidth - probe.clientWidth;
+    probe.remove();
+  }
+  return reservedGutter;
+}
+
 export const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
 
 export function stickyAt(top: string, zIndex: number): ViewStyle | null {

@@ -398,17 +398,14 @@ describe('activeColumnIndex', () => {
 });
 
 describe('cardsRightPadding', () => {
-  test('keeps the padding when no scrollbar takes room', () => {
-    expect(cardsRightPadding(10, 330, 330)).toBe(10);
+  test('keeps the padding when the browser reserves no scrollbar gutter', () => {
+    expect(cardsRightPadding(10, 0)).toBe(10);
   });
 
-  test('lets the scrollbar take the place of the padding', () => {
-    expect(cardsRightPadding(10, 330, 314)).toBe(0);
-    expect(cardsRightPadding(10, 330, 324)).toBe(4);
-  });
-
-  test('keeps the padding until the cards are measured', () => {
-    expect(cardsRightPadding(10, 330, 0)).toBe(10);
+  test('lets the reserved gutter take the place of the padding', () => {
+    expect(cardsRightPadding(10, 10)).toBe(0);
+    expect(cardsRightPadding(10, 16)).toBe(0);
+    expect(cardsRightPadding(10, 6)).toBe(4);
   });
 });
 
