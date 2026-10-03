@@ -10,21 +10,26 @@ import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
 import type { XmtpEnv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles, wipeXmtpStore } from './xmtp.dbkey';
-import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
+import { openClientForAccount, onlineOpts, type CreateOpts } from './xmtp.recover.web';
 import { makeClientLifecycle } from './xmtp.client.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
-import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
+import {
+  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, offlineOpenOptions,
+} from '@stage-labs/client/xmtp/clientConfig';
+import { isStoreLocked } from '@stage-labs/client/xmtp/clientErrors';
 import { ignored, attempt } from './errorPolicy';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
 const INSTALLATION_PREFIX = 'xmtp.installation.';
+const INBOX_PREFIX = 'xmtp.inbox.';
 
 type WebXmtpClient = Client<unknown>;
 
 function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
 function envKeyFor(id: string): string { return ENV_PREFIX + id; }
 function installationKeyFor(id: string): string { return INSTALLATION_PREFIX + id; }
+function inboxKeyFor(id: string): string { return INBOX_PREFIX + id; }
 
 const OPFS_POOL_DIR = '.opfs-libxmtp-metadata';
 const OPFS_EMPTY_SLOT_BYTES = 4096;
@@ -58,22 +63,39 @@ async function opfsHasDatabase(): Promise<boolean> {
   }
 }
 
+async function openSavedOrOnline(
+  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedIfPersisted: Promise<string | null> | null,
+): Promise<WebXmtpClient> {
+  try {
+    return (await openClientForAccount(rec, env, opts, savedIfPersisted)).client;
+  } catch (e) {
+    if (!opts.allowOffline || isStoreLocked(e)) throw e;
+    await secureStorage.delete(inboxKeyFor(rec.id)).catch(ignored(undefined, 'cleanup'));
+    return (await openClientForAccount(rec, env, onlineOpts(opts), savedIfPersisted)).client;
+  }
+}
+
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<WebXmtpClient> {
   const address = rec.address.toLowerCase();
-  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS };
-  const [savedAddress, savedEnv, savedInstallation] = await Promise.all([
-    getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)), getSecure(installationKeyFor(rec.id)),
+  const [savedAddress, savedEnv, savedInstallation, savedInbox] = await Promise.all([
+    getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)),
+    getSecure(installationKeyFor(rec.id)), getSecure(inboxKeyFor(rec.id)),
   ]);
-  const savedIfPersisted = canReuseSavedClient(savedAddress, savedEnv, address, env)
+  const sameAccount = canReuseSavedClient(savedAddress, savedEnv, address, env);
+  const offline = offlineOpenOptions(savedInbox, sameAccount);
+  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS, ...offline };
+  const savedIfPersisted = sameAccount
     ? opfsHasDatabase().then((has) => (has ? savedInstallation : null))
     : null;
-  perfLog('xmtp.client path', { savedAddress, savedEnv, savedInstallation, address, env });
-  const opened = await perfTime('xmtp.client.open', () => openClientForAccount(rec, env, opts, savedIfPersisted));
-  perfLog('xmtp.client opened', { registered: opened.registered, installation: opened.client.installationId });
+  perfLog('xmtp.client path', { savedAddress, savedEnv, savedInstallation, savedInbox, address, env });
+  const client = await perfTime('xmtp.client.open', () => openSavedOrOnline(rec, env, opts, savedIfPersisted));
+  perfLog('xmtp.client opened', { installation: client.installationId, offline: offline !== null });
+  if (offline) void client.preferences.fetchInboxState().catch(ignored(undefined, 'optional'));
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
-  await setSecure(installationKeyFor(rec.id), opened.client.installationId ?? '');
-  return opened.client;
+  await setSecure(installationKeyFor(rec.id), client.installationId ?? '');
+  await setSecure(inboxKeyFor(rec.id), client.inboxId ?? '');
+  return client;
 }
 
 function disposeCachedClient(): void {
@@ -86,6 +108,7 @@ async function forgetSavedClient(id: string): Promise<void> {
   await secureStorage.delete(addressKeyFor(id)).catch(ignored(undefined, 'cleanup'));
   await secureStorage.delete(envKeyFor(id)).catch(ignored(undefined, 'cleanup'));
   await secureStorage.delete(installationKeyFor(id)).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(inboxKeyFor(id)).catch(ignored(undefined, 'cleanup'));
 }
 
 async function revokeInstallation(client: WebXmtpClient, account: AccountRecord, installationId: string): Promise<void> {

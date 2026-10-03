@@ -17,6 +17,12 @@ export interface CreateOpts {
   env: XmtpEnv;
   dbPath: string;
   codecs: typeof XMTP_CODECS;
+  inboxId?: string;
+  allowOffline?: boolean;
+}
+
+export function onlineOpts({ env, dbPath, codecs }: CreateOpts): CreateOpts {
+  return { env, dbPath, codecs };
 }
 
 const NOISY_OPEN_EVENTS = new Set(['installation-mismatch', 'open-failed']);
@@ -63,7 +69,7 @@ export async function openClientForAccount(
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeXmtpStore(rec.id, rec.dbDir);
-      return openClientForAccount(rec, env, opts, null, true);
+      return openClientForAccount(rec, env, onlineOpts(opts), null, true);
     }
     if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
     throw e;

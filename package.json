@@ -51,6 +51,7 @@
     "@xmtp/react-native-sdk@5.7.0": "patches/@xmtp%2Freact-native-sdk@5.7.0.patch",
     "@react-native-masked-view/masked-view@0.3.2": "patches/@react-native-masked-view%2Fmasked-view@0.3.2.patch",
     "react-native-webrtc@124.0.8": "patches/react-native-webrtc@124.0.8.patch",
-    "expo-dev-launcher@57.0.20": "patches/expo-dev-launcher@57.0.20.patch"
+    "expo-dev-launcher@57.0.20": "patches/expo-dev-launcher@57.0.20.patch",
+    "@xmtp/browser-sdk@7.0.0": "patches/@xmtp%2Fbrowser-sdk@7.0.0.patch"
   }
 }

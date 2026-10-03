@@ -14,6 +14,15 @@ export function canReuseSavedClient(
   return savedAddress?.toLowerCase() === address && savedEnv === env;
 }
 
+export interface OfflineOpen {
+  inboxId: string;
+  allowOffline: true;
+}
+
+export function offlineOpenOptions(savedInboxId: string | null, sameAccount: boolean): OfflineOpen | null {
+  return sameAccount && savedInboxId ? { inboxId: savedInboxId, allowOffline: true } : null;
+}
+
 export function installationCreatedAtMs(clientTimestampNs: bigint | null | undefined): number | null {
   return clientTimestampNs != null ? Number(clientTimestampNs / 1_000_000n) : null;
 }

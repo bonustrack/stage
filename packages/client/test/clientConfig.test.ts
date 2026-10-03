@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, nativeInstallationCreatedAtMs, openPersistedClient, OPEN_ATTEMPTS,
+  webXmtpDbPath, canReuseSavedClient, offlineOpenOptions, installationCreatedAtMs, nativeInstallationCreatedAtMs, openPersistedClient, OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
 import { dbDirFor } from '../src/accounts/registry';
 
@@ -23,6 +23,19 @@ describe('canReuseSavedClient', () => {
   });
   test('false when nothing saved', () => {
     expect(canReuseSavedClient(null, null, '0xabc', 'production')).toBe(false);
+  });
+});
+
+describe('offlineOpenOptions', () => {
+  test('opens with the inbox saved for the same address and env', () => {
+    expect(offlineOpenOptions('inbox1', true)).toEqual({ inboxId: 'inbox1', allowOffline: true });
+  });
+  test('needs the network when the saved client was another address or env', () => {
+    expect(offlineOpenOptions('inbox1', false)).toBeNull();
+  });
+  test('needs the network when no inbox was saved', () => {
+    expect(offlineOpenOptions(null, true)).toBeNull();
+    expect(offlineOpenOptions('', true)).toBeNull();
   });
 });
 

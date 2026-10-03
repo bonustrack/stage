@@ -185,6 +185,7 @@
     "@expo/metro-config@57.0.12": "patches/@expo%2Fmetro-config@57.0.12.patch",
     "@xmtp/react-native-sdk@5.7.0": "patches/@xmtp%2Freact-native-sdk@5.7.0.patch",
     "@react-native-masked-view/masked-view@0.3.2": "patches/@react-native-masked-view%2Fmasked-view@0.3.2.patch",
+    "@xmtp/browser-sdk@7.0.0": "patches/@xmtp%2Fbrowser-sdk@7.0.0.patch",
     "expo@57.0.25": "patches/expo@57.0.25.patch",
     "expo-router@57.0.23": "patches/expo-router@57.0.23.patch",
     "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch",
