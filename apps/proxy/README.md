@@ -43,7 +43,11 @@ runtime - no Express, no origin, no laptop dependency.
   ciphertext is stored: one `MailBoxes` Durable Object per mailbox, which also
   holds the key record, sign-in nonces and sessions (512 MiB per mailbox).
   The app derives the mail key from the recovery-phrase owner's signature of
-  `st.box mail key v1 for <name>` and registers the public half; reading
+  `st.box mail key v1 for <name>` and sends the public half with the name
+  claim, inside the signed claim message; the claim stores it in the mailbox
+  only after the name is issued. A name claimed without a key (older apps,
+  Metro) stays inactive until its owner's app registers the key through
+  `POST /mail/key` on start, which is also the path for a new owner; reading
   needs a session opened with a signature from the name's current onchain
   owner (EOA, ERC-1271 or ERC-6492), checked again on every request, so a
   sold name loses access at once. A new owner's key wipes the old mail. Client
@@ -62,11 +66,12 @@ OPTIONS /preview, /img, /x402-settle -> 204 CORS preflight (allows the x-stage-c
 GET  /names/check?label=<label>  -> { valid, available, reason? }
 GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
-POST /names/claim                -> { label, address, issuedAt, signature } -> the issued name
+POST /names/claim                -> { label, address, issuedAt, signature, mailKey? } -> { name, txHash, mailKey?: 'stored' | 'failed' }
 POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
 GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown or expired
 *    /xmtp-push/*                -> relayed upstream
 POST /mail/key                   -> { label, publicKey, issuedAt, signature } -> { address }   401 not the owner   409 older key
+GET  /mail/key?label=<l>         -> { address, owner, publicKey | null }   (null: no key from the current owner)
 POST /mail/challenge             -> { label } -> { nonce, expiresAt }   (5 minutes, single use)
 POST /mail/session               -> { label, nonce, signature } -> { token, expiresAt }   (15 minutes)
 GET  /mail/list?label=<l>        -> { mails: [{ id, ts, size, index }] }   Bearer token
