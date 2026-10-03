@@ -5,16 +5,13 @@ import {
 } from '../components/conversation/messageDeletion.model';
 import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
 import { mergeFeedEntries } from '../lib/feedOrder.model';
+import { entry } from './helpers';
 
 const ME = 'xmtp:me';
 const PEER = 'xmtp:peer';
 
-function entry(id: string, from: string, text?: string, extra: Partial<HistoryEntry> = {}): HistoryEntry {
-  return { id, ts: '2026-09-30T00:00:00.000Z', station: 'xmtp', line: 'stage://xmtp/c', from, to: 'c', text, ...extra };
-}
-
-const mine = entry('m1', ME, 'hello', { payload: { contentType: 'text' } });
-const theirs = entry('m2', PEER, 'hi', { payload: { contentType: 'text' } });
+const mine = entry('m1', { from: ME, text: 'hello', payload: { contentType: 'text' } });
+const theirs = entry('m2', { from: PEER, text: 'hi', payload: { contentType: 'text' } });
 const none: ReadonlyMap<string, 'sender' | 'admin'> = new Map();
 const member = { myUri: ME, deleted: none, superAdmin: false };
 const superAdmin = { myUri: ME, deleted: none, superAdmin: true };
@@ -34,8 +31,8 @@ describe('canDeleteMessage', () => {
   });
 
   test('never a message still sending or a channel update, even for a super admin', () => {
-    expect(canDeleteMessage(entry('tmp_1', ME, 'sending'), member)).toBe(false);
-    const update = entry('g1', PEER, 'renamed the channel', { payload: { contentType: 'group_updated', system: true } });
+    expect(canDeleteMessage(entry('tmp_1', { from: ME, text: 'sending' }), member)).toBe(false);
+    const update = entry('g1', { from: PEER, text: 'renamed the channel', payload: { contentType: 'group_updated', system: true } });
     expect(canDeleteMessage(update, superAdmin)).toBe(false);
     expect(canDeleteMessage({ ...update, from: ME }, member)).toBe(false);
   });
@@ -64,7 +61,7 @@ describe('Delete in the message menu', () => {
 });
 
 describe('reply quote', () => {
-  const answer = entry('m3', PEER, 'sure', { replyTo: 'm1' });
+  const answer = entry('m3', { from: PEER, text: 'sure', replyTo: 'm1' });
   const lookup = (id: string): HistoryEntry | undefined => [mine, theirs, answer].find(e => e.id === id);
 
   test('a reply to a deleted message quotes who deleted it', () => {
@@ -89,7 +86,7 @@ describe('deleted row', () => {
   });
 
   test('an SDK placeholder replaces the cached original in place', () => {
-    const placeholder = entry('m1', ME, undefined, { payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
+    const placeholder = entry('m1', { from: ME, payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
     const merged = mergeFeedEntries([theirs, mine], [placeholder]);
     expect(merged.replaced).toBe(1);
     expect(merged.added).toBe(0);

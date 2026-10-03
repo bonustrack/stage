@@ -2,10 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import { makeVoiceRecorder } from '../components/composer/voice.core';
 import { hasAudioSignal, voiceFileMeta } from '../components/composer/voice.model';
 
-function deferred() {
-  return Promise.withResolvers<undefined>();
-}
-
 function harness(overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {}, callbacks: Partial<Parameters<typeof makeVoiceRecorder>[1]> = {}) {
   const events: string[] = [];
   const errors: unknown[] = [];
@@ -66,7 +62,7 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('does not overlap starts while permission is pending and honors release', async () => {
-    const permission = deferred();
+    const permission = Promise.withResolvers<undefined>();
     const h = harness({ prepare: () => permission.promise });
     const starting = h.recorder.start();
     await h.recorder.stop();
@@ -79,7 +75,7 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('cancellation during permission cannot be overwritten by release', async () => {
-    const permission = deferred();
+    const permission = Promise.withResolvers<undefined>();
     const h = harness({ prepare: () => permission.promise });
     const starting = h.recorder.start();
     await h.recorder.cancel();
@@ -91,7 +87,7 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('waits for stop before another recording and stops only once', async () => {
-    const stopping = deferred();
+    const stopping = Promise.withResolvers<undefined>();
     let stops = 0;
     const h = harness({ stop: async () => { stops++; await stopping.promise; } });
     await h.recorder.start();
@@ -109,8 +105,8 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('keeps the composer busy until validation and attachment finish', async () => {
-    const validating = deferred();
-    const attaching = deferred();
+    const validating = Promise.withResolvers<undefined>();
+    const attaching = Promise.withResolvers<undefined>();
     const h = harness({
       file: async () => { await validating.promise; return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }; },
     }, { upload: () => attaching.promise });
@@ -161,7 +157,7 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('releases the microphone if preparation completes after unmount', async () => {
-    const permission = deferred();
+    const permission = Promise.withResolvers<undefined>();
     const h = harness({ prepare: () => permission.promise });
     const starting = h.recorder.start();
     await h.recorder.dispose();
@@ -172,7 +168,7 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('cancels an upload if unmounted while validating the audio', async () => {
-    const validating = deferred();
+    const validating = Promise.withResolvers<undefined>();
     const h = harness({ file: async () => { await validating.promise; return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }; } });
     await h.recorder.start();
     const stopping = h.recorder.stop();

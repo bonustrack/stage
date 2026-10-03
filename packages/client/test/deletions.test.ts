@@ -5,6 +5,7 @@ import {
 } from '../src/xmtp/deletions';
 import { XMTP_USER_PREFIX } from '../src/xmtp/line';
 import type { StreamedMessage } from '../src/xmtp/summarizeRow';
+import { entry } from './helpers';
 
 const ALICE = `${XMTP_USER_PREFIX}alice`;
 const BOB = `${XMTP_USER_PREFIX}bob`;
@@ -12,14 +13,10 @@ const OWNER = `${XMTP_USER_PREFIX}owner`;
 const MOD = `${XMTP_USER_PREFIX}mod`;
 const SUPER_ADMINS: ReadonlySet<string> = new Set(['owner']);
 
-function entry(id: string, from: string, payload?: Record<string, unknown>, text?: string): HistoryEntry {
-  return { id, ts: '2026-09-30T00:00:00.000Z', station: 'xmtp', line: 'stage://xmtp/c', from, to: 'c', text, payload };
-}
-
-const hello = entry('m1', ALICE, { contentType: 'text' }, 'hello');
-const reply = { ...entry('m2', BOB, { contentType: 'reply', replyTo: 'm1' }, 'hi back'), replyTo: 'm1' };
+const hello = entry('m1', { from: ALICE, payload: { contentType: 'text' }, text: 'hello' });
+const reply = entry('m2', { from: BOB, payload: { contentType: 'reply', replyTo: 'm1' }, text: 'hi back', replyTo: 'm1' });
 const request = (id: string, from: string, target: string): HistoryEntry =>
-  entry(id, from, { contentType: 'deleteMessage', deletes: target });
+  entry(id, { from, payload: { contentType: 'deleteMessage', deletes: target } });
 
 describe('deletedMessages', () => {
   test('a delete from the original sender deletes the message', () => {
@@ -51,7 +48,7 @@ describe('deletedMessages', () => {
   });
 
   test('group updates cannot be deleted, not even by a super admin', () => {
-    const update = entry('g1', ALICE, { contentType: 'group_updated', system: true }, 'renamed the channel');
+    const update = entry('g1', { from: ALICE, payload: { contentType: 'group_updated', system: true }, text: 'renamed the channel' });
     expect(deletedMessages([request('d1', ALICE, 'g1'), update]).size).toBe(0);
     expect(deletedMessages([request('d1', OWNER, 'g1'), update], { superAdmins: SUPER_ADMINS }).size).toBe(0);
   });
@@ -63,7 +60,7 @@ describe('deletedMessages', () => {
   });
 
   test('an SDK placeholder and a local delete both count, with who deleted them', () => {
-    const placeholder = entry('m3', BOB, { contentType: 'deletedMessage', deletedBy: 'admin' });
+    const placeholder = entry('m3', { from: BOB, payload: { contentType: 'deletedMessage', deletedBy: 'admin' } });
     const deleted = deletedMessages([placeholder, hello, reply], { ownDeletes: new Set(['m1', 'm2']), selfInboxId: 'alice' });
     expect(Object.fromEntries(deleted)).toEqual({ m1: 'sender', m2: 'admin', m3: 'admin' });
   });
@@ -71,7 +68,7 @@ describe('deletedMessages', () => {
   test('requests and placeholders are not deletable bubbles themselves', () => {
     expect(isDeleteRequest(request('d1', ALICE, 'm1'))).toBe(true);
     expect(isDeletableEntry(request('d1', ALICE, 'm1'))).toBe(false);
-    expect(isDeletableEntry(entry('m3', BOB, { contentType: 'deletedMessage' }))).toBe(false);
+    expect(isDeletableEntry(entry('m3', { from: BOB, payload: { contentType: 'deletedMessage' } }))).toBe(false);
     expect(isDeletableEntry(hello)).toBe(true);
   });
 });

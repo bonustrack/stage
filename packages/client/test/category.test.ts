@@ -1,17 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { categoryOf, groupTagsOf, LabelPermissionError, writeCategory, writeLabels, type Group } from '../src/xmtp/labels';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
-
-function fixture(initial = '{}'): { group: Group; raw: () => string } {
-  let raw = initial;
-  return {
-    group: {
-      appData: () => Promise.resolve(raw),
-      updateAppData: value => { raw = value; return Promise.resolve(); },
-    },
-    raw: () => raw,
-  };
-}
+import { appDataGroup } from './helpers';
 
 const blob = (value: Record<string, unknown>): string => JSON.stringify({ v: 1, ...value });
 
@@ -24,18 +14,18 @@ describe('channel category', () => {
 
   test('reads labels, category and assignees together, with old channels having none', async () => {
     const bob = '0x1111111111111111111111111111111111111111';
-    expect(await groupTagsOf(fixture(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group))
+    expect(await groupTagsOf(appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group))
       .toEqual({ labels: ['Todo'], category: 'Work', assigned: [bob] });
     expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() }))
       .toEqual({ labels: [], category: 'Ops', assigned: [] });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
-      expect((await groupTagsOf(fixture(raw).group)).category).toBeNull();
+      expect((await groupTagsOf(appDataGroup(raw).group)).category).toBeNull();
     }
     expect(await groupTagsOf({})).toEqual({ labels: [], category: null, assigned: [] });
   });
 
   test('sets, changes and clears one category while keeping the other fields', async () => {
-    const state = fixture(blob({ labels: ['Todo'], assigned: [], custom: 7 }));
+    const state = appDataGroup(blob({ labels: ['Todo'], assigned: [], custom: 7 }));
     expect(await writeCategory(state.group, ' Work ')).toBe('Work');
     expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo'], assigned: [], custom: 7, category: 'Work' });
     expect(await writeCategory(state.group, 'Ops')).toBe('Ops');
