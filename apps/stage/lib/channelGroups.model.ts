@@ -1,4 +1,4 @@
-import { movedPinOrder, pinRank } from '@stage-labs/client/xmtp/pinOrder';
+import { movedKey } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from './format';
 
 export interface ChannelGroupsPrefs {
@@ -14,28 +14,14 @@ export function isCategoryKey(key: string): boolean {
   return key.startsWith(CATEGORY_KEY_PREFIX);
 }
 
-export function compareCategoryKeys(order: readonly string[]): (a: string, b: string) => number {
-  const rank = pinRank(order);
-  return (a, b) => {
-    const ra = rank.get(a);
-    const rb = rank.get(b);
-    if (ra !== undefined && rb !== undefined) return ra - rb;
-    if (ra !== undefined || rb !== undefined) return ra === undefined ? 1 : -1;
-    return compareNames(a, b);
-  };
-}
-
 export function categoryOrderWith(order: readonly string[], visible: readonly string[]): string[] {
-  const rank = pinRank(order);
-  const unranked = visible.filter(key => !rank.has(key)).sort(compareCategoryKeys(order));
-  return [...order, ...unranked];
+  return [...order, ...visible.filter(key => !order.includes(key)).sort(compareNames)];
 }
 
 export function movedCategoryOrder(
   order: readonly string[], visible: readonly string[], key: string, targetKey: string,
 ): string[] {
-  const full = categoryOrderWith(order, visible);
-  return [...movedPinOrder(full, key, full.indexOf(targetKey))];
+  return movedKey(categoryOrderWith(order, visible), key, targetKey);
 }
 
 function stringsOf(value: unknown): string[] {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { movedPinOrder, pinOrderAfterRemote, pinRank, toggledPinOrder } from '../src/xmtp/pinOrder';
+import { movedKey, movedPinOrder, pinOrderAfterRemote, savedFirst, toggledPinOrder } from '../src/xmtp/pinOrder';
 
 describe('pin order', () => {
   test('a new pin goes to the top, unpinning removes it', () => {
@@ -24,7 +24,14 @@ describe('pin order', () => {
     expect(pinOrderAfterRemote(same, { convId: 'a', pinned: true })).toBe(same);
   });
 
-  test('rank maps ids to their position', () => {
-    expect([...pinRank(['x', 'y']).entries()]).toEqual([['x', 0], ['y', 1]]);
+  test('saved keys come first in saved order, the rest keep the given order or the tie-break', () => {
+    const id = (key: string): string => key;
+    expect(savedFirst(['a', 'b', 'c', 'd'], ['c', 'x', 'a', 'c'], id)).toEqual(['c', 'a', 'b', 'd']);
+    expect(savedFirst(['d', 'b', 'a'], [], id, (x, y) => x.localeCompare(y))).toEqual(['a', 'b', 'd']);
+  });
+
+  test('a moved key takes the place of its target', () => {
+    expect(movedKey(['a', 'b', 'c'], 'a', 'c')).toEqual(['b', 'c', 'a']);
+    expect(movedKey(['a', 'b', 'c'], 'c', 'a')).toEqual(['c', 'a', 'b']);
   });
 });

@@ -49,22 +49,21 @@ export function usePinDrag(order: readonly string[], visible: readonly string[])
   return useListDrag(blocks, move);
 }
 
+function useSectionLayout<T>(
+  items: readonly HomeListItem[], on: boolean, none: T, layout: (items: readonly HomeListItem[], header: number, row: number) => T,
+): T {
+  const shape = on ? sectionShape(items) : '';
+  return useMemo(() => (shape === '' ? none : layout(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT)), [shape]);
+}
+
 export function useSectionDrag(items: readonly HomeListItem[], grouped: boolean): ListDrag {
-  const shape = grouped ? sectionShape(items) : '';
-  const blocks = useMemo(
-    () => (shape === '' ? NO_BLOCKS : sectionBlocks(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT)),
-    [shape],
-  );
+  const blocks = useSectionLayout(items, grouped, NO_BLOCKS, sectionBlocks);
   const move = useCallback((moved: string, target: string) => { moveCategory(moved, target, blocks.ids); }, [blocks]);
   return useListDrag(blocks, move);
 }
 
 export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: boolean): ListDrag {
-  const shape = byCategory ? sectionShape(items) : '';
-  const zones = useMemo(
-    () => (shape === '' ? NO_ZONES : categoryZones(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT)),
-    [shape],
-  );
+  const zones = useSectionLayout(items, byCategory, NO_ZONES, categoryZones);
   const move = useCallback((convId: string, key: string) => {
     const category = zones.categories.get(key);
     if (category !== undefined) setChannelCategory(convId, category);

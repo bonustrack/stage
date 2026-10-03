@@ -1,7 +1,8 @@
 import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
+import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
-import { NO_GROUP_TITLES, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
+import { NO_GROUP_TITLES, bucketRows, type GroupableRow, type NameOf } from '../home/groupBy.model';
 import { compareNames } from '../../lib/format';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
@@ -35,23 +36,14 @@ function rememberedLabels(order: readonly string[], known: ReadonlySet<string>):
 function valueColumns<T extends GroupableRow>(
   rows: readonly T[], by: GroupKey, nameOf: NameOf, hidden: (row: T) => boolean,
 ): BoardColumn<T>[] {
-  const columns = new Map<string, BoardColumn<T>>();
-  const none: BoardColumn<T> = { key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: [] };
-  for (const row of rows) {
-    const values = groupValuesOf(row, by);
-    if (values.length === 0 && !hidden(row)) none.rows.push(row);
-    for (const value of values) {
-      const id = value.toLowerCase();
-      let column = columns.get(id);
-      if (column === undefined) {
-        column = { key: columnKeyOf(by, value), label: groupTitleOf(by, value, nameOf), rows: [] };
-        columns.set(id, column);
-      }
-      if (!hidden(row)) column.rows.push(row);
-    }
-  }
-  const sorted = [...columns.values()].sort((a, b) => compareNames(a.label, b.label));
-  return [...sorted, ...(by !== 'label' && none.rows.length > 0 ? [none] : [])];
+  const { buckets, none } = bucketRows(rows, by, nameOf, value => columnKeyOf(by, value));
+  const shown = (list: readonly T[]): T[] => list.filter(row => !hidden(row));
+  const columns = buckets.map(({ key, title, rows: inBucket }) => ({ key, label: title, rows: shown(inBucket) }));
+  const rest = shown(none);
+  return [
+    ...columns.sort((a, b) => compareNames(a.label, b.label)),
+    ...(by !== 'label' && rest.length > 0 ? [{ key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: rest }] : []),
+  ];
 }
 
 export function boardColumns<T extends ChannelListRow & GroupableRow>(
@@ -87,12 +79,7 @@ export function acceptsDrop(drag: BoardDrag, key: string): boolean {
 }
 
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {
-  const saved = new Map<string, number>();
-  order.forEach((key, index) => { if (!saved.has(key.toLowerCase())) saved.set(key.toLowerCase(), index); });
-  const rank = (key: string, index: number): number => saved.get(key.toLowerCase()) ?? order.length + index;
-  return columns.map((column, index) => ({ column, rank: rank(column.key, index) }))
-    .sort((a, b) => a.rank - b.rank)
-    .map(({ column }) => column);
+  return savedFirst(columns, order.map(key => key.toLowerCase()), column => column.key.toLowerCase());
 }
 
 function withShown(saved: readonly string[], shown: readonly string[]): string[] {
@@ -110,11 +97,7 @@ export function movedColumnOrder(
   shown: readonly string[], saved: readonly string[], from: string, to: string,
 ): string[] | null {
   if (from === to || !shown.includes(from) || !shown.includes(to)) return null;
-  const full = withShown(saved, shown);
-  const target = full.indexOf(to);
-  const next = full.filter(key => key !== from);
-  next.splice(target, 0, from);
-  return next;
+  return movedKey(withShown(saved, shown), from, to);
 }
 
 export function keptColumnOrder(

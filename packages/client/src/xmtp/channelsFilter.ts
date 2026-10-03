@@ -1,4 +1,4 @@
-import { pinRank } from './pinOrder';
+import { savedFirst } from './pinOrder';
 export interface ChannelListRow {
   convId: string;
   title: string;
@@ -48,14 +48,7 @@ export function sortChannelRows<T extends ChannelListRow>(
   rows: T[],
   pinnedOrder: readonly string[] = [],
 ): T[] {
-  const rank = pinRank(pinnedOrder);
-  const rankOf = (r: T): number => rank.get(r.convId) ?? Number.POSITIVE_INFINITY;
-  return [...rows].sort((a, b) => {
-    const ra = rankOf(a);
-    const rb = rankOf(b);
-    if (ra !== rb) return ra - rb;
-    return (b.lastTs ?? 0) - (a.lastTs ?? 0);
-  });
+  return savedFirst(rows, pinnedOrder, r => r.convId, (a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
 }
 
 export function deriveBarLabels(rows: readonly { labels?: string[] }[]): string[] {

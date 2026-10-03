@@ -1,7 +1,7 @@
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
-import { compareCategoryKeys } from '../../lib/channelGroups.model';
+import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
-import { NO_GROUP_TITLES, groupTitleOf, groupValuesOf, type NameOf } from './groupBy.model';
+import { NO_GROUP_TITLES, bucketRows, type Bucket, type NameOf } from './groupBy.model';
 import type { Row } from './model';
 
 export interface ChannelGroupHeader {
@@ -33,12 +33,6 @@ interface GroupRow {
   markedUnread: boolean;
 }
 
-interface Bucket<R> {
-  key: string;
-  title: string;
-  rows: R[];
-}
-
 export function isGroupHeader(item: HomeListItem): item is GroupHeaderItem {
   return (item as GroupHeaderItem).header !== undefined;
 }
@@ -51,31 +45,19 @@ export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? 
 
 export const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
-function bucketsOf(row: GroupRow, by: GroupKey, nameOf: NameOf): { key: string; title: string }[] {
-  if (row.peerAddress !== null) return [DM_GROUP];
-  const values = groupValuesOf(row, by);
-  if (values.length === 0) return [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by] }];
-  return values.map(value => ({ key: sectionKeyOf(by, value), title: groupTitleOf(by, value, nameOf) }));
-}
-
 function orderedBuckets<R extends GroupRow>(
   rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[],
 ): Bucket<R>[] {
-  const buckets = new Map<string, Bucket<R>>();
-  for (const row of rows) {
-    for (const { key, title } of bucketsOf(row, by, nameOf)) {
-      let bucket = buckets.get(key);
-      if (bucket === undefined) { bucket = { key, title, rows: [] }; buckets.set(key, bucket); }
-      bucket.rows.push(row);
-    }
-  }
-  const dm = buckets.get(DM_GROUP.key);
-  const none = buckets.get(NO_GROUP_KEY);
-  const compareKeys = compareCategoryKeys(order);
-  const compare = (a: Bucket<R>, b: Bucket<R>): number =>
-    (by === 'category' ? compareKeys(a.key, b.key) : compareNames(a.title, b.title));
-  const grouped = [...buckets.values()].filter(b => b !== dm && b !== none).sort(compare);
-  return [...(dm === undefined ? [] : [dm]), ...grouped, ...(none === undefined ? [] : [none])];
+  const dm = rows.filter(row => row.peerAddress !== null);
+  const { buckets, none } = bucketRows(rows.filter(row => row.peerAddress === null), by, nameOf, value => sectionKeyOf(by, value));
+  const grouped = by === 'category'
+    ? savedFirst(buckets, order, b => b.key, (a, b) => compareNames(a.key, b.key))
+    : buckets.sort((a, b) => compareNames(a.title, b.title));
+  return [
+    ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
+    ...grouped,
+    ...(none.length === 0 ? [] : [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by], rows: none }]),
+  ];
 }
 
 function unreadOf(rows: readonly GroupRow[]): number {

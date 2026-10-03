@@ -23,6 +23,20 @@ export function pinOrderAfterRemote(
   return toggledPinOrder(order, state.convId);
 }
 
-export function pinRank(order: PinOrder): ReadonlyMap<string, number> {
-  return new Map(order.map((id, i) => [id, i]));
+export function savedFirst<T>(
+  items: readonly T[], order: readonly string[], keyOf: (item: T) => string, rest: (a: T, b: T) => number = () => 0,
+): T[] {
+  const rank = new Map<string, number>();
+  order.forEach((key, index) => { if (!rank.has(key)) rank.set(key, index); });
+  return [...items].sort((a, b) => {
+    const ra = rank.get(keyOf(a));
+    const rb = rank.get(keyOf(b));
+    if (ra !== undefined && rb !== undefined) return ra - rb;
+    if (ra !== undefined || rb !== undefined) return ra === undefined ? 1 : -1;
+    return rest(a, b);
+  });
+}
+
+export function movedKey(order: readonly string[], key: string, target: string): string[] {
+  return [...movedPinOrder(order, key, order.indexOf(target))];
 }
