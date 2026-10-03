@@ -128,13 +128,28 @@ const openSession: Op = async (storage, body, now) => {
   return Response.json({ token, expiresAt });
 };
 
-const authorize: Op = async (storage, body, now) => {
-  const token = text(body.token);
-  if (!TOKEN.test(token)) return done(401);
+async function sessionOwner(storage: MailStorage, token: string, now: number): Promise<string | null> {
+  if (!TOKEN.test(token)) return null;
   const session = await getOne(storage, sessionKey(token));
-  if (!isFields(session) || typeof session.owner !== 'string' || typeof session.expiresAt !== 'number') return done(401);
-  return session.expiresAt < now ? done(401) : Response.json({ owner: session.owner });
+  if (!isFields(session) || typeof session.owner !== 'string' || typeof session.expiresAt !== 'number') return null;
+  return session.expiresAt < now ? null : session.owner;
+}
+
+const authorize: Op = async (storage, body, now) => {
+  const owner = await sessionOwner(storage, text(body.token), now);
+  return owner === null ? done(401) : Response.json({ owner });
 };
+
+function signedIn(op: Op): Op {
+  return async (storage, body, now) => {
+    const owner = await sessionOwner(storage, text(body.token), now);
+    if (owner === null) return done(401);
+    const res = await op(storage, { ...body, owner }, now);
+    const headers = new Headers(res.headers);
+    headers.set('x-mail-owner', owner);
+    return new Response(res.body, { status: res.status, headers });
+  };
+}
 
 const list: Op = async (storage, body) => {
   const owner = text(body.owner);
@@ -165,7 +180,10 @@ const close: Op = async (storage) => {
   return done(204);
 };
 
-const OPS: Record<string, Op> = { register, key: readKey, challenge, consume, session: openSession, auth: authorize, list, read, delete: remove, close };
+const OPS: Record<string, Op> = {
+  register, key: readKey, challenge, consume, session: openSession, auth: authorize, list, read, delete: remove, close,
+  signedList: signedIn(list), signedRead: signedIn(read),
+};
 
 async function store(request: Request, storage: MailStorage): Promise<Response> {
   const owner = request.headers.get('x-mail-owner') ?? '';

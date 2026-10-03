@@ -132,12 +132,35 @@ function withAccess(run: (granted: Access) => Promise<Response>, needsId = false
   };
 }
 
-const listMail = withAccess(async ({ stub, owner }) => reply(await (await mailboxCall(stub, 'list', { owner })).json()));
+function ownerMismatch(found: Response, current: Hex | null): Response | null {
+  if (found.status === 401) return fail(401, 'session expired, sign in again');
+  const owner = found.headers.get('x-mail-owner');
+  return current !== null && owner !== null && current.toLowerCase() === owner ? null : fail(403, 'this name has a new owner');
+}
 
-const readMail = withAccess(async ({ stub, owner, id }) => {
-  const found = await mailboxCall(stub, 'read', { owner, id });
+async function signedRead(request: Request, deps: MailDeps, op: string, needsId: boolean): Promise<Response> {
+  const params = new URL(request.url).searchParams;
+  const label = (params.get('label') ?? '').toLowerCase();
+  const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+  const id = params.get('id') ?? '';
+  if (!isMailboxLabel(label)) return fail(400, 'label required');
+  if (token === '') return fail(401, 'sign in first');
+  const [found, current] = await Promise.all([mailboxCall(deps.mailbox(label), op, { token, id }), deps.chain.owner(label)]);
+  const denied = ownerMismatch(found, current);
+  if (denied !== null) return denied;
+  return needsId && !isMailId(id) ? fail(400, 'id required') : found;
+}
+
+const listMail: Handler = async (request, deps) => {
+  const found = await signedRead(request, deps, 'signedList', false);
+  return found.headers.has('x-mail-owner') ? reply(await found.json()) : found;
+};
+
+const readMail: Handler = async (request, deps) => {
+  const found = await signedRead(request, deps, 'signedRead', true);
+  if (!found.headers.has('x-mail-owner')) return found;
   return found.ok ? corsResponse(CORS, found.body, 200, 'application/octet-stream') : fail(404, 'no such mail');
-}, true);
+};
 
 const deleteMail = withAccess(async ({ stub, owner, id }) => {
   const removed = await mailboxCall(stub, 'delete', { owner, id });
