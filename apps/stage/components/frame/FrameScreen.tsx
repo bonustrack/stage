@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type RefObject, useEffect } fro
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Frame, type FrameAction, type FrameActionSource, type FrameNavigation, useFrameNavigation } from '@stage-labs/kit/react-native/frame';
+import { Frame, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
@@ -10,13 +10,12 @@ import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
-import { xmtpSendFrameAction } from '../../lib/xmtp.messages';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { capabilities } from '../../lib/capabilities';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
-import { report } from '../../lib/errorPolicy';
-import { frameActionContent, frameInputOf, frameOf, frameScreenTitle } from './frame.model';
+import { frameInputOf, frameOf, frameScreenTitle } from './frame.model';
+import { useFrameStack } from './frameStack';
+import { useFrameAction } from './useFrameAction';
 import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
 import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
@@ -40,9 +39,9 @@ interface FrameScreens {
   scrollRef: RefObject<ScreenScrollHandle | null>;
 }
 
-function useFrameScreens(frame: FrameContent | null, leave: () => void): FrameScreens {
+function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void): FrameScreens {
   const parsed = useMemo(() => parseFrameDoc(frame === null ? undefined : frameInputOf(frame)), [frame]);
-  const nav = useFrameNavigation(parsed.ok ? parsed.doc.start : '');
+  const nav = useFrameStack(messageId, parsed.ok ? parsed.doc.start : '');
   const { screen, depth, navigate: step } = nav;
   const back = useCallback((): boolean => {
     if (depth === 0) return false;
@@ -86,20 +85,7 @@ function FrameBody({ frame, convId, line, messageId, onSent, insetBottom, naviga
   const notice = consent === 'unknown' || consent === 'denied';
   const viewport = useFillViewport();
   const widget = useMemo(() => frameInputOf(frame), [frame]);
-  const onAction = useCallback(async (action: FrameAction, source: FrameActionSource): Promise<void> => {
-    const content = frameActionContent(messageId, action, source.label);
-    if (content === null) {
-      capabilities.toast('This answer is too long to send.');
-      return;
-    }
-    try {
-      await xmtpSendFrameAction(line, content);
-      onSent();
-    } catch (err) {
-      report('frame.action', err);
-      capabilities.toast('Could not send. Try again.');
-    }
-  }, [line, messageId, onSent]);
+  const onAction = useFrameAction(line, messageId, onSent);
   return (
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <Frame widget={widget} dark={dark} disabled={gated} onAction={onAction} navigation={navigation}
@@ -126,7 +112,7 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
     if (canGoBack) router.back();
     else router.replace(chat);
   }, [router, canGoBack, chat]);
-  const screens = useFrameScreens(frame, leave);
+  const screens = useFrameScreens(frame, messageId, leave);
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} />

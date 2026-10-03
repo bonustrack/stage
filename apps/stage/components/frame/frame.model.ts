@@ -1,8 +1,8 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import {
-  frameSummary, parseFrameDoc, resolveFrameColor, type FrameAction, type FrameColor, type FrameDocResult, type FrameFill,
-  type FrameNode,
+  frameSummary, navigateFrame, parseFrameDoc, resolveFrameColor, type FrameAction, type FrameColor, type FrameDocResult,
+  type FrameFill, type FrameNav, type FrameNode,
 } from '@stage-labs/kit/frame';
 import { kitPalette, type KitPalette, type Scheme } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_HEIGHT } from '../bubble/imageBox.model';
@@ -12,6 +12,7 @@ export const FRAME_ROUTE = '/frame';
 export const FRAME_PREVIEW_BORDER = 1;
 export const FRAME_PREVIEW_FADE = 48;
 export const FRAME_PREVIEW_FILL: FrameFill = { padding: 12 };
+export const FRAME_PREVIEW_BAR = 40;
 
 export interface FrameLink {
   pathname: typeof FRAME_ROUTE;
@@ -39,13 +40,13 @@ export function frameInputOf(frame: FrameContent): unknown {
   return frame.screens === undefined ? frame.widget : { screens: frame.screens, start: frame.start };
 }
 
-function startRootOf(frame: FrameContent): FrameNode | undefined {
+function screenRootOf(frame: FrameContent, screen?: string): FrameNode | undefined {
   const parsed = parseFrameDoc(frameInputOf(frame));
-  return parsed.ok ? parsed.doc.screens.get(parsed.doc.start)?.root : undefined;
+  return parsed.ok ? parsed.doc.screens.get(screen ?? parsed.doc.start)?.root : undefined;
 }
 
 export function frameCardModel(frame: FrameContent): FrameCardModel {
-  const root = startRootOf(frame);
+  const root = screenRootOf(frame);
   const derived = root === undefined ? {} : frameSummary(root);
   const title = filled(frame.title) ?? filled(derived.title) ?? 'Frame';
   const description = filled(frame.description) ?? filled(derived.description);
@@ -72,12 +73,32 @@ function rootLookOf(root: FrameNode | undefined): { theme?: Scheme; background?:
   return root?.type === 'ListView' ? { theme: root.props.theme } : {};
 }
 
-export function frameBackdrop(frame: FrameContent, scheme: Scheme, palette: KitPalette): string {
-  const { theme = scheme, background } = rootLookOf(startRootOf(frame));
+export function frameBackdrop(frame: FrameContent, scheme: Scheme, palette: KitPalette, screen?: string): string {
+  const { theme = scheme, background } = rootLookOf(screenRootOf(frame, screen));
   const own = theme === scheme ? palette : kitPalette(theme);
   return resolveFrameColor(background, theme, own) ?? own.bg;
 }
 
-export function framePreviewClipped(contentHeight: number): boolean {
-  return contentHeight > ATTACHMENT_MAX_HEIGHT - 2 * FRAME_PREVIEW_BORDER;
+export function framePreviewCap(depth: number): number {
+  return ATTACHMENT_MAX_HEIGHT - 2 * FRAME_PREVIEW_BORDER - (depth > 0 ? FRAME_PREVIEW_BAR : 0);
+}
+
+export function frameMoreBelow({ content, viewport, offset }: { content: number; viewport: number; offset: number }): boolean {
+  return content - viewport - offset > 1;
+}
+
+export type FrameStacks = ReadonlyMap<string, readonly string[]>;
+
+export function frameStackOf(stack: readonly string[] | undefined, start: string): readonly string[] {
+  return stack !== undefined && stack[0] === start ? stack : [start];
+}
+
+export function withFrameNav(stacks: FrameStacks, id: string, start: string, nav: FrameNav): FrameStacks {
+  const current = frameStackOf(stacks.get(id), start);
+  const next = navigateFrame(current, nav);
+  if (next === current) return stacks;
+  const out = new Map(stacks);
+  if (next.length > 1) out.set(id, next);
+  else out.delete(id);
+  return out;
 }

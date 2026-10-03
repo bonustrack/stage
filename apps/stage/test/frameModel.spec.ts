@@ -3,8 +3,8 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { kitPalette } from '@stage-labs/kit/tokens';
 import {
-  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameLinkOf, frameOf, framePreviewClipped,
-  frameScreenTitle,
+  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameLinkOf, frameMoreBelow, frameOf, framePreviewCap,
+  frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -108,9 +108,51 @@ describe('the frame preview in the feed', () => {
     expect(frameBackdrop({ widget: { type: 'Card', theme: 'light', background: { light: '#eeeeee', dark: '#111111' } } }, 'dark', dark)).toBe('#eeeeee');
   });
 
-  test('it is clipped only past the image height less its border', () => {
-    expect(framePreviewClipped(0)).toBe(false);
-    expect(framePreviewClipped(398)).toBe(false);
-    expect(framePreviewClipped(399)).toBe(true);
+  test('the backdrop follows the screen shown in the feed', () => {
+    const frame = { screens: { home: { type: 'Card', background: '#123456' }, s1: { type: 'Card', background: '#654321' } } };
+    expect(frameBackdrop(frame, 'light', light, 's1')).toBe('#654321');
+    expect(frameBackdrop(frame, 'light', light, 'missing')).toBe(light.bg);
+  });
+
+  test('it scrolls inside the image height less its border, and less the back bar on a later screen', () => {
+    expect(framePreviewCap(0)).toBe(398);
+    expect(framePreviewCap(2)).toBe(358);
+  });
+
+  test('the fade shows only while more content is below', () => {
+    expect(frameMoreBelow({ content: 300, viewport: 300, offset: 0 })).toBe(false);
+    expect(frameMoreBelow({ content: 900, viewport: 398, offset: 0 })).toBe(true);
+    expect(frameMoreBelow({ content: 900, viewport: 398, offset: 500 })).toBe(true);
+    expect(frameMoreBelow({ content: 900, viewport: 398, offset: 501 })).toBe(false);
+  });
+});
+
+describe('the screen stack of each frame', () => {
+  const none: FrameStacks = new Map();
+
+  test('a frame starts on its start screen', () => {
+    expect(frameStackOf(undefined, 'home')).toEqual(['home']);
+    expect(frameStackOf(['other', 's1'], 'home')).toEqual(['home']);
+  });
+
+  test('each frame keeps its own stack, shared by the feed and the full view', () => {
+    const one = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
+    const both = withFrameNav(one, 'msg-2', 'home', { kind: 'open', screen: 's2' });
+    expect(frameStackOf(both.get('msg-1'), 'home')).toEqual(['home', 's1']);
+    expect(frameStackOf(both.get('msg-2'), 'home')).toEqual(['home', 's2']);
+    expect(none.size).toBe(0);
+  });
+
+  test('going back to the start screen forgets the frame', () => {
+    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
+    const back = withFrameNav(open, 'msg-1', 'home', { kind: 'back' });
+    expect(back.has('msg-1')).toBe(false);
+    expect(frameStackOf(back.get('msg-1'), 'home')).toEqual(['home']);
+  });
+
+  test('a step that changes nothing keeps the same stacks', () => {
+    expect(withFrameNav(none, 'msg-1', 'home', { kind: 'back' })).toBe(none);
+    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
+    expect(withFrameNav(open, 'msg-1', 'home', { kind: 'open', screen: 's1' })).toBe(open);
   });
 });
