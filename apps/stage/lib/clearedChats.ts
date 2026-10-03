@@ -1,7 +1,6 @@
 import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
-import { notifyClearedChatsChanged } from './readSyncRegistry';
 import { makeListeners, useStoreValue } from './storeCore';
 import { reported } from './errorPolicy';
 
@@ -12,6 +11,8 @@ let accountId: string | null = null;
 let cleared: ClearedChats = EMPTY;
 let loading: Promise<void> | null = null;
 const listeners = makeListeners();
+const localChanges = makeListeners();
+export const onClearedChatsChanged = localChanges.subscribe;
 
 function parseCleared(raw: string | null): ClearedChats {
   if (raw === null) return EMPTY;
@@ -55,7 +56,7 @@ export function useClearedChats(): ClearedChats {
 export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {
   await ensureClearedChatsLoaded();
   commit(mergeClearedChats(cleared, { [peerAddress]: atMs }));
-  notifyClearedChatsChanged();
+  localChanges.notify();
 }
 
 export async function applyRemoteClearedChats(incoming: ClearedChats): Promise<void> {

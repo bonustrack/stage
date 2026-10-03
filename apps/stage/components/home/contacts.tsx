@@ -6,7 +6,7 @@ import { Eyebrow } from '../Eyebrow';
 import { Box, PAGE_GUTTER } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../ChannelRow';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { peopleLookup } from './contacts.model';

@@ -10,7 +10,7 @@ import { previewOf } from './feed-helpers';
 import { replyQuoteOf } from './messageDeletion.model';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
-import { XMTP_USER_PREFIX } from '../../modules/messaging';
+import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
 import { memberNamer, withMemberNames } from './systemNames.model';
 import { getPeerName } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';

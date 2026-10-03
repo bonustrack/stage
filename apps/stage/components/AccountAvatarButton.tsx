@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles, peerAvatarUrl } from '../lib/peerProfiles';
-import { useActiveAccountRecord } from '../modules/messaging';
+import { useActiveAccountRecord } from '../modules/messaging/account';
 import { SETTINGS_ROUTE } from '../lib/routes';
 
 

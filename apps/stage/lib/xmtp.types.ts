@@ -22,12 +22,6 @@ export interface StreamStatus {
   ensure: () => void;
 }
 
-export {
-  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine,
-} from '@stage-labs/client/xmtp/line';
-
-export { shortAddress } from '@stage-labs/client/identity/format';
-
 const CONTROL_BODY_PREFIX = 'METRO_CTRL:';
 
 export function isControlBody(text: unknown): boolean {

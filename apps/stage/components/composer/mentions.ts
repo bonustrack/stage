@@ -3,7 +3,7 @@ import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContactList } from '../../lib/useContacts';
-import { getActiveAccountIdSync, getCachedRows } from '../../modules/messaging';
+import { getActiveAccountIdSync, getCachedRows } from '../../lib/channelsCache';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
 import { mentionLabelOf as labelOf } from '../conversation/convTitle';
 import {

@@ -1,15 +1,18 @@
 import { toggleKey } from '../components/conversation/SidebarSection.model';
-import { makeAccountValue } from './accountValue';
 import { NO_GROUPS_PREFS, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs } from './channelGroups.model';
 import { reported } from './errorPolicy';
-import { notifyCategoryOrderChanged } from './readSyncRegistry';
-import { useStoreValue } from './storeCore';
+import type { AccountOrderChange } from './boardOrder';
+import { createValueStore } from './persistedStore';
+import { makeListeners } from './storeCore';
 
-const prefs = makeAccountValue<ChannelGroupsPrefs>('channels.groups.', NO_GROUPS_PREFS, parseChannelGroupsPrefs, JSON.stringify);
+const prefs = createValueStore<ChannelGroupsPrefs>({
+  key: 'channels.groups.', default: NO_GROUPS_PREFS, deserialize: parseChannelGroupsPrefs, serialize: JSON.stringify, perAccount: true,
+});
 
-function primeGroups(): void { void prefs.ready().catch(reported('channelGroups.load')); }
+export const useChannelGroups = prefs.use;
 
-export const useChannelGroups = (): ChannelGroupsPrefs => useStoreValue(prefs.subscribe, prefs.get, primeGroups);
+const categoryOrderChanges = makeListeners<AccountOrderChange>();
+export const onCategoryOrderChanged = categoryOrderChanges.subscribe;
 
 function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor?: string): Promise<void> {
   return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
@@ -31,7 +34,7 @@ export function moveCategory(key: string, targetKey: string, visible: readonly s
   const accountId = prefs.accountId();
   if (accountId === null) return;
   void save(current => withOrder(current, movedCategoryOrder(current.order, visible, key, targetKey)), accountId)
-    .then(() => { if (prefs.accountId() === accountId) notifyCategoryOrderChanged({ accountId, order: prefs.get().order }); });
+    .then(() => { if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, order: prefs.get().order }); });
 }
 
 export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {
@@ -39,6 +42,6 @@ export async function applyRemoteCategoryOrder(forAccount: string, order: readon
 }
 
 export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {
-  await prefs.ready();
+  await prefs.load();
   return prefs.accountId() === forAccount ? prefs.get().order : [];
 }

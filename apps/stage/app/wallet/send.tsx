@@ -16,8 +16,8 @@ import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../..
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 
 const RESOLVING_SPINNER = 24;
-import { TokenSelector, useSelectedBalance, type TokenChoice } from '../../components/wallet/TokenSelector';
-import { sendTokenFor } from '../../components/wallet/TokenSelector.model';
+import { sendTokenFor, type TokenChoice } from '../../components/wallet/screen/model';
+import { TokenSelector, useSelectedBalance } from '../../components/wallet/TokenSelector';
 
 function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,

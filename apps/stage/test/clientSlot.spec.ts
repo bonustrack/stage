@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createClientSlot } from '../lib/storeCore';
+import { createClientSlot } from '../lib/xmtp.state.core';
 
 function deferred<T>(): { promise: Promise<T>; resolve: (v: T) => void } {
   let resolve: (v: T) => void = () => undefined;

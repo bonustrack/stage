@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { xmtpVote, xmtpOpenAnswer } from '../../modules/messaging';
+import { xmtpVote, xmtpOpenAnswer } from '../../lib/xmtp.messages';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { pollQuestionsInFeed } from './feed-helpers';
 import type { PollOpenAnswers, PollOwnVotes, PollVotes } from '../bubble/poll.model';

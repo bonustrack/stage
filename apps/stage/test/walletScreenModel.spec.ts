@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { walletTotalUsd } from '../components/wallet/screen/model';
+import { walletTotalUsd, sendTokenFor } from '../components/wallet/screen/model';
 import {
   balanceCurrency, nextBalanceCurrency, walletBalanceDisplay,
   type BalanceDisplayInput,
@@ -148,5 +148,22 @@ describe('wallet loading and refresh display', () => {
   test('successful loaded balance has no status text', () => {
     expect(walletBalanceDisplay(loaded).subtitle).toBeUndefined();
     expect(walletBalanceDisplay(loaded).spinner).toBe(false);
+  });
+});
+
+describe('sendTokenFor', () => {
+  test('defaults to ETH on Base', () => {
+    expect(sendTokenFor()).toEqual({ symbol: 'ETH', chainId: 8453 });
+  });
+
+  test('keeps USDC on Base when the link asks for it', () => {
+    expect(sendTokenFor('USDC')).toEqual({ symbol: 'USDC', chainId: 8453 });
+    expect(sendTokenFor('USDC', '8453')).toEqual({ symbol: 'USDC', chainId: 8453 });
+  });
+
+  test('falls back to ETH on Base for a token or chain the wallet does not hold', () => {
+    expect(sendTokenFor('USDC', '1')).toEqual({ symbol: 'ETH', chainId: 8453 });
+    expect(sendTokenFor('STAGE', '11155111')).toEqual({ symbol: 'ETH', chainId: 8453 });
+    expect(sendTokenFor('DAI')).toEqual({ symbol: 'ETH', chainId: 8453 });
   });
 });

@@ -25,7 +25,7 @@ import { mentionKeyAction } from './composer/mentions.model';
 import { revealMarked } from './arrowKeys';
 import type { MarkedNode } from './arrowKeys.model';
 import { homeRows } from './home/state';
-import { subscribeCachedRows } from '../modules/messaging';
+import { subscribeCachedRows } from '../lib/channelsCache';
 import { useStoreValue } from '../lib/storeCore';
 import { useClearedChats } from '../lib/clearedChats';
 import { useSafeAreaInsets } from '../lib/safeArea';

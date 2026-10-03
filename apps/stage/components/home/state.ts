@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import type { VirtualListHandle } from '../layout';
-import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';

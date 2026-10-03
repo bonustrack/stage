@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/messaging';
+import { acceptRequestConv, blockRequestConv, syncConsent } from '../lib/xmtp.conv';
 import { usePalette } from '../lib/theme';
 import { Box, Row, PAGE_GUTTER } from './layout';
 import { useWebTabRail } from '../lib/webLayout';

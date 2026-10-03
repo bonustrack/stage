@@ -1,4 +1,4 @@
-import { cachedSelfEthAddress } from '../../modules/messaging';
+import { cachedSelfEthAddress } from '../../lib/xmtp.client';
 import { homeRows } from '../home/state';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
 import { peerLabel, type ConvTitle } from '../conversation/convTitle';

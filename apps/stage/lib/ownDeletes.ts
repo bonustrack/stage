@@ -1,4 +1,4 @@
-import { makeAccountValue } from './accountValue';
+import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { reported } from './errorPolicy';
 
@@ -12,7 +12,9 @@ function parseIds(raw: string): readonly string[] {
   } catch { return NO_IDS; }
 }
 
-const stored = makeAccountValue<readonly string[]>('messages.deleted.', NO_IDS, parseIds, (ids) => JSON.stringify(ids));
+const stored = createValueStore<readonly string[]>({
+  key: 'messages.deleted.', default: NO_IDS, deserialize: parseIds, serialize: (ids) => JSON.stringify(ids), perAccount: true,
+});
 const listeners = makeListeners();
 let snapshotOf: readonly string[] = NO_IDS;
 let snapshot: ReadonlySet<string> = new Set();
@@ -27,7 +29,7 @@ export function getOwnDeletes(): ReadonlySet<string> {
 }
 
 export async function ownDeletesReady(): Promise<ReadonlySet<string>> {
-  await stored.ready();
+  await stored.load();
   return getOwnDeletes();
 }
 
@@ -45,7 +47,7 @@ export function unmarkOwnDelete(messageId: string): Promise<void> {
 }
 
 function primeOwnDeletes(): void {
-  void stored.ready().then(() => { listeners.notify(); }).catch(reported('ownDeletes.load'));
+  void stored.load().then(() => { listeners.notify(); }).catch(reported('ownDeletes.load'));
 }
 
 export function useOwnDeletes(): ReadonlySet<string> {

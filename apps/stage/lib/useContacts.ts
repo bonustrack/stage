@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
-import {
-  peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv,
-  getActiveAccountIdSync, getCachedRows, shortAddress,
-} from '../modules/messaging';
+import { peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv } from './xmtp.identity';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feedLines';
-import { subscribeCachedRows, type CachedRow } from './channelsCache';
+import { getActiveAccountIdSync, getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 
 export interface Contact {

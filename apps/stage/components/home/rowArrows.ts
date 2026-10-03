@@ -1,5 +1,6 @@
-import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';
-import { lineOfConv, prefetchFeed } from '../../modules/messaging';
+import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import type { VirtualListHandle } from '../layout';
@@ -20,7 +21,7 @@ export function useRowArrows({ rows, items, activePath, router, listRef, paused 
   listRef: React.RefObject<VirtualListHandle | null>;
   paused: boolean;
 }): void {
-  const open = rows.find(row => isActiveConversationPathFor(activePath, row.convId, row.peerAddress)) ?? null;
+  const open = rows.find(row => isActiveConversationPath(activePath, row.convId, row.peerAddress)) ?? null;
   useArrowKeys(open !== null && !paused, VERTICAL_ARROWS, (arrow) => {
     const next = stepRow(rows, open?.convId ?? null, arrow);
     if (next === null) return;

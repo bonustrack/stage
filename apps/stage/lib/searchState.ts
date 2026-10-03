@@ -3,7 +3,6 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { reported } from './errorPolicy';
-import { notifySearchStateChanged } from './readSyncRegistry';
 import { makeListeners, useStoreValue } from './storeCore';
 import {
   EMPTY_SEARCH_SLOT, editSearch, receiveSearch, settleSearch, toggledLabel, typingPause, type SearchEdit, type SearchSlot,
@@ -18,6 +17,14 @@ let lastEditAt = 0;
 let settleTimer: ReturnType<typeof setTimeout> | null = null;
 let loading: Promise<void> | null = null;
 const listeners = makeListeners();
+
+export interface SearchStateChange {
+  accountId: string;
+  state: SearchStateContent;
+}
+
+const localChanges = makeListeners<SearchStateChange>();
+export const onSearchStateChanged = localChanges.subscribe;
 
 function parseSearch(raw: string | null): SearchStateContent | null {
   if (raw === null) return null;
@@ -80,7 +87,7 @@ function settleWhenIdle(): void {
 function edit(change: SearchEdit): void {
   lastEditAt = Date.now();
   commit(editSearch(slot, change, lastEditAt));
-  if (accountId !== null) notifySearchStateChanged({ accountId, state: slot.current });
+  if (accountId !== null) localChanges.notify({ accountId, state: slot.current });
 }
 
 export function setSearchQuery(query: string): void {

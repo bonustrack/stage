@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { useActiveAccount } from '../../modules/messaging';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
@@ -22,7 +22,7 @@ import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useHomeView } from '../../lib/homeView';
 import { getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
@@ -34,7 +34,7 @@ const assigneeName = (address: string): string => getPeerName(address) ?? shortA
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement | null {
   const splitHome = useWebTabRail() && pane !== true;
-  const accountEpoch = useActiveAccount();
+  const accountEpoch = useAccountEpoch();
   const board = useHomeView().view === 'board';
   if (splitHome) return board ? null : <NewChatScreen key={accountEpoch}/>;
   if (board) return <BoardScreen pane={pane === true}/>;
@@ -81,7 +81,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [sortedRows, matches, cleared],
   );
   const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
-  const accountEpoch = useActiveAccount();
+  const accountEpoch = useAccountEpoch();
   const paneAtMin = channelsPaneWidth.useAtMin();
   const hideAvatar = pane && paneAtMin;
 

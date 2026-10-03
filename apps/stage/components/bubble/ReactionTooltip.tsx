@@ -1,7 +1,7 @@
 import { useMemo, useRef, type ReactNode } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { View, type ViewType } from '../layout/native';
+import { View } from 'react-native';
 import { hideRailTooltip, showRailTooltip, tooltipLabel, tooltipState } from '../../lib/railTooltip';
 
 const PEEK_MS = 250;
@@ -9,7 +9,7 @@ const PEEK_MS = 250;
 export function ReactionTooltip({ label, emoji, onReact, children }: {
   label: string; emoji: string; onReact?: (emoji: string) => void; children: ReactNode;
 }): React.ReactElement {
-  const ref = useRef<ViewType>(null);
+  const ref = useRef<View>(null);
   const gesture = useMemo(() => {
     const show = (): void => {
       ref.current?.measureInWindow((left, top, width, height) => {

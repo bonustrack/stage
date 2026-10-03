@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { useXmtpBootstrapPhase } from '../../modules/messaging';
+import { useXmtpBootstrapPhase } from '../../lib/xmtp.state.core';
 import { usePalette } from '../../lib/theme';
 
 function BannerFrame({ children }: { children: ReactNode }): React.ReactElement {

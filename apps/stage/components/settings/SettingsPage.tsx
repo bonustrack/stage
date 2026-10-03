@@ -10,11 +10,12 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { SETTINGS_ROUTE } from '../../lib/routes';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
 import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
+import type { AppIconName } from '../appIcons';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
@@ -121,6 +122,12 @@ export function SettingsButtonRow(props: {
     </SettingsItem>
   );
 }
+
+export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: AppIconName }[] = [
+  { value: 'system', label: 'System', icon: 'IconImac' },
+  { value: 'light', label: 'Light', icon: 'IconSun' },
+  { value: 'dark', label: 'Dark', icon: 'IconMoon' },
+];
 
 export function SettingsThemeRow(props: {
   label: string;

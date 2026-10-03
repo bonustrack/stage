@@ -1,9 +1,9 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { setBoardOrder } from '../../lib/boardOrder';
 import { capabilities } from '../../lib/capabilities';
-import {
-  LabelPermissionError, addGroupLabel, lineOfConv, moveGroupLabel, removeGroupLabel, renameGroupLabel,
-} from '../../modules/messaging';
+import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
+import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel } from '../../lib/xmtp.groups';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../channel/channel.labels';
 import {
   addedColumnOrder, columnLabel, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote, labelCarriers,

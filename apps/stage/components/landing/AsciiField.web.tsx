@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from '../layout/native';
+import { View } from 'react-native';
 import { HERO_BLACK, asciiPath } from './Landing.model';
 import { useAsciiArt } from './useAsciiArt';
 

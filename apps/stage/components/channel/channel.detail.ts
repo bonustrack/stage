@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  useConvMeta, fetchGroupRoles, groupEditRights, messagingKeys, lineOfConv, leaveGroupConv, shortAddress,
-  convIdOfLine, convOfLine, memberInboxToAddressMap, removeGroupMembers,
-} from '../../modules/messaging';
+import { useConvMeta, fetchGroupRoles, messagingKeys } from '../../modules/messaging/queries';
+import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/xmtp.groups';
+import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { convOfLine } from '../../lib/xmtp.sdk';
+import { memberInboxToAddressMap } from '../../lib/xmtp.identity';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';

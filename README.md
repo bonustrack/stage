@@ -16,7 +16,7 @@ apps/
               #   app/         expo-router file routes (routes only — helpers live in components/)
               #   components/  kit-JSX screens + colocated *.model.ts pure models, one folder per family
               #   lib/         state + SDK orchestration (incl. the xmtp.*.web adapters and *.core.ts)
-              #   modules/     messaging facade (modules/messaging) + the stage-pill native module
+              #   modules/     messaging/ (rows, queries, feed, consent; no barrel) + the stage-pill native module
               #   platform/    storage seams (.ts native / .web.ts overrides)
               #   test/        pure-model tests (bun test)
               #   desktop/     Electron shell that bundles the web export (nested workspace)

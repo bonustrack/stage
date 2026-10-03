@@ -92,39 +92,3 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
     reset(): void { loaded = false; inFlight = null; },
   };
 }
-
-const READY_CAP_MS = 60_000;
-
-interface ClientSlot<C> {
-  get: () => C | null;
-  set: (client: C | null) => void;
-  getOrCreate: (create: () => Promise<C>) => Promise<C>;
-  waitForReady: () => Promise<boolean>;
-  reset: () => void;
-}
-
-export function createClientSlot<C>(onReset: () => void): ClientSlot<C> {
-  let cached: C | null = null;
-  let inFlight: Promise<C> | null = null;
-  return {
-    get: () => cached,
-    set: (client) => { cached = client; },
-    getOrCreate: async (create) => {
-      if (cached) return cached;
-      if (inFlight) return inFlight;
-      const pending = create();
-      inFlight = pending;
-      try { return await pending; } finally { if (inFlight === pending) inFlight = null; }
-    },
-    waitForReady: async () => {
-      const start = Date.now();
-      while (cached === null && Date.now() - start < READY_CAP_MS) await new Promise((r) => setTimeout(r, 250));
-      return cached !== null;
-    },
-    reset: () => {
-      cached = null;
-      inFlight = null;
-      onReset();
-    },
-  };
-}

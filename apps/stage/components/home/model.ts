@@ -1,5 +1,5 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
-import type { ConversationView } from '../../modules/messaging';
+import type { ConversationView } from '../../modules/messaging/conversation';
 import {
   GROUP_KEYS, homeViewSchema, type GroupKey, type HomeViewContent, type HomeViewEdit,
 } from '@stage-labs/client/xmtp/readState';

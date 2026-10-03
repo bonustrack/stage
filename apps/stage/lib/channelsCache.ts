@@ -1,6 +1,6 @@
 import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
-import { notifyReadStateChanged } from './readSyncRegistry';
+import { makeListeners } from './storeCore';
 import {
   applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
@@ -10,12 +10,21 @@ import type { XmtpConsent } from './xmtp.types';
 
 export type CachedRow = CachedChannelRow;
 
+export interface ReadStateChange {
+  convId: string;
+  lastReadNs: number;
+  markedUnread: boolean;
+}
+
+const readChanges = makeListeners<ReadStateChange>();
+export const onReadStateChanged = readChanges.subscribe;
+
 const stores = new Map<string, PersistentStore<CachedRow[]>>();
 
 const DEFAULT_KEY = '__default__';
 let activeId: string = DEFAULT_KEY;
 
-const activeListeners = new Set<(rows: CachedRow[] | null) => void>();
+const activeListeners = makeListeners<CachedRow[] | null>();
 let activeStoreUnsub: (() => void) | null = null;
 
 let notifyScheduled = false;
@@ -25,7 +34,7 @@ function notifyActive(): void {
   queueMicrotask(() => {
     notifyScheduled = false;
     const v = activeStore().get();
-    for (const l of activeListeners) l(v);
+    activeListeners.notify(v);
   });
 }
 
@@ -71,10 +80,7 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
 
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
-export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
-  activeListeners.add(l);
-  return () => { activeListeners.delete(l); };
-}
+export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export async function getLastReadNs(convId: string): Promise<number> {
@@ -112,7 +118,7 @@ async function markConvUnreadSynced(convId: string): Promise<void> {
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
-  notifyReadStateChanged({ convId, lastReadNs: nowNs, markedUnread: false });
+  readChanges.notify({ convId, lastReadNs: nowNs, markedUnread: false });
   const rows = getCachedRows();
   if (!rows) return;
   const next = applyRead(rows, convId, nowNs);
@@ -124,7 +130,7 @@ export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
   const rows = getCachedRows();
   const current = rows?.find((r) => r.convId === convId);
-  notifyReadStateChanged({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
+  readChanges.notify({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
   if (!rows) return;
   const next = applyUnread(rows, convId);
   if (next === null) return;

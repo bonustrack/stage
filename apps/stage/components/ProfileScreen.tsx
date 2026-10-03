@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../lib/safeArea';
-import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { useActiveAccountRecord } from '../modules/messaging/account';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';

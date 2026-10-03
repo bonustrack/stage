@@ -2,8 +2,9 @@ import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
-import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
-import { registerHiddenConv } from './readSyncRegistry';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
+import { registerHiddenConv } from './xmtp.state.core';
 import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';

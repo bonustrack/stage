@@ -1,11 +1,11 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { View, type ViewType } from './layout/native';
+import { View } from 'react-native';
 import { isShown, keyTarget, modalOpen } from './keyEvents.web';
 import { shortcutKey, shortcutOf, type Shortcut } from './shortcuts.model';
 import { hideRailTooltip, hoverRect, showRailTooltip, tooltipLabel, tooltipState, type TooltipPlacement } from '../lib/railTooltip';
 
-function useShortcut(shortcut: Shortcut | undefined, onShortcut: (() => void) | undefined): React.RefObject<ViewType | null> {
-  const node = useRef<ViewType>(null);
+function useShortcut(shortcut: Shortcut | undefined, onShortcut: (() => void) | undefined): React.RefObject<View | null> {
+  const node = useRef<View>(null);
   const handler = useRef(onShortcut);
   handler.current = onShortcut;
   useEffect(() => {

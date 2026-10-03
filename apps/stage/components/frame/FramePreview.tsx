@@ -6,10 +6,10 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { Box } from '../layout';
-import { View } from '../layout/native';
+import { View } from 'react-native';
 import { GradientFade } from '../GradientFade';
 import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
-import { convIdOfLine } from '../../modules/messaging';
+import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { ATTACHMENT_MAX_HEIGHT, ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
 import {
   FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameCardModel, frameInputOf,

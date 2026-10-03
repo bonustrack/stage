@@ -1,3 +1,4 @@
+import { WALLET_ASSETS, WALLET_CHAIN_ID } from '@stage-labs/client/wallet/assets';
 import { isValidUsdPrice } from './balance.model';
 
 export interface WalletTotalRow {
@@ -64,4 +65,12 @@ export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowMode
     change24h: changeText,
     logoUri: r.logoUrl,
   };
+}
+
+export interface TokenChoice { symbol: string; chainId: number }
+
+export function sendTokenFor(symbol?: string, chainId?: string): TokenChoice {
+  const cid = chainId ? Number(chainId) : WALLET_CHAIN_ID;
+  const hit = WALLET_ASSETS.find(a => a.symbol === symbol && a.chainId === cid);
+  return { symbol: hit?.symbol ?? 'ETH', chainId: WALLET_CHAIN_ID };
 }

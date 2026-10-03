@@ -12,11 +12,14 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, categoryOf, cleanLabel, getCachedRows, knownCategories, LabelPermissionError, lineOfConv, MAX_LABEL_LEN,
-  MAX_LABELS, removeGroupLabel, setGroupCategory, subscribeCachedRows,
-} from '../../modules/messaging';
+  addGroupLabel, knownCategories, removeGroupLabel, setGroupCategory, suggestLabels,
+} from '../../lib/xmtp.groups';
+import {
+  categoryOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
+} from '@stage-labs/client/xmtp/labels';
+import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
-import { suggestLabels } from '../../modules/messaging';
 import { useChannelEditRights } from './channel.detail';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';

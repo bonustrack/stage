@@ -13,7 +13,9 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import { invalidateConvMeta, lineOfConv, updateGroupMeta } from '../../modules/messaging';
+import { invalidateConvMeta } from '../../modules/messaging/queries';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import { updateGroupMeta } from '../../lib/xmtp.groups';
 import { useConvMetaPatch } from './channel.detail';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import {

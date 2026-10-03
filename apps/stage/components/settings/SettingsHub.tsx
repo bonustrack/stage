@@ -20,18 +20,24 @@ import {
   type ThemePreference,
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { listXmtpInstallations, shortAddress, useActiveAccount, useActiveAccountRecord } from '../../modules/messaging';
-import { accountDisplayName } from './SettingsAccountHeader.model';
+import { listXmtpInstallations } from '../../lib/xmtp.client';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { useAccountEpoch } from '../../lib/accountEpoch';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { EditProfileModal } from './EditProfileModal';
 import { useWalletBackedUp } from './RecoveryPhraseRow';
 import { applyPush } from './NotificationsSettings';
-import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow } from './SettingsPage';
+import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
-import { THEME_OPTIONS } from './themeOptions.model';
 import { settingsSection } from './settingsCatalog.model';
 import { protectionSteps, protectionTitle, type ProtectionStep } from './protection.model';
 import { IconCircleCheck } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleCheck';
 import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
+
+function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
+  const candidate = peerName ?? label;
+  return candidate !== undefined && candidate !== null && candidate.trim() !== '' ? candidate : fallback;
+}
 
 function IdentityHero(): React.ReactElement | null {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -65,7 +71,7 @@ function IdentityHero(): React.ReactElement | null {
 }
 
 function useDeviceCount(): number | null {
-  const epoch = useActiveAccount();
+  const epoch = useAccountEpoch();
   const { data } = useQuery({
     queryKey: ['xmtpInstallations', epoch],
     queryFn: async () => (await listXmtpInstallations()).length,

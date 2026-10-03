@@ -4,7 +4,7 @@ import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { parseHandle } from '@stage-labs/client/routing/handles';
 import { resolveDmConvId, type DmResolveError } from '../../lib/dmResolve';
-import { getCachedRows } from '../../modules/messaging';
+import { getCachedRows } from '../../lib/channelsCache';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 
 type ResolveConvError = false | DmResolveError;

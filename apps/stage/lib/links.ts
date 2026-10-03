@@ -1,25 +1,53 @@
-import {
-  conversationLinkOf as pureConversationLinkOf,
-  conversationSharePath as pureConversationSharePath,
-  isActiveConversationPath,
-  profileLinkOf as pureProfileLinkOf,
-  type ConversationLink,
-  type ProfileLink,
-} from './conversationLink';
-import { getPeerHandle } from './peerProfiles';
+import { getPeerHandle } from '@stage-labs/client/identity/peerProfiles';
+import { conversationPathFor, profileSlugFor, stageLabelOf } from '@stage-labs/client/routing/handles';
 
-export function conversationLinkOf(convId: string, peerAddress?: string | null): ConversationLink {
-  return pureConversationLinkOf(convId, peerAddress, getPeerHandle(peerAddress));
+export type ConversationLink =
+  | { pathname: '/[convId]'; params: { convId: string } }
+  | { pathname: '/channel/[convId]'; params: { convId: string } };
+
+export interface ProfileLink { pathname: '/profile/[id]'; params: { id: string } }
+
+type ProfileKind = 'channel' | 'user';
+
+const CHANNEL_ID_RE = /^[0-9a-f]{32}$/i;
+
+export function profileKindOf(id: string | null | undefined): ProfileKind {
+  return CHANNEL_ID_RE.test((id ?? '').trim()) ? 'channel' : 'user';
 }
 
-export function profileLinkOf(address: string): ProfileLink {
-  return pureProfileLinkOf(address, getPeerHandle(address));
+export function conversationLinkOf(
+  convId: string, peerAddress?: string | null, handle: string | null | undefined = getPeerHandle(peerAddress),
+): ConversationLink {
+  if (peerAddress) return { pathname: '/[convId]', params: { convId: profileSlugFor(peerAddress, handle) } };
+  return { pathname: '/channel/[convId]', params: { convId } };
 }
 
-export function conversationSharePath(convId: string, peerAddress?: string | null): string {
-  return pureConversationSharePath(convId, peerAddress, getPeerHandle(peerAddress));
+export function profileLinkOf(address: string, handle: string | null | undefined = getPeerHandle(address)): ProfileLink {
+  return { pathname: '/profile/[id]', params: { id: profileSlugFor(address, handle) } };
 }
 
-export function isActiveConversationPathFor(pathname: string, convId: string, peerAddress?: string | null): boolean {
-  return isActiveConversationPath(pathname, convId, peerAddress, getPeerHandle(peerAddress));
+export function channelProfileLinkOf(convId: string): ProfileLink {
+  return { pathname: '/profile/[id]', params: { id: convId } };
+}
+
+export function conversationSharePath(
+  convId: string, peerAddress?: string | null, handle: string | null | undefined = getPeerHandle(peerAddress),
+): string {
+  if (peerAddress) return conversationPathFor(peerAddress, handle);
+  return `/channel/${convId}`;
+}
+
+export function isActiveConversationPath(
+  pathname: string,
+  convId: string,
+  peerAddress?: string | null,
+  handle: string | null | undefined = getPeerHandle(peerAddress),
+): boolean {
+  if (!pathname) return false;
+  const path = pathname.toLowerCase();
+  if (path === `/channel/${convId}`.toLowerCase()) return true;
+  if (!peerAddress) return false;
+  if (path === `/${peerAddress}`.toLowerCase()) return true;
+  const label = stageLabelOf(handle);
+  return label !== null && path === `/${label}`;
 }

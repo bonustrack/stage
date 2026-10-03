@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fileCardModel, fileSizeLabel, isAttachmentSummary } from '../components/bubble/fileCard.model';
+import { fileCardModel, fileSizeLabel, isAttachmentSummary, resolvedAttachmentKind } from '../components/bubble/fileCard.model';
 
 describe('file card', () => {
   test('hides the fallback text of attachment messages only', () => {
@@ -19,5 +19,21 @@ describe('file card', () => {
     expect(fileSizeLabel(512)).toBe('512 B');
     expect(fileSizeLabel(20_480)).toBe('20 KB');
     expect(fileSizeLabel(undefined)).toBe('');
+  });
+});
+
+describe('resolved attachment kind', () => {
+  test.each(['audio/webm', 'audio/mp4'])('uses decrypted %s instead of a video filename guess', mime => {
+    expect(resolvedAttachmentKind({ kind: 'video', mime })).toBe('audio');
+  });
+
+  test('uses decrypted video and image MIME types', () => {
+    expect(resolvedAttachmentKind({ kind: 'audio', mime: 'video/mp4' })).toBe('video');
+    expect(resolvedAttachmentKind({ kind: 'file', mime: 'image/webp' })).toBe('image');
+  });
+
+  test('keeps the filename guess when MIME metadata is unavailable', () => {
+    expect(resolvedAttachmentKind({ kind: 'audio' })).toBe('audio');
+    expect(resolvedAttachmentKind({ kind: 'file', mime: 'application/octet-stream' })).toBe('file');
   });
 });

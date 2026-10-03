@@ -1,6 +1,7 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { convIdOfLine, isControlBody } from '../../lib/xmtp.types';
+import { convIdOfLine } from '@stage-labs/client/xmtp/line';
+import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages, type ConvHandle } from '../../lib/xmtp.messages';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { PAGE_SIZE } from '../../lib/xmtp.resync';

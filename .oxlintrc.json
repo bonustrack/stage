@@ -330,98 +330,17 @@
     },
     {
       "files": [
-        "apps/stage/components/**/*.{ts,tsx}"
-      ],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "react-native-safe-area-context",
-                "importNames": [
-                  "useSafeAreaInsets"
-                ],
-                "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "View"
-                ],
-                "message": "Use Box/Row/Col from '@/components/layout' instead of View for layout containers."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "Image"
-                ],
-                "message": "Import Image from '@stage-labs/kit/react-native/image' instead of react-native."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "TextInput"
-                ],
-                "message": "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "ScrollView"
-                ],
-                "message": "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "Pressable"
-                ],
-                "message": "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "FlatList"
-                ],
-                "message": "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList."
-              },
-              {
-                "name": "react-native",
-                "importNames": [
-                  "Text"
-                ],
-                "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
-              }
-            ],
-            "patterns": [
-              {
-                "group": [
-                  "**/lib/xmtp",
-                  "**/lib/xmtp.*"
-                ],
-                "message": "Import messaging via the '@/modules/messaging' facade barrel, not the lib/xmtp.* internals."
-              },
-              {
-                "group": [
-                  "**/lib/accountEpoch"
-                ],
-                "message": "Use useActiveAccount() / AccountManager from '@/modules/messaging', not lib/accountEpoch."
-              },
-              {
-                "group": [
-                  "**/lib/channelsCache"
-                ],
-                "message": "Import the channels cache via the '@/modules/messaging' facade barrel, not lib/channelsCache."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": [
-        "apps/stage/components/layout/**"
+        "apps/stage/components/layout/**",
+        "apps/stage/app/_layout.tsx",
+        "apps/stage/components/HoverTooltip.web.tsx",
+        "apps/stage/components/accounts/QrScanner.web.tsx",
+        "apps/stage/components/bubble/ReactionTooltip.tsx",
+        "apps/stage/components/bubble/gestures.ts",
+        "apps/stage/components/call/CallButtons.tsx",
+        "apps/stage/components/call/CallMediaView.web.tsx",
+        "apps/stage/components/frame/FramePreview.tsx",
+        "apps/stage/components/frame/FrameScreen.tsx",
+        "apps/stage/components/landing/AsciiField.web.tsx"
       ],
       "rules": {
         "no-restricted-imports": "off"
