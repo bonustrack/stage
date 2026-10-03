@@ -3,6 +3,7 @@ import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
+import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './homeView.model';
 
 const KEY_PREFIX = 'home.view.';
 
@@ -32,10 +33,10 @@ const localChanges = makeListeners<HomeViewChange>();
 export const onHomeViewChanged = localChanges.subscribe;
 
 export function setHomeView(edit: HomeViewEdit): void {
-  void prefs.update(current => ({ ...current, ...edit, at: Math.max(Date.now(), current.at + 1) }))
+  void prefs.update(current => editHomeView(current, edit, Date.now()))
     .then(() => {
       const accountId = prefs.accountId();
-      if (accountId !== null) localChanges.notify({ accountId, state: prefs.get() });
+      if (accountId !== null && syncsHomeView(edit)) localChanges.notify({ accountId, state: syncedHomeView(prefs.get()) });
     })
     .catch(reported('homeView.save'));
 }
@@ -43,15 +44,16 @@ export function setHomeView(edit: HomeViewEdit): void {
 export async function loadHomeView(forAccount: string): Promise<HomeViewContent | null> {
   await prefs.load();
   const state = forAccount === prefs.accountId() ? prefs.get() : parseHomeView(await appStorage.get(KEY_PREFIX + forAccount) ?? '');
-  return state.at > 0 ? state : null;
+  return state.at > 0 ? syncedHomeView(state) : null;
 }
 
 export async function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
   await prefs.load();
   if (forAccount === prefs.accountId()) {
-    await prefs.update(current => (incoming.at > current.at ? incoming : current));
+    await prefs.update(current => receiveHomeView(current, incoming));
     return;
   }
   const stored = parseHomeView(await appStorage.get(KEY_PREFIX + forAccount) ?? '');
-  if (incoming.at > stored.at) await appStorage.set(KEY_PREFIX + forAccount, JSON.stringify(incoming));
+  const next = receiveHomeView(stored, incoming);
+  if (next !== stored) await appStorage.set(KEY_PREFIX + forAccount, JSON.stringify(next));
 }
