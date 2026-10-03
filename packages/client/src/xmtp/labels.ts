@@ -79,16 +79,16 @@ export function categoryOf(value: unknown): string | null {
   return typeof value === 'string' ? cleanLabel(value) || null : null;
 }
 
-export interface GroupTags { labels: string[]; category: string | null }
+export interface GroupTags { labels: string[]; category: string | null; assigned: string[] }
 
-const NO_TAGS: GroupTags = { labels: [], category: null };
+export const NO_TAGS: GroupTags = { labels: [], category: null, assigned: [] };
 
 export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
   const group = asGroup(conv);
   if (!group) return NO_TAGS;
   try {
     const blob = parseBlob(await readAppData(group));
-    return { labels: readLabels(blob), category: categoryOf(blob.category) };
+    return { labels: readLabels(blob), category: categoryOf(blob.category), assigned: assignedAddresses(blob.assigned) };
   } catch {
     return NO_TAGS;
   }

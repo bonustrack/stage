@@ -15,7 +15,7 @@ export const TAB_HREF: Record<TabName, Href> = {
   settings: '/settings',
 };
 
-export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
+export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement | null> = {
   index: HomeScreen,
   contacts: ContactsScreen,
   wallet: WalletScreen,

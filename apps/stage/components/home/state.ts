@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/pins';
-import { groupRowsByCategory, rowsOf, type HomeListItem } from './groups.model';
+import { groupRows, rowsOf, type HomeListItem } from './groups.model';
+import type { NameOf } from './groupBy.model';
 import { useStoreValue } from '../../lib/storeCore';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
@@ -69,11 +71,13 @@ interface GroupedRows {
   rows: Row[];
 }
 
-export function useGroupedRows(visibleRows: Row[], searchText: string): GroupedRows {
-  const { grouped, collapsed, order } = useChannelGroups();
+export function useGroupedRows(
+  visibleRows: Row[], searchText: string, groupBy: HomeViewContent['groupBy'], nameOf: NameOf, namesVersion: number,
+): GroupedRows {
+  const { collapsed, order } = useChannelGroups();
   return useMemo(() => {
-    if (!grouped) return { grouped, items: visibleRows, rows: visibleRows };
-    const items = groupRowsByCategory(visibleRows, new Set(collapsed), searchText !== '', order);
-    return { grouped, items, rows: rowsOf(items) };
-  }, [grouped, collapsed, order, visibleRows, searchText]);
+    if (groupBy === 'none') return { grouped: false, items: visibleRows, rows: visibleRows };
+    const items = groupRows(visibleRows, groupBy, new Set(collapsed), searchText !== '', nameOf, order);
+    return { grouped: true, items, rows: rowsOf(items) };
+  }, [groupBy, collapsed, order, visibleRows, searchText, nameOf, namesVersion]);
 }

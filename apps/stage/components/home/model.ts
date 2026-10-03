@@ -1,7 +1,11 @@
 import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging';
-import type { MenuItem } from '../appIcons';
+import {
+  GROUP_KEYS, homeViewSchema, type GroupKey, type HomeViewContent, type HomeViewEdit,
+} from '@stage-labs/client/xmtp/readState';
+import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
+import { GROUP_BY_LABELS } from './groupBy.model';
 import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
@@ -72,19 +76,58 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-export const GROUP_BY_CATEGORY_ITEM = 'group-by-category';
+export const VIEW_ITEM = 'view';
 
-const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
-  { id: 'board', label: 'Board view', icon: 'IconColumns3Wide' },
-  { id: 'chats', label: 'Chats view', icon: 'IconBubble3' },
-  { id: GROUP_BY_CATEGORY_ITEM, label: 'Group by category', icon: 'IconFolder1' },
+export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
+  { id: VIEW_ITEM, label: 'View', icon: 'IconEyeOpen' },
   COPY_ADDRESS_ITEM,
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },
 ];
 
-export function channelsOverflowItems(groupedByCategory: boolean): MenuItem[] {
-  return CHANNELS_OVERFLOW_ITEMS.map(item => (item.id === GROUP_BY_CATEGORY_ITEM ? { ...item, selected: groupedByCategory } : item));
+export interface ViewMenuRow {
+  id: string;
+  label: string;
+  icon?: AppIconName;
+  selected: boolean;
+}
+
+export interface ViewMenuSection {
+  heading?: string;
+  rows: ViewMenuRow[];
+}
+
+const VIEW_ID_PREFIX = 'view:';
+const GROUP_ID_PREFIX = 'group:';
+const GROUP_ICONS: Record<GroupKey, AppIconName> = { assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag' };
+
+export function homeViewMenu(current: HomeViewContent): ViewMenuSection[] {
+  const board = current.view === 'board';
+  const picked = board ? current.columnBy : current.groupBy;
+  const groups = GROUP_KEYS.map((key): ViewMenuRow => (
+    { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
+  ));
+  return [
+    { rows: [
+      { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
+      { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
+    ] },
+    { heading: board ? 'Column by' : 'Group by', rows: groups },
+    ...(board ? [] : [{ rows: [{ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' }] }]),
+  ];
+}
+
+export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {
+  const view = homeViewSchema.shape.view.safeParse(id.slice(VIEW_ID_PREFIX.length));
+  if (id.startsWith(VIEW_ID_PREFIX) && view.success) return { view: view.data };
+  if (!id.startsWith(GROUP_ID_PREFIX)) return null;
+  const value = id.slice(GROUP_ID_PREFIX.length);
+  if (current.view === 'board') {
+    const column = homeViewSchema.shape.columnBy.safeParse(value);
+    return column.success ? { columnBy: column.data } : null;
+  }
+  const group = homeViewSchema.shape.groupBy.safeParse(value);
+  return group.success ? { groupBy: group.data } : null;
 }
 
 interface SortInputs {

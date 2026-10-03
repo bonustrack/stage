@@ -1,4 +1,4 @@
-import type { SearchStateContent } from '@stage-labs/client/xmtp/readState';
+import type { HomeViewContent, SearchStateContent } from '@stage-labs/client/xmtp/readState';
 import { makeListeners } from './storeCore';
 
 const hiddenConvs = new Set<string>();
@@ -73,3 +73,13 @@ const searchStateListeners = makeListeners<SearchStateChange>();
 
 export const onSearchStateChanged = searchStateListeners.subscribe;
 export const notifySearchStateChanged = searchStateListeners.notify;
+
+export interface HomeViewChange {
+  accountId: string;
+  state: HomeViewContent;
+}
+
+const homeViewListeners = makeListeners<HomeViewChange>();
+
+export const onHomeViewChanged = homeViewListeners.subscribe;
+export const notifyHomeViewChanged = homeViewListeners.notify;

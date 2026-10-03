@@ -1,17 +1,17 @@
-import { usePathname, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
+import { DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { homeRows } from './state';
-import { GROUP_BY_CATEGORY_ITEM, channelsOverflowItems } from './model';
-import { OverflowMenu } from '../MenuRows';
-import { boardViewHref, chatsViewHref } from './viewSwitch.model';
+import { CHANNELS_OVERFLOW_ITEMS, VIEW_ITEM, homeViewEdit, homeViewMenu } from './model';
+import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
+import { AnchoredMenu } from '../AnchoredMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import { getActiveAccount } from '../../lib/accounts';
-import { toggleGroupByCategory, useChannelGroups } from '../../lib/channelGroups';
+import { setHomeView, useHomeView } from '../../lib/homeView';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
-import { getPeerHandle } from '../../lib/peerProfiles';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
 
@@ -28,17 +28,6 @@ const IconBubbleSparkle = memo((props: CentralIconBaseProps) => (
   </CentralIconBase>
 ));
 
-type HomeView = 'chats' | 'board';
-
-interface HomeOverflowMenuProps {
-  color: string;
-  onBoard?: () => void;
-  onChats?: () => void;
-  onGroupByCategory?: () => void;
-  onProfile: () => void;
-  onSettings: () => void;
-}
-
 function copyActiveAddress(): void {
   void getActiveAccount().then(acct => {
     if (!acct?.address) return;
@@ -46,30 +35,58 @@ function copyActiveAddress(): void {
   });
 }
 
-function HomeOverflowMenu({ color, onBoard, onChats, onGroupByCategory, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
-  const { grouped } = useChannelGroups();
-  const handlers: Record<string, (() => void) | undefined> = {
-    board: onBoard, chats: onChats, [GROUP_BY_CATEGORY_ITEM]: onGroupByCategory, 'copy-address': copyActiveAddress,
-    profile: onProfile, settings: onSettings,
+function HomeViewMenu({ anchor, onClose }: { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
+  const current = useHomeView();
+  const pick = (id: string): void => {
+    onClose();
+    const edit = homeViewEdit(current, id);
+    if (edit !== null) setHomeView(edit);
   };
   return (
-    <OverflowMenu color={color} label="More" items={channelsOverflowItems(grouped).filter(item => handlers[item.id] !== undefined)}
-      onSelect={(id) => { handlers[id]?.(); }} />
+    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
+      {homeViewMenu(current).map((section, index) => (
+        <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+          {section.rows.map(row => (
+            <MenuRow key={row.id} icon={row.icon} label={row.label} selected={row.selected} onPress={() => { pick(row.id); }}/>
+          ))}
+        </Section>
+      ))}
+    </AnchoredMenu>
   );
 }
 
-function useViewSwitch(view: HomeView): { onBoard?: () => void; onChats?: () => void } {
-  const router = useRouter();
-  const pathname = usePathname();
-  if (view === 'board') return { onChats: () => { router.dismissTo(chatsViewHref(pathname, homeRows() ?? [], getPeerHandle)); } };
-  return { onBoard: () => { router.push(boardViewHref(pathname, homeRows() ?? [], getPeerHandle)); } };
+function Section({ divider, heading, children }: {
+  divider: boolean; heading?: string; children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <>
+      {divider ? <DropdownMenuSeparator/> : null}
+      {heading === undefined ? null : <MenuHeading text={heading}/>}
+      {children}
+    </>
+  );
 }
 
-export function HomeTopnavRight({ head, onOpenSearch, view }: {
-  head: string; onOpenSearch?: () => void; view: HomeView;
+function HomeOverflowMenu({ color, onProfile, onSettings }: {
+  color: string; onProfile: () => void; onSettings: () => void;
 }): React.ReactElement {
+  const [viewAnchor, setViewAnchor] = useState<MenuPoint | null>(null);
+  const handlers: Record<string, ((anchor: MenuPoint) => void) | undefined> = {
+    [VIEW_ITEM]: (anchor) => { setTimeout(() => { setViewAnchor(anchor); }, 0); },
+    'copy-address': copyActiveAddress,
+    profile: onProfile,
+    settings: onSettings,
+  };
+  return (
+    <>
+      <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id, anchor) => { handlers[id]?.(anchor); }}/>
+      <HomeViewMenu anchor={viewAnchor} onClose={() => { setViewAnchor(null); }}/>
+    </>
+  );
+}
+
+export function HomeTopnavRight({ head, onOpenSearch }: { head: string; onOpenSearch?: () => void }): React.ReactElement {
   const router = useRouter();
-  const switchView = useViewSwitch(view);
   const openCompose = useOpenNewChat();
   return (
     <>
@@ -79,9 +96,6 @@ export function HomeTopnavRight({ head, onOpenSearch, view }: {
       <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
       <HomeOverflowMenu
         color={head}
-        onBoard={switchView.onBoard}
-        onChats={switchView.onChats}
-        onGroupByCategory={view === 'chats' ? toggleGroupByCategory : undefined}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));

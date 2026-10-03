@@ -14,6 +14,8 @@ interface TestRow {
   lastTs: number | null;
   unreadCount: number;
   labels?: string[];
+  category?: string | null;
+  assigned?: string[];
   peerAddress?: string | null;
 }
 
@@ -70,7 +72,7 @@ describe('boardColumns', () => {
 
   test('every label gets a column, even one whose channels are all hidden', () => {
     const rows = [row('a', 2, ['Todo']), row('b', 1, ['Done'])];
-    const columns = boardColumns(rows, [], [], r => r.convId === 'a');
+    const columns = boardColumns(rows, [], [], 'label', undefined, r => r.convId === 'a');
     expect(columns.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
       ['Done', ['b']],
       ['Todo', []],
@@ -89,6 +91,41 @@ describe('boardColumns', () => {
       ['Done', []],
     ]);
     expect(shape([], [], ['label:Done'])).toEqual([['Done', []]]);
+  });
+});
+
+describe('boardColumns by category and assignee', () => {
+  const names: Record<string, string> = { '0xbob': 'Bob', '0xalice': 'Alice' };
+  const nameOf = (address: string): string => names[address] ?? address;
+  const rows = [
+    { ...row('a', 4), category: 'Work', assigned: ['0xbob'] },
+    { ...row('b', 3), category: 'work', assigned: ['0xalice', '0xbob'] },
+    { ...row('c', 2), category: 'Alpha' },
+    row('d', 1),
+    dm('e', 5),
+  ];
+  const by = (key: 'category' | 'assignee'): [string, string, string[]][] =>
+    boardColumns(rows, [], [], key, nameOf).map(c => [c.key, c.label, c.rows.map(r => r.convId)]);
+
+  test('one column per category A to Z, merged case-insensitively, channels without one last', () => {
+    expect(by('category')).toEqual([
+      ['category:Alpha', 'Alpha', ['c']],
+      ['category:Work', 'Work', ['a', 'b']],
+      ['category:', 'No category', ['d']],
+    ]);
+  });
+
+  test('one column per assignee named after the person, a channel with two assignees in both, unassigned last', () => {
+    expect(by('assignee')).toEqual([
+      ['assignee:0xalice', 'Alice', ['b']],
+      ['assignee:0xbob', 'Bob', ['a', 'b']],
+      ['assignee:', 'Unassigned', ['c', 'd']],
+    ]);
+  });
+
+  test('saved label columns and the empty catch-all stay out', () => {
+    expect(boardColumns([row('a', 1, ['Todo'])], [], ['label:Done'], 'category', nameOf).map(c => c.label)).toEqual(['No category']);
+    expect(boardColumns([{ ...row('a', 1), category: 'Ops' }], [], [], 'category', nameOf).map(c => c.label)).toEqual(['Ops']);
   });
 });
 

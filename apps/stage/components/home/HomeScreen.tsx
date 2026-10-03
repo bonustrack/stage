@@ -20,16 +20,24 @@ import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
 import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useHomeView } from '../../lib/homeView';
+import { getPeerName } from '../../lib/peerProfiles';
+import { shortAddress } from '../../modules/messaging';
+import { BoardScreen } from '../board/BoardScreen';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
 import { usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { channelsPaneWidth } from '../tabs/paneWidth';
 
-export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
+const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
+
+export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement | null {
   const splitHome = useWebTabRail() && pane !== true;
   const accountEpoch = useActiveAccount();
-  if (splitHome) return <NewChatScreen key={accountEpoch}/>;
+  const board = useHomeView().view === 'board';
+  if (splitHome) return board ? null : <NewChatScreen key={accountEpoch}/>;
+  if (board) return <BoardScreen pane={pane === true}/>;
   return <ChannelsHome panRef={panRef} pane={pane === true}/>;
 }
 
@@ -42,8 +50,9 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const { rows, pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
+  const { groupBy } = useHomeView();
   const channelProfilesVersion = usePeerProfiles(
-    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
   );
   const draftsVersion = useDraftsVersion();
   const search = useMemo(() => parseSearchFilter(query), [query]);
@@ -71,7 +80,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
     [sortedRows, matches, cleared],
   );
-  const list = useGroupedRows(visibleRows, search.text);
+  const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
   const accountEpoch = useActiveAccount();
   const paneAtMin = channelsPaneWidth.useAtMin();
   const hideAvatar = pane && paneAtMin;

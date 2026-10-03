@@ -49,7 +49,7 @@ describe('internalLinkPath', () => {
       ['https://stage.box/xmtp/channel72?m=abc&focus=1', '/channel/channel72?m=abc&focus=1'],
       ['stage://wallet/send?to=alice', '/wallet/send?to=alice'],
       ['https://stage.box/#/settings/display?theme=dark', '/settings/display?theme=dark'],
-      ['https://stage.box/board/channel72?m=abc', '/board/channel72?m=abc'],
+      ['https://stage.box/frame?convId=channel72&id=abc', '/frame?convId=channel72&id=abc'],
     ]) expect(internalLinkPath(url ?? '')).toBe(path);
   });
 

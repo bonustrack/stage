@@ -8,6 +8,7 @@ import { IconCode } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
 import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDevices';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
+import { IconEyeOpen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEyeOpen';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
@@ -18,12 +19,14 @@ import { IconMoon } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
+import { IconPeopleAdded } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdded';
 import { IconPeopleCircle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleCircle';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconQuestionmarkCircle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQuestionmarkCircle';
 import { IconSettingsGear2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsGear2';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
+import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { IconTeam } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTeam';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
@@ -40,6 +43,7 @@ export const APP_ICONS = {
   IconColumns3Wide,
   IconDevices,
   IconEmail1,
+  IconEyeOpen,
   IconFileBend,
   IconFolder1,
   IconGroup1,
@@ -50,12 +54,14 @@ export const APP_ICONS = {
   IconPaperPlane,
   IconPencil,
   IconPeople,
+  IconPeopleAdded,
   IconPeopleCircle,
   IconPlusLarge,
   IconQuestionmarkCircle,
   IconSettingsGear2,
   IconSquareBehindSquare1,
   IconSun,
+  IconTag,
   IconTeam,
   IconThumbtack,
   IconTrashCan,

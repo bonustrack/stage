@@ -1,7 +1,8 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isBoardStateType, isCategoryOrderType, isClearStateType, isPinStateType, isReadStateType, isSearchStateType,
+  collectSyncReplay, isBoardStateType, isCategoryOrderType, isClearStateType, isHomeViewType, isPinStateType, isReadStateType,
+  isSearchStateType,
   pickPublishGroup, shouldApplyReadState, syncGroupName, type BoardStateContent, type PinStateContent, type ReadStateContent,
   type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
@@ -14,9 +15,11 @@ import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } fr
 import { applyRemoteBoardOrder, loadBoardOrder } from './boardOrder';
 import { applyRemoteCategoryOrder, loadCategoryOrder } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState } from './searchState';
+import { applyRemoteHomeView, loadHomeView } from './homeView';
 import {
-  isHiddenConv, onBoardOrderChanged, onCategoryOrderChanged, onClearedChatsChanged, onPinChanged, onReadStateChanged,
-  onSearchStateChanged, registerHiddenConv, type AccountOrderChange, type PinChange, type ReadStateChange, type SearchStateChange,
+  isHiddenConv, onBoardOrderChanged, onCategoryOrderChanged, onClearedChatsChanged, onHomeViewChanged, onPinChanged,
+  onReadStateChanged, onSearchStateChanged, registerHiddenConv, type AccountOrderChange, type HomeViewChange, type PinChange,
+  type ReadStateChange, type SearchStateChange,
 } from './readSyncRegistry';
 import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
@@ -26,8 +29,8 @@ import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import {
-  BOARD_STATE_CODEC, CATEGORY_ORDER_CODEC, CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, SEARCH_STATE_CODEC,
-  type JsonCodec,
+  BOARD_STATE_CODEC, CATEGORY_ORDER_CODEC, CLEAR_STATE_CODEC, HOME_VIEW_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC,
+  SEARCH_STATE_CODEC, type JsonCodec,
 } from '@stage-labs/client/xmtp/jsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
@@ -38,6 +41,7 @@ const CLEARED_KEY = 'cleared';
 const PUBLISH_DEBOUNCE_MS = 800;
 const SEARCH_KEY = 'search';
 const SEARCH_DEBOUNCE_MS = 1000;
+const HOME_VIEW_KEY = 'homeView';
 
 let bootToken = 0;
 let groupId: string | null = null;
@@ -51,7 +55,7 @@ const PIN_ORDER_KEY = 'pinOrder';
 const BOARD_ORDER_KEY = 'boardOrder';
 const CATEGORY_ORDER_KEY = 'categoryOrder';
 const STATE_TYPES = [
-  isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isCategoryOrderType, isSearchStateType,
+  isReadStateType, isPinStateType, isClearStateType, isBoardStateType, isCategoryOrderType, isSearchStateType, isHomeViewType,
 ];
 
 type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
@@ -153,6 +157,7 @@ async function applyReplay(accountId: string, replay: SyncReplay): Promise<void>
     await applyOrderState(CATEGORY_ORDER_KEY, replay.categoryOrder, (order) => applyRemoteCategoryOrder(accountId, order));
   }
   if (replay.search !== null) await applyRemoteSearchState(accountId, replay.search);
+  if (replay.homeView !== null) await applyRemoteHomeView(accountId, replay.homeView);
 }
 
 function isStateMessage(m: RowMessage): boolean {
@@ -262,6 +267,8 @@ async function publishSnapshot(target: string, accountId: string): Promise<void>
   await publishOrderSnapshot(line, CATEGORY_ORDER_KEY, CATEGORY_ORDER_CODEC, await loadCategoryOrder(accountId));
   const search = await loadSearchState(accountId);
   if (search !== null) await xmtpSendJson(line, SEARCH_STATE_CODEC, search);
+  const homeView = await loadHomeView(accountId);
+  if (homeView !== null) await xmtpSendJson(line, HOME_VIEW_CODEC, homeView);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
@@ -315,6 +322,10 @@ function queueSearchPublish(change: SearchStateChange): void {
   debounce(SEARCH_KEY, () => { publish(SEARCH_STATE_CODEC, change.state, change.accountId); }, SEARCH_DEBOUNCE_MS);
 }
 
+function queueHomeViewPublish(change: HomeViewChange): void {
+  debounce(HOME_VIEW_KEY, () => { publish(HOME_VIEW_CODEC, change.state, change.accountId); });
+}
+
 function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
@@ -347,6 +358,7 @@ export function startReadSync(): void {
   onBoardOrderChanged(queueBoardPublish);
   onCategoryOrderChanged(queueCategoryOrderPublish);
   onSearchStateChanged(queueSearchPublish);
+  onHomeViewChanged(queueHomeViewPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
   void boot();

@@ -70,7 +70,7 @@ describe('applyInbound', () => {
 });
 
 describe('applyGroupMeta', () => {
-  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null };
+  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null, assigned: [] };
   const rows: Row[] = [
     { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
     { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
@@ -85,6 +85,7 @@ describe('applyGroupMeta', () => {
     ['avatarUri', { avatarUri: 'https://x/y.png' }],
     ['avatarAddress', { avatarAddress: null }],
     ['category', { category: 'Work' }],
+    ['assignees', { assigned: ['0x1111111111111111111111111111111111111111'] }],
   ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
     const out = applyGroupMeta(rows, 'a', { ...meta, ...change });
     expect(out?.[0]).toEqual({ ...rows[0], convId: 'a', ...change });

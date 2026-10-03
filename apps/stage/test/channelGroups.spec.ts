@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { groupRowsByCategory, isGroupHeader, rowsOf, type HomeListItem } from '../components/home/groups.model';
+import {
+  groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem,
+} from '../components/home/groups.model';
 import {
   NO_GROUPS_PREFS, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
 } from '../lib/channelGroups.model';
@@ -10,57 +12,86 @@ function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
     convId, title: convId, lastTs: 1, lastBubbleTs: 1, lastPreview: '', avatarAddress: null, avatarUri: null,
     peerAddress: null, lastSenderAddress: null, lastFromSelf: false, inboxToAddr: {}, unreadCount: 0, lastReadNs: 0,
-    markedUnread: false, selfInboxId: 'me', labels: [], category: null, consent: null, ...extra,
+    markedUnread: false, selfInboxId: 'me', labels: [], category: null, assigned: [], consent: null, ...extra,
   };
 }
 
 const dm = row('dm', { peerAddress: '0xabc' });
-const work = row('work', { category: 'Work' });
-const work2 = row('work2', { category: 'work', unreadCount: 3 });
-const alpha = row('alpha', { category: 'Alpha' });
+const work = row('work', { category: 'Work', labels: ['Todo'], assigned: ['0xbob'] });
+const work2 = row('work2', { category: 'work', unreadCount: 3, labels: ['Done', 'Todo'], assigned: ['0xalice', '0xbob'] });
+const alpha = row('alpha', { category: 'Alpha', labels: ['Done'] });
 const loose = row('loose');
+
+const names: Record<string, string> = { '0xbob': 'Bob', '0xalice': 'Alice' };
+const nameOf = (address: string): string => names[address] ?? address;
 
 function shape(items: HomeListItem[]): string[] {
   return items.map(item => (isGroupHeader(item) ? `# ${item.header.title}` : item.convId));
 }
 
-describe('groupRowsByCategory', () => {
+describe('groupRows by category', () => {
   test('direct messages first, categories A to Z, no category last, rows keep their order', () => {
-    expect(shape(groupRowsByCategory([work, dm, loose, work2, alpha], new Set(), false)))
+    expect(shape(groupRows([work, dm, loose, work2, alpha], 'category', new Set(), false, nameOf)))
       .toEqual(['# Direct messages', 'dm', '# Alpha', 'alpha', '# Work', 'work', 'work2', '# No category', 'loose']);
   });
 
   test('categories merge case-insensitively under the first spelling seen', () => {
-    const items = groupRowsByCategory([work2, work], new Set(), false);
+    const items = groupRows([work2, work], 'category', new Set(), false, nameOf);
     expect(shape(items)).toEqual(['# work', 'work2', 'work']);
     expect(items[0]).toMatchObject({ convId: 'group:category:work', header: { key: 'category:work', count: 2, unread: 1 } });
   });
 
   test('a collapsed group keeps its header and hides its rows, a search expands it again', () => {
     const collapsed = new Set(['category:work']);
-    const folded = groupRowsByCategory([work, work2, loose], collapsed, false);
+    const folded = groupRows([work, work2, loose], 'category', collapsed, false, nameOf);
     expect(shape(folded)).toEqual(['# Work', '# No category', 'loose']);
     expect(folded[0]).toMatchObject({ header: { collapsed: true, unread: 1, count: 2 } });
     expect(rowsOf(folded).map(r => r.convId)).toEqual(['loose']);
-    expect(shape(groupRowsByCategory([work, work2, loose], collapsed, true)))
+    expect(shape(groupRows([work, work2, loose], 'category', collapsed, true, nameOf)))
       .toEqual(['# Work', 'work', 'work2', '# No category', 'loose']);
   });
 
   test('a saved order ranks categories first, the rest follow A to Z, direct messages and no category stay put', () => {
     const ops = row('ops', { category: 'Ops' });
     const order = ['category:work', 'category:ops'];
-    expect(shape(groupRowsByCategory([dm, alpha, loose, ops, work], new Set(), false, order)))
+    expect(shape(groupRows([dm, alpha, loose, ops, work], 'category', new Set(), false, nameOf, order)))
       .toEqual(['# Direct messages', 'dm', '# Work', 'work', '# Ops', 'ops', '# Alpha', 'alpha', '# No category', 'loose']);
-    expect(shape(groupRowsByCategory([alpha, ops, work], new Set(), false, ['category:zzz', 'category:ops'])))
+    expect(shape(groupRows([alpha, ops, work], 'category', new Set(), false, nameOf, ['category:zzz', 'category:ops'])))
       .toEqual(['# Ops', 'ops', '# Alpha', 'alpha', '# Work', 'work']);
   });
 
   test('a marked unread chat counts as unread, empty groups are not shown', () => {
     const marked = row('m', { category: 'Ops', markedUnread: true });
-    const items = groupRowsByCategory([marked], new Set(['dm', 'none']), false);
+    const items = groupRows([marked], 'category', new Set(['dm', 'none']), false, nameOf);
     expect(shape(items)).toEqual(['# Ops', 'm']);
     expect(items[0]).toMatchObject({ header: { unread: 1 } });
-    expect(groupRowsByCategory([], new Set(), false)).toEqual([]);
+    expect(groupRows([], 'category', new Set(), false, nameOf)).toEqual([]);
+  });
+});
+
+describe('groupRows by label and assignee', () => {
+  test('one section per label, a chat with several labels shows under each, no label last', () => {
+    const items = groupRows([work, work2, alpha, loose, dm], 'label', new Set(), false, nameOf);
+    expect(shape(items)).toEqual(['# Direct messages', 'dm', '# Done', 'work2', 'alpha', '# Todo', 'work', 'work2', '# No label', 'loose']);
+    expect(items[2]).toMatchObject({ header: { key: 'label:done', count: 2 } });
+  });
+
+  test('one section per assignee named after the person, unassigned last', () => {
+    const items = groupRows([work, work2, loose], 'assignee', new Set(), false, nameOf);
+    expect(shape(items)).toEqual(['# Alice', 'work2', '# Bob', 'work', 'work2', '# Unassigned', 'loose']);
+    expect(items[0]).toMatchObject({ header: { key: 'assignee:0xalice' } });
+  });
+
+  test('a chat shown twice keeps one plain list key and gets a section key for the repeat', () => {
+    const items = groupRows([work2], 'label', new Set(), false, nameOf);
+    expect(items.map(listKeyOf)).toEqual(['group:label:done', 'work2', 'group:label:todo', 'label:todo/work2']);
+    expect(rowsOf(items)).toHaveLength(2);
+    expect(rowsOf(items)[0]).toBe(work2);
+  });
+
+  test('a repeat in a collapsed first section shows plainly in the next', () => {
+    const items = groupRows([work2], 'label', new Set(['label:done']), false, nameOf);
+    expect(items.map(listKeyOf)).toEqual(['group:label:done', 'group:label:todo', 'work2']);
   });
 });
 
@@ -80,16 +111,16 @@ describe('category order', () => {
 });
 
 describe('parseChannelGroupsPrefs', () => {
-  test('reads the saved switch, folded groups and order, dropping anything else', () => {
+  test('reads the folded groups and order, dropping anything else', () => {
     expect(parseChannelGroupsPrefs('{"grouped":true,"collapsed":["dm",3,"category:work"],"order":["category:work",1]}'))
-      .toEqual({ grouped: true, collapsed: ['dm', 'category:work'], order: ['category:work'] });
-    expect(parseChannelGroupsPrefs('{"grouped":"yes"}')).toEqual({ grouped: false, collapsed: [], order: [] });
+      .toEqual({ collapsed: ['dm', 'category:work'], order: ['category:work'] });
+    expect(parseChannelGroupsPrefs('{"grouped":"yes"}')).toEqual({ collapsed: [], order: [] });
   });
 
-  test('bad or empty storage means off', () => {
+  test('bad or empty storage means nothing folded', () => {
     expect(parseChannelGroupsPrefs('nope')).toBe(NO_GROUPS_PREFS);
     expect(parseChannelGroupsPrefs('null')).toBe(NO_GROUPS_PREFS);
-    expect(parseChannelGroupsPrefs('[]')).toEqual({ grouped: false, collapsed: [], order: [] });
+    expect(parseChannelGroupsPrefs('[]')).toEqual({ collapsed: [], order: [] });
   });
 });
 
@@ -105,7 +136,7 @@ describe('list drag blocks', () => {
   });
 
   test('a section block is its header plus its visible rows, direct messages and no category are not blocks', () => {
-    const items = groupRowsByCategory([dm, work, work2, alpha, loose], new Set(['category:work']), false);
+    const items = groupRows([dm, work, work2, alpha, loose], 'category', new Set(['category:work']), false, nameOf);
     const blocks = sectionBlocks(items, HEADER, ROW);
     expect(blocks.ids).toEqual(['category:alpha', 'category:work']);
     expect(blocks.heights).toEqual([HEADER + ROW, HEADER]);
@@ -118,12 +149,17 @@ describe('list drag blocks', () => {
     expect(blocks.blockOf.has('loose')).toBe(false);
   });
 
+  test('only category sections are blocks, so other groupings cannot be dragged', () => {
+    expect(sectionBlocks(groupRows([work, alpha], 'label', new Set(), false, nameOf), HEADER, ROW).ids).toEqual([]);
+    expect(sectionBlocks(groupRows([work], 'assignee', new Set(), false, nameOf), HEADER, ROW).ids).toEqual([]);
+  });
+
   test('the shape names the sections and their rows, so equal shapes give equal blocks', () => {
-    const items = groupRowsByCategory([dm, work, alpha], new Set(), false);
+    const items = groupRows([dm, work, alpha], 'category', new Set(), false, nameOf);
     expect(sectionShape(items)).toBe('#dm\ndm\n#category:alpha\nalpha\n#category:work\nwork');
-    const renamed = groupRowsByCategory([dm, { ...work, title: 'Renamed', unreadCount: 2 }, alpha], new Set(), false);
+    const renamed = groupRows([dm, { ...work, title: 'Renamed', unreadCount: 2 }, alpha], 'category', new Set(), false, nameOf);
     expect(sectionShape(renamed)).toBe(sectionShape(items));
-    expect(sectionShape(groupRowsByCategory([dm, work, alpha], new Set(['category:work']), false))).not.toBe(sectionShape(items));
+    expect(sectionShape(groupRows([dm, work, alpha], 'category', new Set(['category:work']), false, nameOf))).not.toBe(sectionShape(items));
   });
 
   test('the drop target changes once the moved block passes the middle of a neighbour', () => {
