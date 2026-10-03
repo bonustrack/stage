@@ -192,6 +192,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 - `Image`: `resizeMethod` and `resizeMultiplier` on Android, to choose the size the image is decoded at.
 - `VideoPlayer`: `onVideoSize`, called with the video's display size once it is known.
+- `TextField`: `dataSet`, passed to the input on web (`data-*` attributes).
+
+#### New exports
+
+- `@stage-labs/kit/link`: `NEW_TAB` (target `_blank`, rel `noopener noreferrer`) and `isPlainClick`, the web link helpers.
 
 #### Visual changes
 
