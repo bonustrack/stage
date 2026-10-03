@@ -7,7 +7,7 @@ import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 import { normalizeLabel } from './ProfileSettings.claim.model';
 import { OnboardingCard } from '../onboarding/OnboardingCard';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/profile';
+import { claimStageName, ownedStageName, setUpStageName } from '../../lib/profile';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);
@@ -31,7 +31,7 @@ function SetPrimaryCard({ address, label, onDone }: { address: string; label: st
     if (busy) return;
     setBusy(true);
     setError(null);
-    setPrimaryStageName(address, label)
+    setUpStageName(address, label)
       .then(onDone)
       .catch((err: unknown) => { setError(errorMessage(err)); })
       .finally(() => { setBusy(false); });
@@ -64,7 +64,7 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
     void (async (): Promise<void> => {
       try {
         await claimStageName(label);
-        await setPrimaryStageName(address, label);
+        await setUpStageName(address, label);
         setState({ label, phase: 'claimed' });
         onClaimed();
       } catch (err) {

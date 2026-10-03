@@ -4,9 +4,9 @@ import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import type { ProfileSetup } from '../components/onboarding/Onboarding.profile.model';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
-import { encodeSetPrimaryBasename, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
+import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
 import { PROFILE_TEXT_KEYS, baseProfileClient, resolverForNode } from '@stage-labs/client/identity/onchainProfile';
-import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import { STAGE_NAMES_PARENT, claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { getActiveAccount, getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './historyServer';
 import { invalidatePeerProfile } from './peerProfiles';
@@ -38,20 +38,22 @@ export interface ProfileChanges {
   removeImage?: boolean;
 }
 
-async function submitOnBase(call: ContractCall): Promise<Hex> {
+async function confirmedOnBase(hash: Hex): Promise<Hex> {
+  const receipt = await baseProfileClient().waitForTransactionReceipt({ hash });
+  if (receipt.status !== 'success') throw new Error('The transaction reverted.');
+  return hash;
+}
+
+async function sendOnBase(calls: ContractCall[]): Promise<Hex> {
   const active = await getActiveAccount();
   if (!active) throw new Error('No active account');
   if (active.type === 'smart') {
     const kernel = await kernelClientForRecord(active);
-    return kernel.sendTransaction({ to: call.to, data: call.data, value: 0n } as Parameters<typeof kernel.sendTransaction>[0]);
+    const batch = calls.map((call) => ({ to: call.to, data: call.data, value: 0n }));
+    return confirmedOnBase(await kernel.sendTransaction({ calls: batch }));
   }
-  return sendCall({ to: call.to, data: call.data, chainId: base.id });
-}
-
-async function sendOnBase(call: ContractCall): Promise<Hex> {
-  const hash = await submitOnBase(call);
-  const receipt = await baseProfileClient().waitForTransactionReceipt({ hash });
-  if (receipt.status !== 'success') throw new Error('The transaction reverted.');
+  let hash: Hex = '0x';
+  for (const call of calls) hash = await confirmedOnBase(await sendCall({ to: call.to, data: call.data, chainId: base.id }));
   return hash;
 }
 
@@ -75,7 +77,7 @@ export async function saveBasenameProfile(address: string, name: string, changes
   const records = await recordsFor(changes);
   if (Object.keys(records).length === 0) return null;
   const resolver = await resolverForNode(baseProfileClient(), namehash(normalize(name)));
-  const hash = await sendOnBase(encodeSetTextRecords(name, records, resolver ?? undefined));
+  const hash = await sendOnBase([encodeSetTextRecords(name, records, resolver ?? undefined)]);
   refreshProfileCaches(address, changes.image !== undefined || changes.removeImage === true);
   return hash;
 }
@@ -121,17 +123,22 @@ export async function claimStageName(label: string): Promise<string> {
   return body.name;
 }
 
-export async function setPrimaryStageName(address: string, label: string): Promise<Hex> {
-  const hash = await sendOnBase(encodeSetPrimaryBasename(stageNameOf(label)));
-  refreshProfileCaches(address);
+async function stageNameResolver(name: string): Promise<Hex> {
+  const client = baseProfileClient();
+  const resolver = (await resolverForNode(client, namehash(normalize(name)))) ?? (await resolverForNode(client, namehash(STAGE_NAMES_PARENT)));
+  if (!resolver) throw new Error('The name has no resolver yet, try again.');
+  return resolver;
+}
+
+export async function setUpStageName(address: string, label: string, records: Record<string, string> = {}): Promise<Hex> {
+  const name = stageNameOf(label);
+  const hash = await sendOnBase(encodeNameSetup(name, address as Hex, records, await stageNameResolver(name)));
+  refreshProfileCaches(address, records[PROFILE_TEXT_KEYS.avatar] !== undefined);
   return hash;
 }
 
 export async function applyProfileSetup(address: string, profile: ProfileSetup): Promise<void> {
   await claimStageName(profile.label);
-  await setPrimaryStageName(address, profile.label);
-  if (profile.displayName === undefined && profile.description === undefined && profile.image === undefined) return;
-  await saveBasenameProfile(address, stageNameOf(profile.label), {
-    displayName: profile.displayName, description: profile.description, image: profile.image,
-  });
+  const records = await recordsFor({ displayName: profile.displayName, description: profile.description, image: profile.image });
+  await setUpStageName(address, profile.label, records);
 }

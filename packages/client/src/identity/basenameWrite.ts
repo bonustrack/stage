@@ -11,6 +11,11 @@ const L2_RESOLVER_WRITE_ABI = [
     outputs: [],
   },
   {
+    name: 'setAddr', type: 'function', stateMutability: 'nonpayable',
+    inputs: [{ name: 'node', type: 'bytes32' }, { name: 'a', type: 'address' }],
+    outputs: [],
+  },
+  {
     name: 'multicall', type: 'function', stateMutability: 'nonpayable',
     inputs: [{ name: 'data', type: 'bytes[]' }],
     outputs: [{ name: 'results', type: 'bytes[]' }],
@@ -27,12 +32,18 @@ const REVERSE_REGISTRAR_ABI = [
 
 export interface ContractCall { to: Hex; data: Hex }
 
-export function encodeSetTextRecords(name: string, records: Record<string, string>, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
-  const node = namehash(normalize(name));
-  const calls = Object.entries(records).map(([key, value]) =>
+function textCalls(node: Hex, records: Record<string, string>): Hex[] {
+  return Object.entries(records).map(([key, value]) =>
     encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [node, key, value] }));
+}
+
+function resolverCall(resolver: Hex, calls: Hex[]): ContractCall {
   if (calls.length === 1 && calls[0] !== undefined) return { to: resolver, data: calls[0] };
   return { to: resolver, data: encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'multicall', args: [calls] }) };
+}
+
+export function encodeSetTextRecords(name: string, records: Record<string, string>, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
+  return resolverCall(resolver, textCalls(namehash(normalize(name)), records));
 }
 
 export function encodeSetPrimaryBasename(name: string): ContractCall {
@@ -40,4 +51,10 @@ export function encodeSetPrimaryBasename(name: string): ContractCall {
     to: BASENAME_REVERSE_REGISTRAR,
     data: encodeFunctionData({ abi: REVERSE_REGISTRAR_ABI, functionName: 'setName', args: [name] }),
   };
+}
+
+export function encodeNameSetup(name: string, address: Hex, records: Record<string, string>, resolver: Hex): ContractCall[] {
+  const node = namehash(normalize(name));
+  const setAddr = encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'setAddr', args: [node, address] });
+  return [resolverCall(resolver, [setAddr, ...textCalls(node, records)]), encodeSetPrimaryBasename(name)];
 }

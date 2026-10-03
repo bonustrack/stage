@@ -1,9 +1,7 @@
 import { createPublicClient, createWalletClient, http, keccak256, namehash, stringToBytes, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
-import {
-  BASENAME_REGISTRY, L2_RESOLVER_ABI, REGISTRY_ABI as BASENAME_REGISTRY_ABI,
-} from '@stage-labs/client/identity/onchainProfile';
+import { BASENAME_REGISTRY, REGISTRY_ABI as BASENAME_REGISTRY_ABI } from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import type { NamesChain } from './namesTypes.ts';
 
@@ -11,18 +9,8 @@ const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
 const WRITE_ATTEMPTS = 4;
 const WRITE_RETRY_MS = 2_000;
-const READ_ATTEMPTS = 5;
-const READ_RETRY_MS = 1_500;
 
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function settles<T>(read: () => Promise<T>, accept: (value: T) => boolean): Promise<boolean> {
-  for (let i = 0; i < READ_ATTEMPTS; i++) {
-    if (accept(await read())) return true;
-    await delay(READ_RETRY_MS);
-  }
-  return false;
-}
 
 async function withRetries<T>(attempt: () => Promise<T>): Promise<T> {
   let lastError: unknown;
@@ -46,18 +34,6 @@ const REGISTRY_ABI = [
       { name: 'resolver', type: 'address' }, { name: 'ttl', type: 'uint64' },
     ],
     outputs: [],
-  },
-  {
-    name: 'setOwner', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{ name: 'node', type: 'bytes32' }, { name: 'owner', type: 'address' }], outputs: [],
-  },
-] as const;
-
-const RESOLVER_ABI = [
-  ...L2_RESOLVER_ABI,
-  {
-    name: 'setAddr', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{ name: 'node', type: 'bytes32' }, { name: 'a', type: 'address' }], outputs: [],
   },
 ] as const;
 
@@ -85,29 +61,14 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
     },
     issue: async (label, owner) => {
       const node = namehash(stageNameOf(label));
-      const parentResolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [parentNode] });
-      if (parentResolver === ZERO) throw new Error('parent name has no resolver');
+      const resolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [parentNode] });
+      if (resolver === ZERO) throw new Error('parent name has no resolver');
       const current = await publicClient.readContract({ ...registry, functionName: 'owner', args: [node] });
       if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
-      if (current === ZERO) {
-        await write(() => wallet.writeContract({
-          ...registry, functionName: 'setSubnodeRecord',
-          args: [parentNode, keccak256(stringToBytes(label)), account.address, parentResolver, 0n],
-        }));
-      }
-      const resolver = current === ZERO
-        ? parentResolver
-        : await publicClient.readContract({ ...registry, functionName: 'resolver', args: [node] });
-      if (resolver === ZERO) throw new Error('name has no resolver');
-      const recorded = await publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
-      if (recorded.toLowerCase() !== owner.toLowerCase()) {
-        await write(() => wallet.writeContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'setAddr', args: [node, owner] }));
-        const readAddr = (): Promise<Hex> =>
-          publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
-        const persisted = await settles(readAddr, (check) => check.toLowerCase() === owner.toLowerCase());
-        if (!persisted) throw new Error('forward record did not persist');
-      }
-      return write(() => wallet.writeContract({ ...registry, functionName: 'setOwner', args: [node, owner] }));
+      return write(() => wallet.writeContract({
+        ...registry, functionName: 'setSubnodeRecord',
+        args: [parentNode, keccak256(stringToBytes(label)), owner, resolver, 0n],
+      }));
     },
   };
 }
