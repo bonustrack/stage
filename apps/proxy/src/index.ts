@@ -7,7 +7,6 @@ import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
 import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
-import { handleTransfer, isTransferPath } from './historyTransfer.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
 import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
 import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
@@ -154,13 +153,10 @@ async function handleSettle(request: Request): Promise<Response> {
 
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
-export { HistoryTransfers } from './historyTransfer.ts';
 export { MailBoxes } from './mailBox.ts';
 
 type ProxyEnv = NamesEnv & {
   HISTORY_ARCHIVES?: DurableObjectNamespace;
-  HISTORY_TRANSFERS?: DurableObjectNamespace;
-  TRANSFER_LOOKUPS?: RateLimit;
   MAIL_BOXES?: DurableObjectNamespace;
   MAIL_REQUESTS?: RateLimit;
 };
@@ -183,7 +179,6 @@ function routeMail(request: Request, env: ProxyEnv): Promise<Response> | Respons
   return handleMail(request, { ...wiring, limiter: env.MAIL_REQUESTS, clientIp: clientIp(request) });
 }
 
-const UPLOAD_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT']);
 const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
   ['/preview', handlePreview],
   ['/img', handleImg],
@@ -191,11 +186,7 @@ const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContex
 ]);
 
 function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
-  const ip = clientIp(request);
-  if (UPLOAD_METHODS.has(request.method) && rateLimited(ip)) return json({ error: 'rate limited' }, 429);
-  if (isTransferPath(new URL(request.url).pathname)) {
-    return handleTransfer(request, { ns: env.HISTORY_TRANSFERS, limiter: env.TRANSFER_LOOKUPS, clientIp: ip });
-  }
+  if (request.method === 'POST' && rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 

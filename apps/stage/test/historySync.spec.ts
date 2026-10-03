@@ -26,8 +26,9 @@ describe('history sync phases', () => {
     expect(historySyncIsActive('done')).toBe(false);
   });
 
-  test('the timeout label points at the code transfer', () => {
-    expect(historySyncPhaseLabel('timeout')).toContain('enter a code');
+  test('the timeout label asks to open Stage on the other device', () => {
+    expect(historySyncPhaseLabel('timeout')).toContain('Open Stage there');
+    expect(historySyncPhaseLabel('timeout')).not.toContain('code');
   });
 });
 

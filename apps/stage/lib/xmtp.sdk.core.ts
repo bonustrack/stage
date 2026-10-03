@@ -51,8 +51,6 @@ export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
   processSyncArchive: (client: Cl) => Promise<unknown>;
-  createArchive: (client: Cl, key: Uint8Array) => Promise<Uint8Array>;
-  importArchive: (client: Cl, archive: Uint8Array, key: Uint8Array) => Promise<unknown>;
 }
 
 interface ClientPrimitives<Cl, C, M> {

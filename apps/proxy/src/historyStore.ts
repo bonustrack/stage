@@ -121,10 +121,6 @@ function joined(chunks: Map<string, unknown>, keys: string[]): Uint8Array | null
   return out;
 }
 
-export async function hasChunks(storage: ArchiveStorage): Promise<boolean> {
-  return (await chunkCount(storage, '')) > 0;
-}
-
 async function chunkCount(storage: Pick<ArchiveStorage, 'get'>, prefix: string): Promise<number> {
   const countKey = `${prefix}${COUNT_KEY}`;
   const count = (await storage.get([countKey])).get(countKey);

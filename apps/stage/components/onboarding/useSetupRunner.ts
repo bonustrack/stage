@@ -4,7 +4,7 @@ import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
 import { removeAccount } from '../../lib/accounts';
-import { receiveHistoryWithCode, syncHistoryToEnd } from '../../lib/history';
+import { syncHistoryToEnd } from '../../lib/history';
 import {
   createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError,
   type SetupWarning, type Stage,
@@ -33,7 +33,6 @@ export interface SetupRunner {
 export interface HistoryControls {
   stalled: boolean;
   retry: () => void;
-  receiveCode: (code: string) => Promise<void>;
   continueWithout: () => void;
 }
 
@@ -148,7 +147,6 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const history: HistoryControls = {
     stalled: historyStalled,
     retry: () => { if (isStalled()) void tail(true, heldWarning.current); },
-    receiveCode: async (code) => { await receiveHistoryWithCode(code); continueWithout(); },
     continueWithout,
   };
 

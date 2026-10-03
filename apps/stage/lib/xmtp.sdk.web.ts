@@ -225,8 +225,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
     processSyncArchive: (client) => client.processSyncArchive(null),
-    createArchive: (client, key) => client.createArchive(key, ARCHIVE_OPTIONS),
-    importArchive: (client, archive, key) => client.importArchive(archive, key),
   },
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),

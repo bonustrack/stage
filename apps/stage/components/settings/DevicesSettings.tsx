@@ -14,14 +14,11 @@ import { useActiveAccountRecord } from '../../modules/messaging/account';
 import type { XmtpInstallation } from '../../lib/xmtp.client.core';
 import { capabilities } from '../../lib/capabilities';
 import { transferKindFor } from '../../lib/accountTransfer';
-import { historySyncProblem, receiveHistoryWithCode, runHistorySync, useHistorySyncPhase } from '../../lib/history';
+import { historySyncProblem, runHistorySync, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/history.model';
 import { DANGER, useEffectiveColorScheme } from '../../lib/theme';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
-import { ReceiveCodeSheet, SendHistorySheet } from './HistoryTransferSheets';
 import { SettingsButtonRow, SettingsGroup, SettingsNavRow, SettingsPage, SettingsValueRow } from './SettingsPage';
-import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
-import { IconArrowOutOfBox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowOutOfBox';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDevices';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
@@ -117,45 +114,20 @@ function LinkDeviceGroup(): React.ReactElement | null {
 }
 
 const SYNC_DESC = 'Ask your other devices for the messages this device is missing. Keep Stage open on the other device while it answers.';
-const SEND_DESC = 'Package this device\'s history for another device. You will get a code to enter there.';
-const RECEIVE_DESC = 'Enter the code shown on the device that sent its history.';
-
-async function receiveFromSettings(code: string): Promise<void> {
-  await receiveHistoryWithCode(code);
-  capabilities.toast('History imported');
-}
 
 function HistorySyncSection(): React.ReactElement {
   const phase = useHistorySyncPhase();
-  const [sendOpen, setSendOpen] = useState(false);
-  const [receiveOpen, setReceiveOpen] = useState(false);
   const syncing = historySyncIsActive(phase);
   const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
-    <>
-      <SettingsGroup title="Chat history">
-        <SettingsButtonRow
-          label={syncing ? 'Syncing history…' : 'Sync history from another device'}
-          description={status ?? SYNC_DESC}
-          iconStart={IconArrowRotateClockwise}
-          onPress={() => { if (!syncing) void runHistorySync(); }}
-        />
-        <SettingsButtonRow
-          label="Send history to another device"
-          description={SEND_DESC}
-          iconStart={IconArrowOutOfBox}
-          onPress={() => { setSendOpen(true); }}
-        />
-        <SettingsButtonRow
-          label="Receive history with a code"
-          description={RECEIVE_DESC}
-          iconStart={IconArrowInbox}
-          onPress={() => { setReceiveOpen(true); }}
-        />
-      </SettingsGroup>
-      <SendHistorySheet visible={sendOpen} onClose={() => { setSendOpen(false); }} />
-      <ReceiveCodeSheet visible={receiveOpen} onClose={() => { setReceiveOpen(false); }} onReceive={receiveFromSettings} />
-    </>
+    <SettingsGroup title="Chat history">
+      <SettingsButtonRow
+        label={syncing ? 'Syncing history…' : 'Sync history from another device'}
+        description={status ?? SYNC_DESC}
+        iconStart={IconArrowRotateClockwise}
+        onPress={() => { if (!syncing) void runHistorySync(); }}
+      />
+    </SettingsGroup>
   );
 }
 

@@ -38,7 +38,6 @@
     "./xmtp/clientConfig": "./src/xmtp/clientConfig.ts",
     "./xmtp/clientErrors": "./src/xmtp/clientErrors.ts",
     "./xmtp/dmRoutes": "./src/xmtp/dmRoutes.ts",
-    "./xmtp/historyTransfer": "./src/xmtp/historyTransfer.ts",
     "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
     "./xmtp/summarizeRow": "./src/xmtp/summarizeRow.ts",
     "./xmtp/deleteMessage": "./src/xmtp/deleteMessage.ts",

@@ -4,7 +4,6 @@ import {
   isMailboxLabel, isMailId, isMailPublicKey, mailAddressOf, mailRegisterMessage, mailSessionMessage,
 } from '@stage-labs/client/mail/mailbox';
 import type { ArchiveStub } from './historyStore.ts';
-import type { LookupLimiter } from './historyTransfer.ts';
 import { mailboxCall } from './mailBox.ts';
 import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
@@ -18,10 +17,14 @@ export interface MailChain {
   verify(address: Hex, message: string, signature: Hex): Promise<boolean>;
 }
 
+interface RequestLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
 export interface MailDeps {
   mailbox: (label: string) => ArchiveStub;
   chain: MailChain;
-  limiter?: LookupLimiter;
+  limiter?: RequestLimiter;
   clientIp: string;
   now?: () => number;
 }

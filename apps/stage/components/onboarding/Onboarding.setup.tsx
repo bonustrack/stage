@@ -14,13 +14,10 @@ import {
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleX';
 import { useEffect, useState } from 'react';
-import { ReceiveCodeSheet } from '../settings/HistoryTransferSheets';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
 
 const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Devices and history.';
-const ENTER_CODE = 'Enter a code from my other device';
-const ENTER_CODE_WHILE_WAITING = 'Or enter a code from your other device';
 
 function useNow(running: boolean): number {
   const [now, setNow] = useState(() => Date.now());
@@ -42,30 +39,6 @@ function useHistoryStepHint(active: boolean, stalled: boolean): string | null {
   if (counting && label !== null && deadline !== null) return `${label} ${timeLeftLabel(deadline - now)}`;
   if (!stalled) return label;
   return label === null ? CONTINUE_HINT : `${label} ${CONTINUE_HINT}`;
-}
-
-function HistoryStalledActions({ dark, history }: {
-  dark: boolean; history: HistoryControls;
-}): React.ReactElement {
-  const [codeOpen, setCodeOpen] = useState(false);
-  return (
-    <Col gap={10} width="100%">
-      <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} />
-      <Button dark={dark} size="lg" fullWidth pill color="secondary" variant="solid"
-        label={ENTER_CODE} onPress={() => { setCodeOpen(true); }} />
-      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
-    </Col>
-  );
-}
-
-function EnterCodeWhileWaitingLink({ history }: { history: HistoryControls }): React.ReactElement {
-  const [codeOpen, setCodeOpen] = useState(false);
-  return (
-    <>
-      <SkipLink label={ENTER_CODE_WHILE_WAITING} onPress={() => { setCodeOpen(true); }} />
-      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
-    </>
-  );
 }
 
 const ROW_HEIGHT = 40;
@@ -96,17 +69,19 @@ function StageRow({ label, state, failed }: {
 function SetupActions({ dark, busy, setupErr, onRetry, history }: {
   dark: boolean; busy: boolean; setupErr: SetupErr | null; onRetry: () => void; history: HistoryControls;
 }): React.ReactElement | null {
-  if (setupErr === null) return history.stalled ? <HistoryStalledActions dark={dark} history={history} /> : null;
+  if (setupErr === null) {
+    return history.stalled ? <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} /> : null;
+  }
   return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />;
 }
 
 const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { startOver: 'Start over' };
 
-function SetupLink({ busy, setupErr, onBack, history, waiting }: {
-  busy: boolean; setupErr: SetupErr | null; onBack: () => void; history: HistoryControls; waiting: boolean;
+function SetupLink({ busy, setupErr, onBack, history }: {
+  busy: boolean; setupErr: SetupErr | null; onBack: () => void; history: HistoryControls;
 }): React.ReactElement | null {
   if (setupErr === null && history.stalled) return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
-  if (setupErr === null) return waiting ? <EnterCodeWhileWaitingLink history={history} /> : null;
+  if (setupErr === null) return null;
   const links = setupLinks(setupErr);
   if (links.length === 0) return null;
   return (
@@ -125,7 +100,7 @@ export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, 
   const stages = setupStages(plan);
   const historyHint = useHistoryStepHint(stage === 'history' && setupErr === null, history.stalled);
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
-  const link = SetupLink({ busy, setupErr, onBack, history, waiting: stage === 'history' });
+  const link = SetupLink({ busy, setupErr, onBack, history });
   return (
     <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={link}>
       <Col width="100%">

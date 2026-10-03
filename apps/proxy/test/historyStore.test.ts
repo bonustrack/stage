@@ -26,6 +26,7 @@ describe('parseHistoryRoute', () => {
     expect(parseHistoryRoute('/xmtp-history/production/files/abc-123', 'GET')).toBeNull();
     expect(parseHistoryRoute('/xmtp-history/production/files', 'GET')).toBeNull();
     expect(parseHistoryRoute('/other', 'GET')).toBeNull();
+    for (const method of ['GET', 'PUT', 'DELETE']) expect(parseHistoryRoute(`/xmtp-history/production/transfer/${'a'.repeat(64)}`, method)).toBeNull();
   });
 });
 

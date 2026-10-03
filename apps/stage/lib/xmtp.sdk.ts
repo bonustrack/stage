@@ -13,15 +13,11 @@ import {
   type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt, ignored } from './errorPolicy';
-import { archiveFromBytes, archiveToBytes } from './archiveFile';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
 type NativeMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
 type InstallationIds = Parameters<typeof staticKeyPackageStatuses>[1];
-type NativeArchiveOptions = NonNullable<Parameters<NativeClient['createArchive']>[2]>;
-
-const ARCHIVE_OPTIONS: NativeArchiveOptions = { archiveElements: ['messages', 'consent'], excludeDisappearingMessages: false };
 
 const LIST_OPTIONS: NonNullable<Parameters<NativeClient['conversations']['list']>[0]> = {
   isActive: false, name: false, imageUrl: false, description: false,
@@ -218,8 +214,6 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
     processSyncArchive: (client) => client.processSyncArchive(),
-    createArchive: (client, key) => archiveToBytes((path) => client.createArchive(path, key, ARCHIVE_OPTIONS)),
-    importArchive: (client, archive, key) => archiveFromBytes(archive, (path) => client.importArchive(path, key)),
   },
   nativeErrorLog,
   isGroup: (conv) => conv instanceof Group,
