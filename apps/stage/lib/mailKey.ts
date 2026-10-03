@@ -24,7 +24,7 @@ export async function registerOwnMailKey(rec: AccountRecord, label: string): Pro
   await registerMailKey(linkProxyBase(), label, await deriveMailKey(label, signMessage), signMessage);
 }
 
-async function ownedStageLabel(address: string): Promise<string | null> {
+export async function ownedStageLabel(address: string): Promise<string | null> {
   const issued = await fetchIssuedName(linkProxyBase(), address);
   if (issued !== null) return stageLabelOf(issued);
   return stageLabelOf((await resolveBasenameProfile(baseProfileClient(), address))?.name);

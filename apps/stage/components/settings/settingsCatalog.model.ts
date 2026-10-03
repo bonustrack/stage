@@ -1,6 +1,6 @@
 import type { AppIconName } from '../appIcons';
 
-type SettingsSectionId = 'profile' | 'appearance' | 'security' | 'devices' | 'wallet' | 'advanced';
+type SettingsSectionId = 'profile' | 'appearance' | 'security' | 'devices' | 'wallet' | 'advanced' | 'inbox';
 
 interface SettingsSectionInfo {
   href: string;
@@ -14,6 +14,7 @@ const SETTINGS_SECTIONS: Readonly<Record<SettingsSectionId, SettingsSectionInfo>
   devices: { href: '/settings/devices', icon: 'IconDevices' },
   wallet: { href: '/settings/wallet', icon: 'IconWallet4' },
   advanced: { href: '/settings/advanced', icon: 'IconCode' },
+  inbox: { href: '/settings/inbox', icon: 'IconEmail1' },
 };
 
 export function settingsSection(id: SettingsSectionId): SettingsSectionInfo {

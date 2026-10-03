@@ -146,9 +146,10 @@ export function SettingsThemeRow(props: {
   );
 }
 
-export function SettingsPage({ title, root = false, panRef, keyboardShouldPersistTaps, children }: {
+export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, panRef, keyboardShouldPersistTaps, children }: {
   title: string;
   root?: boolean;
+  backTo?: string;
   panRef?: SimultaneousRefs;
   keyboardShouldPersistTaps?: 'handled';
   children: ReactNode;
@@ -156,7 +157,7 @@ export function SettingsPage({ title, root = false, panRef, keyboardShouldPersis
   const insets = useSafeAreaInsets();
   return (
     <Col surface="surface" flex={1}>
-      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={SETTINGS_ROUTE} />}
+      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} />}
       <ScreenScroll
         simultaneousHandlers={panRef}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
