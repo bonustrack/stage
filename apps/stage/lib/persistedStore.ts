@@ -12,6 +12,7 @@ export interface ValueStoreOptions<T> {
   deserialize: (raw: string) => T | undefined;
   storage?: Pick<AppStorage, 'get' | 'set'>;
   perAccount?: boolean;
+  restore?: (local: T, stored: T) => T;
 }
 
 export interface ValueStore<T> {
@@ -21,6 +22,8 @@ export interface ValueStore<T> {
   set: (value: T) => void;
   setAsync: (value: T) => Promise<void>;
   update: (next: (current: T) => T, onlyFor?: string) => Promise<void>;
+  loadFor: (accountId: string) => Promise<T>;
+  updateFor: (accountId: string, next: (current: T) => T) => Promise<void>;
   accountId: () => string | null;
   subscribe: (cb: () => void) => () => void;
   use: () => T;
@@ -38,11 +41,14 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     return typeof accountId === 'string' ? opts.key + accountId : null;
   }
 
+  function parse(raw: string | null): T | undefined {
+    return raw == null ? undefined : opts.deserialize(raw);
+  }
+
   function apply(raw: string | null): boolean {
-    if (raw == null) return false;
-    const parsed = opts.deserialize(raw);
+    const parsed = parse(raw);
     if (parsed === undefined) return false;
-    cache = parsed;
+    cache = opts.restore ? opts.restore(cache, parsed) : parsed;
     return true;
   }
 
@@ -51,8 +57,8 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     const id = (await getActiveAccount())?.id ?? null;
     if (id === accountId) return false;
     const raw = id === null ? null : await storage.get(opts.key + id);
+    if (!opts.restore || accountId !== undefined) cache = opts.default;
     accountId = id;
-    cache = opts.default;
     apply(raw);
     return true;
   }
@@ -109,16 +115,36 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     await write();
   }
 
-  async function update(next: (current: T) => T, onlyFor?: string): Promise<void> {
-    await (opts.perAccount ? reload() : load());
-    if (onlyFor !== undefined && onlyFor !== accountId) return;
+  async function change(next: (current: T) => T): Promise<void> {
     const value = next(cache);
     if (value !== cache) await setAsync(value);
+  }
+
+  async function update(next: (current: T) => T, onlyFor?: string): Promise<void> {
+    await (opts.perAccount ? reload() : load());
+    if (onlyFor === undefined || onlyFor === accountId) await change(next);
+  }
+
+  async function storedFor(id: string): Promise<T> {
+    return parse(await storage.get(opts.key + id)) ?? opts.default;
+  }
+
+  async function loadFor(id: string): Promise<T> {
+    await load();
+    return id === accountId ? cache : storedFor(id);
+  }
+
+  async function updateFor(id: string, next: (current: T) => T): Promise<void> {
+    await reload();
+    if (id === accountId) return change(next);
+    const stored = await storedFor(id);
+    const value = next(stored);
+    if (value !== stored) await storage.set(opts.key + id, serialize(value));
   }
 
   if (opts.perAccount) subscribeAccountEpoch(() => { void reload().catch(reported(`store.${opts.key}`)); });
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
 
-  return { load, loadAsync, get, set, setAsync, update, accountId: () => accountId ?? null, subscribe, use };
+  return { load, loadAsync, get, set, setAsync, update, loadFor, updateFor, accountId: () => accountId ?? null, subscribe, use };
 }

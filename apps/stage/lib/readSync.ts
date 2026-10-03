@@ -13,7 +13,7 @@ import {
   getCachedRows, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
 } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
-import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats, onClearedChatsChanged } from './clearedChats';
+import { applyRemoteClearedChats, getClearedChats, loadClearedChats, onClearedChatsChanged } from './clearedChats';
 import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
 import { applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged, type SearchStateChange } from './searchState';
@@ -148,7 +148,7 @@ async function applyOrderState(
 async function applyReplay(accountId: string, replay: SyncReplay): Promise<void> {
   await applyReadStates(replay.reads);
   await applyPinStates(replay.pins);
-  if (replay.cleared !== null) await applyRemoteClearedChats(replay.cleared);
+  if (replay.cleared !== null) await applyRemoteClearedChats(accountId, replay.cleared);
   if (replay.board !== null) {
     await applyOrderState(BOARD_ORDER_KEY, replay.board, (order) => applyRemoteBoardOrder(accountId, order));
   }
@@ -220,7 +220,6 @@ async function boot(): Promise<void> {
   if (!(await waitForXmtpReady())) return;
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
-  await ensureClearedChatsLoaded();
   try {
     const groups = await knownSyncGroups();
     const target = await chooseGroup(rec.address, groups);
@@ -261,7 +260,7 @@ async function publishOrderSnapshot(
 
 async function publishSnapshot(target: string, accountId: string): Promise<void> {
   const line = lineOfConv(target);
-  await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: getClearedChats() });
+  await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: await loadClearedChats(accountId) });
   await publishOrderSnapshot(line, BOARD_ORDER_KEY, BOARD_STATE_CODEC, await loadBoardOrder(accountId));
   await publishOrderSnapshot(line, CATEGORY_ORDER_KEY, CATEGORY_ORDER_CODEC, await loadCategoryOrder(accountId));
   const search = await loadSearchState(accountId);

@@ -1,21 +1,10 @@
 import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/readState';
-import { appStorage } from '../platform/storage';
-import { getActiveAccount } from './accounts';
-import { makeListeners, useStoreValue } from './storeCore';
-import { reported } from './errorPolicy';
+import { createValueStore } from './persistedStore';
+import { makeListeners } from './storeCore';
 
-const KEY_PREFIX = 'channels.cleared.';
 const EMPTY: ClearedChats = {};
 
-let accountId: string | null = null;
-let cleared: ClearedChats = EMPTY;
-let loading: Promise<void> | null = null;
-const listeners = makeListeners();
-const localChanges = makeListeners();
-export const onClearedChatsChanged = localChanges.subscribe;
-
-function parseCleared(raw: string | null): ClearedChats {
-  if (raw === null) return EMPTY;
+function parseCleared(raw: string): ClearedChats {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (parsed === null || typeof parsed !== 'object') return EMPTY;
@@ -24,43 +13,27 @@ function parseCleared(raw: string | null): ClearedChats {
   } catch { return EMPTY; }
 }
 
-async function loadForActiveAccount(): Promise<void> {
-  const rec = await getActiveAccount();
-  const id = rec?.id ?? null;
-  if (id === accountId) return;
-  const raw = id === null ? null : await appStorage.get(KEY_PREFIX + id);
-  accountId = id;
-  cleared = parseCleared(raw);
-  listeners.notify();
-}
+const prefs = createValueStore<ClearedChats>({
+  key: 'channels.cleared.', default: EMPTY, deserialize: parseCleared, serialize: JSON.stringify, perAccount: true,
+});
 
-export function ensureClearedChatsLoaded(): Promise<void> {
-  loading ??= loadForActiveAccount().finally(() => { loading = null; });
-  return loading;
-}
+const localChanges = makeListeners();
+export const onClearedChatsChanged = localChanges.subscribe;
 
-function commit(next: ClearedChats): void {
-  cleared = next;
-  listeners.notify();
-  if (accountId !== null) void appStorage.set(KEY_PREFIX + accountId, JSON.stringify(next)).catch(reported('clearedChats.save'));
-}
+export const getClearedChats = prefs.get;
 
-export function getClearedChats(): ClearedChats { return cleared; }
+export const useClearedChats = prefs.use;
 
-function primeClearedChats(): void { void ensureClearedChatsLoaded().catch(reported('clearedChats.load')); }
-
-export function useClearedChats(): ClearedChats {
-  return useStoreValue(listeners.subscribe, getClearedChats, primeClearedChats);
-}
+export const loadClearedChats = prefs.loadFor;
 
 export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {
-  await ensureClearedChatsLoaded();
-  commit(mergeClearedChats(cleared, { [peerAddress]: atMs }));
+  await prefs.update(cleared => mergeClearedChats(cleared, { [peerAddress]: atMs }));
   localChanges.notify();
 }
 
-export async function applyRemoteClearedChats(incoming: ClearedChats): Promise<void> {
-  await ensureClearedChatsLoaded();
-  const next = mergeClearedChats(cleared, incoming);
-  if (JSON.stringify(next) !== JSON.stringify(cleared)) commit(next);
+export function applyRemoteClearedChats(forAccount: string, incoming: ClearedChats): Promise<void> {
+  return prefs.updateFor(forAccount, (cleared) => {
+    const next = mergeClearedChats(cleared, incoming);
+    return JSON.stringify(next) === JSON.stringify(cleared) ? cleared : next;
+  });
 }

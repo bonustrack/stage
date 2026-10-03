@@ -110,4 +110,31 @@ describe('persisted value stores', () => {
     expect(store.get()).toBe(1);
     expect(writes).toEqual([]);
   });
+
+  test('reads and writes another account without touching the active one', async () => {
+    values.set('counter.alice', '4');
+    values.set('counter.bob', '8');
+    const store = accountStore();
+    expect(await store.loadFor('bob')).toBe(8);
+    expect(await store.loadFor('carol')).toBe(0);
+    await store.updateFor('bob', n => n + 1);
+    await store.updateFor('alice', n => n + 10);
+    await store.updateFor('carol', n => n);
+    expect(store.get()).toBe(14);
+    expect(values.get('counter.bob')).toBe('9');
+    expect(values.has('counter.carol')).toBe(false);
+  });
+
+  test('restore merges a value set before the first load, later accounts start from the default', async () => {
+    values.set('counter.alice', '4');
+    values.set('counter.bob', '8');
+    const store = createValueStore({
+      key: 'counter.', default: 1, deserialize: Number, perAccount: true, restore: (local: number, stored: number) => local * stored,
+    });
+    store.set(3);
+    expect(await store.load()).toBe(12);
+    activeId = 'bob';
+    await store.update(n => n);
+    expect(store.get()).toBe(8);
+  });
 });

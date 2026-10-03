@@ -1,11 +1,8 @@
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
-import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
-import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './homeView.model';
-
-const KEY_PREFIX = 'home.view.';
+import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
 function parseHomeView(raw: string): HomeViewContent {
   try {
@@ -15,7 +12,7 @@ function parseHomeView(raw: string): HomeViewContent {
 }
 
 const prefs = createValueStore<HomeViewContent>({
-  key: KEY_PREFIX, default: DEFAULT_HOME_VIEW, deserialize: parseHomeView, serialize: JSON.stringify, perAccount: true,
+  key: 'home.view.', default: DEFAULT_HOME_VIEW, deserialize: parseHomeView, serialize: JSON.stringify, perAccount: true,
 });
 
 export const useHomeView = prefs.use;
@@ -42,18 +39,10 @@ export function setHomeView(edit: HomeViewEdit): void {
 }
 
 export async function loadHomeView(forAccount: string): Promise<HomeViewContent | null> {
-  await prefs.load();
-  const state = forAccount === prefs.accountId() ? prefs.get() : parseHomeView(await appStorage.get(KEY_PREFIX + forAccount) ?? '');
+  const state = await prefs.loadFor(forAccount);
   return state.at > 0 ? syncedHomeView(state) : null;
 }
 
-export async function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
-  await prefs.load();
-  if (forAccount === prefs.accountId()) {
-    await prefs.update(current => receiveHomeView(current, incoming));
-    return;
-  }
-  const stored = parseHomeView(await appStorage.get(KEY_PREFIX + forAccount) ?? '');
-  const next = receiveHomeView(stored, incoming);
-  if (next !== stored) await appStorage.set(KEY_PREFIX + forAccount, JSON.stringify(next));
+export function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
+  return prefs.updateFor(forAccount, current => receiveHomeView(current, incoming));
 }

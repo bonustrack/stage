@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
-import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/homeView.model';
+import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 
 const values = new Map<string, string>();
 let activeId = 'alice';

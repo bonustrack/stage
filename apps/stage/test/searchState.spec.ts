@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { collectSyncReplay, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
 import {
   EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel,
-} from '../lib/searchState.model';
+} from '../lib/syncedSettings.model';
 
 const SEARCH_TYPE = 'stage.box/searchState:1.0';
 
