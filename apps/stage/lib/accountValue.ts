@@ -6,8 +6,9 @@ import { makeListeners } from './storeCore';
 
 export interface AccountValue<T> {
   ready: () => Promise<void>;
+  accountId: () => string | null;
   get: () => T;
-  update: (next: (current: T) => T) => Promise<void>;
+  update: (next: (current: T) => T, onlyFor?: string) => Promise<void>;
   subscribe: (cb: () => void) => () => void;
 }
 
@@ -39,9 +40,11 @@ export function makeAccountValue<T>(
 
   return {
     ready: () => (loaded ? Promise.resolve() : reload()),
+    accountId: () => accountId,
     get: () => value,
-    update: async (next) => {
+    update: async (next, onlyFor) => {
       await reload();
+      if (onlyFor !== undefined && onlyFor !== accountId) return;
       const updated = next(value);
       if (updated === value) return;
       value = updated;

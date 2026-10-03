@@ -1,11 +1,8 @@
-import { useMemo } from 'react';
 import { toggleKey } from '../components/conversation/SidebarSection.model';
-import {
-  NO_GROUPS_PREFS, groupRowsByCategory, parseChannelGroupsPrefs, rowsOf, type ChannelGroupsPrefs, type HomeListItem,
-} from '../components/home/groups.model';
-import type { Row } from '../components/home/model';
 import { makeAccountValue } from './accountValue';
+import { NO_GROUPS_PREFS, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs } from './channelGroups.model';
 import { reported } from './errorPolicy';
+import { notifyCategoryOrderChanged } from './readSyncRegistry';
 import { useStoreValue } from './storeCore';
 
 const prefs = makeAccountValue<ChannelGroupsPrefs>('channels.groups.', NO_GROUPS_PREFS, parseChannelGroupsPrefs, JSON.stringify);
@@ -14,25 +11,38 @@ function primeGroups(): void { void prefs.ready().catch(reported('channelGroups.
 
 export const useChannelGroups = (): ChannelGroupsPrefs => useStoreValue(prefs.subscribe, prefs.get, primeGroups);
 
-interface GroupedRows {
-  grouped: boolean;
-  items: HomeListItem[];
-  rows: Row[];
-}
-
-export function useGroupedRows(visibleRows: Row[], searchText: string): GroupedRows {
-  const { grouped, collapsed } = useChannelGroups();
-  return useMemo(() => {
-    if (!grouped) return { grouped, items: visibleRows, rows: visibleRows };
-    const items = groupRowsByCategory(visibleRows, new Set(collapsed), searchText !== '');
-    return { grouped, items, rows: rowsOf(items) };
-  }, [grouped, collapsed, visibleRows, searchText]);
+function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor?: string): Promise<void> {
+  return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
 }
 
 export function toggleGroupByCategory(): void {
-  void prefs.update(current => ({ ...current, grouped: !current.grouped })).catch(reported('channelGroups.save'));
+  void save(current => ({ ...current, grouped: !current.grouped }));
 }
 
 export function toggleGroupCollapsed(key: string): void {
-  void prefs.update(current => ({ ...current, collapsed: toggleKey(current.collapsed, key) })).catch(reported('channelGroups.save'));
+  void save(current => ({ ...current, collapsed: toggleKey(current.collapsed, key) }));
+}
+
+function sameOrder(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((key, i) => key === b[i]);
+}
+
+function withOrder(current: ChannelGroupsPrefs, order: string[]): ChannelGroupsPrefs {
+  return sameOrder(current.order, order) ? current : { ...current, order };
+}
+
+export function moveCategory(key: string, targetKey: string, visible: readonly string[]): void {
+  const accountId = prefs.accountId();
+  if (accountId === null) return;
+  void save(current => withOrder(current, movedCategoryOrder(current.order, visible, key, targetKey)), accountId)
+    .then(() => { if (prefs.accountId() === accountId) notifyCategoryOrderChanged({ accountId, order: prefs.get().order }); });
+}
+
+export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {
+  await save(current => withOrder(current, [...order]), forAccount);
+}
+
+export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {
+  await prefs.ready();
+  return prefs.accountId() === forAccount ? prefs.get().order : [];
 }

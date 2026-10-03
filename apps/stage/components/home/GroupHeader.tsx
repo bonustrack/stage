@@ -11,7 +11,10 @@ import { IconChevronRight } from '@central-icons-react-native/round-outlined-rad
 
 const CHEVRON_SIZE = 14;
 const TITLE_SIZE = '3xs';
-const TITLE_STYLE = { flexShrink: 1 } as const;
+const TITLE_LINE_HEIGHT = 17;
+const TITLE_STYLE = { flexShrink: 1, lineHeight: TITLE_LINE_HEIGHT } as const;
+const BOTTOM_GAP = 6;
+export const GROUP_HEADER_HEIGHT = LIST_TOP_GAP + TITLE_LINE_HEIGHT + BOTTOM_GAP;
 
 export function GroupHeader({ header, onToggle }: {
   header: ChannelGroupHeader; onToggle: (key: string) => void;
@@ -27,8 +30,8 @@ export function GroupHeader({ header, onToggle }: {
       accessibilityLabel={`${header.title}, ${header.count} chats`}
       {...hoverProps}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: 6, opacity: pressed ? 0.7 : 1,
+        flexDirection: 'row', alignItems: 'center', gap: 6, height: GROUP_HEADER_HEIGHT,
+        paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: BOTTOM_GAP, opacity: pressed ? 0.7 : 1,
       })}
     >
       <Glyph icon={header.collapsed ? IconChevronRight : IconChevronBottom} size={CHEVRON_SIZE} color={tint ?? sub}/>
