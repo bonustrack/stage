@@ -74,8 +74,13 @@ export interface BoardDropZone {
   over: boolean;
 }
 
+const NO_CATEGORY_COLUMN = columnKeyOf('category', '');
+
+export const columnMovable = (key: string): boolean => key !== NO_CATEGORY_COLUMN;
+
 export function acceptsDrop(drag: BoardDrag, key: string): boolean {
-  return (drag.kind === 'column' ? drag.key : drag.from) !== key;
+  if (drag.kind === 'card') return drag.from !== key;
+  return drag.key !== key && columnMovable(key);
 }
 
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {

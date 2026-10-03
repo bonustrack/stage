@@ -1,7 +1,9 @@
 import { toggleKey } from '../components/conversation/SidebarSection.model';
-import { NO_GROUPS_PREFS, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs } from './channelGroups.model';
+import {
+  NO_GROUPS_PREFS, categoryKeysOf, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs,
+} from './channelGroups.model';
 import { reported } from './errorPolicy';
-import type { AccountOrderChange } from './boardOrder';
+import { loadBoardOrder, type AccountOrderChange } from './boardOrder';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 
@@ -39,6 +41,11 @@ export function moveCategory(key: string, targetKey: string, visible: readonly s
 
 export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {
   await save(current => withOrder(current, [...order]), forAccount);
+}
+
+export async function adoptBoardCategoryOrder(forAccount: string): Promise<void> {
+  const order = categoryKeysOf(await loadBoardOrder(forAccount));
+  if (order.length > 0) await save(current => (current.order.length === 0 ? { ...current, order } : current), forAccount);
 }
 
 export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {

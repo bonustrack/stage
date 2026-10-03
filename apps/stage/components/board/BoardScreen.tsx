@@ -35,13 +35,14 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
+import { useChannelGroups } from '../../lib/channelGroups';
 import { useHomeView } from '../../lib/homeView';
 import { capabilities } from '../../lib/capabilities';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
 import { channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnsEditable, orderedColumns,
+  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnMovable, columnsEditable, orderedColumns,
   revealScrollX, searchedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
@@ -183,7 +184,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   const { label } = column;
   const [editing, setEditing] = useState(false);
   const zone = useBoardDropZone(column.key, (drag) => { actions.drop(drag, column.key); });
-  const handle = useBoardDragSource(editing ? null : { kind: 'column', key: column.key }, zone.nativeID);
+  const handle = useBoardDragSource(editing || !columnMovable(column.key) ? null : { kind: 'column', key: column.key }, zone.nativeID);
   return (
     <ColumnFrame
       nativeID={zone.nativeID} over={zone.over} opacity={handle.dragging ? DRAGGING_OPACITY : 1} maxHeight={maxHeight}
@@ -303,8 +304,10 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
-  const order = useBoardOrder();
+  const boardOrder = useBoardOrder();
+  const categoryOrder = useChannelGroups().order;
   const { columnBy } = useHomeView();
+  const order = columnBy === 'category' ? categoryOrder : boardOrder;
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
   useChannelsSync({ accountEpoch: useAccountEpoch(), setError });

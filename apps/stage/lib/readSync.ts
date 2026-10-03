@@ -13,7 +13,7 @@ import {
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
 import { applyRemoteClearedChats, getClearedChats, loadClearedChats, onClearedChatsChanged } from './clearedChats';
 import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
-import { applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
+import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
 import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
 import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
@@ -196,7 +196,9 @@ async function boot(): Promise<void> {
   try {
     const groups = await knownSyncGroups();
     const target = await chooseGroup(rec.address, groups);
-    if (token === bootToken) await replay(rec.id, target, groups);
+    if (token !== bootToken) return;
+    await replay(rec.id, target, groups);
+    await adoptBoardCategoryOrder(rec.id);
   } catch (err) {
     report('readSync.boot', err);
   }

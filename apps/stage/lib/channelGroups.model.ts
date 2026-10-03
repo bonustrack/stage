@@ -18,10 +18,19 @@ export function categoryOrderWith(order: readonly string[], visible: readonly st
   return [...order, ...visible.filter(key => !order.includes(key)).sort(compareNames)];
 }
 
+const isNamedCategory = (key: string): boolean => isCategoryKey(key) && key.length > CATEGORY_KEY_PREFIX.length;
+
+export function categoryKeysOf(keys: readonly string[]): string[] {
+  return [...new Set(keys.map(key => key.toLowerCase()).filter(isNamedCategory))];
+}
+
 export function movedCategoryOrder(
   order: readonly string[], visible: readonly string[], key: string, targetKey: string,
 ): string[] {
-  return movedKey(categoryOrderWith(order, visible), key, targetKey);
+  const shown = categoryKeysOf(visible);
+  const [moved, target] = [key.toLowerCase(), targetKey.toLowerCase()];
+  if (!shown.includes(moved) || !shown.includes(target)) return [...order];
+  return movedKey(categoryOrderWith(order, shown), moved, target);
 }
 
 function stringsOf(value: unknown): string[] {

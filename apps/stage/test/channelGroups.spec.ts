@@ -1,14 +1,27 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
+import { acceptsDrop, boardColumns, columnMovable, orderedColumns } from '../components/board/BoardScreen.model';
 import {
   groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem,
 } from '../components/home/groups.model';
 import {
-  NO_GROUPS_PREFS, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
+  NO_GROUPS_PREFS, categoryKeysOf, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
 } from '../lib/channelGroups.model';
 import {
   blockShift, categoryZones, domElementOf, dragTarget, dropTarget, sectionBlocks, sectionShape, uniformBlocks, zoneTarget,
 } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
+
+const values = new Map<string, string>();
+let activeId = 'ann';
+mock.module('../platform/storage', () => ({
+  appStorage: {
+    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
+    set: async (key: string, value: string): Promise<void> => { values.set(key, value); },
+  },
+}));
+mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId }) }));
+const { adoptBoardCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged } = await import('../lib/channelGroups');
+const { applyRemoteBoardOrder } = await import('../lib/boardOrder');
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
@@ -258,5 +271,76 @@ describe('domElementOf', () => {
       if (saved === undefined) Reflect.deleteProperty(globalThis, 'HTMLElement');
       else Object.defineProperty(globalThis, 'HTMLElement', saved);
     }
+  });
+});
+
+describe('one category order for the chat list and the board', () => {
+  const ops = row('ops', { category: 'Ops' });
+  const rows = [dm, work, alpha, ops, loose];
+  const sections = (order: readonly string[]): string[] =>
+    groupRows(rows, 'category', new Set(), false, nameOf, order).filter(isGroupHeader).map(item => item.header.title);
+  const columns = (order: readonly string[]): string[] =>
+    orderedColumns(boardColumns(rows, [], [], 'category', nameOf), order).map(column => column.label);
+  const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+  const sent: string[][] = [];
+  onCategoryOrderChanged(change => { sent.push([...change.order]); });
+
+  test('the same order drives the chat sections and the board columns, no category last in both', () => {
+    const order = ['category:ops', 'category:work'];
+    expect(sections(order)).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No category']);
+    expect(columns(order)).toEqual(['Ops', 'Work', 'Alpha', 'No category']);
+    expect(sections([]).slice(1)).toEqual(columns([]));
+  });
+
+  test('category keys from any source are lowercase, named and unique', () => {
+    expect(categoryKeysOf(['label:Todo', 'category:Work', 'category:', 'category:work', 'assignee:0xbob', 'category:Ops']))
+      .toEqual(['category:work', 'category:ops']);
+  });
+
+  test('a board column drag reorders the chat sections and goes out to the other devices', async () => {
+    expect(await loadCategoryOrder('ann')).toEqual([]);
+    const board = orderedColumns(boardColumns(rows, [], [], 'category', nameOf), []).map(column => column.key);
+    moveCategory('category:Work', 'category:Alpha', board);
+    await settle();
+    const order = await loadCategoryOrder('ann');
+    expect(order).toEqual(['category:work', 'category:alpha', 'category:ops']);
+    expect(sent).toEqual([order]);
+    expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No category']);
+  });
+
+  test('a chat section drag reorders the board columns', async () => {
+    const visible = sectionBlocks(groupRows(rows, 'category', new Set(), false, nameOf, await loadCategoryOrder('ann')), 40, 67).ids;
+    moveCategory('category:ops', 'category:work', visible);
+    await settle();
+    expect(columns(await loadCategoryOrder('ann'))).toEqual(['Ops', 'Work', 'Alpha', 'No category']);
+  });
+
+  test('no category stays last on the board: it is not dragged and takes no column', () => {
+    expect(columnMovable('category:')).toBe(false);
+    expect(columnMovable('assignee:')).toBe(true);
+    expect(acceptsDrop({ kind: 'column', key: 'category:Work' }, 'category:')).toBe(false);
+    expect(acceptsDrop({ kind: 'column', key: 'category:Work' }, 'category:Ops')).toBe(true);
+    expect(movedCategoryOrder(['category:ops'], ['category:Ops', 'category:Work', 'category:'], 'category:Work', 'category:'))
+      .toEqual(['category:ops']);
+  });
+
+  test('a board-only category order seeds the empty shared order once, and is not sent', async () => {
+    sent.length = 0;
+    activeId = 'carol';
+    values.set('board.columnOrder.carol', JSON.stringify(['label:Todo', 'category:Ops', 'category:', 'assignee:0xbob', 'category:Work']));
+    await adoptBoardCategoryOrder('carol');
+    expect(await loadCategoryOrder('carol')).toEqual(['category:ops', 'category:work']);
+    await applyRemoteBoardOrder('carol', ['category:Work', 'category:Ops']);
+    await adoptBoardCategoryOrder('carol');
+    expect(await loadCategoryOrder('carol')).toEqual(['category:ops', 'category:work']);
+    expect(sent).toEqual([]);
+  });
+
+  test('a synced chat order is kept over the board order', async () => {
+    activeId = 'dave';
+    values.set('channels.groups.dave', JSON.stringify({ collapsed: [], order: ['category:work'] }));
+    values.set('board.columnOrder.dave', JSON.stringify(['category:Ops', 'category:Work']));
+    await adoptBoardCategoryOrder('dave');
+    expect(await loadCategoryOrder('dave')).toEqual(['category:work']);
   });
 });

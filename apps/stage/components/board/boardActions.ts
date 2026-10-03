@@ -1,5 +1,7 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { setBoardOrder } from '../../lib/boardOrder';
+import { moveCategory } from '../../lib/channelGroups';
+import { isCategoryKey } from '../../lib/channelGroups.model';
 import { capabilities } from '../../lib/capabilities';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel } from '../../lib/xmtp.groups';
@@ -18,7 +20,9 @@ export function dropOnBoard(
   columns: readonly BoardColumn<unknown>[], saved: readonly string[], drag: BoardDrag, key: string,
 ): void {
   if (drag.kind === 'column') {
-    const next = movedColumnOrder(columns.map(column => column.key), saved, drag.key, key);
+    const shown = columns.map(column => column.key);
+    if (isCategoryKey(drag.key)) { moveCategory(drag.key, key, shown); return; }
+    const next = movedColumnOrder(shown, saved, drag.key, key);
     if (next !== null) setBoardOrder(next);
     return;
   }
