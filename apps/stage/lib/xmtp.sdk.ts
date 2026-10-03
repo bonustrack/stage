@@ -4,7 +4,7 @@ import {
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
-import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
+import { convIdFromTopic, isMissingMlsState } from '@stage-labs/client/xmtp/clientErrors';
 import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
@@ -22,6 +22,10 @@ type InstallationIds = Parameters<typeof staticKeyPackageStatuses>[1];
 type NativeArchiveOptions = NonNullable<Parameters<NativeClient['createArchive']>[2]>;
 
 const ARCHIVE_OPTIONS: NativeArchiveOptions = { archiveElements: ['messages', 'consent'], excludeDisappearingMessages: false };
+
+const LIST_OPTIONS: NonNullable<Parameters<NativeClient['conversations']['list']>[0]> = {
+  isActive: false, name: false, imageUrl: false, description: false,
+};
 
 const asConversationId = (id: string): ConversationId => id as ConversationId;
 
@@ -55,12 +59,19 @@ function conversationIdField(m: NativeMessage): string | undefined {
   return 'conversationId' in m && typeof m.conversationId === 'string' ? m.conversationId : undefined;
 }
 
+function groupInfoField(read: () => Promise<string>): Promise<string> {
+  return read().catch((err: unknown) => {
+    if (isMissingMlsState(err)) throw err;
+    return recover('xmtp.groupInfo', '')(err);
+  });
+}
+
 async function groupInfoOf(conv: Conversation): Promise<{ name: string; imageUrl: string; description: string }> {
   if (!(conv instanceof Group)) return { ...NO_GROUP_INFO };
   const [name, imageUrl, description] = await Promise.all([
-    conv.name().catch(recover('xmtp.groupInfo', '')),
-    conv.imageUrl().catch(recover('xmtp.groupInfo', '')),
-    conv.description().catch(recover('xmtp.groupInfo', '')),
+    groupInfoField(() => conv.name()),
+    groupInfoField(() => conv.imageUrl()),
+    groupInfoField(() => conv.description()),
   ]);
   return { name, imageUrl, description };
 }
@@ -147,9 +158,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
   findConv: (client, convId) => client.conversations.findConversation(asConversationId(convId)),
-  listConvs: (client, consent) => (consent
-    ? client.conversations.list(undefined, undefined, consent)
-    : client.conversations.list()),
+  listConvs: (client, consent) => client.conversations.list(LIST_OPTIONS, undefined, consent),
   syncConvList: (client) => client.conversations.sync(),
   syncVisible: (client) => client.conversations.syncAllConversations(VISIBLE_CONSENT),
   syncConsent: (client) => client.preferences.syncConsent(),

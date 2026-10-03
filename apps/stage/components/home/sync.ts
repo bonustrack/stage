@@ -232,8 +232,9 @@ function makeRefreshers(
       const visible = await listVisibleConversations();
       const { added, gone } = visibleRowsDiff(rows.map(r => r.convId), visible.map(c => c.id));
       if (added.length === 0 && gone.length === 0) return;
-      const fresh = await Promise.all(visible.filter(c => added.includes(c.id))
-        .map(c => summarize(c, selfInboxId, createdBySelf(c, selfInboxId))));
+      const fresh = (await Promise.all(visible.filter(c => added.includes(c.id))
+        .map(c => summarize(c, selfInboxId, createdBySelf(c, selfInboxId)).catch(recover<Row | null>('home.reconcile', null)))))
+        .filter((r): r is Row => r !== null);
       if (run.cancelled) return;
       updateHomeRows(prev => uniqueByConvId([...fresh, ...(prev ?? []).filter(r => !gone.includes(r.convId))]));
     } catch (err) {

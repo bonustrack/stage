@@ -56,6 +56,15 @@ describe('syncCheckResult', () => {
     expect(result).toEqual({ ok: false, title: 'Not on this device', message: 'This device has no copy of this channel yet.' });
   });
 
+  test('a restored copy waits for a member and shows no local state', () => {
+    const result = syncCheckResult({ ...HEALTHY, restored: true, active: false, syncError: 'MLS Group bb4e Not Found', state: null, newest: '' });
+    expect(result.title).toBe('Not in the channel yet');
+    expect(result.message.split('\n')).toEqual([
+      'This device only has a restored copy of this channel from the history import, so it is not a member yet. It is added when a member next sends a message.',
+      'Error: MLS Group bb4e Not Found',
+    ]);
+  });
+
   test('a channel whose sync state cannot be read says so', () => {
     expect(syncCheckResult({ ...HEALTHY, state: null }).message).toContain('Could not read the sync state.');
   });
@@ -97,6 +106,24 @@ describe('runSyncCheck', () => {
     expect(await runSyncCheck(ops)).toEqual({
       ok: false, title: 'Couldn’t check sync', message: 'Local channel lookup: lookup failed',
     });
+  });
+
+  test('a lookup that fails for want of MLS state names the restored copy', async () => {
+    const ops = syncOps();
+    ops.find.mockRejectedValue(new Error('[NotFound::MlsGroup] Group error: MLS Group bb4e76e238f67034feae85db784edfd6 Not Found'));
+    const result = await runSyncCheck(ops);
+    expect(result.title).toBe('Not in the channel yet');
+    expect(result.message).toContain('restored copy');
+    expect(result.message).toContain('Error: [NotFound::MlsGroup]');
+    expect(ops.isActive).not.toHaveBeenCalled();
+    expect(ops.sync).not.toHaveBeenCalled();
+  });
+
+  test('a membership read that fails for want of MLS state names the restored copy too', async () => {
+    const ops = syncOps();
+    ops.isActive.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    expect((await runSyncCheck(ops)).title).toBe('Not in the channel yet');
+    expect(ops.sync).not.toHaveBeenCalled();
   });
 
   test('an inactive channel is not synced', async () => {
