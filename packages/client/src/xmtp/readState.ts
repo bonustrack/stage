@@ -104,6 +104,25 @@ export function parseBoardState(content: unknown): BoardStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const CATEGORY_ORDER_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'categoryOrderState', versionMajor: 1, versionMinor: 0,
+};
+
+export type CategoryOrderContent = z.infer<typeof boardStateSchema>;
+
+export function categoryOrderFallbackText(): string {
+  return 'Stage category order';
+}
+
+export function isCategoryOrderType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(CATEGORY_ORDER_CONTENT_TYPE.typeId);
+}
+
+export function parseCategoryOrder(content: unknown): CategoryOrderContent | null {
+  const parsed = boardStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export const SEARCH_STATE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box', typeId: 'searchState', versionMajor: 1, versionMinor: 0,
 };
@@ -201,6 +220,7 @@ export interface SyncReplay {
   pins: PinStateContent[];
   cleared: ClearedChats | null;
   board: BoardStateContent | null;
+  categoryOrder: CategoryOrderContent | null;
   search: SearchStateContent | null;
   latestNs: number;
 }
@@ -251,6 +271,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     pins: pinsSinceLastOrder(fresh),
     cleared: mergedCleared(fresh),
     board: latestState(fresh, isBoardStateType, parseBoardState),
+    categoryOrder: latestState(fresh, isCategoryOrderType, parseCategoryOrder),
     search: latestState(fresh, isSearchStateType, parseSearchState),
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };

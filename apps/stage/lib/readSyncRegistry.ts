@@ -49,15 +49,20 @@ const clearedListeners = makeListeners();
 export const onClearedChatsChanged = clearedListeners.subscribe;
 export const notifyClearedChatsChanged = clearedListeners.notify;
 
-export interface BoardOrderChange {
+export interface AccountOrderChange {
   accountId: string;
   order: readonly string[];
 }
 
-const boardOrderListeners = makeListeners<BoardOrderChange>();
+const boardOrderListeners = makeListeners<AccountOrderChange>();
 
 export const onBoardOrderChanged = boardOrderListeners.subscribe;
 export const notifyBoardOrderChanged = boardOrderListeners.notify;
+
+const categoryOrderListeners = makeListeners<AccountOrderChange>();
+
+export const onCategoryOrderChanged = categoryOrderListeners.subscribe;
+export const notifyCategoryOrderChanged = categoryOrderListeners.notify;
 
 export interface SearchStateChange {
   accountId: string;
