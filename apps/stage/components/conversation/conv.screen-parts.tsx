@@ -3,7 +3,6 @@ import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, pinnedTop, PAGE_GUTTER, Col } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
@@ -25,6 +24,7 @@ import { SearchTopnavBar } from '../SearchTopnavBar';
 import { RequestActionBar } from '../RequestActionBar';
 import type { useConversationState } from './useConversationState';
 import { useSafeAreaInsets } from '../../lib/safeArea';
+import { ComposerDock } from './FooterDock';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { channelProfileLinkOf, conversationSharePath, profileLinkOf } from '../../lib/links';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
@@ -95,7 +95,6 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
 }
 
 export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
-  const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const { border: rowBg } = usePalette();
   const {
@@ -106,40 +105,37 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
   const access = useGroupAccess(convId, c.isGroup);
   const composerShown = consentKnown && access === 'member';
   return (
-    <KeyboardStickyView offset={{ opened: insets.bottom }}>
-      <Box>
-        {showJump ? (
-          <Pressable
-            onPress={() => { markAtBottom(); scrollToNewest(); setShowJump(false); }}
-            style={{
-              position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
-              width: 36, height: 36, borderRadius: 999,
-              backgroundColor: dark ? rowBg : '#000000',
-              alignItems: 'center', justifyContent: 'center',
-            }}
+    <ComposerDock>
+      {showJump ? (
+        <Pressable
+          onPress={() => { markAtBottom(); scrollToNewest(); setShowJump(false); }}
+          style={{
+            position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
+            width: 36, height: 36, borderRadius: 999,
+            backgroundColor: dark ? rowBg : '#000000',
+            alignItems: 'center', justifyContent: 'center',
+          }}
 >
-            <Glyph icon={IconArrowDown} size={18} color="#ffffff"/>
-          </Pressable>
-        ) : null}
-        {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-        {access !== 'member' && !requestPending ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
-        {composerShown ? (
-          <MessengerComposer
-            dark={dark}
-            xmtpLine={activeLine}
-            mentionCandidates={mentionCandidates}
-            suggestContacts={c.peerAddr !== null}
-            replyingTo={replyingTo ?? undefined}
-            autoFocusNonce={autoFocusNonce}
-            onClearReply={() => { setReplyingTo(null); }}
-            onJumpToReply={jumpToMessage}
-            onOptimistic={onOptimistic}
-            onSent={onSent}
+          <Glyph icon={IconArrowDown} size={18} color="#ffffff"/>
+        </Pressable>
+      ) : null}
+      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
+      {access !== 'member' && !requestPending ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
+      {composerShown ? (
+        <MessengerComposer
+          dark={dark}
+          xmtpLine={activeLine}
+          mentionCandidates={mentionCandidates}
+          suggestContacts={c.peerAddr !== null}
+          replyingTo={replyingTo ?? undefined}
+          autoFocusNonce={autoFocusNonce}
+          onClearReply={() => { setReplyingTo(null); }}
+          onJumpToReply={jumpToMessage}
+          onOptimistic={onOptimistic}
+          onSent={onSent}
 />
-        ) : null}
-        <Box height={insets.bottom} surface="raised"/>
-      </Box>
-    </KeyboardStickyView>
+      ) : null}
+    </ComposerDock>
   );
 }
 

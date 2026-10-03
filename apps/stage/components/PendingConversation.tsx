@@ -17,6 +17,7 @@ import { MessengerBubble } from './bubble/MessengerBubble';
 import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { ConvTopnavIdentity, ConvTopnavShell } from './conversation/parts';
+import { ChatColumn, ComposerDock } from './conversation/FooterDock';
 import { profileLinkOf } from '../lib/links';
 import { peerLabel } from './conversation/convTitle';
 
@@ -115,25 +116,29 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
   return (
     <Col surface="surface" flex={1}>
       <PendingTopnav address={address} title={peerName}/>
-      <Col flex={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
-        {queued.map(item => (
-          <MessengerBubble
-            key={item.id}
-            entry={entryOf(item, myAddress, myName)}
-            dark={dark}
-            pending
-            myUri={PENDING_MY_URI}
-            senderEthAddress={myAddress}
-          />
-        ))}
-        <Text size="3xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
-          {pendingBanner(reason, peerName)}
-        </Text>
-      </Col>
-      <ComposerEditor
-        dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text} chipBg={pal.border}
-        {...editor}
-      />
+      <ChatColumn>
+        <Col flex={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
+          {queued.map(item => (
+            <MessengerBubble
+              key={item.id}
+              entry={entryOf(item, myAddress, myName)}
+              dark={dark}
+              pending
+              myUri={PENDING_MY_URI}
+              senderEthAddress={myAddress}
+            />
+          ))}
+          <Text size="3xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
+            {pendingBanner(reason, peerName)}
+          </Text>
+        </Col>
+      </ChatColumn>
+      <ComposerDock>
+        <ComposerEditor
+          dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text} chipBg={pal.border}
+          {...editor}
+        />
+      </ComposerDock>
     </Col>
   );
 }
