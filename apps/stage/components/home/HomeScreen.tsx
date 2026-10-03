@@ -20,10 +20,9 @@ import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
 import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
-import { useGroupedRows } from '../../lib/channelGroups';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
-import { useHomeState } from './state';
-import { usePinDrag } from './pinDrag';
+import { useGroupedRows, useHomeState } from './state';
+import { usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { channelsPaneWidth } from '../tabs/paneWidth';
 
@@ -96,9 +95,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [list.grouped, visibleRows, pinned],
   );
   const pinDrag = usePinDrag(pinned, visiblePinned);
+  const sectionDrag = useSectionDrag(list.items, list.grouped);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, hideAvatar,
+    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, hideAvatar,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;

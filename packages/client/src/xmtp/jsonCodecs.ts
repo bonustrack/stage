@@ -24,6 +24,7 @@ import {
   PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
   CLEAR_STATE_CONTENT_TYPE, clearStateFallbackText, clearStateSchema, type ClearStateContent,
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, type BoardStateContent,
+  CATEGORY_ORDER_CONTENT_TYPE, categoryOrderFallbackText, type CategoryOrderContent,
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, type SearchStateContent,
 } from './readState';
 import {
@@ -102,6 +103,10 @@ export const BOARD_STATE_CODEC = jsonCodec<BoardStateContent>(
   BOARD_STATE_CONTENT_TYPE, boardStateFallbackText, boardStateSchema, undefined, false,
 );
 
+export const CATEGORY_ORDER_CODEC = jsonCodec<CategoryOrderContent>(
+  CATEGORY_ORDER_CONTENT_TYPE, categoryOrderFallbackText, boardStateSchema, undefined, false,
+);
+
 export const SEARCH_STATE_CODEC = jsonCodec<SearchStateContent>(
   SEARCH_STATE_CONTENT_TYPE, searchStateFallbackText, searchStateSchema, undefined, false,
 );
@@ -131,6 +136,7 @@ export const STAGE_JSON_CODECS = [
   PIN_STATE_CODEC,
   CLEAR_STATE_CODEC,
   BOARD_STATE_CODEC,
+  CATEGORY_ORDER_CODEC,
   SEARCH_STATE_CODEC,
   CALL_INVITE_CODEC,
   CALL_SIGNAL_CODEC,

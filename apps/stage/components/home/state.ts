@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/pins';
+import { groupRowsByCategory, rowsOf, type HomeListItem } from './groups.model';
 import { useStoreValue } from '../../lib/storeCore';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
@@ -59,4 +61,19 @@ export function useHomeState(): HomeState {
     pinned,
     scroll: { listRef, savedOffsetRef, didRestoreRef },
   };
+}
+
+interface GroupedRows {
+  grouped: boolean;
+  items: HomeListItem[];
+  rows: Row[];
+}
+
+export function useGroupedRows(visibleRows: Row[], searchText: string): GroupedRows {
+  const { grouped, collapsed, order } = useChannelGroups();
+  return useMemo(() => {
+    if (!grouped) return { grouped, items: visibleRows, rows: visibleRows };
+    const items = groupRowsByCategory(visibleRows, new Set(collapsed), searchText !== '', order);
+    return { grouped, items, rows: rowsOf(items) };
+  }, [grouped, collapsed, order, visibleRows, searchText]);
 }

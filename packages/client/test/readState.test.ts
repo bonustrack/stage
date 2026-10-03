@@ -3,6 +3,7 @@ import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, shouldApplyReadState, syncGroupName,
   collectSyncReplay, pickPublishGroup, isBoardStateType, parseBoardState, isSearchStateType, parseSearchState,
+  isCategoryOrderType, parseCategoryOrder,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -63,6 +64,18 @@ describe('board state payload', () => {
     expect(isBoardStateType('stage.box/boardState:1.0')).toBe(true);
     expect(isBoardStateType('stage.box/pinState:1.0')).toBe(false);
     expect(isPinStateType('stage.box/boardState:1.0')).toBe(false);
+  });
+});
+
+describe('category order payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises only its own type', () => {
+    const ok = { order: ['category:work', 'category:home'], at: 3 };
+    expect(parseCategoryOrder(ok)).toEqual(ok);
+    expect(parseCategoryOrder({ order: [''], at: 3 })).toBeNull();
+    expect(parseCategoryOrder({ order: ['category:work'], at: 0 })).toBeNull();
+    expect(isCategoryOrderType('stage.box/categoryOrderState:1.0')).toBe(true);
+    expect(isCategoryOrderType('stage.box/boardState:1.0')).toBe(false);
+    expect(isBoardStateType('stage.box/categoryOrderState:1.0')).toBe(false);
   });
 });
 
@@ -187,6 +200,18 @@ describe('restored sync groups', () => {
     ], 0);
     expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
     expect(collectSyncReplay([], 0).board).toBeNull();
+  });
+
+  test('keeps the newest category order by its own clock, not by arrival', () => {
+    const CATEGORY = 'stage.box/categoryOrderState:1.0';
+    const replay = collectSyncReplay([
+      { contentTypeId: CATEGORY, content: { order: ['category:a'], at: 5 }, sentNs: 1 },
+      { contentTypeId: CATEGORY, content: { order: ['category:b'], at: 9 }, sentNs: 2 },
+      { contentTypeId: 'stage.box/boardState:1.0', content: { order: ['label:c'], at: 12 }, sentNs: 3 },
+    ], 0);
+    expect(replay.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
+    expect(replay.board).toEqual({ order: ['label:c'], at: 12 });
+    expect(collectSyncReplay([], 0).categoryOrder).toBeNull();
   });
 
   test('keeps the newest search by its own clock, not by arrival', () => {
