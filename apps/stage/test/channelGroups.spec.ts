@@ -5,7 +5,9 @@ import {
 import {
   NO_GROUPS_PREFS, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
 } from '../lib/channelGroups.model';
-import { blockShift, dropTarget, sectionBlocks, sectionShape, uniformBlocks } from '../components/home/listDrag.model';
+import {
+  blockShift, categoryZones, dragTarget, dropTarget, sectionBlocks, sectionShape, uniformBlocks, zoneTarget,
+} from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
@@ -185,5 +187,59 @@ describe('list drag blocks', () => {
     expect(blockShift(1, 3, 1, 300)).toBe(300);
     expect(blockShift(2, 3, 1, 300)).toBe(300);
     expect(blockShift(3, 3, 1, 300)).toBe(0);
+  });
+});
+
+describe('moving a chat to another category', () => {
+  const HEADER = 40;
+  const ROW = 67;
+  const items = groupRows([dm, work, work2, alpha, loose], 'category', new Set(), false, nameOf);
+  const { blocks, categories } = categoryZones(items, HEADER, ROW);
+  const at = (from: number, offset: number): number => zoneTarget(blocks.tops, blocks.heights, blocks.zones, from, offset);
+
+  test('every header and row is a block, each tagged with the section it drops into', () => {
+    expect(blocks.ids).toEqual(['dm', 'dm', 'category:alpha', 'alpha', 'category:work', 'work', 'work2', 'none', 'loose']);
+    expect(blocks.heights).toEqual([HEADER, ROW, HEADER, ROW, HEADER, ROW, ROW, HEADER, ROW]);
+    expect(blocks.zones).toEqual([-1, -1, 2, 2, 4, 4, 4, 7, 7]);
+  });
+
+  test('channel rows and their headers can take part, direct messages cannot', () => {
+    expect(blocks.blockOf.get('work2')).toBe(6);
+    expect(blocks.blockOf.get('loose')).toBe(8);
+    expect(blocks.blockOf.get('group:category:alpha')).toBe(2);
+    expect(blocks.blockOf.get('group:none')).toBe(7);
+    expect(blocks.blockOf.has('dm')).toBe(false);
+    expect(blocks.blockOf.has('group:dm')).toBe(false);
+  });
+
+  test('each target section writes its first spelling, no category clears it', () => {
+    expect([...categories]).toEqual([['category:alpha', 'Alpha'], ['category:work', 'Work'], ['none', null]]);
+  });
+
+  test('the target is the section under the middle of the dragged row', () => {
+    expect(at(6, -200)).toBe(2);
+    expect(at(6, 60)).toBe(7);
+    expect(at(6, 2000)).toBe(7);
+    expect(at(8, -250)).toBe(2);
+    expect(at(8, -100)).toBe(4);
+  });
+
+  test('its own section and the direct messages are no target', () => {
+    expect(at(6, 0)).toBe(6);
+    expect(at(6, -60)).toBe(6);
+    expect(at(6, -300)).toBe(6);
+    expect(at(6, -2000)).toBe(6);
+  });
+
+  test('a folded section takes a drop on its header', () => {
+    const folded = categoryZones(groupRows([work, alpha], 'category', new Set(['category:work']), false, nameOf), HEADER, ROW);
+    expect(folded.blocks.ids).toEqual(['category:alpha', 'alpha', 'category:work']);
+    expect(zoneTarget(folded.blocks.tops, folded.blocks.heights, folded.blocks.zones, 1, ROW)).toBe(2);
+  });
+
+  test('reorder drags keep their block logic, zone drags use the sections', () => {
+    const uniform = uniformBlocks(['a', 'b', 'c'], ROW);
+    expect(dragTarget(uniform.tops, uniform.heights, uniform.zones, 1, ROW * 0.6)).toBe(2);
+    expect(dragTarget(blocks.tops, blocks.heights, blocks.zones, 6, -200)).toBe(2);
   });
 });

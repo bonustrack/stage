@@ -10,7 +10,7 @@ import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
 import { ChannelMenu } from '../ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Draggable, Shifted, type ListDrag } from './listDrag';
+import { Draggable, Shifted, isLifted, type ListDrag } from './listDrag';
 import { GroupHeader } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
@@ -119,17 +119,20 @@ function ChannelRowItemBase({
       labels={isGroup ? item.labels : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
-      onLongPress={openMenu}
+      onLongPress={(anchor) => { if (!isLifted()) openMenu(anchor); }}
     />
   );
   if (dragIndex === -1) return row;
   return <Draggable drag={pinDrag} index={dragIndex} onHold={openMenu}>{row}</Draggable>;
 }
 
-function inSection(drag: ListDrag, convId: string, node: React.ReactElement, handle: boolean): React.ReactElement {
+function inBlock(
+  drag: ListDrag, convId: string, node: React.ReactElement, handle: boolean, onHold?: (anchor: MenuPoint) => void,
+): React.ReactElement {
   const index = drag.blockOf.get(convId);
   if (index === undefined) return node;
-  return handle ? <Draggable drag={drag} index={index}>{node}</Draggable> : <Shifted drag={drag} index={index}>{node}</Shifted>;
+  if (!handle) return <Shifted drag={drag} index={index}>{node}</Shifted>;
+  return <Draggable drag={drag} index={index} onHold={onHold}>{node}</Draggable>;
 }
 
 const ChannelRowItem = memo(ChannelRowItemBase);
@@ -140,16 +143,19 @@ export function useChannelRowRenderer(
   deps: {
     channelProfilesVersion: number; draftsVersion: number;
     pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: ListDrag;
-    sectionDrag: ListDrag; hideAvatar: boolean;
+    sectionDrag: ListDrag; rowDrag: ListDrag; hideAvatar: boolean;
   },
 ): ({ item }: { item: HomeListItem }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag, hideAvatar } = deps;
+  const {
+    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag, rowDrag, hideAvatar,
+  } = deps;
   return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
     if (isGroupHeader(item)) {
-      return inSection(sectionDrag, item.convId, <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}/>, true);
+      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}/>;
+      return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), true);
     }
     const title = rowTitle(item);
-    return inSection(sectionDrag, item.convId, (
+    return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (
       <ChannelRowItem
         item={item}
         router={router}
@@ -165,10 +171,10 @@ export function useChannelRowRenderer(
         pinDrag={pinDrag}
         hideAvatar={hideAvatar}
       />
-    ), false);
+    ), true, rowMenuOpener(item, setRowMenu)), false);
   }, [
     router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag,
-    hideAvatar,
+    rowDrag, hideAvatar,
   ]);
 }
 

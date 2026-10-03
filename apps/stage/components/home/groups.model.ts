@@ -19,7 +19,7 @@ interface GroupHeaderItem {
 export type HomeListItem = (Row & { listKey?: string }) | GroupHeaderItem;
 
 const DM_GROUP = { key: 'dm', title: 'Direct messages' };
-const NO_GROUP_KEY = 'none';
+export const NO_GROUP_KEY = 'none';
 const HEADER_ID_PREFIX = 'group:';
 
 interface GroupRow {

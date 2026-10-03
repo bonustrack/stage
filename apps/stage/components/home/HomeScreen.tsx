@@ -26,7 +26,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
 import { channelsFilterBarVisible, deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
-import { usePinDrag, useSectionDrag } from './listDrag';
+import { useCategoryRowDrag, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { channelsPaneWidth } from '../tabs/paneWidth';
 
@@ -105,9 +105,11 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const pinDrag = usePinDrag(pinned, visiblePinned);
   const sectionDrag = useSectionDrag(list.items, list.grouped);
+  const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category');
   useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, hideAvatar,
+    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, rowDrag,
+    hideAvatar,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
