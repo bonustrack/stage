@@ -18,6 +18,7 @@ import {
 } from '@stage-labs/client/xmtp/clientConfig';
 import { isStoreLocked } from '@stage-labs/client/xmtp/clientErrors';
 import { ignored, attempt } from './errorPolicy';
+import { afterFirstPages } from './feedLines';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -90,7 +91,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   perfLog('xmtp.client path', { savedAddress, savedEnv, savedInstallation, savedInbox, address, env });
   const client = await perfTime('xmtp.client.open', () => openSavedOrOnline(rec, env, opts, savedIfPersisted));
   perfLog('xmtp.client opened', { installation: client.installationId, offline: offline !== null });
-  if (offline) void client.preferences.fetchInboxState().catch(ignored(undefined, 'optional'));
+  if (offline) void afterFirstPages().then(() => client.preferences.fetchInboxState()).catch(ignored(undefined, 'optional'));
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
   await setSecure(installationKeyFor(rec.id), client.installationId ?? '');

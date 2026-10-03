@@ -6,6 +6,7 @@ import type { MessageDeletion } from './xmtp.sdk.core';
 import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
+import { afterFirstPages } from './feedLines';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
 import { report, reported } from './errorPolicy';
 
@@ -126,6 +127,7 @@ export async function ensureGlobalStream(): Promise<void> {
   const startedIn = generation;
   try {
     const client = await sdk.client();
+    await afterFirstPages();
     await dmRoutesReady().catch(reported('xmtp.dmRoutes'));
     const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
     if (startedIn !== generation) { cancel(); return; }
