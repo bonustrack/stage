@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
-import { peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv } from './xmtp.identity';
+import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feedLines';
@@ -44,9 +44,8 @@ async function collectAddresses(): Promise<string[]> {
 
   const set = new Set<string>();
   await Promise.all(convs.map(async (c) => {
-    const addrs = isGroupConv(c)
-      ? await groupMemberEthAddresses(c)
-      : [await peerEthAddressOfDm(c)].filter((a): a is string => !!a);
+    const { peerAddress, otherAddresses } = await convMembers(c);
+    const addrs = peerAddress ? [peerAddress] : otherAddresses;
     for (const a of addrs) {
       const lower = a.toLowerCase();
       if (lower && lower !== self) set.add(lower);

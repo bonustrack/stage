@@ -8,7 +8,7 @@ import { PAGE_SIZE } from '../../lib/xmtp.resync';
 import { deletedMessages, isDeleteRequest, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { ownDeletesReady } from '../../lib/ownDeletes';
-import { memberInboxToAddressMap } from '../../lib/xmtp.identity';
+import { convMembers } from '../../lib/xmtp.identity';
 import { recover } from '../../lib/errorPolicy';
 import { fetchSuperAdmins } from './convMeta.fetch';
 
@@ -82,7 +82,7 @@ async function searchDeleteRights(conv: ConvHandle, line: string): Promise<Delet
   const [ownDeletes, superAdmins] = await Promise.all([
     ownDeletesReady(),
     convId && sdk.isGroup(conv)
-      ? fetchSuperAdmins(convId, await memberInboxToAddressMap(conv)).catch(recover('search.superAdmins', NO_SUPER_ADMINS))
+      ? fetchSuperAdmins(convId, (await convMembers(conv)).inboxToAddr).catch(recover('search.superAdmins', NO_SUPER_ADMINS))
       : NO_SUPER_ADMINS,
   ]);
   return { ownDeletes, superAdmins, selfInboxId: (await sdk.client()).inboxId };

@@ -1,9 +1,7 @@
 
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
-import {
-  peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-} from '../../lib/xmtp.identity';
+import { convMembers, type ConvMembers } from '../../lib/xmtp.identity';
 import { groupRoleOf, superAdminInboxIds, type GroupRole } from '@stage-labs/client/xmtp/groups';
 import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
 import { recover } from '../../lib/errorPolicy';
@@ -26,29 +24,25 @@ export const EMPTY_CONV_META: ConvMeta = {
 };
 
 async function fetchGroupConvMeta(
-  conv: Parameters<typeof groupMemberEthAddresses>[0],
-  inboxToAddr: Record<string, string>,
+  conv: Parameters<typeof convMembers>[0],
+  { otherAddresses, inboxToAddr }: ConvMembers,
 ): Promise<ConvMeta> {
-  const [members, meta, assigned] = await Promise.all([
-    groupMemberEthAddresses(conv),
+  const [meta, assigned] = await Promise.all([
     sdk.groupInfo(conv),
     groupAssignedOf(conv).catch(recover<string[] | null>('xmtp.groupAssigned', null)),
   ]);
   return {
     peerAddr: null, isGroup: true, groupName: meta.name, groupImage: meta.imageUrl,
-    groupDescription: meta.description, memberAddrs: members, assigned: assigned ?? [], assignedReady: assigned !== null, inboxToAddr,
+    groupDescription: meta.description, memberAddrs: otherAddresses, assigned: assigned ?? [], assignedReady: assigned !== null, inboxToAddr,
   };
 }
 
 export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return EMPTY_CONV_META;
-  const [peer, inboxToAddr] = await Promise.all([
-    peerEthAddressOfDm(conv),
-    memberInboxToAddressMap(conv),
-  ]);
-  if (peer) return { ...EMPTY_CONV_META, peerAddr: peer, inboxToAddr };
-  return fetchGroupConvMeta(conv, inboxToAddr);
+  const members = await convMembers(conv);
+  if (members.peerAddress) return { ...EMPTY_CONV_META, peerAddr: members.peerAddress, inboxToAddr: members.inboxToAddr };
+  return fetchGroupConvMeta(conv, members);
 }
 
 export async function fetchGroupRoles(

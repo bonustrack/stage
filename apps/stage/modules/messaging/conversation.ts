@@ -1,6 +1,6 @@
 
 import type { Conversation } from '@xmtp/react-native-sdk';
-import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from '../../lib/xmtp.identity';
+import { convMembers, type ConvMembers } from '../../lib/xmtp.identity';
 import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
 import { sdk } from '../../lib/xmtp.sdk';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
@@ -100,16 +100,12 @@ interface GroupRowData {
   tags: GroupTags;
 }
 
-async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
-  if (peerAddress) {
+async function gatherGroupRowData(conv: Conversation, members: ConvMembers): Promise<GroupRowData> {
+  if (members.peerAddress) {
     return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
   }
-  const [memberAddresses, groupMeta, tags] = await Promise.all([
-    groupMemberEthAddresses(conv),
-    sdk.groupInfo(conv),
-    groupTagsOf(conv),
-  ]);
-  return { memberAddresses, groupMeta, tags };
+  const [groupMeta, tags] = await Promise.all([sdk.groupInfo(conv), groupTagsOf(conv)]);
+  return { memberAddresses: members.otherAddresses, groupMeta, tags };
 }
 
 function rowAvatar(
@@ -131,7 +127,7 @@ function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRo
 }
 
 export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
-  return rowMetaOf(conv, null, await gatherGroupRowData(conv, null));
+  return rowMetaOf(conv, null, await gatherGroupRowData(conv, await convMembers(conv)));
 }
 
 function lastSenderAddressOf(last: RowMessage | undefined, inboxToAddr: Record<string, string>): string | null {
@@ -152,16 +148,16 @@ export async function summarizeConversation(
 ): Promise<ConversationView> {
   if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
   const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));
-  const peerAddress = await peerEthAddressOfDm(conv);
+  const members = await convMembers(conv);
+  const { peerAddress, inboxToAddr } = members;
   await dmRoutesReady().catch(reported('conversation.dmRoutes'));
   const convId = dmRowIdOf(conv.id, peerAddress, knownDmIds);
   const dm = peerAddress !== null;
   const msgs = await recentRowMessages(conv, dm);
   const last = pickLastMessage(msgs, dm);
-  const inboxToAddr = await memberInboxToAddressMap(conv);
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
   const { title, groupName, avatarUri, avatarAddress, labels, category, assigned } = rowMetaOf(
-    conv, peerAddress, await gatherGroupRowData(conv, peerAddress),
+    conv, peerAddress, await gatherGroupRowData(conv, members),
   );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;

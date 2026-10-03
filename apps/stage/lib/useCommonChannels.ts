@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync } from './channelsCache';
 import { convOfLine } from './xmtp.sdk';
-import { groupMemberEthAddresses } from './xmtp.identity';
+import { convMembers } from './xmtp.identity';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
@@ -17,7 +17,7 @@ const memberSetCache = createMemberSetCache();
 async function fetchMembers(convId: string): Promise<string[]> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return [];
-  return groupMemberEthAddresses(conv);
+  return (await convMembers(conv)).otherAddresses;
 }
 
 function avatarSeedOf(row: CommonChannelRow): string {

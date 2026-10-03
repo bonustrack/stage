@@ -1,7 +1,7 @@
 import { resolveInboxEthCached, primeInboxEthCache } from '@stage-labs/client/xmtp/inboxCache';
 import { inboxEthCache } from './xmtp.state.core';
 import { sdk } from './xmtp.sdk';
-import { report, recover } from './errorPolicy';
+import { ignored, report, recover } from './errorPolicy';
 
 type InboxEthMap = Record<string, string>;
 type IdentityClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -45,40 +45,42 @@ export async function primeConversationMembers(client: IdentityClient, convs: Id
   }
 }
 
-export const isGroupConv = sdk.isGroup;
-
-export async function peerEthAddressOfDm(conv: IdentityConv): Promise<string | null> {
-  const peerInboxId = sdk.dmPeerInboxId(conv);
-  if (!peerInboxId) return null;
-  try {
-    const inboxId = await peerInboxId();
-    const map = await resolve(await sdk.client(), [inboxId]);
-    return map[inboxId] ?? null;
-  } catch { return null; }
-}
-
 export async function inboxEthAddresses(inboxIds: string[]): Promise<InboxEthMap> {
   return resolve(await sdk.client(), inboxIds);
 }
 
-export async function memberInboxToAddressMap(conv: IdentityConv): Promise<InboxEthMap> {
-  try {
-    return await resolve(await sdk.client(), await memberIdsOf(conv));
-  } catch (err) {
-    report('xmtp.memberInboxToAddressMap', err);
-    return {};
-  }
+export interface ConvMembers {
+  peerAddress: string | null;
+  inboxToAddr: InboxEthMap;
+  otherAddresses: string[];
 }
 
-export async function groupMemberEthAddresses(conv: IdentityConv): Promise<string[]> {
-  if (!sdk.isGroup(conv)) return [];
+const NO_MEMBERS: ConvMembers = { peerAddress: null, inboxToAddr: {}, otherAddresses: [] };
+
+function peerInboxIdOf(conv: IdentityConv): Promise<string | null> {
+  const peerInboxId = sdk.dmPeerInboxId(conv);
+  return peerInboxId ? peerInboxId().catch(ignored<string | null>(null, 'optional')) : Promise.resolve(null);
+}
+
+export async function convMembers(conv: IdentityConv): Promise<ConvMembers> {
   try {
     const client = await sdk.client();
-    const otherIds = (await memberIdsOf(conv)).filter(id => id !== client.inboxId);
-    const map = await resolve(client, otherIds);
-    return otherIds.map(id => map[id]).filter((a): a is string => !!a);
+    const [peerId, memberIds] = await Promise.all([
+      peerInboxIdOf(conv),
+      memberIdsOf(conv).catch(recover<string[]>('xmtp.convMembers', [])),
+    ]);
+    const found = await resolve(client, peerId ? [...memberIds, peerId] : memberIds);
+    const inboxToAddr: InboxEthMap = {};
+    for (const id of memberIds) {
+      const addr = found[id];
+      if (addr) inboxToAddr[id] = addr;
+    }
+    const otherAddresses = sdk.isGroup(conv)
+      ? memberIds.filter(id => id !== client.inboxId).map(id => found[id]).filter((a): a is string => !!a)
+      : [];
+    return { peerAddress: peerId ? found[peerId] ?? null : null, inboxToAddr, otherAddresses };
   } catch (err) {
-    report('xmtp.groupMemberEthAddresses', err);
-    return [];
+    report('xmtp.convMembers', err);
+    return NO_MEMBERS;
   }
 }

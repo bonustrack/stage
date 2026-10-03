@@ -7,7 +7,7 @@ import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/x
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { convOfLine } from '../../lib/xmtp.sdk';
-import { memberInboxToAddressMap } from '../../lib/xmtp.identity';
+import { convMembers } from '../../lib/xmtp.identity';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
@@ -22,8 +22,8 @@ function convIdOf(line: string): string {
 async function sortedMembers(line: string): Promise<string[]> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error('Conversation not found');
-  const map = await memberInboxToAddressMap(conv);
-  return Object.values(map).sort((a, b) => a.localeCompare(b));
+  const { inboxToAddr } = await convMembers(conv);
+  return Object.values(inboxToAddr).sort((a, b) => a.localeCompare(b));
 }
 
 async function removeChannelMember(line: string, addr: string): Promise<string[]> {
