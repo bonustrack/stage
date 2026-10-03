@@ -99,7 +99,8 @@ describe('search state payload', () => {
     expect(parseSearchState(ok)).toEqual(ok);
     expect(parseSearchState({ ...ok, query: '' })?.query).toBe('');
     expect(parseSearchState({ ...ok, labels: [''] })).toBeNull();
-    expect(parseSearchState({ ...ok, at: 0 })).toBeNull();
+    expect(parseSearchState({ ...ok, at: 0 })?.at).toBe(0);
+    expect(parseSearchState({ ...ok, at: -1 })).toBeNull();
     expect(parseSearchState({ query: 'x', at: 3 })).toBeNull();
     expect(isSearchStateType('stage.box/searchState:1.0')).toBe(true);
     expect(isSearchStateType('stage.box/readState:1.0')).toBe(false);

@@ -131,7 +131,7 @@ export const searchStateSchema = z.object({
   query: z.string(),
   labels: z.array(z.string().min(1)),
   unreadOnly: z.boolean(),
-  at: z.number().positive(),
+  at: z.number().nonnegative(),
 });
 
 export type SearchStateContent = z.infer<typeof searchStateSchema>;

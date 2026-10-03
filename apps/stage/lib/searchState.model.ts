@@ -1,37 +1,23 @@
 import type { SearchStateContent } from '@stage-labs/client/xmtp/readState';
 
-export interface SearchSlot {
-  current: SearchStateContent;
-  pending: SearchStateContent | null;
+export type FilterEdit = Partial<Pick<SearchStateContent, 'labels' | 'unreadOnly'>>;
+
+export const EMPTY_SEARCH: SearchStateContent = { query: '', labels: [], unreadOnly: false, at: 0 };
+
+export function editFilters(current: SearchStateContent, change: FilterEdit, now: number): SearchStateContent {
+  return { ...current, ...change, at: Math.max(now, current.at + 1) };
 }
 
-export type SearchEdit = Partial<Omit<SearchStateContent, 'at'>>;
-
-const EMPTY_SEARCH: SearchStateContent = { query: '', labels: [], unreadOnly: false, at: 0 };
-
-export const EMPTY_SEARCH_SLOT: SearchSlot = { current: EMPTY_SEARCH, pending: null };
-
-function latestSeen(slot: SearchSlot): number {
-  return Math.max(slot.current.at, slot.pending?.at ?? 0);
+export function receiveSearch(current: SearchStateContent, incoming: SearchStateContent): SearchStateContent {
+  return incoming.at > current.at ? { ...incoming, query: current.query } : current;
 }
 
-export function editSearch(slot: SearchSlot, change: SearchEdit, now: number): SearchSlot {
-  return { current: { ...slot.current, ...change, at: Math.max(now, latestSeen(slot) + 1) }, pending: null };
+export function restoreSearch(current: SearchStateContent, stored: SearchStateContent): SearchStateContent {
+  return { ...receiveSearch(current, stored), query: current.query === '' ? stored.query : current.query };
 }
 
-export const TYPING_IDLE_MS = 2000;
-
-export function typingPause(focused: boolean, lastEditAt: number, now: number): number {
-  return focused ? Math.max(0, lastEditAt + TYPING_IDLE_MS - now) : 0;
-}
-
-export function receiveSearch(slot: SearchSlot, incoming: SearchStateContent, typing: boolean): SearchSlot {
-  if (incoming.at <= latestSeen(slot)) return slot;
-  return typing ? { current: slot.current, pending: incoming } : { current: incoming, pending: null };
-}
-
-export function settleSearch(slot: SearchSlot): SearchSlot {
-  return slot.pending === null ? slot : { current: slot.pending, pending: null };
+export function syncedSearch(state: SearchStateContent): SearchStateContent {
+  return { ...state, query: '' };
 }
 
 export function toggledLabel(labels: readonly string[], label: string): string[] {
