@@ -150,7 +150,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     <>
       {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
       <Box flex={1}>
-        {wide ? null : <TopnavFade scroll={pane ? 'self' : 'window'} stickyTop={UNDER_TOPNAV}/>}
+        {wide ? null : <TopnavFade stickyTop={pane ? undefined : UNDER_TOPNAV}/>}
         <VirtualList
           ref={listRef}
           scroll={pane ? 'self' : 'window'}

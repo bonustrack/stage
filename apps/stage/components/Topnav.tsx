@@ -1,6 +1,5 @@
 
 import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER, stickyAt } from './layout';
-import type { ListScrollMode } from './layout/VirtualList.types';
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
 import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../lib/webLayout';
@@ -10,13 +9,13 @@ import { GradientFade } from './GradientFade';
 export const TOPNAV_HEIGHT = 52;
 export const TOPNAV_FADE = 8;
 
-const FADE_OVERLAY = { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 } as const;
+const FADE_OVERLAY = { position: 'absolute', left: 0, right: 0, zIndex: 2 } as const;
 
-export function TopnavFade({ scroll, stickyTop }: { scroll: ListScrollMode; stickyTop: string }): React.ReactElement {
+export function TopnavFade({ stickyTop, top = 0 }: { stickyTop?: string; top?: number }): React.ReactElement {
   const { toolbarBg } = usePalette();
-  const sticky = scroll === 'window' ? stickyAt(stickyTop, 2) : null;
+  const sticky = stickyTop === undefined ? null : stickyAt(stickyTop, 2);
   return (
-    <Box pointerEvents="none" height={TOPNAV_FADE} margin={sticky === null ? undefined : { bottom: -TOPNAV_FADE }} style={sticky ?? FADE_OVERLAY}>
+    <Box pointerEvents="none" height={TOPNAV_FADE} margin={sticky === null ? undefined : { bottom: -TOPNAV_FADE }} style={sticky ?? { ...FADE_OVERLAY, top }}>
       <GradientFade color={toolbarBg} height={TOPNAV_FADE} solid="top"/>
     </Box>
   );

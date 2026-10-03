@@ -4,7 +4,7 @@ import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
-import { TOPNAV_HEIGHT } from '../Topnav';
+import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -47,7 +47,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
   const wide = useWebTabRail();
   return (
     <Box style={pinnedTop(2)}>
-    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }} align="stretch" style={wide ? { borderBottomWidth: 1, borderBottomColor: border } : undefined}>
       {!wide ? (
         <Pressable
           onPress={onBack}
@@ -59,6 +59,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
       ) : null}
       {children}
     </Row>
+    {wide ? null : <TopnavFade top={TOPNAV_HEIGHT + safeTop}/>}
     </Box>
   );
 }

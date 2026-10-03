@@ -355,7 +355,7 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, children }: {
   return <>
     {topnav}
     <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
-      <TopnavFade scroll="window" stickyTop={`${TOPNAV_HEIGHT}px`}/>
+      <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`}/>
       <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
           key={search.key} scope="board" onMenu={onFilterMenu} autoFocus={search.key > 0}
