@@ -184,6 +184,44 @@ describe('runSyncCheck', () => {
     expect(ops.find).toHaveBeenCalledTimes(2);
   });
 
+  test('a restored copy left out captures the native load error', async () => {
+    const nativeError = mock((work: () => Promise<unknown>) => work().then(() => 'unexpected', () => 'openmls error while loading group SerializationError'));
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError, device: 'a99ecf50' };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    const result = await runSyncCheck(ops);
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('Native: openmls error while loading group SerializationError');
+    expect(result.message.split('\n').at(-1)).toBe('Device: a99ecf50');
+    expect(nativeError).toHaveBeenCalledTimes(1);
+    expect(ops.find).toHaveBeenCalledTimes(3);
+  });
+
+  test('a quiet native log says the channel state is missing', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError: mock(() => Promise.resolve('')) };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    expect((await runSyncCheck(ops)).message).toContain('Native: no error logged, the channel state is missing');
+  });
+
+  test('a failing native capture is reported, not fatal', async () => {
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError: mock(() => Promise.reject(new Error('log writer unavailable'))) };
+    ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
+    const result = await runSyncCheck(ops);
+    expect(result.title).toBe('Not in the channel yet');
+    expect(result.message).toContain('Native: log writer unavailable');
+  });
+
+  test('a channel that joined skips the native capture', async () => {
+    const nativeError = mock(() => Promise.resolve('x'));
+    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError };
+    let found = 0;
+    ops.find.mockImplementation(() => {
+      found += 1;
+      return found === 1 ? Promise.reject(new Error('MLS Group bb4e Not Found')) : Promise.resolve('channel');
+    });
+    expect((await runSyncCheck(ops)).title).toBe('Joined now');
+    expect(nativeError).not.toHaveBeenCalled();
+  });
+
   test('an invite sync cannot leave the check pending', async () => {
     const ops = { ...syncOps(), syncInvites: mock(() => new Promise<never>(() => undefined)) };
     ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));

@@ -1,10 +1,10 @@
 import {
-  Dm, Group, PublicIdentity, addGroupMembers, staticKeyPackageStatuses,
+  Client, Dm, Group, PublicIdentity, addGroupMembers, staticKeyPackageStatuses,
   type Conversation, type ConversationId, type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
-import { convIdFromTopic, isMissingMlsState } from '@stage-labs/client/xmtp/clientErrors';
+import { convIdFromTopic, isMissingMlsState, pickNativeErrors } from '@stage-labs/client/xmtp/clientErrors';
 import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
@@ -12,7 +12,7 @@ import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup, sendableFinder,
   type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
-import { reported, recover, attempt } from './errorPolicy';
+import { reported, recover, attempt, ignored } from './errorPolicy';
 import { archiveFromBytes, archiveToBytes } from './archiveFile';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
@@ -154,6 +154,32 @@ async function keyPackageErrors(_client: NativeClient, installationIds: string[]
   return [...statuses.values()].map(s => s.validationError);
 }
 
+type LogWriterArgs = Parameters<typeof Client.activatePersistentLibXMTPLogWriter>;
+const LOG_LEVEL_ERROR = 0 as LogWriterArgs[0];
+const LOG_ROTATION_HOURLY = 2 as LogWriterArgs[1];
+const LOG_FLUSH_MS = 300;
+
+async function nativeErrorLog(work: () => Promise<unknown>): Promise<string> {
+  if (Client.isLogWriterActive()) return pickNativeErrors(await readNativeLogs());
+  Client.activatePersistentLibXMTPLogWriter(LOG_LEVEL_ERROR, LOG_ROTATION_HOURLY, 1);
+  try {
+    await work().catch(ignored(undefined, 'probe'));
+    await new Promise((resolve) => setTimeout(resolve, LOG_FLUSH_MS));
+  } finally {
+    Client.deactivatePersistentLibXMTPLogWriter();
+  }
+  try {
+    return pickNativeErrors(await readNativeLogs());
+  } finally {
+    Client.clearXMTPLogs();
+  }
+}
+
+async function readNativeLogs(): Promise<string> {
+  const texts = await Promise.all(Client.getXMTPLogFilePaths().map((path) => Client.readXMTPLogFile(path)));
+  return texts.join('\n');
+}
+
 export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
@@ -195,6 +221,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     createArchive: (client, key) => archiveToBytes((path) => client.createArchive(path, key, ARCHIVE_OPTIONS)),
     importArchive: (client, archive, key) => archiveFromBytes(archive, (path) => client.importArchive(path, key)),
   },
+  nativeErrorLog,
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
   syncState: async (conv) => {

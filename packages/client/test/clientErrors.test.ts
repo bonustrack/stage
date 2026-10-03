@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, isMissingMlsState,
-  readableSendError,
+  pickNativeErrors, readableSendError,
 } from '../src/xmtp/clientErrors';
 
 const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
@@ -42,6 +42,29 @@ describe('restored copies without MLS state', () => {
     expect(isMissingMlsState(new Error(NATIVE_INACTIVE))).toBe(false);
     expect(isMissingMlsState(new Error('Group not found'))).toBe(false);
     expect(isMissingMlsState(new Error('network error'))).toBe(false);
+  });
+});
+
+const NATIVE_LOG = [
+  '2026-10-03T12:40:01.123Z  INFO xmtp_mls::client: syncing welcomes',
+  '2026-10-03T12:40:01.456Z ERROR xmtp_mls::groups: openmls error while loading group SerializationError',
+  '2026-10-03T12:40:01.789Z ERROR xmtp_api: request timed out',
+  '',
+].join('\n');
+
+describe('pickNativeErrors', () => {
+  test('prefers the group loading error, without its timestamp and level', () => {
+    expect(pickNativeErrors(NATIVE_LOG)).toBe('xmtp_mls::groups: openmls error while loading group SerializationError');
+  });
+
+  test('falls back to the last error lines when no group load failed', () => {
+    const log = ['x ERROR one', 'y ERROR two', 'z ERROR three', 'w ERROR four', 'v INFO five'].join('\n');
+    expect(pickNativeErrors(log)).toBe('two | three | four');
+  });
+
+  test('an empty or quiet log gives an empty string', () => {
+    expect(pickNativeErrors('')).toBe('');
+    expect(pickNativeErrors('Cannot read file: /x (exists: false, canRead: false)')).toBe('');
   });
 });
 
