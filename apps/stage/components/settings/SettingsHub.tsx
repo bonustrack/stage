@@ -21,7 +21,7 @@ import {
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { listXmtpInstallations } from '../../lib/xmtp.client';
-import { useMailboxes, type Mailbox } from '../../lib/mail';
+import { useMailboxes } from '../../lib/mail';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
@@ -144,21 +144,17 @@ function PreferencesGroup(): React.ReactElement {
   );
 }
 
-function mailboxesLabel(boxes: readonly Mailbox[]): string {
-  return boxes.length === 1 ? boxes[0]?.mailAddress ?? '' : `${boxes.length} addresses`;
-}
-
 function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
   const address = useActiveAccountRecord()?.address;
-  const boxes = useMailboxes().data ?? [];
+  const hasMailbox = (useMailboxes().data?.length ?? 0) > 0;
   const row = (id: 'inbox' | 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
     return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;
   };
   return (
     <SettingsGroup title="More">
-      {boxes.length > 0 ? row('inbox', 'Inbox', mailboxesLabel(boxes)) : null}
+      {hasMailbox ? row('inbox', 'Inbox') : null}
       {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
       {row('wallet', 'Wallet', address ? shortAddress(address) : undefined)}
