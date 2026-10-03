@@ -213,6 +213,10 @@ export async function storeMail(stub: ArchiveStub, mail: SealedMail, sealed: Uin
   return (await stub.fetch(`${MAILBOX_URL}store`, { method: 'POST', headers, body: sealed })).status;
 }
 
+export async function saveMailKey(stub: ArchiveStub, key: MailKeyRecord): Promise<number> {
+  return (await mailboxCall(stub, 'register', { ...key })).status;
+}
+
 export async function readMailKey(stub: ArchiveStub): Promise<MailKeyRecord | null> {
   const res = await mailboxCall(stub, 'key');
   return res.ok ? keyRecord(await res.json()) : null;

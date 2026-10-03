@@ -4,7 +4,7 @@ import {
   isMailboxLabel, isMailId, isMailPublicKey, mailAddressOf, mailRegisterMessage, mailSessionMessage,
 } from '@stage-labs/client/mail/mailbox';
 import type { ArchiveStub } from './historyStore.ts';
-import { mailboxCall } from './mailBox.ts';
+import { mailboxCall, readMailKey, saveMailKey } from './mailBox.ts';
 import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
 export const MAIL_PREFIX = '/mail/';
@@ -68,10 +68,20 @@ const registerKey: Handler = async (request, deps) => {
   if (!claimIsFresh(issuedAt, (deps.now ?? Date.now)())) return fail(400, 'registration expired, sign it again');
   const owner = await verifiedOwner(deps, label, mailRegisterMessage({ label, publicKey, issuedAt }), signature);
   if (owner instanceof Response) return owner;
-  const stored = await mailboxCall(deps.mailbox(label), 'register', { publicKey, owner: owner.toLowerCase(), issuedAt });
-  if (stored.status === 409) return fail(409, 'a newer key is already registered');
-  if (!stored.ok) return fail(502, 'could not store the key');
+  const stored = await saveMailKey(deps.mailbox(label), { publicKey, owner: owner.toLowerCase(), issuedAt });
+  if (stored === 409) return fail(409, 'a newer key is already registered');
+  if (stored !== 204) return fail(502, 'could not store the key');
   return reply({ address: mailAddressOf(label) });
+};
+
+const keyStatus: Handler = async (request, deps) => {
+  const label = (new URL(request.url).searchParams.get('label') ?? '').toLowerCase();
+  if (!isMailboxLabel(label)) return fail(400, 'label required');
+  const owner = await deps.chain.owner(label);
+  if (owner === null) return fail(404, 'no such name');
+  const key = await readMailKey(deps.mailbox(label));
+  const active = key !== null && key.owner === owner.toLowerCase() && isMailPublicKey(key.publicKey);
+  return reply({ address: mailAddressOf(label), owner: owner.toLowerCase(), publicKey: active ? key.publicKey : null });
 };
 
 const challenge: Handler = async (request, deps) => {
@@ -142,6 +152,7 @@ const closeBox = withAccess(async ({ stub, owner }) => {
 
 const ROUTES: Record<string, Handler> = {
   'POST key': registerKey,
+  'GET key': keyStatus,
   'POST challenge': challenge,
   'POST session': openSession,
   'GET list': listMail,

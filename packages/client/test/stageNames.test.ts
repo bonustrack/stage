@@ -35,6 +35,8 @@ describe('names and claims', () => {
   test('claim messages are lowercase-address and time bound', () => {
     expect(claimMessage({ label: 'fabien', address: '0xABCDEF', issuedAt: 1700000000000 }))
       .toBe('Claim fabien.stage.base.eth for 0xabcdef at 1700000000000');
+    expect(claimMessage({ label: 'fabien', address: '0xABCDEF', issuedAt: 1700000000000, mailKey: '0xAB12' }))
+      .toBe('Claim fabien.stage.base.eth for 0xabcdef at 1700000000000 with st.box mail key 0xab12');
     expect(claimIsFresh(1000, 1000 + 5 * 60 * 1000)).toBe(true);
     expect(claimIsFresh(1000, 1000 + 11 * 60 * 1000)).toBe(false);
     expect(claimIsFresh(Number.NaN, 5)).toBe(false);

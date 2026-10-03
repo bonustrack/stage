@@ -157,7 +157,6 @@ export { MailBoxes } from './mailBox.ts';
 
 type ProxyEnv = NamesEnv & {
   HISTORY_ARCHIVES?: DurableObjectNamespace;
-  MAIL_BOXES?: DurableObjectNamespace;
   MAIL_REQUESTS?: RateLimit;
 };
 

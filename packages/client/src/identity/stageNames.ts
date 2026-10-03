@@ -38,10 +38,12 @@ export interface ClaimRequest {
   label: string;
   address: string;
   issuedAt: number;
+  mailKey?: string;
 }
 
 export function claimMessage(claim: ClaimRequest): string {
-  return `Claim ${stageNameOf(claim.label)} for ${claim.address.toLowerCase()} at ${claim.issuedAt}`;
+  const message = `Claim ${stageNameOf(claim.label)} for ${claim.address.toLowerCase()} at ${claim.issuedAt}`;
+  return claim.mailKey === undefined ? message : `${message} with st.box mail key ${claim.mailKey.toLowerCase()}`;
 }
 
 export function claimIsFresh(issuedAt: number, now: number): boolean {

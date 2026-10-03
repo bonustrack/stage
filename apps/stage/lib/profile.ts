@@ -12,7 +12,8 @@ import { linkProxyBase } from './historyServer';
 import { invalidatePeerProfile } from './peerProfiles';
 import { sendCall } from './tx';
 import { kernelClientForRecord } from './zerodev/client';
-import { ignore, ignored } from './errorPolicy';
+import { ignore, ignored, recover, reported } from './errorPolicy';
+import { claimMailKey, registerOwnMailKey } from './mailKey';
 
 async function filePart(uri: string, mime: string, name: string): Promise<Blob | { uri: string; name: string; type: string }> {
   if (Platform.OS !== 'web') return { uri, name, type: mime };
@@ -110,16 +111,18 @@ export function ownedStageName(address: string): Promise<string | null> {
 }
 
 export async function claimStageName(label: string): Promise<string> {
-  const issuedAt = Date.now();
   const active = await getActiveAccount();
   if (!active) throw new Error('No active account');
-  const message = claimMessage({ label, address: active.address, issuedAt });
+  const mailKey = await claimMailKey(active, label).catch(recover('mail.claimKey', undefined));
+  const issuedAt = Date.now();
+  const message = claimMessage({ label, address: active.address, issuedAt, mailKey });
   const { address, signature } = await signWithActiveAccount(message);
   const res = await fetch(`${linkProxyBase()}/names/claim`, {
-    method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature }),
+    method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }),
   });
-  const body = (await res.json().catch(ignored({}, 'optional'))) as { name?: string; error?: string };
+  const body = (await res.json().catch(ignored({}, 'optional'))) as { name?: string; error?: string; mailKey?: string };
   if (!res.ok || !body.name) throw new Error(body.error ?? `claim failed (${res.status})`);
+  if (body.mailKey === 'failed') void registerOwnMailKey(active, label).catch(reported('mail.key'));
   return body.name;
 }
 

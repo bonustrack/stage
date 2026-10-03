@@ -1,4 +1,5 @@
 import type { Hex } from 'viem';
+import type { ArchiveStub } from './historyStore.ts';
 
 export interface NamesChain {
   operator: Hex;
@@ -15,5 +16,6 @@ export interface NamesStore {
 export interface NamesDeps {
   chain: NamesChain;
   store: NamesStore;
+  mailbox?: (label: string) => ArchiveStub;
   now?: () => number;
 }

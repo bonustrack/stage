@@ -2,7 +2,7 @@ import type { Hex } from 'viem';
 import { z } from 'zod';
 import { base64ToBytes } from '../text/base64';
 import { parseOrThrow } from '../validate';
-import { mailPublicKeyHex, mailRegisterMessage, mailSessionMessage, type MailKeyPair } from './mailbox';
+import { deriveMailKey, mailPublicKeyHex, mailRegisterMessage, mailSessionMessage, type MailKeyPair } from './mailbox';
 
 export type SignMessage = (message: string) => Promise<Hex>;
 
@@ -20,6 +20,7 @@ export interface MailListItem {
   index: Uint8Array;
 }
 
+const KEY_STATUS_SCHEMA = z.object({ owner: z.string(), publicKey: z.string().nullable() });
 const CHALLENGE_SCHEMA = z.object({ nonce: z.string(), expiresAt: z.number() });
 const SESSION_SCHEMA = z.object({ token: z.string(), expiresAt: z.number() });
 const LIST_SCHEMA = z.object({
@@ -51,6 +52,14 @@ export async function registerMailKey(
   const publicKey = mailPublicKeyHex(keys);
   const signature = await signMessage(mailRegisterMessage({ label, publicKey, issuedAt }));
   await postJson(proxyBase, 'key', { label, publicKey, issuedAt, signature });
+}
+
+export async function ensureMailKey(proxyBase: string, label: string, address: string, signMessage: SignMessage): Promise<boolean> {
+  const res = await mailCall(proxyBase, `key?label=${encodeURIComponent(label)}`, { method: 'GET' });
+  const status = parseOrThrow('mail key status', KEY_STATUS_SCHEMA, await res.json());
+  if (status.owner !== address.toLowerCase() || status.publicKey !== null) return false;
+  await registerMailKey(proxyBase, label, await deriveMailKey(label, signMessage), signMessage);
+  return true;
 }
 
 export async function openMailSession(proxyBase: string, label: string, signMessage: SignMessage): Promise<MailSession> {

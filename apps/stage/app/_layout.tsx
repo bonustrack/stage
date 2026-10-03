@@ -22,6 +22,7 @@ import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
 import { ensureActiveAccount } from '../lib/xmtp.recover.core';
+import { useOwnMailKey } from '../lib/mailKey';
 import { ensureMessagingStreamSync } from '../modules/messaging/streamSync';
 import { getOrCreateXmtpClient } from '../lib/xmtp.client';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -128,6 +129,7 @@ function RootLayoutInner(): React.ReactElement {
       .catch(reported('boot.client'));
   }, [onboarding.hasAccount]);
   useEffect(() => { ensureMessagingStreamSync(); }, []);
+  useOwnMailKey(onboarding.hasAccount);
 
   const [loaded] = useFonts(APP_FONTS);
 
