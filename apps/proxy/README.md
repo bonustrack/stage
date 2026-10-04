@@ -28,8 +28,13 @@ runtime - no Express, no origin, no laptop dependency.
   path, so the Worker stores the archives itself: one `HistoryArchives`
   Durable Object per upload, chunked into its SQLite storage and deleted by an
   alarm three days later. Archives are AES-GCM ciphertext whose key only
-  travels inside the MLS device-sync group. Uploads are capped at 50 MB and
-  rate limited per IP.
+  travels inside the MLS device-sync group. Uploads stream into storage and
+  are rate limited per IP. One request carries at most 100 MB, because
+  Cloudflare refuses a bigger body before the Worker runs (with no CORS
+  headers, so a browser only sees a CORS error). A bigger archive comes in
+  parts: the first part goes to `upload?size=<total bytes>` and gets the id,
+  each next part goes to `upload/<id>`, and the archive is served once all
+  its bytes are in. An archive is capped at 1 GB.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -68,7 +73,9 @@ GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
 POST /names/claim                -> { label, address, issuedAt, signature, mailKey? } -> { name, txHash, mailKey?: 'stored' | 'failed' }
 POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
-GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown or expired
+POST /xmtp-history/<env>/upload?size=<bytes> -> archive id, first part of a bigger archive
+POST /xmtp-history/<env>/upload/<id> -> archive id, next part   404 no open archive   413 past its size
+GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown, expired or not complete
 *    /xmtp-push/*                -> relayed upstream
 POST /mail/key                   -> { label, publicKey, issuedAt, signature } -> { address }   401 not the owner   409 older key
 GET  /mail/key?label=<l>         -> { address, owner, publicKey | null }   (null: no key from the current owner)
