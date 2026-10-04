@@ -50,14 +50,12 @@ export function claimIsFresh(issuedAt: number, now: number): boolean {
   return Number.isFinite(issuedAt) && now - issuedAt >= -60_000 && now - issuedAt <= CLAIM_TTL_MS;
 }
 
-const NAMES_CLIENT_HEADERS = { 'x-stage-client': '1' };
-
 function nonEmptyString(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null;
 }
 
 async function namesGet(proxyBase: string, path: string): Promise<Record<string, unknown> | null> {
-  const res = await fetch(`${proxyBase}/names/${path}`, { headers: NAMES_CLIENT_HEADERS });
+  const res = await fetch(`${proxyBase}/names/${path}`);
   if (!res.ok) return null;
   return (await res.json()) as Record<string, unknown> | null;
 }
