@@ -40,3 +40,13 @@ describe('client route preflight', () => {
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
   });
 });
+
+describe('rate limits', () => {
+  test('name lookups do not use up the history upload budget', async () => {
+    const headers = { 'cf-connecting-ip': '203.0.113.7' };
+    const lookups = await Promise.all(Array.from({ length: 61 }, () => call('/names/status?address=0x0', { headers })));
+    expect(lookups.at(-1)?.status).toBe(429);
+    const upload = await call('/xmtp-history/production/upload', { method: 'POST', headers, body: 'archive' });
+    expect(upload.status).toBe(503);
+  });
+});

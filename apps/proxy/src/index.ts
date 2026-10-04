@@ -26,21 +26,24 @@ const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
 const hits = new Map<string, { count: number; reset: number }>();
 
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const e = hits.get(ip);
-  if (!e || now > e.reset) {
-    hits.set(ip, { count: 1, reset: now + RL_WINDOW_MS });
-    return false;
-  }
-  e.count++;
-  return e.count > RL_MAX;
-}
+type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names';
 
 function clientIp(request: Request): string {
   return request.headers.get('cf-connecting-ip')
     ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? 'unknown';
+}
+
+function rateLimited(request: Request, budget: RateBudget): boolean {
+  const key = `${budget}:${clientIp(request)}`;
+  const now = Date.now();
+  const e = hits.get(key);
+  if (!e || now > e.reset) {
+    hits.set(key, { count: 1, reset: now + RL_WINDOW_MS });
+    return false;
+  }
+  e.count++;
+  return e.count > RL_MAX;
 }
 
 const BASE_HEADERS = {
@@ -73,7 +76,7 @@ function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>
 
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
-  if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  if (rateLimited(request, 'preview')) return json({ error: 'rate limited' }, 429);
 
   const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
@@ -97,7 +100,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
 }
 
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  if (rateLimited(request, 'img')) return json({ error: 'rate limited' }, 429);
 
   const params = new URL(request.url).searchParams;
   const url = params.get('url')?.trim() ?? '';
@@ -132,7 +135,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
 
 async function handleSettle(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
-  if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  if (rateLimited(request, 'settle')) return json({ error: 'rate limited' }, 429);
 
   let parsed: unknown;
   try {
@@ -185,7 +188,7 @@ const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContex
 ]);
 
 function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
-  if (request.method === 'POST' && rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  if (request.method === 'POST' && rateLimited(request, 'history')) return json({ error: 'rate limited' }, 429);
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 
@@ -194,7 +197,7 @@ function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promi
   if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
   if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);
   if (!pathname.startsWith(NAMES_PREFIX)) return null;
-  if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  if (rateLimited(request, 'names')) return json({ error: 'rate limited' }, 429);
   return handleNamesRequest(request, env);
 }
 
