@@ -14,6 +14,7 @@ import {
 import type { XmtpFeedStatus } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 import { feedStartId, useFeedStartId } from './feedStart';
+import { cachedSelfInboxId, rememberSelfInboxId } from './feedSnapshot';
 import { isAtFeedStart } from './feedStart.model';
 
 const EMPTY: HistoryEntry[] = [];
@@ -46,8 +47,19 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     const release = holdFeedLine(ln);
     void ensureGlobalStream();
     let cancelled = false;
+    const generation = feedCache.generation();
+    setInboxId('');
+    void cachedSelfInboxId()
+      .then(id => {
+        if (!cancelled && generation === feedCache.generation() && id) setInboxId(prev => prev || id);
+      })
+      .catch(reported('feed.cachedSelf'));
     void getOrCreateXmtpClient('production')
-      .then(c => { if (!cancelled) setInboxId(c.inboxId); })
+      .then(c => {
+        if (cancelled || generation !== feedCache.generation()) return;
+        rememberSelfInboxId(c.inboxId);
+        setInboxId(c.inboxId);
+      })
       .catch(reported('feed.client'));
     setLoadingOlder(false);
     loadingOlderRef.current = false;

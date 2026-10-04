@@ -28,3 +28,10 @@ export const persistenceBackend = {
     AppState.addEventListener('change', (state) => { if (state !== 'active') flushAll(); });
   },
 };
+
+interface SealedCache {
+  read(name: string): Promise<string | null>;
+  write(name: string, text: string | null): Promise<void>;
+}
+
+export const sealedCache: SealedCache | null = null;

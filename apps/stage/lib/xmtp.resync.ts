@@ -4,7 +4,7 @@ import { latestConvMessages } from './xmtp.messages';
 import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { recover, report, reported } from './errorPolicy';
-import { mergeFeedEntries, type FeedMerge } from './feedOrder.model';
+import { mergeFeedEntries, settleCachedFeed, type FeedMerge } from './feedOrder.model';
 import { markFeedStart } from './feedStart';
 import { makeListeners } from './storeCore';
 
@@ -14,15 +14,29 @@ const channelUpdates = makeListeners<string>();
 
 export const subscribeChannelUpdates = channelUpdates.subscribe;
 
-export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {
-  const merged = mergeFeedEntries(feedCache.get(line) ?? [], entries.filter(e => !isControlBody(e.text)));
-  if (merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
+function applyMerge(line: string, merged: FeedMerge, always: boolean): FeedMerge {
+  if (always || merged.added > 0 || merged.replaced > 0) feedCache.set(line, merged.entries);
   if (merged.channelUpdated) channelUpdates.notify(line);
   return merged;
 }
 
+function shown(entries: readonly HistoryEntry[]): HistoryEntry[] {
+  return entries.filter(e => !isControlBody(e.text));
+}
+
+export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {
+  return applyMerge(line, mergeFeedEntries(feedCache.get(line) ?? [], shown(entries)), false);
+}
+
+export function mergeLatestIntoFeed(line: string, page: readonly HistoryEntry[]): FeedMerge {
+  const cached = feedCache.cachedIds(line);
+  if (cached === undefined) return mergeIntoFeed(line, page);
+  feedCache.settleCached(line);
+  return applyMerge(line, settleCachedFeed(feedCache.get(line) ?? [], cached, shown(page)), true);
+}
+
 export function mergePageIntoFeed(line: string, page: readonly HistoryEntry[], older = false): void {
-  const { entries, added } = mergeIntoFeed(line, page);
+  const { entries, added } = older ? mergeIntoFeed(line, page) : mergeLatestIntoFeed(line, page);
   if (page.length < PAGE_SIZE || (older && added === 0)) markFeedStart(line, entries[entries.length - 1]?.id ?? '');
 }
 

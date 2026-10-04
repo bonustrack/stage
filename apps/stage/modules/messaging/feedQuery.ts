@@ -4,12 +4,15 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
-import { PAGE_SIZE, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
+import {
+  PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce,
+} from '../../lib/xmtp.resync';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
 import { isFeedLoaded, markFeedLoaded, trackFirstPageLoad } from '../../lib/feedLines';
+import { cachedFeed, rememberFeed } from '../../lib/feedSnapshot';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
-import { report, ignored } from '../../lib/errorPolicy';
+import { report, reported, recover, ignored } from '../../lib/errorPolicy';
 
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
@@ -40,6 +43,7 @@ function logReconcileHeal(
 }
 
 async function reconcileOnOpen(line: string): Promise<void> {
+  const generation = feedCache.generation();
   try {
     const conv = await convOfLine(line);
     if (!conv) return;
@@ -48,7 +52,9 @@ async function reconcileOnOpen(line: string): Promise<void> {
     if (isControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
-    mergePageIntoFeed(line, await latestConvMessages(conv, line, PAGE_SIZE));
+    const page = await latestConvMessages(conv, line, PAGE_SIZE);
+    if (generation !== feedCache.generation()) return;
+    mergePageIntoFeed(line, page);
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
   } catch (err) {
     report('feed.reconcileOnOpen', err);
@@ -93,51 +99,84 @@ function mirrorSlice(line: string, slice: HistoryEntry[] | undefined): void {
   getQueryClient().setQueryData<HistoryEntry[]>(key, slice ?? []);
 }
 
+function persistSlice(line: string, slice: HistoryEntry[] | undefined): void {
+  if (slice === undefined || feedCache.cachedIds(line) !== undefined) return;
+  rememberFeed(line, slice);
+}
+
 let bridgeStarted = false;
 export function ensureFeedQueryBridge(): void {
   if (bridgeStarted) return;
   bridgeStarted = true;
-  feedCache.subscribeAll((line, slice) => { mirrorSlice(line, slice); });
+  feedCache.subscribeAll((line, slice) => {
+    mirrorSlice(line, slice);
+    persistSlice(line, slice);
+  });
 }
 
 const bgSyncInFlight = new Map<string, Promise<void>>();
 
 function revalidateFeed(line: string, wholeInbox: boolean): Promise<void> {
-  const existing = bgSyncInFlight.get(line);
+  const generation = feedCache.generation();
+  const key = `${generation}:${line}`;
+  const existing = bgSyncInFlight.get(key);
   if (existing) return existing;
   const run = (async (): Promise<void> => {
     try {
       if (wholeInbox) await syncInboxOnce(0);
       const page = await refreshLatestPage(line);
-      if (!page) return;
+      if (!page || generation !== feedCache.generation()) return;
       mergePageIntoFeed(line, page);
       await reconcileOnOpen(line);
     } catch (err) {
       report('feed.revalidate', err);
     } finally {
-      bgSyncInFlight.delete(line);
+      bgSyncInFlight.delete(key);
     }
   })();
-  bgSyncInFlight.set(line, run);
+  bgSyncInFlight.set(key, run);
   return run;
 }
 
-async function loadFirstPage(line: string): Promise<HistoryEntry[]> {
+async function loadFirstPage(line: string, generation: number): Promise<HistoryEntry[]> {
   const conv = await perfTime('feed.convOfLine', () => convOfLine(line));
+  if (generation !== feedCache.generation()) return [];
   if (!conv) {
     perfLog('feed.coldPath: conversation not local, awaiting network');
     await perfTime('feed.revalidate', () => revalidateFeed(line, true));
+    if (generation !== feedCache.generation()) return [];
+    mergeLatestIntoFeed(line, []);
     markFeedLoaded(line);
     return feedCache.get(line) ?? [];
   }
-  mergePageIntoFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
+  const page = await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE));
+  if (generation !== feedCache.generation()) return [];
+  mergePageIntoFeed(line, page);
   markFeedLoaded(line);
   void revalidateFeed(line, !sdk.isGroup(conv));
   return feedCache.get(line) ?? [];
 }
 
-export function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
-  return trackFirstPageLoad(loadFirstPage(line));
+async function showCachedFeed(line: string, generation: number): Promise<boolean> {
+  if (feedCache.get(line) !== undefined) return false;
+  const cached = await cachedFeed(line).catch(recover('feed.cached', null));
+  if (generation !== feedCache.generation()) return false;
+  if (!cached?.length || isFeedLoaded(line) || feedCache.get(line) !== undefined) return false;
+  feedCache.showCached(line, cached);
+  markFeedLoaded(line);
+  perfLog('feed.cachedPage', { entries: cached.length });
+  return true;
+}
+
+export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
+  const generation = feedCache.generation();
+  const latest = trackFirstPageLoad(loadFirstPage(line, generation));
+  const cached = showCachedFeed(line, generation).then(shown => {
+    if (!shown) return latest;
+    void latest.catch(reported('feed.firstPage'));
+    return feedCache.get(line) ?? [];
+  });
+  return Promise.race([latest, cached]);
 }
 
 export function prefetchFeed(line: string): void {

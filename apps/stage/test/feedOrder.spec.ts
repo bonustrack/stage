@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { mergeFeedEntries, withNestedReactions } from '../lib/feedOrder.model';
+import { mergeFeedEntries, settleCachedFeed, withNestedReactions } from '../lib/feedOrder.model';
 import { entry } from './helpers';
 
 const addedYou = entry('added-you', { ts: '2026-09-25T14:04:06.017Z' });
@@ -58,6 +58,17 @@ describe('feed merge order', () => {
     expect(mergeFeedEntries([fixPosted], [labeled, fixPosted]).channelUpdated).toBe(true);
     expect(mergeFeedEntries([labeled, fixPosted], [labeled, screenshot]).channelUpdated).toBe(false);
     expect(mergeFeedEntries([fixPosted], [screenshot]).channelUpdated).toBe(false);
+  });
+
+  test('a fresh page replaces the cached messages it does not confirm and keeps live ones', () => {
+    const cachedOld = entry('in-review', { ts: inReview.ts, text: 'cached copy' });
+    const deletedSince = entry('deleted-since', { ts: '2026-09-25T14:21:00.000Z' });
+    const cached = new Set(['in-review', 'deleted-since', 'context']);
+    const slice = [screenshot, cachedOld, deletedSince, context];
+    const settled = settleCachedFeed(slice, cached, [fixPosted, inReview, inProgress]);
+    expect(ids(settled.entries)).toEqual(['screenshot', 'fix-posted', 'in-review', 'in-progress']);
+    expect(settled.entries[2]).toBe(inReview);
+    expect(ids(settleCachedFeed(slice, cached, []).entries)).toEqual(['screenshot']);
   });
 });
 

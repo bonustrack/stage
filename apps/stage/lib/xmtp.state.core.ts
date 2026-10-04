@@ -5,21 +5,34 @@ import { resetFeedLines } from './feedLines';
 
 export const inboxEthCache = new Map<string, string>();
 
+let feedGeneration = 0;
 const feedSlices = new Map<string, HistoryEntry[]>();
+const cachedFeedIds = new Map<string, ReadonlySet<string>>();
 const feedChanges = makeListeners<{ line: string; slice: HistoryEntry[] | undefined }>();
 
+function setFeedSlice(line: string, slice: HistoryEntry[]): void {
+  feedSlices.set(line, slice);
+  feedChanges.notify({ line, slice });
+}
+
 export const feedCache = {
+  generation: (): number => feedGeneration,
   get: (line: string): HistoryEntry[] | undefined => feedSlices.get(line),
-  set(line: string, slice: HistoryEntry[]): void {
-    feedSlices.set(line, slice);
-    feedChanges.notify({ line, slice });
+  set: setFeedSlice,
+  showCached(line: string, slice: HistoryEntry[]): void {
+    cachedFeedIds.set(line, new Set(slice.map(e => e.id)));
+    setFeedSlice(line, slice);
   },
+  cachedIds: (line: string): ReadonlySet<string> | undefined => cachedFeedIds.get(line),
+  settleCached(line: string): void { cachedFeedIds.delete(line); },
   subscribeAll(cb: (line: string, slice: HistoryEntry[] | undefined) => void): () => void {
     return feedChanges.subscribe(({ line, slice }) => { cb(line, slice); });
   },
   clear(): void {
+    feedGeneration += 1;
     const lines = [...feedSlices.keys()];
     feedSlices.clear();
+    cachedFeedIds.clear();
     for (const line of lines) feedChanges.notify({ line, slice: undefined });
   },
 };

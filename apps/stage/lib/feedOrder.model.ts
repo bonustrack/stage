@@ -22,7 +22,7 @@ function sentMs(entry: HistoryEntry): number {
   return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
 }
 
-function reactionTarget(entry: HistoryEntry): string | undefined {
+export function reactionTarget(entry: HistoryEntry): string | undefined {
   const target = (entry.payload as { reactTo?: unknown } | undefined)?.reactTo;
   return typeof target === 'string' && target !== '' ? target : undefined;
 }
@@ -66,6 +66,12 @@ export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readon
   const fresh = uniqueBy(incoming, e => e.id, new Set(base.map(e => e.id)));
   if (fresh.length === 0) return { entries: [...base], added: 0, replaced, channelUpdated: false };
   return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced, channelUpdated: fresh.some(isSystemEntry) };
+}
+
+export function settleCachedFeed(
+  slice: readonly HistoryEntry[], cachedIds: ReadonlySet<string>, page: readonly HistoryEntry[],
+): FeedMerge {
+  return mergeFeedEntries(slice.filter(e => !cachedIds.has(e.id)), page);
 }
 
 export function withNestedReactions<M>(
