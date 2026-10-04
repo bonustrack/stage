@@ -1,8 +1,9 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, syncGroupName, type BoardStateContent, type LatestKind,
-  type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncReplay,
+  collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, type BoardStateContent, type LatestKind,
+  type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncOwner, type SyncReplay,
+  type SyncTrust,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
@@ -16,13 +17,14 @@ import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type Accoun
 import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
 import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
-import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
+import { rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { addOwnInstallationsToChats } from './ownInstallations';
-import { isHiddenConv, registerHiddenConv } from './xmtp.state.core';
+import { createSyncGroup, isOwnSyncGroupId, listOwnSyncGroups, syncOwnerOf } from './syncGroups';
+import { registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -41,6 +43,7 @@ let bootToken = 0;
 let replaying = false;
 let lastCatchUpAt = 0;
 let groupId: string | null = null;
+const ownGroups = new Set<string>();
 const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
 const nudgedFrom = new Set<string>();
@@ -51,27 +54,13 @@ const PIN_ORDER_KEY = 'pinOrder';
 
 type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
-async function listSyncGroups(): Promise<SyncGroupState[]> {
-  const all = await sdk.listConvs(await sdk.client());
-  const out: SyncGroupState[] = [];
-  for (const conv of all) {
-    if (!(await conversationIsSyncGroup(conv))) continue;
-    const active = await sdk.isActive(conv).catch(recover('readSync.isActive', false));
-    out.push({ id: conv.id, createdAtNs: sdk.createdAtNs(conv), active });
-  }
-  return out;
+function trustFor(owner: SyncOwner): SyncTrust {
+  return { inboxId: owner.inboxId, nowMs: Date.now() };
 }
 
-async function isOwnSyncGroup(convId: string, address: string): Promise<boolean> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (conv?.id !== convId || (await sdk.groupName(conv)) !== syncGroupName(address)) return false;
-  const selfInboxId = (await sdk.client()).inboxId;
-  return (await conv.members()).every((m) => m.inboxId === selfInboxId);
-}
-
-async function createSyncGroup(name: string): Promise<string> {
-  const group = await sdk.newGroup(await sdk.client(), [], { name });
-  return group.id;
+function trustGroup(id: string): void {
+  ownGroups.add(id);
+  registerHiddenConv(id);
 }
 
 async function requireConv(convId: string): Promise<SyncConv> {
@@ -145,12 +134,12 @@ function isStateMessage(m: RowMessage): boolean {
 
 let groupsLoading: Promise<SyncGroupState[]> | null = null;
 
-function knownSyncGroups(): Promise<SyncGroupState[]> {
+function knownSyncGroups(owner: SyncOwner): Promise<SyncGroupState[]> {
   groupsLoading ??= (async (): Promise<SyncGroupState[]> => {
     try {
       await afterFirstPages();
-      const groups = await listSyncGroups();
-      for (const g of groups) registerHiddenConv(g.id);
+      const groups = await listOwnSyncGroups(owner);
+      for (const g of groups) trustGroup(g.id);
       return groups;
     } finally {
       groupsLoading = null;
@@ -159,16 +148,16 @@ function knownSyncGroups(): Promise<SyncGroupState[]> {
   return groupsLoading;
 }
 
-async function chooseGroup(address: string, groups: readonly SyncGroupState[]): Promise<string> {
+async function chooseGroup(owner: SyncOwner, groups: readonly SyncGroupState[]): Promise<string> {
   const chosen = pickPublishGroup(groups);
-  const id = chosen === null ? await createSyncGroup(syncGroupName(address)) : chosen.id;
-  registerHiddenConv(id);
+  const id = chosen === null ? await createSyncGroup(owner) : chosen.id;
+  trustGroup(id);
   groupId = id;
   return id;
 }
 
-async function ensureGroup(address: string): Promise<string> {
-  return groupId ?? chooseGroup(address, await knownSyncGroups());
+async function ensureGroup(owner: SyncOwner): Promise<string> {
+  return groupId ?? chooseGroup(owner, await knownSyncGroups(owner));
 }
 
 interface GroupReplay { id: string; cursorKey: string; cursor: number; messages: RowMessage[] }
@@ -181,10 +170,10 @@ async function readGroup(accountId: string, group: SyncGroupState): Promise<Grou
   return { id: group.id, cursorKey, cursor, messages: messages.filter((m) => m.sentNs > cursor) };
 }
 
-async function replay(accountId: string, target: string, groups: readonly SyncGroupState[]): Promise<void> {
+async function replay(accountId: string, target: string, groups: readonly SyncGroupState[], owner: SyncOwner): Promise<void> {
   const batches: GroupReplay[] = [];
   for (const group of groups) batches.push(await readGroup(accountId, group));
-  await applyReplay(accountId, collectSyncReplay(batches.flatMap((b) => b.messages), 0));
+  await applyReplay(accountId, collectSyncReplay(batches.flatMap((b) => b.messages), 0, trustFor(owner)));
   for (const b of batches) {
     const latest = b.messages.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
     if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
@@ -197,10 +186,11 @@ async function bootReplay(token: number): Promise<void> {
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   try {
-    const groups = await knownSyncGroups();
-    const target = await chooseGroup(rec.address, groups);
+    const owner = await syncOwnerOf(rec.address);
+    const groups = await knownSyncGroups(owner);
+    const target = await chooseGroup(owner, groups);
     if (token !== bootToken) return;
-    await replay(rec.id, target, groups);
+    await replay(rec.id, target, groups, owner);
     await adoptBoardCategoryOrder(rec.id);
     void addOwnInstallationsToChats(rec.id).catch(reported('readSync.ownInstallations'));
   } catch (err) {
@@ -211,6 +201,7 @@ async function bootReplay(token: number): Promise<void> {
 async function boot(): Promise<void> {
   const token = ++bootToken;
   groupId = null;
+  ownGroups.clear();
   localAt.clear();
   replaying = true;
   try {
@@ -224,9 +215,10 @@ async function catchUp(): Promise<void> {
   const token = bootToken;
   const rec = await getActiveAccount().catch(recover('readSync.catchUp', null));
   if (rec === null) return;
-  const groups = await knownSyncGroups();
+  const owner = await syncOwnerOf(rec.address);
+  const groups = await knownSyncGroups(owner);
   if (token !== bootToken) return;
-  await replay(rec.id, await ensureGroup(rec.address), groups);
+  await replay(rec.id, await ensureGroup(owner), groups, owner);
 }
 
 function catchUpInFront(): void {
@@ -243,7 +235,7 @@ async function withGroup(
   try {
     const rec = await getActiveAccount();
     if (rec === null || (onlyFor !== undefined && rec.id !== onlyFor)) return;
-    await send(await ensureGroup(rec.address), rec.id);
+    await send(await ensureGroup(await syncOwnerOf(rec.address)), rec.id);
   } catch (err) {
     report('readSync.publish', err);
   }
@@ -364,19 +356,21 @@ function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(SYNC_CODECS.clear, { cleared: getClearedChats() }); });
 }
 
-async function adoptSyncGroup(convId: string): Promise<string | null> {
+interface Adopted { accountId: string; owner: SyncOwner }
+
+async function adoptSyncGroup(convId: string): Promise<Adopted | null> {
   const rec = await getActiveAccount().catch(recover('readSync.adopt', null));
   if (rec === null) return null;
-  if (isHiddenConv(convId)) return rec.id;
-  if (!(await isOwnSyncGroup(convId, rec.address).catch(recover('readSync.adopt', false)))) return null;
-  registerHiddenConv(convId);
-  return rec.id;
+  const owner = await syncOwnerOf(rec.address);
+  if (!ownGroups.has(convId) && !(await isOwnSyncGroupId(convId, owner).catch(recover('readSync.adopt', false)))) return null;
+  trustGroup(convId);
+  return { accountId: rec.id, owner };
 }
 
 async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
-  const accountId = await adoptSyncGroup(convId);
-  if (accountId === null) return;
-  await applyReplay(accountId, collectSyncReplay([m], 0));
+  const adopted = await adoptSyncGroup(convId);
+  if (adopted === null) return;
+  await applyReplay(adopted.accountId, collectSyncReplay([m], 0, trustFor(adopted.owner)));
   if (groupId !== null && convId !== groupId) nudgeFrom(convId);
 }
 

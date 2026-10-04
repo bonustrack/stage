@@ -161,6 +161,24 @@ export interface SyncGroupState extends SyncGroupCandidate {
   active: boolean;
 }
 
+export interface SyncOwner {
+  address: string;
+  inboxId: string;
+}
+
+export interface SyncGroupFacts extends SyncGroupState {
+  name: string | undefined;
+  addedByInboxId: string | undefined;
+  memberInboxIds: readonly string[];
+}
+
+export function isOwnSyncGroup(group: SyncGroupFacts, owner: SyncOwner): boolean {
+  if (owner.inboxId === '' || group.name !== syncGroupName(owner.address)) return false;
+  if (group.addedByInboxId !== owner.inboxId) return false;
+  if (group.active && group.memberInboxIds.length === 0) return false;
+  return group.memberInboxIds.every((id) => id === owner.inboxId);
+}
+
 export function pickPublishGroup<T extends SyncGroupState>(groups: readonly T[]): T | null {
   const active = groups.filter((g) => g.active).sort((a, b) => a.id.localeCompare(b.id));
   return active[0] ?? null;
@@ -169,8 +187,16 @@ export function pickPublishGroup<T extends SyncGroupState>(groups: readonly T[])
 export interface SyncMessage {
   contentTypeId: string | undefined;
   content: unknown;
+  senderInboxId: string;
   sentNs: number;
 }
+
+export interface SyncTrust {
+  inboxId: string;
+  nowMs: number;
+}
+
+const SYNC_MAX_AHEAD_MS = 86_400_000;
 
 export interface SyncReplay {
   reads: ReadStateContent[];
@@ -184,54 +210,63 @@ function stateOf<K extends SyncKind>(kind: K, m: SyncMessage): SyncContents[K] |
   return isSyncType(m.contentTypeId, kind) ? parseSyncState(kind, m.content) : null;
 }
 
-function latestReads(messages: readonly SyncMessage[]): ReadStateContent[] {
+function inTime<T extends { at: number }>(state: T | null, maxAt: number): T | null {
+  return state !== null && state.at <= maxAt ? state : null;
+}
+
+function latestReads(messages: readonly SyncMessage[], maxAt: number): ReadStateContent[] {
   const byConv = new Map<string, ReadStateContent>();
   for (const m of messages) {
-    const state = stateOf('read', m);
+    const state = inTime(stateOf('read', m), maxAt);
     const current = state === null ? undefined : byConv.get(state.convId);
     if (state !== null && (current === undefined || state.at > current.at)) byConv.set(state.convId, state);
   }
   return [...byConv.values()];
 }
 
-function pinsSinceLastOrder(messages: readonly SyncMessage[]): PinStateContent[] {
+function pinsSinceLastOrder(messages: readonly SyncMessage[], maxAt: number): PinStateContent[] {
   const pins = messages
-    .map((m) => stateOf('pin', m))
+    .map((m) => inTime(stateOf('pin', m), maxAt))
     .filter((p): p is PinStateContent => p !== null)
     .sort((a, b) => a.at - b.at);
   const lastOrder = pins.map((p) => p.order !== undefined).lastIndexOf(true);
   return lastOrder === -1 ? pins : pins.slice(lastOrder);
 }
 
-function mergedCleared(messages: readonly SyncMessage[]): ClearedChats | null {
+function clearedUpTo(cleared: ClearedChats, maxAt: number): ClearedChats {
+  return Object.fromEntries(Object.entries(cleared).filter(([, at]) => at <= maxAt));
+}
+
+function mergedCleared(messages: readonly SyncMessage[], maxAt: number): ClearedChats | null {
   let merged: ClearedChats | null = null;
   for (const m of messages) {
     const state = stateOf('clear', m);
-    if (state !== null) merged = mergeClearedChats(merged ?? {}, state.cleared);
+    if (state !== null) merged = mergeClearedChats(merged ?? {}, clearedUpTo(state.cleared, maxAt));
   }
   return merged;
 }
 
-function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K): SyncContents[K] | null {
+function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K, maxAt: number): SyncContents[K] | null {
   let latest: SyncContents[K] | null = null;
   for (const m of messages) {
-    const state = stateOf(kind, m);
+    const state = inTime(stateOf(kind, m), maxAt);
     if (state !== null && (latest === null || state.at > latest.at)) latest = state;
   }
   return latest;
 }
 
-export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number): SyncReplay {
-  const fresh = messages.filter((m) => m.sentNs > afterNs);
+export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number, trust: SyncTrust): SyncReplay {
+  const fresh = messages.filter((m) => m.sentNs > afterNs && trust.inboxId !== '' && m.senderInboxId === trust.inboxId);
+  const maxAt = trust.nowMs + SYNC_MAX_AHEAD_MS;
   return {
-    reads: latestReads(fresh),
-    pins: pinsSinceLastOrder(fresh),
-    cleared: mergedCleared(fresh),
+    reads: latestReads(fresh, maxAt),
+    pins: pinsSinceLastOrder(fresh, maxAt),
+    cleared: mergedCleared(fresh, maxAt),
     latest: {
-      board: latestState(fresh, 'board'),
-      categoryOrder: latestState(fresh, 'categoryOrder'),
-      search: latestState(fresh, 'search'),
-      homeView: latestState(fresh, 'homeView'),
+      board: latestState(fresh, 'board', maxAt),
+      categoryOrder: latestState(fresh, 'categoryOrder', maxAt),
+      search: latestState(fresh, 'search', maxAt),
+      homeView: latestState(fresh, 'homeView', maxAt),
     },
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };
