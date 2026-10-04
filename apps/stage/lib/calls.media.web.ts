@@ -1,4 +1,5 @@
 import { ignore, ignored, report } from './errorPolicy';
+import { NO_ROUTES, type AudioRoutes } from './calls.route.core';
 import type { CallStream, CallTrack, CapturedMedia } from './calls.types';
 
 export const callsSupported = typeof RTCPeerConnection === 'function' && typeof navigator.mediaDevices?.getUserMedia === 'function';
@@ -44,6 +45,8 @@ export function watchCallLifecycle(leave: () => void): () => void {
 export function prepareAudio(): Promise<void> { return Promise.resolve(); }
 export function startAudio(video: boolean): Promise<void> { void video; return Promise.resolve(); }
 export function stopAudio(): void { return; }
+export function useAudioRoutes(): AudioRoutes { return NO_ROUTES; }
+export function toggleSpeaker(): void { return; }
 
 const TONE_HZ = [480, 620] as const;
 const TONE_S = 0.35;

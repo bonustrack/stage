@@ -9,6 +9,7 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconShareScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShareScreen';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { IconVideoOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideoOff';
+import { IconVolumeFull } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeFull';
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
 import { HoverIconButton } from '../hover';
@@ -18,6 +19,8 @@ import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../../lib/webLayout';
 import { leaveCall, screenShareSupported, toggleCamera, toggleMic, toggleScreen } from '../../lib/calls';
 import { setCallMinimized, type CallLinkStatus, type CallMedia, type CallView } from '../../lib/calls.store';
+import { toggleSpeaker, useAudioRoutes } from '../../lib/calls.media';
+import { canToggleSpeaker, speakerOn } from '../../lib/calls.route.core';
 import { ignore } from '../../lib/errorPolicy';
 import { CallMediaView } from './CallMediaView';
 import { CallScreenPicker } from './CallScreenPicker';
@@ -83,11 +86,19 @@ function MinimizeButton(): React.ReactElement {
   );
 }
 
+function SpeakerControl(): React.ReactElement | null {
+  const routes = useAudioRoutes();
+  if (!canToggleSpeaker(routes)) return null;
+  const on = speakerOn(routes);
+  return <CallControl icon={IconVolumeFull} label={on ? 'Turn speaker off' : 'Turn speaker on'} active={on} onPress={toggleSpeaker}/>;
+}
+
 function Controls({ media, people, onPeople }: { media: CallMedia; people: boolean; onPeople: () => void }): React.ReactElement {
   const bottom = useSafeAreaInsets().bottom;
   return (
     <Row align="center" justify="center" gap={14} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
       <CallControl icon={media.audio ? IconMicrophone : IconMicrophoneOff} label={media.audio ? 'Mute' : 'Unmute'} active={!media.audio} onPress={toggleMic}/>
+      <SpeakerControl/>
       <CallControl
         icon={media.video && !media.screen ? IconVideo : IconVideoOff} label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
         active={media.video && !media.screen} onPress={() => { ignore(toggleCamera(), 'ui'); }}

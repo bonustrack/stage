@@ -1,11 +1,13 @@
-import { Platform, PermissionsAndroid } from 'react-native';
+import { DeviceEventEmitter, Platform, PermissionsAndroid, type EmitterSubscription } from 'react-native';
 import { MediaStream, mediaDevices, type MediaStreamTrack } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 import { setIsAudioActiveAsync } from 'expo-audio';
 import { nativeCalls } from '../modules/stage-calls';
 import { acquireCallAudio, callOwnsAudio, releaseCallAudio } from './calls.audio.core';
+import { NO_ROUTES, joinedHeadset, parseAudioRoutes, speakerTarget, type AudioRoutes } from './calls.route.core';
 import { cancelScreenPicker, startScreenPicker } from './calls.screen';
 import { ignore, ignored, report } from './errorPolicy';
+import { makeValue } from './storeCore';
 import { stopMedia, stopTrack, type CallStream, type CallTrack, type CapturedMedia } from './calls.types';
 
 export const callsSupported = true;
@@ -14,6 +16,10 @@ const CAMERA = { width: 640, height: 360, frameRate: 24, facingMode: 'user' };
 let audioStarted = false;
 let captureEpoch = 0;
 let preparing: Promise<void> | null = null;
+let routeEvents: EmitterSubscription | null = null;
+const routes = makeValue<AudioRoutes>(NO_ROUTES);
+
+export const useAudioRoutes = routes.use;
 
 function track(value: MediaStreamTrack | undefined): CallTrack | null {
   return value ? { platform: 'native', value } : null;
@@ -81,9 +87,34 @@ export async function startAudio(video: boolean): Promise<void> {
   await nativeCalls.start(video);
   if (epoch !== captureEpoch) { await nativeCalls.stop(); throw new Error('Call was canceled'); }
   if (!audioStarted) {
+    watchRoutes(video);
     InCallManager.start({ media: video ? 'video' : 'audio' });
     audioStarted = true;
   }
+}
+
+function watchRoutes(video: boolean): void {
+  if (Platform.OS === 'ios') {
+    routes.set({ available: Platform.isPad ? ['SPEAKER_PHONE'] : ['EARPIECE', 'SPEAKER_PHONE'], selected: video ? 'SPEAKER_PHONE' : 'EARPIECE' });
+    return;
+  }
+  routeEvents ??= DeviceEventEmitter.addListener('onAudioDeviceChanged', (status: unknown) => {
+    const before = routes.get();
+    routes.set(parseAudioRoutes(status));
+    const headset = joinedHeadset(before, routes.get());
+    if (headset) ignore(InCallManager.chooseAudioRoute(headset), 'optional');
+  });
+}
+
+export function toggleSpeaker(): void {
+  const target = speakerTarget(routes.get());
+  if (!audioStarted || target === null) return;
+  if (Platform.OS === 'ios') {
+    InCallManager.setForceSpeakerphoneOn(target === 'SPEAKER_PHONE');
+    routes.set({ ...routes.get(), selected: target });
+    return;
+  }
+  ignore(InCallManager.chooseAudioRoute(target).then((status: unknown) => { if (audioStarted) routes.set(parseAudioRoutes(status)); }), 'ui');
 }
 
 export function stopAudio(): void {
@@ -92,6 +123,9 @@ export function stopAudio(): void {
   const owned = callOwnsAudio();
   if (audioStarted) InCallManager.stop();
   audioStarted = false;
+  routeEvents?.remove();
+  routeEvents = null;
+  routes.set(NO_ROUTES);
   releaseCallAudio();
   ignore(nativeCalls.stop(), 'cleanup');
   if (owned) ignore(restoreAudio(), 'cleanup');
