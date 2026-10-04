@@ -1,6 +1,6 @@
 {
   "name": "stage-desktop",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Stage desktop app for macOS, Linux and Windows, bundling the web UI",
   "homepage": "https://stage.box",
