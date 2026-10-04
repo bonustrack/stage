@@ -139,7 +139,7 @@ function PreferencesGroup(): React.ReactElement {
         </Box>
       </ListViewItem>
       <SettingsToggleRow label="Push notifications" name="push" checked={push} onChange={(next) => { void applyPush(next); }} />
-      <SettingsNavRow label="Custom colors" value={custom ? 'On' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
+      <SettingsNavRow label="Appearance" value={custom ? 'Custom colors' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
     </SettingsGroup>
   );
 }

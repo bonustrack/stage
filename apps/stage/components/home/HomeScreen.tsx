@@ -29,6 +29,7 @@ import { useGroupedRows, useHomeState } from './state';
 import { useCategoryRowDrag, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { channelsPaneWidth } from '../tabs/paneWidth';
+import { useChannelAvatars } from '../../lib/channelRows';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
@@ -83,7 +84,8 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
   const accountEpoch = useAccountEpoch();
   const paneAtMin = channelsPaneWidth.useAtMin();
-  const hideAvatar = pane && paneAtMin;
+  const showAvatars = useChannelAvatars();
+  const hideAvatar = !showAvatars || (pane && paneAtMin);
 
   useChannelsSync({ accountEpoch, setError: st.setError });
 

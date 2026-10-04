@@ -3,13 +3,17 @@ import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useThemePreference,
 } from '../../lib/theme';
+import { setChannelAvatars, useChannelAvatars } from '../../lib/channelRows';
 import { ColorTokens } from '../system/ColorTokens';
-import { SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS } from './SettingsPage';
+import {
+  SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, SettingsToggleRow, THEME_OPTIONS,
+} from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 
 export function DisplaySettings(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
+  const avatars = useChannelAvatars();
 
   return (
     <SettingsPage title="Appearance" keyboardShouldPersistTaps="handled">
@@ -32,6 +36,10 @@ export function DisplaySettings(): React.ReactElement {
           selected={custom}
           onPress={() => { setCustomTheme(true); }}
         />
+      </SettingsGroup>
+
+      <SettingsGroup title="Channel rows">
+        <SettingsToggleRow label="Show avatars" name="channel-avatars" checked={avatars} onChange={setChannelAvatars} />
       </SettingsGroup>
 
       {custom ? (
