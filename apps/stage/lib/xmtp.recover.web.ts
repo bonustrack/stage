@@ -17,12 +17,13 @@ export interface CreateOpts {
   env: XmtpEnv;
   dbPath: string;
   codecs: typeof XMTP_CODECS;
+  historySyncUrl: string;
   inboxId?: string;
   allowOffline?: boolean;
 }
 
-export function onlineOpts({ env, dbPath, codecs }: CreateOpts): CreateOpts {
-  return { env, dbPath, codecs };
+export function onlineOpts({ env, dbPath, codecs, historySyncUrl }: CreateOpts): CreateOpts {
+  return { env, dbPath, codecs, historySyncUrl };
 }
 
 const NOISY_OPEN_EVENTS = new Set(['installation-mismatch', 'open-failed']);

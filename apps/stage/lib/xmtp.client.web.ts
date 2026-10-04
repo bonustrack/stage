@@ -19,6 +19,7 @@ import {
 import { isStoreLocked } from '@stage-labs/client/xmtp/clientErrors';
 import { ignored, attempt } from './errorPolicy';
 import { afterFirstPages } from './feedLines';
+import { historyServerUrl } from './historyServer';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -84,7 +85,9 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   ]);
   const sameAccount = canReuseSavedClient(savedAddress, savedEnv, address, env);
   const offline = offlineOpenOptions(savedInbox, sameAccount);
-  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS, ...offline };
+  const opts: CreateOpts = {
+    env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS, historySyncUrl: historyServerUrl(env), ...offline,
+  };
   const savedIfPersisted = sameAccount
     ? opfsHasDatabase().then((has) => (has ? savedInstallation : null))
     : null;
