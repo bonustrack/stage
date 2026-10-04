@@ -21,6 +21,7 @@ import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
+import { addOwnInstallationsToChats } from './ownInstallations';
 import { isHiddenConv, registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
@@ -201,6 +202,7 @@ async function bootReplay(token: number): Promise<void> {
     if (token !== bootToken) return;
     await replay(rec.id, target, groups);
     await adoptBoardCategoryOrder(rec.id);
+    void addOwnInstallationsToChats(rec.id).catch(reported('readSync.ownInstallations'));
   } catch (err) {
     report('readSync.boot', err);
   }

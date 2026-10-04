@@ -196,6 +196,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   },
   forceAddMember: (client, convId, inboxId) =>
     addGroupMembers(client.installationId, asConversationId(convId), [inboxId]),
+  memberInstallationIds: null,
   inboxIdOfAddress: (client, address) => client.findInboxIdFromIdentity(identityOf(address)),
   installationIdsOf: async (client, inboxId) =>
     ((await client.inboxStates(true, [inboxId]))[0]?.installations ?? []).map(i => i.id),

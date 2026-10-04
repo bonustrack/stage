@@ -65,6 +65,7 @@ interface ClientPrimitives<Cl, C, M> {
   activeDm: (client: Cl, peerInboxId: string) => Promise<C>;
   dmLookup: (client: Cl, address: string) => Promise<DmLookup<C> | null>;
   forceAddMember: ((client: Cl, convId: string, inboxId: string) => Promise<unknown>) | null;
+  memberInstallationIds: ((conv: C, inboxId: string) => Promise<string[]>) | null;
   inboxIdOfAddress: (client: Cl, address: string) => Promise<string | undefined>;
   installationIdsOf: (client: Cl, inboxId: string) => Promise<string[]>;
   keyPackageErrors: (client: Cl, installationIds: string[]) => Promise<(string | null | undefined)[]>;

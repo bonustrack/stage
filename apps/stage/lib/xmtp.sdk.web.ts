@@ -207,6 +207,8 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   activeDm: (client, peerInboxId) => client.conversations.createDm(peerInboxId),
   dmLookup,
   forceAddMember: null,
+  memberInstallationIds: async (conv, inboxId) =>
+    (await conv.members()).find(m => m.inboxId === inboxId)?.installationIds ?? [],
   inboxIdOfAddress: (client, address) => client.fetchInboxIdByIdentifier(identifierOf(address)),
   installationIdsOf: async (client, inboxId) =>
     ((await client.preferences.fetchInboxStates([inboxId]))[0]?.installations ?? []).map(i => i.id),

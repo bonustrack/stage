@@ -3,7 +3,7 @@ import {
   validMemberAddresses, isNoInboxError, isPermissionError, requireValidMembers,
   mapCreateGroupError, mapAddMembersError, createGroupWith, addGroupMembersWith,
   groupRoleOf, superAdminInboxIds, groupEditRightsOf, canEditGroup, mapUpdateGroupError, updateGroupMetaWith, UNKNOWN_GROUP_POLICY,
-  groupMetaPolicyOfSet,
+  groupMetaPolicyOfSet, missingInstallationIds,
   type GroupMetaPolicy,
 } from '../src/xmtp/groups';
 
@@ -224,5 +224,14 @@ describe('updateGroupMetaWith', () => {
   });
   test('keeps other errors as they are', () => {
     expect(mapUpdateGroupError(new Error('network down')).message).toBe('network down');
+  });
+});
+
+describe('missingInstallationIds', () => {
+  test('lists your devices a chat does not include yet', () => {
+    expect(missingInstallationIds(['aa01', 'BB02', 'cc03'], ['AA01', 'cc03'])).toEqual(['BB02']);
+  });
+  test('is empty when every device is in the chat', () => {
+    expect(missingInstallationIds(['aa01'], ['aa01', 'dd04'])).toEqual([]);
   });
 });

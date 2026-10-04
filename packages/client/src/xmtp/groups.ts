@@ -151,6 +151,11 @@ export function superAdminInboxIds(
   return new Set(ids);
 }
 
+export function missingInstallationIds(expected: readonly string[], present: readonly string[]): string[] {
+  const have = new Set(present.map(id => id.toLowerCase()));
+  return expected.filter(id => !have.has(id.toLowerCase()));
+}
+
 function allows(policy: GroupPolicyOption, role: GroupRole): boolean {
   return ROLE_RANK[role] >= POLICY_RANK[policy];
 }
