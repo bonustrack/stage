@@ -34,7 +34,8 @@ runtime - no Express, no origin, no laptop dependency.
   headers, so a browser only sees a CORS error). A bigger archive comes in
   parts: the first part goes to `upload?size=<total bytes>` and gets the id,
   each next part goes to `upload/<id>`, and the archive is served once all
-  its bytes are in. An archive is capped at 1 GB.
+  its bytes are in. An archive is capped at 1 GB. The web app splits its
+  uploads in the patched `@xmtp/browser-sdk` worker, in 50 MB parts.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
