@@ -8,6 +8,7 @@ import { xmtpReply } from '../../lib/xmtp.messages';
 import { useConvDetails, useConvRow } from '../../modules/messaging/queries';
 import { isGroupRow, memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
+import { isAppInFront, subscribeAppInFront } from '../../lib/appInFront';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
@@ -31,6 +32,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
+import { makeSeenCheck } from './markRead.model';
 import { useOutboundLayer } from './useOutboundLayer';
 import { useClearedChats } from '../../lib/clearedChats';
 import {
@@ -71,6 +73,15 @@ function useActiveConvSuppression(convId: string | undefined): void {
     });
     return () => { sub.remove(); setActiveConversation(null); setActiveConvId(null); };
   }, [activeConvId]));
+}
+
+function useMarkReadWhileSeen(convId: string | undefined, fromOthers: number): void {
+  useFocusEffect(useCallback(() => {
+    if (!convId) return;
+    const check = makeSeenCheck(isAppInFront, () => { void markConvRead(convId); });
+    check();
+    return subscribeAppInFront(check);
+  }, [convId, fromOthers]));
 }
 
 function useFeedDeletions(
@@ -211,11 +222,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
   const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
-  const fromOthers = countFromOthers(events, myUri);
-  useEffect(() => {
-    if (!convId) return;
-    void markConvRead(convId);
-  }, [convId, fromOthers]);
+  useMarkReadWhileSeen(convId, countFromOthers(events, myUri));
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
 
