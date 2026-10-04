@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyGroupMeta, applyInbound, applyRead, applyUnread, applySentPatch,
+  applyGroupMeta, applyInbound, applyRead, applyReadUpTo, applyUnread, applySentPatch,
   type CachedChannelRow, type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
@@ -25,6 +25,22 @@ describe('applyRead', () => {
   });
   test('missing conv returns null', () => {
     expect(applyRead(base, 'zzz', 1)).toBeNull();
+  });
+});
+
+describe('applyReadUpTo', () => {
+  const rows: Row[] = [{ convId: 'a', unreadCount: 1, lastReadNs: 5_000_000, markedUnread: true, lastTs: 9 }];
+  test('a read older than the last message keeps the unread count', () => {
+    expect(applyReadUpTo(rows, 'a', 7_000_000)?.[0]).toEqual({ convId: 'a', unreadCount: 1, lastReadNs: 7_000_000, markedUnread: false, lastTs: 9 });
+  });
+  test('a read that covers the last message zeros the count', () => {
+    expect(applyReadUpTo(rows, 'a', 9_000_000)?.[0]?.unreadCount).toBe(0);
+  });
+  test('never moves the read marker back', () => {
+    expect(applyReadUpTo(rows, 'a', 1_000_000)?.[0]?.lastReadNs).toBe(5_000_000);
+  });
+  test('missing conv returns null', () => {
+    expect(applyReadUpTo(rows, 'zzz', 1)).toBeNull();
   });
 });
 

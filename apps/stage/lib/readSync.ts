@@ -1,5 +1,5 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
+import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
   collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, syncGroupName, type BoardStateContent, type LatestKind,
   type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncReplay,
@@ -8,7 +8,7 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import {
-  getCachedRows, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
+  getCachedRows, getLastReadNs, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
 } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
 import { applyRemoteClearedChats, getClearedChats, loadClearedChats, onClearedChatsChanged } from './clearedChats';
@@ -87,7 +87,7 @@ async function recentSyncMessages(convId: string, limit: number): Promise<RowMes
 }
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
-  const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
+  const next = state.markedUnread ? applyUnread(rows, state.convId) : applyReadUpTo(rows, state.convId, state.lastReadNs);
   return next ?? rows;
 }
 
@@ -109,7 +109,7 @@ async function applyReadStates(remote: readonly ReadStateContent[]): Promise<voi
   for (const state of reads) {
     if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
     localAt.set(readKey(state.convId), state.at);
-    await setLastReadNs(state.convId, state.lastReadNs);
+    await setLastReadNs(state.convId, Math.max(await getLastReadNs(state.convId), state.lastReadNs));
     await setMarkedUnreadFlag(state.convId, state.markedUnread);
     if (rows) rows = patchedRows(rows, state);
   }

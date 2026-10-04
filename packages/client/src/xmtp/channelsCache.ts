@@ -40,6 +40,18 @@ export function applyRead<R extends CachedChannelRow>(
   return patchRow(rows, convId, (cur) => ({ ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false }));
 }
 
+export function applyReadUpTo<R extends CachedChannelRow>(
+  rows: readonly R[],
+  convId: string,
+  readNs: number,
+): R[] | null {
+  return patchRow(rows, convId, (cur) => {
+    const lastReadNs = Math.max(cur.lastReadNs, readNs);
+    const lastNs = typeof cur.lastTs === 'number' ? cur.lastTs * 1_000_000 : 0;
+    return { ...cur, unreadCount: lastReadNs >= lastNs ? 0 : cur.unreadCount, lastReadNs, markedUnread: false };
+  });
+}
+
 export function applyUnread<R extends CachedChannelRow>(
   rows: readonly R[],
   convId: string,
