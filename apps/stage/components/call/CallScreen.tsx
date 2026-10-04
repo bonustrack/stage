@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { DENSITY_SCALE } from '@stage-labs/kit/tokens';
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconMicrophoneOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophoneOff';
@@ -96,7 +97,7 @@ function SpeakerControl(): React.ReactElement | null {
 function Controls({ media, people, onPeople }: { media: CallMedia; people: boolean; onPeople: () => void }): React.ReactElement {
   const bottom = useSafeAreaInsets().bottom;
   return (
-    <Row align="center" justify="center" gap={14} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
+    <Row align="center" justify="center" gap={DENSITY_SCALE.normal.gap} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
       <CallControl icon={media.audio ? IconMicrophone : IconMicrophoneOff} label={media.audio ? 'Mute' : 'Unmute'} active={!media.audio} onPress={toggleMic}/>
       <SpeakerControl/>
       <CallControl
