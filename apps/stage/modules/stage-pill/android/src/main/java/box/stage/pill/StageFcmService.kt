@@ -54,6 +54,12 @@ class StageFcmService : FirebaseMessagingService() {
       )
     }
 
+    val cleared = clearedConvOfTopic(topic)
+    if (cleared != null) {
+      NotificationManagerCompat.from(this).cancel(cleared.hashCode())
+      return
+    }
+
     if (convId == null) return
 
     val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -83,6 +89,11 @@ class StageFcmService : FirebaseMessagingService() {
   /** `/xmtp/mls/1/g-<groupId>/proto` → lower-case group id; null for any other topic. */
   private fun groupIdOfTopic(topic: String): String? {
     val match = GROUP_TOPIC.find(topic) ?: return null
+    return match.groupValues.getOrNull(1)?.lowercase()?.takeIf { it.isNotBlank() }
+  }
+
+  private fun clearedConvOfTopic(topic: String): String? {
+    val match = CLEAR_TOPIC.find(topic) ?: return null
     return match.groupValues.getOrNull(1)?.lowercase()?.takeIf { it.isNotBlank() }
   }
 
@@ -145,6 +156,7 @@ class StageFcmService : FirebaseMessagingService() {
     private const val APP_SCHEME = "stage"
     private const val KEY_TOPIC = "topic"
     private val GROUP_TOPIC = Regex("/g-([0-9a-fA-F]+)/")
+    private val CLEAR_TOPIC = Regex("^/stage/clear/([0-9a-fA-F]+)$")
 
     private const val PREFS_NAME = "metro_pill"
     private const val KEY_ACTIVE_CONV = "active_conv"
