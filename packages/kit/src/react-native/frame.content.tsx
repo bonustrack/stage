@@ -1,15 +1,15 @@
 import { cloneElement, isValidElement, useMemo, useState } from 'react';
-import { Platform, View, type DimensionValue, type TextProps } from 'react-native';
+import { Platform, Text as RNText, View, type DimensionValue, type TextProps, type ViewStyle } from 'react-native';
 import RNMarkdown, { MarkdownIt, renderRules, type RenderRules } from 'react-native-markdown-display';
 import { frameFlex, type FrameIconName, type FrameNodeOf } from '../frame';
 import { frameBlockSize } from '../frame.flow';
 import { httpsUrl } from '../frame.values';
 import { NEW_TAB, isPlainClick, type LinkClickEvent } from '../link';
-import { resolveColors, type ButtonColor, type ButtonControlVariant } from '../button.styles';
+import { resolveColors, SIZES, textLabelStyle, type ButtonColor, type ButtonControlVariant } from '../button.styles';
 import { spacingEntries } from '../layout';
 import { markdownStyles } from '../markdown.styles';
 import { TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
-import { FONT_SIZE, FONT_SIZE_DEFAULT, fontSize, schemePalette } from '../tokens';
+import { DENSITY_SCALE, FONT_SIZE, FONT_SIZE_DEFAULT, fontSize, schemePalette } from '../tokens';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Caption } from './caption';
@@ -151,6 +151,12 @@ function iconNode(name: FrameIconName | undefined, color: string, size: number):
   return name === undefined ? undefined : <Glyph icon={FRAME_ICON_GLYPHS[name]} size={size} color={color} />;
 }
 
+const WRAPPING_LABEL = { flexShrink: 1 } as const;
+
+function growingButtonStyle(height: number): ViewStyle {
+  return { height: 'auto', minHeight: height, paddingVertical: DENSITY_SCALE.compact.paddingY };
+}
+
 export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.ReactElement {
   const { dark, usable } = useFrameRuntime();
   const scope = useFormScope();
@@ -168,10 +174,15 @@ export function FrameButton({ node }: { node: FrameNodeOf<'Button'> }): React.Re
       setLoading(false);
     }
   };
+  const control = controlSize(size) ?? 'md';
+  const spec = SIZES[control];
   return (
-    <Button label={label} color={tone} variant={kind} size={controlSize(size)} pill={pill} uniform={uniform} block={block}
+    <Button label={label} color={tone} variant={kind} size={control} pill={pill} uniform={uniform} block={block}
       disabled={disabled === true || !acts || !usable(submit === true ? undefined : onClickAction)} loading={loading} dark={dark}
       iconStart={iconNode(iconStart, fg, FONT_SIZE.xs)} iconEnd={iconNode(iconEnd, fg, FONT_SIZE.xs)}
-      onPress={() => { void press(); }} />
+      style={growingButtonStyle(spec.height)}
+      onPress={() => { void press(); }}>
+      {label === undefined ? undefined : <RNText style={[textLabelStyle(spec, fg), WRAPPING_LABEL]}>{label}</RNText>}
+    </Button>
   );
 }
