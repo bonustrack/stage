@@ -11,6 +11,16 @@ function convIdOfTopic(topic) {
   return match ? match[1].toLowerCase() : null;
 }
 
+function clearedConvOfTopic(topic) {
+  var match = /^\/stage\/clear\/([0-9a-fA-F]+)$/.exec(topic || '');
+  return match ? match[1].toLowerCase() : null;
+}
+
+async function closeCards(convId) {
+  var cards = await self.registration.getNotifications({ tag: convId });
+  cards.forEach(function (card) { card.close(); });
+}
+
 function payloadOf(event) {
   try {
     var json = event.data ? event.data.json() : null;
@@ -45,7 +55,13 @@ async function showGenericCard(convId) {
 }
 
 self.addEventListener('push', function (event) {
-  var convId = convIdOfTopic(payloadOf(event).topic);
+  var topic = payloadOf(event).topic;
+  var cleared = clearedConvOfTopic(topic);
+  if (cleared) {
+    event.waitUntil(closeCards(cleared));
+    return;
+  }
+  var convId = convIdOfTopic(topic);
   if (!convId) return;
   event.waitUntil(showGenericCard(convId));
 });

@@ -1,10 +1,11 @@
 import type { Client } from '@xmtp/browser-sdk';
-import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
+import { groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import {
-  makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
+  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
   type PushPermission, type PushTopics,
 } from './pushRegister.core';
+import { dismissConvNotifications } from './pushNotify.web';
 import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
@@ -41,21 +42,17 @@ async function webPushToken(): Promise<string | null> {
   return firebasePushToken();
 }
 
-function groupTopic(groupId: string): string {
-  return `/xmtp/mls/1/g-${groupId}/proto`;
-}
-
 async function collectTopics(client: PushClient, installationId: string): Promise<PushTopics> {
   const conversations = await client.conversations.list();
   const topics: string[] = [`/xmtp/mls/1/w-${installationId}/proto`];
   for (const conv of conversations) {
     const name = (conv as { name?: string }).name;
-    if (!isSyncGroupName(name ?? '')) topics.push(groupTopic(conv.id));
+    if (!isSyncGroupName(name ?? '')) topics.push(groupTopicOf(conv.id));
   }
   const keys = await client.conversations.hmacKeys();
   const hmacKeys: HmacKeysByTopic = {};
   for (const [id, list] of keys) {
-    const topic = id.startsWith('/') ? id : groupTopic(id);
+    const topic = id.startsWith('/') ? id : groupTopicOf(id);
     hmacKeys[topic] = list.map((k) => ({ thirtyDayPeriodsSinceEpoch: Number(k.epoch), hmacKey: k.key }));
   }
   return { topics, hmacKeys };
@@ -86,3 +83,14 @@ export async function unregisterPushFromServer(client: PushClient): Promise<void
 }
 
 export const schedulePushTopicRefresh = makeTopicRefresh(() => getCachedXmtpClient(), registerPushWithServer);
+
+function cachedInstallationId(): string | null {
+  const id = getCachedXmtpClient()?.installationId;
+  return typeof id === 'string' && id !== '' ? id : null;
+}
+
+export const startPushClear = makePushClear({
+  installationId: cachedInstallationId,
+  rpcUrl: proxiedRpcUrl,
+  dismissLocal: dismissConvNotifications,
+});

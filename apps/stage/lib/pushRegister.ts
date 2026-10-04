@@ -6,9 +6,10 @@ import type { Client } from '@xmtp/react-native-sdk';
 import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
 import { groupIdOfTopic, type HmacKeysByTopic, type PushPlatform } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
-import { getDeviceFcmToken } from './pushNotify';
+import { dismissConvNotifications, getDeviceFcmToken } from './pushNotify';
+import { convIdOfNotificationData } from './pushNotify.model';
 import {
-  directRpcUrl, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
+  directRpcUrl, makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
   type PushPermission, type PushTopics,
 } from './pushRegister.core';
 import { getCachedXmtpClient } from './xmtp.state';
@@ -57,6 +58,12 @@ export async function unregisterPushFromServer(client: PushClient): Promise<void
 
 export const schedulePushTopicRefresh = makeTopicRefresh(() => getCachedXmtpClient(), registerPushWithServer);
 
+export const startPushClear = makePushClear({
+  installationId: () => getCachedXmtpClient()?.installationId ?? null,
+  rpcUrl: directRpcUrl,
+  dismissLocal: dismissConvNotifications,
+});
+
 export async function getPushPermission(): Promise<PushPermission> {
   try {
     return toPermission((await Notifications.getPermissionsAsync()).status);
@@ -74,15 +81,9 @@ const markConvRead = async (convId: string): Promise<void> => {
   return fn(convId);
 };
 
-function convIdFromNotificationData(data: unknown): string | null {
-  if (!data || typeof data !== 'object') return null;
-  const convId = (data as Record<string, unknown>).convId;
-  return typeof convId === 'string' && convId.length > 0 ? convId : null;
-}
-
 function openConvFromResponse(response: Notifications.NotificationResponse | null): void {
   if (!response) return;
-  const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
+  const convId = convIdOfNotificationData(response.notification?.request?.content?.data);
   if (!convId) return;
   router.push({ pathname: '/channel/[convId]', params: { convId } });
   void markConvRead(convId).catch(reported('push.markRead'));

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { notificationIdsForConv } from './pushNotify.model';
 
 Notifications.setNotificationHandler({
   handleNotification: () => {
@@ -86,4 +87,14 @@ export async function presentInboundNotification(args: {
       console.warn('presentInboundNotification failed', (err as Error).message);
     }
   }
+}
+
+export async function dismissConvNotifications(convId: string): Promise<void> {
+  const presented = await Notifications.getPresentedNotificationsAsync();
+  const ids = notificationIdsForConv(
+    presented.map((n) => ({ identifier: n.request.identifier, data: n.request.content.data })),
+    convId,
+    Platform.OS === 'android',
+  );
+  await Promise.all(ids.map((id) => Notifications.dismissNotificationAsync(id)));
 }

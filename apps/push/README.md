@@ -24,9 +24,29 @@ Devices call the server's Connect API over HTTPS with JSON bodies:
 | `POST /notifications.v1.Notifications/RegisterInstallation` | installation id + FCM or APNs token |
 | `POST /notifications.v1.Notifications/SubscribeWithMetadata` | topics with their HMAC keys |
 | `POST /notifications.v1.Notifications/DeleteInstallation` | when the user turns push off |
+| `POST /stage.v1.Push/JoinDeviceGroup` | installation id + the account's group key, once per installation |
+| `POST /stage.v1.Push/ClearConversation` | installation id + group key + a conversation topic, when a chat is read |
 
 The app does not use the SDK's built-in push client on Android because that
 client dials the server over plaintext gRPC; the JSON path above stays on TLS.
+
+## Clearing a chat on the other devices
+
+The two `stage.v1.Push` calls are Stage's own, added to the upstream server by
+`stagepush/` (copied into `pkg/stagepush`) and `stagepush.patch` (mounts them
+next to the XMTP API). The Docker build applies both and runs their tests.
+
+- Each device derives a group key from a signature of its account owner. All
+  devices of one account get the same key, nobody else can. The server keeps
+  only its SHA-256 (`stage_device_groups`, created on start), and an
+  installation joins one group for good.
+- When a chat is read, the device sends the conversation topic with the key.
+  The server sends a data-only push with the topic `/stage/clear/<conversation
+  id>` to the other installations of that group that subscribe to that topic,
+  and each removes its own cards for that chat. No content, nothing the server
+  did not already know.
+- Rate limits: 30 calls per group, refilled one every 2 seconds, and 100 calls
+  for the whole server, refilled 50 a second.
 
 ## One-time setup
 

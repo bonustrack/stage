@@ -1,27 +1,32 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import {
-  PUSH_RPC, deleteInstallationBody, isWelcomeTopic, registerInstallationBody, subscribeWithMetadataBody,
-  type HmacKeysByTopic, type PushPlatform,
+  PUSH_RPC, clearConversationBody, deleteInstallationBody, derivePushGroupKey, isWelcomeTopic, joinDeviceGroupBody,
+  pushRpcPath, registerInstallationBody, subscribeWithMetadataBody, type HmacKeysByTopic, type PushPlatform, type PushRpc,
 } from '@stage-labs/client/xmtp/pushServer';
 import { appStorage } from '../platform/storage';
+import { getActiveAccount } from './accounts';
+import { onReadStateChanged } from './channelsCache';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
-import { report, ignored } from './errorPolicy';
+import { report, reported, ignored } from './errorPolicy';
 import { afterFirstPages } from './feedLines';
 import { envBaseUrl } from './env';
+import { signingKeyForRecord } from './xmtp.signing.core';
 
 const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, 'https://push.stage.box');
-const PUSH_RPC_PATH = '/notifications.v1.Notifications/';
+const CLEAR_DEBOUNCE_MS = 1_500;
+const HTTP_CONFLICT = 409;
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 const stateKey = (installationId: string): string => `push.server.${installationId}`;
+const joinedKey = (installationId: string): string => `push.group.${installationId}`;
 
 export interface PushTopics { topics: string[]; hmacKeys: HmacKeysByTopic }
 
 interface PushRegistrationInput {
   installationId: string;
   platform: PushPlatform;
-  rpcUrl: (method: string) => string;
+  rpcUrl: (method: PushRpc) => string;
   getToken: () => Promise<string | null>;
   collectTopics: () => Promise<PushTopics>;
 }
@@ -57,17 +62,39 @@ function reportPushFailure(scope: string, err: unknown): void {
   report(scope, err);
 }
 
-export function directRpcUrl(method: string): string {
-  return `${PUSH_SERVER_URL}${PUSH_RPC_PATH}${method}`;
+export function directRpcUrl(method: PushRpc): string {
+  return `${PUSH_SERVER_URL}${pushRpcPath(method)}`;
 }
 
-async function postJson(url: string, body: unknown): Promise<void> {
+async function postJson(url: string, body: unknown, accepted?: number): Promise<void> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`push server responded ${res.status}`);
+  if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
+}
+
+const groupKeys = new Map<string, Promise<string>>();
+
+async function activePushGroupKey(): Promise<string | null> {
+  const rec = await getActiveAccount();
+  if (rec === null) return null;
+  const known = groupKeys.get(rec.address);
+  if (known) return known;
+  const pending = signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage));
+  groupKeys.set(rec.address, pending);
+  pending.catch(() => { groupKeys.delete(rec.address); });
+  return pending;
+}
+
+async function joinDeviceGroup(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {
+  const key = joinedKey(installationId);
+  if ((await appStorage.get(key).catch(ignored(null, 'cache'))) === '1') return;
+  const groupKey = await activePushGroupKey();
+  if (groupKey === null) return;
+  await postJson(rpcUrl(PUSH_RPC.join), joinDeviceGroupBody(installationId, groupKey), HTTP_CONFLICT);
+  await appStorage.set(key, '1').catch(ignored(undefined, 'cache'));
 }
 
 async function readState(key: string): Promise<RegisterState | null> {
@@ -123,10 +150,12 @@ export async function runPushRegistration(input: PushRegistrationInput): Promise
     await subscribeTopics(input, fresh ? prev : null, token, fresh ? prev.at : Date.now());
   } catch (err) {
     reportPushFailure('push.register', err);
+    return;
   }
+  await joinDeviceGroup(input.installationId, input.rpcUrl).catch(reported('push.join'));
 }
 
-export async function runPushUnregistration(installationId: string, rpcUrl: (method: string) => string): Promise<void> {
+export async function runPushUnregistration(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {
   try {
     const key = stateKey(installationId);
     const prev = await readState(key);
@@ -137,4 +166,37 @@ export async function runPushUnregistration(installationId: string, rpcUrl: (met
   } catch (err) {
     reportPushFailure('push.unregister', err);
   }
+}
+
+interface PushClearInput {
+  installationId: () => string | null;
+  rpcUrl: (method: PushRpc) => string;
+  dismissLocal: (convId: string) => Promise<void>;
+}
+
+async function requestPushClear(input: PushClearInput, convId: string): Promise<void> {
+  const installationId = input.installationId();
+  if (installationId === null) return;
+  const groupKey = await activePushGroupKey();
+  if (groupKey === null) return;
+  await postJson(input.rpcUrl(PUSH_RPC.clear), clearConversationBody(installationId, groupKey, convId));
+}
+
+export function makePushClear(input: PushClearInput): () => void {
+  const pending = new Map<string, ReturnType<typeof setTimeout>>();
+  let started = false;
+  return () => {
+    if (started) return;
+    started = true;
+    onReadStateChanged(({ convId, markedUnread }) => {
+      if (markedUnread) return;
+      void input.dismissLocal(convId).catch(ignored(undefined, 'ui'));
+      const timer = pending.get(convId);
+      if (timer !== undefined) clearTimeout(timer);
+      pending.set(convId, setTimeout(() => {
+        pending.delete(convId);
+        void requestPushClear(input, convId).catch(reported('push.clear'));
+      }, CLEAR_DEBOUNCE_MS));
+    });
+  };
 }

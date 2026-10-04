@@ -37,3 +37,10 @@ export async function presentInboundNotification(args: {
     report('push.webNotification', err);
   }
 }
+
+export async function dismissConvNotifications(convId: string): Promise<void> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return;
+  for (const card of await registration.getNotifications({ tag: convId })) card.close();
+}

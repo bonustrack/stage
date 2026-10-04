@@ -9,6 +9,11 @@ WORKDIR /src
 RUN git clone --filter=blob:none "$UPSTREAM_REPO" . \
   && git checkout --detach "$UPSTREAM_COMMIT"
 
+COPY stagepush pkg/stagepush
+COPY stagepush.patch /tmp/stagepush.patch
+RUN git apply /tmp/stagepush.patch \
+  && go test ./pkg/stagepush/
+
 RUN go build \
   -o /out/notifications-server \
   -ldflags="-X 'main.GitCommit=$UPSTREAM_COMMIT'" \

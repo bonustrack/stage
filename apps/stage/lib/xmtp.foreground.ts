@@ -1,11 +1,12 @@
 import { AppState, Platform } from 'react-native';
+import { clearedConvOfTopic } from '@stage-labs/client/xmtp/pushServer';
 import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
-import { markBackgroundDelivered } from './pushNotify';
+import { dismissConvNotifications, markBackgroundDelivered } from './pushNotify';
 import { XMTP_APP_GROUP } from './xmtp.dbkeyFs';
 import { getCachedXmtpClient } from './xmtp.state';
 import { resyncActiveFeeds, syncInboxOnce } from './xmtp.resync';
 import type { StreamStatus } from './xmtp.types';
-import { attempt, reported } from './errorPolicy';
+import { attempt, ignored, reported } from './errorPolicy';
 
 const RELEASES_ON_BACKGROUND = Platform.OS === 'ios' && XMTP_APP_GROUP !== null;
 
@@ -70,6 +71,11 @@ function onXmtpPush(status: StreamStatus): void {
 export const foregroundWatch = {
   attach(status: StreamStatus): void {
     pushSub ??= subscribeXmtpPush((e) => {
+      const cleared = clearedConvOfTopic(e?.topic);
+      if (cleared !== null) {
+        void dismissConvNotifications(cleared).catch(ignored(undefined, 'ui'));
+        return;
+      }
       if (AppState.currentState !== 'active') markBackgroundDelivered(e?.messageId);
       onXmtpPush(status);
     });

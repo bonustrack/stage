@@ -1,0 +1,71 @@
+diff --git a/cmd/server/main.go b/cmd/server/main.go
+index 5450a00..9eec87a 100644
+--- a/cmd/server/main.go
++++ b/cmd/server/main.go
+@@ -19,6 +19,7 @@ import (
+ 	"github.com/xmtp/example-notification-server-go/pkg/interfaces"
+ 	"github.com/xmtp/example-notification-server-go/pkg/logging"
+ 	"github.com/xmtp/example-notification-server-go/pkg/options"
++	"github.com/xmtp/example-notification-server-go/pkg/stagepush"
+ 	"github.com/xmtp/example-notification-server-go/pkg/subscriptions"
+ 	"github.com/xmtp/example-notification-server-go/pkg/xmtp"
+ 	"go.uber.org/zap"
+@@ -65,9 +66,9 @@ func main() {
+ 	subscriptionsService := subscriptions.NewSubscriptionsService(logger, db)
+ 	var notifListener xmtp.NotificationListener
+ 	var apiServer *api.ApiServer
++	deliveryServices := []interfaces.Delivery{}
+ 
+ 	if opts.Xmtp.ListenerEnabled {
+-		deliveryServices := []interfaces.Delivery{}
+ 		var err error
+ 
+ 		if opts.Apns.Enabled {
+@@ -107,6 +108,11 @@ func main() {
+ 		if notifListener != nil {
+ 			apiServer.SetReadyCheck(notifListener.Ready)
+ 		}
++		if groups, err := stagepush.NewPostgresGroups(ctx, db); err != nil {
++			logger.Error("stage device groups disabled", zap.Error(err))
++		} else {
++			apiServer.AddRoutes(stagepush.New(logger, groups, subscriptionsService, installationsService, deliveryServices).Routes())
++		}
+ 		apiServer.Start()
+ 	}
+ 
+diff --git a/pkg/api/api.go b/pkg/api/api.go
+index 171ab44..e58c816 100644
+--- a/pkg/api/api.go
++++ b/pkg/api/api.go
+@@ -31,6 +31,7 @@ type ApiServer struct {
+ 	listener      net.Listener
+ 	listenerType  interfaces.ListenerType
+ 	readyCheck    func() bool
++	extraRoutes   map[string]http.Handler
+ }
+ 
+ func NewApiServer(logger *zap.Logger, opts options.ApiOptions, installations interfaces.Installations, subscriptions interfaces.Subscriptions, listenerType interfaces.ListenerType) *ApiServer {
+@@ -60,11 +61,23 @@ func (s *ApiServer) SetReadyCheck(readyCheck func() bool) {
+ 	s.readyCheck = readyCheck
+ }
+ 
++func (s *ApiServer) AddRoutes(routes map[string]http.Handler) {
++	if s.extraRoutes == nil {
++		s.extraRoutes = map[string]http.Handler{}
++	}
++	for path, handler := range routes {
++		s.extraRoutes[path] = handler
++	}
++}
++
+ func (s *ApiServer) Start() {
+ 	mux := http.NewServeMux()
+ 	path, handler := notificationsv1connect.NewNotificationsHandler(s)
+ 	mux.Handle(path, handler)
+ 	mux.HandleFunc("/readyz", s.handleReady)
++	for extraPath, extraHandler := range s.extraRoutes {
++		mux.Handle(extraPath, extraHandler)
++	}
+ 
+ 	addr := fmt.Sprintf(":%d", s.port)
+ 	if s.listener != nil {
