@@ -88,6 +88,7 @@ function webQuery(q: MessageQuery): WebMessagesOptions {
   return {
     limit: BigInt(q.limit),
     ...(q.beforeMs === undefined ? {} : { sentBeforeNs: BigInt(q.beforeMs) * BigInt(1_000_000) }),
+    ...(q.afterNs === undefined ? {} : { sentAfterNs: BigInt(Math.floor(q.afterNs)) }),
     direction: q.order === 'asc' ? SortDirection.Ascending : SortDirection.Descending,
   };
 }

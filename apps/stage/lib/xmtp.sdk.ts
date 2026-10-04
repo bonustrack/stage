@@ -43,6 +43,7 @@ function nativeQuery(q: MessageQuery): NativeMessagesOptions {
   return {
     limit: q.limit,
     ...(q.beforeMs === undefined ? {} : { beforeNs: q.beforeMs * 1_000_000 }),
+    ...(q.afterNs === undefined ? {} : { afterNs: q.afterNs }),
     ...(q.order === undefined ? {} : { direction: q.order === 'asc' ? 'ASCENDING' : 'DESCENDING' }),
   };
 }

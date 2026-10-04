@@ -20,6 +20,7 @@ import { conversationIsSyncGroup, rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
+import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { isHiddenConv, registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
@@ -28,14 +29,16 @@ import type { StreamMsg } from './xmtp.types';
 import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { report, reported, recover, ignored } from './errorPolicy';
 
-const CURSOR_PREFIX = 'readSync.cursor.';
-const REPLAY_LIMIT = 500;
-const FIRST_REPLAY_LIMIT = 5000;
+const CURSOR_PREFIX = 'readSync.cursor.v2.';
+const REPLAY_LIMIT = 5000;
+const CATCH_UP_GAP_MS = 10_000;
 const CLEARED_KEY = 'cleared';
 const PUBLISH_DEBOUNCE_MS = 800;
 const SEARCH_DEBOUNCE_MS = 1000;
 
 let bootToken = 0;
+let replaying = false;
+let lastCatchUpAt = 0;
 let groupId: string | null = null;
 const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
@@ -81,9 +84,10 @@ async function syncConversation(convId: string): Promise<void> {
   await conv.sync();
 }
 
-async function recentSyncMessages(convId: string, limit: number): Promise<RowMessage[]> {
+async function syncMessagesAfter(convId: string, afterNs: number): Promise<RowMessage[]> {
   const conv = await requireConv(convId);
-  return (await sdk.messages(conv, { limit, order: 'desc' })).map(sdk.rowOf);
+  const after = afterNs > 0 ? { afterNs } : {};
+  return (await sdk.messages(conv, { limit: REPLAY_LIMIT, order: 'desc', ...after })).map(sdk.rowOf);
 }
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
@@ -104,16 +108,18 @@ async function pinStateForRows(state: PinStateContent): Promise<PinStateContent>
 
 async function applyReadStates(remote: readonly ReadStateContent[]): Promise<void> {
   const reads = await Promise.all(remote.map(readStateForRows));
-  const before = getCachedRows();
-  let rows = before;
+  const applied: ReadStateContent[] = [];
   for (const state of reads) {
     if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
     localAt.set(readKey(state.convId), state.at);
     await setLastReadNs(state.convId, Math.max(await getLastReadNs(state.convId), state.lastReadNs));
     await setMarkedUnreadFlag(state.convId, state.markedUnread);
-    if (rows) rows = patchedRows(rows, state);
+    applied.push(state);
   }
-  if (rows && rows !== before) setCachedRows(rows);
+  const rows = getCachedRows();
+  if (!rows) return;
+  const next = applied.reduce(patchedRows, rows);
+  if (next !== rows) setCachedRows(next);
 }
 
 async function applyPinStates(remote: readonly PinStateContent[]): Promise<void> {
@@ -170,8 +176,7 @@ async function readGroup(accountId: string, group: SyncGroupState): Promise<Grou
   if (group.active) await syncConversation(group.id).catch(reported('readSync.sync'));
   const cursorKey = `${CURSOR_PREFIX}${accountId}.${group.id}`;
   const cursor = Number(await appStorage.get(cursorKey).catch(recover('readSync.cursor', null))) || 0;
-  const messages = await recentSyncMessages(group.id, cursor === 0 ? FIRST_REPLAY_LIMIT : REPLAY_LIMIT)
-    .catch(recover<RowMessage[]>('readSync.messages', []));
+  const messages = await syncMessagesAfter(group.id, cursor).catch(recover<RowMessage[]>('readSync.messages', []));
   return { id: group.id, cursorKey, cursor, messages: messages.filter((m) => m.sentNs > cursor) };
 }
 
@@ -186,10 +191,7 @@ async function replay(accountId: string, target: string, groups: readonly SyncGr
   }
 }
 
-async function boot(): Promise<void> {
-  const token = ++bootToken;
-  groupId = null;
-  localAt.clear();
+async function bootReplay(token: number): Promise<void> {
   if (!(await waitForXmtpReady())) return;
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
@@ -202,6 +204,35 @@ async function boot(): Promise<void> {
   } catch (err) {
     report('readSync.boot', err);
   }
+}
+
+async function boot(): Promise<void> {
+  const token = ++bootToken;
+  groupId = null;
+  localAt.clear();
+  replaying = true;
+  try {
+    await bootReplay(token);
+  } finally {
+    if (token === bootToken) replaying = false;
+  }
+}
+
+async function catchUp(): Promise<void> {
+  const token = bootToken;
+  const rec = await getActiveAccount().catch(recover('readSync.catchUp', null));
+  if (rec === null) return;
+  const groups = await knownSyncGroups();
+  if (token !== bootToken) return;
+  await replay(rec.id, await ensureGroup(rec.address), groups);
+}
+
+function catchUpInFront(): void {
+  const now = Date.now();
+  if (replaying || sdk.cachedClient() === null || !isAppInFront() || now - lastCatchUpAt < CATCH_UP_GAP_MS) return;
+  replaying = true;
+  lastCatchUpAt = now;
+  void catchUp().catch(reported('readSync.catchUp')).finally(() => { replaying = false; });
 }
 
 async function withGroup(
@@ -359,5 +390,6 @@ export function startReadSync(): void {
   for (const setting of LATEST_WINS) setting.start();
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
+  subscribeAppInFront(catchUpInFront);
   void boot();
 }

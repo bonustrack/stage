@@ -27,7 +27,7 @@ export function notAGroup(): never {
 
 export interface ConvLike { id: string }
 
-export interface MessageQuery { limit: number; beforeMs?: number; order?: 'asc' | 'desc' }
+export interface MessageQuery { limit: number; beforeMs?: number; afterNs?: number; order?: 'asc' | 'desc' }
 
 export interface DmLookup<C> {
   find: () => Promise<C | null | undefined>;
