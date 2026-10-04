@@ -15,12 +15,11 @@ import { menuPointOf } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import type { MarkedNode } from './arrowKeys.model';
 import { contextMenuProps } from '../lib/contextMenu';
-import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
-import { TEXT_11PX } from './smallText';
 import { titleTone } from './TitleText';
+import { UnreadBadge } from './UnreadBadge';
 import type { BubbleLinkProps } from './bubble/helpers';
 
 interface ChannelRowProps {
@@ -52,7 +51,6 @@ interface ChannelRowProps {
 }
 
 export const CHANNEL_ROW_HEIGHT = 67;
-const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
 const WRAPPED_TITLE_LINE_HEIGHT = 22;
 const PREVIEW_LINE_HEIGHT = 18;
@@ -60,16 +58,14 @@ const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
 const PIN_GAP = 4;
 
-function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
-  unreadCount: number; markedUnread?: boolean; head: string; bg: string;
+function TrailingBadge({ unreadCount, markedUnread }: {
+  unreadCount: number; markedUnread?: boolean;
 }): React.ReactElement | null {
   const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
   if (shown <= 0) return null;
   return (
     <Row align="center" height={PREVIEW_LINE_HEIGHT}>
-      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" color={bg} style={TEXT_11PX}>{unreadBadgeLabel(shown)}</Text>
-      </Row>
+      <UnreadBadge count={shown} />
     </Row>
   );
 }
@@ -225,7 +221,7 @@ function ChannelRowBase({
   pinned, draftText, active,
   onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
 }: ChannelRowProps): React.ReactElement {
-  const { link: head, bg, border } = usePalette();
+  const { border } = usePalette();
   const params = channelRowModel({
     title,
     placeholderTitle,
@@ -268,7 +264,7 @@ function ChannelRowBase({
             wrapTitle={wrapTitle}
             previewLines={previewLines}
             trailing={(
-              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} head={head} bg={bg} />
+              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} />
             )}
           />
         </Col>
