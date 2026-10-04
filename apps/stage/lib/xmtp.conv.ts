@@ -175,12 +175,3 @@ export function streamConvConsent(cb: () => void): () => void {
   const client = sdk.cachedClient();
   return client ? sharedConsent(client, cb) : () => undefined;
 }
-
-export async function syncConsent(): Promise<void> {
-  try {
-    const client = sdk.cachedClient();
-    if (client) await sdk.syncConsent(client);
-  } catch (err) {
-    report('xmtp.syncConsent', err);
-  }
-}

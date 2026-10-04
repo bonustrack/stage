@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { acceptRequestConv, blockRequestConv, syncConsent } from '../lib/xmtp.conv';
+import { acceptRequestConv, blockRequestConv } from '../lib/xmtp.conv';
 import { usePalette } from '../lib/theme';
 import { Box, Row, PAGE_GUTTER } from './layout';
 import { useWebTabRail } from '../lib/webLayout';
@@ -26,7 +26,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     if (busy) return;
     setBusy(true);
     void acceptRequestConv(convId)
-      .then(() => { void syncConsent(); onAccepted(); })
+      .then(() => { onAccepted(); })
       .catch(() => { setBusy(false); });
   }, [busy, convId, onAccepted]);
 
@@ -34,10 +34,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     if (busy) return;
     setBusy(true);
     void blockRequestConv(convId)
-      .then(() => {
-        void syncConsent();
-        capabilities.back();
-      })
+      .then(() => { capabilities.back(); })
       .catch(() => { setBusy(false); });
   }, [busy, convId]);
 

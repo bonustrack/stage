@@ -202,7 +202,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   listConvs: (client, consent) => client.conversations.list(webListOptions(consent)),
   syncConvList: (client) => client.conversations.sync(),
   syncVisible: (client) => client.conversations.syncAll(VISIBLE_STATES),
-  syncConsent: (client) => client.preferences.sync(),
   openDm: (client, address) => client.conversations.createDmWithIdentifier(identifierOf(address)),
   activeDm: (client, peerInboxId) => client.conversations.createDm(peerInboxId),
   dmLookup,

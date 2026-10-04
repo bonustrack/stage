@@ -60,7 +60,6 @@ interface ClientPrimitives<Cl, C, M> {
   listConvs: (client: Cl, consent?: XmtpConsent[]) => Promise<C[]>;
   syncConvList: (client: Cl) => Promise<unknown>;
   syncVisible: (client: Cl) => Promise<unknown>;
-  syncConsent: (client: Cl) => Promise<unknown>;
   openDm: (client: Cl, address: string) => Promise<C>;
   activeDm: (client: Cl, peerInboxId: string) => Promise<C>;
   dmLookup: (client: Cl, address: string) => Promise<DmLookup<C> | null>;

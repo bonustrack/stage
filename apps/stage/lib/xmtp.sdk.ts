@@ -184,7 +184,6 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   listConvs: (client, consent) => client.conversations.list(LIST_OPTIONS, undefined, consent),
   syncConvList: (client) => client.conversations.sync(),
   syncVisible: (client) => client.conversations.syncAllConversations(VISIBLE_CONSENT),
-  syncConsent: (client) => client.preferences.syncConsent(),
   openDm: (client, address) => client.conversations.findOrCreateDmWithIdentity(identityOf(address)),
   activeDm: (client, peerInboxId) => client.conversations.findOrCreateDm(peerInboxId),
   dmLookup: (client, address) => {

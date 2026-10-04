@@ -6,7 +6,7 @@ import { getXmtpBootstrapPhase, isActiveConv, registerHiddenConv } from '../../l
 import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
-  listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent, syncConsent,
+  listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent,
   conversationIsSyncGroup, getConvConsentState, createdBySelf,
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
@@ -281,7 +281,7 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
   }
   run.appStateSub = AppState.addEventListener('change', (state) => {
     if (state !== 'active') return;
-    void syncPreferences(); void syncConsent();
+    void syncPreferences();
     void r.refreshThrottled();
   });
 }
@@ -299,7 +299,6 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     subscribeConvStream(selfInboxId, run);
     subscribeLiveStreams(run, r);
     await syncPreferences();
-    await syncConsent();
   } catch (e) {
     if (run.cancelled || e instanceof NoAccountError) { clearTimeout(run.initTimer); return; }
     if (!hasHomeRows()) args.setError((e as Error).message);
