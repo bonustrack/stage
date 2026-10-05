@@ -128,9 +128,11 @@ function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsLis
   useLayoutEffect(() => {
     if (applied.current.enabledLabels === enabledLabels && applied.current.unreadOnly === unreadOnly) return;
     applied.current = { enabledLabels, unreadOnly };
+    scroll.savedOffsetRef.current = 0;
+    scroll.didRestoreRef.current = true;
     if ((peekScrollOffset(CHANNELS_SCROLL_KEY) ?? 0) <= 0) return;
     scroll.listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [enabledLabels, unreadOnly, scroll.listRef]);
+  }, [enabledLabels, unreadOnly, scroll.listRef, scroll.savedOffsetRef, scroll.didRestoreRef]);
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
