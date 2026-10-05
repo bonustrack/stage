@@ -21,7 +21,7 @@ export function ChatGalleryProvider({ entries, children }: {
 }
 
 function useChatImageUri(image: ChatImage | null): string | null {
-  const local = useLocalAttachment(image?.entryId, image?.index);
+  const local = useLocalAttachment(image?.entryId, image?.index, image?.att.remote);
   const remote = useRemoteAttachment(image?.att.remote);
   if (!image) return null;
   if (local) return local;

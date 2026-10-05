@@ -17,17 +17,22 @@ const keyOf = (view: OutboundView, id: string) => view.localIdOf.get(id) ?? id;
 
 function settle(state: OutboundState, live: HistoryEntry[]) {
   const before = outboundView(state, live, ME);
-  const next = settleOutbound(state, before.confirmed);
+  const next = settleOutbound(state, before);
   return { before, next, after: outboundView(next, live, ME) };
 }
 
 describe('a sent message keeps its row once the server confirms it', () => {
-  test('a text-matched confirmation keeps the pending row key after cleanup', () => {
-    const { before, next, after } = settle(pendingState(entry('tmp_1', 0, 'hello')), [entry('real_1', 400, 'hello')]);
+  test('an early echo keeps its row key and retains reconciliation data until the send resolves', () => {
+    const live = [entry('real_1', 400, 'hello')];
+    const { before, next, after } = settle(pendingState(entry('tmp_1', 0, 'hello')), live);
     expect(before.pending).toEqual([]);
-    expect(next.optimistic).toEqual([]);
+    expect(next.optimistic.map(o => o.id)).toEqual(['tmp_1']);
     expect(keyOf(before, 'real_1')).toBe('tmp_1');
     expect(keyOf(after, 'real_1')).toBe('tmp_1');
+    const resolved = settle(recordSent(next, 'tmp_1', 'real_1'), live);
+    expect(resolved.next.optimistic).toEqual([]);
+    expect(keyOf(resolved.after, 'real_1')).toBe('tmp_1');
+    expect(settleOutbound(resolved.next, resolved.after)).toBe(resolved.next);
   });
 
   test('an id-matched confirmation keeps the pending row key after cleanup', () => {

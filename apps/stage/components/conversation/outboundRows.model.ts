@@ -47,15 +47,30 @@ export function mergeConfirmed(prev: Map<string, string>, confirmed: Map<string,
   return next ?? prev;
 }
 
-export function localIdsByLiveId(...sources: Map<string, string>[]): Map<string, string> {
-  const out = new Map<string, string>();
-  for (const source of sources) for (const [localId, liveId] of source) out.set(liveId, localId);
-  return out;
-}
-
 export interface OutboundState {
   optimistic: HistoryEntry[];
   confirmedIds: Map<string, string>;
+  sent?: ReadonlySet<string>;
+  rowKeys?: Map<string, string>;
+}
+
+function stableRowKeys(state: OutboundState, confirmed: Map<string, string>, pending: HistoryEntry[]): Map<string, string> {
+  const keys = new Map(state.rowKeys);
+  const used = new Set([...keys].filter(([id]) => !id.startsWith('tmp_')).map(([, key]) => key));
+  const available = new Set([...state.optimistic.map(o => o.id), ...keys.values()].filter(key => !used.has(key)));
+  const assign = (id: string, preferred: string): string => {
+    const key = used.has(preferred) ? available.values().next().value ?? id : preferred;
+    keys.set(id, key);
+    used.add(key);
+    available.delete(key);
+    return key;
+  };
+  for (const [localId, liveId] of confirmed) {
+    const key = keys.get(liveId) ?? assign(liveId, keys.get(localId) ?? localId);
+    keys.set(localId, key);
+  }
+  for (const entry of pending) assign(entry.id, keys.get(entry.id) ?? entry.id);
+  return keys;
 }
 
 export interface OutboundView {
@@ -69,28 +84,28 @@ export function outboundView(
   uploaded?: ReadonlyMap<string, readonly string[]>,
 ): OutboundView {
   const confirmed = matchConfirmed(state.optimistic, liveBubbles, myUri, state.confirmedIds, uploaded);
-  return {
-    confirmed,
-    pending: confirmed.size ? state.optimistic.filter(o => !confirmed.has(o.id)) : state.optimistic,
-    localIdOf: localIdsByLiveId(state.confirmedIds, confirmed),
-  };
+  const pending = confirmed.size ? state.optimistic.filter(o => !confirmed.has(o.id)) : state.optimistic;
+  return { confirmed, pending, localIdOf: stableRowKeys(state, confirmed, pending) };
 }
 
 export function pendingFromMe(pending: HistoryEntry[], myUri: string): HistoryEntry[] {
   return pending.some(e => e.from !== myUri) ? pending.map(e => (e.from === myUri ? e : { ...e, from: myUri })) : pending;
 }
 
-export function settleOutbound(state: OutboundState, confirmed: Map<string, string>): OutboundState {
-  const optimistic = state.optimistic.filter(o => !confirmed.has(o.id));
-  const confirmedIds = mergeConfirmed(state.confirmedIds, confirmed);
-  if (optimistic.length === state.optimistic.length && confirmedIds === state.confirmedIds) return state;
-  return { optimistic, confirmedIds };
+export function settleOutbound(state: OutboundState, view: OutboundView): OutboundState {
+  const optimistic = state.optimistic.filter(o => !view.confirmed.has(o.id) || !state.sent?.has(o.id));
+  const confirmedIds = mergeConfirmed(state.confirmedIds, view.confirmed);
+  const rowKeys = mergeConfirmed(state.rowKeys ?? new Map<string, string>(), view.localIdOf);
+  if (optimistic.length === state.optimistic.length && confirmedIds === state.confirmedIds && rowKeys === state.rowKeys) return state;
+  return { ...state, optimistic, confirmedIds, rowKeys };
 }
 
 export function recordSent(state: OutboundState, localId: string, sentId?: string): OutboundState {
   if (!sentId) return { ...state, optimistic: state.optimistic.filter(o => o.id !== localId) };
-  const confirmedIds = mergeConfirmed(state.confirmedIds, new Map([[localId, sentId]]));
-  return confirmedIds === state.confirmedIds ? state : { ...state, confirmedIds };
+  if (state.sent?.has(localId) && state.confirmedIds.get(localId) === sentId) return state;
+  const confirmedIds = new Map([...state.confirmedIds].filter(([id, liveId]) => id === localId || liveId !== sentId));
+  confirmedIds.set(localId, sentId);
+  return { ...state, confirmedIds, sent: new Set(state.sent).add(localId) };
 }
 
 export function optimisticRowPreview(text: string, attachments: readonly { mime?: string; name?: string }[]): string {

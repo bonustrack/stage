@@ -72,8 +72,8 @@ export function useOutboundLayer(
     [view, liveBubbles, myUri],
   );
   useEffect(() => {
-    if (view.confirmed.size) setOutbound(s => settleOutbound(s, view.confirmed));
-  }, [view]);
+    if (view.confirmed.size) setOutbound(s => settleOutbound(s, outboundView(s, liveBubbles, myUri, uploaded)));
+  }, [view, liveBubbles, myUri, uploaded]);
   const { localIdOf } = view;
   const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
   useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);

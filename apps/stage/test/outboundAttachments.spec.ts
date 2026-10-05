@@ -33,7 +33,7 @@ function harness(state = pending(photo())) {
       return [...result.pending, ...live].map(e => result.localIdOf.get(e.id) ?? e.id);
     },
     sent(localId: string, sentId?: string) { state = recordSent(state, localId, sentId); },
-    settle(live: HistoryEntry[]) { state = settleOutbound(state, view(live).confirmed); },
+    settle(live: HistoryEntry[]) { state = settleOutbound(state, view(live)); },
     retry(localId: string) { state = { ...state, optimistic: [...state.optimistic, photo(localId)] }; },
   };
 }
@@ -105,8 +105,44 @@ describe('one bubble per outgoing attachment message', () => {
     expect(h.view(live).confirmed.size).toBe(1);
     h.settle(live);
     expect(h.keys(live).sort()).toEqual(['tmp_1', 'tmp_2']);
-    expect(h.view(live).confirmed.size).toBe(0);
+    expect(h.view(live).confirmed.size).toBe(1);
     expect(h.keys([...live, echo('real_2')]).sort()).toEqual(['tmp_1', 'tmp_2']);
+  });
+
+  test('out-of-order results cannot settle two shared-upload sends from one echo', () => {
+    for (const firstResolved of ['tmp_1', 'tmp_2']) {
+      const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
+      h.cache.remember('tmp_1', [URI], [REMOTE]);
+      h.cache.remember('tmp_2', [URI], [REMOTE]);
+      const live = [echo('real_2')];
+      h.settle(live);
+      expect(h.view(live).localIdOf.get('real_2')).toBe('tmp_1');
+      h.sent(firstResolved, firstResolved === 'tmp_1' ? 'real_1' : 'real_2');
+      h.settle(live);
+      expect(h.view(live).pending.map(o => o.id)).toEqual(['tmp_1']);
+      expect(h.keys(live)).toEqual(['tmp_2', 'tmp_1']);
+      h.sent(firstResolved === 'tmp_1' ? 'tmp_2' : 'tmp_1', firstResolved === 'tmp_1' ? 'real_2' : 'real_1');
+      h.settle(live);
+      expect(h.keys(live)).toEqual(['tmp_2', 'tmp_1']);
+      const delivered = [...live, echo('real_1')];
+      h.settle(delivered);
+      expect(h.view(delivered).pending).toEqual([]);
+      expect(h.keys(delivered)).toEqual(['tmp_1', 'tmp_2']);
+    }
+  });
+
+  test('failure of the remaining shared-upload send leaves the delivered row unchanged', () => {
+    const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
+    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_2', [URI], [REMOTE]);
+    const live = [echo('real_2')];
+    h.settle(live);
+    h.sent('tmp_2', 'real_2');
+    h.settle(live);
+    h.sent('tmp_1');
+    h.settle(live);
+    expect(h.view(live).pending).toEqual([]);
+    expect(h.keys(live)).toEqual(['tmp_1']);
   });
 
   test('a known send id takes precedence over another message with the same attachment', () => {
