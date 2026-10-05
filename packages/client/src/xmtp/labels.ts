@@ -194,10 +194,17 @@ export async function writeLabels(
   return next;
 }
 
-export async function writeChannelField(group: Group, field: ChannelField, value: string | null): Promise<string | null> {
+export async function writeChannelField(
+  group: Group, field: ChannelField, value: string | null, expected?: string | null,
+): Promise<string | null> {
   const next = channelFieldOf(field, value);
   if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
-  await writeTags(group, `the ${field}`, () => ({ [field]: next ?? undefined }));
+  await writeTags(group, `the ${field}`, existing => {
+    if (expected !== undefined && channelFieldOf(field, existing[field])?.toLowerCase() !== channelFieldOf(field, expected)?.toLowerCase()) {
+      throw new Error(`The ${field} changed. Try again.`);
+    }
+    return { [field]: next ?? undefined };
+  });
   return next;
 }
 

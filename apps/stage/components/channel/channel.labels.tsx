@@ -172,7 +172,7 @@ function TagPicker({ draft, options, noun, pick }: {
       <PickerList>
         {shown.map(label => (
           <PickerRow key={label.toLowerCase()} selected={includesKey(draft, label)} label={label} onPress={() => { pick(label); }}>
-            <LabelChip label={label} background={bg}/>
+            {noun === 'category' ? <Text size="2xs">{label}</Text> : <LabelChip label={label} background={bg}/>}
           </PickerRow>
         ))}
         {creatable ? (

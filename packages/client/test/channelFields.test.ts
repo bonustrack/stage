@@ -52,6 +52,39 @@ describe('channel status and priority', () => {
     }
   });
 
+  test('a guarded status rename or clear matches the source column without changing other metadata', async () => {
+    const state = appDataGroup(JSON.stringify({ ...kept, status: 'todo' }));
+    expect(await writeChannelField(state.group, 'status', 'Doing', 'Todo')).toBe('Doing');
+    expect(JSON.parse(state.raw())).toEqual({ ...kept, status: 'Doing' });
+    expect(await writeChannelField(state.group, 'status', null, 'Doing')).toBeNull();
+    expect(JSON.parse(state.raw())).toEqual(kept);
+  });
+
+  test.each([null, 'Doing'])('a guarded status change to %s preserves a newer status found by sync', async next => {
+    const writes: string[] = [];
+    const fresh = JSON.stringify({ ...kept, status: 'Done' });
+    const group: Group = {
+      appData: JSON.stringify({ ...kept, status: 'Todo' }),
+      sync: () => { group.appData = fresh; return Promise.resolve(); },
+      updateAppData: value => { writes.push(value); return Promise.resolve(); },
+    };
+    await expect(writeChannelField(group, 'status', next, 'Todo')).rejects.toThrow('The status changed. Try again.');
+    expect(group.appData).toBe(fresh);
+    expect(writes).toEqual([]);
+  });
+
+  test('checks the expected source status after earlier queued writes finish', async () => {
+    const state = appDataGroup(JSON.stringify({ ...kept, status: 'Todo' }));
+    const group = { ...state.group, id: 'guarded-status' };
+    const results = await Promise.allSettled([
+      writeChannelField(group, 'status', 'Done'),
+      writeChannelField({ ...group }, 'status', null, 'Todo'),
+    ]);
+    expect(results.map(result => result.status)).toEqual(['fulfilled', 'rejected']);
+    expect(JSON.parse(state.raw())).toEqual({ ...kept, status: 'Done' });
+    expect(state.writes()).toBe(1);
+  });
+
   test('refuses an unknown priority without changing stored metadata', async () => {
     const initial = JSON.stringify({ ...kept, priority: 'High' });
     const state = appDataGroup(initial);

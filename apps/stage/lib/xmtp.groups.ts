@@ -210,10 +210,12 @@ export async function renameGroupLabel(line: string, from: string, to: string): 
   return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
 }
 
-export async function setGroupField(line: string, field: ChannelField, value: string | null): Promise<string | null> {
+export async function setGroupField(
+  line: string, field: ChannelField, value: string | null, expected?: string | null,
+): Promise<string | null> {
   const convId = convIdOfLine(line);
-  patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
-  try { return await writeChannelField(await groupOfLine(line), field, value); } finally { refreshGroupRow(convId); }
+  if (expected === undefined) patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
+  try { return await writeChannelField(await groupOfLine(line), field, value, expected); } finally { refreshGroupRow(convId); }
 }
 
 export function setGroupCategory(line: string, category: string | null): Promise<string | null> {

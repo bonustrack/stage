@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  addedColumnOrder, addItemRows, boardColumns, cardColumnEdit, columnCarriers, columnEditable, columnsEditable,
-  deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, orderedColumns, renamedColumnOrder,
+  addColumnProblem, addedColumnOrder, addItemRows, boardColumns, cardColumnEdit, columnCarriers, columnEditable, columnsEditable,
+  deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, orderedColumns, renamedColumnOrder, renameTarget,
 } from '../components/board/BoardScreen.model';
 
 const row = (convId: string, status?: string | null) => ({
@@ -23,8 +23,9 @@ describe('status board', () => {
   test('keeps the full emoji and text of Backlog, To-do and custom statuses', () => {
     const statuses = ['🗒️ Backlog', '🎯 To-do', '🚧 In progress', '🔍 In review', '✅ Done', '🚫 Blocked', 'Waiting on QA'];
     const grouped = boardColumns(statuses.map((status, i) => row(`${i}`, status)), [], []);
-    expect(new Set(grouped.map(column => column.label))).toEqual(new Set(statuses));
-    for (const column of grouped) expect(column.rows[0]?.status).toBe(column.label);
+    const named = grouped.filter(column => columnEditable(column.key));
+    expect(new Set(named.map(column => column.label))).toEqual(new Set(statuses));
+    for (const column of named) expect(column.rows[0]?.status).toBe(column.label);
   });
 
   test('status columns are editable but the unset placeholder is not a status value', () => {
@@ -52,6 +53,32 @@ describe('status board', () => {
     expect(cardColumnEdit(columns, 'status:Todo', 'status:Todo', 'status')).toBeNull();
     expect(cardColumnEdit(columns, 'label:Legacy', 'status:Done', 'status')).toBeNull();
     expect(cardColumnEdit(columns, 'status:Todo', 'status:Missing', 'status')).toBeNull();
+  });
+
+  test('retains a clear-status drop target when every visible card has a status', () => {
+    const assigned = boardColumns([row('a', 'Todo')], [], []);
+    expect(assigned.map(column => [column.key, column.rows.length])).toEqual([['status:Todo', 1], ['status:', 0]]);
+    expect(cardColumnEdit(assigned, 'status:Todo', 'status:', 'status')).toEqual({ by: 'status', value: null });
+    const hidden = boardColumns([row('a', 'Todo')], [], [], 'status', value => value, () => true);
+    expect(hidden.map(column => [column.key, column.rows.length])).toEqual([['status:Todo', 0]]);
+    expect(boardColumns([row('a')], [], [], 'status', value => value, () => true)).toEqual([]);
+  });
+
+  test('remembers a literal No status column after its final card is cleared', () => {
+    const before = boardColumns([row('a', 'No status')], [], []);
+    const order = keptColumnOrder(before, [], 'status:No status');
+    expect(order).toEqual(['status:No status', 'status:']);
+    const after = boardColumns([row('a')], [], order ?? []);
+    expect(after.map(column => [column.key, column.rows.length])).toEqual([['status:', 1], ['status:No status', 0]]);
+    expect(cardColumnEdit(after, 'status:', 'status:No status', 'status')).toEqual({ by: 'status', value: 'No status' });
+  });
+
+  test('adding or renaming to No status never merges with the unset placeholder', () => {
+    expect(addColumnProblem(columns, 'No status')).toBeNull();
+    expect(renameTarget(columns, 'Todo', 'No status')).toEqual({ name: 'No status', merge: false });
+    const named = boardColumns([row('a', 'No status'), row('b')], [], []);
+    expect(addColumnProblem(named, 'no status')).toBe('A column named No status already exists.');
+    expect(renameTarget(named, 'Todo', 'no status')).toEqual({ name: 'No status', merge: true });
   });
 
   test('an explicit label board still moves labels rather than status', () => {

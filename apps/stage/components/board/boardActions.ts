@@ -57,7 +57,7 @@ export async function renameBoardColumn(
 ): Promise<void> {
   setBoardOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to, by));
   const results = await Promise.allSettled(columnCarriers(rows, from, by).map(convId => (
-    by === 'status' ? setGroupField(lineOfConv(convId), 'status', to) : renameGroupLabel(lineOfConv(convId), from, to)
+    by === 'status' ? setGroupField(lineOfConv(convId), 'status', to, from) : renameGroupLabel(lineOfConv(convId), from, to)
   )));
   const outcome = columnOutcome(results, `Could not rename the ${by} in every channel. Try again.`, 'kept the old name', by);
   if (outcome !== null) capabilities.toast(outcome);
@@ -71,7 +71,7 @@ export async function deleteBoardColumn(
   if (!await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true })) return;
   setBoardOrder(deletedColumnOrder(columns.map(c => c.key), saved, label, by));
   const results = await Promise.allSettled(carriers.map(convId => (
-    by === 'status' ? setGroupField(lineOfConv(convId), 'status', null) : removeGroupLabel(lineOfConv(convId), label)
+    by === 'status' ? setGroupField(lineOfConv(convId), 'status', null, label) : removeGroupLabel(lineOfConv(convId), label)
   )));
   const outcome = columnOutcome(results, `Could not remove the ${by} from every channel. Try again.`, `kept the ${by}`, by);
   if (outcome !== null) capabilities.toast(outcome);

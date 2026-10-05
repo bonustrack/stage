@@ -30,8 +30,8 @@ function rememberedColumns(order: readonly string[], known: ReadonlySet<string>,
   const prefix = columnKeyOf(by, '');
   return order.flatMap((key) => {
     const label = key.startsWith(prefix) ? key.slice(prefix.length) : '';
-    if (label === '' || seen.has(label.toLowerCase())) return [];
-    seen.add(label.toLowerCase());
+    if (label === '' || seen.has(key.toLowerCase())) return [];
+    seen.add(key.toLowerCase());
     return [{ key, label, rows: [] }];
   });
 }
@@ -43,9 +43,10 @@ function valueColumns<T extends GroupableRow>(
   const shown = (list: readonly T[]): T[] => list.filter(row => !hidden(row));
   const columns = buckets.map(({ key, title, rows: inBucket }) => ({ key, label: title, rows: shown(inBucket) }));
   const rest = shown(none);
+  const showUnset = by !== 'label' && (rest.length > 0 || (by === 'status' && columns.some(column => column.rows.length > 0)));
   return [
     ...columns.sort((a, b) => compareNames(a.label, b.label)),
-    ...(by !== 'label' && rest.length > 0 ? [{ key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: rest }] : []),
+    ...(showUnset ? [{ key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: rest }] : []),
   ];
 }
 
@@ -55,7 +56,7 @@ export function boardColumns<T extends ChannelListRow & GroupableRow>(
 ): BoardColumn<T>[] {
   const columns = valueColumns(sortChannelRows(rows.filter(row => !row.peerAddress), pinned), by, nameOf, hidden);
   if (!columnsEditable(by)) return columns;
-  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.label.toLowerCase())), by)];
+  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.key.toLowerCase())), by)];
 }
 
 export function searchedColumns<T extends FilterRow>(
@@ -174,7 +175,7 @@ export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name:
   const problem = renameProblem(name);
   if (problem !== null) return problem;
   const key = typedName(name).toLowerCase();
-  const taken = columns.find(c => c.label.toLowerCase() === key)?.label;
+  const taken = columns.find(c => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
   return taken === undefined ? null : `A column named ${taken} already exists.`;
 }
 
@@ -189,7 +190,7 @@ export function renameTarget(
 ): { name: string; merge: boolean } {
   const typed = typedName(name);
   const key = typed.toLowerCase();
-  const existing = key === from.toLowerCase() ? null : columns.find(c => c.label.toLowerCase() === key)?.label;
+  const existing = key === from.toLowerCase() ? null : columns.find(c => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
   return existing == null ? { name: typed, merge: false } : { name: existing, merge: true };
 }
 
