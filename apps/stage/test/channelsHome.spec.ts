@@ -23,10 +23,10 @@ describe('the View menu', () => {
   const board = { ...chats, view: 'board', groupBy: 'category' } as const;
   const labels = (sections: ViewMenuSection[]): string[][] => sections.map(s => s.rows.map(r => `${r.label}${r.selected ? '*' : ''}`));
 
-  test('chats shows Group by with No grouping apart, and marks the current picks', () => {
+  test('chats keeps No grouping in Group by without a separate section, and marks the current picks', () => {
     const menu = homeViewMenu(chats);
-    expect(menu.map(s => s.heading)).toEqual([undefined, 'Group by', undefined]);
-    expect(labels(menu)).toEqual([['Chats*', 'Board'], ['Assignees', 'Category', 'Label', 'Status'], ['No grouping*']]);
+    expect(menu.map(s => s.heading)).toEqual([undefined, 'Group by']);
+    expect(labels(menu)).toEqual([['Chats*', 'Board'], ['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
   });
 
   test('board shows Column by without No grouping and marks its own pick', () => {

@@ -99,13 +99,13 @@ export function homeViewMenu(current: HomeViewContent): ViewMenuSection[] {
   const groups = GROUP_KEYS.map((key): ViewMenuRow => (
     { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
   ));
+  if (!board) groups.push({ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' });
   return [
     { rows: [
       { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
       { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
     ] },
     { heading: board ? 'Column by' : 'Group by', rows: groups },
-    ...(board ? [] : [{ rows: [{ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' }] }]),
   ];
 }
 
