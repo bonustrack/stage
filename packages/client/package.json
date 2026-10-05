@@ -36,6 +36,7 @@
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./xmtp/channelsCache": "./src/xmtp/channelsCache.ts",
     "./xmtp/clientConfig": "./src/xmtp/clientConfig.ts",
+    "./xmtp/sendFetch": "./src/xmtp/sendFetch.ts",
     "./xmtp/clientErrors": "./src/xmtp/clientErrors.ts",
     "./xmtp/dmRoutes": "./src/xmtp/dmRoutes.ts",
     "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
