@@ -1,4 +1,5 @@
 import type { MarkdownIt } from 'react-native-markdown-display';
+import { cardLinksOf, type CardLink } from '@stage-labs/client/embed/cardLinks';
 
 const STAR = 0x2a;
 const TASK_RE = /^\[([ xX])\][ \t]+/;
@@ -71,4 +72,35 @@ export function keepIndent(md: MarkdownIt): void {
 export function taskStateOf(attributes: Record<string, unknown>): TaskState | undefined {
   const task = attributes.task;
   return task === 'todo' || task === 'done' ? task : undefined;
+}
+
+const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
+
+export function unescapeBody(text: string): string {
+  if (!text.includes('\\n') && !text.includes('\\t') && !text.includes('\\r')) return text;
+  const unescapeRun = (s: string): string =>
+    s.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, '\t');
+  let out = '';
+  let last = 0;
+  CODE_SPAN_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = CODE_SPAN_RE.exec(text)) !== null) {
+    out += unescapeRun(text.slice(last, m.index)) + m[0];
+    last = m.index + m[0].length;
+  }
+  out += unescapeRun(text.slice(last));
+  return out;
+}
+
+function rendersBareLink(body: string, md: MarkdownIt): boolean {
+  const children = md.parseInline(body, {}).flatMap(token => token.children ?? []);
+  const [open, link, close] = children;
+  return children.length === 3 && open?.type === 'link_open' && open.markup === 'linkify'
+    && link?.type === 'text' && link.content === md.normalizeLinkText(body) && close?.type === 'link_close';
+}
+
+export function messageCardLinks(text: string | null | undefined, md: MarkdownIt): CardLink[] {
+  const body = unescapeBody(text ?? '').trim();
+  const cards = cardLinksOf(body, value => md.linkify.match(value));
+  return cards.length > 0 && rendersBareLink(body, md) ? cards : [];
 }

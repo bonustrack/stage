@@ -3,14 +3,14 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
-import { cardLinksOf } from '@stage-labs/client/embed/cardLinks';
+import { messageCardLinks } from './markdown.model';
 import { isAttachmentSummary } from './fileCard.model';
 import { Box, Row } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
 import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import {
-  attachmentsOf, findLinks, mdParser, markdownStyles,
+  attachmentsOf, mdParser, markdownStyles,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,
 } from './helpers';
 import { QuestionView } from './question';
@@ -93,7 +93,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
 export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, selectable, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
-  const cardLinks = useMemo(() => cardLinksOf(entry.text, findLinks), [entry.text]);
+  const cardLinks = useMemo(() => messageCardLinks(entry.text, mdParser), [entry.text]);
   const textSize = d.poll ? 'md' : 'lg';
   const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
   const markdownProps = useMemo((): MarkdownProps => ({

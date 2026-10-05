@@ -24,24 +24,6 @@ registerDeepLinkSchemas(mdParser.linkify);
 
 export const findLinks: LinkFinder = text => mdParser.linkify.match(text);
 
-const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
-
-export function unescapeBody(text: string): string {
-  if (!text.includes('\\n') && !text.includes('\\t') && !text.includes('\\r')) return text;
-  const unescapeRun = (s: string): string =>
-    s.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, '\t');
-  let out = '';
-  let last = 0;
-  CODE_SPAN_RE.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = CODE_SPAN_RE.exec(text)) !== null) {
-    out += unescapeRun(text.slice(last, m.index)) + m[0];
-    last = m.index + m[0].length;
-  }
-  out += unescapeRun(text.slice(last));
-  return out;
-}
-
 export interface Attachment {
   id?: string; url?: string; dataB64?: string; remote?: RemoteAttachmentInfo;
   kind: string; mime?: string; size?: number; name?: string;
