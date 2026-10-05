@@ -6,7 +6,7 @@ import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Dialog } from './dialog';
 import { Glyph, type CentralIcon } from './glyph';
 import { MODAL } from './modal';
-import { Text } from './text';
+import { Text, type TextProps } from './text';
 import { useKitPalette } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
@@ -29,6 +29,14 @@ export const DROPDOWN_MENU = {
 } as const;
 
 const SheetMenuContext = createContext(false);
+
+export function useDropdownMenuText(): Pick<TextProps, 'size' | 'style'> {
+  const sheet = useContext(SheetMenuContext);
+  return {
+    size: sheet ? 'lg' : 'sm',
+    style: { lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight },
+  };
+}
 
 function usePalette(dark: boolean | undefined): KitPalette {
   const context = useKitPalette();
@@ -80,6 +88,7 @@ export interface DropdownMenuItemProps {
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
   const pal = usePalette(props.dark);
   const sheet = useContext(SheetMenuContext);
+  const menuText = useDropdownMenuText();
   const [hovered, setHovered] = useState(false);
   const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
   const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
@@ -102,7 +111,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     >
       {icon}
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        <Text value={props.label} size={sheet ? 'lg' : 'sm'} color={color} truncate style={{ lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight }} />
+        <Text {...menuText} value={props.label} color={color} truncate />
       </View>
       {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>

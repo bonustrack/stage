@@ -5,7 +5,7 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Col } from './layout';
 import { Avatar } from './Avatar';
 import { AnchoredMenu } from './AnchoredMenu';
@@ -28,6 +28,7 @@ function AccountSwitchRow({ account, active, onSwitch }: {
 }): React.ReactElement {
   const { link: head, text, border } = usePalette();
   const { hovered, hoverProps } = useHover();
+  const menuText = useDropdownMenuText();
   return (
     <Pressable
       onPress={() => { onSwitch(account.id); }}
@@ -41,7 +42,7 @@ function AccountSwitchRow({ account, active, onSwitch }: {
     >
       <Avatar address={account.address} size={26} style={{ backgroundColor: border }}/>
       <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="3xs" numberOfLines={1} color={head}>
+        <Text {...menuText} weight="semibold" numberOfLines={1} color={head}>
           {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
         </Text>
         <Text size="4xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>

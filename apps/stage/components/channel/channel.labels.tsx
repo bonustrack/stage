@@ -155,7 +155,7 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
 function TagPicker({ draft, options, noun, pick }: {
   draft: string[]; options: string[]; noun: string; pick: (tag: string) => void;
 }): React.ReactElement {
-  const { text: fg, bg } = usePalette();
+  const { text: fg } = usePalette();
   const [query, setQuery] = useState('');
   const all = uniqueKeys([...options, ...draft]);
   const shown = all.filter(label => matchesQuery(query, label));
@@ -171,15 +171,11 @@ function TagPicker({ draft, options, noun, pick }: {
       <PickerSearch value={query} onChangeText={setQuery} placeholder="Search or create" onSubmit={create}/>
       <PickerList>
         {shown.map(label => (
-          <PickerRow key={label.toLowerCase()} selected={includesKey(draft, label)} label={label} onPress={() => { pick(label); }}>
-            {noun === 'category' ? <Text size="2xs">{label}</Text> : <LabelChip label={label} background={bg}/>}
-          </PickerRow>
+          <PickerRow key={label.toLowerCase()} selected={includesKey(draft, label)} label={label} onPress={() => { pick(label); }}/>
         ))}
         {creatable ? (
-          <PickerRow selected={false} label={`Create ${noun} ${typed}`} onPress={create}>
-            <Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>
-            <Text size="2xs" numberOfLines={1} style={{ flexShrink: 1 }}>{`Create "${typed}"`}</Text>
-          </PickerRow>
+          <PickerRow selected={false} label={`Create ${noun} ${typed}`} text={`Create "${typed}"`} onPress={create}
+            leading={<Glyph icon={IconPlusLarge} size={LABEL_CHIP_ICON_SIZE} color={fg}/>}/>
         ) : null}
         {shown.length === 0 && !creatable ? <PickerNote text={`Type to create a ${noun}.`}/> : null}
       </PickerList>
@@ -201,9 +197,7 @@ function FieldPicker({ draft, toggle, current, field }: SectionDraft & { current
   if (field === 'priority') return (
     <PickerList>
       {CHANNEL_PRIORITIES.map(priority => (
-        <PickerRow key={priority} selected={includesKey(draft, priority)} label={priority} onPress={() => { toggle(priority); }}>
-          <Text size="2xs">{priority}</Text>
-        </PickerRow>
+        <PickerRow key={priority} selected={includesKey(draft, priority)} label={priority} onPress={() => { toggle(priority); }}/>
       ))}
     </PickerList>
   );

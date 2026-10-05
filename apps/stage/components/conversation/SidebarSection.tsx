@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
-import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
@@ -101,11 +101,12 @@ export function PickerNote({ text }: { text: string }): React.ReactElement {
   return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="2xs" color="secondary">{text}</Text></Box>;
 }
 
-export function PickerRow({ selected, disabled = false, label, onPress, children }: {
-  selected: boolean; disabled?: boolean; label: string; onPress: () => void; children: ReactNode;
+export function PickerRow({ selected, disabled = false, label, text = label, onPress, leading }: {
+  selected: boolean; disabled?: boolean; label: string; text?: string; onPress: () => void; leading?: ReactNode;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
+  const menuText = useDropdownMenuText();
   return (
     <Pressable
       onPress={onPress}
@@ -121,7 +122,8 @@ export function PickerRow({ selected, disabled = false, label, onPress, children
           : hovered && !disabled ? withAlpha(link, DROPDOWN_MENU.hoverAlpha) : 'transparent',
       })}
 >
-      <Row flex={1} align="center" gap={10} style={{ minWidth: 0 }}>{children}</Row>
+      {leading}
+      <Box flex={1} style={{ minWidth: 0 }}><Text {...menuText} truncate>{text}</Text></Box>
       {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link}/> : <Box width={DROPDOWN_MENU.icon}/>}
     </Pressable>
   );

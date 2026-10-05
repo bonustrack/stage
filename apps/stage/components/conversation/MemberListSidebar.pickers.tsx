@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { PickerList, PickerNote, PickerRow, PickerSearch, type SectionDraft } from './SidebarSection';
@@ -16,10 +15,7 @@ interface PersonOption { address: string; name: string; disabled: boolean }
 function PersonRow({ option, draft, toggle }: { option: PersonOption } & SectionDraft): React.ReactElement {
   return (
     <PickerRow selected={includesKey(draft, option.address)} disabled={option.disabled} label={option.name}
-      onPress={() => { toggle(option.address.toLowerCase()); }}>
-      <Avatar address={option.address} size="sm"/>
-      <Text size="xs" numberOfLines={1} style={{ flexShrink: 1 }}>{option.name}</Text>
-    </PickerRow>
+      onPress={() => { toggle(option.address.toLowerCase()); }} leading={<Avatar address={option.address} size="sm"/>}/>
   );
 }
 
@@ -74,10 +70,8 @@ function useLookup(draft: string[], toggle: (key: string) => void): {
 function LookupRow({ query, looking, onPress }: { query: string; looking: boolean; onPress: () => void }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <PickerRow selected={false} disabled={looking} label={`Add ${query}`} onPress={onPress}>
-      <Glyph icon={IconPlusLarge} size={16} color={fg}/>
-      <Text size="xs" numberOfLines={1} style={{ flexShrink: 1 }}>{looking ? 'Looking up…' : `Add "${query}"`}</Text>
-    </PickerRow>
+    <PickerRow selected={false} disabled={looking} label={`Add ${query}`} text={looking ? 'Looking up…' : `Add "${query}"`}
+      onPress={onPress} leading={<Glyph icon={IconPlusLarge} size={16} color={fg}/>}/>
   );
 }
 
