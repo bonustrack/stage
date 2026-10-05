@@ -7,10 +7,10 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 
 function reply(status = '0', flags = 128) {
   const text = new TextEncoder().encode(`grpc-status:${status}\r\ngrpc-message:\r\n`);
-  const body = new Uint8Array(5 + text.length);
-  body[0] = flags;
-  new DataView(body.buffer).setUint32(1, text.length);
-  body.set(text, 5);
+  const body = new Uint8Array(10 + text.length);
+  body[5] = flags;
+  new DataView(body.buffer).setUint32(6, text.length);
+  body.set(text, 10);
   return new Response(body, { headers: { 'content-type': 'application/grpc-web+proto' } });
 }
 
@@ -90,7 +90,7 @@ describe('XMTP send transport', () => {
       return reply('0', 0);
     }, 5);
     const result = await transport.send(() => transport.fetch(URL, options));
-    expect(new Uint8Array(await result.arrayBuffer())[0]).toBe(0);
+    expect(new Uint8Array(await result.arrayBuffer())[5]).toBe(0);
   });
 
   test('leaves streams, other hosts, mutations and encodings untouched', async () => {
@@ -116,6 +116,80 @@ describe('XMTP send transport', () => {
     await expect(result).rejects.toThrow('cancelled');
     expect(signals.length).toBe(2);
     expect(signals.every((signal) => signal?.aborted)).toBe(true);
+  });
+
+  test('forwards an original error without waiting for a stalled backup', async () => {
+    let calls = 0;
+    let backupSignal: AbortSignal | null | undefined;
+    const transport = createXmtpSendFetch(async (_input, init) => {
+      if (++calls === 2) { backupSignal = init?.signal; return pending(init?.signal); }
+      await wait(15);
+      return reply('8');
+    }, 5);
+    const result = await Promise.race([
+      transport.send(() => transport.fetch(URL, options)),
+      wait(100).then(() => { throw new Error('stalled'); }),
+    ]);
+    expect(await result.text()).toContain('grpc-status:8');
+    expect(backupSignal?.aborted).toBe(true);
+  });
+
+  test('recognizes terminal headers before a slow error body', async () => {
+    for (const response of [
+      new Response(new ReadableStream(), { status: 429 }),
+      new Response(new ReadableStream(), { headers: { 'grpc-status': '8', 'content-type': 'application/grpc-web+proto' } }),
+    ]) {
+      let calls = 0;
+      const transport = createXmtpSendFetch(async () => { calls++; return response; }, 5);
+      const result = await transport.send(() => transport.fetch(URL, options));
+      expect(result).toBe(response);
+      await wait(15);
+      expect(calls).toBe(1);
+      await result.body?.cancel();
+    }
+  });
+
+  test('rejects truncated and unsupported backup responses', async () => {
+    for (const invalid of [
+      new Response(new Uint8Array([0, 0, 0, 0, 4]), { headers: { 'grpc-status': '0', 'content-type': 'application/grpc-web+proto' } }),
+      new Response(await reply().arrayBuffer()),
+    ]) {
+      let calls = 0;
+      const transport = createXmtpSendFetch(async () => {
+        if (++calls === 2) return invalid;
+        await wait(15);
+        return reply();
+      }, 5);
+      const result = await transport.send(() => transport.fetch(URL, options));
+      expect(await result.text()).toContain('grpc-status:0');
+      expect(result.headers.get('content-type')).toBe('application/grpc-web+proto');
+    }
+  });
+
+  test('preserves bodyless statuses and a passthrough Request body', async () => {
+    const transport = createXmtpSendFetch(async (input) => {
+      expect(Array.from(new Uint8Array(await new Request(input).arrayBuffer()))).toEqual(Array.from(options.body));
+      return new Response(null, { status: 204 });
+    }, 5);
+    for (const contentType of ['text/plain', 'application/grpc-web+proto']) {
+      const request = new Request(URL, { ...options, headers: { 'content-type': contentType } });
+      const response = await transport.send(() => transport.fetch(request));
+      expect(response.status).toBe(204);
+    }
+  });
+
+  test('a concurrent read cannot occupy the publish hedge slot', async () => {
+    const calls = new Map<string, number>();
+    const transport = createXmtpSendFetch(async (input) => {
+      const path = new Request(input).url;
+      calls.set(path, (calls.get(path) ?? 0) + 1);
+      await wait(15);
+      return reply();
+    }, 5);
+    const query = URL.replace('SendGroupMessages', 'QueryGroupMessages');
+    await transport.send(() => Promise.all([transport.fetch(query, options), transport.fetch(URL, options)]));
+    expect(calls.get(query)).toBe(2);
+    expect(calls.get(URL)).toBe(2);
   });
 
   test('drops send scope after rejection and caps concurrent hedges', async () => {
