@@ -4,7 +4,7 @@ import { CENTRAL_ICONS } from '../src/central-icons.data';
 import { BrandIcon, CENTRAL_ICON_ALIASES, Icon, type BrandIconProps, type HeroIconName } from '../src/react-native/icon';
 import { Glyph, type CentralIcon, type IconStyle } from '../src/react-native/glyph';
 import { Col, Row } from '../src/react-native/box';
-import { Input } from '../src/react-native/input';
+import { Input, SEARCH_INPUT_PROPS } from '../src/react-native/input';
 import { Text } from '../src/react-native/text';
 import { SMALL_FONT_SIZE } from '../src/text.styles';
 import { color, range, select, useDark } from './_controls';
@@ -63,7 +63,7 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
   const names = available.filter((name) => matches(name, query.trim().toLowerCase()));
   return (
     <Col gap={24}>
-      <Input dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" />
+      <Input dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" inputProps={SEARCH_INPUT_PROPS} />
       <Text size="2xs" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
       {names.length === 0 ? <Text size="2xs" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
       <Row gap={8} wrap>

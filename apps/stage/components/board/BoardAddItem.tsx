@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -76,7 +77,7 @@ function AddItemForm({ label, rows, by, onAdd }: {
   return (
     <Col gap={16}>
       <FormField label="Search" placeholder="Channel name" value={query} onChangeText={setQuery} inputRef={input}
-        inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false }}/>
+        inputProps={{ ...SEARCH_INPUT_PROPS, autoFocus: true, autoCapitalize: 'none', autoCorrect: false }}/>
       {shown.length === 0 ? <Text value="No channels found." size="3xs" role="secondary"/> : (
         <Box margin={{ x: -MODAL.padding }}>
           {shown.map(item => (

@@ -4,7 +4,7 @@ import type { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-nat
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
+import { Input, SEARCH_INPUT_PROPS, type InputProps } from '@stage-labs/kit/react-native/input';
 import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -41,6 +41,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   const topInset = props.topInset ?? 0;
   const Frame = props.inline === true ? Fragment : StickyFrame;
   const onKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+    SEARCH_INPUT_PROPS.onKeyPress?.(event);
     if (event.nativeEvent.key === 'Escape' && props.query === '') {
       if (props.field === true) input.current?.blur();
       props.onClose();
@@ -59,7 +60,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
               }}
               autoFocus={props.autoFocus ?? false}
               value={props.query} onChangeText={props.setQuery} placeholder={props.placeholder ?? 'Search'}
-              inputProps={{ accessibilityLabel: 'Search', autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, onKeyPress }}
+              inputProps={{ accessibilityLabel: 'Search', autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
               leading={<HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={props.onOpen}>
                 <Glyph icon={IconMagnifyingGlass} size={20} color={sub}/>
               </HoverTooltip>}
@@ -88,7 +89,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         onChangeText={props.setQuery}
         placeholder={props.placeholder ?? 'Search'}
         placeholderTextColor={sub}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, onKeyPress }}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
         style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('lg'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />

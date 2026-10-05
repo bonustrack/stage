@@ -4,6 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { DROPDOWN_MENU, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { CountTag } from '../CountTag';
@@ -87,7 +88,7 @@ export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
       <FormField value={value} onChangeText={onChangeText} placeholder={placeholder} autoFocus={anchored}
         onSubmit={onSubmit === undefined ? undefined : () => { onSubmit(); }}
         leading={<Glyph icon={IconMagnifyingGlass} size={18} color={sub}/>}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}/>
+        inputProps={{ ...SEARCH_INPUT_PROPS, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}/>
       <DropdownMenuSeparator/>
     </>
   );

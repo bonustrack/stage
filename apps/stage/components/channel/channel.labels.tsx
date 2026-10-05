@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { Col, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
@@ -138,7 +139,7 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
   return (
     <Col gap={10}>
       <FormField label="Labels" placeholder={atCap ? `Limit reached (${MAX_LABELS})` : 'Add a label'} value={input} onChangeText={setInput}
-        onSubmit={submit} disabled={disabled || atCap} inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
+        onSubmit={submit} disabled={disabled || atCap} inputProps={{ ...SEARCH_INPUT_PROPS, maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
         trailing={<AddButton disabled={disabled || atCap || !input.trim()} onAdd={submit} />} />
       {labels.length > 0 ? <RemovableChips labels={labels} disabled={disabled} onRemove={onRemove} /> : null}
       {!atCap && suggestions.length > 0 ? (

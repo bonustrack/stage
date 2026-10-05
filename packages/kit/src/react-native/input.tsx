@@ -2,7 +2,10 @@
 import { forwardRef } from 'react';
 import {
   TextInput,
+  Platform,
   type TextInputProps,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
   type KeyboardTypeOptions,
   type StyleProp,
   type TextStyle,
@@ -16,6 +19,15 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+
+export const SEARCH_INPUT_PROPS = Platform.OS === 'web' ? {
+  inputMode: 'search' as const,
+  autoComplete: 'off' as const,
+  dataSet: { 'protonpass-ignore': '', '1p-ignore': '' },
+  onKeyPress: (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+    if (event.nativeEvent.key === 'Escape') event.preventDefault();
+  },
+} : {};
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
 

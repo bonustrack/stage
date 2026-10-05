@@ -1,6 +1,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
@@ -97,7 +98,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
     <Col gap={12}>
       <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
         onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
-        inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
+        inputProps={{ ...SEARCH_INPUT_PROPS, autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
     </Col>
   );

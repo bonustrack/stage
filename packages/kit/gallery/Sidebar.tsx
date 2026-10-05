@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Col, Row } from '../src/react-native/box';
 import { Glyph } from '../src/react-native/glyph';
-import { Input } from '../src/react-native/input';
+import { Input, SEARCH_INPUT_PROPS } from '../src/react-native/input';
 import { Pressable } from '../src/react-native/pressable';
 import { Text } from '../src/react-native/text';
 import { useKitPalette } from '../src/react-native/theme-context';
@@ -74,7 +74,7 @@ export function Sidebar({ stories, activeId, onSelect, touch = false }: { storie
     <Col flex={1} gap={8}>
       <Row padding={{ x: 12, top: 12 }} align="center" gap={8}>
         <Box flex={1}>
-          <Input dark={dark} size={touch ? 'lg' : 'md'} placeholder="Search components" value={filter} onChangeText={setFilter} />
+          <Input dark={dark} size={touch ? 'lg' : 'md'} placeholder="Search components" value={filter} onChangeText={setFilter} inputProps={SEARCH_INPUT_PROPS} />
         </Box>
         {touch ? null : <SchemeToggle pad={8} />}
       </Row>
