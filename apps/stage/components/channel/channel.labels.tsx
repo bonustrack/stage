@@ -155,7 +155,7 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
 function TagPicker({ draft, options, noun, pick }: {
   draft: string[]; options: string[]; noun: string; pick: (tag: string) => void;
 }): React.ReactElement {
-  const { text: fg } = usePalette();
+  const { text: fg, bg } = usePalette();
   const [query, setQuery] = useState('');
   const all = uniqueKeys([...options, ...draft]);
   const shown = all.filter(label => matchesQuery(query, label));
@@ -171,7 +171,9 @@ function TagPicker({ draft, options, noun, pick }: {
       <PickerSearch value={query} onChangeText={setQuery} placeholder="Search or create" onSubmit={create}/>
       <PickerList>
         {shown.map(label => (
-          <PickerRow key={label.toLowerCase()} selected={includesKey(draft, label)} label={label} onPress={() => { pick(label); }}/>
+          <PickerRow key={label.toLowerCase()} selected={includesKey(draft, label)} label={label} onPress={() => { pick(label); }}>
+            {noun === 'label' ? <Row align="center"><LabelChip label={label} background={bg}/></Row> : null}
+          </PickerRow>
         ))}
         {creatable ? (
           <PickerRow selected={false} label={`Create ${noun} ${typed}`} text={`Create "${typed}"`} onPress={create}

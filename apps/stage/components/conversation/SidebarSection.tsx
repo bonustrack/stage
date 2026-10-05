@@ -101,8 +101,8 @@ export function PickerNote({ text }: { text: string }): React.ReactElement {
   return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="2xs" color="secondary">{text}</Text></Box>;
 }
 
-export function PickerRow({ selected, disabled = false, label, text = label, onPress, leading }: {
-  selected: boolean; disabled?: boolean; label: string; text?: string; onPress: () => void; leading?: ReactNode;
+export function PickerRow({ selected, disabled = false, label, text = label, onPress, leading, children }: {
+  selected: boolean; disabled?: boolean; label: string; text?: string; onPress: () => void; leading?: ReactNode; children?: ReactNode;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
@@ -123,7 +123,7 @@ export function PickerRow({ selected, disabled = false, label, text = label, onP
       })}
 >
       {leading}
-      <Box flex={1} style={{ minWidth: 0 }}><Text {...menuText} truncate>{text}</Text></Box>
+      <Box flex={1} style={{ minWidth: 0 }}>{children ?? <Text {...menuText} truncate>{text}</Text>}</Box>
       {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link}/> : <Box width={DROPDOWN_MENU.icon}/>}
     </Pressable>
   );
