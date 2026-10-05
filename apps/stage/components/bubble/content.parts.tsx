@@ -8,7 +8,7 @@ import type { CardLink } from '@stage-labs/client/embed/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
 import { Box, Col } from '../layout';
-import { BLOCK_GAP, MESSAGE_LINK_STYLE, mdParser, unescapeBody } from './helpers';
+import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks, unescapeBody } from './helpers';
 import type { Attachment, LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
 import { AttachmentView, RemoteAttachmentResolver } from './attachments';
@@ -30,7 +30,7 @@ import { channelFallbackLabel, channelLinkText, markdownLabelText } from '@stage
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import {
-  bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment, type LinkFinder,
+  bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment,
 } from '@stage-labs/client/xmtp/messageBody';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareCheck';
@@ -98,8 +98,6 @@ export const markdownRules: RenderRules = {
     return <Box key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>{children}</Box>;
   },
 };
-
-const findLinks: LinkFinder = text => mdParser.linkify.match(text);
 
 function WebLink({ url, text, fg, onLinkPress }: {
   url: string; text: string; fg: string; onLinkPress: LinkPress;

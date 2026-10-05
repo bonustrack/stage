@@ -1,10 +1,7 @@
 import { youtubeIdOf, mapCoordsOf } from './detect';
 import { githubLinkOf } from '../api/github';
 import { stageChannelIdOf, stageDmPeerOf } from '../xmtp/line';
-import { withChannelLabels } from '../xmtp/channelRefs';
-import { singleChannelLinkOf } from '../xmtp/channelLinks';
-
-export const MAX_CARDS = 5;
+import { wholeLinkUrl, type LinkFinder } from '../xmtp/messageBody';
 
 export type CardLink =
   | { kind: 'dm'; url: string; peerAddress: string }
@@ -46,8 +43,6 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (groupId === undefined) return null;
   return { url, groupId, shortGroup: groupId.slice(0, 8) };
 }
-
-const TOKEN_RE = /(?:https?:\/\/|metro:\/\/|stage:\/\/)\S+/gi;
 
 type Detector = (token: string) => CardLink | null;
 
@@ -97,43 +92,12 @@ function isWebUrlWithHost(token: string): boolean {
   }
 }
 
-function isGenericLink(token: string): boolean {
-  if (!/^https?:\/\//i.test(token)) return false;
-  if (specificCard(token)) return false;
-  return isWebUrlWithHost(token);
-}
-
-function classify(token: string): CardLink | null {
-  const clean = token.replace(/[.,;:!?)\]}'"`]+$/, '');
-  const channelUrl = clean.replace(/>+$/, '');
-  const convId = stageChannelIdOf(channelUrl);
-  if (convId) return { kind: 'channel', url: channelUrl, convId };
-  const card = specificCard(token);
-  if (card) return card;
-  return isGenericLink(clean) ? { kind: 'generic', url: clean } : null;
-}
-
-function isBracketWrapped(text: string, token: string, start: number): boolean {
-  if (text[start - 1] !== '<') return false;
-  const after = text[start + token.length];
-  return token.endsWith('>') || after === '>';
-}
-
-export function cardLinksOf(text?: string | null): CardLink[] {
-  if (!text) return [];
-  const channel = singleChannelLinkOf(text);
-  if (channel) return [{ kind: 'channel', ...channel }];
-  const scanned = withChannelLabels(text);
-  const out: CardLink[] = [];
-  const seen = new Set<string>();
-  for (const m of scanned.matchAll(TOKEN_RE)) {
-    if (isBracketWrapped(scanned, m[0], m.index)) continue;
-    const card = classify(m[0]);
-    if (!card || card.kind === 'channel') continue;
-    if (seen.has(card.url)) continue;
-    seen.add(card.url);
-    out.push(card);
-    if (out.length >= MAX_CARDS) break;
-  }
-  return out;
+export function cardLinksOf(text: string | null | undefined, findLinks: LinkFinder): CardLink[] {
+  const body = text?.trim() ?? '';
+  if (!/^(?:https?|metro|stage):\/\//i.test(body)) return [];
+  const url = wholeLinkUrl(body, findLinks);
+  if (!url) return [];
+  const card = specificCard(url);
+  if (card) return [card];
+  return isWebUrlWithHost(url) ? [{ kind: 'generic', url }] : [];
 }

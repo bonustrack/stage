@@ -10,7 +10,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
 import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import {
-  attachmentsOf, mdParser, markdownStyles,
+  attachmentsOf, findLinks, mdParser, markdownStyles,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,
 } from './helpers';
 import { QuestionView } from './question';
@@ -93,7 +93,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
 export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, selectable, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
-  const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
+  const cardLinks = useMemo(() => cardLinksOf(entry.text, findLinks), [entry.text]);
   const textSize = d.poll ? 'md' : 'lg';
   const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
   const markdownProps = useMemo((): MarkdownProps => ({

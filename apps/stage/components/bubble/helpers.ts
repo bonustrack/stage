@@ -11,6 +11,7 @@ import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage
 import { formatEther } from 'viem';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
+import type { LinkFinder } from '@stage-labs/client/xmtp/messageBody';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import { keepIndent, literalStars, taskLists } from './markdown.model';
 
@@ -20,6 +21,8 @@ export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: 
   .use(literalStars).use(taskLists).use(keepIndent);
 
 registerDeepLinkSchemas(mdParser.linkify);
+
+export const findLinks: LinkFinder = text => mdParser.linkify.match(text);
 
 const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
 

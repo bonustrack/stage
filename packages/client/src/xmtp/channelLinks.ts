@@ -1,14 +1,4 @@
-import { stageChannelIdOf } from './line';
-
 export const MARKDOWN_LINK_RE = /\[([^[\]\n]+)\]\(((?:[^\s()]|\([^\s()]*\))+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'|\([^\)\n]*\)))?\)/g;
-
-export function singleChannelLinkOf(text: string): { url: string; convId: string } | null {
-  const body = text.trim();
-  const [markdown] = body.matchAll(MARKDOWN_LINK_RE);
-  const url = markdown?.index === 0 && markdown[0].length === body.length ? markdown[2] ?? '' : body;
-  const convId = stageChannelIdOf(url);
-  return convId ? { url, convId } : null;
-}
 
 export function channelLinkText(meta: { groupName?: string | null; peerAddress?: string | null }, label?: string, url?: string, text?: string): string {
   return meta.peerAddress ? text ?? url ?? channelLinkLabel(undefined, label) : channelLinkLabel(meta.groupName, label);

@@ -52,7 +52,7 @@ function splitSpans(text: string, spans: Span[], between: (text: string) => Body
   return [...out, ...between(text.slice(last))];
 }
 
-function wholeLinkUrl(target: string, findLinks: LinkFinder): string | undefined {
+export function wholeLinkUrl(target: string, findLinks: LinkFinder): string | undefined {
   const [match, ...rest] = findLinks(target) ?? [];
   if (!match || rest.length > 0 || match.index !== 0 || match.lastIndex !== target.length) return undefined;
   return match.url;
