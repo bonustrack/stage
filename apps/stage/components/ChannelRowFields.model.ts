@@ -31,7 +31,7 @@ function peopleAddresses(data: ChannelRowFieldData, field: 'members' | 'assignee
 
 export function visibleChannelFields(data: ChannelRowFieldData, fields: ChannelFields): VisibleChannelField[] {
   if (data.peerAddress) return [];
-  return CHANNEL_FIELDS.flatMap(field => {
+  return CHANNEL_FIELDS.flatMap((field): VisibleChannelField[] => {
     if (!fields[field.id] || field.id === 'labels' || field.id === 'avatar') return [];
     if (field.id === 'members' || field.id === 'assignees') {
       const addresses = peopleAddresses(data, field.id);
