@@ -8,6 +8,7 @@ test('a hidden channel opened by link offers approval after membership is confir
 });
 
 test('the composer waits for known membership and deliberate approval of hidden groups', () => {
+  expect(canComposeConversation('allowed', true, 'checking')).toBe(false);
   expect(canComposeConversation('allowed', true, 'waiting')).toBe(false);
   expect(canComposeConversation('allowed', true, 'outside')).toBe(false);
   expect(canComposeConversation(undefined, true, 'member')).toBe(false);

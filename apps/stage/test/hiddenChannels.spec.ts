@@ -19,9 +19,11 @@ const client = { inboxId: 'owner', preferences: { sync: async () => { beforePref
 const synced: string[] = [];
 let storageFails = false;
 let beforeFind: (() => Promise<void>) | undefined;
+let beforeMembers: (() => Promise<void>) | undefined;
+let connectedClient = client;
 function withMethods(conv: FakeConv) {
   return Object.assign(conv, {
-    members: async () => (conv.memberIds ?? ['owner']).map(inboxId => ({ inboxId })),
+    members: async () => { await beforeMembers?.(); return (conv.memberIds ?? ['owner']).map(inboxId => ({ inboxId })); },
     sync: async () => { synced.push(conv.id); },
   });
 }
@@ -44,8 +46,8 @@ mock.module('../lib/xmtp.sdk', () => ({
     return conv ? withMethods(conv) : null;
   },
   sdk: {
-    client: async () => client,
-    cachedClient: () => client,
+    client: async () => connectedClient,
+    cachedClient: () => connectedClient,
     findConv: async (_client: unknown, id: string) => {
       await beforeFind?.();
       const conv = convs.find(c => c.id === id);
@@ -71,7 +73,7 @@ const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHidden
 const { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } = await import('../lib/chatVisibility');
 const { leaveGroupConv } = await import('../lib/xmtp.groups');
 const { listVisibleConversations, acceptRequestConv, getConvConsentState, groupAccessOf } = await import('../lib/xmtp.conv');
-const { syncVisibleChannels, reconcileHiddenConsent } = await import('../lib/channelVisibility');
+const { syncVisibleChannels, reconcileHiddenConsent, cachedChannelAccess, subscribeChannelAccess } = await import('../lib/channelVisibility');
 const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
 const { accountClient } = await import('../lib/xmtp.account');
 const { replaySyncGroups } = await import('../lib/readSyncReplay');
@@ -208,8 +210,55 @@ describe('departed channels across devices', () => {
     expect(await visible()).toContain('incomplete');
     expect(await visible()).toContain('legitimate-archive');
     expect(await groupAccessOf('removed')).toBe('outside');
-    expect(await groupAccessOf('incomplete')).toBe('waiting');
+    expect(await groupAccessOf('incomplete')).toBe('checking');
     expect(await groupAccessOf('legitimate-archive')).toBe('waiting');
+  });
+
+  test('listing seeds immediate access from SDK membership, not consent or another channel', async () => {
+    const group: FakeConv = { id: 'cached-member', group: true, active: true, consent: 'allowed' };
+    convs.push(group);
+    expect(cachedChannelAccess(group.id)).toBe('checking');
+    await visible();
+    expect(cachedChannelAccess(group.id)).toBe('member');
+    expect(cachedChannelAccess('removed')).toBe('outside');
+    expect(cachedChannelAccess('incomplete')).toBe('checking');
+    expect(cachedChannelAccess('legitimate-archive')).toBe('waiting');
+    expect(cachedChannelAccess('never-checked')).toBe('checking');
+    const changes: string[] = [];
+    const stop = subscribeChannelAccess(() => { changes.push(cachedChannelAccess(group.id)); });
+    group.memberIds = ['someone-else'];
+    await groupAccessOf(group.id);
+    expect(changes).toEqual(['outside']);
+    stop();
+    group.memberIds = ['owner'];
+  });
+
+  test('access does not cross accounts, client replacement or stale async completion', async () => {
+    await groupAccessOf('cached-member');
+    expect(cachedChannelAccess('cached-member')).toBe('member');
+    connectedClient = { ...client };
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
+    await groupAccessOf('cached-member');
+    expect(cachedChannelAccess('cached-member')).toBe('member');
+    await switchAccount('cache-other');
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
+    beforeMembers = async () => { beforeMembers = undefined; await switchAccount('cache-latest'); };
+    await expect(groupAccessOf('cached-member')).rejects.toThrow('Messaging account changed');
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
+    await switchAccount('other-account');
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
+  });
+
+  test('failed or missing membership clears a previous member without claiming device waiting', async () => {
+    await groupAccessOf('cached-member');
+    beforeMembers = async () => { beforeMembers = undefined; throw new Error('membership unavailable'); };
+    expect(await groupAccessOf('cached-member')).toBe('checking');
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
+    await groupAccessOf('cached-member');
+    const index = convs.findIndex(c => c.id === 'cached-member');
+    convs.splice(index, 1);
+    expect(await groupAccessOf('cached-member')).toBe('checking');
+    expect(cachedChannelAccess('cached-member')).toBe('checking');
   });
 
   test('transport consent and cached rows obey durable hidden state before synchronization', async () => {

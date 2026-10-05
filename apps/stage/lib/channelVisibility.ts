@@ -2,20 +2,49 @@ import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { loadHiddenChannels } from './hiddenChannels';
 import { recover, reported } from './errorPolicy';
+import { makeListeners } from './storeCore';
+import { subscribeAccountEpoch } from './accountEpoch';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>;
-export type GroupAccess = 'member' | 'waiting' | 'outside';
+export type GroupAccess = 'checking' | 'member' | 'waiting' | 'outside';
 const pending = new WeakMap<AccountClient['client'], Promise<void>>();
+const accessCache = new Map<string, { context: AccountClient; access: GroupAccess }>();
+const accessChanges = makeListeners();
+export const subscribeChannelAccess = accessChanges.subscribe;
 
-export async function channelAccess(context: AccountClient, conv: Conv): Promise<GroupAccess> {
-  if (!sdk.isGroup(conv)) return 'member';
-  const members = await conv.members().catch(recover('xmtp.channelMembers', []));
+subscribeAccountEpoch(() => { accessCache.clear(); accessChanges.notify(); });
+
+export function cachedChannelAccess(convId: string | undefined): GroupAccess {
+  const cached = convId ? accessCache.get(convId) : undefined;
+  return cached?.context.current() ? cached.access : 'checking';
+}
+
+function rememberAccess(context: AccountClient, convId: string, access: GroupAccess): GroupAccess {
   context.assertCurrent();
-  if (members.length === 0) return 'waiting';
+  accessCache.set(convId, { context, access });
+  accessChanges.notify();
+  return access;
+}
+
+async function membershipAccess(context: AccountClient, conv: Conv): Promise<GroupAccess> {
+  if (!sdk.isGroup(conv)) return 'member';
+  const members = await conv.members();
+  context.assertCurrent();
+  if (members.length === 0) return 'checking';
   if (!members.some(member => member.inboxId === context.client.inboxId)) return 'outside';
   const active = await sdk.isActive(conv);
   context.assertCurrent();
   return active ? 'member' : 'waiting';
+}
+
+export async function channelAccess(context: AccountClient, conv: Conv): Promise<GroupAccess> {
+  const access = await membershipAccess(context, conv).catch(recover<GroupAccess>('xmtp.channelAccess', 'checking'));
+  return rememberAccess(context, conv.id, access);
+}
+
+export async function checkChannelAccess(context: AccountClient, convId: string): Promise<GroupAccess> {
+  const conv = await sdk.findConv(context.client, convId).catch(recover('xmtp.channelAccessConv', null));
+  return conv ? channelAccess(context, conv) : rememberAccess(context, convId, 'checking');
 }
 
 async function reconcileChannel(context: AccountClient, id: string): Promise<void> {

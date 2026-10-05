@@ -3,7 +3,7 @@ import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { channelConsent, loadHiddenChannels, setChannelHidden } from './hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { channelAccess, reconcileHiddenConsent, syncVisibleChannels, type GroupAccess } from './channelVisibility';
+import { channelAccess, checkChannelAccess, reconcileHiddenConsent, syncVisibleChannels, type GroupAccess } from './channelVisibility';
 export type { GroupAccess } from './channelVisibility';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -110,9 +110,7 @@ export async function syncConversationsFromNetwork(): Promise<void> {
 }
 
 export async function groupAccessOf(convId: string): Promise<GroupAccess> {
-  const context = await accountClient();
-  const conv = await sdk.findConv(context.client, convId);
-  return conv ? channelAccess(context, conv) : 'waiting';
+  return checkChannelAccess(await accountClient(), convId);
 }
 
 export async function checkConvSync(convId: string): Promise<SyncCheckResult> {

@@ -7,6 +7,7 @@ import type { ConversationView } from './conversation';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 import { useHiddenChannels } from '../../lib/hiddenChannels';
+import { cachedChannelAccess, subscribeChannelAccess } from '../../lib/channelVisibility';
 
 const knownConsent = new Map<string, XmtpConsent | null>();
 
@@ -55,17 +56,15 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
 const RECHECK_MS = 10_000;
 
 export function useGroupAccess(convId: string | undefined, isGroup: boolean): GroupAccess {
-  const [access, setAccess] = useState<GroupAccess>(isGroup ? 'waiting' : 'member');
+  const access = useStoreValue(subscribeChannelAccess, () => cachedChannelAccess(convId));
   const epoch = useAccountEpoch();
   useEffect(() => {
-    setAccess(isGroup ? 'waiting' : 'member');
     if (!convId || !isGroup) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const check = async (): Promise<void> => {
-      const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'waiting'));
+      const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'checking'));
       if (cancelled) return;
-      setAccess(next);
       if (next !== 'member') timer = setTimeout(() => { void check(); }, RECHECK_MS);
     };
     void check();
@@ -74,5 +73,5 @@ export function useGroupAccess(convId: string | undefined, isGroup: boolean): Gr
       if (timer) clearTimeout(timer);
     };
   }, [convId, isGroup, epoch]);
-  return access;
+  return isGroup ? access : 'member';
 }

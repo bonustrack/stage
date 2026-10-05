@@ -102,9 +102,10 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
     showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, consentKnown, markConsentAllowed,
   } = c;
-  const access = useGroupAccess(convId, c.isGroup);
-  const requestPending = canApproveConversation(consent, c.isGroup, access);
-  const composerShown = consentKnown && canComposeConversation(consent, c.isGroup, access);
+  const isGroup = c.peerAddr === null;
+  const access = useGroupAccess(convId, isGroup);
+  const requestPending = canApproveConversation(consent, isGroup, access);
+  const composerShown = consentKnown && canComposeConversation(consent, isGroup, access);
   return (
     <ComposerDock>
       {showJump ? (
@@ -121,7 +122,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
         </Pressable>
       ) : null}
       {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-      {access !== 'member' && !requestPending ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
+      {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
       {composerShown ? (
         <MessengerComposer
           dark={dark}
