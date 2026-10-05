@@ -27,7 +27,7 @@ interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   items: HomeListItem[];
   barLabels: string[];
-  showFilterBar: boolean;
+  placeholder?: React.ReactElement | null;
   enabledLabels: Set<string>;
   onToggleLabel: (label: string) => void;
   unreadOnly: boolean;
@@ -57,12 +57,10 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
         head={head} sub={sub} border={border}
       />}
       <MessagingSetupBanner />
-      {p.showFilterBar ? (
-        <LabelFilterBar
-          labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
-          onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
-        />
-      ) : null}
+      <LabelFilterBar
+        labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
+        onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
+      />
     </>
   );
 }
@@ -151,7 +149,10 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
       {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
       <Box flex={1}>
         {wide ? null : <TopnavFade stickyTop={pane ? undefined : UNDER_TOPNAV}/>}
-        <VirtualList
+        {props.placeholder ? <>
+          <ChannelsListHeader p={props} search={search}/>
+          {props.placeholder}
+        </> : <VirtualList
           ref={listRef}
           scroll={pane ? 'self' : 'window'}
           simultaneousHandlers={panRef}
@@ -181,7 +182,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
           ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers}/>}
           renderItem={renderRow}
-        />
+        />}
       </Box>
     </>
   );

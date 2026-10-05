@@ -9,7 +9,8 @@ import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../../lib/webLayout';
-import { HomeError, HomeSpinner, RowChannelMenu, useChannelRowRenderer } from './parts';
+import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
@@ -24,7 +25,7 @@ import { useHomeView } from '../../lib/homeView';
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
-import { channelsFilterBarVisible, deriveSortedRows } from './model';
+import { deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
 import { useCategoryRowDrag, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
@@ -70,11 +71,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
     [rows, matches, enabledLabels, boardOrder],
   );
-  const showFilterBar = channelsFilterBarVisible({
-    labelCount: barLabels.length,
-    unreadOnly,
-    enabledLabelsCount: enabledLabels.size,
-  });
   const cleared = useClearedChats();
   const visibleRows = useMemo(
     () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
@@ -111,14 +107,15 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     hideAvatar,
   });
 
-  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
-  if (!rows) return <HomeSpinner head={head} />;
+  const placeholder = st.error ? <HomeError error={st.error} dark={dark} fg={fg}/> : (!rows ? (
+    <Col flex={1} align="center" justify="center"><Spinner size={28} color={head}/></Col>
+  ) : null);
 
   return (
     <Col flex={1} surface="surface">
       <ChannelsList
         panRef={panRef} items={list.items}
-        barLabels={barLabels} showFilterBar={showFilterBar}
+        barLabels={barLabels} placeholder={placeholder}
         enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
         unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
         query={query} setQuery={setQuery} onFilterMenu={setFiltering}

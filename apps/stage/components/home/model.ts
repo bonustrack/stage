@@ -54,16 +54,6 @@ export function channelsLabelChips(m: ChannelsFilterModel): LabelBarChip[] {
   ];
 }
 
-interface ChannelsFilterBarModel {
-  labelCount: number;
-  unreadOnly: boolean;
-  enabledLabelsCount: number;
-}
-
-export function channelsFilterBarVisible(m: ChannelsFilterBarModel): boolean {
-  return m.labelCount > 0 || m.unreadOnly || m.enabledLabelsCount > 0;
-}
-
 interface ChannelsFilterHandlers {
   onClearAll: () => void;
   onToggleUnread: () => void;
