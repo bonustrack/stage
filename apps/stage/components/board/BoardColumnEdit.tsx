@@ -18,7 +18,6 @@ import {
   BOARD_COLUMN_WIDTH, addColumnProblem, draftEdit, draftNote, renameEdit, renameNote, type BoardColumn, type TitleCommit,
   type TitleEdit,
 } from './BoardScreen.model';
-import { addBoardColumn } from './boardActions';
 
 export const COLUMN_PADDING = 10;
 export const CARD_GAP = 8;
@@ -145,12 +144,12 @@ function CancelButton({ onCancel }: { onCancel: () => void }): React.ReactElemen
   );
 }
 
-function DraftColumn({ columns, saved, onAdded, onClose }: {
-  columns: Columns; saved: readonly string[]; onAdded: () => void; onClose: () => void;
+function DraftColumn({ columns, onAdd, onAdded, onClose }: {
+  columns: Columns; onAdd: (name: string) => void; onAdded: () => void; onClose: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const edit = useTitleEdit('', (name, via) => draftEdit(columns, name, via), (name) => {
-    addBoardColumn(columns, saved, name);
+    onAdd(name);
     onAdded();
   }, onClose);
   return (
@@ -189,10 +188,10 @@ function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactEleme
   );
 }
 
-export function AddColumn({ columns, saved, onReveal }: {
-  columns: Columns; saved: readonly string[]; onReveal: () => void;
+export function AddColumn({ columns, onAdd, onReveal }: {
+  columns: Columns; onAdd: (name: string) => void; onReveal: () => void;
 }): React.ReactElement {
   const [drafting, setDrafting] = useState(false);
   if (!drafting) return <AddColumnButton onPress={() => { onReveal(); setDrafting(true); }}/>;
-  return <DraftColumn columns={columns} saved={saved} onAdded={onReveal} onClose={() => { setDrafting(false); }}/>;
+  return <DraftColumn columns={columns} onAdd={onAdd} onAdded={onReveal} onClose={() => { setDrafting(false); }}/>;
 }

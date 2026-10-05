@@ -15,7 +15,7 @@ import { useHover } from '../hover';
 import { Box, Col } from '../layout';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { addItemRows } from './BoardScreen.model';
+import { addItemRows, type EditableColumnBy } from './BoardScreen.model';
 import { COLUMN_PADDING } from './BoardColumnEdit';
 
 export function AddItemButton({ onPress }: { onPress: () => void }): React.ReactElement {
@@ -57,8 +57,8 @@ function ChannelChoice({ item, picked, query, onToggle }: {
   );
 }
 
-function AddItemForm({ label, rows, onAdd }: {
-  label: string; rows: readonly ChannelRowData[]; onAdd: (convIds: string[]) => void;
+function AddItemForm({ label, rows, by, onAdd }: {
+  label: string; rows: readonly ChannelRowData[]; by: EditableColumnBy; onAdd: (convIds: string[]) => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { primary, bg } = usePalette();
@@ -67,8 +67,8 @@ function AddItemForm({ label, rows, onAdd }: {
   const [picked, setPicked] = useState<string[]>([]);
   const input = useFocusOnOpen();
   const shown = useMemo(
-    () => addItemRows(rows.filter(r => !isRowCleared(cleared, r)), label, query, picked),
-    [rows, cleared, label, query, picked],
+    () => addItemRows(rows.filter(r => !isRowCleared(cleared, r)), label, query, picked, by),
+    [rows, cleared, label, query, picked, by],
   );
   const toggle = (convId: string): void => {
     setPicked(prev => (prev.includes(convId) ? prev.filter(id => id !== convId) : [...prev, convId]));
@@ -90,12 +90,12 @@ function AddItemForm({ label, rows, onAdd }: {
   );
 }
 
-export function AddItemModal({ label, rows, onClose, onAdd }: {
-  label: string | null; rows: readonly ChannelRowData[]; onClose: () => void; onAdd: (convIds: string[]) => void;
+export function AddItemModal({ label, rows, by, onClose, onAdd }: {
+  label: string | null; rows: readonly ChannelRowData[]; by: EditableColumnBy; onClose: () => void; onAdd: (convIds: string[]) => void;
 }): React.ReactElement {
   return (
     <AppModal visible={label !== null} onClose={onClose} title={label === null ? undefined : `Add to ${label}`}>
-      {label === null ? null : <AddItemForm label={label} rows={rows} onAdd={onAdd}/>}
+      {label === null ? null : <AddItemForm label={label} rows={rows} by={by} onAdd={onAdd}/>}
     </AppModal>
   );
 }

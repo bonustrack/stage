@@ -93,6 +93,14 @@ describe('category order payload', () => {
 });
 
 describe('home view payload', () => {
+  test('accepts status grouping and only defaults an unset column choice', () => {
+    const state = { view: 'board', groupBy: 'status', at: 4 };
+    expect(parseSyncState('homeView', state)).toEqual({ ...state, columnBy: 'status' });
+    for (const columnBy of ['label', 'category', 'assignee', 'status']) {
+      expect(parseSyncState('homeView', { ...state, columnBy })).toEqual({ ...state, columnBy });
+    }
+  });
+
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { view: 'board', groupBy: 'none', columnBy: 'category', at: 3 };
     expect(parseSyncState('homeView', ok)).toEqual(ok);

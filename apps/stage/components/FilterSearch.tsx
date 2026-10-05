@@ -13,6 +13,9 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
+import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
+import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
+import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
 import { Box, PAGE_GUTTER, STICKY_UNDER_CHROME } from './layout';
 import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
@@ -32,7 +35,7 @@ import { useSafeAreaInsets } from '../lib/safeArea';
 import { useWebTabRail } from '../lib/webLayout';
 import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../lib/peerProfiles';
 import {
-  HAS_OPTIONS, ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
+  HAS_OPTIONS, PRIORITY_OPTIONS, ME_OPTION, ME_VALUE, filterMenuKey, filterMenuSize, memberNames, memberTokenValue, pickSearchFilter,
   searchFilterMenu, searchFilterSources,
   type FilterField, type FilterMenu, type FilterOption, type FilterOptions, type FilterScope, type FilterSpan,
 } from './searchFilter.model';
@@ -43,8 +46,12 @@ const FILTER_LAYER = { zIndex: 5 };
 const RELATIVE = { position: 'relative' } as const;
 const FIELD_LAYER = { ...RELATIVE, zIndex: 1 };
 const NATIVE = Platform.OS !== 'web';
-const FIELD_NAMES: Record<FilterField, string> = { label: 'Label', member: 'Member', has: 'Has' };
-const FIELD_ICONS: Record<FilterField, CentralIcon> = { label: IconTag, member: IconPeople, has: IconFilter1 };
+const FIELD_NAMES: Record<FilterField, string> = {
+  member: 'Member', category: 'Category', status: 'Status', priority: 'Priority', label: 'Label', has: 'Has',
+};
+const FIELD_ICONS: Record<FilterField, CentralIcon> = {
+  member: IconPeople, category: IconFolder1, status: IconCircleDashed, priority: IconFlag1, label: IconTag, has: IconFilter1,
+};
 
 const optionMark = (index: number): MarkedNode => ({ dataSet: { filteroption: String(index) } });
 
@@ -53,6 +60,7 @@ export function memberNamesOf(address: string): string[] {
 }
 
 const byLabel = (a: FilterOption, b: FilterOption): number => a.label.localeCompare(b.label);
+const valueOption = (value: string): FilterOption => ({ key: value, label: value, value });
 
 function useFilterOptions(scope: FilterScope): FilterOptions {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
@@ -64,7 +72,10 @@ function useFilterOptions(scope: FilterScope): FilterOptions {
   usePeerProfiles(sources.members);
   return {
     has: HAS_OPTIONS,
-    label: sources.labels.map(label => ({ key: label, label, value: label })),
+    label: sources.labels.map(valueOption),
+    category: sources.categories.map(valueOption),
+    status: sources.statuses.map(valueOption),
+    priority: PRIORITY_OPTIONS,
     member: [ME_OPTION, ...sources.members.map(address => ({
       key: address,
       label: peerLabel(address),
@@ -146,7 +157,8 @@ function useFilterInput(
 
 function optionIcon(field: FilterField, option: FilterOption, excluded: boolean): CentralIcon {
   if (excluded) return IconCircleMinus;
-  return field === 'has' && option.value === 'draft' ? IconPencil : IconTag;
+  if (field === 'has') return option.value === 'draft' ? IconPencil : IconTag;
+  return FIELD_ICONS[field];
 }
 
 function FilterOptionItem({ field, option, excluded, highlighted, onPress }: {

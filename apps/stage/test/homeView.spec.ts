@@ -38,6 +38,16 @@ describe('home view model', () => {
 });
 
 describe('home view store', () => {
+  test('stored column choices survive while a missing column preference defaults to status', async () => {
+    for (const columnBy of ['label', 'category', 'assignee', 'status'] as const) {
+      const state = { ...view('board', 'label', 4), columnBy };
+      values.set(`home.view.saved-${columnBy}`, JSON.stringify(state));
+      expect(await loadHomeView(`saved-${columnBy}`)).toEqual({ ...state, view: 'chats' });
+    }
+    values.set('home.view.unset-column', JSON.stringify({ view: 'board', groupBy: 'category', at: 5 }));
+    expect(await loadHomeView('unset-column')).toEqual({ view: 'chats', groupBy: 'category', columnBy: 'status', at: 5 });
+  });
+
   test('the view type is saved per account, kept after a reload and never sent', async () => {
     const sent: HomeViewContent[] = [];
     const stop = onHomeViewChanged(change => { sent.push(change.state); });
@@ -45,7 +55,7 @@ describe('home view store', () => {
     setHomeView({ view: 'board' });
     await settle();
     expect(sent).toEqual([]);
-    expect(stored('alice')).toMatchObject({ view: 'board', at: 0 });
+    expect(stored('alice')).toMatchObject({ view: 'board', columnBy: 'status', at: 0 });
     expect(await loadHomeView('alice')).toBeNull();
 
     setHomeView({ columnBy: 'category' });

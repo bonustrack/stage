@@ -23,6 +23,7 @@ const matching = (query: string): string[] => (
 
 const options: FilterOptions = {
   has: HAS_OPTIONS,
+  category: [], status: [], priority: [],
   label: ['Bug', 'Todo', '🚧 In progress'].map(label => ({ key: label, label, value: label })),
   member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }, { key: BOB, label: '@chen123', value: 'chen123' }],
 };
@@ -40,10 +41,12 @@ function pick(query: string, value: string): ReturnType<typeof pickSearchFilter>
   return pickSearchFilter(query, found, (found.excludeRow ? 1 : 0) + found.options.findIndex(option => option.value === value));
 }
 
+const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
+
 describe('parsing exclude filters', () => {
   test('a minus before a field excludes its values, next to included ones and free text', () => {
     expect(parseSearchFilter('-label:Bug label:Todo -MEMBER:alice123,bob.base.eth ship')).toEqual({
-      labels: ['Todo'], members: [], has: [], exclude: { labels: ['Bug'], members: ['alice123', 'bob.base.eth'], has: [] }, text: 'ship',
+      ...NONE, labels: ['Todo'], exclude: { ...NONE, labels: ['Bug'], members: ['alice123', 'bob.base.eth'] }, text: 'ship',
     });
   });
 
@@ -110,7 +113,9 @@ describe('exclude in the filter menu', () => {
   });
 
   test('a minus lists the fields to exclude', () => {
-    expect(menu('ship -')).toEqual({ kind: 'fields', word: { start: 5, end: 6 }, negated: true, fields: ['label', 'member'] });
+    expect(menu('ship -')).toEqual({
+      kind: 'fields', word: { start: 5, end: 6 }, negated: true, fields: ['member', 'category', 'status', 'priority', 'label'],
+    });
     expect(menu('-M')).toMatchObject({ negated: true, fields: ['member'] });
     expect(menu('-h')).toBeNull();
     const fields = menu('-m');

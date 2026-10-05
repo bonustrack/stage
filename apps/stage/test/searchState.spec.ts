@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { collectSyncReplay, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
+import { collectSyncReplay, searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
 import {
   EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel,
 } from '../lib/syncedSettings.model';
@@ -42,6 +42,16 @@ describe('restoreSearch', () => {
 
   test('text typed before the load finished is kept', () => {
     expect(restoreSearch(state('new', 0), state('saved', 3, ['work']))).toEqual(state('new', 3, ['work']));
+  });
+
+  test('metadata tokens persist as local query text, not synced filters', () => {
+    const query = 'category:"Client work" status:"🚧 In progress",Todo -priority:Low label:Bug member:@me';
+    const stored = searchStateSchema.parse(JSON.parse(JSON.stringify(state(query, 3, ['work']))));
+    expect(restoreSearch(EMPTY_SEARCH, stored)).toEqual(state(query, 3, ['work']));
+    expect(syncedSearch(stored)).toEqual(state('', 3, ['work']));
+    expect(receiveSearch(stored, state('remote', 4)).query).toBe(query);
+    const cleared = searchStateSchema.parse(JSON.parse(JSON.stringify({ ...stored, query: '' })));
+    expect(restoreSearch(EMPTY_SEARCH, cleared)).toEqual(state('', 3, ['work']));
   });
 });
 

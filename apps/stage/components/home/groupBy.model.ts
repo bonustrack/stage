@@ -5,20 +5,25 @@ export interface GroupableRow {
   peerAddress?: string | null;
   labels?: string[];
   category?: string | null;
+  status?: string | null;
   assigned?: string[];
 }
 
 export type NameOf = (address: string) => string;
 
-export const GROUP_BY_LABELS: Record<GroupKey, string> = { assignee: 'Assignees', category: 'Category', label: 'Label' };
+export const GROUP_BY_LABELS: Record<GroupKey, string> = {
+  assignee: 'Assignees', category: 'Category', label: 'Label', status: 'Status',
+};
 
-export const NO_GROUP_TITLES: Record<GroupKey, string> = { assignee: 'Unassigned', category: 'No category', label: 'No label' };
+export const NO_GROUP_TITLES: Record<GroupKey, string> = {
+  assignee: 'Unassigned', category: 'No category', label: 'No label', status: 'No status',
+};
 
 export function groupValuesOf(row: GroupableRow, by: GroupKey): string[] {
   if (by === 'label') return row.labels ?? [];
   if (by === 'assignee') return row.assigned ?? [];
-  const category = categoryOf(row.category);
-  return category === null ? [] : [category];
+  const value = categoryOf(row[by]);
+  return value === null ? [] : [value];
 }
 
 export function groupTitleOf(by: GroupKey, value: string, nameOf: NameOf): string {

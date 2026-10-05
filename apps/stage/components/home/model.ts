@@ -99,7 +99,9 @@ export interface ViewMenuSection {
 
 const VIEW_ID_PREFIX = 'view:';
 const GROUP_ID_PREFIX = 'group:';
-const GROUP_ICONS: Record<GroupKey, AppIconName> = { assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag' };
+const GROUP_ICONS: Record<GroupKey, AppIconName> = {
+  assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag', status: 'IconCircleDashed',
+};
 
 export function homeViewMenu(current: HomeViewContent): ViewMenuSection[] {
   const board = current.view === 'board';

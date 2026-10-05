@@ -42,14 +42,14 @@ import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
 import { channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnMovable, columnsEditable, orderedColumns,
+  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable, columnMovable, columnsEditable, orderedColumns,
   revealScrollX, searchedColumns, type BoardColumn, type BoardDrag,
 } from './BoardScreen.model';
 import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
-import { addToBoardLabel, deleteBoardLabel, dropOnBoard, renameBoardLabel } from './boardActions';
+import { addBoardColumn, addToBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } from './boardActions';
 import { AddItemButton, AddItemModal } from './BoardAddItem';
 import {
   AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
@@ -77,6 +77,7 @@ interface ColumnActions {
   rename: (from: string, to: string) => void;
   remove: (label: string) => void;
   add: (label: string) => void;
+  create: (name: string) => void;
 }
 
 function columnMaxHeight(laneHeight: number): number | string | undefined {
@@ -182,6 +183,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   onOpen: (key: string) => void;
 }): React.ReactElement {
   const { label } = column;
+  const editable = actions.editable && columnEditable(column.key);
   const [editing, setEditing] = useState(false);
   const zone = useBoardDropZone(column.key, (drag) => { actions.drop(drag, column.key); });
   const handle = useBoardDragSource(editing || !columnMovable(column.key) ? null : { kind: 'column', key: column.key }, zone.nativeID);
@@ -197,15 +199,15 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
       ) : (
         <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
           <Row nativeID={handle.nativeID} flex={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
-            <ColumnTitle label={label} onPress={actions.editable ? () => { setEditing(true); } : undefined}/>
+            <ColumnTitle label={label} onPress={editable ? () => { setEditing(true); } : undefined}/>
             <CountTag count={column.rows.length}/>
             <Box flex={1}/>
           </Row>
-          {actions.editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
+          {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
         </Row>
       )}
       <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
-      {actions.editable ? <AddItemButton onPress={() => { actions.add(label); }}/> : null}
+      {editable ? <AddItemButton onPress={() => { actions.add(label); }}/> : null}
     </ColumnFrame>
   );
 }
@@ -230,10 +232,9 @@ function useCardArrows({ columns, openIndex, openConvId, paused, onMove }: {
   });
 }
 
-function BoardLanes({ columns, pinned, saved, actions, filtering }: {
+function BoardLanes({ columns, pinned, actions, filtering }: {
   columns: BoardColumn<ChannelRowData>[];
   pinned: readonly string[];
-  saved: readonly string[];
   actions: ColumnActions;
   filtering: boolean;
 }): React.ReactElement {
@@ -279,15 +280,12 @@ function BoardLanes({ columns, pinned, saved, actions, filtering }: {
       {columns.map(column => (
         <BoardColumnView
           key={column.key}
-          column={column}
-          columns={columns}
+          column={column} columns={columns} pinned={pinned}
           maxHeight={columnMaxHeight(laneHeight)}
-          pinned={pinned}
-          actions={actions}
-          onOpen={setOpenedFrom}
+          actions={actions} onOpen={setOpenedFrom}
         />
       ))}
-      {actions.editable ? <AddColumn columns={columns} saved={saved} onReveal={() => { reveal.current = true; }}/> : null}
+      {actions.editable ? <AddColumn columns={columns} onAdd={actions.create} onReveal={() => { reveal.current = true; }}/> : null}
     </Scroll>
   );
 }
@@ -325,19 +323,26 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {
     editable: columnsEditable(columnBy),
-    drop: (drag, key) => { dropOnBoard(columns, order, drag, key); },
-    rename: (from, to) => { void renameBoardLabel(rows, columns, order, from, to).catch(reported('board.rename')); },
-    remove: (label) => { void deleteBoardLabel(rows, columns, order, label).catch(reported('board.delete')); },
+    drop: (drag, key) => { dropOnBoard(columns, order, drag, key, columnBy); },
+    rename: (from, to) => {
+      if (columnsEditable(columnBy)) void renameBoardColumn(rows, columns, order, from, to, columnBy).catch(reported('board.rename'));
+    },
+    remove: (label) => {
+      if (columnsEditable(columnBy)) void deleteBoardColumn(rows, columns, order, label, columnBy).catch(reported('board.delete'));
+    },
     add: setAdding,
+    create: (name) => { if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy); },
   };
   const addPicked = (convIds: string[]): void => {
     setAdding(null);
-    if (adding !== null) void addToBoardLabel(convIds, adding).catch(reported('board.add'));
+    if (adding !== null && columnsEditable(columnBy)) void addToBoardColumn(convIds, adding, columnBy).catch(reported('board.add'));
   };
   return (
     <>
-      <BoardLanes columns={shown} pinned={pinned} saved={order} actions={actions} filtering={filtering}/>
-      <AddItemModal label={adding} rows={rows} onClose={() => { setAdding(null); }} onAdd={addPicked}/>
+      <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering}/>
+      {columnsEditable(columnBy) ? (
+        <AddItemModal by={columnBy} label={adding} rows={rows} onClose={() => { setAdding(null); }} onAdd={addPicked}/>
+      ) : null}
     </>
   );
 }

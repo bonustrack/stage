@@ -4,6 +4,7 @@ import { IconBell } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
 import { IconCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCode';
 import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
 import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDevices';
@@ -39,6 +40,7 @@ export const APP_ICONS = {
   IconBubble3,
   IconBubbleAnnotation3,
   IconCheckmark1,
+  IconCircleDashed,
   IconCode,
   IconColumns3Wide,
   IconDevices,

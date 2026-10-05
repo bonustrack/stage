@@ -19,7 +19,8 @@ const namesOf = (): string[] => [];
 const matching = (query: string): string[] => (
   rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map(item => item.convId)
 );
-const options: FilterOptions = { has: HAS_OPTIONS, label: [], member: [] };
+const options: FilterOptions = { has: HAS_OPTIONS, label: [], member: [], category: [], status: [], priority: [] };
+const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
 const menu = (query: string, caret = query.length): ReturnType<typeof searchFilterMenu> => searchFilterMenu(query, caret, options);
 
 function pick(query: string, value: string): ReturnType<typeof pickSearchFilter> {
@@ -31,11 +32,11 @@ function pick(query: string, value: string): ReturnType<typeof pickSearchFilter>
 describe('has channel filters', () => {
   test('parses has alongside the existing fields and free text', () => {
     expect(parseSearchFilter('HAS:Label,draft has: label:Todo member:@me hello')).toEqual({
-      labels: ['Todo'], members: ['@me'], has: ['Label', 'draft'], exclude: { labels: [], members: [], has: [] }, text: 'hello',
+      ...NONE, labels: ['Todo'], members: ['@me'], has: ['Label', 'draft'], exclude: NONE, text: 'hello',
     });
     expect(searchFilterValues('has:label has:draft', 'has')).toEqual(['label', 'draft']);
     expect(parseSearchFilter('has:"draft"')).toEqual({
-      labels: [], members: [], has: ['draft'], exclude: { labels: [], members: [], has: [] }, text: '',
+      ...NONE, has: ['draft'], exclude: NONE, text: '',
     });
   });
 
@@ -83,7 +84,7 @@ describe('has channel filters', () => {
   });
 
   test('board filtering passes local drafts through and keeps empty columns', () => {
-    const columns = boardColumns(rows, [], []);
+    const columns = boardColumns(rows, [], [], 'label');
     expect(searchedColumns(columns, 'has:draft', namesOf, draftOf).map(column => [column.label, column.rows.map(item => item.convId)]))
       .toEqual([['Bug', ['both']], ['Todo', ['both']]]);
     expect(searchedColumns(columns, 'has:draft', namesOf).map(column => column.rows)).toEqual([[], []]);

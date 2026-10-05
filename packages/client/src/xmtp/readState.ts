@@ -57,14 +57,14 @@ export const searchStateSchema = z.object({
 
 export type SearchStateContent = z.infer<typeof searchStateSchema>;
 
-export const GROUP_KEYS = ['assignee', 'category', 'label'] as const;
+export const GROUP_KEYS = ['assignee', 'category', 'label', 'status'] as const;
 
 export type GroupKey = (typeof GROUP_KEYS)[number];
 
 export const homeViewSchema = z.object({
   view: z.enum(['chats', 'board']),
   groupBy: z.enum(['none', ...GROUP_KEYS]),
-  columnBy: z.enum(GROUP_KEYS),
+  columnBy: z.enum(GROUP_KEYS).default('status'),
   at: z.number().nonnegative(),
 });
 
@@ -72,7 +72,7 @@ export type HomeViewContent = z.infer<typeof homeViewSchema>;
 
 export type HomeViewEdit = Partial<Omit<HomeViewContent, 'at'>>;
 
-export const DEFAULT_HOME_VIEW: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'label', at: 0 };
+export const DEFAULT_HOME_VIEW: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 0 };
 
 export interface SyncContents {
   read: ReadStateContent;

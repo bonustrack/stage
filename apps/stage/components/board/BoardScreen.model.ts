@@ -1,8 +1,8 @@
 import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
-import { NO_GROUP_TITLES, bucketRows, type GroupableRow, type NameOf } from '../home/groupBy.model';
+import { DEFAULT_HOME_VIEW, type GroupKey } from '@stage-labs/client/xmtp/readState';
+import { NO_GROUP_TITLES, bucketRows, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
 import { compareNames } from '../../lib/format';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
@@ -21,12 +21,15 @@ export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label
 
 export const columnKeyOf = (by: GroupKey, value: string): string => (by === 'label' ? labelColumnKey(value) : `${by}:${value}`);
 
-export const columnsEditable = (by: GroupKey): boolean => by === 'label';
+export type EditableColumnBy = Extract<GroupKey, 'label' | 'status'>;
 
-function rememberedLabels(order: readonly string[], known: ReadonlySet<string>): BoardColumn<never>[] {
+export const columnsEditable = (by: GroupKey): by is EditableColumnBy => by === 'label' || by === 'status';
+
+function rememberedColumns(order: readonly string[], known: ReadonlySet<string>, by: GroupKey): BoardColumn<never>[] {
   const seen = new Set(known);
+  const prefix = columnKeyOf(by, '');
   return order.flatMap((key) => {
-    const label = key.startsWith(LABEL_PREFIX) ? key.slice(LABEL_PREFIX.length) : '';
+    const label = key.startsWith(prefix) ? key.slice(prefix.length) : '';
     if (label === '' || seen.has(label.toLowerCase())) return [];
     seen.add(label.toLowerCase());
     return [{ key, label, rows: [] }];
@@ -47,12 +50,12 @@ function valueColumns<T extends GroupableRow>(
 }
 
 export function boardColumns<T extends ChannelListRow & GroupableRow>(
-  rows: T[], pinned: readonly string[], order: readonly string[], by: GroupKey = 'label',
+  rows: T[], pinned: readonly string[], order: readonly string[], by: GroupKey = DEFAULT_HOME_VIEW.columnBy,
   nameOf: NameOf = value => value, hidden: (row: T) => boolean = () => false,
 ): BoardColumn<T>[] {
   const columns = valueColumns(sortChannelRows(rows.filter(row => !row.peerAddress), pinned), by, nameOf, hidden);
-  if (by !== 'label') return columns;
-  return [...columns, ...rememberedLabels(order, new Set(columns.map(column => column.label.toLowerCase())))];
+  if (!columnsEditable(by)) return columns;
+  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.label.toLowerCase())), by)];
 }
 
 export function searchedColumns<T extends FilterRow>(
@@ -74,9 +77,11 @@ export interface BoardDropZone {
   over: boolean;
 }
 
-const NO_CATEGORY_COLUMN = columnKeyOf('category', '');
+export const columnMovable = (key: string): boolean => key !== columnKeyOf('category', '') && key !== columnKeyOf('status', '');
 
-export const columnMovable = (key: string): boolean => key !== NO_CATEGORY_COLUMN;
+export const columnEditable = (key: string): boolean => (
+  ['label', 'status'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
+);
 
 export function acceptsDrop(drag: BoardDrag, key: string): boolean {
   if (drag.kind === 'card') return drag.from !== key;
@@ -114,23 +119,37 @@ export function keptColumnOrder(
   return next.length === saved.length && next.every((key, index) => key === saved[index]) ? null : next;
 }
 
-export function columnLabel(columns: readonly BoardColumn<unknown>[], key: string): string | null {
-  return columns.find(column => column.key === key)?.label ?? null;
+type CardColumnEdit = { by: 'status'; value: string | null } | { by: 'label'; from: string; to: string };
+
+export function cardColumnEdit(
+  columns: readonly BoardColumn<unknown>[], from: string, to: string, by: GroupKey,
+): CardColumnEdit | null {
+  if (!columnsEditable(by) || from === to) return null;
+  const prefix = columnKeyOf(by, '');
+  if (!from.startsWith(prefix) || !to.startsWith(prefix)) return null;
+  const source = columns.find(column => column.key === from);
+  const target = columns.find(column => column.key === to);
+  if (!source || !target) return null;
+  return by === 'status'
+    ? { by, value: to === prefix ? null : target.label }
+    : { by, from: source.label, to: target.label };
 }
 
-const carries = (row: ChannelListRow, key: string): boolean => (row.labels ?? []).some(l => l.toLowerCase() === key);
+const carries = (row: GroupableRow, key: string, by: EditableColumnBy): boolean => (
+  groupValuesOf(row, by).some(value => value.toLowerCase() === key)
+);
 
-export function labelCarriers(rows: readonly ChannelListRow[], label: string): string[] {
-  const key = label.toLowerCase();
-  return rows.filter(r => !r.peerAddress && carries(r, key)).map(r => r.convId);
+export function columnCarriers(rows: readonly ChannelListRow[], value: string, by: EditableColumnBy): string[] {
+  const key = value.toLowerCase();
+  return rows.filter(r => !r.peerAddress && carries(r, key, by)).map(r => r.convId);
 }
 
 export function addItemRows<T extends ChannelListRow>(
-  rows: readonly T[], label: string, query: string, picked: readonly string[],
+  rows: readonly T[], label: string, query: string, picked: readonly string[], by: EditableColumnBy = 'label',
 ): T[] {
   const key = label.toLowerCase();
   const needle = query.trim().toLowerCase();
-  return sortChannelRows(rows.filter(r => !r.peerAddress && !carries(r, key)
+  return sortChannelRows(rows.filter(r => !r.peerAddress && !carries(r, key, by)
     && (picked.includes(r.convId) || r.title.toLowerCase().includes(needle))));
 }
 
@@ -159,8 +178,10 @@ export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name:
   return taken === undefined ? null : `A column named ${taken} already exists.`;
 }
 
-export function addedColumnOrder(shown: readonly string[], saved: readonly string[], name: string): string[] {
-  return [...withShown(saved, shown), labelColumnKey(typedName(name))];
+export function addedColumnOrder(
+  shown: readonly string[], saved: readonly string[], name: string, by: EditableColumnBy = 'label',
+): string[] {
+  return [...withShown(saved, shown), columnKeyOf(by, typedName(name))];
 }
 
 export function renameTarget(
@@ -204,10 +225,10 @@ export function renameNote(
 }
 
 export function renamedColumnOrder(
-  shown: readonly string[], saved: readonly string[], from: string, to: string,
+  shown: readonly string[], saved: readonly string[], from: string, to: string, by: EditableColumnBy = 'label',
 ): string[] {
-  const fromKey = labelColumnKey(from).toLowerCase();
-  const toKey = labelColumnKey(to);
+  const fromKey = columnKeyOf(by, from).toLowerCase();
+  const toKey = columnKeyOf(by, to);
   const full = withShown(saved, shown);
   const merging = full.some(key => key.toLowerCase() === toKey.toLowerCase() && key.toLowerCase() !== fromKey);
   return full.flatMap((key) => {
@@ -216,18 +237,23 @@ export function renamedColumnOrder(
   });
 }
 
-export function deletedColumnOrder(shown: readonly string[], saved: readonly string[], label: string): string[] {
-  const key = labelColumnKey(label).toLowerCase();
+export function deletedColumnOrder(
+  shown: readonly string[], saved: readonly string[], label: string, by: EditableColumnBy = 'label',
+): string[] {
+  const key = columnKeyOf(by, label).toLowerCase();
   return withShown(saved, shown).filter(k => k.toLowerCase() !== key);
 }
 
-export function deleteColumnConfirm(label: string, carriers: number): { title: string; message: string } {
+export function deleteColumnConfirm(
+  label: string, carriers: number, by: EditableColumnBy = 'label',
+): { title: string; message: string } {
   const channels = carriers === 1 ? '1 channel' : `${carriers} channels`;
+  const moved = by === 'status' ? 'They move to No status. Labels are kept.' : 'Channels with no other label leave the board.';
   return {
     title: 'Delete column',
     message: carriers === 0
-      ? `No channel has the ${label} label.`
-      : `This removes the ${label} label from ${channels}. Channels with no other label leave the board.`,
+      ? `No channel has the ${label} ${by}.`
+      : `This removes the ${label} ${by} from ${channels}. ${moved}`,
   };
 }
 

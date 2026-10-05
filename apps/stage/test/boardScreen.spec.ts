@@ -3,7 +3,7 @@ import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
   BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardsRightPadding, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
-  addItemRows, keptColumnOrder, labelCapNote, labelCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
+  addItemRows, keptColumnOrder, labelCapNote, columnCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
 } from '../components/board/BoardScreen.model';
 
@@ -28,7 +28,7 @@ function dm(convId: string, lastTs: number, labels?: string[]): TestRow {
 }
 
 function shape(rows: TestRow[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
-  return boardColumns(rows, pinned, order).map(c => [c.label, c.rows.map(r => r.convId)]);
+  return boardColumns(rows, pinned, order, 'label').map(c => [c.label, c.rows.map(r => r.convId)]);
 }
 
 describe('boardColumns', () => {
@@ -132,7 +132,7 @@ describe('boardColumns by category and assignee', () => {
 describe('searching the board', () => {
   const rows = [row('alpha', 3, ['Todo']), row('beta', 2, ['Todo']), row('gamma', 1, ['Done'])];
   const searched = (query: string): [string, string[]][] =>
-    searchedColumns(boardColumns(rows, [], []), query).map(c => [c.label, c.rows.map(r => r.convId)]);
+    searchedColumns(boardColumns(rows, [], [], 'label'), query).map(c => [c.label, c.rows.map(r => r.convId)]);
 
   test('keeps every column and only the cards that match, whatever the case', () => {
     expect(searched('  BET ')).toEqual([['Done', []], ['Todo', ['beta']]]);
@@ -182,7 +182,7 @@ describe('saved column order', () => {
 });
 
 describe('columns left empty', () => {
-  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1, ['Done'])], [], []);
+  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1, ['Done'])], [], [], 'label');
 
   test('moving the last card out of a column saves the order so the column stays', () => {
     expect(keptColumnOrder(columns, [], 'label:Todo')).toEqual(['label:Done', 'label:Todo']);
@@ -211,12 +211,12 @@ describe('adding channels to a column', () => {
 });
 
 describe('renaming a column', () => {
-  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], []);
+  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label');
   const keys = columns.map(c => c.key);
 
   test('a rename reaches every group carrying the name whatever its case, direct messages aside', () => {
     const rows = [row('a', 4, ['Urgent', 'todo']), row('b', 3, ['TODO']), row('c', 2, ['Done']), dm('d', 1, ['Todo'])];
-    expect(labelCarriers(rows, 'Todo')).toEqual(['a', 'b']);
+    expect(columnCarriers(rows, 'Todo', 'label')).toEqual(['a', 'b']);
   });
 
   test('a new name must be set and short enough', () => {
@@ -249,7 +249,7 @@ describe('renaming a column', () => {
 });
 
 describe('deleting a column', () => {
-  const keys = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], []).map(c => c.key);
+  const keys = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label').map(c => c.key);
 
   test('the deleted column leaves the saved order and the others keep their place', () => {
     expect(deletedColumnOrder(keys, [], 'Todo')).toEqual(['label:Done']);
@@ -259,7 +259,7 @@ describe('deleting a column', () => {
 
   test('a remembered column with no channel leaves the saved order whatever its case', () => {
     const saved = ['label:Done', 'label:Later', 'label:Todo'];
-    const shown = boardColumns([row('b', 2, ['Done'])], [], saved).map(c => c.key);
+    const shown = boardColumns([row('b', 2, ['Done'])], [], saved, 'label').map(c => c.key);
     expect(deletedColumnOrder(shown, saved, 'later')).toEqual(['label:Done', 'label:Todo']);
   });
 
@@ -275,7 +275,7 @@ describe('deleting a column', () => {
 
 describe('adding a column', () => {
   const rows = [row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)];
-  const columns = boardColumns(rows, [], []);
+  const columns = boardColumns(rows, [], [], 'label');
   const keys = columns.map(c => c.key);
 
   test('a new name must be set, short enough and not taken by any column whatever its case', () => {
@@ -294,13 +294,13 @@ describe('adding a column', () => {
 
   test('the added column shows empty at the far right of the board', () => {
     const order = addedColumnOrder(keys, [], 'Blocked');
-    expect(orderedColumns(boardColumns(rows, [], order), order).map(c => [c.label, c.rows.length]))
+    expect(orderedColumns(boardColumns(rows, [], order, 'label'), order).map(c => [c.label, c.rows.length]))
       .toEqual([['Done', 1], ['Todo', 1], ['Blocked', 0]]);
   });
 });
 
 describe('typing a column title in place', () => {
-  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], []);
+  const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label');
   const long = 'x'.repeat(25);
 
   test('a new column saves its typed name with Enter or on blur', () => {

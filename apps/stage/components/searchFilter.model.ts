@@ -1,19 +1,23 @@
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
+import { CHANNEL_PRIORITIES, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
 
-export type FilterField = 'label' | 'member' | 'has';
+export type FilterField = 'label' | 'member' | 'has' | ChannelField;
 
 export type FilterScope = 'board' | 'chats';
 
-export const FILTER_FIELDS: readonly FilterField[] = ['label', 'member', 'has'];
+export const FILTER_FIELDS: readonly FilterField[] = ['member', 'category', 'status', 'priority', 'label', 'has'];
 
-const EXCLUDE_FIELDS: readonly FilterField[] = ['label', 'member'];
+const EXCLUDE_FIELDS: readonly FilterField[] = FILTER_FIELDS.filter(field => field !== 'has');
 
 export const ME_VALUE = '@me';
 
 interface FilterValues {
   labels: string[];
   members: string[];
+  categories: string[];
+  statuses: string[];
+  priorities: string[];
   has: string[];
 }
 
@@ -25,6 +29,9 @@ interface SearchFilter extends FilterValues {
 export interface FilterRow extends ChannelListRow {
   inboxToAddr?: Record<string, string>;
   selfInboxId?: string;
+  category?: string | null;
+  status?: string | null;
+  priority?: string | null;
 }
 
 export interface FilterSpan {
@@ -53,8 +60,10 @@ export const HAS_OPTIONS: readonly FilterOption[] = [
   { key: 'draft', label: 'Draft', value: 'draft' },
 ];
 
-const FIELD_RE = /^(-?)(label|member|has):(.*)$/i;
-const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has' } as const;
+export const PRIORITY_OPTIONS: readonly FilterOption[] = CHANNEL_PRIORITIES.map(value => ({ key: value, label: value, value }));
+
+const FIELD_RE = /^(-?)(label|member|has|category|status|priority):(.*)$/i;
+const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has', category: 'categories', status: 'statuses', priority: 'priorities' } as const;
 
 function wordsOf(query: string): FilterSpan[] {
   const words: FilterSpan[] = [];
@@ -101,7 +110,7 @@ function fieldWord(word: string): { field: FilterField; negated: boolean; values
 
 const filled = (values: readonly string[]): string[] => values.filter(value => value !== '');
 
-const noValues = (): FilterValues => ({ labels: [], members: [], has: [] });
+const noValues = (): FilterValues => ({ labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] });
 
 export function parseSearchFilter(query: string): SearchFilter {
   const filter: SearchFilter = { ...noValues(), exclude: noValues(), text: '' };
@@ -153,6 +162,10 @@ const labelMatches = (row: FilterRow, value: string): boolean => (
   (row.labels ?? []).some(label => label.toLowerCase() === value.toLowerCase())
 );
 
+const metadataMatches = (row: FilterRow, field: ChannelField, value: string): boolean => (
+  channelFieldOf(field, row[field])?.toLowerCase() === value.toLowerCase()
+);
+
 export function searchRowMatcher(
   filter: SearchFilter, namesOf: MemberNames, draftOf: (convId: string) => string = () => '',
 ): (row: FilterRow) => boolean {
@@ -161,6 +174,9 @@ export function searchRowMatcher(
     label: labelMatches,
     member: (row, value) => memberMatches(row, value, namesOf),
     has: (row, value) => hasMatches(row, value, draftOf),
+    category: (row, value) => metadataMatches(row, 'category', value),
+    status: (row, value) => metadataMatches(row, 'status', value),
+    priority: (row, value) => metadataMatches(row, 'priority', value),
   };
   const kept = (row: FilterRow, field: FilterField): boolean => {
     const key = FILTER_KEYS[field];
@@ -171,19 +187,26 @@ export function searchRowMatcher(
 }
 
 const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = {
-  board: row => !row.peerAddress && (row.labels ?? []).length > 0,
+  board: row => !row.peerAddress,
   chats: () => true,
 };
 
-export function searchFilterSources(rows: readonly FilterRow[], scope: FilterScope): { labels: string[]; members: string[] } {
+const sortedValues = (values: ReadonlyMap<string, string>): string[] => [...values.values()].sort((a, b) => a.localeCompare(b));
+
+export function searchFilterSources(rows: readonly FilterRow[], scope: FilterScope): Omit<FilterValues, 'has' | 'priorities'> {
   const labels = new Map<string, string>();
+  const fields = { category: new Map<string, string>(), status: new Map<string, string>() };
   const members = new Set<string>();
   for (const row of rows) {
     if (!IN_SCOPE[scope](row)) continue;
     for (const label of row.labels ?? []) if (!labels.has(label.toLowerCase())) labels.set(label.toLowerCase(), label);
+    for (const field of ['category', 'status'] as const) {
+      const value = channelFieldOf(field, row[field]);
+      if (value !== null && !fields[field].has(value.toLowerCase())) fields[field].set(value.toLowerCase(), value);
+    }
     for (const address of rowMembers(row)) members.add(address);
   }
-  return { labels: [...labels.values()].sort((a, b) => a.localeCompare(b)), members: [...members] };
+  return { labels: sortedValues(labels), members: [...members], categories: sortedValues(fields.category), statuses: sortedValues(fields.status) };
 }
 
 export function memberTokenValue(address: string, handle: string | undefined): string {

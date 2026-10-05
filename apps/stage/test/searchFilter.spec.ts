@@ -10,7 +10,7 @@ import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
 
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
 
-const NONE = { labels: [], members: [], has: [] };
+const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
 
 const rows = [
   group('build', ['🚧 In progress'], [ALICE]),
@@ -26,13 +26,13 @@ const matching = (query: string): string[] => {
 describe('parsing the search filter', () => {
   test('splits label and member tokens from the free text', () => {
     expect(parseSearchFilter('label:"🚧 In progress" member:alice123 ship it')).toEqual({
-      labels: ['🚧 In progress'], members: ['alice123'], has: [], exclude: NONE, text: 'ship it',
+      ...NONE, labels: ['🚧 In progress'], members: ['alice123'], exclude: NONE, text: 'ship it',
     });
   });
 
   test('field names ignore case, empty values filter nothing and extra spaces go away', () => {
     expect(parseSearchFilter('  LABEL:Todo   Member:  label:""  ')).toEqual({
-      labels: ['Todo'], members: [], has: [], exclude: NONE, text: '',
+      ...NONE, labels: ['Todo'], exclude: NONE, text: '',
     });
   });
 
@@ -42,7 +42,7 @@ describe('parsing the search filter', () => {
 
   test('member:@me is a member token like any other', () => {
     expect(parseSearchFilter('member:@me ship member:alice123')).toEqual({
-      labels: [], members: ['@me', 'alice123'], has: [], exclude: NONE, text: 'ship',
+      ...NONE, members: ['@me', 'alice123'], exclude: NONE, text: 'ship',
     });
   });
 });
@@ -71,7 +71,7 @@ describe('matching board cards', () => {
   });
 
   test('searched columns keep every column and filter their cards', () => {
-    const shown = searchedColumns(boardColumns(rows, [], []), 'member:bob.base.eth', namesOf);
+    const shown = searchedColumns(boardColumns(rows, [], [], 'label'), 'member:bob.base.eth', namesOf);
     expect(shown.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
       ['🚧 In progress', ['ship']], ['Bug', ['ship']], ['Todo', ['plan']],
     ]);
@@ -105,11 +105,11 @@ describe('member:@me', () => {
 });
 
 describe('filter values on the board', () => {
-  test('labels and members come from labelled channels only, without you', () => {
-    const dm = { ...group('dm', ['Todo'], [BOB]), peerAddress: BOB };
+  test('labels and members come from all channels but not direct chats or you', () => {
+    const dm = { ...group('dm', ['Private'], ['0xprivate']), peerAddress: BOB };
     const unlabelled = group('loose', [], ['0xc0ffee']);
     expect(searchFilterSources([...rows, dm, unlabelled, group('dup', ['todo'])], 'board')).toEqual({
-      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB],
+      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'], categories: [], statuses: [],
     });
   });
 
@@ -123,6 +123,7 @@ describe('filter values on the board', () => {
 describe('the filter menu', () => {
   const options: FilterOptions = {
     has: HAS_OPTIONS,
+    category: [], status: [], priority: [],
     label: [
       { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
       { key: 'Todo', label: 'Todo', value: 'Todo' },
@@ -132,8 +133,8 @@ describe('the filter menu', () => {
   const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
 
   test('an empty search or a new word lists the fields, a typed prefix narrows them', () => {
-    expect(menu('')).toEqual({ kind: 'fields', word: { start: 0, end: 0 }, negated: false, fields: ['label', 'member', 'has'] });
-    expect(menu('bug ')).toEqual({ kind: 'fields', word: { start: 4, end: 4 }, negated: false, fields: ['label', 'member', 'has'] });
+    expect(menu('')).toEqual({ kind: 'fields', word: { start: 0, end: 0 }, negated: false, fields: ['member', 'category', 'status', 'priority', 'label', 'has'] });
+    expect(menu('bug ')).toEqual({ kind: 'fields', word: { start: 4, end: 4 }, negated: false, fields: ['member', 'category', 'status', 'priority', 'label', 'has'] });
     expect(menu('ME')).toMatchObject({ kind: 'fields', fields: ['member'] });
     expect(menu('bug')).toBeNull();
   });
@@ -183,7 +184,7 @@ describe('the search filter on the chats page', () => {
   test('every chat gives values, direct chats and unlabelled groups included, without you', () => {
     const loose = group('loose', [], ['0xc0ffee']);
     expect(searchFilterSources([...chats, loose], 'chats')).toEqual({
-      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'],
+      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'], categories: [], statuses: [],
     });
   });
 
@@ -202,7 +203,7 @@ describe('the search filter on the chats page', () => {
 describe('values grouped per field', () => {
   test('a comma joins values of one field, in any order next to the old repeated form', () => {
     expect(parseSearchFilter('member:@me,chen123 ship label:Todo,Bug')).toEqual({
-      labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], has: [], exclude: NONE, text: 'ship',
+      ...NONE, labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], exclude: NONE, text: 'ship',
     });
     expect(parseSearchFilter('member:@me member:chen123,,')).toEqual(parseSearchFilter('member:@me,chen123'));
   });
@@ -216,7 +217,7 @@ describe('values grouped per field', () => {
     const labels = ['🚧 In progress', '🔍 In review', 'a,b', 'Todo'];
     const token = searchFilterToken('label', labels);
     expect(token).toBe('label:"🚧 In progress","🔍 In review","a,b",Todo');
-    expect(parseSearchFilter(`${token} ship`)).toEqual({ labels, members: [], has: [], exclude: NONE, text: 'ship' });
+    expect(parseSearchFilter(`${token} ship`)).toEqual({ ...NONE, labels, exclude: NONE, text: 'ship' });
     expect(searchFilterToken('member', ['@me', 'chen123'])).toBe('member:@me,chen123');
   });
 });
@@ -224,6 +225,7 @@ describe('values grouped per field', () => {
 describe('picked values in the menu', () => {
   const options: FilterOptions = {
     has: HAS_OPTIONS,
+    category: [], status: [], priority: [],
     label: [
       { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
       { key: '🔍 In review', label: '🔍 In review', value: '🔍 In review' },
