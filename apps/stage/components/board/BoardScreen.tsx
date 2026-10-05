@@ -13,6 +13,8 @@ import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
 import { useHomeTopnav, useSearchOpen } from '../home/list';
 import { ChannelRow } from '../ChannelRow';
+import { ChannelRowFields } from '../ChannelRowFields';
+import { useChannelFields } from '../../lib/channelFields';
 import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
 import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
@@ -56,9 +58,7 @@ import {
 } from './BoardColumnEdit';
 
 const DRAGGING_OPACITY = 0.4;
-
 type BoardRouter = ReturnType<typeof useRouter>;
-
 const cardDataSet = (columnKey: string, convId: string): MarkedNode => (
   { dataSet: { boardcard: convId, boardcolumn: columnKey } }
 );
@@ -70,7 +70,6 @@ function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'repla
 }
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
-
 interface ColumnActions {
   editable: boolean;
   drop: (drag: BoardDrag, key: string) => void;
@@ -94,6 +93,7 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   const { border, link } = usePalette();
   const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
+  const fields = useChannelFields('board');
   const source = useBoardDragSource(editable ? { kind: 'card', convId: item.convId, from: columnKey } : null);
   const [menu, setMenu] = useState<RowMenu | null>(null);
   const openMenu = rowMenuOpener(item, setMenu);
@@ -120,6 +120,8 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
         markedUnread={item.markedUnread}
         pinned={pinned}
         draftText={draftText}
+        labels={!item.peerAddress && fields.labels ? item.labels : undefined}
+        fields={<ChannelRowFields data={item} fields={fields}/>}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => {
           if (!panel) {

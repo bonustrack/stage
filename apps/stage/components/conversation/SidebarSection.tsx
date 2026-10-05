@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { useWindowDimensions, type GestureResponderEvent } from 'react-native';
+import { Platform, useWindowDimensions, type GestureResponderEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -102,6 +102,17 @@ export function PickerNote({ text }: { text: string }): React.ReactElement {
   return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="2xs" color="secondary">{text}</Text></Box>;
 }
 
+function checkboxKeys(onPress: () => void, disabled: boolean) {
+  if (Platform.OS !== 'web') return {};
+  return {
+    onKeyDown: (event: Pick<KeyboardEvent, 'key' | 'repeat' | 'preventDefault'>): void => {
+      if (disabled || (event.key !== ' ' && event.key !== 'Spacebar')) return;
+      event.preventDefault();
+      if (!event.repeat) onPress();
+    },
+  };
+}
+
 export function PickerRow({ selected, disabled = false, label, text = label, onPress, leading, children }: {
   selected: boolean; disabled?: boolean; label: string; text?: string; onPress: () => void; leading?: ReactNode; children?: ReactNode;
 }): React.ReactElement {
@@ -114,7 +125,10 @@ export function PickerRow({ selected, disabled = false, label, text = label, onP
       disabled={disabled}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected, disabled }}
+      aria-checked={selected}
+      aria-disabled={disabled}
       accessibilityLabel={label}
+      {...checkboxKeys(onPress, disabled)}
       {...hoverProps}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', gap: DROPDOWN_MENU.itemGap, minHeight: PICKER_ROW_MIN_HEIGHT,

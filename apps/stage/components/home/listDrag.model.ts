@@ -1,5 +1,5 @@
 import { isCategoryKey } from '../../lib/channelGroups.model';
-import { NO_GROUP_KEY, isGroupHeader, type ChannelGroupHeader, type HomeListItem } from './groups.model';
+import { NO_GROUP_KEY, isGroupHeader, listKeyOf, type ChannelGroupHeader, type HomeListItem } from './groups.model';
 
 export interface DragBlocks {
   ids: readonly string[];
@@ -18,6 +18,42 @@ export const NO_BLOCKS: DragBlocks = { ids: [], tops: [], heights: [], blockOf: 
 
 export const NO_ZONES: CategoryZones = { blocks: NO_BLOCKS, categories: new Map() };
 
+interface RowMeasurement {
+  item: HomeListItem;
+  height: number;
+}
+
+export interface RowMeasurements {
+  width: number;
+  rows: ReadonlyMap<string, RowMeasurement>;
+}
+
+export const NO_ROW_MEASUREMENTS: RowMeasurements = { width: 0, rows: new Map() };
+const NO_ROW_HEIGHTS: ReadonlyMap<string, number> = new Map();
+
+export function recordRowMeasurement(
+  measured: RowMeasurements, item: HomeListItem, width: number, height: number,
+): RowMeasurements {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return measured;
+  const key = listKeyOf(item);
+  const previous = measured.rows.get(key);
+  const sameWidth = measured.width === width;
+  if (sameWidth && previous?.item === item && previous.height === height) return measured;
+  const rows = new Map(sameWidth ? measured.rows : undefined);
+  rows.set(key, { item, height });
+  return { width, rows };
+}
+
+export function measuredRowHeights(items: readonly HomeListItem[], measured: RowMeasurements): ReadonlyMap<string, number> {
+  const heights = new Map<string, number>();
+  for (const item of items) {
+    const key = listKeyOf(item);
+    const size = measured.rows.get(key);
+    if (size?.item === item) heights.set(key, size.height);
+  }
+  return heights;
+}
+
 function topsOf(heights: readonly number[]): number[] {
   const tops: number[] = [];
   let top = 0;
@@ -29,8 +65,8 @@ export function domElementOf(node: unknown, web: boolean): HTMLElement | null {
   return web && typeof HTMLElement !== 'undefined' && node instanceof HTMLElement ? node : null;
 }
 
-export function uniformBlocks(ids: readonly string[], height: number): DragBlocks {
-  const heights = ids.map(() => height);
+export function rowBlocks(ids: readonly string[], rowHeight: number, measured: ReadonlyMap<string, number> = NO_ROW_HEIGHTS): DragBlocks {
+  const heights = ids.map(id => measured.get(id) ?? rowHeight);
   return { ids, tops: topsOf(heights), heights, blockOf: new Map(ids.map((id, i) => [id, i])), zones: [] };
 }
 
@@ -38,7 +74,9 @@ export function sectionShape(items: readonly HomeListItem[]): string {
   return items.map(item => (isGroupHeader(item) ? `#${item.header.key}` : item.convId)).join('\n');
 }
 
-export function sectionBlocks(items: readonly HomeListItem[], headerHeight: number, rowHeight: number): DragBlocks {
+export function sectionBlocks(
+  items: readonly HomeListItem[], headerHeight: number, rowHeight: number, measured: ReadonlyMap<string, number> = NO_ROW_HEIGHTS,
+): DragBlocks {
   const ids: string[] = [];
   const heights: number[] = [];
   const blockOf = new Map<string, number>();
@@ -50,7 +88,7 @@ export function sectionBlocks(items: readonly HomeListItem[], headerHeight: numb
       ids.push(item.header.key);
       heights.push(headerHeight);
     } else if (current !== -1) {
-      heights[current] = (heights[current] ?? 0) + rowHeight;
+      heights[current] = (heights[current] ?? 0) + (measured.get(listKeyOf(item)) ?? rowHeight);
     }
     if (current !== -1) blockOf.set(item.convId, current);
   }
@@ -62,7 +100,9 @@ function categoryOfHeader(header: ChannelGroupHeader): string | null | undefined
   return header.key === NO_GROUP_KEY ? null : undefined;
 }
 
-export function categoryZones(items: readonly HomeListItem[], headerHeight: number, rowHeight: number): CategoryZones {
+export function categoryZones(
+  items: readonly HomeListItem[], headerHeight: number, rowHeight: number, measured: ReadonlyMap<string, number> = NO_ROW_HEIGHTS,
+): CategoryZones {
   const ids: string[] = [];
   const heights: number[] = [];
   const zones: number[] = [];
@@ -77,7 +117,7 @@ export function categoryZones(items: readonly HomeListItem[], headerHeight: numb
       if (category !== undefined) categories.set(item.header.key, category);
     }
     ids.push(isGroupHeader(item) ? item.header.key : item.convId);
-    heights.push(isGroupHeader(item) ? headerHeight : rowHeight);
+    heights.push(isGroupHeader(item) ? headerHeight : measured.get(listKeyOf(item)) ?? rowHeight);
     zones.push(zone);
     if (zone !== -1) blockOf.set(item.convId, index);
   }

@@ -27,9 +27,10 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
 import { deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
-import { useCategoryRowDrag, usePinDrag, useSectionDrag } from './listDrag';
+import { useCategoryRowDrag, useListDragMeasurements, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelAvatars } from '../../lib/channelRows';
+import { useChannelFields } from '../../lib/channelFields';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
@@ -79,14 +80,20 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
   const accountEpoch = useAccountEpoch();
   const hideAvatar = !useChannelAvatars();
+  const fields = useChannelFields('chats');
+  const dragLayoutKey = useMemo(
+    () => [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
+    [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
+  );
+  const dragMeasurements = useListDragMeasurements(list.items, dragLayoutKey);
 
   useChannelsSync({ accountEpoch, setError: st.setError });
 
   const activePath = pane ? pathname : '';
   const menuConvId = rowMenu?.convId;
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar] as const,
-    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar],
+    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
   );
   const navRouter = useMemo(
     () => (pane
@@ -98,13 +105,13 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => (list.grouped ? [] : visibleRows.map(r => r.convId).filter(id => pinned.includes(id))),
     [list.grouped, visibleRows, pinned],
   );
-  const pinDrag = usePinDrag(pinned, visiblePinned);
-  const sectionDrag = useSectionDrag(list.items, list.grouped);
-  const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category');
+  const pinDrag = usePinDrag(pinned, visiblePinned, dragMeasurements.heights);
+  const sectionDrag = useSectionDrag(list.items, list.grouped, dragMeasurements.heights);
+  const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category', dragMeasurements.heights);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, rowDrag,
-    hideAvatar,
+    hideAvatar, fields, dragMeasurements,
   });
 
   const placeholder = st.error ? <HomeError error={st.error} dark={dark} fg={fg}/> : (!rows ? (

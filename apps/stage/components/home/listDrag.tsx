@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { Platform, Vibration, type ViewStyle } from 'react-native';
+import { useCallback, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
+import { Platform, Vibration, useWindowDimensions, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
@@ -9,18 +9,68 @@ import { setChannelCategory } from '../channel/channel.labels';
 import { LIST_CELL_SELECTOR } from '../layout/VirtualList.model';
 import { moveCategory } from '../../lib/channelGroups';
 import { movePin } from '../../lib/pins';
+import { makeListeners } from '../../lib/storeCore';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
 import { GROUP_HEADER_HEIGHT } from './GroupHeader';
 import type { HomeListItem } from './groups.model';
 import {
-  NO_BLOCKS, NO_ZONES, blockShift, categoryZones, domElementOf, dragTarget, sectionBlocks, sectionShape, uniformBlocks, type DragBlocks,
+  NO_BLOCKS, NO_ZONES, NO_ROW_MEASUREMENTS, blockShift, categoryZones, domElementOf, dragTarget,
+  measuredRowHeights, recordRowMeasurement, rowBlocks, sectionBlocks, sectionShape, type DragBlocks, type RowMeasurements,
 } from './listDrag.model';
 
 const HOLD_MS = 250;
 const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
 const CLICK_GRACE_MS = 300;
+
+export interface ListDragMeasurements {
+  heights: ReadonlyMap<string, number>;
+  measure: (item: HomeListItem, width: number, height: number) => void;
+}
+
+function rowMeasurementsStore(): {
+  subscribe: (cb: () => void) => () => void;
+  get: () => RowMeasurements;
+  measure: ListDragMeasurements['measure'];
+} {
+  let measured = NO_ROW_MEASUREMENTS;
+  const { subscribe, notify } = makeListeners();
+  return {
+    subscribe,
+    get: () => measured,
+    measure: (item, width, height) => {
+      const next = recordRowMeasurement(measured, item, width, height);
+      if (next === measured) return;
+      measured = next;
+      notify();
+    },
+  };
+}
+
+export function useListDragMeasurements(items: readonly HomeListItem[], layoutKey: unknown): ListDragMeasurements {
+  const { fontScale } = useWindowDimensions();
+  const store = useMemo(rowMeasurementsStore, [layoutKey, fontScale]);
+  const measured = useSyncExternalStore(store.subscribe, store.get, store.get);
+  const heights = useMemo(() => measuredRowHeights(items, measured), [items, measured]);
+  return useMemo(() => ({ heights, measure: store.measure }), [heights, store]);
+}
+
+export function MeasuredDragRow({ item, measure, children }: {
+  item: HomeListItem; measure: ListDragMeasurements['measure']; children: ReactNode;
+}): React.ReactElement {
+  const node = useRef<Animated.View>(null);
+  useLayoutEffect(() => {
+    let current = true;
+    node.current?.measure((_x, _y, width, height) => { if (current) measure(item, width, height); });
+    return () => { current = false; };
+  }, [item, measure]);
+  return (
+    <Animated.View ref={node} collapsable={false} onLayout={({ nativeEvent: { layout } }) => { measure(item, layout.width, layout.height); }}>
+      {children}
+    </Animated.View>
+  );
+}
 
 export interface ListDrag extends DragBlocks {
   from: SharedValue<number>;
@@ -43,27 +93,28 @@ function useListDrag(blocks: DragBlocks, move: (moved: string, target: string) =
   }), [blocks, move, from, to, offset]);
 }
 
-export function usePinDrag(order: readonly string[], visible: readonly string[]): ListDrag {
-  const blocks = useMemo(() => uniformBlocks(visible, CHANNEL_ROW_HEIGHT), [visible]);
+export function usePinDrag(order: readonly string[], visible: readonly string[], heights: ReadonlyMap<string, number>): ListDrag {
+  const blocks = useMemo(() => rowBlocks(visible, CHANNEL_ROW_HEIGHT, heights), [visible, heights]);
   const move = useCallback((moved: string, target: string) => { movePin(moved, order.indexOf(target)); }, [order]);
   return useListDrag(blocks, move);
 }
 
 function useSectionLayout<T>(
-  items: readonly HomeListItem[], on: boolean, none: T, layout: (items: readonly HomeListItem[], header: number, row: number) => T,
+  items: readonly HomeListItem[], on: boolean, heights: ReadonlyMap<string, number>, none: T,
+  layout: (items: readonly HomeListItem[], header: number, row: number, measured: ReadonlyMap<string, number>) => T,
 ): T {
   const shape = on ? sectionShape(items) : '';
-  return useMemo(() => (shape === '' ? none : layout(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT)), [shape]);
+  return useMemo(() => (shape === '' ? none : layout(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT, heights)), [shape, heights]);
 }
 
-export function useSectionDrag(items: readonly HomeListItem[], grouped: boolean): ListDrag {
-  const blocks = useSectionLayout(items, grouped, NO_BLOCKS, sectionBlocks);
+export function useSectionDrag(items: readonly HomeListItem[], grouped: boolean, heights: ReadonlyMap<string, number>): ListDrag {
+  const blocks = useSectionLayout(items, grouped, heights, NO_BLOCKS, sectionBlocks);
   const move = useCallback((moved: string, target: string) => { moveCategory(moved, target, blocks.ids); }, [blocks]);
   return useListDrag(blocks, move);
 }
 
-export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: boolean): ListDrag {
-  const zones = useSectionLayout(items, byCategory, NO_ZONES, categoryZones);
+export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: boolean, heights: ReadonlyMap<string, number>): ListDrag {
+  const zones = useSectionLayout(items, byCategory, heights, NO_ZONES, categoryZones);
   const move = useCallback((convId: string, key: string) => {
     const category = zones.categories.get(key);
     if (category !== undefined) setChannelCategory(convId, category);
@@ -172,7 +223,7 @@ export function Draggable({ drag, index, onHold, children }: {
         drag.to.value = dragTarget(tops, heights, zones, index, e.translationY);
       })
       .onEnd((e) => {
-        if (Math.abs(e.translationY) >= MOVE_SLOP) runOnJS(dropped)(index, drag.to.value);
+        if (Math.abs(e.translationY) >= MOVE_SLOP) runOnJS(dropped)(index, dragTarget(tops, heights, zones, index, e.translationY));
         else if (touch && onHold !== undefined) runOnJS(held)({ x: e.absoluteX, y: e.absoluteY });
       })
       .onFinalize(() => {

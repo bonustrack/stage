@@ -1,6 +1,10 @@
 import { useRouter } from 'expo-router';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
-import { DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
+import { PickerRow } from '../conversation/SidebarSection';
+import { AppIcon } from '../widgets';
+import { CHANNEL_FIELDS } from './fields.model';
+import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
 import { CHANNELS_OVERFLOW_ITEMS, VIEW_ITEM, homeViewEdit, homeViewMenu } from './model';
@@ -37,20 +41,40 @@ function copyActiveAddress(): void {
 
 function HomeViewMenu({ anchor, onClose }: { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
   const current = useHomeView();
+  const fields = useChannelFields(current.view);
+  const [showFields, setShowFields] = useState(false);
+  const close = (): void => { setShowFields(false); onClose(); };
   const pick = (id: string): void => {
     onClose();
     const edit = homeViewEdit(current, id);
     if (edit !== null) setHomeView(edit);
   };
   return (
-    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
-      {homeViewMenu(current).map((section, index) => (
-        <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-          {section.rows.map(row => (
-            <MenuRow key={row.id} icon={row.icon} label={row.label} selected={row.selected} onPress={() => { pick(row.id); }}/>
+    <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
+      {showFields ? (
+        <>
+          <MenuRow icon="IconArrowLeft" label="View" onPress={() => { setShowFields(false); }}/>
+          <DropdownMenuSeparator/>
+          <MenuHeading text="Fields"/>
+          {CHANNEL_FIELDS.map(field => (
+            <PickerRow key={field.id} label={field.label} selected={fields[field.id]}
+              leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
+              onPress={() => { toggleChannelField(current.view, field.id); }}/>
           ))}
-        </Section>
-      ))}
+        </>
+      ) : (
+        <>
+          {homeViewMenu(current).map((section, index) => (
+            <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+              {section.rows.map(row => (
+                <MenuRow key={row.id} icon={row.icon} label={row.label} selected={row.selected} onPress={() => { pick(row.id); }}/>
+              ))}
+            </Section>
+          ))}
+          <DropdownMenuSeparator/>
+          <MenuRow icon="IconEyeOpen" label="Fields" onPress={() => { setShowFields(true); }}/>
+        </>
+      )}
     </AnchoredMenu>
   );
 }

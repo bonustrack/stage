@@ -7,7 +7,7 @@ import {
   NO_GROUPS_PREFS, categoryKeysOf, categoryOrderWith, movedCategoryOrder, parseChannelGroupsPrefs,
 } from '../lib/channelGroups.model';
 import {
-  blockShift, categoryZones, domElementOf, dragTarget, dropTarget, sectionBlocks, sectionShape, uniformBlocks, zoneTarget,
+  blockShift, categoryZones, domElementOf, dragTarget, dropTarget, sectionBlocks, sectionShape, rowBlocks, zoneTarget,
 } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 
@@ -145,7 +145,7 @@ describe('list drag blocks', () => {
   const ROW = 67;
 
   test('pinned rows are one block each of the row height', () => {
-    const blocks = uniformBlocks(['a', 'b', 'c'], ROW);
+    const blocks = rowBlocks(['a', 'b', 'c'], ROW);
     expect(blocks.tops).toEqual([0, ROW, 2 * ROW]);
     expect(blocks.heights).toEqual([ROW, ROW, ROW]);
     expect(blocks.blockOf.get('c')).toBe(2);
@@ -170,7 +170,7 @@ describe('list drag blocks', () => {
     expect(sectionBlocks(groupRows([work], 'assignee', new Set(), false, nameOf), HEADER, ROW).ids).toEqual([]);
   });
 
-  test('the shape names the sections and their rows, so equal shapes give equal blocks', () => {
+  test('the shape names sections and rows independently of their display metadata', () => {
     const items = groupRows([dm, work, alpha], 'category', new Set(), false, nameOf);
     expect(sectionShape(items)).toBe('#dm\ndm\n#category:alpha\nalpha\n#category:work\nwork');
     const renamed = groupRows([dm, { ...work, title: 'Renamed', unreadCount: 2 }, alpha], 'category', new Set(), false, nameOf);
@@ -179,7 +179,7 @@ describe('list drag blocks', () => {
   });
 
   test('the drop target changes once the moved block passes the middle of a neighbour', () => {
-    const uniform = uniformBlocks(['a', 'b', 'c', 'd'], ROW);
+    const uniform = rowBlocks(['a', 'b', 'c', 'd'], ROW);
     expect(dropTarget(uniform.tops, uniform.heights, 1, ROW * 0.4)).toBe(1);
     expect(dropTarget(uniform.tops, uniform.heights, 1, ROW * 0.6)).toBe(2);
     expect(dropTarget(uniform.tops, uniform.heights, 1, ROW * 5)).toBe(3);
@@ -252,7 +252,7 @@ describe('moving a chat to another category', () => {
   });
 
   test('reorder drags keep their block logic, zone drags use the sections', () => {
-    const uniform = uniformBlocks(['a', 'b', 'c'], ROW);
+    const uniform = rowBlocks(['a', 'b', 'c'], ROW);
     expect(dragTarget(uniform.tops, uniform.heights, uniform.zones, 1, ROW * 0.6)).toBe(2);
     expect(dragTarget(blocks.tops, blocks.heights, blocks.zones, 6, -200)).toBe(2);
   });

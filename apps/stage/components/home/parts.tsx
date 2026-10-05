@@ -8,9 +8,11 @@ import { Col } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
+import { ChannelRowFields } from '../ChannelRowFields';
+import type { ChannelFields } from './fields.model';
 import { ChannelMenu } from '../ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Draggable, Shifted, isLifted, type ListDrag } from './listDrag';
+import { Draggable, MeasuredDragRow, Shifted, isLifted, type ListDrag, type ListDragMeasurements } from './listDrag';
 import { GroupHeader } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
@@ -91,10 +93,11 @@ interface ChannelRowItemProps {
   active: boolean;
   pinDrag: ListDrag;
   hideAvatar: boolean;
+  fields: ChannelFields;
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar,
+  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar, fields,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   const openMenu = rowMenuOpener(item, setRowMenu);
@@ -116,7 +119,8 @@ function ChannelRowItemBase({
       markedUnread={item.markedUnread}
       pinned={pinned}
       draftText={draftText}
-      labels={isGroup ? item.labels : undefined}
+      labels={isGroup && fields.labels ? item.labels : undefined}
+      fields={<ChannelRowFields data={item} fields={fields}/>}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
       onLongPress={(anchor) => { if (!isLifted()) openMenu(anchor); }}
@@ -143,11 +147,11 @@ export function useChannelRowRenderer(
   deps: {
     channelProfilesVersion: number; draftsVersion: number;
     pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: ListDrag;
-    sectionDrag: ListDrag; rowDrag: ListDrag; hideAvatar: boolean;
+    sectionDrag: ListDrag; rowDrag: ListDrag; hideAvatar: boolean; fields: ChannelFields; dragMeasurements: ListDragMeasurements;
   },
 ): ({ item }: { item: HomeListItem }) => React.ReactElement {
   const {
-    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag, rowDrag, hideAvatar,
+    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag, rowDrag, hideAvatar, fields, dragMeasurements,
   } = deps;
   return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
     if (isGroupHeader(item)) {
@@ -156,25 +160,28 @@ export function useChannelRowRenderer(
     }
     const title = rowTitle(item);
     return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (
-      <ChannelRowItem
-        item={item}
-        router={router}
-        setRowMenu={setRowMenu}
-        query={query}
-        title={title.text}
-        placeholderTitle={title.placeholder}
-        preview={rowPreview(item)}
-        avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
-        pinned={pinned.includes(item.convId)}
-        draftText={getDraft(item.convId)}
-        active={menuConvId === item.convId || isActiveConversationPath(activePath, item.convId, item.peerAddress)}
-        pinDrag={pinDrag}
-        hideAvatar={hideAvatar}
-      />
+      <MeasuredDragRow item={item} measure={dragMeasurements.measure}>
+        <ChannelRowItem
+          item={item}
+          router={router}
+          setRowMenu={setRowMenu}
+          query={query}
+          title={title.text}
+          placeholderTitle={title.placeholder}
+          preview={rowPreview(item)}
+          avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
+          pinned={pinned.includes(item.convId)}
+          draftText={getDraft(item.convId)}
+          active={menuConvId === item.convId || isActiveConversationPath(activePath, item.convId, item.peerAddress)}
+          pinDrag={pinDrag}
+          hideAvatar={hideAvatar}
+          fields={fields}
+        />
+      </MeasuredDragRow>
     ), true, rowMenuOpener(item, setRowMenu)), false);
   }, [
     router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag,
-    rowDrag, hideAvatar,
+    rowDrag, hideAvatar, fields, dragMeasurements,
   ]);
 }
 

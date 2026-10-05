@@ -47,6 +47,7 @@ interface ChannelRowProps {
   onContextMenu?: (point: MenuPoint) => void;
   highlightQuery?: string;
   accessory?: React.ReactNode;
+  fields?: React.ReactNode;
   mark?: MarkedNode;
 }
 
@@ -219,7 +220,7 @@ function ChannelRowBase({
   title, placeholderTitle, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
   lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
   pinned, draftText, active,
-  onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, mark,
+  onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, fields, mark,
 }: ChannelRowProps): React.ReactElement {
   const { border } = usePalette();
   const params = channelRowModel({
@@ -267,6 +268,7 @@ function ChannelRowBase({
               <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} />
             )}
           />
+          {fields}
         </Col>
         {accessory}
       </Row>
