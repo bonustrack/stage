@@ -15,7 +15,7 @@ import { groupRowMeta } from '../modules/messaging/conversation';
 import { report, reported } from './errorPolicy';
 import { accountClient } from './xmtp.account';
 import { setChannelHidden } from './hiddenChannels';
-import { reconcileHiddenConsent } from './channelVisibility';
+import { forgetChannelAccess, reconcileHiddenConsent } from './channelVisibility';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -114,6 +114,7 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   context.assertCurrent();
   await setChannelHidden(context.account.id, conv.id, true);
   context.assertCurrent();
+  forgetChannelAccess(conv.id);
   const leave = sdk.leaveOp(conv);
   let result: 'left' | 'hidden' = 'hidden';
   if (leave) {
@@ -124,7 +125,10 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
       report('xmtp.leaveGroup', err);
     }
   }
-  if (context.current()) await reconcileHiddenConsent(context).catch(reported('xmtp.leaveGroupConsent'));
+  if (context.current()) {
+    forgetChannelAccess(conv.id);
+    await reconcileHiddenConsent(context).catch(reported('xmtp.leaveGroupConsent'));
+  }
   return result;
 }
 

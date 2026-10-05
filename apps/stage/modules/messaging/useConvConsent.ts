@@ -72,6 +72,6 @@ export function useGroupAccess(convId: string | undefined, isGroup: boolean): Gr
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [convId, isGroup, epoch]);
+  }, [convId, isGroup, epoch, access]);
   return isGroup ? access : 'member';
 }

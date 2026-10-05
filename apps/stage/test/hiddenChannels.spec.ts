@@ -20,6 +20,7 @@ const synced: string[] = [];
 let storageFails = false;
 let beforeFind: (() => Promise<void>) | undefined;
 let beforeMembers: (() => Promise<void>) | undefined;
+let beforeActive: (() => Promise<void>) | undefined;
 let connectedClient = client;
 function withMethods(conv: FakeConv) {
   return Object.assign(conv, {
@@ -50,11 +51,11 @@ mock.module('../lib/xmtp.sdk', () => ({
     cachedClient: () => connectedClient,
     findConv: async (_client: unknown, id: string) => {
       await beforeFind?.();
-      const conv = convs.find(c => c.id === id);
+      const conv = convs.find(c => c.id === id.toLowerCase());
       return conv ? withMethods(conv) : null;
     },
     isGroup: (conv: FakeConv) => conv.group,
-    isActive: async (conv: FakeConv) => conv.active,
+    isActive: async (conv: FakeConv) => { await beforeActive?.(); return conv.active; },
     groupName: async (conv: FakeConv) => conv.name,
     consentOf: async (conv: FakeConv) => conv.consent,
     setConsent: async (conv: FakeConv, consent: XmtpConsent) => { await beforeConsent?.(); conv.consent = consent; },
@@ -94,7 +95,18 @@ describe('departed channels across devices', () => {
     convs.push(group, archive);
     const changes: string[] = [];
     const stop = onHiddenChannelsChanged(id => { changes.push(id); });
+    await groupAccessOf(group.id);
+    expect(cachedChannelAccess(group.id)).toBe('member');
+    const started = Promise.withResolvers<undefined>();
+    const activity = Promise.withResolvers<undefined>();
+    beforeActive = async () => { beforeActive = undefined; started.resolve(undefined); await activity.promise; };
+    const stale = groupAccessOf(group.id);
+    await started.promise;
     expect(await leaveGroupConv(lineOfConv(group.id))).toBe('left');
+    expect(cachedChannelAccess(group.id)).toBe('checking');
+    activity.resolve(undefined);
+    expect(await stale).toBe('checking');
+    expect(cachedChannelAccess(group.id)).toBe('checking');
     expect(leaves).toBe(1);
     expect(group.active).toBe(true);
     expect(await visible()).toEqual(['legitimate-archive']);
@@ -233,6 +245,25 @@ describe('departed channels across devices', () => {
     group.memberIds = ['owner'];
   });
 
+  test('canonical IDs share access and old membership cannot overwrite a newer removal', async () => {
+    const id = 'ab'.repeat(16);
+    const group: FakeConv = { id, group: true, active: true, consent: 'allowed' };
+    convs.push(group);
+    expect(await groupAccessOf(id.toUpperCase())).toBe('member');
+    expect(cachedChannelAccess(id)).toBe('member');
+    expect(cachedChannelAccess(id.toUpperCase())).toBe('member');
+    const started = Promise.withResolvers<undefined>();
+    const activity = Promise.withResolvers<undefined>();
+    beforeActive = async () => { beforeActive = undefined; started.resolve(undefined); await activity.promise; };
+    const stale = groupAccessOf(id);
+    await started.promise;
+    group.memberIds = ['someone-else'];
+    expect(await groupAccessOf(id.toUpperCase())).toBe('outside');
+    activity.resolve(undefined);
+    expect(await stale).toBe('outside');
+    expect(cachedChannelAccess(id)).toBe('outside');
+  });
+
   test('access does not cross accounts, client replacement or stale async completion', async () => {
     await groupAccessOf('cached-member');
     expect(cachedChannelAccess('cached-member')).toBe('member');
@@ -331,8 +362,16 @@ describe('departed channels across devices', () => {
     beforeInstallations = async () => { beforeInstallations = undefined; throw new Error('offline'); };
     await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('offline');
     expect(values.has('ownInstallations.done.phone')).toBe(false);
+    presentDevices.set('departed', ['first']);
+    beforeActive = async () => { beforeActive = undefined; throw new Error('activity unavailable'); };
+    await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('activity unavailable');
+    expect(values.has('ownInstallations.done.phone')).toBe(false);
+    expect(cachedChannelAccess('departed')).toBe('checking');
+    synced.length = 0;
     await addOwnInstallationsToChats('phone');
     expect(values.has('ownInstallations.done.phone')).toBe(true);
+    expect(synced).toContain('departed');
+    presentDevices.delete('departed');
   });
 
   test('an old cursor does not skip hidden snapshots and a failed write does not acknowledge replay', async () => {
