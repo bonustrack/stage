@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { visibleChannelFields } from '../components/ChannelRowFields.model';
 import { DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../components/home/fields.model';
 
-const all: ChannelFields = { members: true, assignees: true, category: true, status: true, labels: true, priority: true };
+const all: ChannelFields = { members: true, assignees: true, category: true, status: true, labels: true, priority: true, avatar: true };
 const data = {
   peerAddress: null,
   inboxToAddr: { self: '0xabc', friend: '0xDEF', duplicate: '0xAbC', empty: '' },
@@ -28,6 +28,7 @@ describe('channel row metadata', () => {
       expect(visibleChannelFields(data, { ...all, [id]: false })).toEqual(visibleChannelFields(data, all).filter(field => field.id !== id));
     }
     expect(visibleChannelFields(data, { ...all, labels: false })).toEqual(visibleChannelFields(data, all));
+    expect(visibleChannelFields(data, { ...all, avatar: false })).toEqual(visibleChannelFields(data, all));
   });
 
   test('missing and blank metadata produces no empty fields or spacer', () => {

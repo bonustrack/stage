@@ -3,7 +3,7 @@ import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useThemePreference,
 } from '../../lib/theme';
-import { setChannelAvatars, useChannelAvatars } from '../../lib/channelRows';
+import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { ColorTokens } from '../system/ColorTokens';
 import {
   SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, SettingsToggleRow, THEME_OPTIONS,
@@ -13,7 +13,7 @@ import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radi
 export function DisplaySettings(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
-  const avatars = useChannelAvatars();
+  const avatars = useChannelFields('chats').avatar;
 
   return (
     <SettingsPage title="Appearance" keyboardShouldPersistTaps="handled">
@@ -38,8 +38,9 @@ export function DisplaySettings(): React.ReactElement {
         />
       </SettingsGroup>
 
-      <SettingsGroup title="Channel rows">
-        <SettingsToggleRow label="Show avatars" name="channel-avatars" checked={avatars} onChange={setChannelAvatars} />
+      <SettingsGroup title="Chats">
+        <SettingsToggleRow label="Show avatars" name="channel-avatars" checked={avatars}
+          onChange={() => { toggleChannelField('chats', 'avatar'); }} />
       </SettingsGroup>
 
       {custom ? (

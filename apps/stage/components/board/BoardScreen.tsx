@@ -17,7 +17,7 @@ import { ChannelRowFields } from '../ChannelRowFields';
 import { useChannelFields } from '../../lib/channelFields';
 import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
-import { HomeError, HomeSpinner, RowChannelMenu, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
+import { HomeError, HomeSpinner, RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
 import type { Row as ChannelRowData } from '../home/model';
@@ -112,8 +112,8 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
       <ChannelRow
         title={title.text}
         placeholderTitle={title.placeholder}
-        hideAvatar
-        wrapTitle
+        avatarUri={item.avatarUri} avatarAddress={rowAvatarAddress(item, !item.peerAddress)} square={!item.peerAddress}
+        hideAvatar={!fields.avatar} wrapTitle
         lastPreview={rowPreview(item)}
         timestamp={channelTimestamp(item.lastTs)}
         unreadCount={item.unreadCount}

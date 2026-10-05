@@ -1,6 +1,6 @@
 import type { AppIconName } from '../appIcons';
 
-export type ChannelField = 'members' | 'assignees' | 'category' | 'status' | 'labels' | 'priority';
+export type ChannelField = 'members' | 'assignees' | 'category' | 'status' | 'labels' | 'priority' | 'avatar';
 export type ChannelFields = Record<ChannelField, boolean>;
 export type ChannelFieldView = 'chats' | 'board';
 export type ChannelFieldPreferences = Record<ChannelFieldView, ChannelFields>;
@@ -12,14 +12,15 @@ export const CHANNEL_FIELDS: readonly { id: ChannelField; label: string; icon?: 
   { id: 'status', label: 'Status', icon: 'IconCircleDashed' },
   { id: 'labels', label: 'Labels', icon: 'IconTag' },
   { id: 'priority', label: 'Priority', icon: 'IconFlag1' },
+  { id: 'avatar', label: 'Avatar', icon: 'IconPeopleCircle' },
 ];
 
 const hiddenFields: ChannelFields = {
-  members: false, assignees: false, category: false, status: false, labels: false, priority: false,
+  members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false,
 };
 
 export const DEFAULT_CHANNEL_FIELDS: ChannelFieldPreferences = {
-  chats: { ...hiddenFields, labels: true },
+  chats: { ...hiddenFields, labels: true, avatar: true },
   board: hiddenFields,
 };
 
@@ -37,15 +38,19 @@ function parseFields(value: unknown, defaults: ChannelFields): ChannelFields {
   return fields;
 }
 
-export function parseChannelFields(raw: string): ChannelFieldPreferences {
+export function parseChannelFields(raw: string, chatsAvatarDefault = true): ChannelFieldPreferences {
+  const defaults = {
+    ...DEFAULT_CHANNEL_FIELDS,
+    chats: { ...DEFAULT_CHANNEL_FIELDS.chats, avatar: chatsAvatarDefault },
+  };
   try {
     const value: unknown = JSON.parse(raw);
-    if (!isRecord(value)) return DEFAULT_CHANNEL_FIELDS;
+    if (!isRecord(value)) return defaults;
     return {
-      chats: parseFields(value.chats, DEFAULT_CHANNEL_FIELDS.chats),
-      board: parseFields(value.board, DEFAULT_CHANNEL_FIELDS.board),
+      chats: parseFields(value.chats, defaults.chats),
+      board: parseFields(value.board, defaults.board),
     };
-  } catch { return DEFAULT_CHANNEL_FIELDS; }
+  } catch { return defaults; }
 }
 
 export function toggleChannelFieldIn(

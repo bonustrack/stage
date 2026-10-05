@@ -29,7 +29,6 @@ import { deriveSortedRows } from './model';
 import { useGroupedRows, useHomeState } from './state';
 import { useCategoryRowDrag, useListDragMeasurements, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
-import { useChannelAvatars } from '../../lib/channelRows';
 import { useChannelFields } from '../../lib/channelFields';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
@@ -79,8 +78,8 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   );
   const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
   const accountEpoch = useAccountEpoch();
-  const hideAvatar = !useChannelAvatars();
   const fields = useChannelFields('chats');
+  const hideAvatar = !fields.avatar;
   const dragLayoutKey = useMemo(
     () => [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
     [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
