@@ -62,10 +62,6 @@ function useLiveChannelField(convId: string | undefined, field: ChannelField): s
   return useStoreValue(subscribeCachedRows, read);
 }
 
-export function useLiveChannelCategory(convId: string | undefined): string | null {
-  return useLiveChannelField(convId, 'category');
-}
-
 export async function writeLabels(line: string, edits: ListEdits): Promise<string[] | null> {
   let latest: string[] | null = null;
   for (const label of edits.removed) latest = await removeGroupLabel(line, label);

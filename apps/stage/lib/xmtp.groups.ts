@@ -235,10 +235,6 @@ export function knownChannelFields(field: ChannelField): string[] {
   });
 }
 
-export function knownCategories(): string[] {
-  return knownChannelFields('category');
-}
-
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();
