@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
+import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
 
 function makeSenders() {
   return {
@@ -27,7 +28,7 @@ describe('composer sends encrypted remote attachments', () => {
     expect(await steps[0]?.run()).toBe('attachment-id');
     expect(senders.attachments).toHaveBeenCalledWith('line', [{
       fileUri: audio.url, mimeType: 'audio/m4a', filename: 'voice.m4a',
-    }]);
+    }], undefined);
   });
 
   test('mixed audio and video keep their order and metadata in one attachment step', async () => {
@@ -40,7 +41,7 @@ describe('composer sends encrypted remote attachments', () => {
     expect(senders.attachments).toHaveBeenCalledWith('line', [
       { fileUri: 'file:///voice.m4a', mimeType: 'audio/m4a', filename: 'voice.m4a' },
       { fileUri: 'file:///clip.mp4', mimeType: 'video/mp4', filename: 'clip.mp4' },
-    ]);
+    ], undefined);
   });
 
   test('text precedes attachments with distinct optimistic ids', async () => {
@@ -71,6 +72,29 @@ describe('composer sends encrypted remote attachments', () => {
     expect(mint).not.toHaveBeenCalled();
   });
 
+  test('uploaded attachment identities reach the pending row before the send resolves', async () => {
+    const upload = Promise.withResolvers<{ url: string; contentDigest: string }[]>();
+    const sent = Promise.withResolvers<string>();
+    const onUploaded = mock(() => undefined);
+    const steps = planSendSteps('line', '', [attachment('video')], undefined, {
+      ...makeSenders(),
+      attachments: async (_line: string, _files: LocalAttachmentInput[], notify?: OnAttachmentsUploaded) => {
+        notify?.(await upload.promise);
+        return sent.promise;
+      },
+    }, () => 'local-id');
+    const step = steps[0];
+    if (!step) throw new Error('Missing attachment step');
+    const result = step.run(onUploaded);
+    expect(onUploaded).not.toHaveBeenCalled();
+    const remote = [{ url: 'https://store.example/video', contentDigest: 'digest' }];
+    upload.resolve(remote);
+    await upload.promise;
+    expect(onUploaded).toHaveBeenCalledWith(remote);
+    sent.resolve('real-id');
+    expect(await result).toBe('real-id');
+  });
+
   test('an upload failure rejects the attachment step', async () => {
     const senders = makeSenders();
     senders.attachments.mockImplementation(async () => { throw new Error('upload failed (413)'); });
@@ -97,7 +121,7 @@ describe('composer sends a pending location', () => {
     expect(senders.text.mock.calls).toEqual([['line', 'meet here'], ['line', locationText]]);
     expect(senders.attachments).toHaveBeenCalledWith('line', [
       { fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' },
-    ]);
+    ], undefined);
   });
 
   test('a location alone replies when a reply is set, and never goes out as a file', async () => {

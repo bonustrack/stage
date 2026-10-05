@@ -3,22 +3,22 @@
 import { File, Paths } from 'expo-file-system';
 import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';
+import type { UploadedAttachment } from './xmtp.types';
+import { makeLocalAttachmentCache } from './localAttachmentCache.core';
 
-const byMessageId = new Map<string, string[]>();
+const cache = makeLocalAttachmentCache();
 
 const listeners = makeListeners();
 const emit = listeners.notify;
 
-export function rememberLocalAttachments(messageId: string, uris: readonly (string | undefined)[]): void {
-  const locals = uris.map(u => u ?? '');
-  if (locals.every(u => u === '')) return;
-  byMessageId.set(messageId, [...locals]);
-  emit();
+export function rememberLocalAttachments(
+  messageId: string, uris: readonly (string | undefined)[], uploaded?: readonly UploadedAttachment[],
+): void {
+  if (cache.remember(messageId, uris, uploaded)) emit();
 }
 
-function getLocalAttachment(messageId: string, index: number): string | undefined {
-  const uri = byMessageId.get(messageId)?.[index];
-  return uri === undefined || uri === '' ? undefined : uri;
+export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]> {
+  return useStoreValue(listeners.subscribe, cache.uploaded);
 }
 
 function safeExtFor(srcUri: string): string {
@@ -46,10 +46,10 @@ export function stashLocalAttachment(srcUri: string): string {
 
 const noSubscribe = (): (() => void) => () => undefined;
 
-export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
+export function useLocalAttachment(messageId?: string, index?: number, uploaded?: UploadedAttachment): string | undefined {
   const active = messageId !== undefined && index !== undefined;
   return useStoreValue(
     active ? listeners.subscribe : noSubscribe,
-    () => (messageId !== undefined && index !== undefined ? getLocalAttachment(messageId, index) : undefined),
+    () => (messageId !== undefined && index !== undefined ? cache.get(messageId, index, uploaded) : undefined),
   );
 }

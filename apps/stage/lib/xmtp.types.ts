@@ -10,6 +10,10 @@ export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
 
 export interface LocalAttachmentInput { fileUri: string; mimeType: string; filename: string }
 
+export interface UploadedAttachment { url: string; contentDigest: string }
+
+export type OnAttachmentsUploaded = (attachments: readonly UploadedAttachment[]) => void;
+
 export interface StreamMsg {
   convId: string | null;
   msg: StreamedMessage;

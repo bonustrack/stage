@@ -7,7 +7,7 @@ import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/
 import { sendableConvOfLine } from './xmtp.sdk.web';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
-import { type LocalAttachmentInput } from './xmtp.types';
+import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
 import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
@@ -70,10 +70,11 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[],
+  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const [conv, infos] = await Promise.all([withReadableSendError(() => sendableConvOfLine(line)), prep.uploaded(files)]);
+  onUploaded?.(infos);
   const id = await withReadableSendError(() => conv.sendMultiRemoteAttachment({ attachments: infos }));
   prep.forget(files);
   return id;

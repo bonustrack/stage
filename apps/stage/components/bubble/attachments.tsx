@@ -86,7 +86,7 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: 
   att: Attachment; fg: string;
   msgId?: string; index?: number; galleryKey?: string;
 }): React.ReactElement {
-  const local = useLocalAttachment(msgId, index);
+  const local = useLocalAttachment(msgId, index, att.remote);
   const remote = useRemoteAttachment(att.remote);
   const uri = local ?? remote.uri;
   const label = att.name ?? 'attachment';

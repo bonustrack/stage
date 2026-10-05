@@ -1,5 +1,5 @@
 import { outgoingFileMeta } from '../../lib/attachmentFiles';
-import type { LocalAttachmentInput } from '../../lib/xmtp.types';
+import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../../lib/xmtp.types';
 import { isLocation, locationText } from './location.model';
 import type { Attachment } from './types';
 
@@ -12,13 +12,13 @@ export interface SendStep {
   text: string;
   attachments: Attachment[];
   location?: Attachment;
-  run: () => Promise<string>;
+  run: (onUploaded?: OnAttachmentsUploaded) => Promise<string>;
 }
 
 interface ComposerSenders {
   text: (line: string, text: string) => Promise<string>;
   reply: (line: string, replyTo: string, text: string) => Promise<string>;
-  attachments: (line: string, files: LocalAttachmentInput[]) => Promise<string>;
+  attachments: (line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded) => Promise<string>;
 }
 
 export function planSendSteps(
@@ -41,7 +41,7 @@ export function planSendSteps(
   if (files.length > 0) {
     steps.push({
       localId: mintLocalId(), text: '', attachments: files,
-      run: () => senders.attachments(xmtpLine, fileInputs(files)),
+      run: onUploaded => senders.attachments(xmtpLine, fileInputs(files), onUploaded),
     });
   }
   for (const location of attachments.filter(isLocation)) {

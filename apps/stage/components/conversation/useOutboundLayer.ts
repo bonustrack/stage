@@ -14,6 +14,7 @@ import {
 } from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
+import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 
 function useStickyBottom(
   allBubblesLength: number, convId: string | undefined, atBottom: () => boolean,
@@ -64,7 +65,8 @@ export function useOutboundLayer(
       }),
     [events, deletedIds, deletedView],
   );
-  const view = useMemo(() => outboundView(outbound, liveBubbles, myUri), [outbound, liveBubbles, myUri]);
+  const uploaded = useUploadedAttachments();
+  const view = useMemo(() => outboundView(outbound, liveBubbles, myUri, uploaded), [outbound, liveBubbles, myUri, uploaded]);
   const allBubbles = useMemo(
     () => (view.pending.length ? [...pendingFromMe(view.pending, myUri), ...liveBubbles] : liveBubbles),
     [view, liveBubbles, myUri],

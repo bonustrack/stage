@@ -1,10 +1,26 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import { hasAttachments } from './feed-helpers';
+import { uploadedAttachmentKey } from '../../lib/localAttachmentCache.core';
+import type { UploadedAttachment } from '../../lib/xmtp.types';
+
+function matchesUpload(entry: HistoryEntry, keys: readonly string[]): boolean {
+  const attachments = (entry.payload as { attachments?: { remote?: UploadedAttachment }[] } | undefined)?.attachments;
+  return keys.length > 0 && attachments?.length === keys.length
+    && attachments.every((attachment, i) => attachment.remote !== undefined && uploadedAttachmentKey(attachment.remote) === keys[i]);
+}
+
+function matchesPending(pending: HistoryEntry, live: HistoryEntry, myUri: string, keys?: readonly string[]): boolean {
+  if (live.from !== myUri || live.line !== pending.line) return false;
+  if (hasAttachments(pending)) return keys !== undefined && matchesUpload(live, keys);
+  const elapsed = new Date(live.ts).getTime() - new Date(pending.ts).getTime();
+  return elapsed >= -1_000 && elapsed < 30_000 && live.text === pending.text;
+}
 
 export function matchConfirmed(
   optimistic: HistoryEntry[], liveBubbles: HistoryEntry[],
   myUri: string, confirmedIds: Map<string, string>,
+  uploaded: ReadonlyMap<string, readonly string[]> = new Map(),
 ): Map<string, string> {
   const confirmed = new Map<string, string>();
   if (!optimistic.length) return confirmed;
@@ -13,17 +29,9 @@ export function matchConfirmed(
   const ordered = [...optimistic].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
   for (const o of ordered) {
     const realId = confirmedIds.get(o.id);
-    if (realId) {
-      const byId = liveBubbles.find(e => e.id === realId && !used.has(e.id));
-      if (byId) { used.add(byId.id); confirmed.set(o.id, byId.id); continue; }
-    }
-    if (hasAttachments(o)) continue;
-    const oTs = new Date(o.ts).getTime();
-    const match = liveBubbles.find(e =>
-      e.from === myUri && !used.has(e.id) && !claimed.has(e.id)
-      && new Date(e.ts).getTime() >= oTs - 1_000
-      && new Date(e.ts).getTime() - oTs < 30_000
-      && e.text === o.text);
+    const match = liveBubbles.find(e => !used.has(e.id) && (realId
+      ? e.id === realId
+      : !claimed.has(e.id) && matchesPending(o, e, myUri, uploaded.get(o.id))));
     if (match) { used.add(match.id); confirmed.set(o.id, match.id); }
   }
   return confirmed;
@@ -56,8 +64,11 @@ export interface OutboundView {
   localIdOf: Map<string, string>;
 }
 
-export function outboundView(state: OutboundState, liveBubbles: HistoryEntry[], myUri: string): OutboundView {
-  const confirmed = matchConfirmed(state.optimistic, liveBubbles, myUri, state.confirmedIds);
+export function outboundView(
+  state: OutboundState, liveBubbles: HistoryEntry[], myUri: string,
+  uploaded?: ReadonlyMap<string, readonly string[]>,
+): OutboundView {
+  const confirmed = matchConfirmed(state.optimistic, liveBubbles, myUri, state.confirmedIds, uploaded);
   return {
     confirmed,
     pending: confirmed.size ? state.optimistic.filter(o => !confirmed.has(o.id)) : state.optimistic,

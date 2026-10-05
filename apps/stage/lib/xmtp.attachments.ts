@@ -9,7 +9,7 @@ import {
 import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
-import { type LocalAttachmentInput } from './xmtp.types';
+import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
 import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
@@ -105,10 +105,11 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[],
+  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const [conv, infos] = await Promise.all([withReadableSendError(() => sendableConvOfLine(line)), prep.uploaded(files)]);
+  onUploaded?.(infos);
   const payload: MultiRemoteAttachmentContent = { attachments: infos };
   const id = await withReadableSendError(() => conv.send({ multiRemoteAttachment: payload }));
   prep.forget(files);
