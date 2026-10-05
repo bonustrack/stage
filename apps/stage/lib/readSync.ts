@@ -5,7 +5,8 @@ import {
   type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncOwner, type SyncReplay,
   type SyncTrust,
 } from '@stage-labs/client/xmtp/readState';
-import { appStorage } from '../platform/storage';
+import { replaySyncGroups } from './readSyncReplay';
+import { syncTarget, sendSyncState, type SyncTarget } from './syncTarget';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import {
@@ -20,24 +21,20 @@ import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, o
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
 import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
 import { rowIdOfConv } from './xmtp.conv';
-import { xmtpSendJson } from './xmtp.messages';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { accountClient, type AccountClient } from './xmtp.account';
+import { createVisibilityPublisher } from './pendingVisibility';
+import { sdk } from './xmtp.sdk';
 import { waitForXmtpReady } from './xmtp.state';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { addOwnInstallationsToChats } from './ownInstallations';
-import { createSyncGroup, isOwnSyncGroupId, listOwnSyncGroups, syncOwnerOf } from './syncGroups';
+import { createSyncGroup, isOwnSyncGroupId, listOwnSyncGroups } from './syncGroups';
 import { registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
-import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { StreamMsg } from './xmtp.types';
 import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
-import { report, reported, recover, ignored } from './errorPolicy';
-
-const CURSOR_PREFIX = 'readSync.cursor.v2.';
-const REPLAY_LIMIT = 5000;
+import { report, reported } from './errorPolicy';
 const CATCH_UP_GAP_MS = 10_000;
-const CLEARED_KEY = 'cleared';
 const PUBLISH_DEBOUNCE_MS = 800;
 const SEARCH_DEBOUNCE_MS = 1000;
 
@@ -45,6 +42,7 @@ let bootToken = 0;
 let replaying = false;
 let lastCatchUpAt = 0;
 let groupId: string | null = null;
+let groupAccountId: string | null = null;
 const ownGroups = new Set<string>();
 const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
@@ -53,8 +51,6 @@ const nudgedFrom = new Set<string>();
 function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
-
-type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
 function trustFor(owner: SyncOwner): SyncTrust {
   return { inboxId: owner.inboxId, nowMs: Date.now() };
@@ -65,21 +61,8 @@ function trustGroup(id: string): void {
   registerHiddenConv(id);
 }
 
-async function requireConv(convId: string): Promise<SyncConv> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) throw new Error('Sync conversation not found');
-  return conv;
-}
-
-async function syncConversation(convId: string): Promise<void> {
-  const conv = await requireConv(convId);
-  await conv.sync();
-}
-
-async function syncMessagesAfter(convId: string, afterNs: number): Promise<RowMessage[]> {
-  const conv = await requireConv(convId);
-  const after = afterNs > 0 ? { afterNs } : {};
-  return (await sdk.messages(conv, { limit: REPLAY_LIMIT, order: 'desc', ...after })).map(sdk.rowOf);
+function ownerOf(context: AccountClient): SyncOwner {
+  return { address: context.account.address, inboxId: context.client.inboxId ?? '' };
 }
 
 function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
@@ -134,69 +117,49 @@ function isStateMessage(m: RowMessage): boolean {
   return isSyncType(m.contentTypeId);
 }
 
-let groupsLoading: Promise<SyncGroupState[]> | null = null;
-
-function knownSyncGroups(owner: SyncOwner): Promise<SyncGroupState[]> {
-  groupsLoading ??= (async (): Promise<SyncGroupState[]> => {
-    try {
-      await afterFirstPages();
-      const groups = await listOwnSyncGroups(owner);
-      for (const g of groups) trustGroup(g.id);
-      return groups;
-    } finally {
-      groupsLoading = null;
-    }
-  })();
-  return groupsLoading;
+async function knownSyncGroups(context: AccountClient): Promise<SyncGroupState[]> {
+  await afterFirstPages();
+  context.assertCurrent();
+  const groups = await listOwnSyncGroups(ownerOf(context), context.client);
+  context.assertCurrent();
+  for (const g of groups) trustGroup(g.id);
+  return groups;
 }
 
-async function chooseGroup(owner: SyncOwner, groups: readonly SyncGroupState[]): Promise<string> {
+async function chooseGroup(context: AccountClient, groups: readonly SyncGroupState[]): Promise<string> {
+  context.assertCurrent();
   const chosen = pickPublishGroup(groups);
-  const id = chosen === null ? await createSyncGroup(owner) : chosen.id;
+  const id = chosen === null ? await createSyncGroup(ownerOf(context), context.client) : chosen.id;
+  context.assertCurrent();
   trustGroup(id);
   groupId = id;
+  groupAccountId = context.account.id;
   return id;
 }
 
-async function ensureGroup(owner: SyncOwner): Promise<string> {
-  return groupId ?? chooseGroup(owner, await knownSyncGroups(owner));
+async function ensureGroup(context: AccountClient): Promise<string> {
+  context.assertCurrent();
+  return groupAccountId === context.account.id && groupId ? groupId : chooseGroup(context, await knownSyncGroups(context));
 }
 
-interface GroupReplay { id: string; cursorKey: string; cursor: number; messages: RowMessage[] }
-
-async function readGroup(accountId: string, group: SyncGroupState): Promise<GroupReplay> {
-  if (group.active) await syncConversation(group.id).catch(reported('readSync.sync'));
-  const cursorKey = `${CURSOR_PREFIX}${accountId}.${group.id}`;
-  const cursor = Number(await appStorage.get(cursorKey).catch(recover('readSync.cursor', null))) || 0;
-  const messages = await syncMessagesAfter(group.id, cursor).catch(recover<RowMessage[]>('readSync.messages', []));
-  return { id: group.id, cursorKey, cursor, messages: messages.filter((m) => m.sentNs > cursor) };
-}
-
-async function replay(accountId: string, target: string, groups: readonly SyncGroupState[], owner: SyncOwner): Promise<void> {
-  const batches: GroupReplay[] = [];
-  for (const group of groups) batches.push(await readGroup(accountId, group));
-  await applyReplay(accountId, collectSyncReplay(batches.flatMap((b) => b.messages), 0, trustFor(owner)));
-  for (const b of batches) {
-    const latest = b.messages.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
-    if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
-    if (b.id !== target && b.messages.some(isStateMessage)) nudgeFrom(b.id);
-  }
+function replay(context: AccountClient, target: string, groups: readonly SyncGroupState[]): Promise<void> {
+  return replaySyncGroups(context, target, groups, state => applyReplay(context.account.id, state), nudgeFrom);
 }
 
 async function bootReplay(token: number): Promise<void> {
   if (!(await waitForXmtpReady())) return;
-  const rec = await getActiveAccount().catch(recover('readSync.boot', null));
-  if (rec === null || token !== bootToken) return;
+  if (token !== bootToken) return;
   try {
-    await backfillHiddenChannels(rec.id);
-    const owner = await syncOwnerOf(rec.address);
-    const groups = await knownSyncGroups(owner);
-    const target = await chooseGroup(owner, groups);
-    if (token !== bootToken) return;
-    await replay(rec.id, target, groups, owner);
-    await adoptBoardCategoryOrder(rec.id);
-    void addOwnInstallationsToChats(rec.id).catch(reported('readSync.ownInstallations'))
-      .then(() => { queueClearedPublish(rec.id); });
+    const context = await accountClient();
+    const { id } = context.account;
+    await backfillHiddenChannels(id);
+    context.assertCurrent();
+    const groups = await knownSyncGroups(context);
+    const target = await chooseGroup(context, groups);
+    await replay(context, target, groups);
+    await adoptBoardCategoryOrder(id);
+    void addOwnInstallationsToChats(id).catch(reported('readSync.ownInstallations'))
+      .then(() => { if (context.current()) queueClearedPublish(id); });
   } catch (err) {
     report('readSync.boot', err);
   }
@@ -216,14 +179,13 @@ async function boot(): Promise<void> {
 }
 
 async function catchUp(): Promise<void> {
-  const token = bootToken;
-  const rec = await getActiveAccount().catch(recover('readSync.catchUp', null));
-  if (rec === null) return;
-  const owner = await syncOwnerOf(rec.address);
-  const groups = await knownSyncGroups(owner);
-  if (token !== bootToken) return;
-  await replay(rec.id, await ensureGroup(owner), groups, owner);
-  queueClearedPublish(rec.id);
+  const context = await accountClient();
+  await backfillHiddenChannels(context.account.id);
+  const groups = await knownSyncGroups(context);
+  await replay(context, await ensureGroup(context), groups);
+  await addOwnInstallationsToChats(context.account.id);
+  context.assertCurrent();
+  queueClearedPublish(context.account.id);
 }
 
 function catchUpInFront(): void {
@@ -235,19 +197,17 @@ function catchUpInFront(): void {
 }
 
 async function withGroup(
-  send: (groupId: string, accountId: string) => Promise<unknown>, onlyFor?: string,
-): Promise<void> {
-  try {
-    const rec = await getActiveAccount();
-    if (rec === null || (onlyFor !== undefined && rec.id !== onlyFor)) return;
-    await send(await ensureGroup(await syncOwnerOf(rec.address)), rec.id);
-  } catch (err) {
-    report('readSync.publish', err);
-  }
+  send: (target: SyncTarget, accountId: string) => Promise<unknown>, onlyFor?: string,
+): Promise<boolean> {
+  const context = await accountClient(onlyFor);
+  const target = await syncTarget(context, await ensureGroup(context));
+  context.assertCurrent();
+  await send(target, context.account.id);
+  return true;
 }
 
 function publish<T>(codec: JsonCodec<T>, content: T, onlyFor?: string): void {
-  void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content), onlyFor);
+  void withGroup((target) => sendSyncState(target, codec, content), onlyFor).catch(reported('readSync.publish'));
 }
 
 function stampOrderState(key: string, order: readonly string[]): BoardStateContent {
@@ -259,7 +219,7 @@ function stampOrderState(key: string, order: readonly string[]): BoardStateConte
 interface LatestWins {
   start: () => void;
   apply: (accountId: string, replay: SyncReplay) => Promise<void>;
-  publishTo: (line: string, accountId: string) => Promise<void>;
+  publishTo: (target: SyncTarget, accountId: string) => Promise<void>;
 }
 
 function latestWins<K extends LatestKind>(kind: K, setting: {
@@ -275,9 +235,9 @@ function latestWins<K extends LatestKind>(kind: K, setting: {
       const state = replay.latest[kind];
       if (state !== null) await setting.apply(accountId, state);
     },
-    publishTo: async (line, accountId) => {
+    publishTo: async (target, accountId) => {
       const state = await setting.load(accountId);
-      if (state !== null) await xmtpSendJson(line, codec, state);
+      if (state !== null) await sendSyncState(target, codec, state);
     },
   };
 }
@@ -314,23 +274,23 @@ const LATEST_WINS: readonly LatestWins[] = [
   }),
 ];
 
-async function publishSnapshot(target: string, accountId: string): Promise<void> {
-  const line = lineOfConv(target);
-  await xmtpSendJson(line, SYNC_CODECS.clear, await loadChatVisibility(accountId));
-  for (const setting of LATEST_WINS) await setting.publishTo(line, accountId);
+async function publishSnapshot(target: SyncTarget, accountId: string): Promise<void> {
+  await sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId));
+  for (const setting of LATEST_WINS) await setting.publishTo(target, accountId);
   const order = await loadPinnedOrder();
   const first = order[0];
   if (first === undefined) return;
   const at = Date.now();
   localAt.set(PIN_ORDER_KEY, at);
-  await xmtpSendJson(line, SYNC_CODECS.pin, { convId: first, pinned: true, order: [...order], at });
+  await sendSyncState(target, SYNC_CODECS.pin, { convId: first, pinned: true, order: [...order], at });
 }
 
 function nudgeFrom(sourceId: string): void {
   if (nudgedFrom.has(sourceId)) return;
   nudgedFrom.add(sourceId);
   groupId = null;
-  void withGroup((target, accountId) => (target === sourceId ? Promise.resolve() : publishSnapshot(target, accountId)));
+  void withGroup((target, accountId) => (target.conv.id === sourceId ? Promise.resolve() : publishSnapshot(target, accountId)))
+    .catch(reported('readSync.snapshot'));
 }
 
 function debounce(key: string, fn: () => void, delayMs = PUBLISH_DEBOUNCE_MS): void {
@@ -357,27 +317,25 @@ function queuePinPublish(change: PinChange): void {
   debounce(PIN_ORDER_KEY, () => { publish(SYNC_CODECS.pin, content); });
 }
 
-function queueClearedPublish(onlyFor?: string): void {
-  debounce(CLEARED_KEY, () => {
-    void withGroup(async (id, accountId) => xmtpSendJson(lineOfConv(id), SYNC_CODECS.clear, await loadChatVisibility(accountId)), onlyFor);
-  });
-}
+const queueClearedPublish = createVisibilityPublisher((accountId) => withGroup(async (target) =>
+  sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId)), accountId));
 
-interface Adopted { accountId: string; owner: SyncOwner }
+interface Adopted { context: AccountClient; owner: SyncOwner }
 
 async function adoptSyncGroup(convId: string): Promise<Adopted | null> {
-  const rec = await getActiveAccount().catch(recover('readSync.adopt', null));
-  if (rec === null) return null;
-  const owner = await syncOwnerOf(rec.address);
-  if (!ownGroups.has(convId) && !(await isOwnSyncGroupId(convId, owner).catch(recover('readSync.adopt', false)))) return null;
+  const context = await accountClient();
+  const owner = ownerOf(context);
+  if (!(groupAccountId === context.account.id && ownGroups.has(convId)) && !(await isOwnSyncGroupId(convId, owner, context.client))) return null;
+  context.assertCurrent();
   trustGroup(convId);
-  return { accountId: rec.id, owner };
+  return { context, owner };
 }
 
 async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
   const adopted = await adoptSyncGroup(convId);
   if (adopted === null) return;
-  await applyReplay(adopted.accountId, collectSyncReplay([m], 0, trustFor(adopted.owner)));
+  await applyReplay(adopted.context.account.id, collectSyncReplay([m], 0, trustFor(adopted.owner)));
+  adopted.context.assertCurrent();
   if (groupId !== null && convId !== groupId) nudgeFrom(convId);
 }
 
@@ -389,7 +347,7 @@ function onStreamMessage(m: StreamMsg): void {
 export function startReadSync(): void {
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
-  onClearedChatsChanged(() => { queueClearedPublish(); });
+  onClearedChatsChanged(() => { void getActiveAccount().then(rec => { if (rec) queueClearedPublish(rec.id); }).catch(reported('readSync.clear')); });
   onHiddenChannelsChanged(queueClearedPublish);
   for (const setting of LATEST_WINS) setting.start();
   subscribeAllMessages(onStreamMessage, { includeHidden: true });

@@ -7,6 +7,7 @@ import { recover, report, reported } from './errorPolicy';
 import { mergeFeedEntries, settleCachedFeed, type FeedMerge } from './feedOrder.model';
 import { markFeedStart } from './feedStart';
 import { makeListeners } from './storeCore';
+import { syncVisibleChannels } from './channelVisibility';
 
 export const PAGE_SIZE = 20;
 
@@ -43,7 +44,7 @@ export function mergePageIntoFeed(line: string, page: readonly HistoryEntry[], o
 async function syncVisibleInbox(): Promise<boolean> {
   const client = sdk.cachedClient();
   if (!client) return false;
-  await sdk.syncVisible(client);
+  await syncVisibleChannels();
   return true;
 }
 

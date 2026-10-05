@@ -14,6 +14,7 @@ import type { Row } from '../components/home/model';
 const values = new Map<string, string>();
 let activeId = 'ann';
 mock.module('../platform/storage', () => ({
+  secureStorage: {},
   appStorage: {
     get: async (key: string): Promise<string | null> => values.get(key) ?? null,
     set: async (key: string, value: string): Promise<void> => { values.set(key, value); },

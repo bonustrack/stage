@@ -1,7 +1,7 @@
 import { appStorage } from '../platform/storage';
 import type { AppStorage } from '../platform/types';
 import { getActiveAccount } from './accounts';
-import { subscribeAccountEpoch } from './accountEpoch';
+import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
 import { hydrateOnce, makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 
@@ -12,6 +12,7 @@ export interface ValueStoreOptions<T> {
   deserialize: (raw: string) => T | undefined;
   storage?: Pick<AppStorage, 'get' | 'set'>;
   perAccount?: boolean;
+  durable?: boolean;
   restore?: (local: T, stored: T) => T;
 }
 
@@ -29,17 +30,36 @@ export interface ValueStore<T> {
   use: () => T;
 }
 
+function durableWriter<T>(
+  read: (id: string) => Promise<T>, write: (id: string, value: T) => Promise<void>, publish: (id: string, value: T) => void,
+) {
+  let pending = Promise.resolve();
+  return {
+    ready: () => pending,
+    update: (id: string, next: (current: T) => T): Promise<void> => {
+      const result = pending.then(async () => {
+        const stored = await read(id);
+        const value = next(stored);
+        if (value !== stored) await write(id, value);
+        publish(id, value);
+      });
+      pending = result.catch(reported('store.durable'));
+      return result;
+    },
+  };
+}
+
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const serialize = opts.serialize ?? ((v: T): string => String(v));
   const storage = opts.storage ?? appStorage;
   let cache: T = opts.default;
   let accountId: string | null | undefined;
   const { notify, subscribe } = makeListeners();
+  const durable = durableWriter(storedFor, (id, value) => storage.set(opts.key + id, serialize(value)), (id, value) => {
+    if (id === accountId && serialize(cache) !== serialize(value)) commit(value);
+  });
 
-  function storageKey(): string | null {
-    if (!opts.perAccount) return opts.key;
-    return typeof accountId === 'string' ? opts.key + accountId : null;
-  }
+  function storageKey(): string | null { return opts.perAccount ? (typeof accountId === 'string' ? opts.key + accountId : null) : opts.key; }
 
   function parse(raw: string | null): T | undefined {
     return raw == null ? undefined : opts.deserialize(raw);
@@ -54,9 +74,12 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
 
   async function read(): Promise<boolean> {
     if (!opts.perAccount) return apply(await storage.get(opts.key));
+    const epoch = getAccountEpoch();
     const id = (await getActiveAccount())?.id ?? null;
     if (id === accountId) return false;
+    await durable.ready();
     const raw = id === null ? null : await storage.get(opts.key + id);
+    if (epoch !== getAccountEpoch()) return read();
     if (!opts.restore || accountId !== undefined) cache = opts.default;
     accountId = id;
     apply(raw);
@@ -110,10 +133,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     void write();
   }
 
-  async function setAsync(value: T): Promise<void> {
-    commit(value);
-    await write();
-  }
+  async function setAsync(value: T): Promise<void> { commit(value); await write(); }
 
   async function change(next: (current: T) => T): Promise<void> {
     const value = next(cache);
@@ -125,17 +145,17 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (onlyFor === undefined || onlyFor === accountId) await change(next);
   }
 
-  async function storedFor(id: string): Promise<T> {
-    return parse(await storage.get(opts.key + id)) ?? opts.default;
-  }
+  async function storedFor(id: string): Promise<T> { return parse(await storage.get(opts.key + id)) ?? opts.default; }
 
   async function loadFor(id: string): Promise<T> {
     await load();
+    await durable.ready();
     return id === accountId ? cache : storedFor(id);
   }
 
   async function updateFor(id: string, next: (current: T) => T): Promise<void> {
     await reload();
+    if (opts.durable) return durable.update(id, next);
     if (id === accountId) return change(next);
     const stored = await storedFor(id);
     const value = next(stored);

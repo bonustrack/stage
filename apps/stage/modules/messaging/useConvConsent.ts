@@ -55,15 +55,15 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
 const RECHECK_MS = 10_000;
 
 export function useGroupAccess(convId: string | undefined, isGroup: boolean): GroupAccess {
-  const [access, setAccess] = useState<GroupAccess>('member');
+  const [access, setAccess] = useState<GroupAccess>(isGroup ? 'waiting' : 'member');
   const epoch = useAccountEpoch();
   useEffect(() => {
-    setAccess('member');
+    setAccess(isGroup ? 'waiting' : 'member');
     if (!convId || !isGroup) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const check = async (): Promise<void> => {
-      const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'member'));
+      const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'waiting'));
       if (cancelled) return;
       setAccess(next);
       if (next !== 'member') timer = setTimeout(() => { void check(); }, RECHECK_MS);

@@ -5,6 +5,7 @@ import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSett
 const values = new Map<string, string>();
 let activeId = 'alice';
 mock.module('../platform/storage', () => ({
+  secureStorage: {},
   appStorage: {
     get: async (key: string): Promise<string | null> => values.get(key) ?? null,
     set: async (key: string, value: string): Promise<void> => { values.set(key, value); },

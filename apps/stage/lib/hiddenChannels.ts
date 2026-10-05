@@ -1,17 +1,11 @@
-import { hiddenChannelsSchema, mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/readState';
+import { mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/readState';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 import type { XmtpConsent } from './xmtp.types';
-
-function parseHidden(raw: string): HiddenChannels | undefined {
-  try {
-    const parsed = hiddenChannelsSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : undefined;
-  } catch { return undefined; }
-}
+import { HIDDEN_CHANNELS_KEY, parseHiddenChannels } from './hiddenChannelsStorage';
 
 const prefs = createValueStore<HiddenChannels>({
-  key: 'channels.hidden.', default: {}, deserialize: parseHidden, serialize: JSON.stringify, perAccount: true,
+  key: HIDDEN_CHANNELS_KEY, default: {}, deserialize: parseHiddenChannels, serialize: JSON.stringify, perAccount: true, durable: true,
 });
 const localChanges = makeListeners<string>();
 

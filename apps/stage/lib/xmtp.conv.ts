@@ -2,7 +2,9 @@ import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { channelConsent, loadHiddenChannels, setChannelHidden } from './hiddenChannels';
-import { getActiveAccount } from './accounts';
+import { accountClient, type AccountClient } from './xmtp.account';
+import { channelAccess, reconcileHiddenConsent, syncVisibleChannels, type GroupAccess } from './channelVisibility';
+export type { GroupAccess } from './channelVisibility';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
@@ -10,7 +12,7 @@ import { registerHiddenConv } from './xmtp.state.core';
 import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
-import { ignored, report, reported, recover } from './errorPolicy';
+import { report, reported, recover } from './errorPolicy';
 import { runSyncCheck, type SyncCheckResult } from './syncCheck.model';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
@@ -86,45 +88,31 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
-async function withoutSyncGroups(convs: Conv[]): Promise<Conv[]> {
-  const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(recover('xmtp.syncGroupCheck', false))));
-  return convs.filter((c, i) => {
-    if (flags[i] === true) registerHiddenConv(c.id);
-    return flags[i] !== true;
-  });
+async function withoutDepartedGroups(context: AccountClient, convs: Conv[]): Promise<Conv[]> {
+  const shown = await Promise.all(convs.map(async (conv) => {
+    if (await conversationIsSyncGroup(conv)) { registerHiddenConv(conv.id); return false; }
+    return await channelAccess(context, conv) !== 'outside';
+  }));
+  context.assertCurrent();
+  return convs.filter((_, i) => shown[i]);
 }
 
 export async function listVisibleConversations(): Promise<Conv[]> {
-  const account = await getActiveAccount();
-  const hidden = account ? await loadHiddenChannels(account.id) : {};
-  const client = await sdk.client();
-  const [visible, denied] = await Promise.all([
-    sdk.listConvs(client, VISIBLE_CONSENT),
-    Object.values(hidden).some(state => !state.hidden) ? sdk.listConvs(client, ['denied']) : [],
-  ]);
-  const restored = denied.filter(c => sdk.isGroup(c) && hidden[c.id]?.hidden === false);
-  return withoutSyncGroups([...visible, ...restored].filter(c => !sdk.isGroup(c) || !hidden[c.id]?.hidden));
+  const context = await accountClient();
+  await reconcileHiddenConsent(context);
+  const hidden = await loadHiddenChannels(context.account.id);
+  const visible = await sdk.listConvs(context.client, VISIBLE_CONSENT);
+  return withoutDepartedGroups(context, visible.filter(c => !sdk.isGroup(c) || !hidden[c.id]?.hidden));
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
-  const client = await sdk.client();
-  try {
-    await sdk.syncVisible(client);
-  } catch (err) {
-    report('xmtp.syncVisible', err);
-  }
+  await syncVisibleChannels().catch(reported('xmtp.syncVisible'));
 }
 
-export type GroupAccess = 'member' | 'waiting' | 'outside';
-
 export async function groupAccessOf(convId: string): Promise<GroupAccess> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv || !sdk.isGroup(conv) || await sdk.isActive(conv)) return 'member';
-  const [client, members] = await Promise.all([
-    sdk.client(), conv.members().catch(ignored([], 'probe')),
-  ]);
-  const memberListKnown = members.length > 0;
-  return memberListKnown && !members.some(m => m.inboxId === client.inboxId) ? 'outside' : 'waiting';
+  const context = await accountClient();
+  const conv = await sdk.findConv(context.client, convId);
+  return conv ? channelAccess(context, conv) : 'waiting';
 }
 
 export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
@@ -160,11 +148,18 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
 }
 
 async function setConvConsent(convId: string, state: XmtpConsent): Promise<void> {
-  const account = await getActiveAccount();
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv || !account) throw new Error('Conversation not found');
-  await sdk.setConsent(conv, state);
-  if (sdk.isGroup(conv)) await setChannelHidden(account.id, convId, state === 'denied');
+  const context = await accountClient();
+  const conv = await sdk.findConv(context.client, convId);
+  if (!conv) throw new Error('Conversation not found');
+  context.assertCurrent();
+  if (sdk.isGroup(conv)) {
+    if (state === 'allowed' && await channelAccess(context, conv) !== 'member') throw new Error('Channel membership is not ready');
+    await setChannelHidden(context.account.id, convId, state === 'denied');
+    await reconcileHiddenConsent(context);
+  } else {
+    await sdk.setConsent(conv, state);
+  }
+  context.assertCurrent();
   patchRowConsent(convId, state);
 }
 

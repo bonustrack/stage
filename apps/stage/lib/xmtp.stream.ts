@@ -9,6 +9,9 @@ import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
 import { afterFirstPages } from './feedLines';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
 import { report, reported } from './errorPolicy';
+import { accountClient } from './xmtp.account';
+import { reconcileHiddenConsent } from './channelVisibility';
+import { isChannelHidden, subscribeHiddenChannels } from './hiddenChannels';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
@@ -60,7 +63,7 @@ function retryAfterStartFailure(err: unknown): void {
 function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable<StreamMessage>): void {
   if (streamSubscribers.size === 0) return;
   const normalized = sdk.rowOf(msg);
-  const hidden = isHiddenConv(convId);
+  const hidden = isHiddenConv(convId) || isChannelHidden(convId);
   for (const [cb, includeHidden] of streamSubscribers) {
     if (hidden && !includeHidden) continue;
     try {
@@ -98,7 +101,7 @@ function handleStreamMessage(msg: StreamMessage): void {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();
     return;
   }
-  if (!isHiddenConv(convId)) routeMessageToFeed(convId, msg);
+  if (!isHiddenConv(convId) && !isChannelHidden(convId)) routeMessageToFeed(convId, msg);
 }
 
 async function applyDeletion(line: string, messageId: string): Promise<void> {
@@ -126,11 +129,14 @@ export async function ensureGlobalStream(): Promise<void> {
   starting = true;
   const startedIn = generation;
   try {
-    const client = await sdk.client();
+    const context = await accountClient();
+    const { client } = context;
     await afterFirstPages();
     await dmRoutesReady().catch(reported('xmtp.dmRoutes'));
+    await reconcileHiddenConsent(context);
+    context.assertCurrent();
     const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
-    if (startedIn !== generation) { cancel(); return; }
+    if (startedIn !== generation) { cancel(); rearmGlobalStream(); return; }
     cancelStream = cancel;
     cancelDeletions ??= sdk.streamDeletions(client, onMessageDeleted);
     startFailures = 0;
@@ -151,3 +157,4 @@ function teardownGlobalStream(): void {
   foregroundWatch.detach();
 }
 registerGlobalStreamTeardown(teardownGlobalStream);
+subscribeHiddenChannels(() => { teardownGlobalStream(); rearmGlobalStream(); });

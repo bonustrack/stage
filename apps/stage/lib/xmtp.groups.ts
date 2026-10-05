@@ -13,12 +13,13 @@ import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup } from './xmtp.sdk.core';
 import { groupRowMeta } from '../modules/messaging/conversation';
 import { report, reported } from './errorPolicy';
-import { getActiveAccount } from './accounts';
+import { accountClient } from './xmtp.account';
 import { setChannelHidden } from './hiddenChannels';
+import { reconcileHiddenConsent } from './channelVisibility';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
-function requireConv<T>(conv: T | null): T {
+function requireConv<T>(conv: T | null | undefined): T {
   if (!conv) throw new Error('Conversation not found');
   return conv;
 }
@@ -107,9 +108,12 @@ export async function groupEditRights(convId: string): Promise<GroupEditRights> 
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
-  const account = requireConv(await getActiveAccount());
-  const conv = await requireGroup(line);
-  await setChannelHidden(account.id, conv.id, true);
+  const context = await accountClient();
+  const conv = requireConv(await sdk.findConv(context.client, convIdOfLine(line) ?? ''));
+  if (!sdk.isGroup(conv)) notAGroup();
+  context.assertCurrent();
+  await setChannelHidden(context.account.id, conv.id, true);
+  context.assertCurrent();
   const leave = sdk.leaveOp(conv);
   let result: 'left' | 'hidden' = 'hidden';
   if (leave) {
@@ -120,7 +124,7 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
       report('xmtp.leaveGroup', err);
     }
   }
-  await sdk.setConsent(conv, 'denied').catch(reported('xmtp.leaveGroupConsent'));
+  if (context.current()) await reconcileHiddenConsent(context).catch(reported('xmtp.leaveGroupConsent'));
   return result;
 }
 

@@ -7,7 +7,7 @@ import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
   listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent,
-  conversationIsSyncGroup, getConvConsentState, createdBySelf,
+  conversationIsSyncGroup, getConvConsentState, createdBySelf, groupAccessOf,
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { summarizeConversation } from '../../modules/messaging/conversation';
@@ -254,6 +254,7 @@ async function onNewConversation(conv: Conversation, selfInboxId: string, run: S
   schedulePushTopicRefresh();
   if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) { registerHiddenConv(conv.id); return; }
   if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
+  if (await groupAccessOf(conv.id).catch(recover('home.newConversationAccess', 'waiting')) === 'outside') return;
   const row = await summarize(conv, selfInboxId, createdBySelf(conv, selfInboxId)).catch(recover('home.newConversation', null));
   if (!row || run.cancelled) return;
   updateHomeRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));

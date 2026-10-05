@@ -7,6 +7,7 @@ import {
 } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
+import { visibleCachedRows } from './hiddenChannelsStorage';
 
 export type CachedRow = CachedChannelRow;
 
@@ -45,7 +46,7 @@ function fileNameFor(id: string): string {
 
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
-  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id)); stores.set(id, s); }
+  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, rows => visibleCachedRows(id, rows)); stores.set(id, s); }
   return s;
 }
 

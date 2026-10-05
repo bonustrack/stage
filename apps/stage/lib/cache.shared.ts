@@ -31,6 +31,7 @@ export class PersistentStore<T> {
   constructor(
     private readonly fileName: string,
     private readonly flushDelayMs = FLUSH_DEBOUNCE_MS,
+    private readonly restore?: (value: T) => Promise<T>,
   ) {
     if (!flushSignalWired) {
       flushSignalWired = true;
@@ -52,7 +53,9 @@ export class PersistentStore<T> {
   private async readBacking(): Promise<T | null> {
     const stored = await backend.read<T>(this.fileName);
     if (stored !== null) {
-      this.value = stored;
+      const restored = this.restore ? await this.restore(stored) : stored;
+      if (this.hydration.done()) return this.value;
+      this.value = restored;
       this.notify(this.value);
     }
     return this.value;

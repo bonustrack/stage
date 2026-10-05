@@ -22,6 +22,7 @@ import { previewOf } from './feed-helpers';
 import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { RequestActionBar } from '../RequestActionBar';
+import { canApproveConversation, canComposeConversation } from './consent.model';
 import type { useConversationState } from './useConversationState';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { ComposerDock } from './FooterDock';
@@ -101,9 +102,9 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
     showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, consentKnown, markConsentAllowed,
   } = c;
-  const requestPending = consent === 'unknown';
   const access = useGroupAccess(convId, c.isGroup);
-  const composerShown = consentKnown && access === 'member';
+  const requestPending = canApproveConversation(consent, c.isGroup, access);
+  const composerShown = consentKnown && canComposeConversation(consent, c.isGroup, access);
   return (
     <ComposerDock>
       {showJump ? (
