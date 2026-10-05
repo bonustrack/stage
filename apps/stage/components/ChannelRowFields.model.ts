@@ -35,7 +35,7 @@ export function visibleChannelFields(data: ChannelRowFieldData, fields: ChannelF
     if (!fields[field.id] || field.id === 'labels' || field.id === 'avatar') return [];
     if (field.id === 'members' || field.id === 'assignees') {
       const addresses = peopleAddresses(data, field.id);
-      return addresses.length === 0 ? [] : [{ ...field, value: '', addresses }];
+      return addresses.length === 0 ? [] : [{ id: field.id, label: field.label, value: '', addresses }];
     }
     const value = data[field.id]?.trim() ?? '';
     return value === '' ? [] : [{ ...field, value, addresses: [] }];
