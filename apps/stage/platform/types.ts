@@ -12,6 +12,7 @@ export interface SecureStorage {
   get: (key: string, options?: SecureAccessOptions) => Promise<string | null>;
   set: (key: string, value: string, options?: SecureAccessOptions) => Promise<void>;
   delete: (key: string) => Promise<void>;
+  subscribe?: (keys: readonly string[], listener: () => void) => () => void;
 }
 
 export interface AppStorage {

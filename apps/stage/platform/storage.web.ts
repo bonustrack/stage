@@ -46,6 +46,14 @@ export const secureStorage: SecureStorage = {
     deleteKey(SECURE_PREFIX + key);
     return Promise.resolve();
   },
+  subscribe: (keys, listener) => {
+    const watched = new Set(keys.map((key) => namespacedKey(SECURE_PREFIX + key)));
+    const changed = (event: StorageEvent): void => {
+      if (event.storageArea === localStorage && (event.key === null || watched.has(event.key))) listener();
+    };
+    window.addEventListener('storage', changed);
+    return () => { window.removeEventListener('storage', changed); };
+  },
 };
 
 export const appStorage: AppStorage = {

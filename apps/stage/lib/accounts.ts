@@ -21,15 +21,22 @@ export type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
 import { accountSelectionChanged } from './accountSelection';
+import { reloadApp } from './reloadApp';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
 
 let cache: AccountRecord[] | null = null;
 
+secureStorage.subscribe?.([LIST_KEY, ACTIVE_KEY], () => {
+  cache = null;
+  accountSelectionChanged();
+  reloadApp();
+});
+
 async function persist(list: AccountRecord[]): Promise<void> {
-  cache = list;
   await secureStorage.set(LIST_KEY, JSON.stringify(list));
+  cache = list;
 }
 
 async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
@@ -93,9 +100,16 @@ export async function getActiveAccountId(): Promise<string | null> {
 }
 
 export async function setActiveAccountId(id: string): Promise<void> {
+  const previous = await secureStorage.get(ACTIVE_KEY);
   await secureStorage.set(ACTIVE_KEY, id);
-  accountSelectionChanged();
+  if (previous !== id) accountSelectionChanged();
   await setActiveAccountForCache(id);
+}
+
+export async function getSelectedAccount(): Promise<AccountRecord | null> {
+  const list = await loadList(true);
+  const id = await secureStorage.get(ACTIVE_KEY);
+  return list.find((rec) => rec.id === id) ?? null;
 }
 
 export async function getActiveAccount(): Promise<AccountRecord | null> {
@@ -153,19 +167,22 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id);
   const next = list.filter(a => a.id !== id);
-  await deleteKey(id);
-  await persist(next);
-  accountSelectionChanged();
-  const active = await getActiveAccountId();
-  if (active === id) {
-    const first = next[0];
-    if (first) await setActiveAccountId(first.id);
-    else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
+  try {
+    await deleteKey(id);
+    await persist(next);
+    const active = await getActiveAccountId();
+    if (active === id) {
+      const first = next[0];
+      if (first) await setActiveAccountId(first.id);
+      else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
+    }
+    const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
+    const stillUsed = new Set(next.flatMap(a => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
+    if (removedPhrase && !stillUsed.has(removedPhrase)) {
+      await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
+    }
+    return next;
+  } finally {
+    accountSelectionChanged();
   }
-  const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
-  const stillUsed = new Set(next.flatMap(a => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
-  if (removedPhrase && !stillUsed.has(removedPhrase)) {
-    await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
-  }
-  return next;
 }

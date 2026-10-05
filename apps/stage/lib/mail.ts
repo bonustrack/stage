@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
 import { mailReadKey, parseReadKeys, withReadKey } from '../components/settings/Inbox.model';
-import { getActiveAccount } from './accounts';
+import { getSelectedAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';
 import { linkProxyBase } from './historyServer';
@@ -17,7 +17,7 @@ export type { InboxState, Mailbox } from './mail.core';
 
 const NO_KEYS: readonly string[] = [];
 const access = makeMailAccess({
-  activeAccount: getActiveAccount,
+  activeAccount: getSelectedAccount,
   ownedLabel: ownedStageLabel,
   signer: async (rec) => (await signingKeyForRecord(rec)).signMessage,
   selection: getAccountSelection,

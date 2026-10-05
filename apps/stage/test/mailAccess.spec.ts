@@ -69,15 +69,16 @@ async function harness() {
     if (url.pathname === '/mail/message') return new Response(fixture.body);
     throw new Error('unexpected request');
   });
+  const activeLookup = { run: (): Promise<AccountRecord | null> => Promise.resolve(active) };
   const access = makeMailAccess({
-    activeAccount: () => Promise.resolve(active),
+    activeAccount: () => activeLookup.run(),
     ownedLabel: (address) => { lookedUp.push(address); return lookup.run(address); },
     signer: (rec) => signing.run(rec),
     selection: () => selection,
     baseUrl: () => 'https://mail.test',
   });
   return {
-    access, lookedUp, signers, requests, names, lookup, signing,
+    access, lookedUp, signers, requests, names, lookup, signing, activeLookup,
     select(rec: AccountRecord | null) { active = rec; selection += 1; access.clear(); },
     boxes: () => access.mailboxes(selection),
     inbox: (boxes: Mailbox[]) => access.inbox(boxes, selection),
@@ -115,6 +116,25 @@ describe('active account mail', () => {
     h.select(null);
     expect(await h.boxes()).toEqual([]);
     expect(h.lookedUp).toEqual([A.address, B.address, B.address]);
+    expect(h.requests).toEqual([]);
+  });
+
+  test('fails closed when the selected account cannot be read', async () => {
+    const h = await harness();
+    const a = await firstBox(h);
+    h.activeLookup.run = () => Promise.reject(new Error('storage unavailable'));
+    await expect(h.boxes()).rejects.toThrow('storage unavailable');
+    await expect(h.access.mail(a, ID)).rejects.toThrow('storage unavailable');
+    expect(h.lookedUp).toEqual([A.address]);
+    expect(h.signers).toEqual([]);
+    expect(h.requests).toEqual([]);
+  });
+
+  test('rejects another account descriptor within the current selection', async () => {
+    const h = await harness();
+    const a = await firstBox(h);
+    await expect(h.access.mail({ ...a, accountId: B.id, address: B.address }, ID)).rejects.toThrow('not in the active account');
+    expect(h.signers).toEqual([]);
     expect(h.requests).toEqual([]);
   });
 
