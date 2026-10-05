@@ -12,10 +12,10 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, knownCategories, removeGroupLabel, setGroupCategory, suggestLabels,
+  addGroupLabel, knownChannelFields, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels,
 } from '../../lib/xmtp.groups';
 import {
-  categoryOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
+  CHANNEL_PRIORITIES, channelFieldOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
 } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -23,6 +23,8 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
+import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
+import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 
@@ -52,12 +54,16 @@ export function useLiveChannelLabels(convId: string | undefined): string[] {
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
 }
 
-export function useLiveChannelCategory(convId: string | undefined): string | null {
+function useLiveChannelField(convId: string | undefined, field: ChannelField): string | null {
   const read = useCallback(
-    (): string | null => categoryOf(getCachedRows()?.find((row) => row.convId === convId)?.category),
-    [convId],
+    (): string | null => channelFieldOf(field, getCachedRows()?.find((row) => row.convId === convId)?.[field]),
+    [convId, field],
   );
   return useStoreValue(subscribeCachedRows, read);
+}
+
+export function useLiveChannelCategory(convId: string | undefined): string | null {
+  return useLiveChannelField(convId, 'category');
 }
 
 export async function writeLabels(line: string, edits: ListEdits): Promise<string[] | null> {
@@ -194,9 +200,18 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
   return <TagPicker draft={draft} options={options} noun="label" pick={pick}/>;
 }
 
-function CategoryPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
-  const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...knownCategories()]), current));
-  return <TagPicker draft={draft} options={options} noun="category" pick={toggle}/>;
+function FieldPicker({ draft, toggle, current, field }: SectionDraft & { current: string[]; field: ChannelField }): React.ReactElement {
+  const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...knownChannelFields(field)]), current));
+  if (field === 'priority') return (
+    <PickerList>
+      {CHANNEL_PRIORITIES.map(priority => (
+        <PickerRow key={priority} selected={includesKey(draft, priority)} label={priority} onPress={() => { toggle(priority); }}>
+          <Text size="2xs">{priority}</Text>
+        </PickerRow>
+      ))}
+    </PickerList>
+  );
+  return <TagPicker draft={draft} options={options} noun={field} pick={toggle}/>;
 }
 
 export function ChannelLabels({ convId, labels }: {
@@ -219,18 +234,30 @@ export function ChannelLabels({ convId, labels }: {
   );
 }
 
-export function ChannelCategory({ convId }: { convId: string }): React.ReactElement | null {
+const CHANNEL_FIELDS = {
+  category: { title: 'Category', icon: IconFolder1 },
+  status: { title: 'Status', icon: IconCircleDashed },
+  priority: { title: 'Priority', icon: IconFlag1 },
+};
+
+function ChannelFieldSection({ convId, field }: { convId: string; field: ChannelField }): React.ReactElement | null {
   const rights = useChannelEditRights(convId);
-  const category = useLiveChannelCategory(convId);
-  if (category === null && !rights.appData) return null;
-  const current = category === null ? [] : [category];
-  const commit = (edits: ListEdits): void => { setChannelCategory(convId, edits.added[0] ?? null); };
+  const value = useLiveChannelField(convId, field);
+  if (value === null && !rights.appData) return null;
+  const current = value === null ? [] : [value];
+  const commit = (edits: ListEdits): void => {
+    void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, `the ${field}`); });
+  };
   return (
-    <SidebarSection title="Category" icon={IconFolder1} editLabel="Edit category" canEdit={rights.appData} current={current} single
-      onCommit={commit} renderPicker={(draft) => <CategoryPicker {...draft} current={current}/>}>
-      {category === null ? <SectionNote text="No category yet"/> : (
-        <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{category}</Text></Row>
+    <SidebarSection {...CHANNEL_FIELDS[field]} editLabel={`Edit ${field}`} canEdit={rights.appData} current={current} single
+      onCommit={commit} renderPicker={(draft) => <FieldPicker {...draft} current={current} field={field}/>}>
+      {value === null ? <SectionNote text={`No ${field} yet`}/> : (
+        <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{value}</Text></Row>
       )}
     </SidebarSection>
   );
+}
+
+export function ChannelFields({ convId }: { convId: string }): React.ReactElement {
+  return <><ChannelFieldSection convId={convId} field="category"/><ChannelFieldSection convId={convId} field="status"/><ChannelFieldSection convId={convId} field="priority"/></>;
 }

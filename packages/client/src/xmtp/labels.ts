@@ -79,16 +79,33 @@ export function categoryOf(value: unknown): string | null {
   return typeof value === 'string' ? cleanLabel(value) || null : null;
 }
 
-export interface GroupTags { labels: string[]; category: string | null; assigned: string[] }
+export const CHANNEL_PRIORITIES = ['Urgent', 'High', 'Medium', 'Low'] as const;
+export type ChannelPriority = typeof CHANNEL_PRIORITIES[number];
+export type ChannelField = 'category' | 'status' | 'priority';
 
-export const NO_TAGS: GroupTags = { labels: [], category: null, assigned: [] };
+export function priorityOf(value: unknown): ChannelPriority | null {
+  return CHANNEL_PRIORITIES.find(priority => priority === categoryOf(value)) ?? null;
+}
+
+export function channelFieldOf(field: ChannelField, value: unknown): string | null {
+  return field === 'priority' ? priorityOf(value) : categoryOf(value);
+}
+
+export interface GroupTags {
+  labels: string[]; category: string | null; status: string | null; priority: ChannelPriority | null; assigned: string[];
+}
+
+export const NO_TAGS: GroupTags = { labels: [], category: null, status: null, priority: null, assigned: [] };
 
 export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
   const group = asGroup(conv);
   if (!group) return NO_TAGS;
   try {
     const blob = parseBlob(await readAppData(group));
-    return { labels: readLabels(blob), category: categoryOf(blob.category), assigned: assignedAddresses(blob.assigned) };
+    return {
+      labels: readLabels(blob), category: categoryOf(blob.category), status: categoryOf(blob.status),
+      priority: priorityOf(blob.priority), assigned: assignedAddresses(blob.assigned),
+    };
   } catch {
     return NO_TAGS;
   }
@@ -177,10 +194,15 @@ export async function writeLabels(
   return next;
 }
 
-export async function writeCategory(group: Group, category: string | null): Promise<string | null> {
-  const next = categoryOf(category);
-  await writeTags(group, 'the category', () => ({ category: next ?? undefined }));
+export async function writeChannelField(group: Group, field: ChannelField, value: string | null): Promise<string | null> {
+  const next = channelFieldOf(field, value);
+  if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
+  await writeTags(group, `the ${field}`, () => ({ [field]: next ?? undefined }));
   return next;
+}
+
+export function writeCategory(group: Group, category: string | null): Promise<string | null> {
+  return writeChannelField(group, 'category', category);
 }
 
 export function assignedAddresses(value: unknown): string[] {

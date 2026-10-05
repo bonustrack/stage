@@ -1,4 +1,4 @@
-import { assignedAddresses, categoryOf, parseObject, stringList } from './labels';
+import { assignedAddresses, channelFieldOf, parseObject, stringList, type ChannelField } from './labels';
 import { mentionToken } from './mentions';
 
 function stringOf(value: unknown): string {
@@ -19,10 +19,12 @@ function labelClauses(before: string[], after: string[]): string[] {
   ].filter(Boolean);
 }
 
-function categoryClause(before: string | null, after: string | null): string {
-  if (after === null) return before === null ? '' : `removed category "${before}"`;
+function fieldClause(field: ChannelField, oldValue: unknown, newValue: unknown): string {
+  const before = channelFieldOf(field, oldValue);
+  const after = channelFieldOf(field, newValue);
+  if (after === null) return before === null ? '' : `removed ${field} "${before}"`;
   if (before === after) return '';
-  return before === null ? `set category "${after}"` : `changed category to "${after}"`;
+  return before === null ? `set ${field} "${after}"` : `changed ${field} to "${after}"`;
 }
 
 function githubClause(before: string, after: string): string {
@@ -53,7 +55,7 @@ export function describeAppDataChange(oldValue: string | undefined, newValue: st
   const after = parseObject(newValue);
   const clauses = [
     ...labelClauses(stringList(before?.labels), stringList(after?.labels)),
-    categoryClause(categoryOf(before?.category), categoryOf(after?.category)),
+    ...(['category', 'status', 'priority'] as const).map(field => fieldClause(field, before?.[field], after?.[field])),
     githubClause(stringOf(before?.github), stringOf(after?.github)),
     ...assigneeClauses(before, after),
   ].filter(Boolean);

@@ -10,7 +10,7 @@ import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
 import { assignedEntries, memberChanges, memberEditsText, memberListEntries, type MemberAdminMark, type MemberListEntry } from './MemberListSidebar.model';
 import { confirmMemberRemoval, useChannelRoles, useChannelEditRights } from '../channel/channel.detail';
-import { ChannelCategory, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
+import { ChannelFields, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
@@ -160,7 +160,7 @@ export function MemberListSidebar({ convId }: { convId: string }): React.ReactEl
       ListHeaderComponent={<MembersSection convId={convId} entries={entries}/>}
       ListFooterComponent={<>
         <AssigneesSection convId={convId} entries={entries} assigned={assigned} assignedReady={assignedReady}/>
-        <ChannelCategory convId={convId}/>
+        <ChannelFields convId={convId}/>
         <ChannelLabels convId={convId} labels={labels}/>
       </>}
       renderItem={({ item }) => (

@@ -86,7 +86,7 @@ describe('applyInbound', () => {
 });
 
 describe('applyGroupMeta', () => {
-  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null, assigned: [] };
+  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null, status: null, priority: null, assigned: [] };
   const rows: Row[] = [
     { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
     { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
@@ -101,6 +101,8 @@ describe('applyGroupMeta', () => {
     ['avatarUri', { avatarUri: 'https://x/y.png' }],
     ['avatarAddress', { avatarAddress: null }],
     ['category', { category: 'Work' }],
+    ['status', { status: 'In review' }],
+    ['priority', { priority: 'Urgent' }],
     ['assignees', { assigned: ['0x1111111111111111111111111111111111111111'] }],
     ['members', { inboxToAddr: { i1: '0x1111111111111111111111111111111111111111' } }],
   ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
@@ -111,6 +113,11 @@ describe('applyGroupMeta', () => {
 
   test('fills metadata on a row that had none', () => {
     expect(applyGroupMeta(rows, 'b', meta)?.[1]).toEqual({ ...rows[1], convId: 'b', ...meta });
+  });
+
+  test.each(['status', 'priority'])('clears %s without changing other row fields', field => {
+    const filled: Row[] = [{ ...rows[0], convId: 'a', [field]: 'High' }];
+    expect(applyGroupMeta(filled, 'a', meta)?.[0]).toEqual({ ...filled[0], [field]: null });
   });
 
   test('returns null when nothing changed', () => {

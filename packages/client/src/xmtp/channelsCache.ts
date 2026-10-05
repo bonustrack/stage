@@ -1,5 +1,6 @@
 
 import { ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
+import type { GroupTags } from './labels';
 
 export interface CachedChannelRow {
   convId: string;
@@ -116,14 +117,11 @@ export function applyInbound<R extends CachedChannelRow & { selfInboxId: string 
   };
 }
 
-export interface GroupRowMeta {
+export interface GroupRowMeta extends GroupTags {
   title: string;
   groupName?: string;
   avatarUri: string | null;
   avatarAddress: string | null;
-  labels: string[];
-  category: string | null;
-  assigned: string[];
   inboxToAddr?: Record<string, string>;
 }
 
@@ -144,7 +142,7 @@ function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
     && cur.avatarUri === meta.avatarUri
     && cur.avatarAddress === meta.avatarAddress
     && sameLabels(cur.labels, meta.labels)
-    && (cur.category ?? null) === meta.category
+    && (['category', 'status', 'priority'] as const).every(field => (cur[field] ?? null) === meta[field])
     && sameLabels(cur.assigned ?? [], meta.assigned)
     && sameMembers(cur.inboxToAddr, meta.inboxToAddr);
 }

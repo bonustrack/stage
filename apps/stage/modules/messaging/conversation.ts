@@ -24,7 +24,7 @@ import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
 import { channelConsent } from '../../lib/hiddenChannels';
-export interface ConversationView extends ConvRow {
+export interface ConversationView extends ConvRow, GroupTags {
   convId: string;
   title: string;
   lastTs: number | null;
@@ -36,9 +36,6 @@ export interface ConversationView extends ConvRow {
   unreadCount: number;
   lastReadNs: number;
   markedUnread: boolean;
-  labels: string[];
-  category: string | null;
-  assigned: string[];
   consent: XmtpConsent | null;
 }
 
@@ -164,7 +161,7 @@ export async function summarizeConversation(
   const msgs = await recentRowMessages(conv, dm);
   const last = pickLastMessage(msgs, dm);
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
-  const { title, groupName, avatarUri, avatarAddress, labels, category, assigned } = rowMetaOf(
+  const { title, groupName, avatarUri, avatarAddress, labels, category, status, priority, assigned } = rowMetaOf(
     conv, peerAddress, await gatherGroupRowData(conv, members),
   );
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
@@ -193,6 +190,8 @@ export async function summarizeConversation(
     markedUnread,
     labels,
     category,
+    status,
+    priority,
     assigned,
     consent: dm ? await consent : channelConsent(conv.id, await consent),
   };

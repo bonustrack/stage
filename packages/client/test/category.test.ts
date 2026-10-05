@@ -15,13 +15,13 @@ describe('channel category', () => {
   test('reads labels, category and assignees together, with old channels having none', async () => {
     const bob = '0x1111111111111111111111111111111111111111';
     expect(await groupTagsOf(appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group))
-      .toEqual({ labels: ['Todo'], category: 'Work', assigned: [bob] });
+      .toEqual({ labels: ['Todo'], category: 'Work', status: null, priority: null, assigned: [bob] });
     expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() }))
-      .toEqual({ labels: [], category: 'Ops', assigned: [] });
+      .toEqual({ labels: [], category: 'Ops', status: null, priority: null, assigned: [] });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
       expect((await groupTagsOf(appDataGroup(raw).group)).category).toBeNull();
     }
-    expect(await groupTagsOf({})).toEqual({ labels: [], category: null, assigned: [] });
+    expect(await groupTagsOf({})).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
   });
 
   test('sets, changes and clears one category while keeping the other fields', async () => {

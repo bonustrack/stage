@@ -4,8 +4,8 @@ import {
 } from '@stage-labs/client/xmtp/groups';
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  addLabel, asGroup, assignedAddresses, categoryOf, moveLabel, removeLabel, renameLabels, stringList, writeAssigned, writeCategory,
-  writeLabels, type Group,
+  addLabel, asGroup, assignedAddresses, channelFieldOf, moveLabel, removeLabel, renameLabels, stringList, writeAssigned, writeChannelField,
+  writeLabels, type ChannelField, type Group,
 } from '@stage-labs/client/xmtp/labels';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
@@ -202,10 +202,14 @@ export async function renameGroupLabel(line: string, from: string, to: string): 
   return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
 }
 
-export async function setGroupCategory(line: string, category: string | null): Promise<string | null> {
+export async function setGroupField(line: string, field: ChannelField, value: string | null): Promise<string | null> {
   const convId = convIdOfLine(line);
-  patchRow(convId, () => ({ category: categoryOf(category) }));
-  try { return await writeCategory(await groupOfLine(line), category); } finally { refreshGroupRow(convId); }
+  patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
+  try { return await writeChannelField(await groupOfLine(line), field, value); } finally { refreshGroupRow(convId); }
+}
+
+export function setGroupCategory(line: string, category: string | null): Promise<string | null> {
+  return setGroupField(line, 'category', category);
 }
 
 function knownTags(tagsOf: (row: CachedRow) => string[]): string[] {
@@ -224,11 +228,15 @@ function knownTags(tagsOf: (row: CachedRow) => string[]): string[] {
   return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-export function knownCategories(): string[] {
+export function knownChannelFields(field: ChannelField): string[] {
   return knownTags(row => {
-    const category = categoryOf(row.category);
-    return category === null ? [] : [category];
+    const value = channelFieldOf(field, row[field]);
+    return value === null ? [] : [value];
   });
+}
+
+export function knownCategories(): string[] {
+  return knownChannelFields('category');
 }
 
 export function suggestLabels(query: string, applied: string[]): string[] {
