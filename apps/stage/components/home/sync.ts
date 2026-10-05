@@ -29,6 +29,8 @@ import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
 import { isCallSignalType } from '@stage-labs/client/xmtp/call';
+import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/hiddenChannels';
+import { getActiveAccount } from '../../lib/accounts';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
   const seen = new Set<string>();
@@ -91,7 +93,7 @@ function rowPreviewOf(msg: StreamedMessage): string {
 function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
-    if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId)) return;
+    if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId) || isChannelHidden(streamConvId)) return;
     if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
     const decoded = msg.content;
     const preview = rowPreviewOf(msg);
@@ -180,6 +182,7 @@ interface SyncRun {
   cancelConvStream: (() => void) | null;
   cancelMsgStream: (() => void) | null;
   cancelConsentStream: (() => void) | null;
+  reconcileVisibility?: () => Promise<void>;
   appStateSub: { remove: () => void } | null;
 }
 
@@ -267,6 +270,7 @@ function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
 }
 
 function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
+  run.reconcileVisibility = r.reconcile;
   try {
     run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
       isCancelled: () => run.cancelled, refresh: r.refresh,
@@ -321,11 +325,22 @@ export function useChannelsSync(args: SyncArgs): void {
       }, INIT_TIMEOUT_MS);
     };
     armInitTimer();
-    void hydrateCachedRows();
+    const removeHidden = (): void => { if (homeRows() !== null) updateHomeRows(rows => rows); };
+    const stopVisibility = subscribeHiddenChannels(() => {
+      removeHidden();
+      void run.reconcileVisibility?.();
+    });
+    void (async (): Promise<void> => {
+      const account = await getActiveAccount();
+      if (account) await loadHiddenChannels(account.id);
+      await hydrateCachedRows();
+      if (!run.cancelled) removeHidden();
+    })().catch(recover('home.visibility', undefined));
     void hydratePeerProfiles();
     void initSync(run, args);
     return (): void => {
       run.cancelled = true;
+      stopVisibility();
       clearTimeout(run.initTimer);
       for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
         if (stop) attempt(stop, 'cleanup');

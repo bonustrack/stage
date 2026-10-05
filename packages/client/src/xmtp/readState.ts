@@ -22,9 +22,22 @@ export type PinStateContent = z.infer<typeof pinStateSchema>;
 
 export type ClearedChats = Record<string, number>;
 
+export const hiddenChannelsSchema = z.record(z.string().min(1), z.object({ hidden: z.boolean(), at: z.number().nonnegative() }));
+export type HiddenChannels = z.infer<typeof hiddenChannelsSchema>;
+
 const clearStateSchema = z.object({
   cleared: z.record(z.string().min(1), z.number().nonnegative()),
+  hidden: hiddenChannelsSchema.optional().catch(undefined),
 });
+
+export function mergeHiddenChannels(local: HiddenChannels, incoming: HiddenChannels): HiddenChannels {
+  const merged = { ...local };
+  for (const [id, state] of Object.entries(incoming)) {
+    const previous = merged[id];
+    if (!previous || state.at > previous.at || (state.at === previous.at && state.hidden)) merged[id] = state;
+  }
+  return merged;
+}
 
 export const boardOrderSchema = z.array(z.string().min(1));
 
@@ -202,6 +215,7 @@ export interface SyncReplay {
   reads: ReadStateContent[];
   pins: PinStateContent[];
   cleared: ClearedChats | null;
+  hidden: HiddenChannels | null;
   latest: { [K in LatestKind]: SyncContents[K] | null };
   latestNs: number;
 }
@@ -246,6 +260,18 @@ function mergedCleared(messages: readonly SyncMessage[], maxAt: number): Cleared
   return merged;
 }
 
+function mergedHidden(messages: readonly SyncMessage[], maxAt: number): HiddenChannels | null {
+  let merged: HiddenChannels | null = null;
+  for (const m of messages) {
+    const hidden = stateOf('clear', m)?.hidden;
+    if (hidden !== undefined) {
+      const valid = Object.fromEntries(Object.entries(hidden).filter(([, state]) => state.at <= maxAt));
+      merged = mergeHiddenChannels(merged ?? {}, valid);
+    }
+  }
+  return merged;
+}
+
 function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K, maxAt: number): SyncContents[K] | null {
   let latest: SyncContents[K] | null = null;
   for (const m of messages) {
@@ -262,6 +288,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
     reads: latestReads(fresh, maxAt),
     pins: pinsSinceLastOrder(fresh, maxAt),
     cleared: mergedCleared(fresh, maxAt),
+    hidden: mergedHidden(fresh, maxAt),
     latest: {
       board: latestState(fresh, 'board', maxAt),
       categoryOrder: latestState(fresh, 'categoryOrder', maxAt),

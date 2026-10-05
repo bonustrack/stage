@@ -6,6 +6,7 @@ import { useStoreValue } from '../../lib/storeCore';
 import type { ConversationView } from './conversation';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { report, recover, attempt } from '../../lib/errorPolicy';
+import { useHiddenChannels } from '../../lib/hiddenChannels';
 
 const knownConsent = new Map<string, XmtpConsent | null>();
 
@@ -23,6 +24,7 @@ function listedConsent(convId: string | undefined): XmtpConsent | undefined {
 }
 
 export function useConvConsentState(convId: string | undefined): XmtpConsent | null | undefined {
+  const hidden = useHiddenChannels()[convId ?? ''];
   const listed = useStoreValue(subscribeCachedRows, () => listedConsent(convId));
   const [checked, setChecked] = useState<XmtpConsent | null | undefined>(() => lastKnownConsent(convId));
   useEffect(() => {
@@ -47,7 +49,7 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
       if (cancelConsent) attempt(cancelConsent, 'cleanup');
     };
   }, [convId]);
-  return checked ?? listed ?? checked;
+  return hidden === undefined ? checked ?? listed ?? checked : hidden.hidden ? 'denied' : 'allowed';
 }
 
 const RECHECK_MS = 10_000;

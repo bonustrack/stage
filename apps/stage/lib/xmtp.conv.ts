@@ -1,6 +1,8 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
+import { channelConsent, loadHiddenChannels, setChannelHidden } from './hiddenChannels';
+import { getActiveAccount } from './accounts';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
@@ -93,8 +95,15 @@ async function withoutSyncGroups(convs: Conv[]): Promise<Conv[]> {
 }
 
 export async function listVisibleConversations(): Promise<Conv[]> {
+  const account = await getActiveAccount();
+  const hidden = account ? await loadHiddenChannels(account.id) : {};
   const client = await sdk.client();
-  return withoutSyncGroups(await sdk.listConvs(client, VISIBLE_CONSENT));
+  const [visible, denied] = await Promise.all([
+    sdk.listConvs(client, VISIBLE_CONSENT),
+    Object.values(hidden).some(state => !state.hidden) ? sdk.listConvs(client, ['denied']) : [],
+  ]);
+  const restored = denied.filter(c => sdk.isGroup(c) && hidden[c.id]?.hidden === false);
+  return withoutSyncGroups([...visible, ...restored].filter(c => !sdk.isGroup(c) || !hidden[c.id]?.hidden));
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
@@ -142,7 +151,8 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return null;
   try {
-    return await sdk.consentOf(conv);
+    const consent = await sdk.consentOf(conv);
+    return sdk.isGroup(conv) ? channelConsent(convId, consent) : consent;
   } catch (err) {
     report('xmtp.consentOf', err);
     return null;
@@ -150,9 +160,11 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
 }
 
 async function setConvConsent(convId: string, state: XmtpConsent): Promise<void> {
+  const account = await getActiveAccount();
   const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) throw new Error('Conversation not found');
+  if (!conv || !account) throw new Error('Conversation not found');
   await sdk.setConsent(conv, state);
+  if (sdk.isGroup(conv)) await setChannelHidden(account.id, convId, state === 'denied');
   patchRowConsent(convId, state);
 }
 

@@ -12,7 +12,9 @@ import {
   getCachedRows, getLastReadNs, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
 } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
-import { applyRemoteClearedChats, getClearedChats, loadClearedChats, onClearedChatsChanged } from './clearedChats';
+import { onClearedChatsChanged } from './clearedChats';
+import { onHiddenChannelsChanged } from './hiddenChannels';
+import { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } from './chatVisibility';
 import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
 import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
@@ -124,7 +126,7 @@ async function applyPinStates(remote: readonly PinStateContent[]): Promise<void>
 async function applyReplay(accountId: string, replay: SyncReplay): Promise<void> {
   await applyReadStates(replay.reads);
   await applyPinStates(replay.pins);
-  if (replay.cleared !== null) await applyRemoteClearedChats(accountId, replay.cleared);
+  await applyRemoteChatVisibility(accountId, replay);
   for (const setting of LATEST_WINS) await setting.apply(accountId, replay);
 }
 
@@ -186,13 +188,15 @@ async function bootReplay(token: number): Promise<void> {
   const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   try {
+    await backfillHiddenChannels(rec.id);
     const owner = await syncOwnerOf(rec.address);
     const groups = await knownSyncGroups(owner);
     const target = await chooseGroup(owner, groups);
     if (token !== bootToken) return;
     await replay(rec.id, target, groups, owner);
     await adoptBoardCategoryOrder(rec.id);
-    void addOwnInstallationsToChats(rec.id).catch(reported('readSync.ownInstallations'));
+    void addOwnInstallationsToChats(rec.id).catch(reported('readSync.ownInstallations'))
+      .then(() => { queueClearedPublish(rec.id); });
   } catch (err) {
     report('readSync.boot', err);
   }
@@ -219,6 +223,7 @@ async function catchUp(): Promise<void> {
   const groups = await knownSyncGroups(owner);
   if (token !== bootToken) return;
   await replay(rec.id, await ensureGroup(owner), groups, owner);
+  queueClearedPublish(rec.id);
 }
 
 function catchUpInFront(): void {
@@ -311,7 +316,7 @@ const LATEST_WINS: readonly LatestWins[] = [
 
 async function publishSnapshot(target: string, accountId: string): Promise<void> {
   const line = lineOfConv(target);
-  await xmtpSendJson(line, SYNC_CODECS.clear, { cleared: await loadClearedChats(accountId) });
+  await xmtpSendJson(line, SYNC_CODECS.clear, await loadChatVisibility(accountId));
   for (const setting of LATEST_WINS) await setting.publishTo(line, accountId);
   const order = await loadPinnedOrder();
   const first = order[0];
@@ -352,8 +357,10 @@ function queuePinPublish(change: PinChange): void {
   debounce(PIN_ORDER_KEY, () => { publish(SYNC_CODECS.pin, content); });
 }
 
-function queueClearedPublish(): void {
-  debounce(CLEARED_KEY, () => { publish(SYNC_CODECS.clear, { cleared: getClearedChats() }); });
+function queueClearedPublish(onlyFor?: string): void {
+  debounce(CLEARED_KEY, () => {
+    void withGroup(async (id, accountId) => xmtpSendJson(lineOfConv(id), SYNC_CODECS.clear, await loadChatVisibility(accountId)), onlyFor);
+  });
 }
 
 interface Adopted { accountId: string; owner: SyncOwner }
@@ -382,7 +389,8 @@ function onStreamMessage(m: StreamMsg): void {
 export function startReadSync(): void {
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
-  onClearedChatsChanged(queueClearedPublish);
+  onClearedChatsChanged(() => { queueClearedPublish(); });
+  onHiddenChannelsChanged(queueClearedPublish);
   for (const setting of LATEST_WINS) setting.start();
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });

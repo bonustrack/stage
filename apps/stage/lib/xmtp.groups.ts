@@ -13,6 +13,8 @@ import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup } from './xmtp.sdk.core';
 import { groupRowMeta } from '../modules/messaging/conversation';
 import { report, reported } from './errorPolicy';
+import { getActiveAccount } from './accounts';
+import { setChannelHidden } from './hiddenChannels';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -105,19 +107,21 @@ export async function groupEditRights(convId: string): Promise<GroupEditRights> 
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
-  const conv = requireConv(await convOfLine(line));
+  const account = requireConv(await getActiveAccount());
+  const conv = await requireGroup(line);
+  await setChannelHidden(account.id, conv.id, true);
   const leave = sdk.leaveOp(conv);
+  let result: 'left' | 'hidden' = 'hidden';
   if (leave) {
     try {
       await leave();
-      await sdk.setConsent(conv, 'denied').catch(reported('xmtp.leaveGroupConsent'));
-      return 'left';
+      result = 'left';
     } catch (err) {
       report('xmtp.leaveGroup', err);
     }
   }
-  await sdk.setConsent(conv, 'denied');
-  return 'hidden';
+  await sdk.setConsent(conv, 'denied').catch(reported('xmtp.leaveGroupConsent'));
+  return result;
 }
 
 function patchRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {

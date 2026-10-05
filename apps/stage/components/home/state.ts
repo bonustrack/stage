@@ -12,6 +12,7 @@ import {
 } from '../../lib/scrollPos';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { Row } from './model';
+import { isChannelHidden } from '../../lib/hiddenChannels';
 
 export interface RowMenu {
   convId: string;
@@ -40,7 +41,8 @@ export function homeRows(): Row[] | null {
 }
 
 export function updateHomeRows(fn: (prev: Row[] | null) => Row[] | null): void {
-  setCachedRows(fn(homeRows()));
+  const next = fn(homeRows());
+  setCachedRows(next?.filter(row => row.peerAddress !== null || !isChannelHidden(row.convId)) ?? null);
 }
 
 export function useHomeState(): HomeState {

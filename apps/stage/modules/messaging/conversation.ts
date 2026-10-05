@@ -23,6 +23,7 @@ import type { ConvRow } from './convRow.model';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
+import { channelConsent } from '../../lib/hiddenChannels';
 export interface ConversationView extends ConvRow {
   convId: string;
   title: string;
@@ -193,6 +194,6 @@ export async function summarizeConversation(
     labels,
     category,
     assigned,
-    consent: await consent,
+    consent: dm ? await consent : channelConsent(conv.id, await consent),
   };
 }
