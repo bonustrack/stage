@@ -20,6 +20,7 @@ export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/key
 export type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
+import { accountSelectionChanged } from './accountSelection';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -93,6 +94,7 @@ export async function getActiveAccountId(): Promise<string | null> {
 
 export async function setActiveAccountId(id: string): Promise<void> {
   await secureStorage.set(ACTIVE_KEY, id);
+  accountSelectionChanged();
   await setActiveAccountForCache(id);
 }
 
@@ -153,6 +155,7 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   const next = list.filter(a => a.id !== id);
   await deleteKey(id);
   await persist(next);
+  accountSelectionChanged();
   const active = await getActiveAccountId();
   if (active === id) {
     const first = next[0];

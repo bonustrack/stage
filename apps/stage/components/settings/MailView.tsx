@@ -105,7 +105,7 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
       </Col>
     );
   }
-  return <MailContent mail={mail.data} id={id} />;
+  return <MailContent key={`${box?.selection}/${label}/${id}`} mail={mail.data} id={id} />;
 }
 
 export function MailView({ label, id }: { label: string; id: string }): React.ReactElement {
