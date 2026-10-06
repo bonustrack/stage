@@ -3,7 +3,7 @@ import { Linking, Platform } from 'react-native';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../lib/xmtp.client';
 import {
-  getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
+  getPushPermission, isPushSupported, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
 } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsToggleRow } from './SettingsPage';
@@ -19,6 +19,7 @@ function permissionLabel(perm: string): string {
 }
 
 export async function applyPush(next: boolean): Promise<void> {
+  if (!isPushSupported()) return;
   await setPushEnabled(next);
   if (next) await requestPushPermission();
   try {
@@ -46,14 +47,16 @@ function usePushToggle(): { enabled: boolean; perm: string; onToggle: (next: boo
 export function NotificationsSettings(): React.ReactElement {
   const { enabled, perm, onToggle } = usePushToggle();
   const status = usePushStatus();
+  const supported = isPushSupported();
   return (
     <SettingsPage title="Notifications">
-      <SettingsGroup title="Push" footnote={`${permissionLabel(perm)} ${describePushStatus(status)}`}>
+      <SettingsGroup title="Push" footnote={supported ? `${permissionLabel(perm)} ${describePushStatus(status)}` : 'Push notifications are unavailable in this browser.'}>
         <SettingsToggleRow
           label="Push notifications"
           name="push"
-          checked={enabled}
-          description="Get notified about new messages even when Stage is closed."
+          checked={enabled && supported}
+          disabled={!supported}
+          description={supported ? 'Get notified about new messages even when Stage is closed.' : undefined}
           onChange={onToggle}
         />
       </SettingsGroup>

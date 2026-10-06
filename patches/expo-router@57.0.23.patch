@@ -1,7 +1,8 @@
 diff --git a/build/fork/getPathFromState-forks.js b/build/fork/getPathFromState-forks.js
+index 63e3101859c323d758639b9263ddadb2f6df7589..fca32426b13c9234e10a74bffee36eea2fc02a39 100644
 --- a/build/fork/getPathFromState-forks.js
 +++ b/build/fork/getPathFromState-forks.js
-@@ -77,13 +77,29 @@
+@@ -77,13 +77,30 @@ function appendQueryAndHash(path, { '#': hash, ...focusedParams }) {
      }
      return path;
  }
@@ -12,14 +13,15 @@ diff --git a/build/fork/getPathFromState-forks.js b/build/fork/getPathFromState-
 +    if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
 +        return path;
 +    }
-+    if (path.startsWith('/#')) {
++    const base = typeof location !== 'undefined' && location.protocol === 'chrome-extension:' ? '/index.html' : '/';
++    if (path.startsWith(`${base}#`)) {
 +        return path;
 +    }
-+    let rest = path.startsWith('#') ? path.slice(1) : path;
++    let rest = path.startsWith('/#') ? path.slice(2) : path.startsWith('#') ? path.slice(1) : path;
 +    if (!rest.startsWith('/')) {
 +        rest = `/${rest}`;
 +    }
-+    return `/#${rest}`;
++    return `${base}#${rest}`;
 +}
  function appendBaseUrl(path, baseUrl = process.env.EXPO_BASE_URL) {
      if (process.env.NODE_ENV !== 'development') {
@@ -34,9 +36,10 @@ diff --git a/build/fork/getPathFromState-forks.js b/build/fork/getPathFromState-
  function getPathWithConventionsCollapsed({ pattern, route, params, preserveGroups, preserveDynamicRoutes, shouldEncodeURISegment = true, initialRouteName, }) {
      const segments = pattern.split('/');
 diff --git a/build/fork/getPathFromState.js b/build/fork/getPathFromState.js
+index 0503037e1ef7f23dd2322500f54468408f20238f..aa60d95793743d47a7ae1645d0e4c56a0ec6a600 100644
 --- a/build/fork/getPathFromState.js
 +++ b/build/fork/getPathFromState.js
-@@ -323,12 +323,28 @@
+@@ -323,12 +323,29 @@ const createNormalizedConfigs = (options, pattern) => Object.fromEntries(Object.
      const result = createConfigItem(c, pattern);
      return [name, result];
  }));
@@ -47,33 +50,33 @@ diff --git a/build/fork/getPathFromState.js b/build/fork/getPathFromState.js
 +    if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
 +        return path;
 +    }
-+    if (path.startsWith('/#')) {
++    const base = typeof location !== 'undefined' && location.protocol === 'chrome-extension:' ? '/index.html' : '/';
++    if (path.startsWith(`${base}#`)) {
 +        return path;
 +    }
-+    let rest = path.startsWith('#') ? path.slice(1) : path;
++    let rest = path.startsWith('/#') ? path.slice(2) : path.startsWith('#') ? path.slice(1) : path;
 +    if (!rest.startsWith('/')) {
 +        rest = `/${rest}`;
 +    }
-+    return `/#${rest}`;
++    return `${base}#${rest}`;
 +}
  function appendBaseUrl(path, baseUrl = process.env.EXPO_BASE_URL) {
      if (process.env.NODE_ENV !== 'development') {
          if (baseUrl) {
 -            return `/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`;
--        }
--    }
--    return path;
 +            return wrapHashRoutingHref(`/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`);
-+        }
-+    }
+         }
+     }
+-    return path;
 +    return wrapHashRoutingHref(path);
  }
  //# sourceMappingURL=getPathFromState.js.map
 \ No newline at end of file
 diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-forks.js
+index 63374a73c024945b5b7dc9db410ebb248f1b67e1..55c30e557ad94481b91413a8e11b4aeb03985b44 100644
 --- a/build/fork/getStateFromPath-forks.js
 +++ b/build/fork/getStateFromPath-forks.js
-@@ -45,7 +45,23 @@
+@@ -45,7 +45,27 @@ function safelyDecodeURIComponent(str) {
          return str;
      }
  }
@@ -81,13 +84,17 @@ diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-
 +    if (typeof path !== 'string') {
 +        return path;
 +    }
++    if (typeof location !== 'undefined' && location.protocol === 'chrome-extension:' && /^\/index\.html(?:\?|$)/.test(path)) {
++        path = path.replace('/index.html', '/');
++    }
 +    const hashIndex = path.indexOf('#');
 +    if (hashIndex === -1) {
 +        return path;
 +    }
 +    const before = path.slice(0, hashIndex);
 +    const fragment = path.slice(hashIndex + 1);
-+    if ((before === '' || before === '/') && fragment.startsWith('/')) {
++    const extensionEntry = typeof location !== 'undefined' && location.protocol === 'chrome-extension:' && before === '/index.html';
++    if ((before === '' || before === '/' || extensionEntry) && fragment.startsWith('/')) {
 +        return fragment;
 +    }
 +    return path;

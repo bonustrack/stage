@@ -9,6 +9,7 @@ import { dismissConvNotifications } from './pushNotify.web';
 import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
+import { isBrowserExtension } from './extension.web';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
@@ -20,24 +21,24 @@ export function usePushDeepLinks(): void {
   return undefined;
 }
 
-function notificationsAvailable(): boolean {
-  return typeof Notification !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+export function isPushSupported(): boolean {
+  return !isBrowserExtension() && typeof Notification !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
 }
 
 export function getPushPermission(): Promise<PushPermission> {
-  if (!notificationsAvailable()) return Promise.resolve('denied');
+  if (!isPushSupported()) return Promise.resolve('denied');
   return Promise.resolve(toPermission(Notification.permission));
 }
 
 export async function requestPushPermission(): Promise<PushPermission> {
-  if (!notificationsAvailable()) return 'denied';
+  if (!isPushSupported()) return 'denied';
   try {
     return toPermission(await Notification.requestPermission());
   } catch { return 'undetermined'; }
 }
 
 async function webPushToken(): Promise<string | null> {
-  if (!notificationsAvailable() || Notification.permission !== 'granted') return null;
+  if (!isPushSupported() || Notification.permission !== 'granted') return null;
   const { firebasePushToken } = await import('./firebaseWeb');
   return firebasePushToken();
 }

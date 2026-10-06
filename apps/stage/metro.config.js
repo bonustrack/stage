@@ -34,4 +34,8 @@ config.resolver.extraNodeModules = {
   ),
 };
 
+if (process.env.STAGE_EXTENSION === '1') {
+  config.transformer.asyncRequireModulePath = require.resolve('./extension/asyncRequire');
+}
+
 module.exports = config;
