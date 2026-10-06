@@ -1,0 +1,44 @@
+name: Chrome extension
+
+on:
+  pull_request:
+    paths:
+      - 'apps/stage/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'scripts/build-extension.mjs'
+      - 'bun.lock'
+      - 'package.json'
+      - '.github/workflows/build-extension.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BROWSER: none
+      EXPO_NO_TELEMETRY: '1'
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
+      EXPO_PUBLIC_SWARMY_KEY: ${{ secrets.EXPO_PUBLIC_SWARMY_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.0'
+      - name: Check public client configuration
+        run: |
+          test -n "$EXPO_PUBLIC_ZERODEV_PROJECT_ID" && test -n "$EXPO_PUBLIC_SWARMY_KEY" || {
+            printf '%s\n' 'Extension artifacts need the public client configuration. Fork PRs do not receive repository secrets.' >&2
+            exit 1
+          }
+      - run: bun install --frozen-lockfile
+      - run: bun scripts/build-extension.mjs "$RUNNER_TEMP/stage-extension"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-chrome-extension
+          path: ${{ runner.temp }}/stage-extension
+          if-no-files-found: error

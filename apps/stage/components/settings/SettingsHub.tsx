@@ -15,6 +15,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { canExportPrivateKey } from '../../lib/accounts';
 import { usePushEnabled } from '../../lib/pushPref';
+import { isPushSupported } from '../../lib/pushRegister';
 import {
   setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, usePalette, useThemePreference,
   type ThemePreference,
@@ -129,6 +130,7 @@ function PreferencesGroup(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
   const push = usePushEnabled();
+  const pushSupported = isPushSupported();
   return (
     <SettingsGroup title="Preferences">
       <ListViewItem align="center" gap={14} dark={dark} padding={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 16, paddingRight: 14 }}>
@@ -138,7 +140,9 @@ function PreferencesGroup(): React.ReactElement {
             onChange={(v) => { if (!isThemePreference(v)) return; setCustomTheme(false); void setThemePreference(v); }} />
         </Box>
       </ListViewItem>
-      <SettingsToggleRow label="Push notifications" name="push" checked={push} onChange={(next) => { void applyPush(next); }} />
+      <SettingsToggleRow label="Push notifications" name="push" checked={push && pushSupported} disabled={!pushSupported}
+        description={pushSupported ? undefined : 'Push notifications are unavailable in this browser.'}
+        onChange={(next) => { void applyPush(next); }} />
       <SettingsNavRow label="Appearance" value={custom ? 'Custom colors' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
     </SettingsGroup>
   );

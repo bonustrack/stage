@@ -24,6 +24,9 @@ export default defineConfig({
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',
           'scripts/**/*.js',
+          'extension/background.js',
+          'extension/asyncRequire.js',
+          'extension/package.mjs',
         ],
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [

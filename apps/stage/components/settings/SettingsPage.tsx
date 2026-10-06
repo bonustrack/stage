@@ -65,6 +65,7 @@ export function SettingsToggleRow(props: {
   label: string;
   name: string;
   checked: boolean;
+  disabled?: boolean;
   description?: string;
   onChange?: (checked: boolean) => void;
 }): React.ReactElement {
@@ -77,7 +78,7 @@ export function SettingsToggleRow(props: {
           <Caption value={props.description} color="secondary" />
         )}
       </Col>
-      <Switch name={props.name} checked={props.checked} dark={dark} onChange={props.onChange} />
+      <Switch name={props.name} checked={props.checked} disabled={props.disabled} dark={dark} onChange={props.onChange} />
     </SettingsItem>
   );
 }

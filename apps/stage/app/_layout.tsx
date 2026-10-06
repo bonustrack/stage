@@ -51,7 +51,7 @@ const APP_FONTS = {
 applyWebGlobalStyles();
 installAlertShim();
 void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
-if (Platform.OS === 'web' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
+if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
   void ensureActiveAccount().then(() => getOrCreateXmtpClient('production')).catch(ignored(undefined, 'optional'));
 }
 

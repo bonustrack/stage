@@ -64,6 +64,10 @@ export const startPushClear = makePushClear({
   dismissLocal: dismissConvNotifications,
 });
 
+export function isPushSupported(): boolean {
+  return true;
+}
+
 export async function getPushPermission(): Promise<PushPermission> {
   try {
     return toPermission((await Notifications.getPermissionsAsync()).status);

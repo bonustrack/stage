@@ -4,7 +4,7 @@ Stage is a private, encrypted messenger built on XMTP, with group channels,
 multi-account support, free onchain names and avatars (`*.stage.base.eth` on
 Base), and a smart-account wallet (assets, balances, transfers,
 recovery phrase backup). It ships as **one universal Expo app** serving Android, iOS,
-web and desktop from the same React Native codebase (web via
+web, desktop and a Chrome side-panel extension from the same React Native codebase (web via
 react-native-web), backed by a framework-agnostic TypeScript core, a
 design-system kit, a Cloudflare Worker and a push-notification server.
 
@@ -20,6 +20,7 @@ apps/
               #   platform/    storage seams (.ts native / .web.ts overrides)
               #   test/        pure-model tests (bun test)
               #   desktop/     Electron shell that bundles the web export (nested workspace)
+              #   extension/   Chrome Manifest V3 shell around the same web export
   proxy/      # Cloudflare Worker: link previews, image resize, x402, XMTP history/push relays,
               #   the *.stage.base.eth names service, and the bundler.stage.box manifest proxy
   push/       # XMTP notification server (upstream image, deployed to Fly as stage-push)
@@ -115,6 +116,7 @@ rate-limit and rotate it.
 - **Desktop:** the same version bump runs `release-desktop.yml`, which builds the
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
+- **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
 - **Proxy / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates

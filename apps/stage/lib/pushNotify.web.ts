@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { isAppInFront } from './appInFront.web';
 import { report } from './errorPolicy';
+import { isBrowserExtension } from './extension.web';
 
 export function markBackgroundDelivered(messageId: string | null | undefined): void {
   void messageId;
@@ -17,7 +18,7 @@ export async function presentInboundNotification(args: {
   convId: string;
   messageId?: string;
 }): Promise<void> {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || isAppInFront()) return;
+  if (isBrowserExtension() || typeof Notification === 'undefined' || Notification.permission !== 'granted' || isAppInFront()) return;
   const options: NotificationOptions = { body: args.body, tag: args.convId, data: { convId: args.convId } };
   try {
     const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
@@ -36,7 +37,7 @@ export async function presentInboundNotification(args: {
 }
 
 export async function dismissConvNotifications(convId: string): Promise<void> {
-  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  if (isBrowserExtension() || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   const registration = await navigator.serviceWorker.getRegistration();
   if (!registration) return;
   for (const card of await registration.getNotifications({ tag: convId })) card.close();
