@@ -15,7 +15,6 @@ import { homeRows, type ScrollRefs } from './state';
 import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
-import { setSearchFocused } from '../../lib/searchState';
 import { useWebTabRail } from '../../lib/webLayout';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
@@ -53,7 +52,7 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
   return (
     <>
       {wide ? null : <FilterSearch
-        key={search.key} onFocusChange={setSearchFocused} autoFocus={search.key > 0}
+        key={search.key} autoFocus={search.key > 0}
         query={p.query} setQuery={p.setQuery} onClose={search.close} onOpen={search.open}
         head={head} sub={sub} border={border}
       />}
@@ -86,7 +85,7 @@ export function useSearchOpen(query: string, setQuery: (query: string) => void):
   return {
     key,
     open,
-    close: () => { setKey(0); setSearchFocused(false); setQuery(setSearchQueryText(query, '')); },
+    close: () => { setKey(0); setQuery(setSearchQueryText(query, '')); },
   };
 }
 
@@ -110,7 +109,7 @@ export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: bool
   const smallNav = useMemo(() => <Topnav inline={pane} right={right} bordered={false}/>, [pane, right]);
   const override = !wide ? smallNav : (
     <FilterSearch
-      key={search.key} onFocusChange={setSearchFocused} autoFocus={search.key > 0}
+      key={search.key} autoFocus={search.key > 0}
       query={query} setQuery={setQuery} onClose={search.close} onOpen={search.open}
       head={head} sub={sub} border={border} inline={pane} trailing={right}
     />

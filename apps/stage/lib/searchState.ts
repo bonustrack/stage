@@ -19,8 +19,6 @@ const prefs = createValueStore<SearchStateContent>({
 
 export const useSearchState = prefs.use;
 
-let focused = false;
-
 export interface SearchStateChange {
   accountId: string;
   state: SearchStateContent;
@@ -52,12 +50,6 @@ export function clearSearchFilters(): void {
   const current = prefs.get();
   if (current.labels.length > 0 || current.unreadOnly) editSynced({ labels: [], unreadOnly: false });
 }
-
-export function setSearchFocused(next: boolean): void {
-  focused = next;
-}
-
-export const isSearchFocused = (): boolean => focused;
 
 export function applyRemoteSearchState(forAccount: string, incoming: SearchStateContent): Promise<void> {
   return prefs.updateFor(forAccount, current => receiveSearch(current, incoming));
