@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { prepareExtensionAssets, prepareExtensionHtml } from '../apps/stage/extension/package.mjs';
+import { prepareExtensionAssetPaths, prepareExtensionHtml } from '../apps/stage/extension/package.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const stage = path.join(root, 'apps/stage');
@@ -32,6 +32,19 @@ function run(command, args) {
   if (result.status !== 0) throw new Error(`${command} failed (${result.status}).`);
 }
 
+async function prepareExtensionAssets(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await prepareExtensionAssets(file);
+    } else if (/\.(html|js|css|json)$/.test(entry.name)) {
+      const content = await readFile(file, 'utf8');
+      const prepared = prepareExtensionAssetPaths(content);
+      if (prepared !== content) await writeFile(file, prepared);
+    }
+  }
+}
+
 async function directoryBytes(directory) {
   const sizes = await Promise.all((await readdir(directory, { withFileTypes: true })).map(async entry => {
     const file = path.join(directory, entry.name);
@@ -49,7 +62,7 @@ try {
   await writeFile(path.join(output, 'index.html'), prepared.html);
   for (const script of prepared.scripts) await writeFile(path.join(output, script.name), script.content);
   for (const resource of ['_expo', 'assets', 'wasm', 'favicon.ico', 'favicon.svg']) {
-    await cp(path.join(temporary, resource), path.join(output, resource), { recursive: true });
+    await cp(path.join(temporary, resource), path.join(output, resource === '_expo' ? 'expo' : resource), { recursive: true });
   }
   await cp(path.join(shell, 'background.js'), path.join(output, 'background.js'));
   await cp(path.join(stage, 'assets/icon.png'), path.join(output, 'icon.png'));
