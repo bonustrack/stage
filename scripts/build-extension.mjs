@@ -65,7 +65,7 @@ try {
     await cp(path.join(temporary, resource), path.join(output, resource === '_expo' ? 'expo' : resource), { recursive: true });
   }
   await cp(path.join(shell, 'background.js'), path.join(output, 'background.js'));
-  await cp(path.join(stage, 'assets/icon.png'), path.join(output, 'icon.png'));
+  await cp(path.join(shell, 'icons'), path.join(output, 'icons'), { recursive: true });
   await prepareExtensionAssets(output);
   console.log(`Chrome extension: ${output} (${await directoryBytes(output)} bytes unpacked)`);
 } finally {
