@@ -229,6 +229,10 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
+  useFocusEffect(useCallback(() => {
+    setSelectedForCopy(null);
+    return () => { setSelectedForCopy(null); };
+  }, [convId]));
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);

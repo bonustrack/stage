@@ -57,14 +57,18 @@ export const MONO_FONT = Platform.select({
 export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
   const styles = kitMarkdownStyles({ fg, dark, link, fontSize: fontSize(size), lineHeight: 23, paragraphGap: 0 });
+  const selection = { userSelect: Platform.OS === 'web' ? 'text' : 'none' };
   return {
     ...styles,
     body: { ...styles.body, gap: BLOCK_GAP },
     hr: { ...styles.hr, marginVertical: BLOCK_GAP / 2 },
     link: { ...styles.link, ...MESSAGE_LINK_STYLE },
-    code_inline: { ...styles.code_inline, fontFamily: MONO_FONT },
-    code_block: { ...styles.code_block, fontFamily: MONO_FONT },
-    fence: { ...styles.fence, fontFamily: MONO_FONT },
+    textgroup: { ...styles.textgroup, ...selection },
+    bullet_list_icon: { ...styles.bullet_list_icon, ...selection },
+    ordered_list_icon: { ...styles.ordered_list_icon, ...selection },
+    code_inline: { ...styles.code_inline, fontFamily: MONO_FONT, ...selection },
+    code_block: { ...styles.code_block, fontFamily: MONO_FONT, ...selection },
+    fence: { ...styles.fence, fontFamily: MONO_FONT, ...selection },
   };
 }
 

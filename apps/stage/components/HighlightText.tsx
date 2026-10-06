@@ -1,4 +1,5 @@
 
+import { Platform } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { highlightSegments } from './HighlightText.model';
@@ -20,6 +21,7 @@ export function HighlightText({ text, query, fg }: {
           value={segment.value}
           color={fg}
           size="lg"
+          selectable={Platform.OS === 'web'}
           style={{
             lineHeight: 23,
             minWidth: 0,

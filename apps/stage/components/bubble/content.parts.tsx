@@ -1,4 +1,5 @@
 import { cloneElement, isValidElement, useMemo } from 'react';
+import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown, { renderRules, type RenderRules } from 'react-native-markdown-display';
@@ -55,7 +56,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="lg" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       onPress={() => { router.push(profileLinkOf(address)); }} role="link"
       suppressHighlighting>
       {mentionLabelOf(address)}
@@ -103,7 +104,7 @@ function WebLink({ url, text, fg, onLinkPress }: {
   url: string; text: string; fg: string; onLinkPress: LinkPress;
 }): React.ReactElement {
   return (
-    <Text size="lg" color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
+    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
       {...bubbleLinkProps(url, onLinkPress)} suppressHighlighting>
       {text}
     </Text>
@@ -120,7 +121,7 @@ function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkP
 function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
   const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
   return (
-    <Text size="lg" color={fg} style={{ lineHeight: 23 }}>
+    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>
       {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}
     </Text>
   );
@@ -153,7 +154,7 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 
 function SafeMarkdown({ body, fg, markdownProps }: { body: string; fg: string; markdownProps: MarkdownProps }): React.ReactElement {
   return (
-    <ResetBoundary resetKey={body} fallback={() => <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>}>
+    <ResetBoundary resetKey={body} fallback={() => <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>{body}</Text>}>
       <Markdown {...markdownProps}>{body}</Markdown>
     </ResetBoundary>
   );
@@ -163,7 +164,7 @@ interface PlainBodyProps { body: string; fg: string; query?: string }
 
 function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   if (query) return <HighlightText text={body} query={query} fg={fg} />;
-  return <Text size="lg" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+  return <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
@@ -178,12 +179,11 @@ function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement
   return <PlainBody body={text} fg={fg} query={query} />;
 }
 
-function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
-  body: string; fg: string; selectable?: boolean;
-  highlight?: string; markdownProps: MarkdownProps;
+function BubbleBodyText({ body, fg, highlight, markdownProps }: {
+  body: string; fg: string; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const query = highlight?.trim() ? highlight : undefined;
-  switch (bodyView(body, query !== undefined || selectable === true, findLinks)) {
+  switch (bodyView(body, query !== undefined, findLinks)) {
     case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
     case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
     case 'mention': return <MentionBody text={body} fg={fg} onLinkPress={markdownProps.onLinkPress} />;
@@ -191,18 +191,17 @@ function BubbleBodyText({ body, fg, selectable, highlight, markdownProps }: {
   }
 }
 
-export function BubbleBody({ text, fg, selectable, highlight, markdownProps }: {
-  text: string; fg: string; selectable?: boolean;
-  highlight?: string; markdownProps: MarkdownProps;
+export function BubbleBody({ text, fg, highlight, markdownProps }: {
+  text: string; fg: string; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
   const parts = useMemo(() => splitCodeBlocks(unescapeBody(text)), [text]);
   return (
     <Box gap={BLOCK_GAP} style={{ alignSelf: 'stretch' }}>
       {parts.map((part, index) => (part.type === 'code' ? (
-        <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} selectable={selectable} highlight={highlight} />
+        <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} highlight={highlight} />
       ) : (
         <BubbleBodyText
-          key={`text-${index}`} body={part.text} fg={fg} selectable={selectable}
+          key={`text-${index}`} body={part.text} fg={fg}
           highlight={highlight} markdownProps={markdownProps}
         />
       )))}

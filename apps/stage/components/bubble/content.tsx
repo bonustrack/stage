@@ -43,12 +43,12 @@ function descriptorsOf(entry: HistoryEntry): {
 type BubbleContentProps = Pick<MessengerBubbleProps,
   'entry' | 'dark' | 'pending' | 'replyPreview' | 'onReplyPreviewPress' | 'onAnswer' | 'votes' | 'ownVotes' | 'onVote'
   | 'openAnswers' | 'onOpenAnswer' | 'myUri' | 'call' | 'onPay' | 'paying' | 'onSign' | 'signing' | 'consentAllowed'
-  | 'selectable' | 'highlight'
+  | 'highlight'
 > & { fg: string; sub: string };
 
-function BubbleMain({ d, entry, fg, call, selectable, highlight, markdownProps }: {
+function BubbleMain({ d, entry, fg, call, highlight, markdownProps }: {
   d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; call?: CallRecord;
-  selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
+  highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
   if (isDeletedPlaceholder(entry)) {
     return <Text size="lg" color={fg} style={{ lineHeight: 23 }}>{deletedTextOf(deletedByOf(entry))}</Text>;
@@ -60,7 +60,7 @@ function BubbleMain({ d, entry, fg, call, selectable, highlight, markdownProps }
   }
   if (d.txReq || d.txReceipt || d.frame || call) return null;
   if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
-  return <BubbleBody text={entry.text} fg={fg} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
+  return <BubbleBody text={entry.text} fg={fg} highlight={highlight} markdownProps={markdownProps} />;
 }
 
 function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleContentProps }): React.ReactElement {
@@ -91,7 +91,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
 }
 
 export function BubbleContent(props: BubbleContentProps): React.ReactElement {
-  const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, selectable, highlight } = props;
+  const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
   const cardLinks = useMemo(() => messageCardLinks(entry.text, mdParser), [entry.text]);
   const textSize = d.poll ? 'md' : 'lg';
@@ -109,7 +109,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
-      <BubbleMain d={d} entry={entry} fg={fg} call={props.call} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
+      <BubbleMain d={d} entry={entry} fg={fg} call={props.call} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       {props.call ? <CallCard record={props.call} line={entry.line} /> : null}
       <BubbleCards d={d} p={props} />

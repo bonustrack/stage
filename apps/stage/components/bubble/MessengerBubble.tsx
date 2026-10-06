@@ -13,6 +13,8 @@ import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { useBubbleGestures } from './gestures';
+import { MessageSelection } from './MessageSelection';
+import { messageInteraction, type MessageInteraction } from './messageInteraction.model';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 
 function BubbleAvatar({ address, bg, onPress }: {
@@ -31,14 +33,16 @@ function rowBackground(replyTarget: boolean | undefined, dark: boolean): string 
   return 'transparent';
 }
 
-function BubbleColumn({ p, fg, sub, pillBg }: {
-  p: MessengerBubbleProps; fg: string; sub: string; pillBg: string;
+function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
+  p: MessengerBubbleProps; fg: string; sub: string; pillBg: string; interaction: MessageInteraction;
 }): React.ReactElement {
   const { pending } = p;
   return (
     <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
       <Col>
-        <BubbleContent {...p} fg={fg} sub={sub} />
+        {(interaction === 'selectableText' || interaction === 'readonlyInput') && p.onEndSelection ? (
+          <MessageSelection text={p.entry.text ?? ''} fg={fg} input={interaction === 'readonlyInput'} onClose={p.onEndSelection} />
+        ) : <BubbleContent {...p} fg={fg} sub={sub} />}
       </Col>
       {pending ? null : (
         <ReactionsRow
@@ -57,6 +61,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
   const g = useBubbleGestures(props);
+  const interaction = messageInteraction(Platform.OS, props.selectable === true && !!props.onEndSelection);
   const row = (
     <Animated.View
       ref={g.rowRef}
@@ -74,10 +79,10 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
         <Glyph icon={IconArrowUndoUp} size={20} color={sub}/>
       </Animated.View>
       <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
-      <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} />
+      <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} interaction={interaction} />
     </Animated.View>
   );
-  return Platform.OS === 'web' ? row : <GestureDetector gesture={g.tapGestures}>{row}</GestureDetector>;
+  return interaction === 'gestures' ? <GestureDetector gesture={g.tapGestures}>{row}</GestureDetector> : row;
 }
 
 const DATA_KEYS = [

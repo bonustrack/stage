@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -47,13 +48,13 @@ function CopyCodeButton({ code }: { code: string }): React.ReactElement {
   );
 }
 
-function CodeText({ code, fg, selectable, highlight }: {
-  code: string; fg: string; selectable?: boolean; highlight?: string;
+function CodeText({ code, fg, highlight }: {
+  code: string; fg: string; highlight?: string;
 }): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const query = highlight?.trim() ?? '';
   return (
-    <Text variant="mono" size="3xs" color={fg} selectable={selectable} style={CODE_TEXT}>
+    <Text variant="mono" size="3xs" color={fg} selectable={Platform.OS === 'web'} style={CODE_TEXT}>
       {query === '' ? code : highlightSegments(code, query).map((segment, index) => (
         segment.match ? (
           <Text key={`${index}-${segment.value}`} size="2xs" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
@@ -63,8 +64,8 @@ function CodeText({ code, fg, selectable, highlight }: {
   );
 }
 
-export function CodeBlock({ code, lang, fg, selectable, highlight }: {
-  code: string; lang?: string; fg: string; selectable?: boolean; highlight?: string;
+export function CodeBlock({ code, lang, fg, highlight }: {
+  code: string; lang?: string; fg: string; highlight?: string;
 }): React.ReactElement {
   const pal = usePalette();
   const scrollGesture = useMemo(() => Gesture.Native().disallowInterruption(true), []);
@@ -79,7 +80,7 @@ export function CodeBlock({ code, lang, fg, selectable, highlight }: {
       </Row>
       <GestureDetector gesture={scrollGesture}>
         <Scroll horizontal contentContainerStyle={{ paddingHorizontal: CODE_PAD, paddingBottom: 10 }}>
-          <CodeText code={code} fg={fg} selectable={selectable} highlight={highlight}/>
+          <CodeText code={code} fg={fg} highlight={highlight}/>
         </Scroll>
       </GestureDetector>
     </Box>

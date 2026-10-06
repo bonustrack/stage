@@ -66,7 +66,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     groupDescription, groupLabels, senderEthOf, profilesVersion,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed, deletedIds,
+    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, setSelectedForCopy, consentAllowed, deletedIds,
   } = c;
 
   const sub = usePalette().text;
@@ -99,6 +99,8 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       return named;
     };
   }, [myUri, senderEthOf]);
+
+  const endSelection = useCallback(() => { setSelectedForCopy(null); }, [setSelectedForCopy]);
 
   const onAvatarPress = useCallback((address: string) => {
     router.push(profileLinkOf(address));
@@ -140,7 +142,8 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
           onSign={signHandlerOf(item, myUri, onSign)}
           paying={payingIds.has(item.id)}
           onPay={payHandlerOf(item, myUri, onPay)}
-          selectable={selectedForCopy === item.id}
+          selectable={!deleted && selectedForCopy === item.id}
+          onEndSelection={endSelection}
           onAnswer={(label) => { onAnswer(item.id, label); }}
           highlight={highlight}
         />
@@ -150,7 +153,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     dark, myUri, sub, senderEthOf, namedEntry, deletedIds, confirmedIds, replyingToId, jumpHighlightId, menuForId,
     reactorNames, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, signingIds, payingIds,
-    consentAllowed, selectedForCopy, highlight,
+    consentAllowed, selectedForCopy, endSelection, highlight,
     onAvatarPress, jumpToMessage, onVote, onOpenAnswer, onSign, onPay, onReact,
     setReplyTarget, setMenuAnchor, setMenuFor, onAnswer,
   ]);

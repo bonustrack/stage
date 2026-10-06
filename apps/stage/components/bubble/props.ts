@@ -36,5 +36,6 @@ export interface MessengerBubbleProps {
   signing?: boolean;
   consentAllowed?: boolean;
   selectable?: boolean;
+  onEndSelection?: () => void;
   highlight?: string;
 }
