@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { prepareExtensionHtml } from '../apps/stage/extension/package.mjs';
+import { prepareExtensionAssets, prepareExtensionHtml } from '../apps/stage/extension/package.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const stage = path.join(root, 'apps/stage');
@@ -53,6 +53,7 @@ try {
   }
   await cp(path.join(shell, 'background.js'), path.join(output, 'background.js'));
   await cp(path.join(stage, 'assets/icon.png'), path.join(output, 'icon.png'));
+  await prepareExtensionAssets(output);
   console.log(`Chrome extension: ${output} (${await directoryBytes(output)} bytes unpacked)`);
 } finally {
   await rm(temporary, { recursive: true, force: true });

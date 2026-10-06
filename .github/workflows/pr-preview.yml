@@ -45,6 +45,12 @@ name: App preview
 on:
   push:
     branches: ['**']
+    paths-ignore:
+      - 'apps/stage/extension/**'
+      - 'apps/stage/test/extension*.spec.ts'
+      - 'scripts/build-extension.mjs'
+      - '.github/workflows/build-extension.yml'
+      - '.github/workflows/pr-preview.yml'
   # GitHub fires `delete` when a branch or tag is deleted. We use it to tear down
   # that branch's per-branch EAS preview so stale channels/branches don't pile up.
   delete:
