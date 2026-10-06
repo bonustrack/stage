@@ -6,6 +6,10 @@ export class NoAccountError extends Error {
   constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
+export class AccountChangedError extends Error {
+  constructor() { super('Messaging account changed'); this.name = 'AccountChangedError'; }
+}
+
 export interface XmtpInstallation {
   id: string;
   createdAt: number | undefined;

@@ -9,31 +9,24 @@ import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
 import { afterFirstPages } from './feedLines';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
 import { report, reported } from './errorPolicy';
-import { accountClient } from './xmtp.account';
+import { accountClient, type AccountClient } from './xmtp.account';
 import { reconcileHiddenConsent } from './channelVisibility';
 import { isChannelHidden, subscribeHiddenChannels } from './hiddenChannels';
+import { subscribeAccountEpoch } from './accountEpoch';
+import { subscribeAccountSelection } from './accountSelection';
+import { makeGlobalStream } from './xmtp.stream.core';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
 interface SubscribeOptions { includeHidden?: boolean }
 
-const REARM_DELAY_MS = 500;
-const RETRY_BASE_MS = 5_000;
-const RETRY_MAX_MS = 60_000;
-
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 
-let cancelStream: (() => void) | null = null;
-let cancelDeletions: (() => void) | null = null;
-let starting = false;
-let generation = 0;
-let rearmTimer: ReturnType<typeof setTimeout> | null = null;
-let startFailures = 0;
 let lastMessageAt = 0;
 let lastCloseAt = 0;
 
 const status: StreamStatus = {
-  live: () => cancelStream !== null,
+  live: () => globalStream.live(),
   lastMessageAt: () => lastMessageAt,
   lastCloseAt: () => lastCloseAt,
   ensure: () => { void ensureGlobalStream(); },
@@ -42,22 +35,10 @@ const status: StreamStatus = {
 export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {
   streamSubscribers.set(cb, options.includeHidden === true);
   void ensureGlobalStream();
-  return () => { streamSubscribers.delete(cb); };
-}
-
-function rearmGlobalStream(delayMs = REARM_DELAY_MS): void {
-  if (rearmTimer) return;
-  rearmTimer = setTimeout(() => {
-    rearmTimer = null;
-    void ensureGlobalStream();
-  }, delayMs);
-}
-
-function retryAfterStartFailure(err: unknown): void {
-  report('xmtp.globalStream', err);
-  if (streamSubscribers.size === 0) return;
-  startFailures += 1;
-  rearmGlobalStream(Math.min(RETRY_BASE_MS * 2 ** (startFailures - 1), RETRY_MAX_MS));
+  return () => {
+    streamSubscribers.delete(cb);
+    if (streamSubscribers.size === 0 && activeFeedLines.size === 0) globalStream.teardown();
+  };
 }
 
 function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable<StreamMessage>): void {
@@ -104,57 +85,58 @@ function handleStreamMessage(msg: StreamMessage): void {
   if (!isHiddenConv(convId) && !isChannelHidden(convId)) routeMessageToFeed(convId, msg);
 }
 
-async function applyDeletion(line: string, messageId: string): Promise<void> {
-  const entry = await sdk.deletedEntryOf(await sdk.client(), messageId, line);
+async function applyDeletion(context: AccountClient, line: string, messageId: string, current: () => boolean): Promise<void> {
+  const entry = await sdk.deletedEntryOf(context.client, messageId, line);
+  if (!current()) return;
   if (entry) mergeIntoFeed(line, [entry]);
   else if (activeFeedLines.has(line)) await resyncActiveFeeds();
 }
 
-function onMessageDeleted({ convId, messageId }: MessageDeletion): void {
+function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion, current: () => boolean): void {
   const line = lineOfConv(routeConvId(convId));
   if (!feedCache.get(line)?.some(e => e.id === messageId)) return;
-  void applyDeletion(line, messageId).catch(reported('xmtp.deletion'));
+  void applyDeletion(context, line, messageId, current).catch(reported('xmtp.deletion'));
 }
 
-function onGlobalStreamClose(): void {
-  cancelStream = null;
-  if (cancelDeletions) { cancelDeletions(); cancelDeletions = null; }
-  lastCloseAt = Date.now();
-  void resyncActiveFeeds();
-  rearmGlobalStream();
+async function prepareStream(assertCurrent: () => void): Promise<AccountClient> {
+  const context = await accountClient();
+  assertCurrent();
+  await afterFirstPages();
+  assertCurrent();
+  await dmRoutesReady().catch(reported('xmtp.dmRoutes'));
+  assertCurrent();
+  await reconcileHiddenConsent(context);
+  context.assertCurrent();
+  return context;
 }
 
-export async function ensureGlobalStream(): Promise<void> {
-  if (cancelStream || starting) return;
-  starting = true;
-  const startedIn = generation;
+async function openStream(context: AccountClient, current: () => boolean, closed: () => void): Promise<() => void> {
+  const stop = await sdk.streamAllMessages(context.client, msg => { if (current()) handleStreamMessage(msg); }, closed);
+  if (!current()) return stop;
   try {
-    const context = await accountClient();
-    const { client } = context;
-    await afterFirstPages();
-    await dmRoutesReady().catch(reported('xmtp.dmRoutes'));
-    await reconcileHiddenConsent(context);
-    context.assertCurrent();
-    const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
-    if (startedIn !== generation) { cancel(); rearmGlobalStream(); return; }
-    cancelStream = cancel;
-    cancelDeletions ??= sdk.streamDeletions(client, onMessageDeleted);
-    startFailures = 0;
-    foregroundWatch.attach(status);
-  } catch (err) {
-    retryAfterStartFailure(err);
-  } finally {
-    starting = false;
+    const stopDeletions = sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion, current); });
+    return () => { stop(); stopDeletions(); };
+  } catch (error) {
+    stop();
+    throw error;
   }
 }
 
-function teardownGlobalStream(): void {
-  generation += 1;
-  if (cancelStream) { cancelStream(); cancelStream = null; }
-  if (cancelDeletions) { cancelDeletions(); cancelDeletions = null; }
-  if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
-  lastMessageAt = 0; lastCloseAt = 0; startFailures = 0;
-  foregroundWatch.detach();
-}
-registerGlobalStreamTeardown(teardownGlobalStream);
-subscribeHiddenChannels(() => { teardownGlobalStream(); rearmGlobalStream(); });
+const globalStream = makeGlobalStream({
+  prepare: prepareStream,
+  current: (context: AccountClient) => context.current(),
+  open: openStream,
+  wanted: () => streamSubscribers.size > 0 || activeFeedLines.size > 0,
+  live: () => { foregroundWatch.attach(status); },
+  closed: () => { lastCloseAt = Date.now(); void resyncActiveFeeds(); },
+  stopped: () => { lastMessageAt = 0; lastCloseAt = 0; foregroundWatch.detach(); },
+  report: reported('xmtp.globalStream'),
+  schedule: (run, delay) => { const timer = setTimeout(run, delay); return () => { clearTimeout(timer); }; },
+});
+
+export const ensureGlobalStream = globalStream.ensure;
+registerGlobalStreamTeardown(globalStream.teardown);
+subscribeHiddenChannels(() => { globalStream.teardown(); globalStream.rearm(); });
+function restartForAccount(): void { globalStream.teardown(); void globalStream.ensure(); }
+subscribeAccountEpoch(restartForAccount);
+subscribeAccountSelection(restartForAccount);

@@ -1,7 +1,8 @@
 import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { loadHiddenChannels } from './hiddenChannels';
-import { recover, reported } from './errorPolicy';
+import { recover, report } from './errorPolicy';
+import { AccountChangedError } from './xmtp.client.core';
 import { makeListeners } from './storeCore';
 import { subscribeAccountEpoch } from './accountEpoch';
 
@@ -98,7 +99,9 @@ async function reconcile(context: AccountClient): Promise<void> {
 
 export function reconcileHiddenConsent(context: AccountClient): Promise<void> {
   const result = (pending.get(context.client) ?? Promise.resolve()).then(() => reconcile(context));
-  pending.set(context.client, result.catch(reported('xmtp.hiddenConsent')));
+  pending.set(context.client, result.catch((error: unknown) => {
+    if (!(error instanceof AccountChangedError)) report('xmtp.hiddenConsent', error);
+  }));
   return result;
 }
 
