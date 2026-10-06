@@ -93,20 +93,25 @@ const GROUP_ICONS: Record<GroupKey, AppIconName> = {
   assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag', status: 'IconCircleDashed',
 };
 
-export function homeViewMenu(current: HomeViewContent): ViewMenuSection[] {
+export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
   const board = current.view === 'board';
+  if (!grouping) return [
+    { rows: [
+      { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
+      { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
+    ] },
+    { rows: [
+      { id: 'grouping', label: 'Group by', icon: 'IconColumns3Wide', selected: false },
+      { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
+      { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
+    ] },
+  ];
   const picked = board ? current.columnBy : current.groupBy;
   const groups = GROUP_KEYS.map((key): ViewMenuRow => (
     { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
   ));
   if (!board) groups.push({ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' });
-  return [
-    { rows: [
-      { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
-      { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
-    ] },
-    { heading: board ? 'Column by' : 'Group by', rows: groups },
-  ];
+  return [{ heading: board ? 'Column by' : 'Group by', rows: groups }];
 }
 
 export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {

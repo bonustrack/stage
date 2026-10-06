@@ -368,7 +368,7 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, children }: {
       <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`}/>
       <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
-          key={search.key} scope="board" onMenu={onFilterMenu} autoFocus={search.key > 0}
+          key={search.key} autoFocus={search.key > 0}
           query={query} setQuery={setQuery} onClose={search.close} onOpen={openSearch}
           head={link} sub={text} border={border}
         />

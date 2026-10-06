@@ -4,7 +4,7 @@ import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../l
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
 import { FilterSearch } from '../FilterSearch';
-import { parseSearchFilter, type FilterScope } from '../searchFilter.model';
+import { parseSearchFilter, searchQueryText, setSearchQueryText, type FilterScope } from '../searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
@@ -52,7 +52,7 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
   return (
     <>
       {wide ? null : <FilterSearch
-        key={search.key} scope="chats" onMenu={p.onFilterMenu} onFocusChange={setSearchFocused} autoFocus={search.key > 0}
+        key={search.key} onFocusChange={setSearchFocused} autoFocus={search.key > 0}
         query={p.query} setQuery={p.setQuery} onClose={search.close} onOpen={search.open}
         head={head} sub={sub} border={border}
       />}
@@ -86,12 +86,13 @@ export function useSearchOpen(query: string, setQuery: (query: string) => void, 
   const [held, setHeld] = useState(false);
   const reset = (): void => { setKey(0); setHeld(false); };
   const open = useCallback(() => { setKey(k => k + 1); setHeld(true); }, []);
-  useEffect(() => { if (wide && query === '' && !isSearchFocused()) reset(); }, [query, wide]);
+  const text = searchQueryText(query);
+  useEffect(() => { if (wide && text === '' && !isSearchFocused()) reset(); }, [text, wide]);
   return {
     key,
-    shown: held || query !== '',
+    shown: held || text !== '',
     open,
-    close: () => { reset(); setQuery(''); },
+    close: () => { reset(); setSearchFocused(false); setQuery(setSearchQueryText(query, '')); },
     onFocusChange: (focused) => { setSearchFocused(focused); if (focused) setHeld(true); },
   };
 }
@@ -108,13 +109,14 @@ export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: bool
   const { scope, query, setQuery, onFilterMenu, pane } = p;
   const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
-    () => <HomeTopnavRight head={sub} onOpenSearch={wide ? search.open : undefined}/>,
-    [sub, wide, search.open],
+    () => <HomeTopnavRight head={sub} onOpenSearch={wide ? search.open : undefined}
+      scope={scope} query={query} setQuery={setQuery} onFilterMenu={onFilterMenu}/>,
+    [sub, wide, search.open, scope, query, setQuery, onFilterMenu],
   );
   const smallNav = useMemo(() => <Topnav inline={pane} right={right} bordered={false}/>, [pane, right]);
   const override = !wide ? smallNav : (search.shown ? (
     <FilterSearch
-      key={search.key} scope={scope} onMenu={onFilterMenu} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
+      key={search.key} onFocusChange={search.onFocusChange} autoFocus={search.key > 0}
       query={query} setQuery={setQuery} onClose={search.close}
       head={head} sub={sub} border={border} inline={pane} trailing={right}
     />

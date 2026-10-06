@@ -12,6 +12,7 @@ import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconEyeOpen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEyeOpen';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
+import { IconFilter1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFilter1';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconImac } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImac';
@@ -48,6 +49,7 @@ export const APP_ICONS = {
   IconEmail1,
   IconEyeOpen,
   IconFileBend,
+  IconFilter1,
   IconFlag1,
   IconFolder1,
   IconGroup1,

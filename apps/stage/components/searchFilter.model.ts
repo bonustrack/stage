@@ -34,7 +34,7 @@ export interface FilterRow extends ChannelListRow {
   priority?: string | null;
 }
 
-export interface FilterSpan {
+interface FilterSpan {
   start: number;
   end: number;
 }
@@ -112,17 +112,83 @@ const filled = (values: readonly string[]): string[] => values.filter(value => v
 
 const noValues = (): FilterValues => ({ labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] });
 
+function literalWord(word: string): string {
+  return word.startsWith('\\') && (word.startsWith('\\\\') || fieldWord(word.slice(1)) !== null) ? word.slice(1) : word;
+}
+
 export function parseSearchFilter(query: string): SearchFilter {
   const filter: SearchFilter = { ...noValues(), exclude: noValues(), text: '' };
   const free: string[] = [];
   for (const span of wordsOf(query)) {
     const word = query.slice(span.start, span.end);
     const token = fieldWord(word);
-    if (token === null) free.push(word);
+    if (token === null) free.push(literalWord(word));
     else (token.negated ? filter.exclude : filter)[FILTER_KEYS[token.field]].push(...filled(token.values));
   }
   filter.text = free.join(' ');
   return filter;
+}
+
+export function searchQueryText(query: string): string {
+  let end = 0;
+  let text = '';
+  for (const span of wordsOf(query)) {
+    if (fieldWord(query.slice(span.start, span.end)) === null) continue;
+    text += query.slice(end, span.start);
+    end = span.end;
+  }
+  const free = `${text}${query.slice(end)}`.trimStart();
+  return wordsOf(free).toReversed().reduce((result, span) => (
+    `${result.slice(0, span.start)}${literalWord(free.slice(span.start, span.end))}${result.slice(span.end)}`
+  ), free);
+}
+
+function escapedQueryText(text: string): string {
+  return wordsOf(text).toReversed().reduce((result, span) => {
+    const word = text.slice(span.start, span.end);
+    const escaped = word.startsWith('\\') || fieldWord(word) !== null ? `\\${word}` : word;
+    return `${result.slice(0, span.start)}${escaped}${result.slice(span.end)}`;
+  }, text);
+}
+
+export function setSearchQueryText(query: string, text: string): string {
+  const tokens = wordsOf(query).map(span => query.slice(span.start, span.end)).filter(word => fieldWord(word) !== null);
+  return [...tokens, escapedQueryText(text)].filter(part => part !== '').join(' ');
+}
+
+export function selectedSearchFilters(query: string, field: FilterField, negated = false): string[] {
+  const filter = parseSearchFilter(query);
+  return (negated ? filter.exclude : filter)[FILTER_KEYS[field]];
+}
+
+export function searchFilterCount(query: string): number {
+  return FILTER_FIELDS.reduce((count, field) => count + searchFilterValues(query, field).length, 0);
+}
+
+function formatSearchFilter(filter: SearchFilter, text: string): string {
+  return [...FILTER_FIELDS.flatMap(field => [false, true].flatMap(negated => {
+    const values = (negated ? filter.exclude : filter)[FILTER_KEYS[field]];
+    return values.length === 0 ? [] : [searchFilterToken(field, values, negated)];
+  })), escapedQueryText(text)].filter(part => part !== '').join(' ');
+}
+
+export function toggleSearchFilter(query: string, field: FilterField, value: string, negated = false): string {
+  const filter = parseSearchFilter(query);
+  const key = FILTER_KEYS[field];
+  const target = negated ? filter.exclude : filter;
+  const selected = target[key].some(picked => sameSearchFilterValue(field, picked, value));
+  filter[key] = filter[key].filter(picked => !sameSearchFilterValue(field, picked, value));
+  filter.exclude[key] = filter.exclude[key].filter(picked => !sameSearchFilterValue(field, picked, value));
+  if (!selected) target[key].push(value);
+  return formatSearchFilter(filter, searchQueryText(query));
+}
+
+export function clearQueryFilters(query: string, field?: FilterField): string {
+  if (field === undefined) return escapedQueryText(searchQueryText(query));
+  const filter = parseSearchFilter(query);
+  filter[FILTER_KEYS[field]] = [];
+  filter.exclude[FILTER_KEYS[field]] = [];
+  return formatSearchFilter(filter, searchQueryText(query));
 }
 
 function rowMembers(row: FilterRow): string[] {
@@ -233,7 +299,7 @@ export function searchFilterValues(query: string, field: FilterField): string[] 
   return [...filter[FILTER_KEYS[field]], ...filter.exclude[FILTER_KEYS[field]]];
 }
 
-const sameValue = (field: FilterField, a: string, b: string): boolean => (
+export const sameSearchFilterValue = (field: FilterField, a: string, b: string): boolean => (
   field === 'member' ? memberKey(a) === memberKey(b) : a.trim().toLowerCase() === b.trim().toLowerCase()
 );
 
@@ -246,7 +312,7 @@ export function searchFilterMenu(query: string, caret: number, options: FilterOp
     const needle = bare(token.values.at(-1) ?? '');
     const picked = [...searchFilterValues(withoutWord(query, word), field), ...filled(token.values.slice(0, -1))];
     const matching = options[field].filter(option => (
-      !picked.some(value => sameValue(field, value, option.value)) && optionMatches(option, needle)
+      !picked.some(value => sameSearchFilterValue(field, value, option.value)) && optionMatches(option, needle)
     ));
     const excludeRow = !negated && EXCLUDE_FIELDS.includes(field) && token.values.length === 1 && token.values[0] === '';
     return matching.length === 0 ? null : { kind: 'values', word, field, negated, excludeRow, options: matching };
@@ -255,11 +321,6 @@ export function searchFilterMenu(query: string, caret: number, options: FilterOp
   const typed = text.slice(negated ? 1 : 0).toLowerCase();
   const fields = (negated ? EXCLUDE_FIELDS : FILTER_FIELDS).filter(field => field.startsWith(typed));
   return fields.length === 0 ? null : { kind: 'fields', word, negated, fields };
-}
-
-export function filterMenuKey(menu: FilterMenu | null): string {
-  if (menu === null) return '';
-  return `${menu.kind}:${menu.word.start}:${menu.kind === 'values' ? menu.field : ''}`;
 }
 
 export function filterMenuSize(menu: FilterMenu | null): number {

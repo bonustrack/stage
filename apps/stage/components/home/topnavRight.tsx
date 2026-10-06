@@ -15,7 +15,9 @@ import { getActiveAccount } from '../../lib/accounts';
 import { setHomeView, useHomeView } from '../../lib/homeView';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { SearchFilterMenu } from '../SearchFilterMenu';
+import { searchFilterCount, type FilterScope } from '../searchFilter.model';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
 
@@ -39,42 +41,51 @@ function copyActiveAddress(): void {
   });
 }
 
-function HomeViewMenu({ anchor, onClose }: { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
+interface HomeFilterProps {
+  query: string;
+  setQuery: (query: string) => void;
+  scope: FilterScope;
+  onFilterMenu: (open: boolean) => void;
+}
+
+function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
   const current = useHomeView();
   const fields = useChannelFields(current.view);
-  const [showFields, setShowFields] = useState(false);
-  const close = (): void => { setShowFields(false); onClose(); };
+  const [page, setPage] = useState('view');
+  const close = (): void => { setPage('view'); onClose(); };
+  const back = (): void => { setPage('view'); };
+  const open = anchor !== null;
+  const { onFilterMenu } = filter;
+  useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
   const pick = (id: string): void => {
-    onClose();
+    if (id === 'grouping' || id === 'filter' || id === 'fields') { setPage(id); return; }
+    close();
     const edit = homeViewEdit(current, id);
     if (edit !== null) setHomeView(edit);
   };
+  const count = searchFilterCount(filter.query);
   return (
-    <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
-      {showFields ? (
-        <>
-          <MenuRow icon="IconArrowLeft" label="View" onPress={() => { setShowFields(false); }}/>
+    <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
+      {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}/> : <>
+        {page === 'view' ? null : <>
+          <MenuRow icon="IconArrowLeft" label="View" onPress={back}/>
           <DropdownMenuSeparator/>
+        </>}
+        {page === 'fields' ? <>
           <MenuHeading text="Fields"/>
           {CHANNEL_FIELDS.map(field => (
             <PickerRow key={field.id} label={field.label} selected={fields[field.id]}
               leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
               onPress={() => { toggleChannelField(current.view, field.id); }}/>
           ))}
-        </>
-      ) : (
-        <>
-          {homeViewMenu(current).map((section, index) => (
-            <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-              {section.rows.map(row => (
-                <MenuRow key={row.id} icon={row.icon} label={row.label} selected={row.selected} onPress={() => { pick(row.id); }}/>
-              ))}
-            </Section>
-          ))}
-          <DropdownMenuSeparator/>
-          <MenuRow icon="IconEyeOpen" label="Fields" onPress={() => { setShowFields(true); }}/>
-        </>
-      )}
+        </> : homeViewMenu(current, page === 'grouping').map((section, index) => (
+          <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+            {section.rows.map(row => <MenuRow key={row.id} icon={row.icon}
+              label={row.id === 'filter' && count > 0 ? `Filter (${count})` : row.label}
+              selected={row.selected} onPress={() => { pick(row.id); }}/>) }
+          </Section>
+        ))}
+      </>}
     </AnchoredMenu>
   );
 }
@@ -91,7 +102,7 @@ function Section({ divider, heading, children }: {
   );
 }
 
-function HomeOverflowMenu({ color, onProfile, onSettings }: {
+function HomeOverflowMenu({ color, onProfile, onSettings, ...filter }: HomeFilterProps & {
   color: string; onProfile: () => void; onSettings: () => void;
 }): React.ReactElement {
   const [viewAnchor, setViewAnchor] = useState<MenuPoint | null>(null);
@@ -104,12 +115,12 @@ function HomeOverflowMenu({ color, onProfile, onSettings }: {
   return (
     <>
       <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id, anchor) => { handlers[id]?.(anchor); }}/>
-      <HomeViewMenu anchor={viewAnchor} onClose={() => { setViewAnchor(null); }}/>
+      <HomeViewMenu {...filter} anchor={viewAnchor} onClose={() => { setViewAnchor(null); }}/>
     </>
   );
 }
 
-export function HomeTopnavRight({ head, onOpenSearch }: { head: string; onOpenSearch?: () => void }): React.ReactElement {
+export function HomeTopnavRight({ head, onOpenSearch, ...filter }: HomeFilterProps & { head: string; onOpenSearch?: () => void }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
   return (
@@ -119,7 +130,7 @@ export function HomeTopnavRight({ head, onOpenSearch }: { head: string; onOpenSe
       )}
       <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
       <HomeOverflowMenu
-        color={head}
+        {...filter} color={head}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));
