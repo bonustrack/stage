@@ -32,7 +32,7 @@ The extension reuses Stage's web keyring, localStorage, IndexedDB cache, OPFS da
 
 The only extension permission is `sidePanel`. There are no host permissions, content scripts, external-message handlers, alarms, offscreen documents or persistent background chat. APIs still need to allow normal cross-origin requests, as they do for the web app.
 
-The toolbar and native side-panel header reuse transparent PNGs rendered from `public/favicon.svg`. Chrome's stable extension icon API cannot select light/dark variants for both surfaces, so the packaged logo uses a neutral grey that is readable on light and dark backgrounds. The app's SVG favicon still follows its existing colour-scheme rules. No theme watcher or extra permission is needed.
+The toolbar and native side-panel header reuse the black artwork from `public/favicon.svg`, rendered as transparent PNGs at Chrome's icon sizes. They remain black in both themes, with no white background, theme watcher or extra permission. The app's SVG favicon keeps its existing colour-scheme rules.
 
 The small event-driven service worker only configures the toolbar action. The panel owns the app and its messaging workers. Closing every Stage extension surface stops that client; reopening reconnects with its saved installation and catches up. Closed-panel push notifications are not implemented, and the website's Firebase service worker is not registered by the extension. Chrome controls service-worker suspension and background-tab throttling.
 
