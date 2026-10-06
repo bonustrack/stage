@@ -112,12 +112,16 @@ export async function getSelectedAccount(): Promise<AccountRecord | null> {
   return list.find((rec) => rec.id === id) ?? null;
 }
 
-export async function getActiveAccount(): Promise<AccountRecord | null> {
-  const list = await loadAccounts();
+async function activeAccount(strict: boolean): Promise<AccountRecord | null> {
+  const list = await loadList(strict);
   if (!list.length) return null;
-  const id = await getActiveAccountId();
+  const id = strict ? await secureStorage.get(ACTIVE_KEY) : await getActiveAccountId();
+  if (strict && id) await setActiveAccountForCache(id);
   return resolveActiveAccount(list, id);
 }
+
+export function getActiveAccount(): Promise<AccountRecord | null> { return activeAccount(false); }
+export function getActiveAccountStrict(): Promise<AccountRecord | null> { return activeAccount(true); }
 
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
   const rec = await getActiveAccount();

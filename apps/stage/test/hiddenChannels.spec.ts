@@ -37,7 +37,10 @@ mock.module('../platform/storage', () => ({
     set: async (key: string, value: string): Promise<void> => { if (storageFails) throw new Error('disk full'); values.set(key, value); },
   },
 }));
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId, address: activeId }) }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => ({ id: activeId, address: activeId }),
+  getActiveAccountStrict: async () => ({ id: activeId, address: activeId }),
+}));
 mock.module('../lib/xmtp.client', () => ({ cachedSelfEthAddress: () => activeId }));
 mock.module('../lib/channelsCache', () => ({ getCachedRows: () => null, setCachedRows: () => undefined, patchRowConsent: () => undefined }));
 mock.module('../modules/messaging/conversation', () => ({ groupRowMeta: async () => null }));

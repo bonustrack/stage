@@ -1,4 +1,4 @@
-import { getActiveAccount } from './accounts';
+import { getActiveAccountStrict } from './accounts';
 import { getAccountEpoch } from './accountEpoch';
 import { cachedSelfEthAddress } from './xmtp.client';
 import { sdk } from './xmtp.sdk';
@@ -6,7 +6,7 @@ import { AccountChangedError, NoAccountError } from './xmtp.client.core';
 
 export async function accountClient(onlyFor?: string) {
   const epoch = getAccountEpoch();
-  const account = await getActiveAccount();
+  const account = await getActiveAccountStrict();
   if (!account) throw new NoAccountError();
   if (onlyFor !== undefined && onlyFor !== account.id) throw new AccountChangedError();
   const client = await sdk.client();
@@ -17,7 +17,7 @@ export async function accountClient(onlyFor?: string) {
     if (!current()) throw new Error('Messaging client does not match the active account');
   };
   assertCurrent();
-  if ((await getActiveAccount())?.id !== account.id) throw new AccountChangedError();
+  if ((await getActiveAccountStrict())?.id !== account.id) throw new AccountChangedError();
   assertCurrent();
   return { account, client, current, assertCurrent };
 }

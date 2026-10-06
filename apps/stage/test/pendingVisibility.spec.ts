@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, expect, jest, mock, test } from 'bun:test';
 
 let activeId = 'a';
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId }) }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => ({ id: activeId }),
+  getActiveAccountStrict: async () => ({ id: activeId }),
+}));
 const { createVisibilityPublisher } = await import('../lib/pendingVisibility');
 
 async function advance(ms: number): Promise<void> {

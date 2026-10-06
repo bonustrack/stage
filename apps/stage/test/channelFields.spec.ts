@@ -18,7 +18,10 @@ mock.module('../platform/storage', () => ({
     set: async (key: string, value: string): Promise<void> => { writes.push(key); values.set(key, value); },
   },
 }));
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId }) }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => ({ id: activeId }),
+  getActiveAccountStrict: async () => ({ id: activeId }),
+}));
 const { toggleChannelField } = await import('../lib/channelFields');
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.fields.${id}`) ?? 'null');

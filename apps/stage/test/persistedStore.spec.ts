@@ -16,7 +16,10 @@ const storage = {
 };
 
 mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: {} }));
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => activeId === null ? null : { id: activeId } }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => activeId === null ? null : { id: activeId },
+  getActiveAccountStrict: async () => activeId === null ? null : { id: activeId },
+}));
 const { createValueStore } = await import('../lib/persistedStore');
 
 beforeEach(() => {

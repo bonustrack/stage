@@ -11,7 +11,10 @@ mock.module('../platform/storage', () => ({
     set: async (key: string, value: string): Promise<void> => { values.set(key, value); },
   },
 }));
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId }) }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => ({ id: activeId }),
+  getActiveAccountStrict: async () => ({ id: activeId }),
+}));
 const { applyRemoteHomeView, loadHomeView, onHomeViewChanged, setHomeView } = await import('../lib/homeView');
 
 const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => (

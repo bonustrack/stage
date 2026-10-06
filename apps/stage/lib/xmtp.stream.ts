@@ -85,17 +85,18 @@ function handleStreamMessage(msg: StreamMessage): void {
   if (!isHiddenConv(convId) && !isChannelHidden(convId)) routeMessageToFeed(convId, msg);
 }
 
-async function applyDeletion(context: AccountClient, line: string, messageId: string, current: () => boolean): Promise<void> {
+async function applyDeletion(context: AccountClient, line: string, messageId: string): Promise<void> {
+  const generation = feedCache.generation();
   const entry = await sdk.deletedEntryOf(context.client, messageId, line);
-  if (!current()) return;
+  if (!context.current() || feedCache.generation() !== generation) return;
   if (entry) mergeIntoFeed(line, [entry]);
   else if (activeFeedLines.has(line)) await resyncActiveFeeds();
 }
 
-function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion, current: () => boolean): void {
+function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion): void {
   const line = lineOfConv(routeConvId(convId));
   if (!feedCache.get(line)?.some(e => e.id === messageId)) return;
-  void applyDeletion(context, line, messageId, current).catch(reported('xmtp.deletion'));
+  void applyDeletion(context, line, messageId).catch(reported('xmtp.deletion'));
 }
 
 async function prepareStream(assertCurrent: () => void): Promise<AccountClient> {
@@ -114,7 +115,7 @@ async function openStream(context: AccountClient, current: () => boolean, closed
   const stop = await sdk.streamAllMessages(context.client, msg => { if (current()) handleStreamMessage(msg); }, closed);
   if (!current()) return stop;
   try {
-    const stopDeletions = sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion, current); });
+    const stopDeletions = sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion); });
     return () => { stop(); stopDeletions(); };
   } catch (error) {
     stop();
@@ -139,4 +140,4 @@ registerGlobalStreamTeardown(globalStream.teardown);
 subscribeHiddenChannels(() => { globalStream.teardown(); globalStream.rearm(); });
 function restartForAccount(): void { globalStream.teardown(); void globalStream.ensure(); }
 subscribeAccountEpoch(restartForAccount);
-subscribeAccountSelection(restartForAccount);
+subscribeAccountSelection(globalStream.teardown);

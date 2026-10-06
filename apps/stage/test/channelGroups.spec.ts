@@ -20,7 +20,10 @@ mock.module('../platform/storage', () => ({
     set: async (key: string, value: string): Promise<void> => { values.set(key, value); },
   },
 }));
-mock.module('../lib/accounts', () => ({ getActiveAccount: async () => ({ id: activeId }) }));
+mock.module('../lib/accounts', () => ({
+  getActiveAccount: async () => ({ id: activeId }),
+  getActiveAccountStrict: async () => ({ id: activeId }),
+}));
 const { adoptBoardCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged } = await import('../lib/channelGroups');
 const { applyRemoteBoardOrder } = await import('../lib/boardOrder');
 
