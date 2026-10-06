@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
@@ -24,9 +24,19 @@ export function menuPointOf(event: GestureResponderEvent): MenuPoint {
 
 interface AnchorRect { left: number; right: number; top: number; bottom: number; width: number }
 
-export function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
-  const target = event.currentTarget as unknown as { getBoundingClientRect?: () => AnchorRect };
+function rectOf(node: unknown): AnchorRect | undefined {
+  if (typeof node !== 'object' || node === null) return undefined;
+  const target = node as { getBoundingClientRect?: () => AnchorRect };
   return target.getBoundingClientRect?.();
+}
+
+export function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
+  return rectOf(event.currentTarget);
+}
+
+export function menuPointOnLayout(event: LayoutChangeEvent): MenuPoint | null {
+  const rect = rectOf('target' in event.nativeEvent ? event.nativeEvent.target : undefined);
+  return rect === undefined ? null : { x: rect.left, y: rect.bottom + MENU_GAP };
 }
 
 export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
@@ -62,11 +72,12 @@ export function AnchoredOverlay({ open, onClose, children }: {
   );
 }
 
-export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, children }: {
+export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, avoidKeyboard, children }: {
   visible: boolean;
   onClose: () => void;
   anchor?: MenuPoint | null;
   forceAnchor?: boolean;
+  avoidKeyboard?: boolean;
   children: ReactNode;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
@@ -75,7 +86,7 @@ export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, ch
 
   if ((!anchored && !forceAnchor) || !anchor) {
     return (
-      <DropdownMenuSheet open={visible} onClose={onClose} side={centered ? 'center' : 'bottom'} maxWidth={MENU_WIDTH}>
+      <DropdownMenuSheet open={visible} onClose={onClose} side={centered ? 'center' : 'bottom'} maxWidth={MENU_WIDTH} avoidKeyboard={avoidKeyboard}>
         {children}
       </DropdownMenuSheet>
     );

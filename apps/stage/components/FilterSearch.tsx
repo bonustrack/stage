@@ -19,7 +19,7 @@ export function FilterSearch({ query, setQuery, onFocusChange, ...bar }: {
   useEffect(() => () => { if (focused.current) onFocusChange?.(false); }, []);
   return (
     <SearchTopnavBar
-      {...bar} inline={!wide || bar.inline === true} field={!wide} query={searchQueryText(query)}
+      {...bar} inline={!wide || bar.inline === true} field={!wide} persistent={wide} query={searchQueryText(query)}
       setQuery={text => { setQuery(setSearchQueryText(query, text)); }}
       inputProps={{
         accessibilityLabel: 'Search',

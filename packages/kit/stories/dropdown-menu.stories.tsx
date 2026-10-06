@@ -27,7 +27,7 @@ export const Controls: Story<Args> = ({ showDanger, highlightFirst, ...args }) =
 Controls.args = { showDanger: true, highlightFirst: false };
 Controls.argTypes = { showDanger: bool, highlightFirst: bool, background: color, maxHeight: number };
 
-export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background'>> = (args) => {
+export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background' | 'avoidKeyboard'>> = (args) => {
   const dark = useDark();
   const [open, setOpen] = useState(false);
   const close = (): void => { setOpen(false); };
@@ -44,4 +44,4 @@ export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background'>> =
   );
 };
 Sheet.args = { side: 'bottom' };
-Sheet.argTypes = { side: select(['bottom', 'center']), background: color };
+Sheet.argTypes = { side: select(['bottom', 'center']), background: color, avoidKeyboard: bool };

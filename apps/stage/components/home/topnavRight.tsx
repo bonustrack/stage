@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { PickerRow } from '../conversation/SidebarSection';
 import { AppIcon } from '../widgets';
@@ -41,6 +40,11 @@ function copyActiveAddress(): void {
   });
 }
 
+export interface HomeMenuState {
+  anchor: MenuPoint | null;
+  setAnchor: React.Dispatch<React.SetStateAction<MenuPoint | null>>;
+}
+
 interface HomeFilterProps {
   query: string;
   setQuery: (query: string) => void;
@@ -59,13 +63,14 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
   const pick = (id: string): void => {
     if (id === 'grouping' || id === 'filter' || id === 'fields') { setPage(id); return; }
-    close();
     const edit = homeViewEdit(current, id);
-    if (edit !== null) setHomeView(edit);
+    if (edit === null) return;
+    if (edit.view === undefined) close();
+    setHomeView(edit);
   };
   const count = searchFilterCount(filter.query);
   return (
-    <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
+    <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
       {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}/> : <>
         {page === 'view' ? null : <>
           <MenuRow icon="IconArrowLeft" label="View" onPress={back}/>
@@ -102,10 +107,11 @@ function Section({ divider, heading, children }: {
   );
 }
 
-function HomeOverflowMenu({ color, onProfile, onSettings, ...filter }: HomeFilterProps & {
-  color: string; onProfile: () => void; onSettings: () => void;
+function HomeOverflowMenu({ color, onProfile, onSettings, menu, ...filter }: HomeFilterProps & {
+  color: string; onProfile: () => void; onSettings: () => void; menu: HomeMenuState;
 }): React.ReactElement {
-  const [viewAnchor, setViewAnchor] = useState<MenuPoint | null>(null);
+  const { anchor: viewAnchor, setAnchor: setViewAnchor } = menu;
+  const reanchor = (point: MenuPoint): void => { setViewAnchor(current => current === null ? null : point); };
   const handlers: Record<string, ((anchor: MenuPoint) => void) | undefined> = {
     [VIEW_ITEM]: (anchor) => { setTimeout(() => { setViewAnchor(anchor); }, 0); },
     'copy-address': copyActiveAddress,
@@ -114,20 +120,17 @@ function HomeOverflowMenu({ color, onProfile, onSettings, ...filter }: HomeFilte
   };
   return (
     <>
-      <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id, anchor) => { handlers[id]?.(anchor); }}/>
+      <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onAnchorLayout={reanchor} onSelect={(id, anchor) => { handlers[id]?.(anchor); }}/>
       <HomeViewMenu {...filter} anchor={viewAnchor} onClose={() => { setViewAnchor(null); }}/>
     </>
   );
 }
 
-export function HomeTopnavRight({ head, onOpenSearch, ...filter }: HomeFilterProps & { head: string; onOpenSearch?: () => void }): React.ReactElement {
+export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: string; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
   return (
     <>
-      {onOpenSearch === undefined ? null : (
-        <HoverIconButton icon={IconMagnifyingGlass} label="Search" color={head} placement="below" shortcut="/" onShortcut={onOpenSearch} onPress={onOpenSearch} />
-      )}
       <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
       <HomeOverflowMenu
         {...filter} color={head}

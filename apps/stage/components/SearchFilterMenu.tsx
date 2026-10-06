@@ -14,10 +14,11 @@ import { homeRows } from './home/state';
 import { subscribeCachedRows } from '../lib/channelsCache';
 import { useStoreValue } from '../lib/storeCore';
 import { useClearedChats } from '../lib/clearedChats';
-import { getPeerHandle, usePeerProfiles } from '../lib/peerProfiles';
+import { usePeerProfiles } from '../lib/peerProfiles';
+import { memberNamesOf } from './FilterSearch';
 import {
-  FILTER_FIELDS, HAS_OPTIONS, PRIORITY_OPTIONS, ME_OPTION, ME_VALUE, clearQueryFilters, memberTokenValue,
-  sameSearchFilterValue as same, searchFilterCount, searchFilterSources, searchFilterValues, selectedSearchFilters, toggleSearchFilter,
+  FILTER_FIELDS, HAS_OPTIONS, PRIORITY_OPTIONS, ME_OPTION, ME_VALUE, clearQueryFilters, memberFilterOption,
+  searchFilterOptionMatches as matches, searchFilterCount, searchFilterSources, searchFilterValues, selectedSearchFilters, toggleSearchFilter,
   type FilterField, type FilterOption, type FilterOptions, type FilterScope,
 } from './searchFilter.model';
 
@@ -44,9 +45,9 @@ function useFilterOptions(scope: FilterScope): FilterOptions {
     category: sources.categories.map(valueOption),
     status: sources.statuses.map(valueOption),
     priority: PRIORITY_OPTIONS,
-    member: [ME_OPTION, ...sources.members.map(address => ({
-      key: address, label: peerLabel(address), value: memberTokenValue(address, getPeerHandle(address)),
-    })).sort((a, b) => a.label.localeCompare(b.label))],
+    member: [ME_OPTION, ...sources.members.map(address => (
+      memberFilterOption(address, peerLabel(address), memberNamesOf(address))
+    )).sort((a, b) => a.label.localeCompare(b.label))],
   };
 }
 
@@ -62,12 +63,12 @@ function FilterValues({ field, options, query, setQuery, onBack }: {
   const [needle, setNeedle] = useState('');
   const [excluded, setExcluded] = useState(false);
   const selected = selectedSearchFilters(query, field, excluded);
-  const saved = searchFilterValues(query, field).filter(value => !options.some(option => same(field, option.value, value))).map(valueOption);
+  const saved = searchFilterValues(query, field).filter(value => !options.some(option => matches(field, option,value))).map(valueOption);
   const available = [...options, ...saved];
   const matching = available.filter(option => [option.label, option.value].some(value => value.toLowerCase().includes(needle.toLowerCase())));
   const custom = needle.trim();
-  if (custom !== '' && field !== 'has' && field !== 'priority' && !available.some(option => same(field, option.value, custom))) matching.push(valueOption(custom));
-  const pick = (value: string): void => { setQuery(toggleSearchFilter(query, field, value, excluded)); };
+  if (custom !== '' && field !== 'has' && field !== 'priority' && !available.some(option => matches(field, option,custom))) matching.push(valueOption(custom));
+  const pick = (option: FilterOption): void => { setQuery(toggleSearchFilter(query, field, option.value, excluded, option.aliases)); };
   return <>
     <MenuRow icon="IconArrowLeft" label="Filter" onPress={onBack}/>
     <DropdownMenuSeparator/>
@@ -75,8 +76,8 @@ function FilterValues({ field, options, query, setQuery, onBack }: {
     <PickerSearch value={needle} onChangeText={setNeedle} placeholder={`Search ${FIELD_NAMES[field].toLowerCase()}`} />
     {field === 'has' ? null : <PickerRow label={`Exclude ${FIELD_NAMES[field].toLowerCase()}`} selected={excluded}
       leading={<AppIcon name={IconCircleMinus} size={DROPDOWN_MENU.icon} color="link"/>} onPress={() => { setExcluded(!excluded); }}/>}
-    {matching.map(option => <PickerRow key={option.key} label={option.label} selected={selected.some(value => same(field, value, option.value))}
-      leading={<OptionIcon field={field} option={option}/>} onPress={() => { pick(option.value); }}/>) }
+    {matching.map(option => <PickerRow key={option.key} label={option.label} selected={selected.some(value => matches(field, option, value))}
+      leading={<OptionIcon field={field} option={option}/>} onPress={() => { pick(option); }}/>) }
     {matching.length === 0 ? <PickerNote text="No options"/> : null}
     {searchFilterValues(query, field).length === 0 ? null : <MenuRow divider icon={IconCrossMedium} label={`Clear ${FIELD_NAMES[field].toLowerCase()}`}
       onPress={() => { setQuery(clearQueryFilters(query, field)); }}/>}

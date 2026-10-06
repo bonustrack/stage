@@ -43,6 +43,7 @@ export interface FilterOption {
   key: string;
   label: string;
   value: string;
+  aliases?: readonly string[];
 }
 
 export type FilterOptions = Record<FilterField, readonly FilterOption[]>;
@@ -65,6 +66,12 @@ export const PRIORITY_OPTIONS: readonly FilterOption[] = CHANNEL_PRIORITIES.map(
 const FIELD_RE = /^(-?)(label|member|has|category|status|priority):(.*)$/i;
 const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has', category: 'categories', status: 'statuses', priority: 'priorities' } as const;
 
+function escapedAt(text: string, index: number): boolean {
+  let slashes = 0;
+  for (let i = index - 1; i >= 0 && text.charAt(i) === '\\'; i -= 1) slashes += 1;
+  return slashes % 2 === 1;
+}
+
 function wordsOf(query: string): FilterSpan[] {
   const words: FilterSpan[] = [];
   let start = -1;
@@ -78,12 +85,12 @@ function wordsOf(query: string): FilterSpan[] {
       continue;
     }
     if (start === -1) start = i;
-    if (ch === '"') quoted = !quoted;
+    if (ch === '"' && !escapedAt(query, i)) quoted = !quoted;
   }
   return words;
 }
 
-const unquote = (raw: string): string => raw.replace(/^"/, '').replace(/"$/, '').trim();
+const unquote = (raw: string): string => raw.replace(/^"/, '').replace(/"$/, '').replace(/\\(["\\])/g, '$1').trim();
 
 function valuesOf(raw: string): string[] {
   const values: string[] = [];
@@ -91,7 +98,7 @@ function valuesOf(raw: string): string[] {
   let open = false;
   for (let i = 0; i < raw.length; i += 1) {
     const ch = raw.charAt(i);
-    if (ch === '"') open = !open;
+    if (ch === '"' && !escapedAt(raw, i)) open = !open;
     else if (ch === ',' && !open) {
       values.push(unquote(raw.slice(from, i)));
       from = i + 1;
@@ -172,13 +179,14 @@ function formatSearchFilter(filter: SearchFilter, text: string): string {
   })), escapedQueryText(text)].filter(part => part !== '').join(' ');
 }
 
-export function toggleSearchFilter(query: string, field: FilterField, value: string, negated = false): string {
+export function toggleSearchFilter(query: string, field: FilterField, value: string, negated = false, aliases: readonly string[] = []): string {
   const filter = parseSearchFilter(query);
   const key = FILTER_KEYS[field];
   const target = negated ? filter.exclude : filter;
-  const selected = target[key].some(picked => sameSearchFilterValue(field, picked, value));
-  filter[key] = filter[key].filter(picked => !sameSearchFilterValue(field, picked, value));
-  filter.exclude[key] = filter.exclude[key].filter(picked => !sameSearchFilterValue(field, picked, value));
+  const matches = (picked: string): boolean => [value, ...aliases].some(alias => sameSearchFilterValue(field, picked, alias));
+  const selected = target[key].some(matches);
+  filter[key] = filter[key].filter(picked => !matches(picked));
+  filter.exclude[key] = filter.exclude[key].filter(picked => !matches(picked));
   if (!selected) target[key].push(value);
   return formatSearchFilter(filter, searchQueryText(query));
 }
@@ -279,6 +287,14 @@ export function memberTokenValue(address: string, handle: string | undefined): s
   return handle === undefined || handle.trim() === '' ? address.toLowerCase() : bare(displayHandle(handle.trim()));
 }
 
+export function memberFilterOption(address: string, label: string, names: readonly string[]): FilterOption {
+  return { key: address, value: address.toLowerCase(), label, aliases: names };
+}
+
+export function searchFilterOptionMatches(field: FilterField, option: FilterOption, value: string): boolean {
+  return [option.value, ...option.aliases ?? []].some(alias => sameSearchFilterValue(field, alias, value));
+}
+
 export function memberNames(handle: string | undefined, displayName: string | undefined): string[] {
   return [handle, handle === undefined ? undefined : displayHandle(handle), displayName]
     .filter((name): name is string => name !== undefined && name.trim() !== '');
@@ -328,7 +344,7 @@ export function filterMenuSize(menu: FilterMenu | null): number {
   return menu.kind === 'fields' ? menu.fields.length : menu.options.length + (menu.excludeRow ? 1 : 0);
 }
 
-const quoted = (value: string): string => (/[\s",]/.test(value) ? `"${value.replace(/"/g, '')}"` : value);
+const quoted = (value: string): string => (/[\s",\\]/.test(value) ? `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : value);
 
 const fieldPrefix = (field: FilterField, negated: boolean): string => `${negated ? '-' : ''}${field}:`;
 

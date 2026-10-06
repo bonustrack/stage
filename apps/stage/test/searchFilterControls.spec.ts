@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   FILTER_FIELDS, clearQueryFilters, parseSearchFilter, searchFilterCount, searchQueryText,
-  sameSearchFilterValue, selectedSearchFilters, setSearchQueryText, toggleSearchFilter,
+  memberFilterOption, sameSearchFilterValue, searchFilterOptionMatches, selectedSearchFilters, setSearchQueryText, toggleSearchFilter,
 } from '../components/searchFilter.model';
 
 describe('separate query and filter controls', () => {
@@ -45,6 +45,33 @@ describe('separate query and filter controls', () => {
     expect(sameSearchFilterValue('member', '@me', 'me')).toBe(false);
     expect(sameSearchFilterValue('member', '@Emma123', 'emma123')).toBe(true);
     expect(sameSearchFilterValue('category', '@Stage', 'Stage')).toBe(false);
+  });
+
+  test('a selected member keeps its identity when its profile resolves', () => {
+    const address = '0x1111111111111111111111111111111111111111';
+    const pending = memberFilterOption(address, address, []);
+    const resolved = memberFilterOption(address, '@emma123', ['@emma123', 'emma123.stage.base.eth', 'Emma']);
+    const query = toggleSearchFilter('hello', 'member', pending.value);
+    expect(resolved.value).toBe(pending.value);
+    expect(selectedSearchFilters(query, 'member').every(value => searchFilterOptionMatches('member', resolved, value))).toBe(true);
+    expect(toggleSearchFilter(query, 'member', resolved.value, false, resolved.aliases)).toBe('hello');
+    const excluded = toggleSearchFilter(`${query} member:emma123`, 'member', resolved.value, true, resolved.aliases);
+    expect(selectedSearchFilters(excluded, 'member')).toEqual([]);
+    expect(selectedSearchFilters(excluded, 'member', true)).toEqual([address]);
+    expect(toggleSearchFilter('member:emma123 hello', 'member', resolved.value, false, resolved.aliases)).toBe('hello');
+  });
+
+  test('filter edits preserve quoted names in other and same-field selections', () => {
+    const query = 'category:"Client "A" work" priority:High notes';
+    for (const changed of [toggleSearchFilter(query, 'status', 'Todo'), clearQueryFilters(query, 'priority'), toggleSearchFilter(query, 'category', 'Other')]) {
+      expect(selectedSearchFilters(changed, 'category')).toContain('Client "A" work');
+      expect(searchQueryText(changed)).toBe('notes');
+    }
+    for (const value of ['Client "A" work', 'Review "A, B"', 'Unmatched " quote', 'C:\\folder\\notes']) {
+      const changed = toggleSearchFilter('notes', 'category', value);
+      expect(selectedSearchFilters(changed, 'category')).toEqual([value]);
+      expect(toggleSearchFilter(changed, 'category', value)).toBe('notes');
+    }
   });
 
   test('typing field syntax is literal text, not a hidden filter', () => {

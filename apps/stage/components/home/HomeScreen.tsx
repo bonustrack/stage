@@ -1,5 +1,7 @@
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { MenuPoint } from '../AnchoredMenu.model';
+import type { HomeMenuState } from './topnavRight';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -17,7 +19,7 @@ import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
 import { searchBarLabels } from './model';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
+import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMatcher } from '../searchFilter.model';
 import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
@@ -37,12 +39,15 @@ export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?:
   const splitHome = useWebTabRail() && pane !== true;
   const accountEpoch = useAccountEpoch();
   const board = useHomeView().view === 'board';
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const menu = useMemo(() => ({ anchor, setAnchor }), [anchor]);
+  useEffect(() => { setAnchor(null); }, [accountEpoch]);
   if (splitHome) return board ? null : <NewChatScreen key={accountEpoch}/>;
-  if (board) return <BoardScreen pane={pane === true}/>;
-  return <ChannelsHome panRef={panRef} pane={pane === true}/>;
+  if (board) return <BoardScreen pane={pane === true} menu={menu}/>;
+  return <ChannelsHome panRef={panRef} pane={pane === true} menu={menu}/>;
 }
 
-function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boolean }): React.ReactElement {
+function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -52,9 +57,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
   const { groupBy } = useHomeView();
-  const channelProfilesVersion = usePeerProfiles(
-    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
-  );
+  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
+  const channelProfilesVersion = usePeerProfiles([
+    ...members, ...(rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
+  ]);
   const draftsVersion = useDraftsVersion();
   const search = useMemo(() => parseSearchFilter(query), [query]);
   const matches = useMemo(
@@ -128,7 +134,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
         listExtraData={listExtraData}
         scroll={st.scroll}
         renderRow={renderRow}
-        pane={pane}
+        pane={pane} menu={menu}
       />
       <RowChannelMenu
         menu={rowMenu} isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}

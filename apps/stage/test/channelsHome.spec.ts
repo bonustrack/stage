@@ -29,6 +29,22 @@ describe('the View menu', () => {
     expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
   });
 
+  test('Group by uses a distinct grouping icon', () => {
+    const rows = homeViewMenu(chats).flatMap(section => section.rows);
+    const icon = rows.find(row => row.id === 'grouping')?.icon;
+    expect(icon).toBe('IconLayersThree');
+    expect(rows.filter(row => row.id !== 'grouping').every(row => row.icon !== icon)).toBe(true);
+  });
+
+  test('both mode transitions refresh selection and retain independent grouping preferences', () => {
+    const next = { ...chats, ...homeViewEdit(chats, 'view:board') };
+    expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Group by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(next, true))).toEqual([['Assignees', 'Category', 'Label*', 'Status']]);
+    const back = { ...next, ...homeViewEdit(next, 'view:chats') };
+    expect(labels(homeViewMenu(back))).toEqual([['Chats*', 'Board'], ['Group by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(back, true))).toEqual([['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
+  });
+
   test('chats keeps No grouping inside Group by and marks the current pick', () => {
     const menu = homeViewMenu(chats, true);
     expect(menu.map(s => s.heading)).toEqual(['Group by']);

@@ -131,9 +131,10 @@ export interface DropdownMenuSheetProps {
   dark?: boolean;
   background?: string;
   maxWidth?: number;
+  avoidKeyboard?: boolean;
 }
 
-export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', dark, background, maxWidth = MODAL.maxWidth }: DropdownMenuSheetProps): React.ReactElement {
+export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', dark, background, maxWidth = MODAL.maxWidth, avoidKeyboard }: DropdownMenuSheetProps): React.ReactElement {
   const pal = usePalette(dark);
   const centered = side === 'center';
   return (
@@ -143,6 +144,7 @@ export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', da
       side={side}
       animationType="none"
       gestureRoot
+      avoidKeyboard={avoidKeyboard}
       backdropColor={MODAL.backdrop}
       panelBackground={background ?? pal.border}
       panelRadius={centered ? DROPDOWN_MENU.radius : DROPDOWN_MENU.sheetRadius}

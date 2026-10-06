@@ -11,6 +11,7 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { FORM_FIELD_HEIGHT, FormField } from './FormField';
 import { HoverTooltip } from './HoverTooltip';
+import { HoverIconButton } from './hover';
 
 const BAR_GAP = 10;
 const FIELD_GAP = 4;
@@ -18,6 +19,26 @@ export const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
+}
+
+function SearchMagnifier({ persistent, color, onOpen, focus }: {
+  persistent?: boolean; color: string; onOpen?: () => void; focus: () => void;
+}): React.ReactElement | null {
+  return persistent === true ? <HoverIconButton icon={IconMagnifyingGlass} label="Focus search" role="button" size={20}
+    color={color} placement="below" shortcut="/" onShortcut={onOpen} onPress={focus}/> : null;
+}
+
+function SearchActions({ persistent, query, clear, onClose, sub, trailing }: {
+  persistent?: boolean; query: string; clear: () => void; onClose: () => void; sub: string; trailing?: React.ReactNode;
+}): React.ReactElement {
+  return <>
+    {persistent !== true || query !== '' ? <Pressable
+      onPress={persistent === true ? clear : onClose} hitSlop={8} accessibilityRole="button"
+      accessibilityLabel={persistent === true ? 'Clear search' : 'Close search'}>
+      <Glyph icon={IconCrossMedium} size={18} color={sub}/>
+    </Pressable> : null}
+    {trailing !== undefined ? <Row align="center" gap={18}>{trailing}</Row> : null}
+  </>;
 }
 
 export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
@@ -31,6 +52,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   topInset?: number;
   inline?: boolean;
   field?: boolean;
+  persistent?: boolean;
   onOpen?: () => void;
   autoFocus?: boolean;
   trailing?: React.ReactNode;
@@ -38,12 +60,18 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const input = useRef<React.ComponentRef<typeof Input>>(null);
+  const inputRef = (node: React.ComponentRef<typeof Input> | null): void => {
+    input.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref !== null) ref.current = node;
+  };
+  const clear = (): void => { props.setQuery(''); input.current?.focus(); };
   const topInset = props.topInset ?? 0;
   const Frame = props.inline === true ? Fragment : StickyFrame;
   const onKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
     SEARCH_INPUT_PROPS.onKeyPress?.(event);
     if (event.nativeEvent.key === 'Escape' && props.query === '') {
-      if (props.field === true) input.current?.blur();
+      if (props.field === true || props.persistent === true) input.current?.blur();
       props.onClose();
     } else props.inputProps?.onKeyPress?.(event);
   };
@@ -53,11 +81,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, bottom: FIELD_GAP }} surface="toolbar" align="center">
           <Box flex={1}>
             <FormField
-              inputRef={node => {
-                input.current = node;
-                if (typeof ref === 'function') ref(node);
-                else if (ref !== null) ref.current = node;
-              }}
+              inputRef={inputRef}
               autoFocus={props.autoFocus ?? false}
               value={props.query} onChangeText={props.setQuery} placeholder={props.placeholder ?? 'Search'}
               inputProps={{ accessibilityLabel: 'Search', autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
@@ -65,7 +89,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
                 <Glyph icon={IconMagnifyingGlass} size={20} color={sub}/>
               </HoverTooltip>}
               trailing={props.query === '' ? undefined : <Pressable
-                onPress={() => { props.setQuery(''); input.current?.focus(); }}
+                onPress={clear}
                 hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search">
                 <Glyph icon={IconCrossMedium} size={18} color={sub}/>
               </Pressable>}
@@ -82,8 +106,9 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       padding={{ x: PAGE_GUTTER, top: topInset }}
       align="center" gap={BAR_GAP} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
+      <SearchMagnifier persistent={props.persistent} color={sub} onOpen={props.onOpen} focus={() => { input.current?.focus(); }}/>
       <Input
-        ref={ref}
+        ref={inputRef}
         autoFocus={props.autoFocus ?? true}
         value={props.query}
         onChangeText={props.setQuery}
@@ -91,12 +116,9 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         placeholderTextColor={sub}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
         style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('lg'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
-          backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
+          backgroundColor: 'transparent', minHeight: 0, borderWidth: 0, paddingLeft: props.persistent === true ? 0 : undefined }}
 />
-      <Pressable onPress={props.onClose} hitSlop={8} accessibilityLabel="Close search">
-        <Glyph icon={IconCrossMedium} size={18} color={sub}/>
-      </Pressable>
-      {props.trailing !== undefined ? <Row align="center" gap={18}>{props.trailing}</Row> : null}
+      <SearchActions {...props} clear={clear}/>
     </Row>
     </Frame>
   );

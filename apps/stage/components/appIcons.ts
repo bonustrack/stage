@@ -17,6 +17,7 @@ import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconImac } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImac';
 import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconKey2';
+import { IconLayersThree } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconLayersThree';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { IconMoon } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMoon';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
@@ -55,6 +56,7 @@ export const APP_ICONS = {
   IconGroup1,
   IconImac,
   IconKey2,
+  IconLayersThree,
   IconMagnifyingGlass,
   IconMoon,
   IconPaperPlane,

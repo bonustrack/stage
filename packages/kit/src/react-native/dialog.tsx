@@ -1,6 +1,6 @@
 
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveColor, resolveOptionalColor, type Color, type Scheme } from '../tokens';
@@ -34,6 +34,7 @@ export interface DialogProps {
   handleColor?: Color;
   scroll?: boolean;
   keyboardPersistTaps?: boolean;
+  avoidKeyboard?: boolean;
   scrollPadding?: SpacingValue;
   fullBleedPanel?: boolean;
 }
@@ -155,7 +156,8 @@ export function Dialog(props: DialogProps): ReactNode {
   );
 
   const overlay = (
-    <View
+    <KeyboardAvoidingView
+      enabled={props.avoidKeyboard === true && Platform.OS === 'ios'} behavior="padding"
       pointerEvents="box-none"
       style={[
         overlayStyle(props),
@@ -166,7 +168,7 @@ export function Dialog(props: DialogProps): ReactNode {
         <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} />
       )}
       {inner}
-    </View>
+    </KeyboardAvoidingView>
   );
 
   const body = props.gestureRoot

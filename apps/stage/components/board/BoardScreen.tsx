@@ -12,6 +12,7 @@ import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
 import { useHomeTopnav, useSearchOpen } from '../home/list';
+import type { HomeMenuState } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { ChannelRowFields } from '../ChannelRowFields';
 import { useChannelFields } from '../../lib/channelFields';
@@ -349,14 +350,14 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   );
 }
 
-function BoardFrame({ pane, query, setQuery, onFilterMenu, children }: {
+function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
   pane: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
-  children: React.ReactNode;
+  children: React.ReactNode; menu: HomeMenuState;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const wide = useWebTabRail();
-  const search = useSearchOpen(query, setQuery, wide);
-  const slot = useHomeTopnav({ scope: 'board', pane, query, setQuery, onFilterMenu }, search, wide);
+  const search = useSearchOpen(query, setQuery);
+  const slot = useHomeTopnav({ scope: 'board', pane, query, setQuery, onFilterMenu, menu }, search, wide);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
   const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); search.open(); };
@@ -377,7 +378,6 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, children }: {
     </Box>
   </>;
 }
-
 function useBoardHeight(): number | undefined {
   const { height } = useWindowDimensions();
   const chrome = useBottomChromeHeight();
@@ -385,14 +385,14 @@ function useBoardHeight(): number | undefined {
   return height - TOPNAV_HEIGHT - chrome;
 }
 
-export function BoardScreen({ pane }: { pane: boolean }): React.ReactElement {
+export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [filtering, setFiltering] = useState(false);
   const height = useBoardHeight();
   const windowHeight = !pane && height !== undefined;
   return (
     <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering}>
+      <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering} menu={menu}>
         <BoardBody query={query} filtering={filtering}/>
       </BoardFrame>
     </Col>
