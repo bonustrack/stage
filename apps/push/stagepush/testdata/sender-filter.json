@@ -1,0 +1,4 @@
+{
+  "payload": "{\"installationId\":\"3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29\",\"groupKey\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"issuedAt\":1800000000,\"topics\":[{\"topic\":\"/xmtp/mls/1/g-0123456789abcdef0123456789abcdef/proto\",\"hmacKeys\":[{\"thirtyDayPeriodsSinceEpoch\":694,\"key\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\"}]}]}",
+  "signature": "uU8gAQIx5N9N70lAVA+qpi6TLBc93FldeFsKGsUKbf0JVzK5SxWLXX39Iyar4HNbefp3baZpe1rpowccMDg9Cw=="
+}

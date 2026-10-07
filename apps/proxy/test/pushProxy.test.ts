@@ -18,6 +18,14 @@ describe('parsePushRoute', () => {
       .toBe('https://push.stage.box/stage.v1.Push/ClearConversation');
   });
 
+  test('only forwards signed sender publication through the Stage POST route', () => {
+    expect(parsePushRoute('/xmtp-push/PublishSenderFilters', 'POST'))
+      .toBe('https://push.stage.box/stage.v1.Push/PublishSenderFilters');
+    expect(parsePushRoute('/xmtp-push/PublishSenderFilters', 'GET')).toBeNull();
+    expect(parsePushRoute('/xmtp-push/PublishSenderFilters/extra', 'POST')).toBeNull();
+    expect(parsePushRoute('/xmtp-push/SenderFilterVersion', 'POST')).toBeNull();
+  });
+
   test('rejects other RPCs, methods and paths', () => {
     expect(parsePushRoute('/xmtp-push/Subscribe', 'POST')).toBeNull();
     expect(parsePushRoute('/xmtp-push/RegisterInstallation', 'GET')).toBeNull();

@@ -1,5 +1,5 @@
 diff --git a/cmd/server/main.go b/cmd/server/main.go
-index 5450a00..9eec87a 100644
+index 5450a00..334f247 100644
 --- a/cmd/server/main.go
 +++ b/cmd/server/main.go
 @@ -19,6 +19,7 @@ import (
@@ -10,8 +10,17 @@ index 5450a00..9eec87a 100644
  	"github.com/xmtp/example-notification-server-go/pkg/subscriptions"
  	"github.com/xmtp/example-notification-server-go/pkg/xmtp"
  	"go.uber.org/zap"
-@@ -65,9 +66,9 @@ func main() {
- 	subscriptionsService := subscriptions.NewSubscriptionsService(logger, db)
+@@ -62,12 +63,17 @@ func main() {
+ 	db := initDb()
+ 	ctx, cancel := context.WithCancel(context.Background())
+ 	installationsService := installations.NewInstallationsService(logger, db)
+-	subscriptionsService := subscriptions.NewSubscriptionsService(logger, db)
++	senderStore, err := stagepush.NewSenderStore(ctx, db)
++	if err != nil {
++		logger.Fatal("failed to initialize sender filters")
++	}
++	senderStore.StartCleanup(ctx, logger)
++	subscriptionsService := stagepush.WithSenderFilters(subscriptions.NewSubscriptionsService(logger, db), senderStore)
  	var notifListener xmtp.NotificationListener
  	var apiServer *api.ApiServer
 +	deliveryServices := []interfaces.Delivery{}
@@ -21,7 +30,7 @@ index 5450a00..9eec87a 100644
  		var err error
  
  		if opts.Apns.Enabled {
-@@ -107,6 +108,11 @@ func main() {
+@@ -107,6 +113,12 @@ func main() {
  		if notifListener != nil {
  			apiServer.SetReadyCheck(notifListener.Ready)
  		}
@@ -30,6 +39,7 @@ index 5450a00..9eec87a 100644
 +		} else {
 +			apiServer.AddRoutes(stagepush.New(logger, groups, subscriptionsService, installationsService, deliveryServices).Routes())
 +		}
++		apiServer.AddRoutes(stagepush.NewSenderHandler(senderStore, logger).Routes())
  		apiServer.Start()
  	}
  
@@ -69,3 +79,31 @@ index 171ab44..e58c816 100644
  
  	addr := fmt.Sprintf(":%d", s.port)
  	if s.listener != nil {
+diff --git a/pkg/interfaces/interfaces.go b/pkg/interfaces/interfaces.go
+index fcc4114..9d5a878 100644
+--- a/pkg/interfaces/interfaces.go
++++ b/pkg/interfaces/interfaces.go
+@@ -118,6 +118,7 @@ type Subscription struct {
+ 	IsActive       bool         `json:"-"`
+ 	IsSilent       bool         `json:"is_silent"`
+ 	HmacKey        *HmacKey     `json:"-"`
++	SenderKeys     [][]byte     `json:"-"`
+ }
+ 
+ type SendRequest struct {
+diff --git a/pkg/xmtp/common.go b/pkg/xmtp/common.go
+index b2a24d3..dc3dce3 100644
+--- a/pkg/xmtp/common.go
++++ b/pkg/xmtp/common.go
+@@ -42,6 +42,11 @@ func (d *deliveryDispatcher) shouldDeliver(messageContext interfaces.MessageCont
+ 			return false
+ 		}
+ 	}
++	for _, key := range subscription.SenderKeys {
++		if messageContext.IsSender(key) {
++			return false
++		}
++	}
+ 	if messageContext.ShouldPush != nil {
+ 		shouldPush := messageContext.ShouldPush
+ 		return *shouldPush

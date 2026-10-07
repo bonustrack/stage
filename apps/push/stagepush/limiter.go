@@ -39,6 +39,9 @@ func (l *limiter) allow(key string, now time.Time) bool {
 					delete(l.buckets, k)
 				}
 			}
+			if len(l.buckets) >= maxLimiterKeys {
+				return false
+			}
 		}
 		b = &bucket{tokens: l.burst, at: now}
 		l.buckets[key] = b

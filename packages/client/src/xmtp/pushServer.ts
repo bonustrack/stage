@@ -10,6 +10,7 @@ export const PUSH_RPC = {
   remove: 'DeleteInstallation',
   join: 'JoinDeviceGroup',
   clear: 'ClearConversation',
+  senderFilters: 'PublishSenderFilters',
 } as const;
 
 export type PushRpc = (typeof PUSH_RPC)[keyof typeof PUSH_RPC];
@@ -23,6 +24,7 @@ const RPC_SERVICE: Record<PushRpc, string> = {
   DeleteInstallation: XMTP_SERVICE,
   JoinDeviceGroup: STAGE_SERVICE,
   ClearConversation: STAGE_SERVICE,
+  PublishSenderFilters: STAGE_SERVICE,
 };
 
 export function isPushRpc(method: string): method is PushRpc {

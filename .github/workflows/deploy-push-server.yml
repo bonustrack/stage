@@ -21,7 +21,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: xmtp
+        ports: ['25432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: false
+      - name: Test signed filters with isolated PostgreSQL
+        env:
+          STAGE_PUSH_DATABASE_TESTS: '1'
+        run: |
+          set -euo pipefail
+          upstream=$(python3 -c 'from pathlib import Path; print(next(line.split("=", 1)[1] for line in Path("apps/push/Dockerfile").read_text().splitlines() if line.startswith("ARG UPSTREAM_COMMIT=")))')
+          git clone https://github.com/xmtp/example-notification-server-go.git "$RUNNER_TEMP/stage-push-tests"
+          git -C "$RUNNER_TEMP/stage-push-tests" checkout --detach "$upstream"
+          cp -R apps/push/stagepush "$RUNNER_TEMP/stage-push-tests/pkg/stagepush"
+          cp apps/push/xmtp_tests/*.go "$RUNNER_TEMP/stage-push-tests/pkg/xmtp/"
+          git -C "$RUNNER_TEMP/stage-push-tests" apply "$GITHUB_WORKSPACE/apps/push/stagepush.patch"
+          cd "$RUNNER_TEMP/stage-push-tests"
+          go test -race ./pkg/stagepush ./pkg/xmtp
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -39,4 +72,9 @@ jobs:
             echo "FLY_API_TOKEN secret is not set; add it in the repository settings." >&2
             exit 1
           fi
-          flyctl deploy --remote-only --ha=false --config fly.toml --dockerfile Dockerfile
+          flyctl deploy --remote-only --ha=false --config fly.toml --dockerfile Dockerfile --build-arg "STAGE_COMMIT=$GITHUB_SHA"
+      - name: Verify readiness and exact deployed source
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors https://push.stage.box/readyz
+          curl --fail --silent --show-error https://push.stage.box/stage.v1.Push/SenderFilterVersion | python3 -c 'import json,os,sys; value=json.load(sys.stdin); assert value == {"commit": os.environ["GITHUB_SHA"], "senderFilters": "1"}, value; print(value)'
