@@ -55,9 +55,9 @@ export function useDictation(args: DictationArgs) {
     });
     return () => {
       mounted = false;
-      unregister();
       app.remove();
       void instance.dispose();
+      void unregister().catch((error: unknown) => { report('dictation.dispose', error); });
       if (control.current === instance) control.current = null;
     };
   }, [args.key]);

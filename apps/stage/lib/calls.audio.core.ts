@@ -22,10 +22,15 @@ export function registerCallRecorder(stop: () => Promise<void>): () => void {
   return () => { recorders.delete(stop); };
 }
 
-export function registerDictationRecorder(stop: () => Promise<void>): () => void {
-  const unregister = registerCallRecorder(stop);
-  dictations.add(stop);
-  return () => { unregister(); dictations.delete(stop); };
+export function registerDictationRecorder(stop: () => Promise<void>): () => Promise<void> {
+  let retiring = false;
+  const cleanup = async (): Promise<void> => {
+    await stop();
+    if (retiring) { unregister(); dictations.delete(cleanup); }
+  };
+  const unregister = registerCallRecorder(cleanup);
+  dictations.add(cleanup);
+  return () => { retiring = true; return cleanup(); };
 }
 
 export function voiceOwnsAudio(): boolean {
