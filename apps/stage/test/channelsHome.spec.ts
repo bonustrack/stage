@@ -25,7 +25,7 @@ describe('the View menu', () => {
 
   test('the root contains view choices and submenu entries, not grouping options', () => {
     expect(labels(homeViewMenu(chats))).toEqual([['Chats*', 'Board'], ['Group by', 'Filter', 'Fields']]);
-    expect(labels(homeViewMenu(board))).toEqual([['Chats', 'Board*'], ['Group by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(board))).toEqual([['Chats', 'Board*'], ['Column by', 'Filter', 'Fields']]);
     expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
   });
 
@@ -38,10 +38,12 @@ describe('the View menu', () => {
 
   test('both mode transitions refresh selection and retain independent grouping preferences', () => {
     const next = { ...chats, ...homeViewEdit(chats, 'view:board') };
-    expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Group by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Column by', 'Filter', 'Fields']]);
+    expect(homeViewMenu(next, true).map(section => section.heading)).toEqual(['Column by']);
     expect(labels(homeViewMenu(next, true))).toEqual([['Assignees', 'Category', 'Label*', 'Status']]);
     const back = { ...next, ...homeViewEdit(next, 'view:chats') };
     expect(labels(homeViewMenu(back))).toEqual([['Chats*', 'Board'], ['Group by', 'Filter', 'Fields']]);
+    expect(homeViewMenu(back, true).map(section => section.heading)).toEqual(['Group by']);
     expect(labels(homeViewMenu(back, true))).toEqual([['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
   });
 

@@ -101,7 +101,7 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
       { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
     ] },
     { rows: [
-      { id: 'grouping', label: 'Group by', icon: 'IconLayersThree', selected: false },
+      { id: 'grouping', label: board ? 'Column by' : 'Group by', icon: 'IconLayersThree', selected: false },
       { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
       { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
     ] },
