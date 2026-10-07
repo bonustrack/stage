@@ -101,12 +101,27 @@ describe('global message stream lifecycle', () => {
     h.stream.teardown();
     pending.resolve(undefined);
     await first;
+    await settle();
     expect(h.opened[0]?.stops).toBe(1);
     expect(h.state.closed).toBe(0);
     expect(h.state.live).toBe(0);
     h.hooks.wait = () => Promise.resolve();
     expect(await h.fire()).toBe(500);
     expect(h.opened).toHaveLength(2);
+    expect(h.stream.live()).toBe(true);
+  });
+
+  test('a closed worker with unresolved startup cannot block the replacement account', async () => {
+    const h = harness();
+    h.hooks.wait = () => new Promise(() => undefined);
+    const first = h.stream.ensure();
+    await settle();
+    h.state.account = 'b';
+    h.restart();
+    await first;
+    h.hooks.wait = () => Promise.resolve();
+    expect(await h.fire()).toBe(500);
+    expect(h.opened.map(stream => stream.id)).toEqual(['a', 'b']);
     expect(h.stream.live()).toBe(true);
   });
 

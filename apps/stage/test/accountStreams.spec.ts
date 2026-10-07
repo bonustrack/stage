@@ -2,9 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { openAccountStreams } from '../lib/xmtp.stream.core';
 
 function fixture() {
+  const controller = new AbortController();
   const state = { current: true, refreshes: 0, messageStops: 0, preferenceStops: 0, deletionStops: 0, deletions: 0 };
   let onChange = (): void => undefined;
   const deps = {
+    signal: controller.signal,
     current: () => state.current,
     messages: async () => () => { state.messageStops += 1; },
     preferences: async (refresh: () => void) => {
@@ -14,7 +16,7 @@ function fixture() {
     deletions: () => { state.deletions += 1; return () => { state.deletionStops += 1; }; },
     refreshPush: () => { state.refreshes += 1; },
   };
-  return { deps, state, emitPreference: () => { onChange(); } };
+  return { deps, state, controller, emitPreference: () => { onChange(); } };
 }
 
 describe('account streams and sender-filter refreshes', () => {
@@ -69,6 +71,20 @@ describe('account streams and sender-filter refreshes', () => {
     stop();
     f.emitPreference();
     expect(f.state).toEqual({ current: false, refreshes: 0, messageStops: 1, preferenceStops: 1, deletionStops: 0, deletions: 0 });
+  });
+
+  test('account cancellation releases messages even when the preference worker never answers', async () => {
+    const f = fixture();
+    let attached = (): void => undefined;
+    const started = new Promise<void>(resolve => { attached = resolve; });
+    f.deps.preferences = () => { attached(); return new Promise(() => undefined); };
+    const opening = openAccountStreams(f.deps);
+    await started;
+    f.state.current = false;
+    f.controller.abort(new Error('account changed'));
+    await expect(opening).rejects.toThrow('account changed');
+    expect(f.state.messageStops).toBe(1);
+    expect(f.state.refreshes).toBe(0);
   });
 
   test('a preference stream failure releases messages and propagates for global-stream retry', async () => {

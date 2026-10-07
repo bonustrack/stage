@@ -1,10 +1,13 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import {
-  PUSH_RPC, clearConversationBody, deleteInstallationBody, derivePushGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
+  PUSH_RPC, clearConversationBody, derivePushGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
 } from '@stage-labs/client/xmtp/pushServer';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount, type AccountRecord } from './accounts';
-import { makePushRegistrar, readPushRegistration, type PushRegistrationInput } from './pushRegistration.core';
+import { makePushRegistrar, type PushRegistrationInput } from './pushRegistration.core';
+import { subscribeAccountEpoch } from './accountEpoch';
+import { subscribeAccountSelection } from './accountSelection';
+import { makePushRetry } from './pushRetry.core';
 
 export type { PushTopics } from './pushRegistration.core';
 import { onReadStateChanged } from './channelsCache';
@@ -55,13 +58,19 @@ export function directRpcUrl(method: PushRpc): string {
   return `${PUSH_SERVER_URL}${pushRpcPath(method)}`;
 }
 
-async function postJson(url: string, body: unknown, accepted?: number): Promise<void> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
+async function postJson(url: string, body: unknown, accepted?: number, signal?: AbortSignal): Promise<void> {
+  const controller = new AbortController();
+  const abort = (): void => { controller.abort(); };
+  if (signal?.aborted) abort();
+  else signal?.addEventListener('abort', abort, { once: true });
+  const timer = setTimeout(abort, 15_000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
+  } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
 }
 
 const groupKeys = new Map<string, Promise<string>>();
@@ -77,20 +86,29 @@ async function pushGroupKey(rec: AccountRecord): Promise<string> {
 
 async function joinDeviceGroup(input: PushRegistrationInput, account: AccountRecord): Promise<void> {
   const key = joinedKey(input.installationId);
-  if ((await appStorage.get(key).catch(ignored(null, 'cache'))) === '1' || !input.current()) return;
+  if ((await appStorage.get(key)) === '1' || !input.current()) return;
   const groupKey = await pushGroupKey(account);
   if (!input.current()) return;
   await postJson(input.rpcUrl(PUSH_RPC.join), joinDeviceGroupBody(input.installationId, groupKey), HTTP_CONFLICT);
   await appStorage.set(key, '1').catch(ignored(undefined, 'cache'));
 }
 
-const register = makePushRegistrar({
+const registrar = makePushRegistrar({
   read: installationId => appStorage.get(stateKey(installationId)),
   write: (installationId, value) => appStorage.set(stateKey(installationId), value),
-  post: postJson,
+  remove: installationId => appStorage.delete(stateKey(installationId)),
+  cacheError: reported('push.cache'),
+  post: (url, body, signal) => postJson(url, body, undefined, signal),
   now: Date.now,
   status: setPushStatus,
 });
+
+const retry = makePushRetry((run, delay) => {
+  const timer = setTimeout(run, delay);
+  return () => { clearTimeout(timer); };
+});
+subscribeAccountEpoch(retry.clear);
+subscribeAccountSelection(retry.clear);
 
 async function pushEnabled(): Promise<boolean> {
   await loadPushEnabled();
@@ -100,27 +118,34 @@ async function pushEnabled(): Promise<boolean> {
 }
 
 export async function runPushRegistration(input: PushRegistrationInput & { accountAddress: string }): Promise<void> {
-  const current = (): boolean => input.current() && isPushEnabledSync();
+  const controller = new AbortController();
+  const abort = (): void => { controller.abort(); };
+  const stopEpoch = subscribeAccountEpoch(abort);
+  const stopSelection = subscribeAccountSelection(abort);
+  const current = (): boolean => !controller.signal.aborted && input.current() && isPushEnabledSync();
   try {
     if (!input.current() || !(await pushEnabled())) return;
     const account = await getActiveAccount();
     if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) return;
     await afterFirstPages();
-    const guarded = { ...input, current };
-    if (await register(guarded)) await joinDeviceGroup(guarded, account).catch(reported('push.join'));
+    const guarded = { ...input, current, signal: controller.signal };
+    if (await registrar.register(guarded)) {
+      retry.success(input.installationId);
+      await joinDeviceGroup(guarded, account).catch(reported('push.join'));
+    }
   } catch (err) {
-    if (current()) reportPushFailure('push.register', err);
-  }
+    if (current()) {
+      reportPushFailure('push.register', err);
+      retry.failed(input.installationId, () => { if (input.current()) void runPushRegistration(input); });
+    }
+  } finally { stopEpoch(); stopSelection(); }
 }
 
 export async function runPushUnregistration(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {
   try {
-    const key = stateKey(installationId);
-    const prev = readPushRegistration(await appStorage.get(key));
-    await appStorage.delete(key).catch(ignored(undefined, 'cleanup'));
+    retry.success(installationId);
     setPushStatus('disabled');
-    if (!prev) return;
-    await postJson(rpcUrl(PUSH_RPC.remove), deleteInstallationBody(installationId));
+    await registrar.unregister(installationId, rpcUrl);
   } catch (err) {
     reportPushFailure('push.unregister', err);
   }

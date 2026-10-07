@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createHmac } from 'node:crypto';
 import {
-  makePushRegistrar, readPushRegistration, type PushRegistrationInput,
+  makePushRegistrar, type PushRegistrationInput,
 } from '../lib/pushRegistration.core';
 import type { PushSubscriptionJson } from '@stage-labs/client/xmtp/pushServer';
 
@@ -14,7 +14,9 @@ const OWNER_KEY = new Uint8Array(42).fill(2);
 const OTHER_KEY = new Uint8Array(42).fill(3);
 const ENVELOPE = new TextEncoder().encode('synthetic MLS ciphertext');
 
-function fixture() {
+function fixture(timeoutMs?: number) {
+  const controller = new AbortController();
+  const cacheErrors: unknown[] = [];
   const stored = new Map<string, string>();
   const subscriptions = new Map<string, PushSubscriptionJson[]>();
   const calls: string[] = [];
@@ -27,12 +29,16 @@ function fixture() {
   let failPost = false;
   let failRead = false;
   let failSync = false;
+  let failWrite = false;
   let sync: () => Promise<void> = () => Promise.resolve();
   let beforePost: () => Promise<void> = () => Promise.resolve();
   let beforeRead: () => void = () => undefined;
-  const register = makePushRegistrar({
+  const { register, unregister } = makePushRegistrar({
+    timeoutMs,
+    cacheError: error => { cacheErrors.push(error); },
+    remove: async id => { stored.delete(id); },
     read: async id => { beforeRead(); if (failRead) throw new Error('disk unavailable'); return stored.get(id) ?? null; },
-    write: async (id, value) => { stored.set(id, value); },
+    write: async (id, value) => { if (failWrite) throw new Error('quota exceeded'); stored.set(id, value); },
     post: async (url, body) => {
       await beforePost();
       if (failPost) throw new Error('offline');
@@ -41,12 +47,13 @@ function fixture() {
         const request = body as { installationId: string; subscriptions: PushSubscriptionJson[] };
         subscriptions.set(request.installationId, request.subscriptions);
       }
+      if (url === 'DeleteInstallation') subscriptions.delete((body as { installationId: string }).installationId);
     },
     now: () => now,
     status: status => { statuses.push(status); },
   });
   const input: PushRegistrationInput = {
-    installationId: 'mobile', platform: 'android', current: () => current,
+    installationId: 'mobile', platform: 'android', current: () => current, signal: controller.signal,
     rpcUrl: method => method, getToken: async () => token,
     syncPreferences: async () => { if (failSync) throw new Error('sync failed'); await sync(); },
     collectTopics: async () => ({
@@ -62,7 +69,8 @@ function fixture() {
     return !expected.equals(createHmac('sha256', senderKey).update(ENVELOPE).digest());
   };
   return {
-    input, register, calls, statuses, stored, subscriptions, delivers,
+    input, register, unregister, calls, statuses, stored, subscriptions, delivers, cacheErrors,
+    abort: () => { controller.abort(); }, setWriteFailure: (value: boolean) => { failWrite = value; },
     setKey: (value: Uint8Array) => { key = value; }, setPeriod: (value: number) => { period = value; },
     setToken: (value: string) => { token = value; }, setNow: (value: number) => { now = value; },
     setCurrent: (value: boolean) => { current = value; }, setPostFailure: (value: boolean) => { failPost = value; },
@@ -245,9 +253,59 @@ describe('inbox sender-filter registration', () => {
     expect(f.calls).toEqual([]);
   });
 
-  test('ignores malformed stored registrations', () => {
-    for (const raw of [null, '', '{', '{}', '{"token":3,"at":0}', '{"token":"t","at":"now"}']) {
-      expect(readPushRegistration(raw)).toBeNull();
+  test('a closed worker cannot block the same installation on the replacement session', async () => {
+    const f = fixture();
+    const entered = deferred();
+    f.onSync(() => { entered.release(); return new Promise(() => undefined); });
+    const abandoned = f.register(f.input);
+    await entered.promise;
+    f.abort();
+    await expect(abandoned).rejects.toThrow('cancelled');
+    f.onSync(async () => undefined);
+    expect(await f.register({ ...f.input, signal: new AbortController().signal })).toBe(true);
+  });
+
+  test('a hung SDK call times out without poisoning future refreshes', async () => {
+    const f = fixture(10);
+    f.onSync(() => new Promise(() => undefined));
+    await expect(f.register(f.input)).rejects.toThrow('timed out');
+    f.onSync(async () => undefined);
+    expect(await f.register(f.input)).toBe(true);
+  });
+
+  test('disable during the first subscription waits and deletes remote state without a cache record', async () => {
+    const f = fixture();
+    const entered = deferred();
+    const gate = deferred();
+    f.onPost(async () => { if (f.calls.length === 1) { entered.release(); await gate.promise; } });
+    const registering = f.register(f.input);
+    await entered.promise;
+    expect(f.stored.size).toBe(0);
+    f.setCurrent(false);
+    const removing = f.unregister('mobile', method => method);
+    gate.release();
+    expect(await registering).toBe(false);
+    await removing;
+    expect(f.calls).toEqual(['RegisterInstallation', 'SubscribeWithMetadata', 'DeleteInstallation']);
+    expect(f.subscriptions.size).toBe(0);
+    expect(f.stored.size).toBe(0);
+  });
+
+  test('successful remote registration remains successful when optional cache persistence fails', async () => {
+    const f = fixture();
+    f.setWriteFailure(true);
+    expect(await f.register(f.input)).toBe(true);
+    expect(f.cacheErrors).toHaveLength(1);
+    expect(f.subscriptions.has('mobile')).toBe(true);
+    expect(f.statuses.at(-1)).toBe('registered');
+  });
+
+  test('repairs malformed stored registrations', async () => {
+    for (const raw of ['', '{', '{}', '{"token":3,"at":0}', '{"token":"t","at":"now"}']) {
+      const f = fixture();
+      f.stored.set('mobile', raw);
+      expect(await f.register(f.input)).toBe(true);
+      expect(f.calls).toEqual(['RegisterInstallation', 'SubscribeWithMetadata']);
     }
   });
 });

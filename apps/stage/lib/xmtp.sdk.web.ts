@@ -155,8 +155,10 @@ function streamConsent(client: WebClient, onChange: () => void): () => void {
 
 async function streamPreferences(client: WebClient, onChange: () => void, onClose: () => void): Promise<() => void> {
   const handle = await client.preferences.streamPreferences({
-    onValue: () => { onChange(); }, onError: reported('xmtp.preferenceStream'), onFail: onClose,
+    disableSync: true, retryOnFail: false, onError: reported('xmtp.preferenceStream'), onFail: onClose,
   });
+  const consume = async (): Promise<void> => { for await (const updates of handle) { if (updates.length > 0) onChange(); } };
+  void consume().catch(reported('xmtp.preferenceStream'));
   return () => { ignore(handle.end(), 'cleanup'); };
 }
 
