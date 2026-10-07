@@ -73,6 +73,7 @@ interface ClientPrimitives<Cl, C, M> {
   streamAllMessages: (client: Cl, onMessage: (m: M | undefined) => void, onClose: () => void) => Promise<() => void>;
   streamConversations: (client: Cl, onConv: (conv: C) => void) => () => void;
   streamConsent: (client: Cl, onChange: () => void) => () => void;
+  streamPreferences: (client: Cl, onChange: () => void, onClose: () => void) => Promise<() => void>;
   streamDeletions: (client: Cl, onDeleted: (deletion: MessageDeletion) => void) => () => void;
   deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;
   messageTarget: (client: Cl, messageId: string) => Promise<MessageTarget<C> | null>;

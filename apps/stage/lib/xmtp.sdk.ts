@@ -123,6 +123,11 @@ function streamConsent(client: NativeClient, onChange: () => void): () => void {
   };
 }
 
+async function streamPreferences(client: NativeClient, onChange: () => void, onClose: () => void): Promise<() => void> {
+  await client.preferences.streamPreferenceUpdates(() => { onChange(); return Promise.resolve(); }, onClose);
+  return () => { attempt(() => { client.preferences.cancelStreamPreferenceUpdates(); }, 'cleanup'); };
+}
+
 function streamDeletions(client: NativeClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
   let live = true;
   let cancel: (() => void) | null = null;
@@ -210,6 +215,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamAllMessages,
   streamConversations,
   streamConsent,
+  streamPreferences,
   streamDeletions,
   deletedEntryOf: () => Promise.resolve(null),
   messageTarget,

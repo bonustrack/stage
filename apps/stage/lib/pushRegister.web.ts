@@ -9,13 +9,14 @@ import { dismissConvNotifications } from './pushNotify.web';
 import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
+import { getAccountEpoch } from './accountEpoch';
 import { isBrowserExtension } from './extension.web';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
 }
 
-type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations'>;
+type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations' | 'preferences' | 'accountIdentifier'>;
 
 export function usePushDeepLinks(): void {
   return undefined;
@@ -68,9 +69,14 @@ function installationIdOf(client: PushClient): string | null {
 
 export async function registerPushWithServer(client: PushClient): Promise<void> {
   const installationId = installationIdOf(client);
-  if (!installationId) return;
+  const accountAddress = client.accountIdentifier?.identifier;
+  if (!installationId || !accountAddress) return;
+  const epoch = getAccountEpoch();
   await runPushRegistration({
     installationId,
+    accountAddress,
+    current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
+    syncPreferences: () => client.preferences.sync(),
     platform: 'web',
     rpcUrl: proxiedRpcUrl,
     getToken: webPushToken,
