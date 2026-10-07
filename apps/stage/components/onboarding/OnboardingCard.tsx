@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { Title } from '@stage-labs/kit/react-native/title';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Col } from '../layout';
 import { PAGE_INTRO_MAX_WIDTH, PAGE_INTRO_TYPE } from '../chrome/PageIntro.model';
@@ -9,7 +10,7 @@ const CENTER = { textAlign: 'center' } as const;
 function PageIntro({ title, about }: { title: string; about?: string }): React.ReactElement {
   return (
     <Col gap={PAGE_INTRO_TYPE.gap}>
-      <Text weight="medium" style={{ ...CENTER, ...PAGE_INTRO_TYPE.title }}>{title}</Text>
+      <Title hero="3xl" style={CENTER}>{title}</Title>
       {about === undefined ? null : <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>{about}</Text>}
     </Col>
   );

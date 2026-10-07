@@ -8,7 +8,7 @@ import { FONT_SIZE, FONT_SIZE_SNAP, fontName, fontSize, type FontSizeName } from
 import { BALANCE_TITLE_STYLE, HERO_TITLE_STYLE } from '../src/title.styles';
 
 const TEXT_SIZES: Record<FontSizeName, number> = {
-  '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 32,
+  '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 26,
 };
 
 describe('hero title typography', () => {
@@ -20,13 +20,13 @@ describe('hero title typography', () => {
     expect(BALANCE_TITLE_STYLE).toEqual({ fontSize: 60, lineHeight: 63, fontFamily: fontName.head });
   });
 
-  test('3xl keeps its size, line height and semibold font', () => {
-    expect(HERO_TITLE_STYLE['3xl']).toEqual({ fontSize: 44, lineHeight: 46.2, fontFamily: fontName.head });
+  test('3xl matches the onboarding heading without a semibold font', () => {
+    expect(HERO_TITLE_STYLE['3xl']).toEqual({ fontSize: 38, lineHeight: 46, fontFamily: fontName.sans });
   });
 });
 
 describe('text size tokens', () => {
-  test('all options keep their numeric sizes after the small-token rename', () => {
+  test('all options resolve to their named numeric sizes', () => {
     expect(FONT_SIZE).toEqual(TEXT_SIZES);
     for (const name of Object.keys(TEXT_SIZES) as FontSizeName[]) {
       expect(fontSize(name)).toBe(TEXT_SIZES[name]);
@@ -42,7 +42,7 @@ describe('text size tokens', () => {
     expect(FONT_SIZE_SNAP).toEqual({
       '10': '3xs', '11': '3xs', '12': '3xs', '13': '3xs', '14': '2xs',
       '15': 'xs', '16': 'xs', '17': 'sm', '18': 'md', '19': 'lg', '20': 'xl',
-      '22': '2xl', '24': '2xl', '26': '2xl', '28': '3xl', '34': '3xl', '38': '3xl',
+      '22': '2xl', '24': '2xl', '26': '3xl', '28': '3xl', '34': '3xl', '38': '3xl',
     });
     for (const token of Object.values(FONT_SIZE_SNAP)) expect(FONT_SIZE[token]).toBeDefined();
   });

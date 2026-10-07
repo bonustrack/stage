@@ -210,7 +210,7 @@ export const FONT_SIZE: Record<FontSizeName, number> = {
   lg: 19,
   xl: 20,
   '2xl': 24,
-  '3xl': 32,
+  '3xl': 26,
 } as const;
 
 export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
@@ -229,7 +229,7 @@ export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
   '18': 'md',
   '19': 'lg',
   '20': 'xl',
-  '22': '2xl', '24': '2xl', '26': '2xl',
+  '22': '2xl', '24': '2xl', '26': '3xl',
   '28': '3xl', '34': '3xl', '38': '3xl',
 } as const;
 
