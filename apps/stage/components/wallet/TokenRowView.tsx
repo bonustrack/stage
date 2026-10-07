@@ -43,14 +43,14 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
       ) : null}
       <Col gap={2}>
         <Text value={params.symbol} weight="semibold" size="md" truncate />
-        <Text value={params.name} color="secondary" size="2xs" />
+        <Text value={params.name} color="secondary" size="xs" />
       </Col>
       <Spacer />
       <Col gap={2} align="end">
         {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="md" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
-          <Text value={params.priceUsd} color="secondary" size="2xs" />
-          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="2xs" />}
+          <Text value={params.priceUsd} color="secondary" size="xs" />
+          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="xs" />}
         </Row>
       </Col>
     </Row>

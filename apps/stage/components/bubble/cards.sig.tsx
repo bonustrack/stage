@@ -115,7 +115,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
     <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
         <Glyph icon={IconPencil} size={18} color={pal.link}/>
-        <Text weight="semibold" size="2xs" style={{ flexShrink: 1 }}>{title}</Text>
+        <Text weight="semibold" size="xs" style={{ flexShrink: 1 }}>{title}</Text>
       </Row>
       {senderNote ? <SenderNote note={senderNote} fill={fill} border={border} /> : null}
       {req.kind === 'eip712' ? (

@@ -100,7 +100,7 @@ function LinkCardText({ title, description, subColor }: {
         <Text weight="semibold" size="xl" numberOfLines={2}>{title}</Text>
       )}
       {description ? (
-        <Text size="2xs" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
+        <Text size="xs" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
           {description}
         </Text>
       ) : null}
@@ -198,7 +198,7 @@ export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | 
       <ListViewItem dark={dark}>
         <Col radius="lg">
           <Col gap={2} padding={{ x: 12, y: 10 }}>
-            <Text size="2xs" value="Open preview build" weight="semibold" truncate />
+            <Text size="xs" value="Open preview build" weight="semibold" truncate />
             <Caption value={`EAS Update · ${ref.shortGroup}`} color="secondary" maxLines={2} />
           </Col>
         </Col>

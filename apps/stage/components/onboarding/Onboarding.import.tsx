@@ -121,7 +121,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   return (
     <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
       {scanning ? <QrScanner dark={dark} onScan={onScan} /> : scanned ? (
-        <Text size="2xs" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
+        <Text size="xs" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
       ) : phraseField}
     </OnboardingCard>
   );

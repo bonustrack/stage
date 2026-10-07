@@ -181,13 +181,13 @@ function PreviewParagraph({ params, fg, hasPrefix, lines = 2 }: {
   const chips = params.chips !== undefined && params.chips.length > 0 ? params.chips : null;
   return (
     <Box flex={1} minWidth={0}>
-      <Text size="2xs" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
+      <Text size="xs" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
         {chips === null ? null : (
           <Box height={1} padding={{ right: CHIP_GAP }} aria-hidden style={CHIP_SPACER_STYLE}>
             <PreviewChips chips={chips} fg={fg} />
           </Box>
         )}
-        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="2xs" color="danger" /> : null}
+        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="xs" color="danger" /> : null}
         {params.preview}
       </Text>
       {chips === null ? null : (

@@ -75,7 +75,7 @@ function SectionHeader({ title, icon, count, editLabel, penShown, onEdit, onFocu
 }
 
 export function SectionNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="2xs" color="secondary">{text}</Text></Box>;
+  return <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="xs" color="secondary">{text}</Text></Box>;
 }
 
 export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
@@ -99,7 +99,7 @@ export function PickerList({ children }: { children: ReactNode }): React.ReactEl
 }
 
 export function PickerNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="2xs" color="secondary">{text}</Text></Box>;
+  return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="xs" color="secondary">{text}</Text></Box>;
 }
 
 function checkboxKeys(onPress: () => void, disabled: boolean) {

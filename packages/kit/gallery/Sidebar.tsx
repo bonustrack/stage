@@ -58,7 +58,7 @@ function GroupRows({ group, activeId, onSelect, touch }: { group: Group; activeI
       {open && foldable ? group.stories.map((story) => (
         <Pressable key={story.id} onPress={() => { onSelect(story.id); }}>
           <Row padding={{ left: 32, right: 12, y: touch ? 13 : 4 }}>
-            <Text size="2xs" color={story.id === activeId ? pal.link : pal.sub}>{story.name}</Text>
+            <Text size="xs" color={story.id === activeId ? pal.link : pal.sub}>{story.name}</Text>
           </Row>
         </Pressable>
       )) : null}

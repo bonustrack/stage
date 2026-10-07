@@ -8,9 +8,9 @@ export default { title: 'Divider' };
 
 export const Controls: Story<DividerProps> = (args) => (
   <Col>
-    <Text size="2xs">Above</Text>
+    <Text size="xs">Above</Text>
     <Divider {...args} dark={useDark()} />
-    <Text size="2xs">Below</Text>
+    <Text size="xs">Below</Text>
   </Col>
 );
 Controls.args = { spacing: 12, size: 1 };

@@ -36,7 +36,7 @@ function SessionRow({ inst, busy, onRevoke }: {
     <ListViewItem align="center" gap={12} dark={dark}>
       <AppIcon name={IconDevices} color={inst.current ? 'link' : 'secondary'} size={24} />
       <Col flex={1} gap={2}>
-        <Text value={inst.current ? 'This device' : `Device ${shortAddress(inst.id)}`} size="2xs" weight="semibold" color="link" />
+        <Text value={inst.current ? 'This device' : `Device ${shortAddress(inst.id)}`} size="xs" weight="semibold" color="link" />
         <Caption value={addedOn(inst.createdAt)} color="secondary" />
       </Col>
       <Pressable onPress={onRevoke} disabled={busy} hitSlop={8} accessibilityRole="button">

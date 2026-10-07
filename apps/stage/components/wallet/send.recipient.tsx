@@ -30,7 +30,7 @@ export function RecipientRow({ address, label, onPress }: {
         style={{ backgroundColor: border }}
 />
       <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="2xs" color={head} numberOfLines={1}>
+        <Text weight="semibold" size="xs" color={head} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
@@ -73,7 +73,7 @@ export function ContactsModal({ visible, onClose, onPick }: {
   return (
     <AppModal visible={visible} onClose={onClose} title="Contacts">
       {contacts.length === 0 ? (
-        <Text size="2xs" role="secondary" style={{ paddingVertical: 16 }}>
+        <Text size="xs" role="secondary" style={{ paddingVertical: 16 }}>
           No contacts yet. Start a DM to build your list.
         </Text>
       ) : (

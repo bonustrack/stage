@@ -17,10 +17,10 @@ const BLOCK_RADIUS = 8;
 const BLOCK_PAD = 10;
 const QUOTE_BAR = 4;
 const HEADING_SCALE = [1.6, 1.35, 1.15, 1, 1, 1] as const;
+const HEADING_SIZES = [FONT_SIZE['2xl'], FONT_SIZE.xl, FONT_SIZE.sm, FONT_SIZE.xs, FONT_SIZE.xs, FONT_SIZE.xs];
 const HEADING_MIN_GAP = { top: 6, bottom: 2 } as const;
 
-function heading(fg: string, base: number, scale: number, gap: number): object {
-  const fontSize = Math.round(base * scale);
+function heading(fg: string, fontSize: number, gap: number): object {
   return {
     color: fg,
     fontSize,
@@ -76,21 +76,17 @@ function tableStyles(border: string, gap: number): Record<string, object> {
 export function markdownStyles(options: MarkdownStyleOptions): Record<string, object> {
   const { fg, dark } = options;
   const pal = schemePalette(dark);
-  const base = options.fontSize ?? FONT_SIZE['2xs'];
+  const base = options.fontSize ?? FONT_SIZE.xs;
   const lineHeight = options.lineHeight ?? Math.round(base * 1.45);
   const gap = options.paragraphGap ?? 8;
   const link = options.link ?? (dark ? MARKDOWN_LINK.dark : MARKDOWN_LINK.light);
   const inline = { fontSize: base, lineHeight };
+  const headings = options.fontSize === undefined ? HEADING_SIZES : HEADING_SCALE.map((scale) => Math.round(base * scale));
   return {
     body: { color: fg, fontSize: base, lineHeight, fontFamily: fontName.sans },
     paragraph: { marginTop: 0, marginBottom: gap },
     textgroup: { minWidth: 0 },
-    heading1: heading(fg, base, HEADING_SCALE[0], gap),
-    heading2: heading(fg, base, HEADING_SCALE[1], gap),
-    heading3: heading(fg, base, HEADING_SCALE[2], gap),
-    heading4: heading(fg, base, HEADING_SCALE[3], gap),
-    heading5: heading(fg, base, HEADING_SCALE[4], gap),
-    heading6: heading(fg, base, HEADING_SCALE[5], gap),
+    ...Object.fromEntries(headings.map((size, index) => [`heading${index + 1}`, heading(fg, size, gap)])),
     strong: { ...inline, fontFamily: fontName.head, fontWeight: 'normal' },
     em: { ...inline, fontFamily: fontName.sans, fontStyle: 'italic', fontWeight: 'normal' },
     s: { textDecorationLine: 'line-through' },

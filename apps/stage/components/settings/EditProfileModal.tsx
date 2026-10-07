@@ -54,7 +54,7 @@ function EditProfileSection({ address, name, picture, onSaved }: {
         <FormField label="Display name" placeholder="How people see you" value={draft.displayName} onChangeText={(v) => { setDraft({ ...draft, displayName: v }); }} disabled={busy} />
         <FormField label="About" placeholder="A few words about you" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy} />
       </Col>
-      {problem ?? status ? <Text value={problem ?? status ?? ''} size="2xs" color="secondary" /> : null}
+      {problem ?? status ? <Text value={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
       <Box padding={{ top: 8 }}>
         <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
           disabled={busy || problem !== null} onPress={save} />

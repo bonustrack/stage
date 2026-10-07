@@ -169,6 +169,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### Unreleased
+
+- Stage, kit controls, Markdown defaults and the gallery use `xs` (16px) instead of `2xs` (15px) text. Existing Frame `Text`, `Title`, `Caption` and `Label` nodes with `size: '2xs'` are normalized to `xs`; icon, radius and control-size names are unchanged. Other text sizes and default `md` (18px) body text are unchanged.
+- The published `FontSizeName` / `TextSizeToken`, `FONT_SIZE['2xs']` (15px), `fontSize()` and `FONT_SIZE_SNAP` compatibility surface remains available for external consumers. Stage and the gallery no longer select that typography token.
+
 ### 0.1.0-beta.2
 
 #### New component

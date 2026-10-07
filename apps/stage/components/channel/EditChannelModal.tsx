@@ -102,7 +102,7 @@ function EditChannelSection({ convId, current, rights, picture, labels, onSaved 
         <ChannelLabelsEditor labels={labelDraft.draft} input={labelDraft.input} setInput={labelDraft.setInput} disabled={busy}
           onAdd={labelDraft.add} onRemove={labelDraft.remove} />
       </Col>
-      {problem ?? status ? <Text value={problem ?? status ?? ''} size="2xs" color="secondary" /> : null}
+      {problem ?? status ? <Text value={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
       <Box padding={{ top: 8 }}>
         <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
           disabled={busy || problem !== null} onPress={save} />

@@ -38,7 +38,7 @@ export const Controls: Story<ThemeArgs> = (args) => {
           <Badge dark={dark} label="Badge" color="info" />
         </Row>
         <Input dark={dark} placeholder="Input on the derived palette" />
-        <Card dark={dark}><Text size="2xs" color={palette.text}>Card on the derived surface. Sub text: <Text size="2xs" color={palette.sub}>{palette.sub}</Text></Text></Card>
+        <Card dark={dark}><Text size="xs" color={palette.text}>Card on the derived surface. Sub text: <Text size="xs" color={palette.sub}>{palette.sub}</Text></Text></Card>
         <Row gap={8} wrap>
           {(Object.keys(palette) as (keyof typeof palette)[]).map((name) => (
             <Col key={name} align="center" gap={4}>

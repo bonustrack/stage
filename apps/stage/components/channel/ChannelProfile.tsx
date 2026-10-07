@@ -67,7 +67,7 @@ function ChannelTitle({ name, description }: { name: string | null; description:
       {about ? (
         <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
           <Eyebrow>DESCRIPTION</Eyebrow>
-          <Text size="2xs" color={fg} style={{ marginTop: 6 }}>{about}</Text>
+          <Text size="xs" color={fg} style={{ marginTop: 6 }}>{about}</Text>
         </Box>
       ) : null}
     </>
@@ -122,7 +122,7 @@ function MemberRow({
         <Row align="center" gap={12} flex={1}>
           <Image src={stampAvatarUrl(item, 40)} size={40} radius="full" background={border} />
           <Col gap={2} flex={1}>
-            <Text size="2xs" value={model.displayName} weight="semibold" truncate />
+            <Text size="xs" value={model.displayName} weight="semibold" truncate />
             {model.addressLine === undefined ? null : (
               <Caption value={model.addressLine} color="secondary" truncate />
             )}

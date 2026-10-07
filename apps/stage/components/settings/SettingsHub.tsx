@@ -59,7 +59,7 @@ function IdentityHero(): React.ReactElement | null {
         <Avatar address={address} size={72} />
         <Col flex={1} gap={2}>
           <Text value={accountDisplayName(getPeerName(address), rec.label, short)} size="2xl" weight="semibold" color="link" truncate />
-          <Text value={sub} size="2xs" color="secondary" />
+          <Text value={sub} size="xs" color="secondary" />
         </Col>
       </Row>
       <Row gap={8}>
@@ -90,7 +90,7 @@ function StepRow({ step }: { step: ProtectionStep }): React.ReactElement {
     <Row align="center" gap={12} padding={{ y: 8 }}>
       <Glyph icon={step.done ? IconCircleCheck : IconCircleDashed} size={24} color={step.done ? success : sub} />
       <Text value={step.label} size="xs" color="link" style={{ flex: 1 }} />
-      {step.done ? <Text value={step.doneText} size="2xs" color="secondary" /> : (
+      {step.done ? <Text value={step.doneText} size="xs" color="secondary" /> : (
         <Button label={step.action} size="sm" color="primary" variant="solid" dark={dark}
           onPress={() => { capabilities.navigate(settingsSection('security').href); }} />
       )}

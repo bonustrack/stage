@@ -21,7 +21,7 @@ function IntroLabelChips({ labels, fg }: {
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
         <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }} key={label.toLowerCase()}>
-          <Text size="2xs" color={fg}>{label}</Text>
+          <Text size="xs" color={fg}>{label}</Text>
         </Box>
       ))}
     </Row>

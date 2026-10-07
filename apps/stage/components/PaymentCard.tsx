@@ -113,7 +113,7 @@ export function PaymentCard({
       <Row align="center" justify="between" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
-          <Text weight="semibold" size="2xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
+          <Text weight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
             {description}
           </Text>
         </Row>

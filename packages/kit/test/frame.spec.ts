@@ -126,9 +126,21 @@ describe('parseFrame: text and content nodes', () => {
     for (const [type, names] of Object.entries(chatkit)) {
       const base = type === 'Icon' ? { name: 'sparkle' } : { value: 'a' };
       for (const size of names) expect(Object.keys(FONT_SIZE)).toContain(size);
-      for (const size of Object.keys(FONT_SIZE)) expect(only({ type, ...base, size }).props).toEqual({ ...base, size });
+      for (const size of Object.keys(FONT_SIZE)) {
+        const expected = type !== 'Icon' && size === '2xs' ? 'xs' : size;
+        expect(only({ type, ...base, size }).props).toEqual({ ...base, size: expected });
+      }
       for (const size of ['5xl', '6xl', '7xl']) expect(only({ type, ...base, size }).props).toEqual(base);
     }
+  });
+
+  test('legacy text sizes become xs without changing icon or radius dimensions', () => {
+    for (const type of ['Text', 'Title', 'Caption', 'Label']) {
+      expect(only({ type, value: 'Legacy text', size: '2xs' }).props.size).toBe('xs');
+    }
+    expect(only({ type: 'Text', value: 'Editable', size: '2xs', editable: { name: 'note' } }).props.size).toBe('xs');
+    expect(only({ type: 'Icon', name: 'sparkle', size: '2xs' }).props.size).toBe('2xs');
+    expect(only({ type: 'Box', radius: '2xs' }).props.radius).toBe('2xs');
   });
 
   test('a required prop missing makes the node unsupported', () => {

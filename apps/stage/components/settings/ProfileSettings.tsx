@@ -26,7 +26,7 @@ function CopyableAddress({ address }: { address: string }): React.ReactElement {
   };
   return (
     <Pressable onPress={copy} hitSlop={8}>
-      <Text value={copied ? 'Copied' : shortAddress(address)} size="2xs" color="secondary" />
+      <Text value={copied ? 'Copied' : shortAddress(address)} size="xs" color="secondary" />
     </Pressable>
   );
 }
@@ -66,7 +66,7 @@ function EditPane({ address, handle, view }: {
       </ProfileHeader>
       {view.explanation === '' ? null : (
         <Box padding={{ x: PAGE_GUTTER, bottom: 12 }}>
-          <Text value={view.explanation} size="2xs" color="secondary" />
+          <Text value={view.explanation} size="xs" color="secondary" />
         </Box>
       )}
       {editable ? (

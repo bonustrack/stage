@@ -12,7 +12,7 @@ export const Controls: Story<CardProps & { statusText: string; withActions: bool
     confirm={withActions ? { label: 'Confirm', onPress: () => undefined } : undefined}
     cancel={withActions ? { label: 'Cancel', onPress: () => undefined } : undefined}
   >
-    <Text size="2xs">Card content goes here. Cards group related content and actions.</Text>
+    <Text size="xs">Card content goes here. Cards group related content and actions.</Text>
   </Card>
 );
 Controls.args = { size: 'md', collapsed: false, asForm: false, statusText: 'Status line', withActions: true };

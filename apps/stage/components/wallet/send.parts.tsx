@@ -66,9 +66,9 @@ export function TxStatus(props: {
 function ReviewLine({ label, value, secondary }: { label: string; value: string; secondary?: string }): React.ReactElement {
   return (
     <Row align="start" gap={12}>
-      <Text value={label} size="2xs" color="secondary" style={{ flex: 1 }} />
+      <Text value={label} size="xs" color="secondary" style={{ flex: 1 }} />
       <Col align="end" gap={2}>
-        <Text value={value} size="2xs" weight="semibold" color="text" />
+        <Text value={value} size="xs" weight="semibold" color="text" />
         {secondary === undefined ? null : <Text value={secondary} size="4xs" color="secondary" />}
       </Col>
     </Row>
@@ -89,11 +89,11 @@ export function SendReview({ recipient, amount, symbol, secondaryLabel, chainId 
         <ReviewLine label="Network" value={networkName(chainId)} />
       </Col>
       <Col gap={8}>
-        <Text value="To" size="2xs" color="secondary" />
+        <Text value="To" size="xs" color="secondary" />
         <RecipientRow address={summary.address} label={summary.label} />
         <Col background={border} radius="lg" padding={16} gap={6}>
           <Text value="Full address" size="4xs" color="secondary" />
-          <Text value={summary.address} size="2xs" variant="mono" color="text" selectable />
+          <Text value={summary.address} size="xs" variant="mono" color="text" selectable />
           <Text value="Check every character before you send. Transfers cannot be reversed." size="4xs" color="secondary" />
         </Col>
       </Col>

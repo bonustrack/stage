@@ -108,7 +108,7 @@ function DayCell(props: {
           opacity: enabled ? 1 : 0.3,
         }}
       >
-        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>
+        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>
           {d.getDate()}
         </RNText>
       </View>

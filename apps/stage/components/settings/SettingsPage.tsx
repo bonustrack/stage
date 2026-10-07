@@ -54,7 +54,7 @@ export function SettingsNavRow(props: {
         <Text value={props.label} size="xs" color="link" truncate />
       </Col>
       {props.value === undefined ? null : (
-        <Text value={props.value} size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} />
+        <Text value={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       )}
       <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
     </SettingsItem>
@@ -93,7 +93,7 @@ export function SettingsValueRow(props: {
       <Col flex={1}>
         <Text value={props.label} size="xs" color="link" />
       </Col>
-      <Text value={props.value} size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} />
+      <Text value={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       {props.onPress === undefined ? null : (
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}

@@ -32,7 +32,7 @@ export const Controls: Story<Pick<VoiceRecorderProps, 'slideThresholdPx'>> = (ar
           {...args}
           recording={recording} levels={levels} recordSecs={secs} dark={dark}
           fg={p.textColor} head={p.textColor} sub={p.subColor} bg={p.bgColor} chipBg={p.inputBgColor} primary={p.primaryColor}
-          inputSlot={<Text size="2xs" role="secondary">Message</Text>}
+          inputSlot={<Text size="xs" role="secondary">Message</Text>}
           leftControls={<Glyph icon={IconPlusLarge} size={22} dark={dark} />}
           rightAction={<Pressable><Glyph icon={IconMicrophone} size={22} dark={dark} /></Pressable>}
           onStart={() => { setRecording(true); setLog('recording'); }}

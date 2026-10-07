@@ -87,7 +87,7 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
     window.scrollTo(0, 0);
   };
   const activeId = story?.id ?? null;
-  const stage = story ? <StoryStage key={story.id} story={story} args={args} scroll={!stacked} compact={menu} /> : <Text size="2xs">No stories found</Text>;
+  const stage = story ? <StoryStage key={story.id} story={story} args={args} scroll={!stacked} compact={menu} /> : <Text size="xs">No stories found</Text>;
   const controls = story && Object.keys(argTypes).length > 0
     ? <ControlsPanel argTypes={argTypes} values={args} onChange={setArg} onReset={() => { navigate(serializeRoute(story.id, {})); }} touch={menu} />
     : null;

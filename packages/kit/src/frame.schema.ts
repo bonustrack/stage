@@ -29,6 +29,7 @@ const DIRECTION = oneOf(['row', 'col']);
 const WEIGHT = oneOf(['normal', 'medium', 'semibold', 'bold']);
 const TEXT_ALIGN = oneOf(['start', 'center', 'end']);
 const FONT_SIZE_NAME = oneOf(Object.keys(FONT_SIZE) as FontSizeName[]);
+const TEXT_SIZE: Validator<FontSizeName> = (raw) => FONT_SIZE_NAME(raw === '2xs' ? 'xs' : raw);
 const RADIUS = oneOf(['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full', '100%', 'none']);
 const CONTROL_SIZE = oneOf(['3xs', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']);
 const CONTROL_VARIANT = oneOf(['solid', 'soft', 'outline', 'ghost']);
@@ -78,13 +79,13 @@ export const FRAME_NODE_SCHEMAS = {
   Col: { props: BOX, children: 'nodes' },
   Form: { props: { ...BOX, direction: DIRECTION, onSubmitAction: action }, children: 'nodes' },
   Text: {
-    props: { ...TEXT_BASE, size: FONT_SIZE_NAME, italic: bool, lineThrough: bool, width: length, editable },
+    props: { ...TEXT_BASE, size: TEXT_SIZE, italic: bool, lineThrough: bool, width: length, editable },
     required: ['value'],
   },
-  Title: { props: { ...TEXT_BASE, size: FONT_SIZE_NAME }, required: ['value'] },
-  Caption: { props: { ...TEXT_BASE, size: FONT_SIZE_NAME }, required: ['value'] },
+  Title: { props: { ...TEXT_BASE, size: TEXT_SIZE }, required: ['value'] },
+  Caption: { props: { ...TEXT_BASE, size: TEXT_SIZE }, required: ['value'] },
   Label: {
-    props: { value: label, fieldName, size: FONT_SIZE_NAME, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
+    props: { value: label, fieldName, size: TEXT_SIZE, weight: WEIGHT, textAlign: TEXT_ALIGN, color },
     required: ['value'],
   },
   Markdown: { props: { value: text }, required: ['value'] },

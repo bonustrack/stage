@@ -67,9 +67,9 @@ function WalletInfoRow({ label, value }: {
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
       <Col flex={1}>
-        <Text value={label} size="2xs" color="secondary" />
+        <Text value={label} size="xs" color="secondary" />
       </Col>
-      <Text value={value} size="2xs" color="text" />
+      <Text value={value} size="xs" color="text" />
     </ListViewItem>
   );
 }
@@ -84,7 +84,7 @@ function WalletCopyRow({ label, value, onCopy }: {
     <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
       <Col flex={1} gap={4}>
         <Text value={label} size="4xs" color="secondary" />
-        <Text value={value} size="2xs" color="text" />
+        <Text value={value} size="xs" color="text" />
       </Col>
       <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
     </ListViewItem>
@@ -97,7 +97,7 @@ function WalletValidatorRow(): React.ReactElement {
     <ListViewItem align="start" gap={12} dark={dark}>
       <Col flex={1} gap={3}>
         <Row align="center" gap={8}>
-          <Text value="ECDSA owner key" size="2xs" color="text" />
+          <Text value="ECDSA owner key" size="xs" color="text" />
           <Badge label="SUDO" color="success" />
         </Row>
         <Text value="Main key (recovery phrase)" size="4xs" color="secondary" />
@@ -138,7 +138,7 @@ export function WalletSettings(): React.ReactElement {
   return (
     <SettingsPage title="Wallet">
       {!model ? (
-        <Text size="2xs" color={fg} style={{ padding: 24 }}>No active account.</Text>
+        <Text size="xs" color={fg} style={{ padding: 24 }}>No active account.</Text>
       ) : (
         <>
           <SettingsGroup title="Address" footnote={model.isSmart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>

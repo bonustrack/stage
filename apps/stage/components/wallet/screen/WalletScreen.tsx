@@ -94,7 +94,7 @@ function WalletTokens({ rows, err, c }: {
   if (err && rows === null) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
-        <Text size="2xs" color={DANGER}>Couldn’t load tokens</Text>
+        <Text size="xs" color={DANGER}>Couldn’t load tokens</Text>
       </Col>
     );
   }

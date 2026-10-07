@@ -60,7 +60,7 @@ function useFieldText(): { color: string; fontFamily: string; fontSize: number }
 
 function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
   if (hint === undefined) return null;
-  return <Text value={hint} size="2xs" color={color} style={{ paddingHorizontal: 4 }} />;
+  return <Text value={hint} size="xs" color={color} style={{ paddingHorizontal: 4 }} />;
 }
 
 const BARE_INPUT = {

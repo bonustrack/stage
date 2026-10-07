@@ -34,7 +34,7 @@ function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
           <Text value={row.sender} size="xs" weight={row.unread ? 'semibold' : undefined} color="link" truncate style={{ flex: 1 }} />
           <Caption value={channelTimestamp(row.ts)} color="secondary" />
         </Row>
-        <Text value={row.subject} size="2xs" color={row.unread ? 'link' : 'secondary'} truncate />
+        <Text value={row.subject} size="xs" color={row.unread ? 'link' : 'secondary'} truncate />
         {row.to === null ? null : <Caption value={row.to} color="secondary" />}
       </Col>
     </ListViewItem>
@@ -53,7 +53,7 @@ function Opening(): React.ReactElement {
   return (
     <CenterNote>
       <Spinner size={24} />
-      <Text value="Opening your mailbox…" size="2xs" color="secondary" textAlign="center" />
+      <Text value="Opening your mailbox…" size="xs" color="secondary" textAlign="center" />
     </CenterNote>
   );
 }
@@ -64,7 +64,7 @@ function EmptyMailbox({ boxes }: { boxes: readonly Mailbox[] }): React.ReactElem
     <CenterNote>
       <Glyph icon={IconEmail1} size={32} color={sub} />
       {boxes.map((box) => <Text key={box.mailAddress} value={box.mailAddress} size="xs" weight="semibold" color="link" textAlign="center" />)}
-      <Text value="No mail yet" size="2xs" color="secondary" textAlign="center" />
+      <Text value="No mail yet" size="xs" color="secondary" textAlign="center" />
     </CenterNote>
   );
 }
@@ -97,7 +97,7 @@ function InboxBody(): React.ReactElement {
   if (mailboxes.isError) return <RetryNotice message="Could not look up your Stage names." onRetry={() => { void mailboxes.refetch(); }} />;
   if (boxes === undefined) return <Opening />;
   if (boxes.length === 0) {
-    return <CenterNote><Text value="Claim a Stage name to get mail at name@st.box." size="2xs" color="secondary" textAlign="center" /></CenterNote>;
+    return <CenterNote><Text value="Claim a Stage name to get mail at name@st.box." size="xs" color="secondary" textAlign="center" /></CenterNote>;
   }
   if (inbox.isError) return <RetryNotice message="Could not open your mailbox. Check your connection and try again." onRetry={() => { void inbox.refetch(); }} />;
   if (inbox.data === undefined) return <Opening />;

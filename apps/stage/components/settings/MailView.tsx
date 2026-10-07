@@ -25,8 +25,8 @@ function MetaLine({ label, value }: { label: string; value: string }): React.Rea
   if (value === '') return null;
   return (
     <Row gap={8} align="start">
-      <Text value={label} size="2xs" color="secondary" style={{ width: META_LABEL_WIDTH }} />
-      <Text value={value} size="2xs" color="link" selectable style={{ flex: 1 }} />
+      <Text value={label} size="xs" color="secondary" style={{ width: META_LABEL_WIDTH }} />
+      <Text value={value} size="xs" color="link" selectable style={{ flex: 1 }} />
     </Row>
   );
 }
@@ -37,7 +37,7 @@ function ImagesNotice({ shown, onToggle }: { shown: boolean; onToggle: () => voi
     <Box padding={12} radius="sm" surface="raised">
       <Row align="center" gap={12}>
         <Text value={shown ? 'Images from the sender are shown.' : 'Images from the sender are hidden.'}
-          size="2xs" color="secondary" style={{ flex: 1 }} />
+          size="xs" color="secondary" style={{ flex: 1 }} />
         <Button label={shown ? 'Hide images' : 'Show images'} size="sm" color="secondary" variant="solid" dark={dark} onPress={onToggle} />
       </Row>
     </Box>
@@ -102,7 +102,7 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
     return (
       <Col align="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>
         <Spinner size={24} />
-        <Text value="Decrypting…" size="2xs" color="secondary" />
+        <Text value="Decrypting…" size="xs" color="secondary" />
       </Col>
     );
   }

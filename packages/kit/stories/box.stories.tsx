@@ -11,7 +11,7 @@ const SURFACE = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const;
 const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const;
 
 function Cell({ label }: { label: string }): React.ReactElement {
-  return <Box padding={8} background="#5b8def" radius="sm"><Text size="2xs" color="#fff">{label}</Text></Box>;
+  return <Box padding={8} background="#5b8def" radius="sm"><Text size="xs" color="#fff">{label}</Text></Box>;
 }
 
 export const Controls: Story<BoxProps & { borderWidth: number; borderColor: string }> = ({ borderWidth, borderColor, ...args }) => {
@@ -34,6 +34,6 @@ export const RowAndCol: Story = () => (
   <Col gap={16}>
     <Row gap={8}><Cell label="Row" /><Cell label="a" /><Cell label="b" /></Row>
     <Col gap={8} width={160}><Cell label="Col" /><Cell label="a" /><Cell label="b" /></Col>
-    <Row gap={8} wrap>{SURFACE.map((s) => <Box key={s} surface={s} padding={12} radius="md"><Text size="2xs">{s}</Text></Box>)}</Row>
+    <Row gap={8} wrap>{SURFACE.map((s) => <Box key={s} surface={s} padding={12} radius="md"><Text size="xs">{s}</Text></Box>)}</Row>
   </Col>
 );

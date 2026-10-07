@@ -151,7 +151,7 @@ function HsvPicker({ value, onChange, p }: {
           borderRadius: 10, borderWidth: 1, borderColor: p.border,
           backgroundColor: p.rowBg,
           color: text != null && !isHexColor(text) ? '#eb4c5b' : p.head,
-          fontSize: fontSize('2xs'), fontFamily: fontName.sans,
+          fontSize: fontSize('xs'), fontFamily: fontName.sans,
         }}
 />
     </Box>

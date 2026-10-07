@@ -124,7 +124,7 @@ function AddButton({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: disabled ? 0.5 : pressed ? 0.7 : 1 })}
     >
       <Glyph icon={IconPlusLarge} size={14} color={disabled ? sub : fg} />
-      <Text size="2xs" color={disabled ? sub : fg}>Add</Text>
+      <Text size="xs" color={disabled ? sub : fg}>Add</Text>
     </Pressable>
   );
 }

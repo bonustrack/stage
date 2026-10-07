@@ -14,7 +14,7 @@ export const text: ArgType<string> = { control: { type: 'text' } };
 export const number: ArgType<number> = { control: { type: 'number' } };
 export const color: ArgType<string> = { control: { type: 'color' } };
 
-export const FONT_SIZES = Object.keys(FONT_SIZE) as FontSizeName[];
+export const FONT_SIZES = (Object.keys(FONT_SIZE) as FontSizeName[]).filter((size) => size !== '2xs');
 export const CONTROL_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CONTROL_VARIANTS = ['soft', 'outline'] as const;
 export const COLOR_TOKENS = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border'] as const;

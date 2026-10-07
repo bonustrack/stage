@@ -68,7 +68,7 @@ function OptionRow({ opt, isOn, multi, dark, fg, onPress }: {
         borderColor: isOn ? '#c0a06e' : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
       })}
     >
-      <Text size="2xs" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
+      <Text size="xs" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
       {opt.description ? (
         <Text role="secondary" style={[TEXT_12PX, { marginTop: 2 }]}>{opt.description}</Text>
       ) : null}
@@ -89,7 +89,7 @@ function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }):
         borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
       })}
     >
-      <Text size="2xs" role="secondary">Other…</Text>
+      <Text size="xs" role="secondary">Other…</Text>
     </Pressable>
   );
 }

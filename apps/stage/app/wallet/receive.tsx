@@ -33,7 +33,7 @@ function AddressCard({ label, address, hint, onCopy }: {
       <Eyebrow value={label.toUpperCase()} color="secondary" style={TEXT_12PX}/>
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Col flex={1}>
-          <Text value={address || '-'} size="2xs" truncate />
+          <Text value={address || '-'} size="xs" truncate />
         </Col>
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       </ListViewItem>

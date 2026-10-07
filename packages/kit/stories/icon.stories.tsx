@@ -64,8 +64,8 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
   return (
     <Col gap={24}>
       <Input dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" inputProps={SEARCH_INPUT_PROPS} />
-      <Text size="2xs" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
-      {names.length === 0 ? <Text size="2xs" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
+      <Text size="xs" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
+      {names.length === 0 ? <Text size="xs" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
       <Row gap={8} wrap>
         {names.map((name) => (
           <IconCell key={name} icon={glyph(name, style)} label={name} detail={ALIASES_OF.get(name)?.join(', ')} dark={dark} />

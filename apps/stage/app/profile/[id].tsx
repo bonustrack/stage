@@ -16,7 +16,7 @@ function UserProfile({ handle }: { handle: string }): React.ReactElement {
     <Col surface="surface" flex={1} align="center" justify="center" padding={24}>
       {resolved.resolving
         ? <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
-        : <Text size="2xs" role="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>}
+        : <Text size="xs" role="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>}
     </Col>
   );
 }
