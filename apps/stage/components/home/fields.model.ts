@@ -24,6 +24,10 @@ export const DEFAULT_CHANNEL_FIELDS: ChannelFieldPreferences = {
   board: hiddenFields,
 };
 
+export function visibleChannelFieldCount(fields: ChannelFields): number {
+  return CHANNEL_FIELDS.filter(({ id }) => fields[id]).length;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

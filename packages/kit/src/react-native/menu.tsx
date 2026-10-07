@@ -74,6 +74,7 @@ export function DropdownMenu({ children, dark, background, maxHeight, style }: D
 
 export interface DropdownMenuItemProps {
   label: string;
+  children?: ReactNode;
   onPress: () => void;
   iconName?: CentralIcon;
   icon?: ReactNode;
@@ -98,6 +99,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     <Pressable
       onPress={props.onPress}
       accessibilityRole="menuitem"
+      accessibilityLabel={props.label}
       onHoverIn={() => { setHovered(true); }}
       onHoverOut={() => { setHovered(false); }}
       style={({ pressed }) => ({
@@ -111,7 +113,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     >
       {icon}
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        <Text {...menuText} value={props.label} color={color} truncate />
+        {props.children ?? <Text {...menuText} value={props.label} color={color} truncate />}
       </View>
       {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>

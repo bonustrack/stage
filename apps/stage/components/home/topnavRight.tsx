@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { PickerRow } from '../conversation/SidebarSection';
 import { AppIcon } from '../widgets';
-import { CHANNEL_FIELDS } from './fields.model';
+import { CHANNEL_FIELDS, visibleChannelFieldCount } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
@@ -68,7 +68,11 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
     if (edit.view === undefined && page !== 'sorting') close();
     setHomeView(edit);
   };
-  const count = searchFilterCount(filter.query);
+  const filterCount = searchFilterCount(filter.query);
+  const counts: Record<string, number | undefined> = {
+    filter: filterCount > 0 ? filterCount : undefined,
+    fields: visibleChannelFieldCount(fields),
+  };
   return (
     <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
       {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}/> : <>
@@ -90,7 +94,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
                 leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link"/>}
                 onPress={() => { pick(row.id); }}/>
             ) : <MenuRow key={row.id} icon={row.icon}
-              label={row.id === 'filter' && count > 0 ? `Filter (${count})` : row.label}
+              label={row.label} value={row.value} count={counts[row.id]}
               selected={row.selected} onPress={() => { pick(row.id); }}/>) }
           </Section>
         ))}

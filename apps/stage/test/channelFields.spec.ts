@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import {
-  CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn,
+  CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn, visibleChannelFieldCount,
 } from '../components/home/fields.model';
 
 const values = new Map<string, string>();
@@ -42,6 +42,24 @@ describe('channel field preferences', () => {
       ['status', 'Status'], ['labels', 'Labels'], ['priority', 'Priority'], ['avatar', 'Avatar'],
     ]);
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });
+  });
+
+  test('counts currently visible fields, including zero, independently for each view', () => {
+    let prefs = parseChannelFields('{}');
+    expect(visibleChannelFieldCount(prefs.chats)).toBe(2);
+    expect(visibleChannelFieldCount(prefs.board)).toBe(0);
+    for (const [index, { id }] of CHANNEL_FIELDS.entries()) {
+      prefs = toggleChannelFieldIn(prefs, 'board', id);
+      expect(visibleChannelFieldCount(prefs.board)).toBe(index + 1);
+      expect(visibleChannelFieldCount(prefs.chats)).toBe(2);
+    }
+    for (const [index, { id }] of CHANNEL_FIELDS.entries()) {
+      prefs = toggleChannelFieldIn(prefs, 'board', id);
+      expect(visibleChannelFieldCount(prefs.board)).toBe(CHANNEL_FIELDS.length - index - 1);
+    }
+    const unknownField = { ...prefs.chats, future: true };
+    expect(visibleChannelFieldCount(unknownField)).toBe(2);
+    expect(visibleChannelFieldCount(parseChannelFields('{"chats":{"labels":false}}').chats)).toBe(1);
   });
 
   test('missing or invalid persisted data falls back without throwing', () => {

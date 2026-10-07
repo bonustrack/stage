@@ -79,6 +79,7 @@ export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
 export interface ViewMenuRow {
   id: string;
   label: string;
+  value?: string;
   icon?: AppIconName;
   selected: boolean;
 }
@@ -115,19 +116,19 @@ export function homeSortMenu(current: HomeViewContent): ViewMenuSection[] {
 export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
   const board = current.view === 'board';
   const sort = homeSortOf(current);
+  const picked = board ? current.columnBy : current.groupBy;
   if (!grouping) return [
     { rows: [
       { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
       { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
     ] },
     { rows: [
-      { id: 'grouping', label: board ? 'Column by' : 'Group by', icon: 'IconLayersThree', selected: false },
-      { id: 'sorting', label: `Sort by: ${SORT_LABELS[sort.by]}`, icon: DIRECTION_ICONS[sort.direction], selected: false },
+      { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
+      { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
       { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
       { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
     ] },
   ];
-  const picked = board ? current.columnBy : current.groupBy;
   const groups = GROUP_KEYS.map((key): ViewMenuRow => (
     { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
   ));

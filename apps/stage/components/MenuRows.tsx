@@ -3,28 +3,50 @@ import type { LayoutChangeEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { AppIcon, type AppIconRef } from './widgets';
-import { Box } from './layout';
+import { Box, Row } from './layout';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { CountTag } from './CountTag';
 import { Eyebrow } from './Eyebrow';
 import type { MenuItem } from './appIcons';
 import { AnchoredMenu, menuPointBelow, menuPointBelowEnd, menuPointOnLayout } from './AnchoredMenu';
 import { RoundIconButton } from './RoundIconButton';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { usePalette } from '../lib/theme';
-import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { useHover } from './hover';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 
-export function MenuRow({ icon, label, onPress, danger, divider = danger === true, selected }: {
-  icon?: AppIconRef; label: string; onPress: () => void; danger?: boolean; divider?: boolean; selected?: boolean;
+function MenuRowContent({ label, value, count, role }: {
+  label: string; value?: string; count?: number; role: 'danger' | 'link';
+}): React.ReactElement {
+  const menuText = useDropdownMenuText();
+  return (
+    <Row align="center" gap={DROPDOWN_MENU.itemGap}>
+      <Box style={{ flexShrink: 1, minWidth: 0 }}>
+        <Text {...menuText} role={role} truncate>
+          {label}{value === undefined ? null : <>: <Text {...menuText} role="secondary">{value}</Text></>}
+        </Text>
+      </Box>
+      {count === undefined ? null : <CountTag count={count}/>}
+    </Row>
+  );
+}
+
+export function MenuRow({ icon, label, value, count, onPress, danger, divider = danger === true, selected }: {
+  icon?: AppIconRef; label: string; value?: string; count?: number; onPress: () => void;
+  danger?: boolean; divider?: boolean; selected?: boolean;
 }): React.ReactElement {
   const tone = danger === true ? 'danger' : 'link';
+  const name = value === undefined ? label : `${label}: ${value}`;
   return (
     <>
       {divider ? <DropdownMenuSeparator /> : null}
       <DropdownMenuItem
-        label={label} danger={danger} selected={selected} onPress={onPress}
+        label={count === undefined ? name : `${name} (${count})`} danger={danger} selected={selected} onPress={onPress}
         icon={icon === undefined ? undefined : <AppIcon name={icon} size={DROPDOWN_MENU.icon} color={tone} />}
-      />
+      >
+        {value === undefined && count === undefined ? null : <MenuRowContent label={label} value={value} count={count} role={tone}/>}
+      </DropdownMenuItem>
     </>
   );
 }

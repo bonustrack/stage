@@ -2,6 +2,10 @@ import { useState } from 'react';
 import type { Story } from '../gallery/story';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSheet, type DropdownMenuProps, type DropdownMenuSheetProps } from '../src/react-native/dropdown-menu';
 import { Button } from '../src/react-native/button';
+import { Badge } from '../src/react-native/badge';
+import { Row } from '../src/react-native/box';
+import { Text } from '../src/react-native/text';
+import { DROPDOWN_MENU, useDropdownMenuText } from '../src/react-native/menu';
 import { bool, color, number, select, useDark } from './_controls';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
@@ -26,6 +30,23 @@ export const Controls: Story<Args> = ({ showDanger, highlightFirst, ...args }) =
 };
 Controls.args = { showDanger: true, highlightFirst: false };
 Controls.argTypes = { showDanger: bool, highlightFirst: bool, background: color, maxHeight: number };
+
+export const CustomContent: Story = () => {
+  const menuText = useDropdownMenuText();
+  return (
+    <DropdownMenu>
+      <DropdownMenuItem label="Sort by: Priority" onPress={() => undefined}>
+        <Text {...menuText}>Sort by: <Text {...menuText} role="secondary">Priority</Text></Text>
+      </DropdownMenuItem>
+      <DropdownMenuItem label="Fields (2)" onPress={() => undefined}>
+        <Row align="center" gap={DROPDOWN_MENU.itemGap}>
+          <Text {...menuText}>Fields</Text>
+          <Badge label="2" color="secondary" variant="soft" pill/>
+        </Row>
+      </DropdownMenuItem>
+    </DropdownMenu>
+  );
+};
 
 export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background' | 'avoidKeyboard'>> = (args) => {
   const dark = useDark();
