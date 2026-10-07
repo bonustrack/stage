@@ -13,7 +13,7 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
-import { SMALL_FONT_SIZE } from '../text.styles';
+import { Text } from './text';
 import { Glyph } from './glyph';
 import { ControlSheet, ControlTrigger } from './control-trigger';
 import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
@@ -160,7 +160,7 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
       <View style={{ flexDirection: 'row' }}>
         {WEEKDAYS.map((w, i) => (
           <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 4 }}>
-            <RNText style={{ color: colors.sub, fontSize: SMALL_FONT_SIZE['5xs'], fontFamily: fontName.sans }}>{w}</RNText>
+            <Text size="3xs" color={colors.sub}>{w}</Text>
           </View>
         ))}
       </View>

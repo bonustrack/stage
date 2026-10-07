@@ -19,7 +19,6 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { previewLinkOf } from '@stage-labs/client/embed/cardLinks';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta, type GithubMeta } from '../../lib/useGithubMeta';
-import { TEXT_11PX } from '../smallText';
 import type { SpacingValue } from '@stage-labs/kit/layout';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { domainOf } from '../../lib/format';
@@ -60,7 +59,7 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
           {meta.favicon ? (
             <Image src={meta.favicon} alt={domain} radius="xs" style={{ width: 14, height: 14, marginRight: 6 }} />
           ) : null}
-          <Text color={subColor} numberOfLines={1} style={TEXT_11PX}>{domain}</Text>
+          <Text color={subColor} numberOfLines={1} size="3xs">{domain}</Text>
         </Row>
         <LinkCardText title={meta.title === '' ? undefined : meta.title} description={meta.description} subColor={subColor} />
       </Box>
@@ -134,10 +133,10 @@ function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | n
   return (
     <>
       {meta.additions != null ? (
-        <Text weight="semibold" color={SUCCESS} style={[TEXT_11PX, { marginLeft: 8 }]}>+{fmt(meta.additions)}</Text>
+        <Text weight="semibold" color={SUCCESS} size="3xs" style={{ marginLeft: 8 }}>+{fmt(meta.additions)}</Text>
       ) : null}
       {meta.deletions != null ? (
-        <Text weight="semibold" color={DANGER} style={[TEXT_11PX, { marginLeft: 6 }]}>−{fmt(meta.deletions)}</Text>
+        <Text weight="semibold" color={DANGER} size="3xs" style={{ marginLeft: 6 }}>−{fmt(meta.deletions)}</Text>
       ) : null}
     </>
   );
@@ -151,13 +150,13 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
         <Box width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
       ) : null}
       {meta.state ? (
-        <Text color={subColor} style={[TEXT_11PX, { textTransform: 'capitalize' }]}>{meta.state}</Text>
+        <Text color={subColor} size="3xs" style={{ textTransform: 'capitalize' }}>{meta.state}</Text>
       ) : null}
       {meta.kind === 'repo' && meta.stars != null ? (
-        <Text color={subColor} style={TEXT_11PX}>★ {meta.stars}</Text>
+        <Text color={subColor} size="3xs">★ {meta.stars}</Text>
       ) : null}
       {meta.author ? (
-        <Text color={subColor} style={[TEXT_11PX, { marginLeft: meta.state ? 8 : 0 }]}>{meta.author}</Text>
+        <Text color={subColor} size="3xs" style={{ marginLeft: meta.state ? 8 : 0 }}>{meta.author}</Text>
       ) : null}
       <GithubDiffStats meta={meta} />
     </Row>
@@ -177,7 +176,7 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
     <OutlinedLinkCard url={url} padding={{ x: 12, y: 10 }}>
       <Row margin={{ bottom: 4 }} align="center" justify="start">
         <GithubLogo size={16} color={pal.link}/>
-        <Text color={subColor} style={[TEXT_11PX, { marginLeft: 6 }]}>
+        <Text color={subColor} size="3xs" style={{ marginLeft: 6 }}>
           {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
         </Text>
       </Row>

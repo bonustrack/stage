@@ -25,7 +25,6 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { stampAvatarUrl, channelStampSeed } from '@stage-labs/kit/avatar';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
-import { TEXT_11PX } from '../smallText';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Eyebrow } from '../Eyebrow';
 import { TitleText } from '../TitleText';
@@ -91,7 +90,7 @@ function MemberBadge({ badge, border, sub, dark }: {
         value={badge.label}
         weight="medium"
         color={owner ? MEMBER_OWNER_FG[scheme] : sub}
-        style={TEXT_11PX}
+        size="3xs"
       />
     </Box>
   );

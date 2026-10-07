@@ -30,7 +30,6 @@ import type { X402Accept, X402Challenge } from '../lib/useLinkPreview';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
-import { TEXT_11PX } from './smallText';
 
 interface PaymentBalanceArgs {
   show: boolean;
@@ -234,7 +233,7 @@ export function X402Card({ challenge, dark }: {
 
   const badge = (
     <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
-      <Text weight="semibold" color={pal.primary} style={TEXT_11PX}>x402</Text>
+      <Text weight="semibold" color={pal.primary} size="3xs">x402</Text>
     </Box>
   );
 

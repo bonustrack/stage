@@ -15,8 +15,6 @@ export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
 export type TextSizeToken = FontSizeName;
 
-export const SMALL_FONT_SIZE = { '6xs': 11, '5xs': 12 } as const;
-
 export type TextAlign = 'start' | 'center' | 'end';
 
 export type ResolvedTextAlign = 'left' | 'center' | 'right';

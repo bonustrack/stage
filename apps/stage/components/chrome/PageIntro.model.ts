@@ -1,6 +1,6 @@
 export const PAGE_INTRO_TYPE = {
   title: { fontSize: 38, lineHeight: 46 },
-  about: { fontSize: 20, lineHeight: 26 },
+  about: { lineHeight: 26 },
   gap: 14,
   sectionGap: 32,
   contentWidth: 340,

@@ -13,7 +13,6 @@ import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
-import { TEXT_11PX } from '../smallText';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
@@ -51,7 +50,7 @@ function TabIcon({ name, icon, active, unreadBadge }: {
           align="center" justify="center"
           style={TAB_BADGE_POSITION}
 >
-          <Text weight="semibold" color={pal.bg} style={TEXT_11PX}>{unreadBadge}</Text>
+          <Text weight="semibold" color={pal.bg} size="3xs">{unreadBadge}</Text>
         </Box>
       ) : null}
     </Box>

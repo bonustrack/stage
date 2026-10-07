@@ -8,7 +8,6 @@ import { Box, Row } from './layout';
 import { MediaCard } from './MediaCard';
 import { googleMapsUrl, osmTileGrid, type MapView } from '@stage-labs/client/embed/detect';
 import { usePalette, withAlpha } from '../lib/theme';
-import { TEXT_11PX } from './smallText';
 
 const LETTERBOX_CROP = 4 / 3;
 
@@ -31,7 +30,7 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
         </Box>
       </Box>
       <Box padding={{ x: 10, y: 6 }}>
-        <Text role="secondary" style={TEXT_11PX}>
+        <Text role="secondary" size="3xs">
           YouTube
         </Text>
       </Box>
@@ -81,7 +80,7 @@ function MapAttribution(): React.ReactElement {
       padding={{ x: 4 }} background={withAlpha(colors['bg-light'], 0.75)}
       style={{ position: 'absolute', right: 0, bottom: 0, borderTopLeftRadius: 4 }}
     >
-      <Text color={colors['fg-light']} style={TEXT_11PX}>© OpenStreetMap</Text>
+      <Text color={colors['fg-light']} size="3xs">© OpenStreetMap</Text>
     </Box>
   );
 }
@@ -121,7 +120,7 @@ export function LocationEmbed({ lat, lng, dark }: {
         <Text weight="semibold" size="3xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
-        <Text role="secondary" numberOfLines={1} style={TEXT_11PX}>
+        <Text role="secondary" numberOfLines={1} size="3xs">
           Open in Google Maps
         </Text>
       </Row>

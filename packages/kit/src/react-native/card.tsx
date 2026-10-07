@@ -1,9 +1,9 @@
 
 import { type ReactNode } from 'react';
-import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
-import { SMALL_FONT_SIZE } from '../text.styles';
+import { Text, type TextSizeToken } from './text';
+import { BLOCK_RADIUS_DEFAULT, schemePalette } from '../tokens';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -33,10 +33,10 @@ export interface CardProps {
 }
 
 const PADDING: Record<CardSize, number> = { sm: 10, md: 14, lg: 18 };
-const STATUS_SIZE: Record<CardSize, number> = {
-  sm: SMALL_FONT_SIZE['5xs'],
-  md: FONT_SIZE['3xs'],
-  lg: FONT_SIZE['2xs'],
+const STATUS_SIZE: Record<CardSize, TextSizeToken> = {
+  sm: '3xs',
+  md: '3xs',
+  lg: '2xs',
 };
 
 function palette(dark: boolean): { surface: string; border: string; sub: string } {
@@ -52,18 +52,15 @@ function CardStatusLine(props: {
 }): React.ReactElement {
   const { status, size, collapsed, sub } = props;
   return (
-    <RNText
-      style={{
-        color: sub,
-        fontSize: STATUS_SIZE[size],
-        fontFamily: fontName.sans,
-        marginBottom: collapsed ? 0 : 8,
-      }}
+    <Text
+      size={STATUS_SIZE[size]}
+      color={sub}
+      style={{ marginBottom: collapsed ? 0 : 8 }}
       numberOfLines={1}
     >
       {status.favicon ? `${status.favicon}  ` : ''}
       {status.text}
-    </RNText>
+    </Text>
   );
 }
 

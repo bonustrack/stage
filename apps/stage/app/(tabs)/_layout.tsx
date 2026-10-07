@@ -1,3 +1,4 @@
+import { FONT_SIZE } from '@stage-labs/kit/tokens';
 
 import { Box, Col } from '../../components/layout';
 import { usePathname, useRouter } from 'expo-router';
@@ -19,7 +20,6 @@ import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
-import { TEXT_11PX } from '../../components/smallText';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
 
@@ -136,7 +136,7 @@ export default function TabsLayout(): React.ReactElement {
                       ...TAB_BADGE_POSITION,
                       backgroundColor: pal.link,
                       color: pal.bg,
-                      ...TEXT_11PX,
+                      fontSize: FONT_SIZE['3xs'],
                       fontFamily: 'Calibre-Semibold',
                       minWidth: TAB_BADGE_SIZE,
                       height: TAB_BADGE_SIZE,

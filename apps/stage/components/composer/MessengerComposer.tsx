@@ -18,7 +18,6 @@ import { forgetAttachments } from '../../lib/xmtp.attachments';
 import { fileInputs } from './send.model';
 import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
-import { TEXT_12PX } from '../smallText';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 
@@ -120,7 +119,7 @@ function ComposerHeader(p: {
         <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} />
       ) : null}
       {p.uploading || p.err ? (
-        <Text color={p.err ? DANGER : p.sub} style={[TEXT_12PX, { paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }]}>
+        <Text size="3xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
           {p.err ?? 'Uploading…'}
         </Text>
       ) : null}

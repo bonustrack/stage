@@ -171,6 +171,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ### Unreleased
 
+- Custom 11px and 12px text now uses `3xs` (13px), including all badge text, small Card status text, calendar weekday labels, `Caption size="sm"`, `Label size="xs"` and gallery labels. `SMALL_FONT_SIZE` is removed and `BadgeFontToken` now uses `3xs` only. Component size names, padding, icons and control dimensions are unchanged. Other fixed app text sizes use the exact matching Text token where available; unmatched and computed sizes stay unchanged.
 - Stage, kit controls, Markdown defaults and the gallery use `xs` (16px) instead of the former `2xs` (15px) text.
 - Breaking text token rename: former `4xs` (13px) is now `3xs`; former `3xs` (14px) is now `2xs`. `4xs` and the unused Text `4xl` (40px) option are removed from `FontSizeName`, `TextSizeToken`, `FONT_SIZE`, `fontSize()` and text selectors. `xs` through `3xl` and default `md` remain unchanged. Rename existing text consumers simultaneously to keep their pixel sizes. `caption` and the badge font token use `3xs`, still 13px. Badge/control size names, icon dimensions, spacing and radii are unchanged. The wallet's separate `Title hero="4xl"` is still 60px and is not the removed Text option.
 - `FONT_SIZE_SNAP` now uses `3xs` for 10 through 13, `2xs` for 14, and `xs` for 15 and 16. The 15px font token no longer exists; larger snap entries are unchanged.

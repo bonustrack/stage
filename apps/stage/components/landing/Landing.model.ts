@@ -15,7 +15,6 @@ export const BANNER = {
   link: 'Claim your free username',
   tail: '. →',
   copies: 3,
-  size: 19,
   lineHeight: 29,
   padY: 12,
   padRight: 64,
@@ -43,7 +42,7 @@ export const HERO_LAYOUT = {
 export const HERO_LOGO_SIZE = HERO_LAYOUT.logoHeight - 2 * HERO_LAYOUT.logoPadY;
 
 export const HERO_TYPE = {
-  eyebrow: { size: 17, letterSpacing: 1.7 },
+  eyebrow: { letterSpacing: 1.7 },
   title: { size: 76, lineHeight: 83.6 },
   paragraph: { size: 26, lineHeight: 31.2 },
 } as const;

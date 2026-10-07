@@ -17,7 +17,6 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
 import { useCopiedFlag } from '../../lib/useCopiedFlag';
 import { MONO_FONT } from './helpers';
-import { TEXT_11PX } from '../smallText';
 
 const CODE_PAD = 12;
 const CODE_TEXT = { fontFamily: MONO_FONT, lineHeight: 20, flexShrink: 0 } as const;
@@ -40,7 +39,7 @@ function CopyCodeButton({ code }: { code: string }): React.ReactElement {
         {...hoverProps}
       >
         <Row align="center" gap={4} padding={{ x: 6, y: 4 }}>
-          {copied ? <Text color={color} style={TEXT_11PX}>Copied</Text> : null}
+          {copied ? <Text color={color} size="3xs">Copied</Text> : null}
           <Glyph icon={copied ? IconCheckmark1 : IconSquareBehindSquare1} size={16} color={color}/>
         </Row>
       </Pressable>
@@ -75,7 +74,7 @@ export function CodeBlock({ code, lang, fg, highlight }: {
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}
     >
       <Row align="center" justify="between" padding={{ left: CODE_PAD, right: 4, top: 2 }}>
-        <Text role="secondary" numberOfLines={1} style={TEXT_11PX}>{lang ?? ''}</Text>
+        <Text role="secondary" numberOfLines={1} size="3xs">{lang ?? ''}</Text>
         <CopyCodeButton code={code}/>
       </Row>
       <GestureDetector gesture={scrollGesture}>

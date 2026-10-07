@@ -14,9 +14,9 @@ function BannerCopy({ onWidth }: { onWidth?: (width: number) => void }): React.R
       padding={{ y: BANNER.padY, right: BANNER.padRight }}
       onLayout={onWidth ? (e) => { onWidth(e.nativeEvent.layout.width); } : undefined}
     >
-      <Text color={HERO_WHITE} numberOfLines={1} style={{ fontSize: BANNER.size, lineHeight: BANNER.lineHeight }}>
+      <Text size="lg" color={HERO_WHITE} numberOfLines={1} style={{ lineHeight: BANNER.lineHeight }}>
         {BANNER.lead}
-        <Text color={HERO_WHITE} style={{ fontSize: BANNER.size, lineHeight: BANNER.lineHeight, textDecorationLine: 'underline' }}>
+        <Text size="lg" color={HERO_WHITE} style={{ lineHeight: BANNER.lineHeight, textDecorationLine: 'underline' }}>
           {BANNER.link}
         </Text>
         {BANNER.tail}

@@ -3,7 +3,7 @@ import { resolveBadgeStyle, type BadgeSize } from '../src/badge';
 import { SIZES } from '../src/button.styles';
 import { CONTROL_SIZES, controlColors, controlTextStyle } from '../src/control.styles';
 import { markdownStyles } from '../src/markdown.styles';
-import { resolveTextSize, SMALL_FONT_SIZE } from '../src/text.styles';
+import { resolveTextSize } from '../src/text.styles';
 import { FONT_SIZE, FONT_SIZE_SNAP, fontSize, type FontSizeName } from '../src/tokens';
 
 const TEXT_SIZES: Record<FontSizeName, number> = {
@@ -32,12 +32,16 @@ describe('text size tokens', () => {
     for (const token of Object.values(FONT_SIZE_SNAP)) expect(FONT_SIZE[token]).toBeDefined();
   });
 
-  test('button and badge size names and dimensions are unchanged', () => {
+  test('button text sizes are unchanged and every badge uses 3xs text', () => {
     expect(Object.values(SIZES).map((size) => size.fontSize)).toEqual([13, 14, 17, 18, 19]);
-    const badgeFonts = { ...SMALL_FONT_SIZE, ...FONT_SIZE };
     const sizes: BadgeSize[] = ['3xs', '2xs', 'sm', 'md', 'lg'];
-    expect(sizes.map((size) => badgeFonts[resolveBadgeStyle(undefined, undefined, size, 'light').fontToken]))
-      .toEqual([11, 12, 13, 13, 13]);
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const size of sizes) {
+        const { fontToken } = resolveBadgeStyle(undefined, undefined, size, scheme);
+        expect(fontToken).toBe('3xs');
+        expect(resolveTextSize(fontToken, undefined)).toBe(13);
+      }
+    }
   });
 });
 

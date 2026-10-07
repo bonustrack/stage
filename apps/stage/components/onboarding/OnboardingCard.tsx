@@ -10,7 +10,7 @@ function PageIntro({ title, about }: { title: string; about?: string }): React.R
   return (
     <Col gap={PAGE_INTRO_TYPE.gap}>
       <Text weight="medium" style={{ ...CENTER, ...PAGE_INTRO_TYPE.title }}>{title}</Text>
-      {about === undefined ? null : <Text style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>{about}</Text>}
+      {about === undefined ? null : <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>{about}</Text>}
     </Col>
   );
 }
