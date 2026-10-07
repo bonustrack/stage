@@ -13,9 +13,10 @@ import {
   type PushPermission, type PushTopics,
 } from './pushRegister.core';
 import { getCachedXmtpClient } from './xmtp.state';
+import { getAccountEpoch } from './accountEpoch';
 import { attempt, recover, reported } from './errorPolicy';
 
-type PushClient = Pick<Client, 'installationId' | 'conversations'>;
+type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity'>;
 
 const PLATFORM: PushPlatform = Platform.OS === 'android' ? 'android' : 'ios';
 
@@ -43,8 +44,12 @@ async function collectTopics(client: PushClient): Promise<PushTopics> {
 }
 
 export async function registerPushWithServer(client: PushClient): Promise<void> {
+  const epoch = getAccountEpoch();
   await runPushRegistration({
     installationId: client.installationId,
+    accountAddress: client.publicIdentity.identifier,
+    current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
+    syncPreferences: () => client.preferences.sync(),
     platform: PLATFORM,
     rpcUrl: directRpcUrl,
     getToken: getDeviceFcmToken,

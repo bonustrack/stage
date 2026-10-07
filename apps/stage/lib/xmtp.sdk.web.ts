@@ -153,6 +153,13 @@ function streamConsent(client: WebClient, onChange: () => void): () => void {
   }));
 }
 
+async function streamPreferences(client: WebClient, onChange: () => void, onClose: () => void): Promise<() => void> {
+  const handle = await client.preferences.streamPreferences({
+    onValue: () => { onChange(); }, onError: reported('xmtp.preferenceStream'), onFail: onClose,
+  });
+  return () => { ignore(handle.end(), 'cleanup'); };
+}
+
 function streamDeletions(client: WebClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
   return endWhenCancelled(client.conversations.streamDeletedMessages({
     onValue: (m: DecodedMessage) => { onDeleted({ convId: m.conversationId, messageId: m.id }); },
@@ -220,6 +227,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   streamConversations: (client, onConv) =>
     endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),
   streamConsent,
+  streamPreferences,
   streamDeletions,
   deletedEntryOf,
   messageTarget,

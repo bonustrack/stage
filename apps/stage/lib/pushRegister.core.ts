@@ -1,10 +1,12 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import {
-  PUSH_RPC, clearConversationBody, deleteInstallationBody, derivePushGroupKey, isWelcomeTopic, joinDeviceGroupBody,
-  pushRpcPath, registerInstallationBody, subscribeWithMetadataBody, type HmacKeysByTopic, type PushPlatform, type PushRpc,
+  PUSH_RPC, clearConversationBody, deleteInstallationBody, derivePushGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
 } from '@stage-labs/client/xmtp/pushServer';
 import { appStorage } from '../platform/storage';
-import { getActiveAccount } from './accounts';
+import { getActiveAccount, type AccountRecord } from './accounts';
+import { makePushRegistrar, readPushRegistration, type PushRegistrationInput } from './pushRegistration.core';
+
+export type { PushTopics } from './pushRegistration.core';
 import { onReadStateChanged } from './channelsCache';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
@@ -17,19 +19,8 @@ const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, 'htt
 const CLEAR_DEBOUNCE_MS = 1_500;
 const HTTP_CONFLICT = 409;
 
-const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 const stateKey = (installationId: string): string => `push.server.${installationId}`;
 const joinedKey = (installationId: string): string => `push.group.${installationId}`;
-
-export interface PushTopics { topics: string[]; hmacKeys: HmacKeysByTopic }
-
-interface PushRegistrationInput {
-  installationId: string;
-  platform: PushPlatform;
-  rpcUrl: (method: PushRpc) => string;
-  getToken: () => Promise<string | null>;
-  collectTopics: () => Promise<PushTopics>;
-}
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
@@ -55,8 +46,6 @@ export function makeTopicRefresh<C>(
   };
 }
 
-interface RegisterState { token: string; at: number; topics: string }
-
 function reportPushFailure(scope: string, err: unknown): void {
   setPushStatus('failed', errorMessage(err));
   report(scope, err);
@@ -77,9 +66,7 @@ async function postJson(url: string, body: unknown, accepted?: number): Promise<
 
 const groupKeys = new Map<string, Promise<string>>();
 
-async function activePushGroupKey(): Promise<string | null> {
-  const rec = await getActiveAccount();
-  if (rec === null) return null;
+async function pushGroupKey(rec: AccountRecord): Promise<string> {
   const known = groupKeys.get(rec.address);
   if (known) return known;
   const pending = signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage));
@@ -88,42 +75,22 @@ async function activePushGroupKey(): Promise<string | null> {
   return pending;
 }
 
-async function joinDeviceGroup(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {
-  const key = joinedKey(installationId);
-  if ((await appStorage.get(key).catch(ignored(null, 'cache'))) === '1') return;
-  const groupKey = await activePushGroupKey();
-  if (groupKey === null) return;
-  await postJson(rpcUrl(PUSH_RPC.join), joinDeviceGroupBody(installationId, groupKey), HTTP_CONFLICT);
+async function joinDeviceGroup(input: PushRegistrationInput, account: AccountRecord): Promise<void> {
+  const key = joinedKey(input.installationId);
+  if ((await appStorage.get(key).catch(ignored(null, 'cache'))) === '1' || !input.current()) return;
+  const groupKey = await pushGroupKey(account);
+  if (!input.current()) return;
+  await postJson(input.rpcUrl(PUSH_RPC.join), joinDeviceGroupBody(input.installationId, groupKey), HTTP_CONFLICT);
   await appStorage.set(key, '1').catch(ignored(undefined, 'cache'));
 }
 
-async function readState(key: string): Promise<RegisterState | null> {
-  const raw = await appStorage.get(key).catch(ignored(null, 'cache'));
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<RegisterState>;
-    if (typeof parsed.token !== 'string' || typeof parsed.at !== 'number') return null;
-    return { token: parsed.token, at: parsed.at, topics: typeof parsed.topics === 'string' ? parsed.topics : '' };
-  } catch { return null; }
-}
-
-async function subscribeTopics(
-  input: PushRegistrationInput, prev: RegisterState | null, token: string, registeredAt: number,
-): Promise<void> {
-  const subs = await input.collectTopics();
-  const signature = [...subs.topics].sort().join('\n');
-  if (prev?.at === registeredAt && prev.topics === signature) {
-    setPushStatus('registered', `${subs.topics.length} topics, unchanged`);
-    return;
-  }
-  await postJson(
-    input.rpcUrl(PUSH_RPC.subscribe),
-    subscribeWithMetadataBody(input.installationId, subs.topics, subs.hmacKeys, isWelcomeTopic),
-  );
-  const next: RegisterState = { token, at: registeredAt, topics: signature };
-  await appStorage.set(stateKey(input.installationId), JSON.stringify(next)).catch(ignored(undefined, 'cache'));
-  setPushStatus('registered', `${subs.topics.length} topics`);
-}
+const register = makePushRegistrar({
+  read: installationId => appStorage.get(stateKey(installationId)),
+  write: (installationId, value) => appStorage.set(stateKey(installationId), value),
+  post: postJson,
+  now: Date.now,
+  status: setPushStatus,
+});
 
 async function pushEnabled(): Promise<boolean> {
   await loadPushEnabled();
@@ -132,33 +99,24 @@ async function pushEnabled(): Promise<boolean> {
   return false;
 }
 
-export async function runPushRegistration(input: PushRegistrationInput): Promise<void> {
+export async function runPushRegistration(input: PushRegistrationInput & { accountAddress: string }): Promise<void> {
+  const current = (): boolean => input.current() && isPushEnabledSync();
   try {
-    if (!(await pushEnabled())) return;
+    if (!input.current() || !(await pushEnabled())) return;
+    const account = await getActiveAccount();
+    if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) return;
     await afterFirstPages();
-    const token = await input.getToken();
-    if (!token) {
-      setPushStatus('no-token');
-      return;
-    }
-    setPushStatus('registering');
-    const prev = await readState(stateKey(input.installationId));
-    const fresh = prev !== null && prev.token === token && Date.now() - prev.at < REGISTER_TTL_MS;
-    if (!fresh) {
-      await postJson(input.rpcUrl(PUSH_RPC.register), registerInstallationBody(input.installationId, token, input.platform));
-    }
-    await subscribeTopics(input, fresh ? prev : null, token, fresh ? prev.at : Date.now());
+    const guarded = { ...input, current };
+    if (await register(guarded)) await joinDeviceGroup(guarded, account).catch(reported('push.join'));
   } catch (err) {
-    reportPushFailure('push.register', err);
-    return;
+    if (current()) reportPushFailure('push.register', err);
   }
-  await joinDeviceGroup(input.installationId, input.rpcUrl).catch(reported('push.join'));
 }
 
 export async function runPushUnregistration(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {
   try {
     const key = stateKey(installationId);
-    const prev = await readState(key);
+    const prev = readPushRegistration(await appStorage.get(key));
     await appStorage.delete(key).catch(ignored(undefined, 'cleanup'));
     setPushStatus('disabled');
     if (!prev) return;
@@ -177,8 +135,10 @@ interface PushClearInput {
 async function requestPushClear(input: PushClearInput, convId: string): Promise<void> {
   const installationId = input.installationId();
   if (installationId === null) return;
-  const groupKey = await activePushGroupKey();
-  if (groupKey === null) return;
+  const account = await getActiveAccount();
+  if (account === null || input.installationId() !== installationId) return;
+  const groupKey = await pushGroupKey(account);
+  if (input.installationId() !== installationId) return;
   await postJson(input.rpcUrl(PUSH_RPC.clear), clearConversationBody(installationId, groupKey, convId));
 }
 

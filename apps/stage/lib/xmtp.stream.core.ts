@@ -12,6 +12,32 @@ interface StreamDeps<C> {
   schedule: (run: () => void, delay: number) => () => void;
 }
 
+interface AccountStreams {
+  messages: () => Promise<() => void>;
+  preferences: (onChange: () => void) => Promise<() => void>;
+  deletions: () => () => void;
+  refreshPush: () => void;
+  current: () => boolean;
+}
+
+export async function openAccountStreams(deps: AccountStreams): Promise<() => void> {
+  const stop = await deps.messages();
+  if (!deps.current()) return stop;
+  let stopPreferences: (() => void) | undefined;
+  try {
+    const refreshPush = (): void => { if (deps.current()) deps.refreshPush(); };
+    stopPreferences = await deps.preferences(refreshPush);
+    if (!deps.current()) return () => { stop(); stopPreferences?.(); };
+    refreshPush();
+    const stopDeletions = deps.deletions();
+    return () => { stop(); stopPreferences?.(); stopDeletions(); };
+  } catch (error) {
+    stop();
+    stopPreferences?.();
+    throw error;
+  }
+}
+
 export function makeGlobalStream<C>(deps: StreamDeps<C>) {
   let cancel: (() => void) | null = null;
   let timer: (() => void) | null = null;

@@ -14,7 +14,8 @@ import { reconcileHiddenConsent } from './channelVisibility';
 import { isChannelHidden, subscribeHiddenChannels } from './hiddenChannels';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { subscribeAccountSelection } from './accountSelection';
-import { makeGlobalStream } from './xmtp.stream.core';
+import { makeGlobalStream, openAccountStreams } from './xmtp.stream.core';
+import { registerPushWithServer } from './pushRegister';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
@@ -111,16 +112,14 @@ async function prepareStream(assertCurrent: () => void): Promise<AccountClient> 
   return context;
 }
 
-async function openStream(context: AccountClient, current: () => boolean, closed: () => void): Promise<() => void> {
-  const stop = await sdk.streamAllMessages(context.client, msg => { if (current()) handleStreamMessage(msg); }, closed);
-  if (!current()) return stop;
-  try {
-    const stopDeletions = sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion); });
-    return () => { stop(); stopDeletions(); };
-  } catch (error) {
-    stop();
-    throw error;
-  }
+function openStream(context: AccountClient, current: () => boolean, closed: () => void): Promise<() => void> {
+  return openAccountStreams({
+    messages: () => sdk.streamAllMessages(context.client, msg => { if (current()) handleStreamMessage(msg); }, closed),
+    preferences: refresh => sdk.streamPreferences(context.client, refresh, closed),
+    deletions: () => sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion); }),
+    refreshPush: () => { void registerPushWithServer(context.client); },
+    current,
+  });
 }
 
 const globalStream = makeGlobalStream({
