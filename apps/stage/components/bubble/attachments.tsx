@@ -12,7 +12,7 @@ import { Col } from '../layout';
 import { IconTileRow, MediaCard } from '../MediaCard';
 import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
-import { fileCardModel, resolvedAttachmentKind } from './fileCard.model';
+import { attachmentPreview, fileCardModel, resolvedAttachmentKind } from './fileCard.model';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
 import { useRemoteAttachment } from './attachmentUri';
@@ -88,7 +88,7 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: 
 }): React.ReactElement {
   const local = useLocalAttachment(msgId, index, att.remote);
   const remote = useRemoteAttachment(att.remote);
-  const uri = local ?? remote.uri;
+  const { uri, mime } = attachmentPreview(att, local, remote);
   const label = att.name ?? 'attachment';
   const kind = resolvedAttachmentKind(att);
   const compact = kind === 'file';
@@ -98,5 +98,5 @@ export function RemoteAttachmentResolver({ att, fg, msgId, index, galleryKey }: 
   }
   if (!uri && kind === 'image') return <ImageLoading />;
   if (!uri) return <AttachmentPending label={label} fg={fg} compact={compact} />;
-  return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
+  return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
 }

@@ -4,7 +4,7 @@ import { File, Paths } from 'expo-file-system';
 import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';
 import type { UploadedAttachment } from './xmtp.types';
-import { makeLocalAttachmentCache } from './localAttachmentCache.core';
+import { makeLocalAttachmentCache, type LocalAttachmentPreview } from './localAttachmentCache.core';
 
 const cache = makeLocalAttachmentCache();
 
@@ -12,9 +12,9 @@ const listeners = makeListeners();
 const emit = listeners.notify;
 
 export function rememberLocalAttachments(
-  messageId: string, uris: readonly (string | undefined)[], uploaded?: readonly UploadedAttachment[],
+  messageId: string, previews: readonly LocalAttachmentPreview[], uploaded?: readonly UploadedAttachment[],
 ): void {
-  if (cache.remember(messageId, uris, uploaded)) emit();
+  if (cache.remember(messageId, previews, uploaded)) emit();
 }
 
 export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]> {
@@ -46,7 +46,7 @@ export function stashLocalAttachment(srcUri: string): string {
 
 const noSubscribe = (): (() => void) => () => undefined;
 
-export function useLocalAttachment(messageId?: string, index?: number, uploaded?: UploadedAttachment): string | undefined {
+export function useLocalAttachment(messageId?: string, index?: number, uploaded?: UploadedAttachment): LocalAttachmentPreview | undefined {
   const active = messageId !== undefined && index !== undefined;
   return useStoreValue(
     active ? listeners.subscribe : noSubscribe,

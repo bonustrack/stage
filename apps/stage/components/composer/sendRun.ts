@@ -36,9 +36,9 @@ export interface StartedSend { text: string; pending: Attachment[]; replyTo?: st
 
 async function runStep(step: SendStep): Promise<StepOutcome> {
   try {
-    const localUris = step.attachments.map((at) => at.url);
-    const id = await step.run(uploaded => { rememberLocalAttachments(step.localId, localUris, uploaded); });
-    if (localUris.length > 0) rememberLocalAttachments(id, localUris);
+    const previews = step.attachments.map(at => ({ uri: at.url, mime: at.mime }));
+    const id = await step.run(uploaded => { rememberLocalAttachments(step.localId, previews, uploaded); });
+    if (previews.length > 0) rememberLocalAttachments(id, previews);
     return { id };
   } catch (e) {
     return { error: (e as Error).message };

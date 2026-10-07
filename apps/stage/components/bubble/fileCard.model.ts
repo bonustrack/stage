@@ -31,6 +31,14 @@ export function fileCardModel(a: { name?: string; mime?: string; size?: number; 
   return { title, subtitle };
 }
 
+export function attachmentPreview(
+  att: { mime?: string },
+  local: { uri: string; mime?: string } | undefined,
+  remote: { uri: string | null; mime?: string },
+): { uri: string | null; mime: string | undefined } {
+  return { uri: local?.uri ?? remote.uri, mime: remote.mime ?? local?.mime ?? att.mime };
+}
+
 export function resolvedAttachmentKind(att: { kind: string; mime?: string }): string {
   if (att.mime?.startsWith('image/')) return 'image';
   if (att.mime?.startsWith('audio/')) return 'audio';

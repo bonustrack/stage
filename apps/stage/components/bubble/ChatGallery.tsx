@@ -24,7 +24,7 @@ function useChatImageUri(image: ChatImage | null): string | null {
   const local = useLocalAttachment(image?.entryId, image?.index, image?.att.remote);
   const remote = useRemoteAttachment(image?.att.remote);
   if (!image) return null;
-  if (local) return local;
+  if (local) return local.uri;
   return image.att.remote ? remote.uri ?? '' : inlineAttachmentUrl(image.att);
 }
 

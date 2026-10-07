@@ -42,23 +42,23 @@ describe('one bubble per outgoing attachment message', () => {
   test('the upload, early echo, send result and cleanup keep one stable row and local preview', () => {
     const h = harness();
     expect(h.keys()).toEqual(['tmp_1']);
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     expect(h.keys()).toEqual(['tmp_1']);
     const live = [echo()];
     expect(h.keys(live)).toEqual(['tmp_1']);
     expect(h.view(live).pending).toEqual([]);
-    expect(h.cache.get('real_1', 0, REMOTE)).toBe(URI);
+    expect(h.cache.get('real_1', 0, REMOTE)?.uri).toBe(URI);
     h.settle(live);
     expect(h.keys(live)).toEqual(['tmp_1']);
     h.sent('tmp_1', 'real_1');
-    h.cache.remember('real_1', [URI]);
+    h.cache.remember('real_1', [{ uri: URI }]);
     expect(h.keys(live)).toEqual(['tmp_1']);
-    expect(h.cache.get('real_1', 0, REMOTE)).toBe(URI);
+    expect(h.cache.get('real_1', 0, REMOTE)?.uri).toBe(URI);
   });
 
   test('a send result before its echo does not remove or duplicate the pending row', () => {
     const h = harness();
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     h.sent('tmp_1', 'real_1');
     expect(h.keys()).toEqual(['tmp_1']);
     expect(h.keys([echo()])).toEqual(['tmp_1']);
@@ -68,14 +68,14 @@ describe('one bubble per outgoing attachment message', () => {
 
   test('a slow upload and an echo predating new-chat handoff still match exactly', () => {
     const h = harness();
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     expect(h.keys([echo('slow', [REMOTE], { ts: '2026-10-05T10:02:00.000Z' })])).toEqual(['tmp_1']);
     expect(h.keys([echo('handoff', [REMOTE], { ts: '2026-10-05T09:59:50.000Z' })])).toEqual(['tmp_1']);
   });
 
   test('matching filenames or timestamps never hide a different image or sender', () => {
     const h = harness();
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     const unrelated = [
       echo('different-upload', [OTHER]),
       echo('different-sender', [REMOTE], { from: 'metro://xmtp/other' }),
@@ -87,20 +87,20 @@ describe('one bubble per outgoing attachment message', () => {
 
   test('two pending images with the same name pair with their own echoes out of order', () => {
     const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
-    h.cache.remember('tmp_2', ['file:///second/photo.jpg'], [OTHER]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
+    h.cache.remember('tmp_2', [{ uri: 'file:///second/photo.jpg' }], [OTHER]);
     expect(h.keys([echo('real_2', [OTHER])])).toEqual(['tmp_1', 'tmp_2']);
     const live = [echo('real_2', [OTHER]), echo()];
     expect(h.keys(live)).toEqual(['tmp_2', 'tmp_1']);
     h.settle(live);
     expect(h.keys(live)).toEqual(['tmp_2', 'tmp_1']);
-    expect(h.cache.get('real_2', 0, OTHER)).toBe('file:///second/photo.jpg');
+    expect(h.cache.get('real_2', 0, OTHER)?.uri).toBe('file:///second/photo.jpg');
   });
 
   test('one echo cannot confirm two pending messages using the same uploaded file', () => {
     const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
-    h.cache.remember('tmp_2', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
+    h.cache.remember('tmp_2', [{ uri: URI }], [REMOTE]);
     const live = [echo()];
     expect(h.view(live).confirmed.size).toBe(1);
     h.settle(live);
@@ -112,8 +112,8 @@ describe('one bubble per outgoing attachment message', () => {
   test('out-of-order results cannot settle two shared-upload sends from one echo', () => {
     for (const firstResolved of ['tmp_1', 'tmp_2']) {
       const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
-      h.cache.remember('tmp_1', [URI], [REMOTE]);
-      h.cache.remember('tmp_2', [URI], [REMOTE]);
+      h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
+      h.cache.remember('tmp_2', [{ uri: URI }], [REMOTE]);
       const live = [echo('real_2')];
       h.settle(live);
       expect(h.view(live).localIdOf.get('real_2')).toBe('tmp_1');
@@ -133,8 +133,8 @@ describe('one bubble per outgoing attachment message', () => {
 
   test('failure of the remaining shared-upload send leaves the delivered row unchanged', () => {
     const h = harness(pending(photo('tmp_1'), photo('tmp_2')));
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
-    h.cache.remember('tmp_2', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
+    h.cache.remember('tmp_2', [{ uri: URI }], [REMOTE]);
     const live = [echo('real_2')];
     h.settle(live);
     h.sent('tmp_2', 'real_2');
@@ -147,7 +147,7 @@ describe('one bubble per outgoing attachment message', () => {
 
   test('a known send id takes precedence over another message with the same attachment', () => {
     const h = harness();
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     h.sent('tmp_1', 'real_1');
     expect(h.keys([echo('other-id')])).toEqual(['tmp_1', 'other-id']);
     expect(h.keys([echo('other-id'), echo()])).toEqual(['other-id', 'tmp_1']);
@@ -155,11 +155,11 @@ describe('one bubble per outgoing attachment message', () => {
 
   test('an attachment batch matches the entire ordered upload, not a subset', () => {
     const h = harness(pending(entry('tmp_1', [{ url: URI }, { url: 'file:///second.jpg' }])));
-    h.cache.remember('tmp_1', [URI, 'file:///second.jpg'], [REMOTE, OTHER]);
+    h.cache.remember('tmp_1', [{ uri: URI }, { uri: 'file:///second.jpg' }], [REMOTE, OTHER]);
     expect(h.keys([echo()])).toEqual(['tmp_1', 'real_1']);
     expect(h.keys([echo('reversed', [OTHER, REMOTE])])).toEqual(['tmp_1', 'reversed']);
     expect(h.keys([echo('batch', [REMOTE, OTHER])])).toEqual(['tmp_1']);
-    expect(h.cache.get('batch', 1, OTHER)).toBe('file:///second.jpg');
+    expect(h.cache.get('batch', 1, OTHER)?.uri).toBe('file:///second.jpg');
   });
 
   test('failed upload removal and retry leave just the retry bubble', () => {
@@ -168,18 +168,18 @@ describe('one bubble per outgoing attachment message', () => {
     expect(h.keys()).toEqual([]);
     h.retry('tmp_2');
     expect(h.keys()).toEqual(['tmp_2']);
-    h.cache.remember('tmp_2', [URI], [OTHER]);
+    h.cache.remember('tmp_2', [{ uri: URI }], [OTHER]);
     expect(h.keys([echo('real_2', [OTHER])])).toEqual(['tmp_2']);
   });
 
   test('a send failure after its echo was reconciled cannot remove the delivered image', () => {
     const h = harness();
-    h.cache.remember('tmp_1', [URI], [REMOTE]);
+    h.cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     const live = [echo()];
     h.settle(live);
     h.sent('tmp_1');
     expect(h.keys(live)).toEqual(['tmp_1']);
-    expect(h.cache.get('real_1', 0, REMOTE)).toBe(URI);
+    expect(h.cache.get('real_1', 0, REMOTE)?.uri).toBe(URI);
   });
 });
 
@@ -187,21 +187,21 @@ describe('local attachment previews', () => {
   test('uploaded keys are immutable snapshots and metadata-free previews still work', () => {
     const cache = makeLocalAttachmentCache();
     const empty = cache.uploaded();
-    expect(cache.remember('tmp_1', [URI], [REMOTE])).toBe(true);
+    expect(cache.remember('tmp_1', [{ uri: URI }], [REMOTE])).toBe(true);
     const uploaded = cache.uploaded();
     expect(empty.size).toBe(0);
     expect(uploaded.size).toBe(1);
-    cache.remember('real_1', [URI]);
+    cache.remember('real_1', [{ uri: URI }]);
     expect(cache.uploaded()).toBe(uploaded);
-    expect(cache.get('real_1', 0)).toBe(URI);
+    expect(cache.get('real_1', 0)?.uri).toBe(URI);
     expect(cache.get('unknown', 0, OTHER)).toBeUndefined();
-    expect(cache.remember('empty', [undefined], [OTHER])).toBe(false);
+    expect(cache.remember('empty', [{ uri: '' }], [OTHER])).toBe(false);
     expect(cache.uploaded()).toBe(uploaded);
   });
 
   test('remote URL alone is not enough to reuse local content', () => {
     const cache = makeLocalAttachmentCache();
-    cache.remember('tmp_1', [URI], [REMOTE]);
+    cache.remember('tmp_1', [{ uri: URI }], [REMOTE]);
     const altered: UploadedAttachment = { ...REMOTE, contentDigest: 'different' };
     expect(cache.get('real_1', 0, altered)).toBeUndefined();
   });
