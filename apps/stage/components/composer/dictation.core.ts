@@ -6,6 +6,7 @@ interface DictationHost {
   apply(draft: DictationDraft): void;
   phase(phase: DictationPhase): void;
   error(message: string | null): void;
+  microphoneGranted(): Promise<boolean>;
   permission(): Promise<boolean>;
   confirmDownload(locale: string): Promise<boolean>;
   blocked(): boolean;
@@ -19,6 +20,7 @@ interface Session {
   phase: DictationPhase;
   timer?: ReturnType<typeof setTimeout>;
   starting?: Promise<void>;
+  permissionPending?: boolean;
 }
 
 interface Runtime {
@@ -128,13 +130,22 @@ async function ensureAvailable(r: Runtime, s: Session): Promise<boolean> {
   return false;
 }
 
+async function permission(r: Runtime, s: Session): Promise<boolean> {
+  const granted = await r.host.microphoneGranted();
+  if (!valid(r, s)) return false;
+  s.permissionPending = true;
+  try {
+    const permitted = granted || await r.host.permission();
+    if (!valid(r, s)) return false;
+    if (!permitted || !await r.bridge.requestPermission()) throw new Error('Allow microphone and speech recognition access in Settings to use dictation.');
+    return valid(r, s);
+  } finally { s.permissionPending = false; }
+}
+
 async function prepare(r: Runtime, s: Session): Promise<boolean> {
   await cleanup(r);
   if (!valid(r, s) || !await ensureAvailable(r, s)) return false;
-  const permitted = await r.host.permission();
-  if (!valid(r, s)) return false;
-  if (!permitted || !await r.bridge.requestPermission()) throw new Error('Allow microphone and speech recognition access in Settings to use dictation.');
-  return valid(r, s);
+  return permission(r, s);
 }
 
 async function start(r: Runtime): Promise<void> {
@@ -179,6 +190,7 @@ export function makeDictation(bridge: SpeechBridge, host: DictationHost, limitMs
     start: () => start(r), stop: () => stop(r), cancel: () => cancel(r),
     toggle: () => r.current ? stop(r) : start(r),
     recordVoice: (action: () => Promise<void>) => recordVoice(r, action),
+    background: () => { if (!r.current?.permissionPending) void cancel(r); },
     inactive: () => { if (r.current?.phase === 'listening' || r.current?.phase === 'finishing') void cancel(r); },
     edited: () => { if (r.current && host.read().text !== r.current.text) void cancel(r); },
     dispose: (): Promise<void> => {

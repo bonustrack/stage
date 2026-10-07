@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { requestRecordingPermissionsAsync } from 'expo-audio';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import { capabilities } from '../../lib/capabilities';
 import { callOwnsAudio, registerDictationRecorder, voiceOwnsAudio } from '../../lib/calls.audio.core';
 import { report } from '../../lib/errorPolicy';
@@ -37,6 +37,7 @@ export function useDictation(args: DictationArgs) {
       },
       phase: value => { if (mounted) setPhase(value); },
       error: message => { if (mounted) current.current.setErr(message); },
+      microphoneGranted: async () => (await getRecordingPermissionsAsync()).granted,
       permission: async () => (await requestRecordingPermissionsAsync()).granted,
       confirmDownload: locale => capabilities.confirm({
         title: 'Download speech model?',
@@ -50,7 +51,7 @@ export function useDictation(args: DictationArgs) {
     setPhase('idle');
     const unregister = registerDictationRecorder(instance.cancel);
     const app = AppState.addEventListener('change', state => {
-      if (state === 'background') void instance.cancel();
+      if (state === 'background') instance.background();
       else if (state === 'inactive') instance.inactive();
     });
     return () => {

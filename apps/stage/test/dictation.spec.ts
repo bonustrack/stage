@@ -30,6 +30,7 @@ function harness(overrides: Partial<SpeechBridge> = {}, callbacks: Partial<Host>
     apply: next => { draft = next; },
     phase: value => { phases.push(value); },
     error: message => { errors.push(message); },
+    microphoneGranted: async () => false,
     permission: async () => { events.push('mic-permission'); return true; },
     confirmDownload: async locale => { events.push(`confirm:${locale}`); return true; },
     blocked: () => false,
