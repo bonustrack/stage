@@ -51,6 +51,8 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
       {!wide ? (
         <Pressable
           onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           {...back.hoverProps}
           style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
 >
@@ -66,11 +68,12 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
 
 export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, border, head, title, onPress }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean;
-  border: string; head: string; title: ConvTitle; onPress: () => void;
+  border: string; head: string; title: ConvTitle; onPress?: () => void;
 }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
       <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>

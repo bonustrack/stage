@@ -18,23 +18,16 @@ import {
 } from '../../components/conversation/conv.screen-parts';
 import { ChatColumn, FooterDock } from '../../components/conversation/FooterDock';
 import {
-  ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown,
+  ChatColumnSpinner, ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
+import { PeerTopnav } from '../../components/conversation/PeerTopnav';
 
-function UnresolvedConversation({ resolved }: {
-  resolved: ReturnType<typeof useResolvedConvId>;
+function UnresolvedConversation({ resolved, peer }: {
+  resolved: ReturnType<typeof useResolvedConvId>; peer?: string;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const sidebar = useConversationSidebarShown();
-  if (resolved.resolving) {
-    return (
-      <>
-        <ChatColumnSpinner bottomInset={measuredFooterHeight}/>
-        {sidebar ? <ConversationSidebar/> : null}
-      </>
-    );
-  }
-  if (resolved.pendingAddress && resolved.error) {
+  const fill = useChatColumnFill(0, false);
+  if (!resolved.resolving && resolved.pendingAddress && resolved.error) {
     return (
       <PendingConversation
         address={resolved.pendingAddress}
@@ -45,9 +38,14 @@ function UnresolvedConversation({ resolved }: {
     );
   }
   return (
-    <Col surface="surface" flex={1} align="center" justify="center">
-      <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
-    </Col>
+    <>
+      <PeerTopnav peer={peer}/>
+      {resolved.resolving ? <ChatColumnSpinner bottomInset={0} sidebar={false}/> : (
+        <Col surface="surface" flex={1} align="center" justify="center" style={fill}>
+          <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
+        </Col>
+      )}
+    </>
   );
 }
 
@@ -84,7 +82,7 @@ export default function XmtpConversation(): React.ReactElement {
   if (resolved.resolving || !convId) {
     return (
       <ConversationShell bg={bg}>
-        <UnresolvedConversation resolved={resolved}/>
+        <UnresolvedConversation resolved={resolved} peer={pathname.startsWith('/channel/') ? undefined : routeParam}/>
       </ConversationShell>
     );
   }

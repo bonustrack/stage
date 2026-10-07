@@ -32,16 +32,16 @@ export function useConversationSidebarShown(): boolean {
   return wide && open;
 }
 
-export function useChatColumnFill(bottomInset: number): StyleProp<ViewStyle> {
+export function useChatColumnFill(bottomInset: number, sidebar = true): StyleProp<ViewStyle> {
   const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
   const shown = useConversationSidebarShown();
-  return [viewportFill(), PANE_LEFT_PAD, shown ? RIGHT_PANE_PAD : null, { paddingTop: top, paddingBottom: bottomInset }];
+  return [viewportFill(), PANE_LEFT_PAD, sidebar && shown ? RIGHT_PANE_PAD : null, { paddingTop: top, paddingBottom: bottomInset }];
 }
 
-export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): React.ReactElement {
+export function ChatColumnSpinner({ bottomInset, sidebar = true }: { bottomInset: number; sidebar?: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Col surface="surface" flex={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
+    <Col surface="surface" flex={1} align="center" justify="center" style={useChatColumnFill(bottomInset, sidebar)}>
       <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
     </Col>
   );

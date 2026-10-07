@@ -1,7 +1,5 @@
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from '../lib/safeArea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -16,9 +14,8 @@ import { Col } from './layout';
 import { MessengerBubble } from './bubble/MessengerBubble';
 import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
-import { ConvTopnavIdentity, ConvTopnavShell } from './conversation/parts';
+import { PeerTopnav } from './conversation/PeerTopnav';
 import { ChatColumn, ComposerDock } from './conversation/FooterDock';
-import { profileLinkOf } from '../lib/links';
 import { peerLabel } from './conversation/convTitle';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
@@ -36,21 +33,6 @@ function entryOf(item: OutboxItem, myAddress: string | null, myName: string | nu
     to: item.address,
     text: item.text,
   };
-}
-
-function PendingTopnav({ address, title }: { address: string; title: string }): React.ReactElement {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { text: fg, link: head, border } = usePalette();
-  return (
-    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
-      <ConvTopnavIdentity
-        peerAddr={address} groupImage="" channelId={address} isGroup={false}
-        border={border} head={head} title={{ text: title, placeholder: false }}
-        onPress={() => { router.push(profileLinkOf(address)); }}
-      />
-    </ConvTopnavShell>
-  );
 }
 
 function usePendingComposer(onSubmit: (text: string) => void): {
@@ -115,7 +97,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
 
   return (
     <Col surface="surface" flex={1}>
-      <PendingTopnav address={address} title={peerName}/>
+      <PeerTopnav peer={address}/>
       <ChatColumn>
         <Col flex={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
           {queued.map(item => (
