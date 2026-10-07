@@ -45,6 +45,12 @@ name: App preview
 on:
   push:
     branches: ['**', '!feat/native-mic-dictation']
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to publish as this branch's preview
+        type: string
+        required: true
   # GitHub fires `delete` when a branch or tag is deleted. We use it to tear down
   # that branch's per-branch EAS preview so stale channels/branches don't pile up.
   delete:
@@ -60,8 +66,7 @@ concurrency:
 
 jobs:
   build:
-    # Only publish on push. The `delete` event handled below must not build.
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -81,11 +86,16 @@ jobs:
       # flakey analytics calls).
       EXPO_NO_TELEMETRY: '1'
       TMPDIR: ${{ github.workspace }}/.metro-tmp
+      SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
     steps:
       - uses: actions/checkout@v6
         with:
           # Need at least the previous commit so we can diff for native changes.
           fetch-depth: 2
+          ref: ${{ env.SOURCE_SHA }}
+
+      - name: Verify preview source
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -133,7 +143,7 @@ jobs:
             local after before
             [ -n "$BEFORE" ] && git fetch -q --depth=1 origin "$BEFORE" || return 1
             after="$(runtime)" || return 1
-            git diff --quiet "$BEFORE" "$GITHUB_SHA" -- bun.lock || LOCK_SAME=false
+            git diff --quiet "$BEFORE" "$SOURCE_SHA" -- bun.lock || LOCK_SAME=false
             git checkout -q --detach "$BEFORE" || return 1
             if [ "$LOCK_SAME" = false ]; then bun install --frozen-lockfile || return 1; fi
             before="$(runtime)" || return 1
@@ -142,7 +152,7 @@ jobs:
           }
           NATIVE=false
           compare || { NATIVE=false; echo "::warning::Native change check failed; treating it as no native change."; }
-          git checkout -q --detach "$GITHUB_SHA" || exit 1
+          git checkout -q --detach "$SOURCE_SHA" || exit 1
           if [ "$LOCK_SAME" = false ]; then bun install --frozen-lockfile || exit 1; fi
           echo "native=$NATIVE" >> "$GITHUB_OUTPUT"
 
@@ -162,7 +172,7 @@ jobs:
         # Stamp the preview bundle with the pushed commit so the About page shows
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
-          GIT_COMMIT: ${{ github.sha }}
+          GIT_COMMIT: ${{ env.SOURCE_SHA }}
           GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
           RAW_BRANCH: ${{ github.ref_name }}
         run: |
@@ -241,7 +251,7 @@ jobs:
             --platform android \
             --skip-bundler \
             --input-dir dist \
-            --message "${RAW_BRANCH}@${SHORT_SHA} (${{ github.sha }})" \
+            --message "${RAW_BRANCH}@${SHORT_SHA} ($SOURCE_SHA)" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
@@ -257,7 +267,7 @@ jobs:
           {
             echo "## App preview - \`${{ github.ref_name }}\` @ \`$SHORT_SHA\`"
             echo ""
-            echo "**commit \`$SHORT_SHA\`** (\`${{ github.sha }}\`)"
+            echo "**commit \`$SHORT_SHA\`** (\`$SOURCE_SHA\`)"
             echo ""
             if [ '${{ steps.native.outputs.native }}' = 'true' ]; then
               echo "> [!WARNING]"
@@ -296,7 +306,7 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.sha,
+              sha: process.env.SOURCE_SHA,
               state: 'success',
               context: 'Preview',
               target_url: target,
