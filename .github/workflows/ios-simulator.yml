@@ -32,6 +32,8 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Verify Apple toolchain
         run: xcodebuild -version && xcrun swift --version
       - uses: oven-sh/setup-bun@v2
@@ -82,9 +84,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             2>&1 | tee "$RUNNER_TEMP/ios-build.log"
       - name: Archive simulator app
+        if: github.ref != 'refs/heads/feat/native-mic-dictation'
         run: |
           ditto -c -k --keepParent "$RUNNER_TEMP/stage-ios/Build/Products/Debug-iphonesimulator/Stage.app" "$RUNNER_TEMP/stage-ios-simulator.zip"
       - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/feat/native-mic-dictation'
         with:
           name: stage-ios-simulator
           path: ${{ runner.temp }}/stage-ios-simulator.zip

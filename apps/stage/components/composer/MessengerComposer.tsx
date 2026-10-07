@@ -1,4 +1,6 @@
+import { Platform } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { useDictation } from './dictation';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col, PAGE_GUTTER, Row } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
@@ -40,7 +42,8 @@ function DropOverlay({ head }: { head: string }): React.ReactElement {
   );
 }
 
-const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File']);
+const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File', 'Voice message']);
+const nativeDictation = <T,>(value: T): T | undefined => Platform.OS === 'web' ? undefined : value;
 
 interface Props {
   dark: boolean;
@@ -84,11 +87,12 @@ function useDraftState(shared: ComposerState | undefined): ComposerState {
 }
 
 function composerAttachActions(
-  actions: ReturnType<typeof useComposerActions>, s: ComposerState, draftOnly: boolean,
+  actions: ReturnType<typeof useComposerActions>, s: ComposerState, draftOnly: boolean, recordVoice: () => Promise<void>,
 ): ReturnType<typeof buildAttachActions> {
   const all = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
+    recordVoice: Platform.OS === 'web' ? undefined : recordVoice,
     openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
   });
   return draftOnly ? all.filter(([, label]) => DRAFT_ATTACH_LABELS.has(label)) : all;
@@ -149,8 +153,15 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const channels = useChannelSuggest(s, convId ?? '');
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
-
-  const attachActions = composerAttachActions(actions, s, draftOnly);
+  const dictation = useDictation({
+    key: draftKey, text: mention.display, selection: s.selection, setText: mention.setDisplay,
+    setSelection: s.setSelection, setErr: s.setErr, recording: s.recording, busy: props.busy === true,
+  });
+  const startRecording = (): Promise<void> => dictation.recordVoice(async () => {
+    s.bumpBlur();
+    await actions.startRec();
+  });
+  const attachActions = composerAttachActions(actions, s, draftOnly, startRecording);
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
@@ -172,7 +183,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
-        text={mention.display} setText={mention.setDisplay}
+        text={mention.display} setText={dictation.setText}
         selection={s.selection} setSelection={s.setSelection}
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
         attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen} attachActions={attachActions}
@@ -181,10 +192,11 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
         busy={props.busy}
+        dictation={nativeDictation(dictation)}
         placeholder={props.placeholder}
         rounded={props.rounded}
         onMentionKey={(key, shift) => channels.onKey(key, shift) || mention.onKey(key, shift)}
-        onStartRec={() => void actions.startRec()}
+        onStartRec={() => void startRecording()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={sendHandler(props.onSubmit, actions.send)}

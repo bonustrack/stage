@@ -91,6 +91,7 @@ const config = {
       usesNonExemptEncryption: false,
     },
     infoPlist: {
+      NSSpeechRecognitionUsageDescription: `Allow ${variant.name} to turn your speech into message text on this device.`,
       NSFaceIDUsageDescription: `Allow ${variant.name} to use Face ID to verify it is you before revealing a recovery phrase or key.`,
       NSLocationWhenInUseUsageDescription: `Allow ${variant.name} to share your current location in chat.`,
       NSLocationAlwaysUsageDescription: `Allow ${variant.name} to share your current location in chat.`,
@@ -167,7 +168,7 @@ const config = {
     [
       'expo-audio',
       {
-        microphonePermission: `Allow ${variant.name} to use your microphone for calls and voice messages.`,
+        microphonePermission: `Allow ${variant.name} to use your microphone for on-device dictation, calls and voice messages.`,
       },
     ],
     [

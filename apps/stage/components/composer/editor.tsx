@@ -8,6 +8,9 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
+import { dictationLabel, type DictationPhase } from './dictation.model';
 import { Box, Col, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 import { AnchoredMenu, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
@@ -40,6 +43,7 @@ interface EditorProps {
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   busy?: boolean;
+  dictation?: { phase: DictationPhase; toggle: () => void };
   placeholder?: string;
   rounded?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
@@ -153,7 +157,23 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   if (!p.hasContent) return null;
   return (
     <Button size="md" uniform pill dark={dark} tintBg={primary} loading={p.busy}
+      disabled={p.dictation !== undefined && p.dictation.phase !== 'idle'}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
+  );
+}
+
+function ComposerMic({ p, recorder }: { p: EditorProps; recorder: React.ReactElement }): React.ReactElement {
+  if (p.recording || !p.dictation) return <HoverTooltip label="Record voice message">{recorder}</HoverTooltip>;
+  const active = p.dictation.phase !== 'idle';
+  const label = active ? 'Stop dictation' : 'Dictate message';
+  return (
+    <HoverTooltip label={label}>
+      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: p.busy === true, selected: active }}
+        disabled={p.busy} onPress={p.dictation.toggle}
+        style={{ width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? p.head : 'transparent' }}>
+        <Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg}/>
+      </Pressable>
+    </HoverTooltip>
   );
 }
 
@@ -165,6 +185,11 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
     <Col {...SCROLLBAR_ON_HOVER} padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
+      {p.dictation && p.dictation.phase !== 'idle' ? (
+        <Text size="3xs" color={p.sub} accessibilityLiveRegion="polite" style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
+          {dictationLabel(p.dictation.phase)}
+        </Text>
+      ) : null}
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}
@@ -175,7 +200,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         inputSlot={<ComposerInputSlot p={p} />}
         leftControls={<ComposerLeftControls p={p} />}
         rightAction={<ComposerRightAction p={p} primary={primary} />}
-        wrapMic={(mic) => <HoverTooltip label="Record voice message">{mic}</HoverTooltip>}
+        wrapMic={(mic) => <ComposerMic p={p} recorder={mic}/>}
         onStart={p.onStartRec}
         onCancel={p.onCancelRec}
         onComplete={p.onStopRec}
@@ -190,8 +215,11 @@ export function buildAttachActions(a: {
   pickImage: () => void; takePhoto: () => void;
   pickFile: () => void; pickLocation: () => Promise<void>;
   openPoll: () => void; openSig: () => void; openTx: () => void;
+  recordVoice?: () => Promise<void>;
 }): AttachAction[] {
+  const voice: AttachAction[] = a.recordVoice ? [[IconMicrophone, 'Voice message', a.recordVoice]] : [];
   return [
+    ...voice,
     [IconImages1, 'Image', a.pickImage],
     [IconCamera1, 'Camera', a.takePhoto],
     [IconPaperclip3, 'File', a.pickFile],
