@@ -9,7 +9,7 @@ const VARIANTS = ['body', 'secondary', 'caption', 'mono'] as const;
 const ROLES = ['default', 'secondary', 'muted', 'link', 'primary', 'danger', 'success'] as const;
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold', 'regular'] as const;
 
-export const Controls: Story<TextProps> = (args) => <Text {...args} size={args.size === '2xs' ? 'xs' : args.size} />;
+export const Controls: Story<TextProps> = (args) => <Text {...args} size={FONT_SIZES.find((size) => size === args.size)} />;
 Controls.args = { value: 'The quick brown fox jumps over the lazy dog', size: 'xs', weight: 'normal', variant: 'body', role: 'default', textAlign: 'start', italic: false, lineThrough: false, truncate: false };
 Controls.argTypes = {
   value: text, variant: select(VARIANTS), role: select(ROLES), size: select(FONT_SIZES), weight: select(WEIGHTS),

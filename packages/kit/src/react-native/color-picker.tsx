@@ -90,7 +90,7 @@ function hueStops(): string[] {
 
 function Label({ text, p }: { text: string; p: HsvPalette }): React.ReactElement {
   return (
-    <Text weight="semibold" size="4xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
+    <Text weight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
       {text}
     </Text>
   );
@@ -120,7 +120,7 @@ function HsvPicker({ value, onChange, p }: {
           <Text weight="semibold" size="2xl" color={p.head}>
             {hex}
           </Text>
-          <Text size="4xs" color={p.sub} style={{ marginTop: 2 }}>
+          <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>
             live preview
           </Text>
         </Col>

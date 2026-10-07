@@ -44,18 +44,18 @@ export function TxStatus(props: {
     <>
       {txHash ? (
         <Box padding={{ x: 4 }} gap={4}>
-          <Text size="4xs" role="secondary">
+          <Text size="3xs" role="secondary">
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
           <Pressable {...bubbleLinkProps(explorerTxUrl(txChainId, txHash), openInBubbleLink)} hitSlop={6}>
-            <Text size="4xs" role="link">
+            <Text size="3xs" role="link">
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>
           </Pressable>
         </Box>
       ) : null}
       {txErr ? (
-        <Text size="4xs" color={DANGER} style={{ paddingHorizontal: 4 }}>
+        <Text size="3xs" color={DANGER} style={{ paddingHorizontal: 4 }}>
           {txErr}
         </Text>
       ) : null}
@@ -69,7 +69,7 @@ function ReviewLine({ label, value, secondary }: { label: string; value: string;
       <Text value={label} size="xs" color="secondary" style={{ flex: 1 }} />
       <Col align="end" gap={2}>
         <Text value={value} size="xs" weight="semibold" color="text" />
-        {secondary === undefined ? null : <Text value={secondary} size="4xs" color="secondary" />}
+        {secondary === undefined ? null : <Text value={secondary} size="3xs" color="secondary" />}
       </Col>
     </Row>
   );
@@ -92,9 +92,9 @@ export function SendReview({ recipient, amount, symbol, secondaryLabel, chainId 
         <Text value="To" size="xs" color="secondary" />
         <RecipientRow address={summary.address} label={summary.label} />
         <Col background={border} radius="lg" padding={16} gap={6}>
-          <Text value="Full address" size="4xs" color="secondary" />
+          <Text value="Full address" size="3xs" color="secondary" />
           <Text value={summary.address} size="xs" variant="mono" color="text" selectable />
-          <Text value="Check every character before you send. Transfers cannot be reversed." size="4xs" color="secondary" />
+          <Text value="Check every character before you send. Transfers cannot be reversed." size="3xs" color="secondary" />
         </Col>
       </Col>
     </Col>

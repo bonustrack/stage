@@ -18,7 +18,7 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       radius="full"
       background={pillBg}
     >
-      <Text value={emoji} size="4xs" />
+      <Text value={emoji} size="3xs" />
       <Caption value={String(count)} color="secondary" />
       {own ? (
         <Box
@@ -76,7 +76,7 @@ export function ReactionsRow({
         <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,
         }}>
-          <Text size="4xs">{emoji}</Text>
+          <Text size="3xs">{emoji}</Text>
           <Text role="secondary" style={TEXT_11PX}>1</Text>
         </Row>
       ))}

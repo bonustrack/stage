@@ -74,7 +74,7 @@ function AttachmentPending({ label, fg, compact }: { label: string; fg: string; 
     <MediaCard>
       <Col flex={1} padding={12} align="center" justify="center" gap={8}>
         <Spinner size={20} color={fg}/>
-        <Text size="4xs" role="secondary" numberOfLines={1}>
+        <Text size="3xs" role="secondary" numberOfLines={1}>
           {label}
         </Text>
       </Col>

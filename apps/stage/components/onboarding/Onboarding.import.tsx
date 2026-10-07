@@ -33,7 +33,7 @@ function SuggestionChips({ words, onPick }: {
             backgroundColor: pressed ? pal.border : 'transparent',
           })}
         >
-          <Text size="3xs" color={pal.primary}>{word}</Text>
+          <Text size="2xs" color={pal.primary}>{word}</Text>
         </Pressable>
       ))}
     </Row>
@@ -98,7 +98,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
         }} />
       <SuggestionChips words={suggestions} onPick={pickSuggestion} />
       {hint === null ? null : (
-        <Text size="4xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
+        <Text size="3xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
       )}
     </>
   );

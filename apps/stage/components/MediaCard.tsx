@@ -53,7 +53,7 @@ export function IconTileRow({ icon, title, titleColor, subtitle, tabular = false
       </Box>
       <Col flex={1} minWidth={0} gap={2}>
         <Text size="xs" weight="semibold" color={titleColor} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text size="3xs" role="secondary" numberOfLines={1} style={tabular ? TABULAR_NUMS : undefined}>{subtitle}</Text> : null}
+        {subtitle ? <Text size="2xs" role="secondary" numberOfLines={1} style={tabular ? TABULAR_NUMS : undefined}>{subtitle}</Text> : null}
       </Col>
       {children}
     </Row>

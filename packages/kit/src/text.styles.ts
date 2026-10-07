@@ -45,7 +45,7 @@ export function resolveTextSize(
   variant: TextVariant | undefined,
 ): number {
   if (size) return FONT_SIZE[size];
-  return variant === 'caption' ? FONT_SIZE['4xs'] : FONT_SIZE[FONT_SIZE_DEFAULT];
+  return variant === 'caption' ? FONT_SIZE['3xs'] : FONT_SIZE[FONT_SIZE_DEFAULT];
 }
 
 export function textVariantRole(variant: TextVariant | undefined): TextRole {

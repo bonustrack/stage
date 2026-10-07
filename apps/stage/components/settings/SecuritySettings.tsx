@@ -43,7 +43,7 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
       <Glyph icon={IconWallet4} size={24} color={link} />
       <Col flex={1}>
         <Text size="sm" color={text}>Tap to copy private key</Text>
-        <Text size="4xs" selectable color={text} style={{ marginTop: 4 }}>{revealed}</Text>
+        <Text size="3xs" selectable color={text} style={{ marginTop: 4 }}>{revealed}</Text>
       </Col>
       <Glyph icon={IconSquareBehindSquare1} size={20} color={link} />
     </ListViewItem>

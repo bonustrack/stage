@@ -142,7 +142,7 @@ function TitleRow({ params, scheme, wrap }: {
   );
 }
 
-const CHIP_TEXT_SIZE = '3xs';
+const CHIP_TEXT_SIZE = '2xs';
 const CHIP_HEIGHT = 20;
 const CHIP_PADDING_X = 7;
 const CHIP_GAP = 3;

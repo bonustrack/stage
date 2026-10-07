@@ -3,6 +3,7 @@ import { Platform, Text as RNText, View, type DimensionValue, type TextProps, ty
 import RNMarkdown, { MarkdownIt, renderRules, type RenderRules } from 'react-native-markdown-display';
 import { frameFlex, type FrameIconName, type FrameNodeOf } from '../frame';
 import { frameBlockSize } from '../frame.flow';
+import { FRAME_ICON_SIZE } from '../frame.schema';
 import { httpsUrl } from '../frame.values';
 import { NEW_TAB, isPlainClick, type LinkClickEvent } from '../link';
 import { resolveColors, SIZES, textLabelStyle, type ButtonColor, type ButtonControlVariant } from '../button.styles';
@@ -125,7 +126,7 @@ export function FrameIcon({ node }: { node: FrameNodeOf<'Icon'> }): React.ReactE
   if (name === undefined) return null;
   return (
     <View style={frameFlex(node)}>
-      <Glyph icon={FRAME_ICON_GLYPHS[name]} size={fontSize(size)} color={color(node.props.color)} dark={dark} />
+      <Glyph icon={FRAME_ICON_GLYPHS[name]} size={FRAME_ICON_SIZE[size]} color={color(node.props.color)} dark={dark} />
     </View>
   );
 }

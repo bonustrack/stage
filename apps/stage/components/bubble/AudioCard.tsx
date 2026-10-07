@@ -62,7 +62,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             onScrub={setScrub}
             onSeek={seek}
           />
-          <Text size="3xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
+          <Text size="2xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
         </Row>
       </Col>
     </Card>

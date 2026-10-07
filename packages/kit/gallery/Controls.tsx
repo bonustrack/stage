@@ -41,7 +41,7 @@ function NumberControl({ argType, value, size, onChange }: ControlProps): React.
           onChangeText={(text) => { onChange(text === '' ? undefined : Number(text)); }}
         />
       </Box>
-      {hint ? <Text size="4xs" role="secondary">{hint}</Text> : null}
+      {hint ? <Text size="3xs" role="secondary">{hint}</Text> : null}
     </Row>
   );
 }
@@ -87,7 +87,7 @@ export function ControlsPanel({ argTypes, values, onChange, onReset, touch = fal
       </Row>
       {Object.entries(argTypes).map(([name, argType]) => (
         <Col key={name} gap={4}>
-          <Text size="3xs" role="secondary">{name}</Text>
+          <Text size="2xs" role="secondary">{name}</Text>
           <Control name={name} argType={argType} value={values[name]} size={touch ? 'lg' : 'md'} onChange={(next) => { onChange(name, next); }} />
         </Col>
       ))}

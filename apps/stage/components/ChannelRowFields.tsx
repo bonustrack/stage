@@ -18,7 +18,7 @@ function FieldPeople({ addresses, label }: { addresses: string[]; label: string 
   return (
     <Row align="center" gap={3} accessible accessibilityLabel={`${label}: ${entries.map(entry => entry.name).join(', ')}`}>
       {shown.map(entry => <Avatar key={entry.address} address={entry.address} size={20}/>)}
-      {overflow > 0 ? <Text size="3xs" color="secondary">+{overflow}</Text> : null}
+      {overflow > 0 ? <Text size="2xs" color="secondary">+{overflow}</Text> : null}
     </Row>
   );
 }
@@ -34,7 +34,7 @@ export function ChannelRowFields({ data, fields }: {
         <Row key={field.id} align="center" gap={4} minWidth={0} style={{ flexShrink: 1 }}>
           {field.icon === undefined ? null : <AppIcon name={field.icon} size={14} color="secondary"/>}
           {field.addresses.length > 0 ? <FieldPeople addresses={field.addresses} label={field.label}/> : (
-            <Text size="3xs" color="secondary" truncate style={{ flexShrink: 1 }} accessibilityLabel={`${field.label}: ${field.value}`}>{field.value}</Text>
+            <Text size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} accessibilityLabel={`${field.label}: ${field.value}`}>{field.value}</Text>
           )}
         </Row>
       ))}

@@ -118,7 +118,7 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
         opacity: disabled ? 0.5 : 1,
       })}
     >
-      <Text weight="semibold" size="3xs" color={'#000'}>
+      <Text weight="semibold" size="2xs" color={'#000'}>
         Submit{s.multi && s.selected.size > 0 ? ` (${s.selected.size}${s.otherText.trim() ? '+1' : ''})` : ''}
       </Text>
     </Pressable>

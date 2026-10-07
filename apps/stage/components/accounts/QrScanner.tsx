@@ -32,7 +32,7 @@ function useCameraModule(): CameraLoad {
 function Notice({ message }: { message: string }): React.ReactElement {
   return (
     <Col align="center" padding={{ y: 16 }}>
-      <Text size="3xs" role="secondary" textAlign="center">{message}</Text>
+      <Text size="2xs" role="secondary" textAlign="center">{message}</Text>
     </Col>
   );
 }
@@ -40,7 +40,7 @@ function Notice({ message }: { message: string }): React.ReactElement {
 function PermissionPrompt({ dark, onAllow }: { dark: boolean; onAllow: () => void }): React.ReactElement {
   return (
     <Col gap={10} align="center" padding={{ y: 16 }}>
-      <Text size="3xs" role="secondary" textAlign="center">
+      <Text size="2xs" role="secondary" textAlign="center">
         Camera access is needed to scan the code from your other device.
       </Text>
       <Button dark={dark} variant="soft" color="primary" label="Allow camera" onPress={onAllow} />

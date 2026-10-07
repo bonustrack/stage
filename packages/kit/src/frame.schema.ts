@@ -28,8 +28,13 @@ const JUSTIFY = oneOf(['start', 'center', 'end', 'between', 'around', 'evenly'])
 const DIRECTION = oneOf(['row', 'col']);
 const WEIGHT = oneOf(['normal', 'medium', 'semibold', 'bold']);
 const TEXT_ALIGN = oneOf(['start', 'center', 'end']);
-const FONT_SIZE_NAME = oneOf(Object.keys(FONT_SIZE) as FontSizeName[]);
-const TEXT_SIZE: Validator<FontSizeName> = (raw) => FONT_SIZE_NAME(raw === '2xs' ? 'xs' : raw);
+export const FRAME_ICON_SIZE = {
+  '4xs': 13, '3xs': 14, '2xs': 15, xs: 16, sm: 17, md: 18,
+  lg: 19, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40,
+} as const;
+
+const TEXT_SIZE = oneOf(Object.keys(FONT_SIZE) as FontSizeName[]);
+const ICON_SIZE = oneOf(Object.keys(FRAME_ICON_SIZE) as (keyof typeof FRAME_ICON_SIZE)[]);
 const RADIUS = oneOf(['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full', '100%', 'none']);
 const CONTROL_SIZE = oneOf(['3xs', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']);
 const CONTROL_VARIANT = oneOf(['solid', 'soft', 'outline', 'ghost']);
@@ -96,7 +101,7 @@ export const FRAME_NODE_SCHEMAS = {
     },
     required: ['label'],
   },
-  Icon: { props: { name: ICON, color, size: FONT_SIZE_NAME }, required: ['name'] },
+  Icon: { props: { name: ICON, color, size: ICON_SIZE }, required: ['name'] },
   Image: {
     props: {
       ...BLOCK, src: httpsUrl, alt: label, fit: oneOf(['cover', 'contain', 'fill', 'scale-down', 'none']),

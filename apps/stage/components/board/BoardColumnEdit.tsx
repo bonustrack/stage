@@ -117,7 +117,7 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
 
 function TitleNote({ note }: { note: string | null }): React.ReactElement | null {
   if (note === null) return null;
-  return <Text value={note} size="3xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
+  return <Text value={note} size="2xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
 }
 
 export function RenameHeading({ label, columns, count, onRename, onClose }: {

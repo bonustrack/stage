@@ -34,7 +34,7 @@ export function RecipientRow({ address, label, onPress }: {
           {name}
         </Text>
         {showAddrLine ? (
-          <Text size="4xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text size="3xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}

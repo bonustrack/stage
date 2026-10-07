@@ -23,7 +23,7 @@ import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-
 
 const PICKER_LIST_MAX_HEIGHT = 320;
 const PICKER_ROW_MIN_HEIGHT = 40;
-const TITLE_SIZE = '3xs';
+const TITLE_SIZE = '2xs';
 const TITLE_ICON_SIZE = 15;
 
 export interface SectionDraft { draft: string[]; toggle: (key: string) => void }

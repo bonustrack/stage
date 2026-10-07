@@ -133,7 +133,7 @@ export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement 
   if (error !== null) {
     return (
       <Col gap={10} align="center" padding={{ y: 16 }}>
-        <Text size="3xs" role="secondary" textAlign="center">{error}</Text>
+        <Text size="2xs" role="secondary" textAlign="center">{error}</Text>
         {error === LOAD_ERROR ? (
           <Button dark={dark} variant="soft" color="primary" label="Try again" onPress={retry} style={{ alignSelf: 'center' }} />
         ) : null}

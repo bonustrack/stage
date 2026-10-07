@@ -105,7 +105,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text role="secondary" size="4xs">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
+        <Text role="secondary" size="3xs">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />

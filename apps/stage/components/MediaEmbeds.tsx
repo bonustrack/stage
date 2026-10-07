@@ -118,7 +118,7 @@ export function LocationEmbed({ lat, lng, dark }: {
         <MapAttribution/>
       </Box>
       <Row padding={{ x: 10, y: 8 }} align="center" justify="between" gap={8}>
-        <Text weight="semibold" size="4xs" color={dark ? '#ffffff' : '#000000'}>
+        <Text weight="semibold" size="3xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
         <Text role="secondary" numberOfLines={1} style={TEXT_11PX}>

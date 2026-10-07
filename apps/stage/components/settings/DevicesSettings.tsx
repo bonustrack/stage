@@ -40,7 +40,7 @@ function SessionRow({ inst, busy, onRevoke }: {
         <Caption value={addedOn(inst.createdAt)} color="secondary" />
       </Col>
       <Pressable onPress={onRevoke} disabled={busy} hitSlop={8} accessibilityRole="button">
-        {busy ? <ActivityIndicator size="small" color={DANGER} /> : <Text value="Revoke" size="3xs" color={DANGER} />}
+        {busy ? <ActivityIndicator size="small" color={DANGER} /> : <Text value="Revoke" size="2xs" color={DANGER} />}
       </Pressable>
     </ListViewItem>
   );

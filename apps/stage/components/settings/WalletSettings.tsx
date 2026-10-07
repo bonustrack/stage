@@ -83,7 +83,7 @@ function WalletCopyRow({ label, value, onCopy }: {
   return (
     <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
       <Col flex={1} gap={4}>
-        <Text value={label} size="4xs" color="secondary" />
+        <Text value={label} size="3xs" color="secondary" />
         <Text value={value} size="xs" color="text" />
       </Col>
       <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
@@ -100,7 +100,7 @@ function WalletValidatorRow(): React.ReactElement {
           <Text value="ECDSA owner key" size="xs" color="text" />
           <Badge label="SUDO" color="success" />
         </Row>
-        <Text value="Main key (recovery phrase)" size="4xs" color="secondary" />
+        <Text value="Main key (recovery phrase)" size="3xs" color="secondary" />
       </Col>
     </ListViewItem>
   );

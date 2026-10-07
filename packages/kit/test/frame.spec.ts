@@ -3,6 +3,7 @@ import {
   FRAME_ICONS, FRAME_LIMITS, frameFillPadding, frameFlex, frameSummary, missingRequired, parseFrame, resolveFrameColor, withFormValues,
   type FrameNode,
 } from '../src/frame';
+import { FRAME_ICON_SIZE } from '../src/frame.schema';
 import { FONT_SIZE, kitPalette } from '../src/tokens';
 
 function root(widget: unknown): FrameNode {
@@ -118,29 +119,34 @@ describe('parseFrame: text and content nodes', () => {
     expect(only({ type: 'Markdown', value: '**b**' }).props).toEqual({ value: '**b**' });
   });
 
-  test('text and icon sizes are Kit FONT_SIZE names, ChatKit names up to 4xl included', () => {
-    const chatkit: Record<string, string[]> = {
-      Text: ['xs', 'sm', 'md', 'lg', 'xl'], Title: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'],
-      Caption: ['sm', 'md', 'lg'], Label: ['xs', 'sm', 'md', 'lg', 'xl'], Icon: ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'],
-    };
-    for (const [type, names] of Object.entries(chatkit)) {
-      const base = type === 'Icon' ? { name: 'sparkle' } : { value: 'a' };
-      for (const size of names) expect(Object.keys(FONT_SIZE)).toContain(size);
+  test('every text node accepts exactly the current Kit font names without remapping', () => {
+    for (const type of ['Text', 'Title', 'Caption', 'Label']) {
       for (const size of Object.keys(FONT_SIZE)) {
-        const expected = type !== 'Icon' && size === '2xs' ? 'xs' : size;
-        expect(only({ type, ...base, size }).props).toEqual({ ...base, size: expected });
+        expect(only({ type, value: 'a', size }).props).toEqual({ value: 'a', size });
       }
-      for (const size of ['5xl', '6xl', '7xl']) expect(only({ type, ...base, size }).props).toEqual(base);
+      for (const size of ['4xs', '4xl', '5xl', '6xl', '7xl']) {
+        expect(only({ type, value: 'a', size }).props).toEqual({ value: 'a' });
+      }
     }
+    expect(only({ type: 'Text', value: 'Editable', size: '2xs', editable: { name: 'note' } }).props.size).toBe('2xs');
   });
 
-  test('legacy text sizes become xs without changing icon or radius dimensions', () => {
-    for (const type of ['Text', 'Title', 'Caption', 'Label']) {
-      expect(only({ type, value: 'Legacy text', size: '2xs' }).props.size).toBe('xs');
+  test('icon, radius and control sizes keep their names and numeric dimensions', () => {
+    const iconSizes = {
+      '4xs': 13, '3xs': 14, '2xs': 15, xs: 16, sm: 17, md: 18,
+      lg: 19, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40,
+    };
+    expect(FRAME_ICON_SIZE).toEqual(iconSizes);
+    for (const size of Object.keys(iconSizes)) {
+      expect(only({ type: 'Icon', name: 'sparkle', size }).props.size).toBe(size);
     }
-    expect(only({ type: 'Text', value: 'Editable', size: '2xs', editable: { name: 'note' } }).props.size).toBe('xs');
-    expect(only({ type: 'Icon', name: 'sparkle', size: '2xs' }).props.size).toBe('2xs');
-    expect(only({ type: 'Box', radius: '2xs' }).props.radius).toBe('2xs');
+    for (const size of ['5xl', '6xl', '7xl']) {
+      expect(only({ type: 'Icon', name: 'sparkle', size }).props.size).toBeUndefined();
+    }
+    for (const size of ['3xs', '2xs']) {
+      expect(only({ type: 'Button', label: 'Go', size }).props.size).toBe(size);
+    }
+    for (const radius of ['2xs', '4xl']) expect(only({ type: 'Box', radius }).props.radius).toBe(radius);
   });
 
   test('a required prop missing makes the node unsupported', () => {

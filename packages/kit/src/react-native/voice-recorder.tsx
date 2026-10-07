@@ -51,7 +51,7 @@ function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx 
         }),
       }}>
         <Glyph icon={IconArrowLeft} size={14} color={sub}/>
-        <Text size="4xs" role="secondary">
+        <Text size="3xs" role="secondary">
           Slide to cancel
         </Text>
       </Animated.View>
@@ -60,7 +60,7 @@ function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx 
           <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>
-      <Text size="4xs" role="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
+      <Text size="3xs" role="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
         {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
       </Text>
     </Row>

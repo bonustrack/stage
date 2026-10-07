@@ -26,7 +26,7 @@ const PAD_Y: Record<BadgeSize, number> = {
 };
 
 const FONT_PX: Record<BadgeFontToken, number> = {
-  '6xs': SMALL_FONT_SIZE['6xs'], '5xs': SMALL_FONT_SIZE['5xs'], '4xs': FONT_SIZE['4xs'],
+  '6xs': SMALL_FONT_SIZE['6xs'], '5xs': SMALL_FONT_SIZE['5xs'], '3xs': FONT_SIZE['3xs'],
 };
 
 export function Badge({ label, color, variant, size = 'sm', pill, dark }: BadgeProps): React.ReactElement {

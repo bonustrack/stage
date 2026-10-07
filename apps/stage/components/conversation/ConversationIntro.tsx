@@ -70,7 +70,7 @@ export function ConversationIntro({ c, convId }: {
         title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
         style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}
       />
-      <Text size="4xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+      <Text size="3xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
     </Pressable>

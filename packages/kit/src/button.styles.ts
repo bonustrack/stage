@@ -27,8 +27,8 @@ export interface SizeSpec {
 }
 
 export const SIZES: Record<ButtonSize, SizeSpec> = {
-  xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE['4xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
-  sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
+  xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
+  sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.head, gap: 6, spinner: 'small' },
   md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE.sm, fontFamily: fontName.head, gap: 8, spinner: 'small' },
   lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.md, fontFamily: fontName.head, gap: 8, spinner: 'small' },
   xl: { height: 53, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, lineHeight: 29, fontFamily: fontName.sans, gap: 8, spinner: 'small' },

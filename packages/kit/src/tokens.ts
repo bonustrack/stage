@@ -191,7 +191,6 @@ export const CONTROL_RADIUS_DEFAULT = 8;
 
 
 export type FontSizeName =
-  | '4xs'
   | '3xs'
   | '2xs'
   | 'xs'
@@ -200,13 +199,11 @@ export type FontSizeName =
   | 'lg'
   | 'xl'
   | '2xl'
-  | '3xl'
-  | '4xl';
+  | '3xl';
 
 export const FONT_SIZE: Record<FontSizeName, number> = {
-  '4xs': 13,
-  '3xs': 14,
-  '2xs': 15,
+  '3xs': 13,
+  '2xs': 14,
   xs: 16,
   sm: 17,
   md: 18,
@@ -214,7 +211,6 @@ export const FONT_SIZE: Record<FontSizeName, number> = {
   xl: 20,
   '2xl': 24,
   '3xl': 32,
-  '4xl': 40,
 } as const;
 
 export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
@@ -224,10 +220,10 @@ export function fontSize(name: FontSizeName): number {
 }
 
 export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': '4xs', '11': '4xs', '12': '4xs',
-  '13': '4xs',
-  '14': '3xs',
-  '15': '2xs',
+  '10': '3xs', '11': '3xs', '12': '3xs',
+  '13': '3xs',
+  '14': '2xs',
+  '15': 'xs',
   '16': 'xs',
   '17': 'sm',
   '18': 'md',

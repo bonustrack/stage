@@ -10,7 +10,7 @@ import { IconChevronBottom } from '@central-icons-react-native/round-outlined-ra
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 
 const CHEVRON_SIZE = 14;
-const TITLE_SIZE = '3xs';
+const TITLE_SIZE = '2xs';
 const TITLE_LINE_HEIGHT = 17;
 const TITLE_STYLE = { flexShrink: 1, lineHeight: TITLE_LINE_HEIGHT } as const;
 const BOTTOM_GAP = 6;

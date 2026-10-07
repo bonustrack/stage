@@ -9,7 +9,7 @@ export type CaptionSize = 'sm' | 'md';
 export type CaptionWeight = 'normal' | 'medium' | 'semibold';
 export type CaptionAlign = 'start' | 'center' | 'end';
 
-const SIZE: Record<CaptionSize, number> = { sm: SMALL_FONT_SIZE['5xs'], md: FONT_SIZE['4xs'] };
+const SIZE: Record<CaptionSize, number> = { sm: SMALL_FONT_SIZE['5xs'], md: FONT_SIZE['3xs'] };
 
 export interface CaptionProps {
   value?: string;

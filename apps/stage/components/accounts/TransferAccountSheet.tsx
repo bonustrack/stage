@@ -63,9 +63,9 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
   return (
     <AppModal visible={rec !== null} onClose={onClose} title="Link a device">
       <Col gap={14} align="center">
-        {kind !== null ? <Text size="4xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
+        {kind !== null ? <Text size="3xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
         <QrPanel payload={payload} />
-        <Text size="3xs" role="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
+        <Text size="2xs" role="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
         <Button
           dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Copy code"
           disabled={payload === null} onPress={copy}

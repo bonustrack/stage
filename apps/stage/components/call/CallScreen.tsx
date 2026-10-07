@@ -73,7 +73,7 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
           : <Avatar address={person.address} size={72}/>}
         <Row align="center" gap={6} padding={{ x: 10, y: 6 }} style={{ position: 'absolute', left: 8, bottom: 8 }} background="#00000099" radius={8}>
           {tile.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={14} color="#ffffff"/>}
-          <Text size="3xs" color="#ffffff" value={status ? `${person.name} · ${status}` : person.name} maxLines={1}/>
+          <Text size="2xs" color="#ffffff" value={status ? `${person.name} · ${status}` : person.name} maxLines={1}/>
         </Row>
       </Box>
     </Box>
@@ -123,7 +123,7 @@ function Participants({ tiles, convId, selfInboxId }: { tiles: TileData[]; convI
         return (
           <Row key={t.key} align="center" gap={10}>
             <Avatar address={person.address} size={28}/>
-            <Text size="3xs" value={person.name} maxLines={1} style={{ flex: 1 }}/>
+            <Text size="2xs" value={person.name} maxLines={1} style={{ flex: 1 }}/>
             {t.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={16}/>}
             {t.media.screen ? <Glyph icon={IconShareScreen} size={16}/> : null}
           </Row>
@@ -147,7 +147,7 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
         <MinimizeButton/>
         <Col flex={1}>
           <TitleText weight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1}/>
-          <Text size="3xs" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
+          <Text size="2xs" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
         </Col>
       </Row>
       <Row flex={1}>

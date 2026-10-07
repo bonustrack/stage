@@ -28,8 +28,8 @@ function detailColors(dark: boolean): { fill: string; border: string } {
 function SenderNote({ note, fill, border }: { note: string; fill: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={fill} padding={8} style={{ borderWidth: 1, borderColor: border }}>
-      <Text size="4xs" role="secondary">Sender's note (untrusted)</Text>
-      <Text size="4xs" numberOfLines={4}>{note}</Text>
+      <Text size="3xs" role="secondary">Sender's note (untrusted)</Text>
+      <Text size="3xs" numberOfLines={4}>{note}</Text>
     </Box>
   );
 }
@@ -41,7 +41,7 @@ function Eip712DomainLine({ domain }: {
   const chainId = stringifyPrimitive(domain?.chainId);
   if (!domainName && !chainId) return null;
   return (
-    <Text size="4xs" role="secondary">
+    <Text size="3xs" role="secondary">
       {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
     </Text>
   );
@@ -50,8 +50,8 @@ function Eip712DomainLine({ domain }: {
 function Eip712FieldRow({ name, value }: { name: string; value: unknown }): React.ReactElement {
   return (
     <Row align="start" gap={8}>
-      <Text size="4xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
-      <Text variant="mono" size="4xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+      <Text size="3xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
+      <Text variant="mono" size="3xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
         {fmtSigValue(value)}
       </Text>
     </Row>
@@ -67,7 +67,7 @@ function Eip712Detail({ req, fill, border }: {
   return (
     <Col radius="md" background={fill} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
       <Eip712DomainLine domain={domain} />
-      {primaryType ? <Text weight="semibold" size="4xs">{primaryType}</Text> : null}
+      {primaryType ? <Text weight="semibold" size="3xs">{primaryType}</Text> : null}
       {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} />)}
     </Col>
   );
@@ -76,7 +76,7 @@ function Eip712Detail({ req, fill, border }: {
 function MessageDetail({ message, fill, border }: { message: string; fill: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={fill} padding={10} style={{ borderWidth: 1, borderColor: border }}>
-      <Text variant="mono" size="4xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
+      <Text variant="mono" size="3xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
     </Box>
   );
 }
@@ -87,7 +87,7 @@ function SigAction({ gated, dark, signing, onSign }: {
   const pal = usePalette();
   if (gated) {
     return (
-      <Text size="4xs" role="secondary" style={{ marginTop: 2 }}>
+      <Text size="3xs" role="secondary" style={{ marginTop: 2 }}>
         Accept this conversation to enable signing.
       </Text>
     );

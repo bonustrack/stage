@@ -20,7 +20,7 @@ export function MessagingSetupBanner(): React.ReactElement | null {
   return (
     <BannerFrame>
       <Spinner size={16} color={text} />
-      <Col flex={1}><Text size="3xs">Setting up secure messaging on this device…</Text></Col>
+      <Col flex={1}><Text size="2xs">Setting up secure messaging on this device…</Text></Col>
     </BannerFrame>
   );
 }

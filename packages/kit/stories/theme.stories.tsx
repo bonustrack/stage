@@ -47,7 +47,7 @@ export const Controls: Story<ThemeArgs> = (args) => {
             </Col>
           ))}
         </Row>
-        <Text size="4xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
+        <Text size="3xs" variant="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
       </Col>
     </KitThemeProvider>
   );

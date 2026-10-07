@@ -41,14 +41,14 @@ function isSemanticBadgeColor(
   return typeof value === 'string' && BADGE_COLOR_NAMES.has(value as BadgeColor);
 }
 
-export type BadgeFontToken = '6xs' | '5xs' | '4xs';
+export type BadgeFontToken = '6xs' | '5xs' | '3xs';
 
 const BADGE_FONT_TOKEN: Record<BadgeSize, BadgeFontToken> = {
   '3xs': '6xs',
   '2xs': '5xs',
-  sm: '4xs',
-  md: '4xs',
-  lg: '4xs',
+  sm: '3xs',
+  md: '3xs',
+  lg: '3xs',
 };
 
 export interface ResolvedBadgeStyle {

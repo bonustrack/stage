@@ -67,7 +67,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
             backgroundColor: 'transparent', borderWidth: 0,
-            color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('4xs'), fontFamily: 'Calibre-Medium',
+            color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('3xs'), fontFamily: 'Calibre-Medium',
           }}
 />
       </Col>

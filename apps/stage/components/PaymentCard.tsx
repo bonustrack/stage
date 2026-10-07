@@ -55,13 +55,13 @@ function PaymentBalanceLine({ show, bal, pal }: {
   if (!show) return null;
   if (bal) {
     return (
-      <Text size="4xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
+      <Text size="3xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
         {bal.text}
       </Text>
     );
   }
   return (
-    <Text size="4xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
+    <Text size="3xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
       Balance: …
     </Text>
   );
@@ -148,20 +148,20 @@ function X402Detail({ accept, network, endpoint, pal }: {
     <>
       {accept.payTo ? (
         <Row align="center" gap={6}>
-          <Text role="secondary" size="4xs">To</Text>
+          <Text role="secondary" size="3xs">To</Text>
           <Text size="xs" weight="semibold" color={pal.text} numberOfLines={1}>
             {shortAddress(accept.payTo)}
           </Text>
         </Row>
       ) : null}
       <Row align="center" gap={6}>
-        <Text role="secondary" size="4xs">On</Text>
-        <Text size="3xs" color={pal.sub} numberOfLines={1}>{network}</Text>
+        <Text role="secondary" size="3xs">On</Text>
+        <Text size="2xs" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
       <Pressable {...bubbleLinkProps(endpoint, openInBubbleLink)}>
         <Row align="center" gap={6}>
           <Glyph icon={IconChainLink3} size={13} color={pal.sub}/>
-          <Text size="4xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
+          <Text size="3xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
             {domainOf(endpoint)}
           </Text>
         </Row>

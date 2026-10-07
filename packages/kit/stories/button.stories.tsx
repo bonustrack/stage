@@ -39,17 +39,17 @@ export const Matrix: Story = () => {
     <Col gap={16}>
       {VARIANTS.map((variant) => (
         <Col key={variant} gap={8}>
-          <Text size="3xs" role="secondary">{variant}</Text>
+          <Text size="2xs" role="secondary">{variant}</Text>
           <Row gap={8} wrap>
             {COLORS.map((c) => <Button key={c} dark={dark} color={c} variant={variant} label={c} />)}
           </Row>
         </Col>
       ))}
-      <Text size="3xs" role="secondary">sizes</Text>
+      <Text size="2xs" role="secondary">sizes</Text>
       <Row gap={8} align="center" wrap>
         {SIZES.map((s) => <Button key={s} dark={dark} size={s} label={s} />)}
       </Row>
-      <Text size="3xs" role="secondary">states</Text>
+      <Text size="2xs" role="secondary">states</Text>
       <Row gap={8} wrap>
         <Button dark={dark} label="Disabled" disabled />
         <Button dark={dark} label="Loading" loading />

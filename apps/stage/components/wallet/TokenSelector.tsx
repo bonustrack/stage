@@ -107,7 +107,7 @@ export function TokenSelector({ value, onChange }: {
           <Text weight="semibold" size="xs" color={head} numberOfLines={1}>
             {value.symbol}
           </Text>
-          <Text size="4xs" role="secondary" numberOfLines={1}>
+          <Text size="3xs" role="secondary" numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
         </Col>

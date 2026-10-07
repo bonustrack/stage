@@ -12,7 +12,7 @@ export const Controls: Story<ColorPickerProps> = (args) => {
   return (
     <Col gap={12}>
       <ColorPicker {...args} dark={useDark()} value={value} onChange={setValue} />
-      <Text role="secondary" size="3xs">value: {value}</Text>
+      <Text role="secondary" size="2xs">value: {value}</Text>
     </Col>
   );
 };

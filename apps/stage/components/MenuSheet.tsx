@@ -45,7 +45,7 @@ function AccountSwitchRow({ account, active, onSwitch }: {
         <Text {...menuText} weight="semibold" numberOfLines={1} color={head}>
           {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
         </Text>
-        <Text size="4xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
+        <Text size="3xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
           {shortAddress(account.address)}
         </Text>
       </Col>
