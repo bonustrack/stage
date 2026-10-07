@@ -1,5 +1,5 @@
 import {
-  Client, Dm, Group, PublicIdentity, addGroupMembers, staticKeyPackageStatuses,
+  Client, Dm, Group, PublicIdentity, addGroupMembers, createGroupWithIdentities, staticKeyPackageStatuses,
   type Conversation, type ConversationId, type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
@@ -204,7 +204,9 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     const states = await client.inboxStates(true, inboxIds);
     return inboxIds.map((_, i) => states[i]?.identities.find(it => it.kind === 'ETHEREUM')?.identifier);
   },
-  newGroup: (client, addresses, meta) => client.conversations.newGroupWithIdentities(identitiesOf(addresses), meta),
+  newGroup: (client, addresses, meta) => createGroupWithIdentities(
+    client, identitiesOf(addresses), 'all_members', meta.name, meta.imageUrl, undefined, undefined, undefined, meta.appData,
+  ),
   streamAllMessages,
   streamConversations,
   streamConsent,

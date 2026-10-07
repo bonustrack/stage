@@ -52,10 +52,10 @@ export function refreshGroupRow(convId: string | null): void {
   void loadGroupRow(convId, refreshSeq).catch(reported('messaging.refreshGroupRow'));
 }
 
-export async function createGroup(addresses: string[]): Promise<CreateGroupResult> {
+export async function createGroup(addresses: string[], appData?: string): Promise<CreateGroupResult> {
   const client = await sdk.client();
   return createGroupWith(
-    addresses, lineOfConv, (members) => sdk.newGroup(client, members, {}), (address) => sdk.inboxIdOfAddress(client, address),
+    addresses, lineOfConv, (members) => sdk.newGroup(client, members, { appData }), (address) => sdk.inboxIdOfAddress(client, address),
   );
 }
 

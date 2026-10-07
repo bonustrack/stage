@@ -1,4 +1,5 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { newChatMetadata, newChatParams } from '../components/home/newChatMetadata.model';
 import { NewChatScreen } from '../components/home/NewChatScreen';
 import { useWebTabRail } from '../lib/webLayout';
 import { useAccountEpoch } from '../lib/accountEpoch';
@@ -9,5 +10,6 @@ export default function NewChatRoute(): React.ReactElement {
   const board = useHomeView().view === 'board';
   const loaded = useHomeViewLoaded();
   const accountEpoch = useAccountEpoch();
-  return wide && loaded && !board ? <Redirect href="/" /> : <NewChatScreen key={accountEpoch}/>;
+  const params = newChatParams(newChatMetadata(useLocalSearchParams()));
+  return wide && loaded && !board ? <Redirect href={{ pathname: '/', params }} /> : <NewChatScreen key={accountEpoch}/>;
 }

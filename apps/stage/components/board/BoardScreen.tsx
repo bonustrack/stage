@@ -18,6 +18,7 @@ import { ChannelRowFields } from '../ChannelRowFields';
 import { useChannelFields } from '../../lib/channelFields';
 import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
+import { NewChatAction } from '../home/NewChatAction';
 import { HomeError, HomeSpinner, RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
 import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
@@ -69,7 +70,6 @@ function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'repla
   if (press === 'push') router.push(link);
   else router.replace(link);
 }
-
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 interface ColumnActions {
   editable: boolean;
@@ -79,7 +79,6 @@ interface ColumnActions {
   add: (label: string) => void;
   create: (name: string) => void;
 }
-
 function columnMaxHeight(laneHeight: number): number | string | undefined {
   if (Platform.OS === 'web') return '100%';
   return laneHeight > 0 ? laneHeight : undefined;
@@ -186,6 +185,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   onOpen: (key: string) => void;
 }): React.ReactElement {
   const { label } = column;
+  const { columnBy } = useHomeView();
   const editable = actions.editable && columnEditable(column.key);
   const [editing, setEditing] = useState(false);
   const zone = useBoardDropZone(column.key, (drag) => { actions.drop(drag, column.key); });
@@ -207,6 +207,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
             <Box flex={1}/>
           </Row>
           {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
+          <NewChatAction by={columnBy} groupKey={column.key} title={label}/>
         </Row>
       )}
       <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
@@ -384,7 +385,6 @@ function useBoardHeight(): number | undefined {
   if (Platform.OS !== 'web') return undefined;
   return height - TOPNAV_HEIGHT - chrome;
 }
-
 export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [filtering, setFiltering] = useState(false);

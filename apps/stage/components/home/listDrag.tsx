@@ -193,8 +193,8 @@ export function Shifted({ drag, index, children }: {
   return <Animated.View style={style}>{children}</Animated.View>;
 }
 
-export function Draggable({ drag, index, onHold, children }: {
-  drag: ListDrag; index: number; onHold?: (anchor: { x: number; y: number }) => void; children: ReactNode;
+export function Draggable({ drag, index, onHold, children, shift = true }: {
+  drag: ListDrag; index: number; onHold?: (anchor: { x: number; y: number }) => void; children: ReactNode; shift?: boolean;
 }): React.ReactElement {
   const touch = isCoarsePointer();
   const { tops, heights, zones } = drag;
@@ -241,7 +241,7 @@ export function Draggable({ drag, index, onHold, children }: {
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={style}>
+      <Animated.View style={shift ? style : undefined}>
         <Animated.View ref={holdNode}>{children}</Animated.View>
       </Animated.View>
     </GestureDetector>

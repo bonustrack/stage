@@ -131,12 +131,12 @@ function ChannelRowItemBase({
 }
 
 function inBlock(
-  drag: ListDrag, convId: string, node: React.ReactElement, handle: boolean, onHold?: (anchor: MenuPoint) => void,
+  drag: ListDrag, convId: string, node: React.ReactElement, handle: boolean, onHold?: (anchor: MenuPoint) => void, shift = true,
 ): React.ReactElement {
   const index = drag.blockOf.get(convId);
   if (index === undefined) return node;
   if (!handle) return <Shifted drag={drag} index={index}>{node}</Shifted>;
-  return <Draggable drag={drag} index={index} onHold={onHold}>{node}</Draggable>;
+  return <Draggable drag={drag} index={index} onHold={onHold} shift={shift}>{node}</Draggable>;
 }
 
 const ChannelRowItem = memo(ChannelRowItemBase);
@@ -155,8 +155,9 @@ export function useChannelRowRenderer(
   } = deps;
   return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
     if (isGroupHeader(item)) {
-      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}/>;
-      return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), true);
+      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}
+        wrapToggle={node => inBlock(sectionDrag, item.convId, node, true, undefined, false)}/>;
+      return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), false);
     }
     const title = rowTitle(item);
     return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (

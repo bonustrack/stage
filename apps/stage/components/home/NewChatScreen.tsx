@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
@@ -15,8 +15,10 @@ import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
 import { ChatColumn, FooterDock } from '../conversation/FooterDock';
-import { includesKey, toggleKey } from '../conversation/SidebarSection.model';
+import { includesKey, toggleKey, uniqueKeys } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
+import { NewChatMetadata } from './NewChatMetadata';
+import { memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata as Metadata } from './newChatMetadata.model';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
@@ -95,14 +97,14 @@ function useCandidates(): { candidates: string[]; remembered: string[] } {
   }), [peers, self, requests, history]);
 }
 
-function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
+function useRecipients(drafting: boolean, draftKey: string | null, assigned: readonly string[], self: string | null): Recipients {
   const { candidates, remembered } = useCandidates();
   const [picks, setPicks] = useState(NO_PICKS);
   useSavedDraft(membersDraftKey(draftKey), picks === NO_PICKS ? undefined : picks, (saved) => {
     const restored = savedPicks(saved);
     if (restored !== null) setPicks(restored);
   });
-  const picked = pickedRecipients(picks.chosen, candidates, remembered);
+  const picked = uniqueKeys([...pickedRecipients(picks.chosen, candidates, remembered), ...assigned.filter(a => a !== self?.toLowerCase())]);
   const shown = shownRecipients(candidates, picks.added, picked);
   const latest = useRef({ picked, candidates });
   latest.current = { picked, candidates };
@@ -111,8 +113,8 @@ function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
     if (drafting && picks.chosen === null && picked.length > 0) setPicks(prev => ({ ...prev, chosen: picked }));
   }, [drafting]);
   const toggle = (address: string): void => {
-    setPicks(({ added, chosen }) => ({
-      chosen: toggleKey(chosen ?? latest.current.picked, address),
+    setPicks(({ added }) => ({
+      chosen: toggleKey(latest.current.picked, address),
       added: includesKey(added, address) || includesKey(latest.current.candidates, address) ? added : [address, ...added],
     }));
   };
@@ -120,7 +122,7 @@ function useRecipients(drafting: boolean, draftKey: string | null): Recipients {
   return { shown, picked, toggle, reset };
 }
 
-function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (convId: string) => void): {
+function useStartChat(draft: ComposerState, draftKey: string | null, metadata: Metadata, onOpened: (convId: string) => void): {
   creating: boolean; start: (addresses: readonly string[]) => Promise<void>;
 } {
   const [creating, setCreating] = useState(false);
@@ -134,7 +136,7 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
     setCreating(true);
     uploadAttachments(fileInputs(draft.pending));
     try {
-      const { line } = await createGroup([...addresses]);
+      const { line } = await createGroup([...addresses], newChatAppData(metadata));
       const convId = convIdOfLine(line);
       if (convId === null) return;
       rememberOwnGroup(convId);
@@ -158,9 +160,10 @@ function useStartChat(draft: ComposerState, draftKey: string | null, onOpened: (
 
 interface FormProps {
   recipients: Recipients; draft: ComposerState; draftKey: string | null; creating: boolean; onSubmit: () => void;
+  metadata: Metadata; setMetadata: (value: Metadata) => void;
 }
 
-function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded }: FormProps & { rounded?: boolean }): React.ReactElement {
+function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded, metadata, setMetadata }: FormProps & { rounded?: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const focusNonce = useNewChatFocusNonce();
   const mentionCandidates = recipients.picked.map(address => ({ address, name: peerLabel(address) }));
@@ -170,6 +173,7 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded 
         onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
       <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
         placeholder={askPlaceholder(mentionCandidates.map(c => c.name))} rounded={rounded}
+        metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>}
         autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
     </Box>
   );
@@ -204,13 +208,23 @@ export function NewChatScreen(): React.ReactElement {
   const centered = useWebTabRail();
   const [footerH, setFooterH] = useState(0);
   const draft = useComposerState();
-  const draftKey = newChatDraftKey(useActiveAccountRecord());
-  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0, draftKey);
-  const { creating, start } = useStartChat(draft, draftKey, (convId) => {
+  const account = useActiveAccountRecord();
+  const draftKey = newChatDraftKey(account);
+  const metadata = newChatMetadata(useGlobalSearchParams());
+  const setMetadata = (next: Metadata): void => { router.setParams(newChatParams(next)); };
+  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0, draftKey, metadata.assigned, account?.address ?? null);
+  const selectedMetadata = memberChatMetadata(metadata, recipients.picked, account?.address ?? null);
+  const { creating, start } = useStartChat(draft, draftKey, selectedMetadata, (convId) => {
     recipients.reset();
+    setMetadata(NO_NEW_CHAT_METADATA);
     router.replace({ pathname: '/channel/[convId]', params: { convId } });
   });
-  const form = { recipients, draft, draftKey, creating, onSubmit: () => { void start(recipients.picked); } };
+  const toggleRecipient = (address: string): void => {
+    if (includesKey(metadata.assigned, address)) setMetadata({ ...metadata, assigned: metadata.assigned.filter(a => a.toLowerCase() !== address.toLowerCase()) });
+    recipients.toggle(address);
+  };
+  const form = { recipients: { ...recipients, toggle: toggleRecipient }, draft, draftKey, creating, metadata: selectedMetadata, setMetadata,
+    onSubmit: () => { void start(recipients.picked); } };
   if (centered) return <CenteredNewChat {...form}/>;
   return (
     <Col flex={1} surface="surface">

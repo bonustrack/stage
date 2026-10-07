@@ -187,7 +187,7 @@ function TagPicker({ draft, options, noun, pick }: {
   );
 }
 
-function LabelPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
+export function LabelPicker({ draft, toggle, current }: SectionDraft & { current: string[] }): React.ReactElement {
   const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...suggestLabels('', current)]), current));
   const pick = (label: string): void => {
     if (!includesKey(draft, label) && draft.length >= MAX_LABELS) { capabilities.toast(`A channel can have up to ${MAX_LABELS} labels.`); return; }
@@ -196,7 +196,7 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
   return <TagPicker draft={draft} options={options} noun="label" pick={pick}/>;
 }
 
-function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
+export function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
   const sources = useSearchFilterSources('chats');
   if (field === 'priority') return (
     <PickerList>

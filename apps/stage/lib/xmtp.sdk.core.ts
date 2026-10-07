@@ -9,7 +9,7 @@ import type { XmtpConsent } from './xmtp.types';
 import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
 
-export interface GroupMeta { name?: string; imageUrl?: string }
+export interface GroupMeta { name?: string; imageUrl?: string; appData?: string }
 
 export interface GroupInfo { name: string; imageUrl: string; description: string }
 

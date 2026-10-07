@@ -99,8 +99,8 @@ async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   return permissions ? webGroupMetaPolicy(permissions.policySet) : UNKNOWN_GROUP_POLICY;
 }
 
-function groupOptions(meta: GroupMeta): { groupName?: string; groupImageUrlSquare?: string } {
-  return { groupName: meta.name, groupImageUrlSquare: meta.imageUrl };
+function groupOptions(meta: GroupMeta): { groupName?: string; groupImageUrlSquare?: string; appData?: string } {
+  return { groupName: meta.name, groupImageUrlSquare: meta.imageUrl, appData: meta.appData };
 }
 
 function asEncoded(content: { content: Uint8Array }): EncodedContentArg {

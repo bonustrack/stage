@@ -5,6 +5,7 @@ import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useHomeView } from '../../lib/homeView';
 import { newChatNav } from './newChat.model';
+import { newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata } from './newChatMetadata.model';
 
 let requested = 0;
 let handled = 0;
@@ -17,13 +18,14 @@ export function requestNewChatFocus(): void {
   listeners.notify();
 }
 
-export function useOpenNewChat(): () => void {
+export function useOpenNewChat(metadata: NewChatMetadata = NO_NEW_CHAT_METADATA): () => void {
   const router = useRouter();
   const nav = newChatNav(useWebTabRail(), useHomeView().view === 'board', usePathname());
   return () => {
     requestNewChatFocus();
-    if (nav.push) router.push(nav.href);
-    else router.replace(nav.href);
+    const href = { pathname: nav.href, params: newChatParams(metadata) };
+    if (nav.push) router.push(href);
+    else router.replace(href);
   };
 }
 

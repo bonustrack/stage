@@ -54,6 +54,7 @@ interface Props {
   busy?: boolean;
   placeholder?: string;
   rounded?: boolean;
+  metadata?: React.ReactNode;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
@@ -157,6 +158,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
     <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
       <SuggestMenu suggest={mention}/>
       <SuggestMenu suggest={channels}/>
+      {props.metadata}
       <ComposerHeader
         dark={dark} fg={fg} sub={sub}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
