@@ -24,7 +24,7 @@ function StickyFrame({ children }: { children: React.ReactNode }): React.ReactEl
 function SearchMagnifier({ persistent, color, onOpen, focus }: {
   persistent?: boolean; color: string; onOpen?: () => void; focus: () => void;
 }): React.ReactElement | null {
-  return persistent === true ? <HoverIconButton icon={IconMagnifyingGlass} label="Focus search" role="button"
+  return persistent === true ? <HoverIconButton icon={IconMagnifyingGlass} label="Search" role="button"
     color={color} placement="below" shortcut="/" onShortcut={onOpen} onPress={focus}/> : null;
 }
 
