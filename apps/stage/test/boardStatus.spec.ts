@@ -32,7 +32,9 @@ describe('status board', () => {
     expect(columnsEditable('status')).toBe(true);
     expect(columnEditable('status:Todo')).toBe(true);
     expect(columnEditable('status:')).toBe(false);
-    expect(columnEditable('category:Stage')).toBe(false);
+    expect(columnEditable('category:Stage')).toBe(true);
+    expect(columnEditable('category:')).toBe(false);
+    expect(columnEditable('assignee:0xbob')).toBe(false);
   });
 
   test('remembers empty status columns separately from the saved label layout', () => {

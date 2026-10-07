@@ -1,7 +1,7 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { setBoardOrder } from '../../lib/boardOrder';
-import { moveCategory } from '../../lib/channelGroups';
+import { moveCategory, setCategoryOrder } from '../../lib/channelGroups';
 import { isCategoryKey } from '../../lib/channelGroups.model';
 import { capabilities } from '../../lib/capabilities';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
@@ -13,10 +13,15 @@ import {
   movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag, type EditableColumnBy,
 } from './BoardScreen.model';
 
+function saveColumnOrder(order: readonly string[], by: GroupKey): void {
+  if (by === 'category') setCategoryOrder(order);
+  else setBoardOrder(order);
+}
+
 export function addBoardColumn(
   columns: readonly BoardColumn<unknown>[], saved: readonly string[], name: string, by: EditableColumnBy,
 ): void {
-  setBoardOrder(addedColumnOrder(columns.map(column => column.key), saved, name, by));
+  saveColumnOrder(addedColumnOrder(columns.map(column => column.key), saved, name, by), by);
 }
 
 export function dropOnBoard(
@@ -32,9 +37,9 @@ export function dropOnBoard(
   const edit = cardColumnEdit(columns, drag.from, key, by);
   if (edit === null) return;
   const kept = keptColumnOrder(columns, saved, drag.from);
-  if (kept !== null) setBoardOrder(kept);
+  if (kept !== null) saveColumnOrder(kept, by);
   const line = lineOfConv(drag.convId);
-  const write = edit.by === 'status' ? setGroupField(line, 'status', edit.value) : moveGroupLabel(line, edit.from, edit.to);
+  const write = edit.by === 'label' ? moveGroupLabel(line, edit.from, edit.to) : setGroupField(line, edit.by, edit.value);
   void write.catch(toastLabelError);
 }
 
@@ -45,7 +50,7 @@ function columnOutcome(
   const refused = failed.filter(r => r.reason instanceof LabelPermissionError).length;
   if (failed.length > refused) return failure;
   if (refused === 0) return null;
-  const field = by === 'label' ? 'labels' : 'status';
+  const field = by === 'label' ? 'labels' : by;
   return refused === 1
     ? `1 channel ${refusal}, no permission to edit its ${field}.`
     : `${refused} channels ${refusal}, no permission to edit their ${field}.`;
@@ -55,9 +60,9 @@ export async function renameBoardColumn(
   rows: readonly ChannelListRow[], columns: readonly BoardColumn<unknown>[], saved: readonly string[],
   from: string, to: string, by: EditableColumnBy,
 ): Promise<void> {
-  setBoardOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to, by));
+  saveColumnOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to, by), by);
   const results = await Promise.allSettled(columnCarriers(rows, from, by).map(convId => (
-    by === 'status' ? setGroupField(lineOfConv(convId), 'status', to, from) : renameGroupLabel(lineOfConv(convId), from, to)
+    by === 'label' ? renameGroupLabel(lineOfConv(convId), from, to) : setGroupField(lineOfConv(convId), by, to, from)
   )));
   const outcome = columnOutcome(results, `Could not rename the ${by} in every channel. Try again.`, 'kept the old name', by);
   if (outcome !== null) capabilities.toast(outcome);
@@ -69,9 +74,9 @@ export async function deleteBoardColumn(
   const carriers = columnCarriers(rows, label, by);
   const confirm = deleteColumnConfirm(label, carriers.length, by);
   if (!await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true })) return;
-  setBoardOrder(deletedColumnOrder(columns.map(c => c.key), saved, label, by));
+  saveColumnOrder(deletedColumnOrder(columns.map(c => c.key), saved, label, by), by);
   const results = await Promise.allSettled(carriers.map(convId => (
-    by === 'status' ? setGroupField(lineOfConv(convId), 'status', null, label) : removeGroupLabel(lineOfConv(convId), label)
+    by === 'label' ? removeGroupLabel(lineOfConv(convId), label) : setGroupField(lineOfConv(convId), by, null, label)
   )));
   const outcome = columnOutcome(results, `Could not remove the ${by} from every channel. Try again.`, `kept the ${by}`, by);
   if (outcome !== null) capabilities.toast(outcome);
@@ -79,7 +84,7 @@ export async function deleteBoardColumn(
 
 export async function addToBoardColumn(convIds: readonly string[], label: string, by: EditableColumnBy): Promise<void> {
   const results = await Promise.allSettled(convIds.map(convId => (
-    by === 'status' ? setGroupField(lineOfConv(convId), 'status', label) : addGroupLabel(lineOfConv(convId), label)
+    by === 'label' ? addGroupLabel(lineOfConv(convId), label) : setGroupField(lineOfConv(convId), by, label)
   )));
   const added = results.flatMap(r => (r.status === 'fulfilled' && Array.isArray(r.value) ? [r.value] : []));
   const notes = [

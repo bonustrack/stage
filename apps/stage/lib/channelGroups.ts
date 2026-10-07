@@ -29,14 +29,22 @@ function sameOrder(a: readonly string[], b: readonly string[]): boolean {
 }
 
 function withOrder(current: ChannelGroupsPrefs, order: string[]): ChannelGroupsPrefs {
-  return sameOrder(current.order, order) ? current : { ...current, order };
+  return current.orderConfigured && sameOrder(current.order, order) ? current : { ...current, order, orderConfigured: true };
+}
+
+function changeCategoryOrder(next: (order: string[]) => string[]): void {
+  const accountId = prefs.accountId();
+  if (accountId === null) return;
+  void save(current => withOrder(current, next(current.order)), accountId)
+    .then(() => { if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, order: prefs.get().order }); });
+}
+
+export function setCategoryOrder(order: readonly string[]): void {
+  changeCategoryOrder(() => categoryKeysOf(order));
 }
 
 export function moveCategory(key: string, targetKey: string, visible: readonly string[]): void {
-  const accountId = prefs.accountId();
-  if (accountId === null) return;
-  void save(current => withOrder(current, movedCategoryOrder(current.order, visible, key, targetKey)), accountId)
-    .then(() => { if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, order: prefs.get().order }); });
+  changeCategoryOrder(order => movedCategoryOrder(order, visible, key, targetKey));
 }
 
 export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {
@@ -45,7 +53,7 @@ export async function applyRemoteCategoryOrder(forAccount: string, order: readon
 
 export async function adoptBoardCategoryOrder(forAccount: string): Promise<void> {
   const order = categoryKeysOf(await loadBoardOrder(forAccount));
-  if (order.length > 0) await save(current => (current.order.length === 0 ? { ...current, order } : current), forAccount);
+  if (order.length > 0) await save(current => (current.order.length === 0 && !current.orderConfigured ? withOrder(current, order) : current), forAccount);
 }
 
 export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {

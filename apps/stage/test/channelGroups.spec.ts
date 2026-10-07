@@ -24,7 +24,7 @@ mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
-const { adoptBoardCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged } = await import('../lib/channelGroups');
+const { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged, setCategoryOrder } = await import('../lib/channelGroups');
 const { applyRemoteBoardOrder } = await import('../lib/boardOrder');
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
@@ -296,9 +296,9 @@ describe('one category order for the chat list and the board', () => {
     expect(sections([]).slice(1)).toEqual(columns([]));
   });
 
-  test('category keys from any source are lowercase, named and unique', () => {
+  test('category keys keep their spelling and are named and case-insensitively unique', () => {
     expect(categoryKeysOf(['label:Todo', 'category:Work', 'category:', 'category:work', 'assignee:0xbob', 'category:Ops']))
-      .toEqual(['category:work', 'category:ops']);
+      .toEqual(['category:Work', 'category:Ops']);
   });
 
   test('a board column drag reorders the chat sections and goes out to the other devices', async () => {
@@ -307,7 +307,7 @@ describe('one category order for the chat list and the board', () => {
     moveCategory('category:Work', 'category:Alpha', board);
     await settle();
     const order = await loadCategoryOrder('ann');
-    expect(order).toEqual(['category:work', 'category:alpha', 'category:ops']);
+    expect(order).toEqual(['category:Work', 'category:Alpha', 'category:Ops']);
     expect(sent).toEqual([order]);
     expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No category']);
   });
@@ -333,11 +333,52 @@ describe('one category order for the chat list and the board', () => {
     activeId = 'carol';
     values.set('board.columnOrder.carol', JSON.stringify(['label:Todo', 'category:Ops', 'category:', 'assignee:0xbob', 'category:Work']));
     await adoptBoardCategoryOrder('carol');
-    expect(await loadCategoryOrder('carol')).toEqual(['category:ops', 'category:work']);
+    expect(await loadCategoryOrder('carol')).toEqual(['category:Ops', 'category:Work']);
     await applyRemoteBoardOrder('carol', ['category:Work', 'category:Ops']);
     await adoptBoardCategoryOrder('carol');
-    expect(await loadCategoryOrder('carol')).toEqual(['category:ops', 'category:work']);
+    expect(await loadCategoryOrder('carol')).toEqual(['category:Ops', 'category:Work']);
     expect(sent).toEqual([]);
+  });
+
+  test('edited empty categories retain spelling, persist and sync without changing collapsed groups', async () => {
+    activeId = 'edited';
+    values.set('channels.groups.edited', JSON.stringify({ collapsed: ['category:work'], order: ['category:fde', 'category:work'] }));
+    await applyRemoteCategoryOrder('edited', ['category:fde', 'category:work']);
+    sent.length = 0;
+    setCategoryOrder(['category:FDE Team', 'category:Work', 'category:WORK', 'category:', 'label:Todo']);
+    await settle();
+    const order = ['category:FDE Team', 'category:Work'];
+    expect(await loadCategoryOrder('edited')).toEqual(order);
+    expect(JSON.parse(values.get('channels.groups.edited') ?? '{}')).toEqual({ collapsed: ['category:work'], order, orderConfigured: true });
+    expect(sent).toEqual([order]);
+    moveCategory('category:work', 'category:fde team', ['category:work', 'category:FDE Team']);
+    await settle();
+    expect(await loadCategoryOrder('edited')).toEqual(['category:Work', 'category:FDE Team']);
+    expect(sections(['category:Ops', 'category:Work'])).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No category']);
+    setCategoryOrder(['category:Work']);
+    await settle();
+    expect(await loadCategoryOrder('edited')).toEqual(['category:Work']);
+    sent.length = 0;
+    await applyRemoteCategoryOrder('edited', ['category:Remote', 'category:Work']);
+    expect(await loadCategoryOrder('edited')).toEqual(['category:Remote', 'category:Work']);
+    expect(sent).toEqual([]);
+  });
+
+  test('deleting the final configured category stays empty after legacy adoption and reload', async () => {
+    activeId = 'empty';
+    values.set('board.columnOrder.empty', JSON.stringify(['category:Old']));
+    await adoptBoardCategoryOrder('empty');
+    setCategoryOrder([]);
+    await settle();
+    const stored = parseChannelGroupsPrefs(values.get('channels.groups.empty') ?? '{}');
+    expect(stored).toEqual({ collapsed: [], order: [], orderConfigured: true });
+    await adoptBoardCategoryOrder('empty');
+    expect(await loadCategoryOrder('empty')).toEqual([]);
+    activeId = 'other';
+    await applyRemoteCategoryOrder('other', ['category:Other']);
+    activeId = 'empty';
+    await adoptBoardCategoryOrder('empty');
+    expect(await loadCategoryOrder('empty')).toEqual([]);
   });
 
   test('a synced chat order is kept over the board order', async () => {

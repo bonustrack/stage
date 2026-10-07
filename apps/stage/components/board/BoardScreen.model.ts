@@ -2,7 +2,7 @@ import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/ch
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import { DEFAULT_HOME_VIEW, type GroupKey } from '@stage-labs/client/xmtp/readState';
-import { NO_GROUP_TITLES, bucketRows, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
+import { NO_GROUP_TITLES, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
 import { compareNames } from '../../lib/format';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
 
@@ -21,18 +21,18 @@ export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label
 
 export const columnKeyOf = (by: GroupKey, value: string): string => (by === 'label' ? labelColumnKey(value) : `${by}:${value}`);
 
-export type EditableColumnBy = Extract<GroupKey, 'label' | 'status'>;
+export type EditableColumnBy = Exclude<GroupKey, 'assignee'>;
 
-export const columnsEditable = (by: GroupKey): by is EditableColumnBy => by === 'label' || by === 'status';
+export const columnsEditable = (by: GroupKey): by is EditableColumnBy => by !== 'assignee';
 
-function rememberedColumns(order: readonly string[], known: ReadonlySet<string>, by: GroupKey): BoardColumn<never>[] {
+function rememberedColumns(order: readonly string[], known: ReadonlySet<string>, by: GroupKey, nameOf: NameOf): BoardColumn<never>[] {
   const seen = new Set(known);
   const prefix = columnKeyOf(by, '');
   return order.flatMap((key) => {
     const label = key.startsWith(prefix) ? key.slice(prefix.length) : '';
     if (label === '' || seen.has(key.toLowerCase())) return [];
     seen.add(key.toLowerCase());
-    return [{ key, label, rows: [] }];
+    return [{ key, label: groupTitleOf(by, label, nameOf), rows: [] }];
   });
 }
 
@@ -55,8 +55,7 @@ export function boardColumns<T extends ChannelListRow & GroupableRow>(
   nameOf: NameOf = value => value, hidden: (row: T) => boolean = () => false,
 ): BoardColumn<T>[] {
   const columns = valueColumns(sortChannelRows(rows.filter(row => !row.peerAddress), pinned), by, nameOf, hidden);
-  if (!columnsEditable(by)) return columns;
-  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.key.toLowerCase())), by)];
+  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.key.toLowerCase())), by, nameOf)];
 }
 
 export function searchedColumns<T extends FilterRow>(
@@ -81,7 +80,7 @@ export interface BoardDropZone {
 export const columnMovable = (key: string): boolean => key !== columnKeyOf('category', '') && key !== columnKeyOf('status', '');
 
 export const columnEditable = (key: string): boolean => (
-  ['label', 'status'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
+  ['label', 'status', 'category'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
 );
 
 export function acceptsDrop(drag: BoardDrag, key: string): boolean {
@@ -120,7 +119,7 @@ export function keptColumnOrder(
   return next.length === saved.length && next.every((key, index) => key === saved[index]) ? null : next;
 }
 
-type CardColumnEdit = { by: 'status'; value: string | null } | { by: 'label'; from: string; to: string };
+type CardColumnEdit = { by: 'status' | 'category'; value: string | null } | { by: 'label'; from: string; to: string };
 
 export function cardColumnEdit(
   columns: readonly BoardColumn<unknown>[], from: string, to: string, by: GroupKey,
@@ -131,9 +130,9 @@ export function cardColumnEdit(
   const source = columns.find(column => column.key === from);
   const target = columns.find(column => column.key === to);
   if (!source || !target) return null;
-  return by === 'status'
-    ? { by, value: to === prefix ? null : target.label }
-    : { by, from: source.label, to: target.label };
+  return by === 'label'
+    ? { by, from: source.label, to: target.label }
+    : { by, value: to === prefix ? null : target.label };
 }
 
 const carries = (row: GroupableRow, key: string, by: EditableColumnBy): boolean => (
@@ -249,7 +248,7 @@ export function deleteColumnConfirm(
   label: string, carriers: number, by: EditableColumnBy = 'label',
 ): { title: string; message: string } {
   const channels = carriers === 1 ? '1 channel' : `${carriers} channels`;
-  const moved = by === 'status' ? 'They move to No status. Labels are kept.' : 'Channels with no other label leave the board.';
+  const moved = by === 'label' ? 'Channels with no other label leave the board.' : `They move to ${NO_GROUP_TITLES[by]}. Labels are kept.`;
   return {
     title: 'Delete column',
     message: carriers === 0

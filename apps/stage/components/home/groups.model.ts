@@ -51,7 +51,7 @@ function orderedBuckets<R extends GroupRow>(
   const dm = rows.filter(row => row.peerAddress !== null);
   const { buckets, none } = bucketRows(rows.filter(row => row.peerAddress === null), by, nameOf, value => sectionKeyOf(by, value));
   const grouped = by === 'category'
-    ? savedFirst(buckets, order, b => b.key, (a, b) => compareNames(a.key, b.key))
+    ? savedFirst(buckets, order.map(key => key.toLowerCase()), b => b.key, (a, b) => compareNames(a.key, b.key))
     : buckets.sort((a, b) => compareNames(a.title, b.title));
   return [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
