@@ -71,6 +71,25 @@ have natively (no comments, no em dash, `stage/*`, `no-restricted-syntax`,
 lints only those paths. CI always runs the full lint, because a type change in
 one file can create findings in another.
 
+`stage/no-custom-font-size` requires named Kit font sizes in Stage's `app`,
+`components`, `lib`, `modules` and `platform` JS/TS source. It checks object and
+StyleSheet properties, assignments, JSX font-size props and CSS font declarations
+in strings. Native inputs and Markdown body sizing can use `FONT_SIZE` or
+`fontSize()` imported from Kit. Imported Kit `Text` (including aliases) must use
+`size`, not a style override, even when that override contains a token. The check
+follows local const aliases and destructuring, static computed keys, arrays,
+spreads, branches and `StyleSheet.create` / `flatten`. Direct arithmetic writes
+are rejected; destructuring reads are not declarations. CSS-like strings are
+checked at declaration boundaries, not by matching ordinary prose. This is not
+cross-module or runtime data-flow analysis of arbitrary wrappers, functions,
+mutations, dynamic property keys or generated CSS. Kit's semantic Title, wallet
+and computed Markdown styles, test fixtures and standalone HTML support pages
+are outside this app rule. Existing Kit-specific lint rules still apply there.
+The CLI/config regression suite lives in `apps/stage/scripts/test`, separate
+from the app's pure-model `test` directory. Run it with
+`bun test apps/stage/scripts/test/typographyLint.test.mjs`; CI's Test step runs
+this suite before the workspace tests.
+
 Tasks are orchestrated by [Turbo](https://turbo.build); see `turbo.json` for the
 pipeline (`build`, `test`, `typecheck`).
 

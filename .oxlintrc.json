@@ -224,6 +224,14 @@
     },
     {
       "files": [
+        "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx,js,jsx,mjs}"
+      ],
+      "rules": {
+        "stage/no-custom-font-size": "error"
+      }
+    },
+    {
+      "files": [
         "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"
       ],
       "rules": {
@@ -234,12 +242,8 @@
         "core/no-restricted-syntax": [
           "error",
           {
-            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
-            "message": "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@stage-labs/kit/tokens') instead of a raw fontSize number."
-          },
-          {
-            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
-            "message": "Kit Text/Title/Caption must size via the `size` prop (size=\"sm|md|lg|...\"), not a fontSize in style. Remove fontSize from the style and pass size= instead."
+            "selector": "JSXElement[openingElement.name.name=/^(Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
+            "message": "Kit Title/Caption must size via the `size` prop, not a fontSize in style. Remove fontSize from the style and pass size= instead."
           },
           {
             "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
@@ -349,7 +353,6 @@
     {
       "files": [
         "apps/stage/components/landing/**",
-        "apps/stage/components/chrome/PageIntro.model.ts",
         "apps/stage/components/smallText.ts"
       ],
       "rules": {

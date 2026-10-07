@@ -113,8 +113,8 @@ function HeroAction(): React.ReactElement {
       <Col width="100%" maxWidth={HERO_LAYOUT.blockMaxWidth}>
         <Box background={HERO_YELLOW} padding={{ y: HERO_LAYOUT.blockPadY }}>
           <Text
-            color={HERO_BLACK}
-            style={{ fontSize: HERO_TYPE.paragraph.size, lineHeight: HERO_TYPE.paragraph.lineHeight }}
+            size="3xl" color={HERO_BLACK}
+            style={{ lineHeight: HERO_TYPE.paragraph.lineHeight }}
           >
             {HERO_COPY.paragraph}
           </Text>

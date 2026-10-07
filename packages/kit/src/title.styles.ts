@@ -1,7 +1,7 @@
 import { fontName } from './tokens';
 
 export const HERO_TITLE_STYLE = {
-  '3xl': { fontSize: 44, lineHeight: 44 * 1.05, fontFamily: fontName.head },
+  '3xl': { fontSize: 38, lineHeight: 46, fontFamily: fontName.sans },
   '4xl': { fontSize: 76, lineHeight: 83.6, fontFamily: fontName.sans },
 } as const;
 
