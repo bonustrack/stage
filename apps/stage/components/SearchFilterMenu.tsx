@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { IconCircleMinus } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleMinus';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { AppIcon } from './widgets';
 import type { AppIconName } from './appIcons';
@@ -10,15 +9,11 @@ import { AccountAvatar } from './AccountAvatarButton';
 import { MenuHeading, MenuRow } from './MenuRows';
 import { PickerNote, PickerRow, PickerSearch } from './conversation/SidebarSection';
 import { peerLabel } from './conversation/convTitle';
-import { homeRows } from './home/state';
-import { subscribeCachedRows } from '../lib/channelsCache';
-import { useStoreValue } from '../lib/storeCore';
-import { useClearedChats } from '../lib/clearedChats';
 import { usePeerProfiles } from '../lib/peerProfiles';
-import { memberNamesOf } from './FilterSearch';
+import { memberNamesOf, useSearchFilterSources } from './FilterSearch';
 import {
   FILTER_FIELDS, HAS_OPTIONS, PRIORITY_OPTIONS, ME_OPTION, ME_VALUE, clearQueryFilters, memberFilterOption,
-  searchFilterOptionMatches as matches, searchFilterCount, searchFilterSources, searchFilterValues, selectedSearchFilters, toggleSearchFilter,
+  searchFilterOptionMatches as matches, searchFilterCount, searchFilterValues, selectedSearchFilters, toggleSearchFilter,
   type FilterField, type FilterOption, type FilterOptions, type FilterScope,
 } from './searchFilter.model';
 
@@ -32,12 +27,7 @@ const valueOption = (value: string): FilterOption => ({ key: value, label: value
 const counted = (label: string, count: number): string => count === 0 ? label : `${label} (${count})`;
 
 function useFilterOptions(scope: FilterScope): FilterOptions {
-  const rows = useStoreValue(subscribeCachedRows, homeRows);
-  const cleared = useClearedChats();
-  const sources = useMemo(
-    () => searchFilterSources((rows ?? []).filter(row => !isRowCleared(cleared, row)), scope),
-    [rows, cleared, scope],
-  );
+  const sources = useSearchFilterSources(scope);
   usePeerProfiles(sources.members);
   return {
     has: HAS_OPTIONS,

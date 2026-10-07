@@ -13,7 +13,7 @@ import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } 
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
-  addGroupLabel, knownChannelFields, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels,
+  addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels,
 } from '../../lib/xmtp.groups';
 import {
   CHANNEL_PRIORITIES, channelFieldOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
@@ -22,6 +22,7 @@ import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
+import { useSearchFilterSources } from '../FilterSearch';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
@@ -195,8 +196,8 @@ function LabelPicker({ draft, toggle, current }: SectionDraft & { current: strin
   return <TagPicker draft={draft} options={options} noun="label" pick={pick}/>;
 }
 
-function FieldPicker({ draft, toggle, current, field }: SectionDraft & { current: string[]; field: ChannelField }): React.ReactElement {
-  const [options] = useState(() => selectedFirst(uniqueKeys([...current, ...knownChannelFields(field)]), current));
+function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
+  const sources = useSearchFilterSources('chats');
   if (field === 'priority') return (
     <PickerList>
       {CHANNEL_PRIORITIES.map(priority => (
@@ -204,7 +205,7 @@ function FieldPicker({ draft, toggle, current, field }: SectionDraft & { current
       ))}
     </PickerList>
   );
-  return <TagPicker draft={draft} options={options} noun={field} pick={toggle}/>;
+  return <TagPicker draft={draft} options={field === 'category' ? sources.categories : sources.statuses} noun={field} pick={toggle}/>;
 }
 
 export function ChannelLabels({ convId, labels }: {
@@ -243,7 +244,7 @@ function ChannelFieldSection({ convId, field }: { convId: string; field: Channel
   };
   return (
     <SidebarSection {...CHANNEL_FIELDS[field]} editLabel={`Edit ${field}`} canEdit={rights.appData} current={current} single
-      onCommit={commit} renderPicker={(draft) => <FieldPicker {...draft} current={current} field={field}/>}>
+      onCommit={commit} renderPicker={(draft) => <FieldPicker {...draft} field={field}/>}>
       {value === null ? <SectionNote text={`No ${field} yet`}/> : (
         <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{value}</Text></Row>
       )}

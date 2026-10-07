@@ -238,13 +238,6 @@ function knownTags(tagsOf: (row: CachedRow) => string[]): string[] {
   return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-export function knownChannelFields(field: ChannelField): string[] {
-  return knownTags(row => {
-    const value = channelFieldOf(field, row[field]);
-    return value === null ? [] : [value];
-  });
-}
-
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();
