@@ -43,7 +43,6 @@ export const HERO_LOGO_SIZE = HERO_LAYOUT.logoHeight - 2 * HERO_LAYOUT.logoPadY;
 
 export const HERO_TYPE = {
   eyebrow: { letterSpacing: 1.7 },
-  title: { size: 76, lineHeight: 83.6 },
   paragraph: { size: 26, lineHeight: 31.2 },
 } as const;
 

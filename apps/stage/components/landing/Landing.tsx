@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Platform, useWindowDimensions } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { Title } from '@stage-labs/kit/react-native/title';
 import { Box, Col, Row, ScreenScroll } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { desktopTitleBarInset } from '../../lib/webLayout';
@@ -98,12 +99,9 @@ function HeroCopy(): React.ReactElement {
         </Text>
       </Box>
       <Box background={HERO_YELLOW} width="100%" maxWidth={HERO_LAYOUT.blockMaxWidth} padding={{ y: HERO_LAYOUT.blockPadY }}>
-        <Text
-          color={HERO_BLACK} accessibilityRole="header"
-          style={{ fontSize: HERO_TYPE.title.size, lineHeight: HERO_TYPE.title.lineHeight }}
-        >
+        <Title hero="4xl" color={HERO_BLACK} accessibilityRole="header">
           {HERO_COPY.title}
-        </Text>
+        </Title>
       </Box>
     </Col>
   );

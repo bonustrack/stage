@@ -4,11 +4,26 @@ import { SIZES } from '../src/button.styles';
 import { CONTROL_SIZES, controlColors, controlTextStyle } from '../src/control.styles';
 import { markdownStyles } from '../src/markdown.styles';
 import { resolveTextSize } from '../src/text.styles';
-import { FONT_SIZE, FONT_SIZE_SNAP, fontSize, type FontSizeName } from '../src/tokens';
+import { FONT_SIZE, FONT_SIZE_SNAP, fontName, fontSize, type FontSizeName } from '../src/tokens';
+import { BALANCE_TITLE_STYLE, HERO_TITLE_STYLE } from '../src/title.styles';
 
 const TEXT_SIZES: Record<FontSizeName, number> = {
   '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 32,
 };
+
+describe('hero title typography', () => {
+  test('4xl matches the landing headline without a semibold font', () => {
+    expect(HERO_TITLE_STYLE['4xl']).toEqual({ fontSize: 76, lineHeight: 83.6, fontFamily: fontName.sans });
+  });
+
+  test('balance typography keeps the former wallet hero appearance', () => {
+    expect(BALANCE_TITLE_STYLE).toEqual({ fontSize: 60, lineHeight: 63, fontFamily: fontName.head });
+  });
+
+  test('3xl keeps its size, line height and semibold font', () => {
+    expect(HERO_TITLE_STYLE['3xl']).toEqual({ fontSize: 44, lineHeight: 46.2, fontFamily: fontName.head });
+  });
+});
 
 describe('text size tokens', () => {
   test('all options keep their numeric sizes after the small-token rename', () => {
