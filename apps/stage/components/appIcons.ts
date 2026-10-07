@@ -1,3 +1,7 @@
+import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
+import { IconArrowUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUp';
+import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
+import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { IconBell } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBell';
@@ -37,6 +41,10 @@ import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 
 export const APP_ICONS = {
+  IconArrowDown,
+  IconArrowUp,
+  IconCalendar1,
+  IconClock,
   IconArrowLeft,
   IconArrowUndoUp,
   IconBell,

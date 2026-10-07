@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isGroupRow, listedConvRow, memberAddressesOf, sameConvRow } from '../modules/messaging/convRow.model';
+import { isGroupRow, listedConvRow, memberAddressesOf, rowCreatedTs, sameConvRow } from '../modules/messaging/convRow.model';
 
 describe('listedConvRow', () => {
   test('a listed direct chat gives the peer and its address map', () => {
@@ -33,6 +33,33 @@ describe('listedConvRow', () => {
     expect(listedConvRow([], 'x')).toBeUndefined();
     expect(listedConvRow(null, 'x')).toBeUndefined();
     expect(memberAddressesOf(null)).toEqual([]);
+  });
+});
+
+describe('rowCreatedTs', () => {
+  const original = { id: 'original', createdNs: 10_000_000 };
+  const replacement = { id: 'replacement', createdNs: 90_000_000 };
+  const ns = (conv: typeof original): number => conv.createdNs;
+  const lookup = async (id: string): Promise<typeof original | null> => id === original.id ? original : null;
+  const missing = async (): Promise<null> => null;
+
+  test('channels and unmapped DMs use their SDK creation time', async () => {
+    expect(await rowCreatedTs(original, original.id, undefined, lookup, ns)).toBe(10);
+    expect(await rowCreatedTs(replacement, replacement.id, undefined, lookup, ns)).toBe(90);
+  });
+
+  test('replacement DMs preserve the canonical creation time from cache or SDK', async () => {
+    expect(await rowCreatedTs(replacement, original.id, 10, missing, ns)).toBe(10);
+    expect(await rowCreatedTs(replacement, original.id, undefined, lookup, ns)).toBe(10);
+    expect(await rowCreatedTs(replacement, original.id, null, lookup, ns)).toBe(10);
+    expect(await rowCreatedTs(replacement, 'unknown', undefined, missing, ns)).toBeNull();
+  });
+
+  test('invalid or absent creation times remain unknown', async () => {
+    for (const invalid of [0, -1, NaN, Infinity]) {
+      expect(await rowCreatedTs({ ...original, createdNs: invalid }, original.id, undefined, lookup, ns)).toBeNull();
+      expect(await rowCreatedTs(replacement, original.id, invalid, lookup, ns)).toBe(10);
+    }
   });
 });
 

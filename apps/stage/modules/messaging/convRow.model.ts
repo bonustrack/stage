@@ -40,6 +40,15 @@ export function listedConvRow(rows: readonly CachedRowLike[] | null, convId: str
   };
 }
 
+export async function rowCreatedTs<C extends { id: string }>(
+  conv: C, rowId: string, cached: unknown, lookup: (id: string) => Promise<C | null>, createdAtNs: (conv: C) => number,
+): Promise<number | null> {
+  if (conv.id !== rowId && typeof cached === 'number' && Number.isFinite(cached) && cached > 0) return cached;
+  const source = conv.id === rowId ? conv : await lookup(rowId);
+  const ns = source === null ? 0 : createdAtNs(source);
+  return Number.isFinite(ns) && ns >= 1_000_000 ? Math.floor(ns / 1_000_000) : null;
+}
+
 function sameRecord(a: Record<string, string>, b: Record<string, string>): boolean {
   const keys = Object.keys(a);
   return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);

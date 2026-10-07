@@ -34,14 +34,16 @@ export function toggledLabel(labels: readonly string[], label: string): string[]
 }
 
 export function syncsHomeView(edit: HomeViewEdit): boolean {
-  return edit.groupBy !== undefined || edit.columnBy !== undefined;
+  return edit.groupBy !== undefined || edit.columnBy !== undefined || edit.chatsSort !== undefined || edit.boardSort !== undefined;
 }
 
 export function editHomeView(current: HomeViewContent, edit: HomeViewEdit, now: number): HomeViewContent {
   return syncsHomeView(edit) ? stamped(current, edit, now) : { ...current, ...edit };
 }
 
-export const receiveHomeView = receiveKeeping<HomeViewContent>('view');
+export function receiveHomeView(current: HomeViewContent, incoming: HomeViewContent): HomeViewContent {
+  return incoming.at > current.at ? { ...current, ...incoming, view: current.view } : current;
+}
 
 export function syncedHomeView(state: HomeViewContent): HomeViewContent {
   return { ...state, view: DEFAULT_HOME_VIEW.view };

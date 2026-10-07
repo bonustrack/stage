@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import { collectSyncReplay, DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
+import { homeSortOf } from '../components/home/sort.model';
 
 const values = new Map<string, string>();
 let activeId = 'alice';
@@ -40,6 +41,54 @@ describe('home view model', () => {
   });
 });
 
+describe('home view sorting', () => {
+  const chatsSort = { by: 'created', direction: 'asc' } as const;
+  const boardSort = { by: 'status', direction: 'desc' } as const;
+
+  test('editing either mode keeps the other preference and advances the shared clock', () => {
+    const current = { ...view('board', 'label', 4), chatsSort };
+    const next = editHomeView(current, { boardSort }, 10);
+    expect(next).toEqual({ ...current, boardSort, at: 10 });
+    expect(homeSortOf(next)).toEqual(boardSort);
+    expect(homeSortOf({ ...next, view: 'chats' })).toEqual(chatsSort);
+    expect(syncedHomeView(next)).toEqual({ ...next, view: 'chats' });
+  });
+
+  test('old-device sync without sort fields does not erase deliberate choices', () => {
+    const current = { ...view('board', 'label', 4), chatsSort, boardSort };
+    expect(receiveHomeView(current, view('chats', 'status', 9))).toEqual({ ...current, groupBy: 'status', at: 9 });
+  });
+
+  test('catch-up replay restores sorts before advancing past a legacy grouping edit', async () => {
+    const log = [
+      { ...view('chats', 'none', 10), chatsSort, boardSort },
+      view('chats', 'category', 11),
+    ].map((content, i) => ({ content, contentTypeId: 'stage.box/homeView:1.0', senderInboxId: 'self', sentNs: i + 1 }));
+    const incoming = collectSyncReplay(log, 0, { inboxId: 'self', nowMs: 100 }).latest.homeView;
+    expect(incoming).not.toBeNull();
+    if (incoming === null) throw new Error('Missing home view replay');
+    await applyRemoteHomeView('catch-up-sorts', incoming);
+    expect(stored('catch-up-sorts')).toEqual({ ...view('chats', 'category', 11), chatsSort, boardSort });
+  });
+
+  test('sort choices survive serialization, reload, remote sync, and account switching', async () => {
+    const state = { ...view('board', 'category', 10), columnBy: 'assignee' as const, chatsSort, boardSort };
+    values.set('home.view.sorted', JSON.stringify(state));
+    expect(await loadHomeView('sorted')).toEqual({ ...state, view: 'chats' });
+    expect(await loadHomeView('other-unset-account')).toBeNull();
+    await applyRemoteHomeView('sorted', { ...state, chatsSort: { by: 'priority', direction: 'asc' }, at: 11 });
+    expect(stored('sorted')).toEqual({ ...state, chatsSort: { by: 'priority', direction: 'asc' }, at: 11 });
+  });
+
+  test('old saved grouping uses new independent sorting defaults without a migration', async () => {
+    values.set('home.view.legacy-sorts', JSON.stringify(view('board', 'category', 6)));
+    const state = await loadHomeView('legacy-sorts');
+    expect(state).toEqual(view('chats', 'category', 6));
+    expect(homeSortOf(state ?? DEFAULT_HOME_VIEW)).toEqual({ by: 'updated', direction: 'desc' });
+    expect(homeSortOf({ ...(state ?? DEFAULT_HOME_VIEW), view: 'board' })).toEqual({ by: 'priority', direction: 'desc' });
+  });
+});
+
 describe('home view store', () => {
   test('stored column choices survive while a missing column preference defaults to status', async () => {
     for (const columnBy of ['label', 'category', 'assignee', 'status'] as const) {
@@ -76,6 +125,11 @@ describe('home view store', () => {
     setHomeView({ groupBy: 'assignee' });
     await settle();
     expect(stored('alice')).toMatchObject({ view: 'board', groupBy: 'assignee', columnBy: 'category' });
+    setHomeView({ boardSort: { by: 'created', direction: 'asc' } });
+    await settle();
+    expect(stored('alice')).toMatchObject({ view: 'board', boardSort: { by: 'created', direction: 'asc' } });
+    expect(sent.at(-1)).toMatchObject({ view: 'chats', boardSort: { by: 'created', direction: 'asc' } });
+    expect(stored('bob')).not.toHaveProperty('boardSort');
     stop();
   });
 

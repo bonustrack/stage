@@ -1,7 +1,8 @@
 import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
-import { DEFAULT_HOME_VIEW, type GroupKey } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
+import { homeSortOf, sortHomeRows } from '../home/sort.model';
 import { NO_GROUP_TITLES, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
 import { compareNames } from '../../lib/format';
 import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../searchFilter.model';
@@ -53,8 +54,9 @@ function valueColumns<T extends GroupableRow>(
 export function boardColumns<T extends ChannelListRow & GroupableRow>(
   rows: T[], pinned: readonly string[], order: readonly string[], by: GroupKey = DEFAULT_HOME_VIEW.columnBy,
   nameOf: NameOf = value => value, hidden: (row: T) => boolean = () => false,
+  sort: HomeSort = homeSortOf({ ...DEFAULT_HOME_VIEW, view: 'board' }), statusOrder: readonly string[] = order,
 ): BoardColumn<T>[] {
-  const columns = valueColumns(sortChannelRows(rows.filter(row => !row.peerAddress), pinned), by, nameOf, hidden);
+  const columns = valueColumns(sortHomeRows(rows.filter(row => !row.peerAddress), pinned, sort, statusOrder), by, nameOf, hidden);
   return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.key.toLowerCase())), by, nameOf)];
 }
 

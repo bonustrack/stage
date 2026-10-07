@@ -1,7 +1,7 @@
 
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { convMembers, type ConvMembers } from '../../lib/xmtp.identity';
-import { getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
+import { getCachedRows, getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
@@ -19,7 +19,7 @@ import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { ownDeletesReady } from '../../lib/ownDeletes';
 import { fetchSuperAdmins } from './groupDetails';
-import type { ConvRow } from './convRow.model';
+import { rowCreatedTs, type ConvRow } from './convRow.model';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
@@ -28,6 +28,7 @@ export interface ConversationView extends ConvRow, GroupTags {
   convId: string;
   title: string;
   lastTs: number | null;
+  createdTs?: number | null;
   lastBubbleTs: number | null;
   lastPreview: string;
   avatarAddress: string | null;
@@ -146,6 +147,13 @@ async function resolveMarkedUnread(
   return initialMarkedUnread(inputs);
 }
 
+function createdTsOf(conv: Conversation, convId: string): Promise<number | null> {
+  return rowCreatedTs(
+    conv, convId, getCachedRows()?.find(row => row.convId === convId)?.createdTs,
+    id => convOfLine(lineOfConv(id)), sdk.createdAtNs,
+  );
+}
+
 const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();
 
 export async function summarizeConversation(
@@ -176,6 +184,7 @@ export async function summarizeConversation(
     title,
     groupName,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
+    createdTs: await createdTsOf(conv, convId),
     lastBubbleTs: lastBubbleTsOf(msgs, dm),
     lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
     avatarAddress,

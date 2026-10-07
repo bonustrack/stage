@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW } from '@stage-labs/client/xmtp/readState';
 import {
-  CHANNELS_OVERFLOW_ITEMS, homeViewEdit, homeViewMenu, searchBarLabels, type ViewMenuSection,
+  CHANNELS_OVERFLOW_ITEMS, homeSortMenu, homeViewEdit, homeViewMenu, searchBarLabels, type ViewMenuSection,
 } from '../components/home/model';
 
 describe('filter chips follow the search', () => {
@@ -24,8 +24,8 @@ describe('the View menu', () => {
   const labels = (sections: ViewMenuSection[]): string[][] => sections.map(s => s.rows.map(r => `${r.label}${r.selected ? '*' : ''}`));
 
   test('the root contains view choices and submenu entries, not grouping options', () => {
-    expect(labels(homeViewMenu(chats))).toEqual([['Chats*', 'Board'], ['Group by', 'Filter', 'Fields']]);
-    expect(labels(homeViewMenu(board))).toEqual([['Chats', 'Board*'], ['Column by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(chats))).toEqual([['Chats*', 'Board'], ['Group by', 'Sort by: Updated', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(board))).toEqual([['Chats', 'Board*'], ['Column by', 'Sort by: Priority', 'Filter', 'Fields']]);
     expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
   });
 
@@ -38,11 +38,11 @@ describe('the View menu', () => {
 
   test('both mode transitions refresh selection and retain independent grouping preferences', () => {
     const next = { ...chats, ...homeViewEdit(chats, 'view:board') };
-    expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Column by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Column by', 'Sort by: Priority', 'Filter', 'Fields']]);
     expect(homeViewMenu(next, true).map(section => section.heading)).toEqual(['Column by']);
     expect(labels(homeViewMenu(next, true))).toEqual([['Assignees', 'Category', 'Label*', 'Status']]);
     const back = { ...next, ...homeViewEdit(next, 'view:chats') };
-    expect(labels(homeViewMenu(back))).toEqual([['Chats*', 'Board'], ['Group by', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(back))).toEqual([['Chats*', 'Board'], ['Group by', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(homeViewMenu(back, true).map(section => section.heading)).toEqual(['Group by']);
     expect(labels(homeViewMenu(back, true))).toEqual([['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
   });
@@ -68,6 +68,19 @@ describe('the View menu', () => {
     expect(homeViewEdit(board, 'group:none')).toBeNull();
     expect(homeViewEdit(chats, 'view:table')).toBeNull();
     expect(homeViewEdit(chats, 'settings')).toBeNull();
+  });
+
+  test('Sort by offers all four fields and both directions for each mode', () => {
+    expect(labels(homeSortMenu(chats))).toEqual([['Status', 'Created', 'Updated*', 'Priority'], ['Ascending', 'Descending*']]);
+    expect(labels(homeSortMenu(board))).toEqual([['Status', 'Created', 'Updated', 'Priority*'], ['Ascending', 'Descending*']]);
+    for (const current of [chats, board]) {
+      const key = current.view === 'board' ? 'boardSort' : 'chatsSort';
+      const picked = { ...current, ...homeViewEdit(current, 'sort:created') };
+      expect(picked).toHaveProperty(key, { by: 'created', direction: 'desc' });
+      expect(homeViewEdit(picked, 'direction:asc')).toEqual({ [key]: { by: 'created', direction: 'asc' } });
+      expect(homeViewEdit(current, 'sort:unknown')).toBeNull();
+      expect(homeViewEdit(current, 'direction:down')).toBeNull();
+    }
   });
 
   test('the defaults are the chats list without grouping and a board by status', () => {

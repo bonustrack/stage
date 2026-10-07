@@ -6,7 +6,7 @@ import { CHANNEL_FIELDS } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { CHANNELS_OVERFLOW_ITEMS, VIEW_ITEM, homeViewEdit, homeViewMenu } from './model';
+import { CHANNELS_OVERFLOW_ITEMS, VIEW_ITEM, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
@@ -62,10 +62,10 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   const { onFilterMenu } = filter;
   useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
   const pick = (id: string): void => {
-    if (id === 'grouping' || id === 'filter' || id === 'fields') { setPage(id); return; }
+    if (id === 'grouping' || id === 'sorting' || id === 'filter' || id === 'fields') { setPage(id); return; }
     const edit = homeViewEdit(current, id);
     if (edit === null) return;
-    if (edit.view === undefined) close();
+    if (edit.view === undefined && page !== 'sorting') close();
     setHomeView(edit);
   };
   const count = searchFilterCount(filter.query);
@@ -83,9 +83,13 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
               leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
               onPress={() => { toggleChannelField(current.view, field.id); }}/>
           ))}
-        </> : homeViewMenu(current, page === 'grouping').map((section, index) => (
+        </> : (page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping')).map((section, index) => (
           <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-            {section.rows.map(row => <MenuRow key={row.id} icon={row.icon}
+            {section.rows.map(row => page === 'sorting' ? (
+              <PickerRow key={row.id} label={row.label} selected={row.selected}
+                leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link"/>}
+                onPress={() => { pick(row.id); }}/>
+            ) : <MenuRow key={row.id} icon={row.icon}
               label={row.id === 'filter' && count > 0 ? `Filter (${count})` : row.label}
               selected={row.selected} onPress={() => { pick(row.id); }}/>) }
           </Section>

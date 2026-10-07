@@ -1,11 +1,12 @@
-import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
+import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging/conversation';
 import {
-  GROUP_KEYS, homeViewSchema, type GroupKey, type HomeViewContent, type HomeViewEdit,
+  GROUP_KEYS, homeSortSchema, homeViewSchema, type GroupKey, type HomeSort, type HomeViewContent, type HomeViewEdit,
 } from '@stage-labs/client/xmtp/readState';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
 import { GROUP_BY_LABELS } from './groupBy.model';
+import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
 import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
@@ -93,8 +94,27 @@ const GROUP_ICONS: Record<GroupKey, AppIconName> = {
   assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag', status: 'IconCircleDashed',
 };
 
+const SORT_ICONS: Record<HomeSort['by'], AppIconName> = {
+  status: 'IconCircleDashed', created: 'IconCalendar1', updated: 'IconClock', priority: 'IconFlag1',
+};
+const DIRECTION_ICONS: Record<HomeSort['direction'], AppIconName> = { asc: 'IconArrowUp', desc: 'IconArrowDown' };
+
+export function homeSortMenu(current: HomeViewContent): ViewMenuSection[] {
+  const sort = homeSortOf(current);
+  return [
+    { heading: 'Sort by', rows: homeSortSchema.shape.by.options.map(by => ({
+      id: `sort:${by}`, label: SORT_LABELS[by], icon: SORT_ICONS[by], selected: sort.by === by,
+    })) },
+    { heading: 'Direction', rows: homeSortSchema.shape.direction.options.map(direction => ({
+      id: `direction:${direction}`, label: direction === 'asc' ? 'Ascending' : 'Descending',
+      icon: DIRECTION_ICONS[direction], selected: sort.direction === direction,
+    })) },
+  ];
+}
+
 export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
   const board = current.view === 'board';
+  const sort = homeSortOf(current);
   if (!grouping) return [
     { rows: [
       { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
@@ -102,6 +122,7 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
     ] },
     { rows: [
       { id: 'grouping', label: board ? 'Column by' : 'Group by', icon: 'IconLayersThree', selected: false },
+      { id: 'sorting', label: `Sort by: ${SORT_LABELS[sort.by]}`, icon: DIRECTION_ICONS[sort.direction], selected: false },
       { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
       { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
     ] },
@@ -117,7 +138,7 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
 export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {
   const view = homeViewSchema.shape.view.safeParse(id.slice(VIEW_ID_PREFIX.length));
   if (id.startsWith(VIEW_ID_PREFIX) && view.success) return { view: view.data };
-  if (!id.startsWith(GROUP_ID_PREFIX)) return null;
+  if (!id.startsWith(GROUP_ID_PREFIX)) return homeSortEdit(current, id);
   const value = id.slice(GROUP_ID_PREFIX.length);
   if (current.view === 'board') {
     const column = homeViewSchema.shape.columnBy.safeParse(value);
@@ -132,6 +153,8 @@ interface SortInputs {
   enabledLabels: Set<string>;
   unreadOnly: boolean;
   pinned: readonly string[];
+  sort?: HomeSort;
+  statusOrder?: readonly string[];
 }
 
 export function deriveSortedRows(i: SortInputs): Row[] {
@@ -139,7 +162,7 @@ export function deriveSortedRows(i: SortInputs): Row[] {
     enabledLabels: i.enabledLabels,
     unreadOnly: i.unreadOnly,
   });
-  return sortChannelRows(filtered, i.pinned);
+  return sortHomeRows(filtered, i.pinned, i.sort, i.statusOrder);
 }
 
 export function searchBarLabels(

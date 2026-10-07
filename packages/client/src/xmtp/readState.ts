@@ -61,10 +61,19 @@ export const GROUP_KEYS = ['assignee', 'category', 'label', 'status'] as const;
 
 export type GroupKey = (typeof GROUP_KEYS)[number];
 
+export const homeSortSchema = z.object({
+  by: z.enum(['status', 'created', 'updated', 'priority']),
+  direction: z.enum(['asc', 'desc']),
+});
+
+export type HomeSort = z.infer<typeof homeSortSchema>;
+
 export const homeViewSchema = z.object({
   view: z.enum(['chats', 'board']),
   groupBy: z.enum(['none', ...GROUP_KEYS]),
   columnBy: z.enum(GROUP_KEYS).default('status'),
+  chatsSort: homeSortSchema.optional(),
+  boardSort: homeSortSchema.optional(),
   at: z.number().nonnegative(),
 });
 
@@ -281,6 +290,13 @@ function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kin
   return latest;
 }
 
+function latestHomeView(messages: readonly SyncMessage[], maxAt: number): HomeViewContent | null {
+  const states = messages.map(m => inTime(stateOf('homeView', m), maxAt))
+    .filter((state): state is HomeViewContent => state !== null)
+    .sort((a, b) => b.at - a.at);
+  return states.reduce<HomeViewContent | null>((latest, state) => ({ ...state, ...latest }), null);
+}
+
 export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number, trust: SyncTrust): SyncReplay {
   const fresh = messages.filter((m) => m.sentNs > afterNs && trust.inboxId !== '' && m.senderInboxId === trust.inboxId);
   const maxAt = trust.nowMs + SYNC_MAX_AHEAD_MS;
@@ -293,7 +309,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
       board: latestState(fresh, 'board', maxAt),
       categoryOrder: latestState(fresh, 'categoryOrder', maxAt),
       search: latestState(fresh, 'search', maxAt),
-      homeView: latestState(fresh, 'homeView', maxAt),
+      homeView: latestHomeView(fresh, maxAt),
     },
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };

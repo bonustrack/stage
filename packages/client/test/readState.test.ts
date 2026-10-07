@@ -274,6 +274,24 @@ describe('restored sync groups', () => {
     expect(replayOf([]).latest.homeView).toBeNull();
   });
 
+  test('replays the latest supplied sort choices across newer legacy snapshots', () => {
+    const VIEW = 'stage.box/homeView:1.0';
+    const base = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 10 };
+    const chatsSort = { by: 'created', direction: 'asc' };
+    const boardSort = { by: 'updated', direction: 'desc' };
+    const messages = [
+      { contentTypeId: VIEW, content: { ...base, chatsSort, boardSort }, sentNs: 1 },
+      { contentTypeId: VIEW, content: { ...base, chatsSort: { by: 'priority', direction: 'asc' }, at: 11 }, sentNs: 2 },
+      { contentTypeId: VIEW, content: { ...base, groupBy: 'category', at: 12 }, sentNs: 3 },
+      { contentTypeId: VIEW, content: { ...base, chatsSort, at: NOW + DAY_MS + 1 }, sentNs: 4 },
+      { contentTypeId: VIEW, content: { ...base, chatsSort: { by: 'unknown' }, at: 13 }, sentNs: 5 },
+    ];
+    const expected = { ...base, groupBy: 'category', at: 12, chatsSort: { by: 'priority', direction: 'asc' }, boardSort };
+    expect(replayOf(messages).latest.homeView).toEqual(expected);
+    expect(replayOf([...messages].reverse()).latest.homeView).toEqual(expected);
+    expect(replayOf(messages, 2).latest.homeView).toEqual({ ...base, groupBy: 'category', at: 12 });
+  });
+
   test('skips messages at or before the cursor', () => {
     const replay = replayOf([
       { contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 },

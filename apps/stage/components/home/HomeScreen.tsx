@@ -28,6 +28,7 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
 import { deriveSortedRows } from './model';
+import { homeSortOf } from './sort.model';
 import { useGroupedRows, useHomeState } from './state';
 import { useCategoryRowDrag, useListDragMeasurements, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
@@ -56,7 +57,10 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const { rows, pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
-  const { groupBy } = useHomeView();
+  const view = useHomeView();
+  const { groupBy } = view;
+  const sort = homeSortOf(view);
+  const boardOrder = useBoardOrder();
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
   const channelProfilesVersion = usePeerProfiles([
     ...members, ...(rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
@@ -69,10 +73,9 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   );
 
   const sortedRows = useMemo(
-    () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),
-    [rows, pinned, enabledLabels, unreadOnly],
+    () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder: boardOrder }),
+    [rows, pinned, enabledLabels, unreadOnly, sort, boardOrder],
   );
-  const boardOrder = useBoardOrder();
   const barLabels = useMemo(
     () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
     [rows, matches, enabledLabels, boardOrder],

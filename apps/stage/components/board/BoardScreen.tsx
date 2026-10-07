@@ -41,6 +41,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { useHomeView } from '../../lib/homeView';
+import { homeSortOf } from '../home/sort.model';
 import { capabilities } from '../../lib/capabilities';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -293,13 +294,11 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
     </Scroll>
   );
 }
-
 function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
   const assigned = assignees ? (rows ?? []).flatMap(r => r.assigned) : [];
   return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members, ...assigned]);
 }
-
 function BoardBody({ query, filtering }: { query: string; filtering: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
@@ -308,7 +307,9 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const cleared = useClearedChats();
   const boardOrder = useBoardOrder();
   const categoryOrder = useChannelGroups().order;
-  const { columnBy } = useHomeView();
+  const view = useHomeView();
+  const { columnBy } = view;
+  const sort = homeSortOf(view);
   const order = columnBy === 'category' ? categoryOrder : boardOrder;
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
@@ -316,8 +317,8 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, assigneeName, r => isRowCleared(cleared, r)), order),
-    [rows, cleared, pinned, order, columnBy, profiles],
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, assigneeName, r => isRowCleared(cleared, r), sort, boardOrder), order),
+    [rows, cleared, pinned, order, columnBy, profiles, sort, boardOrder],
   );
   const shown = useMemo(
     () => searchedColumns(columns, query, memberNamesOf, getDraft),
@@ -350,7 +351,6 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     </>
   );
 }
-
 function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
   pane: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
   children: React.ReactNode; menu: HomeMenuState;
