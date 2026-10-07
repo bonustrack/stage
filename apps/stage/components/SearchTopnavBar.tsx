@@ -1,5 +1,5 @@
 
-import { Fragment, forwardRef, useRef } from 'react';
+import { Fragment, forwardRef, useRef, useState } from 'react';
 import type { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -41,6 +41,17 @@ function SearchActions({ persistent, query, clear, onClose, sub, trailing }: {
   </>;
 }
 
+function useSearchFocus(head: string, sub: string, inputProps: InputProps['inputProps']): { color: string; handlers: InputProps['inputProps'] } {
+  const [focused, setFocused] = useState(false);
+  return {
+    color: focused ? head : sub,
+    handlers: {
+      onFocus: event => { setFocused(true); inputProps?.onFocus?.(event); },
+      onBlur: event => { setFocused(false); inputProps?.onBlur?.(event); },
+    },
+  };
+}
+
 export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   query: string;
   setQuery: (v: string) => void;
@@ -59,6 +70,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   inputProps?: InputProps['inputProps'];
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
+  const focus = useSearchFocus(head, sub, props.inputProps);
   const input = useRef<React.ComponentRef<typeof Input>>(null);
   const inputRef = (node: React.ComponentRef<typeof Input> | null): void => {
     input.current = node;
@@ -75,6 +87,10 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       props.onClose();
     } else props.inputProps?.onKeyPress?.(event);
   };
+  const inputProps: InputProps['inputProps'] = {
+    autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress,
+    ...focus.handlers,
+  };
   if (props.field === true) {
     return (
       <Frame>
@@ -84,9 +100,9 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
               inputRef={inputRef}
               autoFocus={props.autoFocus ?? false}
               value={props.query} onChangeText={props.setQuery} placeholder={props.placeholder ?? 'Search'}
-              inputProps={{ accessibilityLabel: 'Search', autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
+              inputProps={{ accessibilityLabel: 'Search', ...inputProps }}
               leading={<HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={props.onOpen}>
-                <Glyph icon={IconMagnifyingGlass} size={20} color={sub}/>
+                <Glyph icon={IconMagnifyingGlass} size={20} color={focus.color}/>
               </HoverTooltip>}
               trailing={props.query === '' ? undefined : <Pressable
                 onPress={clear}
@@ -106,7 +122,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       padding={{ x: PAGE_GUTTER, top: topInset }}
       align="center" gap={BAR_GAP} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
-      <SearchMagnifier persistent={props.persistent} color={sub} onOpen={props.onOpen} focus={() => { input.current?.focus(); }}/>
+      <SearchMagnifier persistent={props.persistent} color={focus.color} onOpen={props.onOpen} focus={() => { input.current?.focus(); }}/>
       <Input
         ref={inputRef}
         autoFocus={props.autoFocus ?? true}
@@ -114,7 +130,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         onChangeText={props.setQuery}
         placeholder={props.placeholder ?? 'Search'}
         placeholderTextColor={sub}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress }}
+        inputProps={inputProps}
         style={{ flex: 1, minWidth: 0, color: head, fontSize: fontSize('lg'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0, paddingLeft: props.persistent === true ? 0 : undefined }}
 />
