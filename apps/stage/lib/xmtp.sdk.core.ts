@@ -8,6 +8,9 @@ import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from './xmtp.types';
 import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
+import { getAccountEpoch } from './accountEpoch';
+import { AccountChangedError } from './xmtp.client.core';
+import { prepareNotifyingSend } from './pushSenderFilter.core';
 
 export interface GroupMeta { name?: string; imageUrl?: string; appData?: string }
 
@@ -122,19 +125,32 @@ export function convFinder<Cl, C extends ConvLike, M>(
 }
 
 export function sendableFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>,
-): (line: string) => Promise<C> {
+  sdk: XmtpSdk<Cl, C, M>, prepare: (client: Cl, conv: C) => Promise<void>,
+): (line: string, shouldPush?: boolean) => Promise<C> {
   const find = convFinder(sdk);
-  return async (line) => {
+  return async (line, shouldPush = true) => {
+    const epoch = getAccountEpoch();
+    const client = await sdk.client();
+    const assertCurrent = (): void => {
+      if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
+    };
     const conv = await find(line);
+    assertCurrent();
     if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-    if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) return conv;
-    const peerInboxId = sdk.dmPeerInboxId(conv);
-    if (!peerInboxId) throw new Error(INACTIVE_SEND_MESSAGE);
-    const active = await sdk.activeDm(await sdk.client(), await peerInboxId());
-    registerDmRoute(active.id, convIdOfLine(line) ?? conv.id);
+    const active = await activeForSend(sdk, client, conv, line);
+    assertCurrent();
+    await prepareNotifyingSend(shouldPush, () => prepare(client, active), assertCurrent);
     return active;
   };
+}
+
+async function activeForSend<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>, client: Cl, conv: C, line: string): Promise<C> {
+  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) return conv;
+  const peerInboxId = sdk.dmPeerInboxId(conv);
+  if (!peerInboxId) throw new Error(INACTIVE_SEND_MESSAGE);
+  const active = await sdk.activeDm(client, await peerInboxId());
+  registerDmRoute(active.id, convIdOfLine(line) ?? conv.id);
+  return active;
 }
 
 export async function withReadableSendError<T>(send: () => Promise<T>): Promise<T> {

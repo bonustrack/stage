@@ -23,6 +23,8 @@ import {
   type GroupMeta, type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, ignore, ignored } from './errorPolicy';
+import { prepareSenderFilters } from './pushRegister.web';
+import { groupTopicOf } from '@stage-labs/client/xmtp/pushServer';
 
 type WebClient = Awaited<ReturnType<typeof xmtpClient>>;
 type WebMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
@@ -290,4 +292,4 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
 
 export const convOfLine = convFinder(sdk);
 
-export const sendableConvOfLine = sendableFinder(sdk);
+export const sendableConvOfLine = sendableFinder(sdk, (client, conv) => prepareSenderFilters(client, groupTopicOf(conv.id)));

@@ -1,13 +1,14 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import {
-  PUSH_RPC, clearConversationBody, derivePushGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
+  PUSH_RPC, clearConversationBody, derivePushGroupKey, deriveSenderFilterGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
 } from '@stage-labs/client/xmtp/pushServer';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount, type AccountRecord } from './accounts';
-import { makePushRegistrar, type PushRegistrationInput } from './pushRegistration.core';
+import { makePushRegistrar, type PushRegistrationInput, type PushTopics } from './pushRegistration.core';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { subscribeAccountSelection } from './accountSelection';
 import { makePushRetry } from './pushRetry.core';
+import { makeSenderFilterPublisher, maintainPushPaths } from './pushSenderFilter.core';
 
 export type { PushTopics } from './pushRegistration.core';
 import { onReadStateChanged } from './channelsCache';
@@ -117,28 +118,76 @@ async function pushEnabled(): Promise<boolean> {
   return false;
 }
 
-export async function runPushRegistration(input: PushRegistrationInput & { accountAddress: string }): Promise<void> {
+export interface PushRuntimeInput extends PushRegistrationInput {
+  accountAddress: string;
+  inboxId: string;
+  signInstallation: (text: string) => Promise<Uint8Array>;
+  collectSenderTopics: (topic?: string) => Promise<PushTopics>;
+}
+
+const senderPublisher = makeSenderFilterPublisher();
+const senderGroupKeys = new Map<string, Promise<string>>();
+function clearSenderState(): void { senderPublisher.clear(); senderGroupKeys.clear(); }
+subscribeAccountEpoch(clearSenderState);
+subscribeAccountSelection(clearSenderState);
+
+async function senderGroupKey(account: AccountRecord, inboxId: string): Promise<string> {
+  const id = `${account.address.toLowerCase()}:${inboxId}`;
+  const known = senderGroupKeys.get(id);
+  if (known) return known;
+  const pending = signingKeyForRecord(account).then(({ signMessage }) => deriveSenderFilterGroupKey(account.address, inboxId, signMessage));
+  senderGroupKeys.set(id, pending);
+  pending.catch(() => { senderGroupKeys.delete(id); });
+  return pending;
+}
+
+export async function runSenderFilterPublication(input: PushRuntimeInput, topic?: string): Promise<void> {
   const controller = new AbortController();
   const abort = (): void => { controller.abort(); };
   const stopEpoch = subscribeAccountEpoch(abort);
   const stopSelection = subscribeAccountSelection(abort);
-  const current = (): boolean => !controller.signal.aborted && input.current() && isPushEnabledSync();
+  const current = (): boolean => !controller.signal.aborted && input.current();
   try {
-    if (!input.current() || !(await pushEnabled())) return;
     const account = await getActiveAccount();
-    if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) return;
-    await afterFirstPages();
-    const guarded = { ...input, current, signal: controller.signal };
-    if (await registrar.register(guarded)) {
-      retry.success(input.installationId);
-      await joinDeviceGroup(guarded, account).catch(reported('push.join'));
-    }
+    if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) throw new Error('Sender filter account changed');
+    await senderPublisher.publish({
+      installationId: input.installationId, current, signal: controller.signal, topic,
+      groupKey: () => senderGroupKey(account, input.inboxId), sign: input.signInstallation,
+      syncPreferences: input.syncPreferences, collectTopics: input.collectSenderTopics,
+      post: (body, signal) => postJson(input.rpcUrl(PUSH_RPC.senderFilters), body, undefined, signal),
+    });
+  } finally { stopEpoch(); stopSelection(); }
+}
+
+export async function runPushRegistration(input: PushRuntimeInput): Promise<void> {
+  const controller = new AbortController();
+  const abort = (): void => { controller.abort(); };
+  const stopEpoch = subscribeAccountEpoch(abort);
+  const stopSelection = subscribeAccountSelection(abort);
+  const accountCurrent = (): boolean => !controller.signal.aborted && input.current();
+  const current = (): boolean => accountCurrent() && isPushEnabledSync();
+  try {
+    if (!accountCurrent()) return;
+    await maintainPushPaths(
+      () => runSenderFilterPublication(input),
+      () => registerDelivery(input, current, controller.signal),
+    );
+    if (accountCurrent()) retry.success(input.installationId);
   } catch (err) {
-    if (current()) {
+    if (accountCurrent()) {
       reportPushFailure('push.register', err);
       retry.failed(input.installationId, () => { if (input.current()) void runPushRegistration(input); });
     }
   } finally { stopEpoch(); stopSelection(); }
+}
+
+async function registerDelivery(input: PushRuntimeInput, current: () => boolean, signal: AbortSignal): Promise<void> {
+  if (!(await pushEnabled()) || !current()) return;
+  const account = await getActiveAccount();
+  if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) return;
+  await afterFirstPages();
+  const guarded = { ...input, current, signal };
+  if (await registrar.register(guarded)) await joinDeviceGroup(guarded, account).catch(reported('push.join'));
 }
 
 export async function runPushUnregistration(installationId: string, rpcUrl: (method: PushRpc) => string): Promise<void> {

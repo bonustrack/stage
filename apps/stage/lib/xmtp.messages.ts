@@ -45,8 +45,8 @@ export function xmtpDeleteMessage(messageId: string): Promise<string> {
   });
 }
 
-function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>): Promise<string> {
-  return withReadableSendError(async () => send(await sendableConvOfLine(line)));
+function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>, shouldPush = true): Promise<string> {
+  return withReadableSendError(async () => send(await sendableConvOfLine(line, shouldPush)));
 }
 
 export function xmtpSendText(line: string, text: string): Promise<string> {
@@ -62,7 +62,7 @@ export function xmtpReact(line: string, messageId: string, emoji: string, action
 }
 
 export function xmtpSendJson<T>(line: string, codec: JsonCodec<T>, content: T): Promise<string> {
-  return sendOn(line, conv => sdk.send.json(conv, codec, content));
+  return sendOn(line, conv => sdk.send.json(conv, codec, content), codec.shouldPush());
 }
 
 export const xmtpSendPoll = (line: string, poll: PollContent): Promise<string> => xmtpSendJson(line, POLL_CODEC, poll);

@@ -13,6 +13,8 @@ import {
   type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt, ignored } from './errorPolicy';
+import { prepareSenderFilters } from './pushRegister';
+import { groupTopicOf } from '@stage-labs/client/xmtp/pushServer';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
@@ -270,4 +272,4 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
 
 export const convOfLine = convFinder(sdk);
 
-export const sendableConvOfLine = sendableFinder(sdk);
+export const sendableConvOfLine = sendableFinder(sdk, (client, conv) => prepareSenderFilters(client, groupTopicOf(conv.id)));

@@ -9,14 +9,14 @@ import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { dismissConvNotifications, getDeviceFcmToken } from './pushNotify';
 import { convIdOfNotificationData } from './pushNotify.model';
 import {
-  directRpcUrl, makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
-  type PushPermission, type PushTopics,
+  directRpcUrl, makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission,
+  type PushPermission, type PushTopics, type PushRuntimeInput,
 } from './pushRegister.core';
 import { getCachedXmtpClient } from './xmtp.state';
 import { getAccountEpoch } from './accountEpoch';
 import { attempt, recover, reported } from './errorPolicy';
 
-type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity'>;
+type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity' | 'inboxId' | 'signWithInstallationKey'>;
 
 const PLATFORM: PushPlatform = Platform.OS === 'android' ? 'android' : 'ios';
 
@@ -43,18 +43,33 @@ async function collectTopics(client: PushClient): Promise<PushTopics> {
   return { topics, hmacKeys };
 }
 
-export async function registerPushWithServer(client: PushClient): Promise<void> {
+function pushInput(client: PushClient): PushRuntimeInput {
   const epoch = getAccountEpoch();
-  await runPushRegistration({
+  return {
     installationId: client.installationId,
     accountAddress: client.publicIdentity.identifier,
+    inboxId: client.inboxId,
+    signInstallation: text => client.signWithInstallationKey(text),
     current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
     syncPreferences: () => client.preferences.sync(),
     platform: PLATFORM,
     rpcUrl: directRpcUrl,
     getToken: getDeviceFcmToken,
     collectTopics: () => collectTopics(client),
-  });
+    collectSenderTopics: async topic => {
+      if (!topic) return collectTopics(client);
+      const keys = await getHmacKeys(client.installationId);
+      return { topics: [topic], hmacKeys: { [topic]: keys.hmacKeys[topic]?.values } };
+    },
+  };
+}
+
+export async function registerPushWithServer(client: PushClient): Promise<void> {
+  await runPushRegistration(pushInput(client));
+}
+
+export async function prepareSenderFilters(client: PushClient, topic: string): Promise<void> {
+  await runSenderFilterPublication(pushInput(client), topic);
 }
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {

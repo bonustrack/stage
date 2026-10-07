@@ -127,3 +127,46 @@ export function clearConversationBody(installationId: string, groupKey: string, 
 } {
   return { installationId, groupKey, topic: groupTopicOf(convId) };
 }
+
+export interface SenderFilterTopic {
+  topic: string;
+  hmacKeys: { thirtyDayPeriodsSinceEpoch: number; key: string }[];
+}
+
+export const SENDER_FILTER_BATCH_SIZE = 256;
+
+export function senderFilterTopics(topics: readonly string[], keys: HmacKeysByTopic): SenderFilterTopic[] {
+  return [...new Set(topics)].filter(topic => !isWelcomeTopic(topic)).sort().map(topic => ({
+    topic,
+    hmacKeys: (keys[topic] ?? []).map(key => ({
+      thirtyDayPeriodsSinceEpoch: key.thirtyDayPeriodsSinceEpoch,
+      key: bytesToBase64(key.hmacKey),
+    })).sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
+  })).filter(topic => topic.hmacKeys.length > 0);
+}
+
+export async function deriveSenderFilterGroupKey(
+  address: string, inboxId: string, signOwnerMessage: (message: string) => Promise<Hex>,
+): Promise<string> {
+  const signature = await stableOwnerSignature(
+    `stage.box sender filter group v1 for ${address.toLowerCase()} inbox ${inboxId.toLowerCase()}`, signOwnerMessage,
+  );
+  return bytesToHex(sha256(hexToBytes(signature)));
+}
+
+export function senderFilterSignatureText(payload: string): string {
+  return `stage.box sender filters v1\n${bytesToHex(sha256(new TextEncoder().encode(payload)))}`;
+}
+
+export async function signedSenderFilters(
+  installationId: string, groupKey: string, topics: readonly SenderFilterTopic[], issuedAt: number,
+  sign: (text: string) => Promise<Uint8Array | readonly number[]>,
+): Promise<{ payload: string; signature: string }> {
+  const payload = JSON.stringify({
+    installationId: installationId.toLowerCase(), groupKey, issuedAt,
+    topics: topics.map(topic => ({ topic: topic.topic, hmacKeys: topic.hmacKeys.map(key => ({
+      thirtyDayPeriodsSinceEpoch: key.thirtyDayPeriodsSinceEpoch, key: key.key,
+    })) })),
+  });
+  return { payload, signature: bytesToBase64(Uint8Array.from(await sign(senderFilterSignatureText(payload)))) };
+}

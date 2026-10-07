@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { makeAttachmentPrep } from '../lib/xmtp.attachmentPrep.core';
+import { makeAttachmentPrep, sendPreparedAttachment } from '../lib/xmtp.attachmentPrep.core';
 
 const photo = { fileUri: 'blob:photo', mimeType: 'image/png', filename: 'photo.png' };
 const clip = { fileUri: 'blob:clip', mimeType: 'video/mp4', filename: 'clip.mp4' };
@@ -14,6 +14,34 @@ function makePrep(failFirstEncrypt = false) {
   const store = mock(async (encrypted: string) => `url:${encrypted}`);
   return { encrypt, store, prep: makeAttachmentPrep(encrypt, store) };
 }
+
+describe('attachment send account capture', () => {
+  test('rejects switches during upload, upload callbacks and conversation preparation', async () => {
+    for (const phase of ['upload', 'callback', 'find']) {
+      let current = true;
+      let sent = false;
+      await expect(sendPreparedAttachment({
+        assertCurrent: () => { if (!current) throw new Error('account changed'); },
+        uploaded: async () => { if (phase === 'upload') current = false; return ['encrypted attachment']; },
+        onUploaded: () => { if (phase === 'callback') current = false; },
+        find: async () => { if (phase === 'find') current = false; return 'shared group'; },
+        send: async () => { sent = true; return 'id'; },
+      })).rejects.toThrow('account changed');
+      expect(sent).toBe(false);
+    }
+  });
+
+  test('uploads first, then performs just-in-time sender preparation under the initiating session', async () => {
+    const order: string[] = [];
+    expect(await sendPreparedAttachment({
+      assertCurrent: () => { order.push('check'); },
+      uploaded: async () => { order.push('upload'); return ['encrypted attachment']; },
+      find: async () => { order.push('prepare'); return 'conversation'; },
+      send: async (_conv, infos) => { order.push('send'); expect(infos).toEqual(['encrypted attachment']); return 'id'; },
+    })).toBe('id');
+    expect(order).toEqual(['check', 'upload', 'check', 'check', 'prepare', 'check', 'send']);
+  });
+});
 
 describe('attachment prep', () => {
   test('a file prepared on pick is encrypted and uploaded once when sent', async () => {

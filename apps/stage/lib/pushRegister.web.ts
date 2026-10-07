@@ -1,9 +1,9 @@
 import type { Client } from '@xmtp/browser-sdk';
-import { groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
+import { groupIdOfTopic, groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import {
-  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
-  type PushPermission, type PushTopics,
+  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission,
+  type PushPermission, type PushTopics, type PushRuntimeInput,
 } from './pushRegister.core';
 import { dismissConvNotifications } from './pushNotify.web';
 import { linkProxyBase } from './historyServer';
@@ -16,7 +16,7 @@ function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
 }
 
-type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations' | 'preferences' | 'accountIdentifier'>;
+type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations' | 'preferences' | 'accountIdentifier' | 'inboxId' | 'signWithInstallationKey'>;
 
 export function usePushDeepLinks(): void {
   return undefined;
@@ -51,13 +51,23 @@ async function collectTopics(client: PushClient, installationId: string): Promis
     const name = (conv as { name?: string }).name;
     if (!isSyncGroupName(name ?? '')) topics.push(groupTopicOf(conv.id));
   }
-  const keys = await client.conversations.hmacKeys();
+  return { topics, hmacKeys: normalizeKeys(await client.conversations.hmacKeys()) };
+}
+
+function normalizeKeys(keys: Awaited<ReturnType<PushClient['conversations']['hmacKeys']>>): HmacKeysByTopic {
   const hmacKeys: HmacKeysByTopic = {};
   for (const [id, list] of keys) {
     const topic = id.startsWith('/') ? id : groupTopicOf(id);
     hmacKeys[topic] = list.map((k) => ({ thirtyDayPeriodsSinceEpoch: Number(k.epoch), hmacKey: k.key }));
   }
-  return { topics, hmacKeys };
+  return hmacKeys;
+}
+
+async function collectSenderTopic(client: PushClient, topic: string): Promise<PushTopics> {
+  const id = groupIdOfTopic(topic);
+  const conv = id ? await client.conversations.getConversationById(id) : undefined;
+  if (!conv) throw new Error('Sender filter conversation is not ready');
+  return { topics: [topic], hmacKeys: normalizeKeys(await conv.hmacKeys()) };
 }
 
 function installationIdOf(client: PushClient): string | null {
@@ -67,21 +77,36 @@ function installationIdOf(client: PushClient): string | null {
   return null;
 }
 
-export async function registerPushWithServer(client: PushClient): Promise<void> {
+function pushInput(client: PushClient): PushRuntimeInput | null {
   const installationId = installationIdOf(client);
   const accountAddress = client.accountIdentifier?.identifier;
-  if (!installationId || !accountAddress) return;
+  const inboxId = client.inboxId;
+  if (!installationId || !accountAddress || !inboxId) return null;
   const epoch = getAccountEpoch();
-  await runPushRegistration({
+  return {
     installationId,
     accountAddress,
+    inboxId,
+    signInstallation: text => client.signWithInstallationKey(text),
     current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
     syncPreferences: () => client.preferences.sync(),
     platform: 'web',
     rpcUrl: proxiedRpcUrl,
     getToken: webPushToken,
     collectTopics: () => collectTopics(client, installationId),
-  });
+    collectSenderTopics: topic => topic ? collectSenderTopic(client, topic) : collectTopics(client, installationId),
+  };
+}
+
+export async function registerPushWithServer(client: PushClient): Promise<void> {
+  const input = pushInput(client);
+  if (input) await runPushRegistration(input);
+}
+
+export async function prepareSenderFilters(client: PushClient, topic: string): Promise<void> {
+  const input = pushInput(client);
+  if (!input) throw new Error('Sender filter account is not ready');
+  await runSenderFilterPublication(input, topic);
 }
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {

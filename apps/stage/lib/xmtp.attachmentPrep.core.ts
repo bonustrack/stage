@@ -9,6 +9,23 @@ export interface AttachmentPrep<R> {
   forget: (files: Files) => void;
 }
 
+export async function sendPreparedAttachment<R, C>(input: {
+  assertCurrent: () => void;
+  uploaded: () => Promise<R[]>;
+  onUploaded?: (infos: R[]) => void;
+  find: () => Promise<C>;
+  send: (conv: C, infos: R[]) => Promise<string>;
+}): Promise<string> {
+  input.assertCurrent();
+  const infos = await input.uploaded();
+  input.assertCurrent();
+  input.onUploaded?.(infos);
+  input.assertCurrent();
+  const conv = await input.find();
+  input.assertCurrent();
+  return input.send(conv, infos);
+}
+
 const ENCRYPTS_AT_ONCE = 2;
 const UPLOADS_AT_ONCE = 3;
 

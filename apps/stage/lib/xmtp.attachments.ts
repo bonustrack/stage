@@ -3,7 +3,7 @@ import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import {
   MultiRemoteAttachmentCodec,
-  type MultiRemoteAttachmentContent, type RemoteAttachmentInfo,
+  type RemoteAttachmentInfo,
   type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
 } from '@xmtp/react-native-sdk';
 import { xmtpClient } from './xmtp.client';
@@ -12,7 +12,8 @@ import { withReadableSendError } from './xmtp.sdk.core';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
 import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
-import { makeAttachmentPrep } from './xmtp.attachmentPrep.core';
+import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
+import { accountClient } from './xmtp.account';
 import { attempt } from './errorPolicy';
 
 declare const sanitizedBrand: unique symbol;
@@ -108,10 +109,12 @@ export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
-  const [conv, infos] = await Promise.all([withReadableSendError(() => sendableConvOfLine(line)), prep.uploaded(files)]);
-  onUploaded?.(infos);
-  const payload: MultiRemoteAttachmentContent = { attachments: infos };
-  const id = await withReadableSendError(() => conv.send({ multiRemoteAttachment: payload }));
+  const session = await accountClient();
+  const id = await withReadableSendError(() => sendPreparedAttachment({
+    assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded,
+    find: () => sendableConvOfLine(line),
+    send: (conv, infos) => conv.send({ multiRemoteAttachment: { attachments: infos } }),
+  }));
   prep.forget(files);
   return id;
 }
