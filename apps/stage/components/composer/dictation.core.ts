@@ -18,6 +18,7 @@ interface Session {
   text: string;
   phase: DictationPhase;
   timer?: ReturnType<typeof setTimeout>;
+  starting?: Promise<void>;
 }
 
 interface Runtime {
@@ -27,6 +28,7 @@ interface Runtime {
   disposed: boolean;
   voiceStarting: boolean;
   cleanup: Promise<void>;
+  pending: Set<Session>;
   limitMs: number;
   finishMs: number;
 }
@@ -46,13 +48,27 @@ function end(r: Runtime, s: Session): void {
   if (!r.disposed) r.host.phase('idle');
 }
 
+function cleanup(r: Runtime): Promise<void> {
+  const drain = async (): Promise<void> => {
+    for (const s of r.pending) {
+      const starting = s.starting;
+      await r.bridge.cancel(s.id);
+      if (starting) {
+        await Promise.allSettled([starting]);
+        await r.bridge.cancel(s.id);
+      }
+      r.pending.delete(s);
+    }
+  };
+  r.cleanup = r.cleanup.then(drain, drain);
+  void r.cleanup.catch((error: unknown) => { r.host.cleanupError(error); });
+  return r.cleanup;
+}
+
 function cancel(r: Runtime): Promise<void> {
   const s = r.current;
-  if (s) {
-    end(r, s);
-    r.cleanup = r.cleanup.then(() => r.bridge.cancel(s.id)).catch((error: unknown) => { r.host.cleanupError(error); });
-  }
-  return r.cleanup;
+  if (s) { end(r, s); r.pending.add(s); }
+  return r.pending.size > 0 ? cleanup(r) : r.cleanup;
 }
 
 function valid(r: Runtime, s: Session): boolean {
@@ -70,7 +86,11 @@ function failed(r: Runtime, s: Session, message: string): void {
 async function stop(r: Runtime): Promise<void> {
   const s = r.current;
   if (!s || s.phase === 'finishing') return;
-  if (s.phase !== 'listening') { await cancel(r); return; }
+  if (s.phase !== 'listening') {
+    try { await cancel(r); }
+    catch { r.host.error('Could not release dictation audio. Try stopping again. Your draft was kept.'); }
+    return;
+  }
   phase(r, s, 'finishing');
   clearTimeout(s.timer);
   s.timer = setTimeout(() => { failed(r, s, 'Dictation stopped. Check the text before sending.'); }, r.finishMs);
@@ -85,7 +105,7 @@ function update(r: Runtime, s: Session, event: SpeechEvent): void {
     r.host.apply(draft);
   }
   if (event.error) { failed(r, s, event.error); return; }
-  if (event.state === 'ended') { end(r, s); return; }
+  if (event.state === 'ended') { void cancel(r); return; }
   if (event.state === 'listening' && s.phase === 'preparing') {
     phase(r, s, 'listening');
     clearTimeout(s.timer);
@@ -109,7 +129,7 @@ async function ensureAvailable(r: Runtime, s: Session): Promise<boolean> {
 }
 
 async function prepare(r: Runtime, s: Session): Promise<boolean> {
-  await r.cleanup;
+  await cleanup(r);
   if (!valid(r, s) || !await ensureAvailable(r, s)) return false;
   const permitted = await r.host.permission();
   if (!valid(r, s)) return false;
@@ -126,10 +146,11 @@ async function start(r: Runtime): Promise<void> {
   r.host.error(null);
   phase(r, s, 'preparing');
   try {
-    if (!await prepare(r, s)) return;
+    if (!await prepare(r, s) || !valid(r, s)) return;
     s.timer = setTimeout(() => { failed(r, s, 'Dictation did not start. Try again or use + to record voice.'); }, 10_000);
-    await r.bridge.start(s.id);
-    if (r.current !== s) await r.bridge.cancel(s.id);
+    s.starting = r.bridge.start(s.id);
+    try { await s.starting; }
+    finally { s.starting = undefined; }
   } catch (error) {
     failed(r, s, error instanceof Error ? error.message : 'Dictation is unavailable. Your draft was kept.');
   }
@@ -140,12 +161,16 @@ async function recordVoice(r: Runtime, action: () => Promise<void>): Promise<voi
   r.voiceStarting = true;
   try {
     await cancel(r);
-    if (!r.disposed && !r.host.blocked()) await action();
+    if (r.disposed) return;
+    if (r.host.blocked()) { r.host.error('Stop the call or other voice recording before recording a voice message.'); return; }
+    await action();
+  } catch {
+    r.host.error('Could not release dictation audio. Try again before recording voice. Your draft was kept.');
   } finally { r.voiceStarting = false; }
 }
 
 export function makeDictation(bridge: SpeechBridge, host: DictationHost, limitMs = 60_000, finishMs = 5000) {
-  const r: Runtime = { bridge, host, current: null, disposed: false, voiceStarting: false, cleanup: Promise.resolve(), limitMs, finishMs };
+  const r: Runtime = { bridge, host, current: null, disposed: false, voiceStarting: false, cleanup: Promise.resolve(), pending: new Set(), limitMs, finishMs };
   const unsubscribe = bridge.subscribe(event => {
     const s = r.current;
     if (s && event.sessionId === s.id && valid(r, s)) update(r, s, event);
@@ -154,6 +179,7 @@ export function makeDictation(bridge: SpeechBridge, host: DictationHost, limitMs
     start: () => start(r), stop: () => stop(r), cancel: () => cancel(r),
     toggle: () => r.current ? stop(r) : start(r),
     recordVoice: (action: () => Promise<void>) => recordVoice(r, action),
+    inactive: () => { if (r.current?.phase === 'listening' || r.current?.phase === 'finishing') void cancel(r); },
     edited: () => { if (r.current && host.read().text !== r.current.text) void cancel(r); },
     dispose: (): Promise<void> => {
       if (!r.disposed) { r.disposed = true; unsubscribe(); }

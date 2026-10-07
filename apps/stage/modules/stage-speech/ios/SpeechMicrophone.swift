@@ -4,9 +4,10 @@ import UIKit
 @MainActor final class SpeechMicrophone {
   private let engine = AVAudioEngine()
   private var tapped = false
+  private var configuration: NSObjectProtocol?
   private var previous: (AVAudioSession.Category, AVAudioSession.Mode, AVAudioSession.CategoryOptions)?
 
-  func start(receive: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
+  func start(onFailure: @escaping @MainActor (String) -> Void, receive: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
     guard UIApplication.shared.applicationState == .active else {
       throw SpeechFailure(message: "Open Stage to use dictation.")
     }
@@ -24,6 +25,12 @@ import UIKit
       tapped = true
       engine.prepare()
       try engine.start()
+      configuration = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
+        Task { @MainActor in
+          guard self?.tapped == true else { return }
+          onFailure("The microphone connection changed. Your draft was kept. Tap the mic to try again.")
+        }
+      }
     } catch {
       _ = stop()
       throw error
@@ -31,18 +38,18 @@ import UIKit
   }
 
   func stop() -> String? {
+    if let configuration { NotificationCenter.default.removeObserver(configuration); self.configuration = nil }
     engine.stop()
     if tapped { engine.inputNode.removeTap(onBus: 0); tapped = false }
     guard let previous else { return nil }
-    self.previous = nil
     let audio = AVAudioSession.sharedInstance()
-    do {
-      try audio.setActive(false, options: .notifyOthersOnDeactivation)
-      try audio.setCategory(previous.0, mode: previous.1, options: previous.2)
-      return nil
-    } catch {
-      return "Dictation stopped, but the audio session could not be restored. Try your audio action again."
-    }
+    var restored = true
+    do { try audio.setActive(false, options: .notifyOthersOnDeactivation) }
+    catch { restored = false }
+    do { try audio.setCategory(previous.0, mode: previous.1, options: previous.2) }
+    catch { restored = false }
+    if restored { self.previous = nil; return nil }
+    return "Dictation stopped, but the audio session could not be restored. Try your audio action again."
   }
 }
 

@@ -119,7 +119,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
   };
 
   const voice = useVoiceRecorder({
-    upload, setErr: a.setErr, setRecording: a.setRecording,
+    upload: (uri, mime, name) => { setLastAttachment('Voice message'); return upload(uri, mime, name); },
+    setErr: a.setErr, setRecording: a.setRecording,
     setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
   });
 

@@ -52,6 +52,7 @@ describe('dictation draft insertion', () => {
       text: 'Meet there tomorrow', selection: { start: 10, end: 10 },
     });
     expect(dictationDraft({ text: 'Hello!', selection: { start: 5, end: 5 } }, 'world').text).toBe('Hello world!');
+    expect(dictationDraft({ text: 'Hello', selection: { start: 5, end: 5 } }, '.').text).toBe('Hello.');
   });
 
   it('keeps empty recognition and clamps stale cursor positions', () => {
@@ -281,6 +282,79 @@ describe('dictation speech bridge', () => {
     await recording;
     await h.control.start();
     expect(h.events.filter(event => event === 'start')).toHaveLength(2);
+  });
+
+  it('rejects failed cleanup and blocks voice handoff until a successful retry', async () => {
+    let failing = true, recorded = false;
+    const h = harness({ cancel: async () => { if (failing) throw new Error('restore failed'); } });
+    await h.control.start();
+    h.event({ text: 'kept' });
+    await expect(h.control.cancel()).rejects.toThrow('restore failed');
+    await h.control.recordVoice(async () => { recorded = true; });
+    expect(recorded).toBe(false);
+    expect(h.errors.at(-1)).toContain('Could not release dictation audio');
+    expect(h.events).toContain('cleanup-error');
+    expect(h.draft().text).toBe('Hello kept');
+    failing = false;
+    await h.control.recordVoice(async () => { recorded = true; });
+    expect(recorded).toBe(true);
+  });
+
+  it('drains late native startup and cancels it again before handing off audio', async () => {
+    const entered = Promise.withResolvers<undefined>();
+    const started = Promise.withResolvers<undefined>();
+    let recorded = false;
+    const h = harness({ start: async () => { entered.resolve(undefined); await started.promise; } });
+    const starting = h.control.start();
+    await entered.promise;
+    const handoff = h.control.recordVoice(async () => { recorded = true; });
+    await Bun.sleep(1);
+    expect(recorded).toBe(false);
+    expect(h.events.filter(event => event.startsWith('cancel:'))).toHaveLength(1);
+    started.resolve(undefined);
+    await Promise.all([starting, handoff]);
+    expect(h.events.filter(event => event.startsWith('cancel:'))).toHaveLength(2);
+    expect(recorded).toBe(true);
+  });
+
+  it('keeps startup errors delivered with a terminal native event', async () => {
+    const entered = Promise.withResolvers<undefined>();
+    const started = Promise.withResolvers<undefined>();
+    let id = '';
+    const h = harness({ start: async value => { id = value; entered.resolve(undefined); await started.promise; throw new Error('start rejected'); } });
+    const starting = h.control.start();
+    await entered.promise;
+    h.event({ error: 'Microphone activation failed', state: 'ended' }, id);
+    started.resolve(undefined);
+    await starting;
+    expect(h.errors.at(-1)).toBe('Microphone activation failed');
+    expect(h.phases.at(-1)).toBe('idle');
+  });
+
+  it('stops inactive listening but does not cancel its own permission prompt', async () => {
+    const permission = Promise.withResolvers<boolean>();
+    const entered = Promise.withResolvers<undefined>();
+    const h = harness({}, { permission: () => { entered.resolve(undefined); return permission.promise; } });
+    const starting = h.control.start();
+    await entered.promise;
+    h.control.inactive();
+    permission.resolve(true);
+    await starting;
+    expect(h.phases.at(-1)).toBe('listening');
+    h.event({ text: 'kept' });
+    h.control.inactive();
+    h.event({ text: 'late' });
+    await h.control.cancel();
+    expect(h.phases.at(-1)).toBe('idle');
+    expect(h.draft().text).toBe('Hello kept');
+  });
+
+  it('explains blocked voice recording instead of silently ignoring the action', async () => {
+    const h = harness({}, { blocked: () => true });
+    let recorded = false;
+    await h.control.recordVoice(async () => { recorded = true; });
+    expect(recorded).toBe(false);
+    expect(h.errors.at(-1)).toContain('Stop the call');
   });
 
   it('keeps text if native stop fails', async () => {

@@ -168,11 +168,10 @@ function ComposerMic({ p, recorder }: { p: EditorProps; recorder: React.ReactEle
   const label = active ? 'Stop dictation' : 'Dictate message';
   return (
     <HoverTooltip label={label}>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: p.busy === true, selected: active }}
-        disabled={p.busy} onPress={p.dictation.toggle}
-        style={{ width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? p.head : 'transparent' }}>
-        <Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg}/>
-      </Pressable>
+      <Button size="md" uniform pill dark={p.dark} variant={active ? 'solid' : 'ghost'}
+        accessibilityLabel={label} accessibilityState={{ disabled: p.busy === true, selected: active }}
+        disabled={p.busy} onPress={p.dictation.toggle} tintBg={active ? p.head : 'transparent'}
+        icon={<Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg}/>} />
     </HoverTooltip>
   );
 }

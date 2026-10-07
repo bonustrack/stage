@@ -1,7 +1,11 @@
 import { afterEach, expect, test } from 'bun:test';
-import { acquireCallAudio, callOwnsAudio, registerCallRecorder, releaseCallAudio, subscribeCallAudio } from '../lib/calls.audio.core';
+import {
+  acquireCallAudio, acquireVoiceAudio, callOwnsAudio, registerCallRecorder, registerDictationRecorder,
+  releaseCallAudio, releaseVoiceAudio, subscribeCallAudio, voiceOwnsAudio,
+} from '../lib/calls.audio.core';
 
-afterEach(releaseCallAudio);
+const voiceOwner = {};
+afterEach(() => { releaseCallAudio(); releaseVoiceAudio(voiceOwner); });
 
 test('native call owns audio before waiting for a recorder to stop', async () => {
   let finish: () => void = () => undefined;
@@ -23,6 +27,47 @@ test('failed recorder cleanup is not treated as audio ready', async () => {
   const unregister = registerCallRecorder(() => Promise.reject(new Error('Cannot stop recorder')));
   try { await expect(acquireCallAudio()).rejects.toThrow('Cannot stop recorder'); }
   finally { unregister(); }
+});
+
+test('voice reserves audio globally while every mounted dictation stops', async () => {
+  const stopped = Promise.withResolvers<undefined>();
+  const unregister = registerDictationRecorder(() => stopped.promise);
+  let ready = false;
+  try {
+    const acquiring = acquireVoiceAudio(voiceOwner).then(() => { ready = true; });
+    expect(voiceOwnsAudio()).toBe(true);
+    await expect(acquireVoiceAudio({})).rejects.toThrow('other voice recording');
+    releaseVoiceAudio({});
+    expect(voiceOwnsAudio()).toBe(true);
+    expect(ready).toBe(false);
+    stopped.resolve(undefined);
+    await acquiring;
+    expect(ready).toBe(true);
+    releaseVoiceAudio(voiceOwner);
+    expect(voiceOwnsAudio()).toBe(false);
+  } finally { unregister(); }
+});
+
+test('failed dictation cleanup blocks voice and call audio acquisition', async () => {
+  const unregister = registerDictationRecorder(async () => { throw new Error('dictation cleanup failed'); });
+  try {
+    await expect(acquireVoiceAudio(voiceOwner)).rejects.toThrow('dictation cleanup failed');
+    expect(voiceOwnsAudio()).toBe(false);
+    await expect(acquireCallAudio()).rejects.toThrow('dictation cleanup failed');
+  } finally { unregister(); }
+});
+
+test('call takeover during voice preparation prevents voice acquisition', async () => {
+  const stopped = Promise.withResolvers<undefined>();
+  const unregister = registerDictationRecorder(() => stopped.promise);
+  try {
+    const voice = acquireVoiceAudio(voiceOwner);
+    const call = acquireCallAudio();
+    stopped.resolve(undefined);
+    await expect(voice).rejects.toThrow('Leave the call');
+    await call;
+    expect(voiceOwnsAudio()).toBe(false);
+  } finally { unregister(); }
 });
 
 test('unmounted recorders are not stopped on call entry', async () => {

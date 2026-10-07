@@ -38,7 +38,7 @@ import AVFoundation
       }
     }
     let request = self.request
-    try microphone.start { request.append($0) }
+    try microphone.start(onFailure: end) { request.append($0) }
   }
 
   func stop() async {
@@ -54,7 +54,7 @@ import AVFoundation
   }
 
   func cancel() async -> String? {
-    guard !cancelled else { return nil }
+    guard !cancelled else { return microphone.stop() }
     cancelled = true
     timeout?.cancel()
     let error = microphone.stop()

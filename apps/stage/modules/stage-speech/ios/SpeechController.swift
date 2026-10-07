@@ -18,6 +18,8 @@ struct SpeechFailure: LocalizedError {
   private var sessionId: String?
   private var timer: Task<Void, Never>?
   private var interruption: NSObjectProtocol?
+  private var cleanups: [String: Task<String?, Never>] = [:]
+  private var retryCleanup: [String: NativeSpeechSession] = [:]
 
   init(emit: @escaping ([String: Any]) -> Void) {
     self.emit = emit
@@ -57,6 +59,11 @@ struct SpeechFailure: LocalizedError {
   func downloadModel() async throws {
     #if compiler(>=6.2)
     if #available(iOS 26.0, *), let locale = await modernLocale() {
+      for reserved in await AssetInventory.reservedLocales where reserved.identifier != locale.identifier {
+        guard await AssetInventory.release(reservedLocale: reserved) else {
+          throw SpeechFailure(message: "Could not release the previous speech language. Try the download again.")
+        }
+      }
       let transcriber = ModernSpeechSession.transcriber(locale)
       if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
         try await request.downloadAndInstall()
@@ -68,7 +75,9 @@ struct SpeechFailure: LocalizedError {
   }
 
   func start(_ id: String) async throws {
-    guard sessionId == nil else { throw SpeechFailure(message: "Another dictation session is active.") }
+    guard sessionId == nil, cleanups.isEmpty, retryCleanup.isEmpty else {
+      throw SpeechFailure(message: "The previous dictation session has not released audio. Stop dictation and try again.")
+    }
     guard AVAudioSession.sharedInstance().recordPermission == .granted else {
       throw SpeechFailure(message: "Allow microphone access in Settings to use dictation.")
     }
@@ -86,7 +95,8 @@ struct SpeechFailure: LocalizedError {
         await self?.stop(id)
       }
     } catch {
-      _ = await finish(id, error: nil)
+      let message = (error as? SpeechFailure)?.message ?? "Could not start on-device dictation. Check microphone access and try again. Your draft was kept."
+      _ = await finish(id, error: message)
       throw error
     }
   }
@@ -127,13 +137,18 @@ struct SpeechFailure: LocalizedError {
   }
 
   private func finish(_ id: String, error: String?) async -> String? {
-    guard sessionId == id else { return nil }
-    let previous = session
+    if let pending = cleanups[id] { return await pending.value }
+    guard sessionId == id || retryCleanup[id] != nil else { return nil }
+    let previous = session ?? retryCleanup[id]
     sessionId = nil
     session = nil
     timer?.cancel()
     timer = nil
-    let cleanupError = await previous?.cancel()
+    let pending = Task { await previous?.cancel() }
+    cleanups[id] = pending
+    let cleanupError = await pending.value
+    cleanups[id] = nil
+    retryCleanup[id] = cleanupError == nil ? nil : previous
     var event: [String: Any] = ["sessionId": id, "state": "ended"]
     if let message = error ?? cleanupError { event["error"] = message }
     emit(event)

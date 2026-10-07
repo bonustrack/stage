@@ -7,7 +7,7 @@ export function dictationDraft(draft: DictationDraft, transcript: string): Dicta
   const end = Math.max(start, Math.min(draft.selection.end, draft.text.length));
   const before = draft.text.slice(0, start);
   const after = draft.text.slice(end);
-  const leading = before && !/\s$/u.test(before) && !/^\s/u.test(transcript) ? ' ' : '';
+  const leading = before && !/\s$/u.test(before) && !/^\s|^[.,!?;:]/u.test(transcript) ? ' ' : '';
   const trailing = after && !/^\s|^[.,!?;:]/u.test(after) && !/\s$/u.test(transcript) ? ' ' : '';
   const caret = before.length + leading.length + transcript.length;
   return { text: before + leading + transcript + trailing + after, selection: { start: caret, end: caret } };

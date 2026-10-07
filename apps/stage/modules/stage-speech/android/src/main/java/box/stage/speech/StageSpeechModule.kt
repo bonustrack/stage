@@ -46,7 +46,10 @@ class StageSpeechModule : Module() {
       check(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { "Microphone permission required." }
       val next = SpeechSession(context, id, { sendEvent("onSpeech", it) }, { session = null })
       session = next
-      try { next.start() } catch (error: Exception) { next.cancel(); throw error }
+      try { next.start() } catch (error: Exception) {
+        next.cancel("Could not start on-device dictation. Check microphone access and try again. Your draft was kept.")
+        throw error
+      }
     }.runOnQueue(Queues.MAIN)
 
     AsyncFunction("stop") { id: String ->

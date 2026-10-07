@@ -8,7 +8,7 @@ import {
 import { describeError, report } from '../../lib/errorPolicy';
 import { makeVoiceRecorder } from './voice.core';
 import { recordedVoiceFile } from './voiceFile';
-import { callOwnsAudio, registerCallRecorder } from '../../lib/calls.audio.core';
+import { acquireVoiceAudio, callOwnsAudio, registerCallRecorder, releaseVoiceAudio } from '../../lib/calls.audio.core';
 
 const RECORDING_OPTIONS = { ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true };
 const METERING_INTERVAL_MS = 80;
@@ -35,7 +35,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
     const clearTimers = (): void => { clearInterval(secondsTimer); clearInterval(meterTimer); };
     const control = makeVoiceRecorder({
       prepare: async () => {
-        if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
+        await acquireVoiceAudio(recorder);
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) throw new Error('Microphone permission denied. Allow microphone access, then try again.');
         if (callOwnsAudio()) throw new Error('Leave the call before recording a voice message.');
@@ -65,6 +65,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
         }, METERING_INTERVAL_MS);
       },
       stopped: () => {
+        releaseVoiceAudio(recorder);
         clearTimers();
         if (mounted) { argsRef.current.setRecording(false); argsRef.current.setLevels([]); }
       },

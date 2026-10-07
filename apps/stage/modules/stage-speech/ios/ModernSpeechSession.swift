@@ -52,7 +52,7 @@ import Speech
     try await analyzer.start(inputSequence: sequence)
     guard !cancelled else { return }
     let converter = SpeechBufferConverter()
-    try microphone.start { [weak self] buffer in
+    try microphone.start(onFailure: end) { [weak self] buffer in
       do {
         let converted = try converter.convert(buffer, to: format)
         if converted.frameLength > 0, case .dropped = continuation.yield(AnalyzerInput(buffer: converted)) {
@@ -83,7 +83,7 @@ import Speech
   }
 
   func cancel() async -> String? {
-    guard !cancelled else { return nil }
+    guard !cancelled else { return microphone.stop() }
     cancelled = true
     let error = microphone.stop()
     input?.finish()

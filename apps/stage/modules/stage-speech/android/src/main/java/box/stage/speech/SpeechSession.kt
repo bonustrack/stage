@@ -36,9 +36,9 @@ internal class SpeechSession(
     handler.postDelayed({ finish() }, 5000)
   }
 
-  fun cancel() {
+  fun cancel(error: String? = null) {
     if (ended) return
-    try { recognizer.cancel() } finally { finish() }
+    try { recognizer.cancel() } finally { finish(error) }
   }
 
   private fun finish(error: String? = null) {

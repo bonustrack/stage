@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { requestRecordingPermissionsAsync } from 'expo-audio';
 import { capabilities } from '../../lib/capabilities';
-import { callOwnsAudio, registerCallRecorder } from '../../lib/calls.audio.core';
+import { callOwnsAudio, registerDictationRecorder, voiceOwnsAudio } from '../../lib/calls.audio.core';
 import { report } from '../../lib/errorPolicy';
 import { speech } from '../../lib/speech';
 import { makeDictation } from './dictation.core';
@@ -43,13 +43,16 @@ export function useDictation(args: DictationArgs) {
         message: `Download the ${locale} language model for on-device dictation. This uses the internet for the model only. Your microphone audio stays on this device.`,
         confirmLabel: 'Download',
       }),
-      blocked: () => current.current.key !== key || !focused.current || AppState.currentState === 'background' || callOwnsAudio() || current.current.recording || current.current.busy,
+      blocked: () => current.current.key !== key || !focused.current || AppState.currentState === 'background' || callOwnsAudio() || voiceOwnsAudio() || current.current.recording || current.current.busy,
       cleanupError: error => { report('dictation.cleanup', error); },
     });
     control.current = instance;
     setPhase('idle');
-    const unregister = registerCallRecorder(instance.cancel);
-    const app = AppState.addEventListener('change', state => { if (state === 'background') void instance.cancel(); });
+    const unregister = registerDictationRecorder(instance.cancel);
+    const app = AppState.addEventListener('change', state => {
+      if (state === 'background') void instance.cancel();
+      else if (state === 'inactive') instance.inactive();
+    });
     return () => {
       mounted = false;
       unregister();
