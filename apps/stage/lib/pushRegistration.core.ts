@@ -1,5 +1,4 @@
-import { sha256 } from '@noble/hashes/sha2';
-import { bytesToHex } from '@noble/hashes/utils';
+import { sha256 } from 'viem';
 import {
   PUSH_RPC, isWelcomeTopic, registerInstallationBody, subscribeWithMetadataBody,
   type HmacKeysByTopic, type PushPlatform, type PushRpc, type PushSubscriptionJson,
@@ -26,7 +25,7 @@ function pushSubscriptionSignature(subscriptions: readonly PushSubscriptionJson[
     ...sub,
     hmacKeys: [...sub.hmacKeys].sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
   })).sort((a, b) => a.topic.localeCompare(b.topic));
-  return bytesToHex(sha256(new TextEncoder().encode(JSON.stringify(sorted))));
+  return sha256(new TextEncoder().encode(JSON.stringify(sorted)));
 }
 
 export function readPushRegistration(raw: string | null): RegisterState | null {

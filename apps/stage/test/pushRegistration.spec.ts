@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { hmac } from '@noble/hashes/hmac';
-import { sha256 } from '@noble/hashes/sha2';
+import { createHmac } from 'node:crypto';
 import {
   makePushRegistrar, readPushRegistration, type PushRegistrationInput,
 } from '../lib/pushRegistration.core';
@@ -59,8 +58,8 @@ function fixture() {
     const sub = subscriptions.get(installationId)?.find(item => item.topic === topic);
     const own = sub?.hmacKeys.find(item => item.thirtyDayPeriodsSinceEpoch === period);
     if (!own) return true;
-    const expected = hmac(sha256, Buffer.from(own.key, 'base64'), ENVELOPE);
-    return !Buffer.from(expected).equals(Buffer.from(hmac(sha256, senderKey, ENVELOPE)));
+    const expected = createHmac('sha256', Buffer.from(own.key, 'base64')).update(ENVELOPE).digest();
+    return !expected.equals(createHmac('sha256', senderKey).update(ENVELOPE).digest());
   };
   return {
     input, register, calls, statuses, stored, subscriptions, delivers,
