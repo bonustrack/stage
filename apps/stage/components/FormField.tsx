@@ -35,6 +35,7 @@ export interface FormFieldProps {
   onSubmit?: (text: string) => void;
   leading?: ReactNode;
   trailing?: ReactNode;
+  trailingWidth?: number;
   labelTrailing?: ReactNode;
   hint?: string;
   hintTone?: 'secondary' | 'success' | 'danger';
@@ -75,9 +76,9 @@ function slotInset(slot: ReactNode, width: number): number {
   return FIELD_PADDING_X + (slot === undefined ? 0 : width + SLOT_GAP);
 }
 
-function lineStyleOf(inset: boolean, leading: ReactNode, trailing: ReactNode): TextStyle {
+function lineStyleOf(inset: boolean, leading: ReactNode, trailing: ReactNode, trailingWidth: number): TextStyle {
   if (!inset) return { flex: 1 };
-  return { ...CENTERED_LINE, height: FORM_FIELD_HEIGHT, paddingLeft: slotInset(leading, LEADING_SLOT), paddingRight: slotInset(trailing, TRAILING_SLOT) };
+  return { ...CENTERED_LINE, height: FORM_FIELD_HEIGHT, paddingLeft: slotInset(leading, LEADING_SLOT), paddingRight: slotInset(trailing, trailingWidth) };
 }
 
 function InsetFrame({ field, leading, trailing, background, disabled }: {
@@ -116,7 +117,7 @@ function StackedFrame({ field, label, labelTrailing, leading, trailing, backgrou
 }
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, labelTrailing, hint, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, trailingWidth = TRAILING_SLOT, labelTrailing, hint, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -124,7 +125,7 @@ export function FormField({
   const toneColor = { secondary: 'secondary', success: pal.success, danger: pal.danger }[hintTone];
   const textStyle = useFieldText();
   const inset = label === undefined && multiline !== true;
-  const lineStyle = lineStyleOf(inset, leading, trailing);
+  const lineStyle = lineStyleOf(inset, leading, trailing, trailingWidth);
   const field = multiline ? (
     <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} rows={rows} inputProps={inputProps}

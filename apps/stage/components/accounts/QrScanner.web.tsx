@@ -96,13 +96,27 @@ function useCameraScan(
     const video = attachVideo(host);
     let done = false;
     let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = (): void => {
+      done = true;
+      if (timer !== null) clearInterval(timer);
+      stopStream(video);
+    };
+    const fail = (message: ScanError): void => { if (!done) { stop(); setError(message); } };
     const start = (read: FrameReader): void => {
+      let reading = false;
       const tick = async (): Promise<void> => {
-        if (done) return;
-        const text = await read(video);
-        if (text === null || done) return;
-        done = true;
-        onScanRef.current(text);
+        if (done || reading) return;
+        reading = true;
+        try {
+          const text = await read(video);
+          if (text === null || done) return;
+          stop();
+          onScanRef.current(text);
+        } catch {
+          fail(CAMERA_ERROR);
+        } finally {
+          reading = false;
+        }
       };
       timer = setInterval(() => { void tick(); }, SCAN_INTERVAL_MS);
     };
@@ -114,15 +128,11 @@ function useCameraScan(
         await video.play();
         const read = await reader;
         if (done) return;
-        if (read === null) { setError(LOAD_ERROR); return; }
+        if (read === null) { fail(LOAD_ERROR); return; }
         start(read);
       })
-      .catch(() => { setError(CAMERA_ERROR); });
-    return () => {
-      done = true;
-      if (timer !== null) clearInterval(timer);
-      stopStream(video);
-    };
+      .catch(() => { fail(CAMERA_ERROR); });
+    return stop;
   }, [host]);
   return { error, retry: () => { setError(null); } };
 }
