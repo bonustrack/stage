@@ -41,6 +41,19 @@ function SearchActions({ persistent, query, clear, onClose, sub, trailing }: {
   </>;
 }
 
+function fieldActions(query: string, clear: () => void, sub: string, action: React.ReactNode): { trailing?: React.ReactNode; trailingWidth?: number } {
+  if (query === '' && action === undefined) return {};
+  return {
+    trailingWidth: query !== '' && action !== undefined ? 54 : 24,
+    trailing: <Row align="center" gap={16}>
+      {query === '' ? null : <Pressable onPress={clear} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search">
+        <Glyph icon={IconCrossMedium} size={18} color={sub}/>
+      </Pressable>}
+      {action}
+    </Row>,
+  };
+}
+
 function useSearchFocus(head: string, sub: string, inputProps: InputProps['inputProps']): { color: string; handlers: InputProps['inputProps'] } {
   const [focused, setFocused] = useState(false);
   return {
@@ -67,6 +80,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   onOpen?: () => void;
   autoFocus?: boolean;
   trailing?: React.ReactNode;
+  fieldAction?: React.ReactNode;
   inputProps?: InputProps['inputProps'];
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
@@ -104,11 +118,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
               leading={<HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={props.onOpen}>
                 <Glyph icon={IconMagnifyingGlass} size={20} color={focus.color}/>
               </HoverTooltip>}
-              trailing={props.query === '' ? undefined : <Pressable
-                onPress={clear}
-                hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search">
-                <Glyph icon={IconCrossMedium} size={18} color={sub}/>
-              </Pressable>}
+              {...fieldActions(props.query, clear, sub, props.fieldAction)}
             />
           </Box>
         </Row>
