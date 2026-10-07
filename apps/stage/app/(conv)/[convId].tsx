@@ -26,7 +26,8 @@ function UnresolvedConversation({ resolved, peer }: {
   resolved: ReturnType<typeof useResolvedConvId>; peer?: string;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const fill = useChatColumnFill(0, false);
+  const fill = useChatColumnFill(0);
+  const memberList = useConversationSidebarShown();
   if (!resolved.resolving && resolved.pendingAddress && resolved.error) {
     return (
       <PendingConversation
@@ -40,11 +41,12 @@ function UnresolvedConversation({ resolved, peer }: {
   return (
     <>
       <PeerTopnav peer={peer}/>
-      {resolved.resolving ? <ChatColumnSpinner bottomInset={0} sidebar={false}/> : (
+      {resolved.resolving ? <ChatColumnSpinner bottomInset={0}/> : (
         <Col surface="surface" flex={1} align="center" justify="center" style={fill}>
           <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
         </Col>
       )}
+      {memberList ? <ConversationSidebar/> : null}
     </>
   );
 }
