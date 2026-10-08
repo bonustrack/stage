@@ -24,7 +24,6 @@ const FIELD_ICONS: Record<FilterField, AppIconName> = {
   member: 'IconPeople', category: 'IconFolder1', status: 'IconCircleDashed', priority: 'IconFlag1', label: 'IconTag', has: 'IconFilter1',
 };
 const valueOption = (value: string): FilterOption => ({ key: value, label: value, value });
-const counted = (label: string, count: number): string => count === 0 ? label : `${label} (${count})`;
 
 function useFilterOptions(scope: FilterScope): FilterOptions {
   const sources = useSearchFilterSources(scope);
@@ -84,7 +83,11 @@ export function SearchFilterMenu({ query, setQuery, scope, onBack }: {
     <MenuRow icon="IconArrowLeft" label="View" onPress={onBack}/>
     <DropdownMenuSeparator/>
     <MenuHeading text="Filter"/>
-    {FILTER_FIELDS.map(key => <MenuRow key={key} icon={FIELD_ICONS[key]} label={counted(FIELD_NAMES[key], searchFilterValues(query, key).length)} onPress={() => { setField(key); }}/>) }
+    {FILTER_FIELDS.map(key => {
+      const count = searchFilterValues(query, key).length;
+      return <MenuRow key={key} icon={FIELD_ICONS[key]} label={FIELD_NAMES[key]} count={count > 0 ? count : undefined}
+        onPress={() => { setField(key); }}/>;
+    })}
     {searchFilterCount(query) === 0 ? null : <MenuRow divider icon={IconCrossMedium} label="Clear filters" onPress={() => { setQuery(clearQueryFilters(query)); }}/>}
   </>;
 }
