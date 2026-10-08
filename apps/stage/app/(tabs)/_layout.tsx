@@ -12,7 +12,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import {
-  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail, chatsTabOpensNewChat,
+  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, WebTabBar, WebTabRail, chatsTabOpensNewChat, useTabIcons,
 } from '../../components/tabs/WebTabRail';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
@@ -94,6 +94,7 @@ export default function TabsLayout(): React.ReactElement {
   const rail = useWebTabRail();
   const gate = useAccountGate();
   const chatsTabListeners = useChatsTabListeners(pathname, rail);
+  const tabIcons = useTabIcons();
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
   const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
@@ -119,7 +120,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarIconStyle: TAB_ICON_FRAME,
         }}
 >
-        {TAB_ICONS.map(([name, icon]) => (
+        {tabIcons.map(([name, icon]) => (
           <Tabs.Screen
             key={name}
             name={name}

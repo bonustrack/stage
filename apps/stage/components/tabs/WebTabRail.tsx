@@ -10,7 +10,9 @@ import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
+import { useHomeView } from '../../lib/homeView';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
+import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
@@ -27,11 +29,19 @@ export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } a
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
-export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
+type TabIcons = readonly (readonly [TabName, CentralIcon])[];
+
+const TAB_ICONS: TabIcons = [
   ['index', IconBubble3],
   ['contacts', IconGroup1],
   ['wallet', IconWallet4],
 ];
+
+const BOARD_TAB_ICONS: TabIcons = TAB_ICONS.map(([name, icon]): readonly [TabName, CentralIcon] => [name, name === 'index' ? IconColumns3Wide : icon]);
+
+export function useTabIcons(): TabIcons {
+  return useHomeView().view === 'board' ? BOARD_TAB_ICONS : TAB_ICONS;
+}
 
 const TAB_LABELS: Record<TabName, string> = { index: 'Chats', contacts: 'Contacts', wallet: 'Wallet', settings: 'Settings' };
 
@@ -66,10 +76,11 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
 }): React.ReactElement {
   const router = useRouter();
   const openNewChat = useOpenNewChat();
+  const tabIcons = useTabIcons();
   const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
   return (
     <>
-      {TAB_ICONS.map(([name, icon], i) => {
+      {tabIcons.map(([name, icon], i) => {
         const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
         const go = (): void => {
           if (name === 'index' && chatsTabOpensNewChat(pathname, vertical)) {
