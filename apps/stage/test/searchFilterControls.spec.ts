@@ -39,6 +39,28 @@ describe('separate query and filter controls', () => {
     expect(parseSearchFilter(clearQueryFilters(excluded, 'status'))).toMatchObject({ statuses: [], exclude: { statuses: [] }, text: 'release' });
   });
 
+  test.each(['member', 'category', 'status', 'priority', 'label'] as const)('counts only excluded %s selections through toggles and clears', field => {
+    const count = (query: string): number => selectedSearchFilters(query, field, true).length;
+    const included = toggleSearchFilter('release notes', field, 'High');
+    expect(count(included)).toBe(0);
+    const excluded = toggleSearchFilter(included, field, 'Low', true);
+    expect(count(excluded)).toBe(1);
+    expect(searchFilterCount(excluded)).toBe(2);
+    const moved = toggleSearchFilter(excluded, field, 'HIGH', true);
+    expect(count(moved)).toBe(2);
+    expect(selectedSearchFilters(moved, field)).toEqual([]);
+    expect(searchFilterCount(moved)).toBe(2);
+    const removed = toggleSearchFilter(moved, field, 'low', true);
+    expect(count(removed)).toBe(1);
+    expect(count(toggleSearchFilter(removed, field, 'High', true))).toBe(0);
+    for (const cleared of [clearQueryFilters(moved, field), clearQueryFilters(moved)]) {
+      expect(count(cleared)).toBe(0);
+      expect(searchFilterCount(cleared)).toBe(0);
+      expect(searchQueryText(cleared)).toBe('release notes');
+    }
+    expect(count('has:label -status: -label:""')).toBe(0);
+  });
+
   test('member handle aliases toggle the same selection', () => {
     expect(toggleSearchFilter('member:emma123 hello', 'member', '@Emma123')).toBe('hello');
     expect(toggleSearchFilter('member:@me hello', 'member', '@ME')).toBe('hello');

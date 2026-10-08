@@ -52,6 +52,7 @@ function FilterValues({ field, options, query, setQuery, onBack }: {
   const [needle, setNeedle] = useState('');
   const [excluded, setExcluded] = useState(false);
   const selected = selectedSearchFilters(query, field, excluded);
+  const excludedCount = selectedSearchFilters(query, field, true).length;
   const saved = searchFilterValues(query, field).filter(value => !options.some(option => matches(field, option,value))).map(valueOption);
   const available = [...options, ...saved];
   const matching = available.filter(option => [option.label, option.value].some(value => value.toLowerCase().includes(needle.toLowerCase())));
@@ -63,7 +64,7 @@ function FilterValues({ field, options, query, setQuery, onBack }: {
     <DropdownMenuSeparator/>
     <MenuHeading text={FIELD_NAMES[field]}/>
     <PickerSearch value={needle} onChangeText={setNeedle} placeholder={`Search ${FIELD_NAMES[field].toLowerCase()}`} />
-    {field === 'has' ? null : <PickerRow label={`Exclude ${FIELD_NAMES[field].toLowerCase()}`} selected={excluded}
+    {field === 'has' ? null : <PickerRow label={`Exclude ${FIELD_NAMES[field].toLowerCase()}`} selected={excluded} count={excludedCount > 0 ? excludedCount : undefined}
       leading={<AppIcon name={IconCircleMinus} size={DROPDOWN_MENU.icon} color="link"/>} onPress={() => { setExcluded(!excluded); }}/>}
     {matching.map(option => <PickerRow key={option.key} label={option.label} selected={selected.some(value => matches(field, option, value))}
       leading={<OptionIcon field={field} option={option}/>} onPress={() => { pick(option); }}/>) }

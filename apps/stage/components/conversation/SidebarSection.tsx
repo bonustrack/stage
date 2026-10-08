@@ -113,8 +113,8 @@ function checkboxKeys(onPress: () => void, disabled: boolean) {
   };
 }
 
-export function PickerRow({ selected, disabled = false, label, text = label, onPress, leading, children }: {
-  selected: boolean; disabled?: boolean; label: string; text?: string; onPress: () => void; leading?: ReactNode; children?: ReactNode;
+export function PickerRow({ selected, disabled = false, label, text = label, count, onPress, leading, children }: {
+  selected: boolean; disabled?: boolean; label: string; text?: string; count?: number; onPress: () => void; leading?: ReactNode; children?: ReactNode;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
@@ -127,7 +127,7 @@ export function PickerRow({ selected, disabled = false, label, text = label, onP
       accessibilityState={{ checked: selected, disabled }}
       aria-checked={selected}
       aria-disabled={disabled}
-      accessibilityLabel={label}
+      accessibilityLabel={count === undefined ? label : `${label} (${count})`}
       {...checkboxKeys(onPress, disabled)}
       {...hoverProps}
       style={({ pressed }) => ({
@@ -138,7 +138,10 @@ export function PickerRow({ selected, disabled = false, label, text = label, onP
       })}
 >
       {leading}
-      <Box flex={1} style={{ minWidth: 0 }}>{children ?? <Text {...menuText} truncate>{text}</Text>}</Box>
+      <Box flex={1} style={{ minWidth: 0 }}>{children ?? <Row align="center" gap={DROPDOWN_MENU.itemGap}>
+        <Box style={{ flexShrink: 1, minWidth: 0 }}><Text {...menuText} truncate>{text}</Text></Box>
+        {count === undefined ? null : <CountTag count={count}/>}
+      </Row>}</Box>
       {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link}/> : <Box width={DROPDOWN_MENU.icon}/>}
     </Pressable>
   );
