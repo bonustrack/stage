@@ -1,4 +1,4 @@
-import { ignored } from './errorPolicy';
+import { ignored, report } from './errorPolicy';
 import { envString } from './env';
 
 const SWARMY_KEY = envString(process.env.EXPO_PUBLIC_SWARMY_KEY);
@@ -29,6 +29,7 @@ export async function fromFirstUrl<T>(urls: readonly string[], load: (url: strin
     try {
       return await load(url);
     } catch (err) {
+      report('attachment.download', err);
       failure = err;
     }
   }
