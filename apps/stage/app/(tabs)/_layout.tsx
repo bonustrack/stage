@@ -15,7 +15,7 @@ import {
   TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail, chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
 import { useWebTabRail } from '../../lib/webLayout';
-import { useTotalUnread } from '../../lib/useTotalUnread';
+import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { SETTINGS_ROUTE } from '../../lib/routes';
@@ -85,8 +85,7 @@ function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: numb
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
-  const unread = useTotalUnread();
-  const unreadBadge = unreadBadgeLabel(unread);
+  const unreadBadge = unreadBadgeLabel(useVisibleUnreadCount());
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const active = pal.link;

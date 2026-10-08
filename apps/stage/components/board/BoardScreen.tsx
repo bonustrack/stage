@@ -40,7 +40,7 @@ import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useChannelGroups } from '../../lib/channelGroups';
-import { useHomeView } from '../../lib/homeView';
+import { useBoardQuery, useHomeView } from '../../lib/homeView';
 import { homeSortOf } from '../home/sort.model';
 import { capabilities } from '../../lib/capabilities';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
@@ -386,7 +386,7 @@ function useBoardHeight(): number | undefined {
   return height - TOPNAV_HEIGHT - chrome;
 }
 export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState }): React.ReactElement {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useBoardQuery();
   const [filtering, setFiltering] = useState(false);
   const height = useBoardHeight();
   const windowHeight = !pane && height !== undefined;

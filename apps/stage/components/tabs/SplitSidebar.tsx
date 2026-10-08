@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { Box, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { useTotalUnread } from '../../lib/useTotalUnread';
+import { useVisibleUnreadCount } from '../home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
 import { HomeScreen } from '../home/HomeScreen';
 import { WebTabRail } from './WebTabRail';
@@ -54,7 +54,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   const active = visible && rail && isSplitRoute(pathname, boardHome);
   const railOnly = visible && rail && isRailOnlyRoute(pathname, boardHome);
   usePaneScope(paneScopeOf(active, railOnly));
-  const unreadBadge = unreadBadgeLabel(useTotalUnread());
+  const unreadBadge = unreadBadgeLabel(useVisibleUnreadCount());
   if (!active && !railOnly) return null;
   return (
     <>

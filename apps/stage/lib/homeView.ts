@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeListeners, makeValue, useStoreValue } from './storeCore';
 import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
 function parseHomeView(raw: string): HomeViewContent {
@@ -16,6 +17,17 @@ const prefs = createValueStore<HomeViewContent>({
 });
 
 export const useHomeView = prefs.use;
+
+const boardQuery = makeValue('');
+
+export const getBoardQuery = boardQuery.get;
+
+export const subscribeBoardQuery = boardQuery.subscribe;
+
+export function useBoardQuery(): [string, (query: string) => void] {
+  useEffect(() => () => { boardQuery.set(''); }, []);
+  return [boardQuery.use(), boardQuery.set];
+}
 
 const homeViewLoaded = (): boolean => prefs.accountId() !== null;
 

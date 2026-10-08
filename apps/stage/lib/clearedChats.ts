@@ -24,6 +24,10 @@ export const getClearedChats = prefs.get;
 
 export const useClearedChats = prefs.use;
 
+export const subscribeClearedChats = prefs.subscribe;
+
+export const primeClearedChats = prefs.loadAsync;
+
 export const loadClearedChats = prefs.loadFor;
 
 export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {

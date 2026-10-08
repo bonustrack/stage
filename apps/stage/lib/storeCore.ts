@@ -36,7 +36,9 @@ export function makeListeners<T = void>(): {
   return { notify, subscribe, size: () => listeners.size };
 }
 
-export function makeValue<T>(initial: T): { get: () => T; set: (next: T) => void; use: () => T } {
+export function makeValue<T>(initial: T): {
+  get: () => T; set: (next: T) => void; use: () => T; subscribe: (cb: () => void) => () => void;
+} {
   let value = initial;
   const { notify, subscribe } = makeListeners();
   const get = (): T => value;
@@ -47,6 +49,7 @@ export function makeValue<T>(initial: T): { get: () => T; set: (next: T) => void
       notify();
     },
     use: () => useStoreValue(subscribe, get),
+    subscribe,
   };
 }
 

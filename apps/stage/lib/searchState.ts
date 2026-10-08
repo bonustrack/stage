@@ -19,6 +19,12 @@ const prefs = createValueStore<SearchStateContent>({
 
 export const useSearchState = prefs.use;
 
+export const getSearchState = prefs.get;
+
+export const subscribeSearchState = prefs.subscribe;
+
+export const primeSearchState = prefs.loadAsync;
+
 export interface SearchStateChange {
   accountId: string;
   state: SearchStateContent;

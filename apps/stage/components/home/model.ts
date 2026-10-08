@@ -1,13 +1,14 @@
-import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
+import { filterChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging/conversation';
 import {
-  GROUP_KEYS, homeSortSchema, homeViewSchema, type GroupKey, type HomeSort, type HomeViewContent, type HomeViewEdit,
+  GROUP_KEYS, homeSortSchema, homeViewSchema, isRowCleared, type ClearableRow, type ClearedChats, type GroupKey, type HomeSort,
+  type HomeViewContent, type HomeViewEdit,
 } from '@stage-labs/client/xmtp/readState';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
-import { GROUP_BY_LABELS } from './groupBy.model';
+import { GROUP_BY_LABELS, type GroupableRow } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
-import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
+import { boardColumns, labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
@@ -164,6 +165,40 @@ export function deriveSortedRows(i: SortInputs): Row[] {
     unreadOnly: i.unreadOnly,
   });
   return sortHomeRows(filtered, i.pinned, i.sort, i.statusOrder);
+}
+
+interface UnreadRow {
+  unreadCount: number;
+  markedUnread?: boolean;
+}
+
+export function unreadRowCount(rows: readonly UnreadRow[]): number {
+  return rows.filter(row => row.unreadCount > 0 || row.markedUnread === true).length;
+}
+
+type ListedRow = ChannelListRow & GroupableRow & ClearableRow;
+
+interface VisibleUnreadInputs<R> {
+  view: HomeViewContent['view'];
+  columnBy: GroupKey;
+  rows: R[] | null;
+  enabledLabels: Set<string>;
+  unreadOnly: boolean;
+  matches: (row: R) => boolean;
+  cleared: ClearedChats;
+}
+
+function listedRows<R extends ListedRow>(i: VisibleUnreadInputs<R>): R[] {
+  const hidden = (row: R): boolean => isRowCleared(i.cleared, row);
+  if (i.view === 'board') {
+    const cards = boardColumns(i.rows ?? [], [], [], i.columnBy, undefined, hidden).flatMap(column => column.rows);
+    return [...new Map(cards.map(row => [row.convId, row])).values()];
+  }
+  return filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly }).filter(row => !hidden(row));
+}
+
+export function visibleUnreadCount<R extends ListedRow>(i: VisibleUnreadInputs<R>): number {
+  return unreadRowCount(listedRows(i).filter(i.matches));
 }
 
 export function searchBarLabels(

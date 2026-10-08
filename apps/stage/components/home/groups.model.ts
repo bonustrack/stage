@@ -2,7 +2,7 @@ import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
 import { NO_GROUP_TITLES, bucketRows, type Bucket, type NameOf } from './groupBy.model';
-import type { Row } from './model';
+import { unreadRowCount, type Row } from './model';
 
 export interface ChannelGroupHeader {
   key: string;
@@ -29,8 +29,6 @@ interface GroupRow {
   labels?: string[];
   category?: string | null;
   assigned?: string[];
-  unreadCount: number;
-  markedUnread: boolean;
 }
 
 export function isGroupHeader(item: HomeListItem): item is GroupHeaderItem {
@@ -60,10 +58,6 @@ function orderedBuckets<R extends GroupRow>(
   ];
 }
 
-function unreadOf(rows: readonly GroupRow[]): number {
-  return rows.filter(r => r.unreadCount > 0 || r.markedUnread).length;
-}
-
 function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[] {
   return bucket.rows.map((row) => {
     if (!seen.has(row.convId)) { seen.add(row.convId); return row; }
@@ -79,7 +73,7 @@ export function groupRows(
   return orderedBuckets(rows, by, nameOf, order).flatMap((bucket): HomeListItem[] => {
     const folded = collapsed.has(bucket.key) && !expandAll;
     const header: ChannelGroupHeader = {
-      key: bucket.key, title: bucket.title, count: bucket.rows.length, unread: unreadOf(bucket.rows), collapsed: folded,
+      key: bucket.key, title: bucket.title, count: bucket.rows.length, unread: unreadRowCount(bucket.rows), collapsed: folded,
     };
     return [{ convId: HEADER_ID_PREFIX + bucket.key, header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
   });

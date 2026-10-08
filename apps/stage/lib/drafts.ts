@@ -29,11 +29,15 @@ export function setDraft(convId: string, text: string): void {
   setDraftValue(convId, text.trim() ? text : undefined);
 }
 
+export function subscribeDrafts(onChange: () => void): () => void {
+  return store.subscribe(onChange);
+}
+
 export function useDraftsVersion(): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   useEffect(() => {
     void loadDrafts();
-    return store.subscribe(() => { bump(); });
+    return subscribeDrafts(() => { bump(); });
   }, []);
   return version;
 }
