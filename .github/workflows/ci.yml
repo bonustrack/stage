@@ -34,7 +34,7 @@ jobs:
         run: bun run test
 
   android-compile:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/native-mic-dictation'
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/feat/native-mic-dictation' || github.ref == 'refs/heads/feat/dictation-auto-language')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -72,7 +72,7 @@ jobs:
         working-directory: apps/stage/android
         run: |
           set -o pipefail
-          ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a \
+          ./gradlew :stage-speech:testDebugUnitTest :app:assembleDebug -PreactNativeArchitectures=arm64-v8a \
             --no-daemon --max-workers=2 2>&1 | tee "$RUNNER_TEMP/android-build.log"
       - uses: actions/upload-artifact@v4
         if: always()

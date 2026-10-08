@@ -29,6 +29,7 @@ interface Session {
   capture: Capture | null;
   stopping: boolean;
   rapidEnds: number;
+  languageFallback?: boolean;
   lastCaptureId?: string;
   timer?: ReturnType<typeof setTimeout>;
   permissionPending?: boolean;
@@ -48,6 +49,7 @@ interface Runtime {
 }
 
 let nextCapture = 0;
+const restartingReasons = new Set<SpeechEvent['reason']>(['segment', 'silence', 'fallback']);
 
 function phase(r: Runtime, s: Session, value: DictationPhase): void {
   if (r.current !== s) return;
@@ -150,8 +152,14 @@ function completed(r: Runtime, s: Session, event: SpeechEvent): void {
   clearTimeout(s.timer);
   r.pending.add(capture);
   s.capture = null;
-  if (s.stopping || (event.reason !== 'segment' && event.reason !== 'silence')) { void cancel(r); return; }
-  s.rapidEnds = !capture.heard && Date.now() - capture.startedAt < 1000 ? s.rapidEnds + 1 : 0;
+  if (s.stopping || !restartingReasons.has(event.reason)) { void cancel(r); return; }
+  if (event.reason === 'fallback') {
+    if (s.languageFallback) { failed(r, s, 'Dictation could not return to the device language. Your draft was kept. Tap the mic to try again.'); return; }
+    s.languageFallback = true;
+    s.rapidEnds = 0;
+  } else {
+    s.rapidEnds = !capture.heard && Date.now() - capture.startedAt < 1000 ? s.rapidEnds + 1 : 0;
+  }
   if (s.rapidEnds >= 3) {
     failed(r, s, 'Speech recognition is ending too quickly. Wait a moment and tap the mic again. Your draft was kept.');
     return;
@@ -172,6 +180,7 @@ function update(r: Runtime, s: Session, event: SpeechEvent): void {
     r.host.apply(draft);
   }
   if (event.error) { failed(r, s, event.error); return; }
+  if (event.notice) r.host.error(event.notice);
   if (event.state === 'ended') { completed(r, s, event); return; }
   if (event.state === 'listening' && capture.state === 'starting') {
     capture.state = 'listening';
@@ -185,7 +194,10 @@ function update(r: Runtime, s: Session, event: SpeechEvent): void {
 async function ensureAvailable(r: Runtime, s: Session): Promise<boolean> {
   const status = await r.bridge.availability();
   if (!valid(r, s)) return false;
-  if (status.available) return true;
+  if (status.available) {
+    if (status.notice) r.host.error(status.notice);
+    return true;
+  }
   if (!status.download) throw new Error(status.reason ?? 'On-device dictation is not available for this device language. Use typing or + to record voice.');
   if (await r.host.confirmDownload(status.locale) && valid(r, s)) {
     phase(r, s, 'downloading');
