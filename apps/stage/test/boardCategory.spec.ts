@@ -46,9 +46,9 @@ describe('configured category board columns', () => {
     const next = deletedColumnOrder(keys, order, 'FDE', 'category');
     expect(next).toEqual(['category:Metro', 'category:Stage', 'category:', 'status:Done']);
     expect(orderedColumns(boardColumns(rows, [], next, 'category'), next).map(column => column.label)).toEqual(['Metro', 'Stage']);
-    expect(deleteColumnConfirm('fde', 0, 'category').message).toBe('No channel has the fde category.');
+    expect(deleteColumnConfirm('fde', 0, 'category').message).toBe('No channel has the fde project.');
     expect(deleteColumnConfirm('Stage', 2, 'category').message)
-      .toBe('This removes the Stage category from 2 channels. They move to No category. Labels are kept.');
+      .toBe('This removes the Stage project from 2 channels. They move to No project. Labels are kept.');
   });
 
   test('adds empty categories and retains a category when its last card moves', () => {
@@ -56,9 +56,9 @@ describe('configured category board columns', () => {
     expect(orderedColumns(boardColumns(rows, [], next, 'category'), next).at(-1)?.label).toBe('New Team');
     expect(cardColumnEdit(columns, 'category:Metro', 'category:fde', 'category')).toEqual({ by: 'category', value: 'fde' });
     expect(keptColumnOrder(columns, [], 'category:Metro')).toEqual(keys);
-    const withUnset = boardColumns([row('a', 'No category'), row('b')], [], [], 'category');
-    expect(cardColumnEdit(withUnset, 'category:No category', 'category:', 'category')).toEqual({ by: 'category', value: null });
-    expect(cardColumnEdit(withUnset, 'category:', 'category:No category', 'category')).toEqual({ by: 'category', value: 'No category' });
+    const withUnset = boardColumns([row('a', 'No project'), row('b')], [], [], 'category');
+    expect(cardColumnEdit(withUnset, 'category:No project', 'category:', 'category')).toEqual({ by: 'category', value: null });
+    expect(cardColumnEdit(withUnset, 'category:', 'category:No project', 'category')).toEqual({ by: 'category', value: 'No project' });
   });
 
   test('keeps emoji-distinct categories and retains empty configured statuses and labels', () => {

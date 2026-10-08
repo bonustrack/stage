@@ -38,7 +38,7 @@ beforeEach(() => {
 describe('channel field preferences', () => {
   test('lists all seven fields in display order and preserves existing view defaults', () => {
     expect(CHANNEL_FIELDS.map(({ id, label }) => [id, label])).toEqual([
-      ['members', 'Members'], ['assignees', 'Assignees'], ['category', 'Category'],
+      ['members', 'Members'], ['assignees', 'Assignees'], ['category', 'Project'],
       ['status', 'Status'], ['labels', 'Labels'], ['priority', 'Priority'], ['avatar', 'Avatar'],
     ]);
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });

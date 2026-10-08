@@ -44,7 +44,7 @@ describe('the View menu', () => {
         icon: view === 'chats' ? 'IconArrowUp' : 'IconArrowDown',
       });
     }
-    for (const [key, value] of [['category', 'Category'], ['label', 'Label'], ['status', 'Status']] as const) {
+    for (const [key, value] of [['category', 'Project'], ['label', 'Label'], ['status', 'Status']] as const) {
       expect(homeViewMenu({ ...chats, groupBy: key }).flatMap(section => section.rows)
         .find(row => row.id === 'grouping')?.value).toBe(value);
     }
@@ -61,23 +61,23 @@ describe('the View menu', () => {
     const next = { ...chats, ...homeViewEdit(chats, 'view:board') };
     expect(labels(homeViewMenu(next))).toEqual([['Chats', 'Board*'], ['Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
     expect(homeViewMenu(next, true).map(section => section.heading)).toEqual(['Column by']);
-    expect(labels(homeViewMenu(next, true))).toEqual([['Assignees', 'Category', 'Label*', 'Status']]);
+    expect(labels(homeViewMenu(next, true))).toEqual([['Assignees', 'Project', 'Label*', 'Status']]);
     const back = { ...next, ...homeViewEdit(next, 'view:chats') };
     expect(labels(homeViewMenu(back))).toEqual([['Chats*', 'Board'], ['Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(homeViewMenu(back, true).map(section => section.heading)).toEqual(['Group by']);
-    expect(labels(homeViewMenu(back, true))).toEqual([['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
+    expect(labels(homeViewMenu(back, true))).toEqual([['Assignees', 'Project', 'Label', 'Status', 'No grouping*']]);
   });
 
   test('chats keeps No grouping inside Group by and marks the current pick', () => {
     const menu = homeViewMenu(chats, true);
     expect(menu.map(s => s.heading)).toEqual(['Group by']);
-    expect(labels(menu)).toEqual([['Assignees', 'Category', 'Label', 'Status', 'No grouping*']]);
+    expect(labels(menu)).toEqual([['Assignees', 'Project', 'Label', 'Status', 'No grouping*']]);
   });
 
   test('the grouping submenu shows Column by for board without No grouping', () => {
     const menu = homeViewMenu(board, true);
     expect(menu.map(s => s.heading)).toEqual(['Column by']);
-    expect(labels(menu)).toEqual([['Assignees', 'Category', 'Label*', 'Status']]);
+    expect(labels(menu)).toEqual([['Assignees', 'Project', 'Label*', 'Status']]);
   });
 
   test('a pick edits the view, the grouping of chats or the columns of the board', () => {
@@ -107,7 +107,7 @@ describe('the View menu', () => {
   test('the defaults are the chats list without grouping and a board by status', () => {
     expect(DEFAULT_HOME_VIEW).toEqual({ ...chats, columnBy: 'status' });
     expect(labels(homeViewMenu({ ...DEFAULT_HOME_VIEW, view: 'board' }, true)))
-      .toEqual([['Assignees', 'Category', 'Label', 'Status*']]);
+      .toEqual([['Assignees', 'Project', 'Label', 'Status*']]);
     expect(homeViewEdit(board, 'group:status')).toEqual({ columnBy: 'status' });
     expect(CHANNELS_OVERFLOW_ITEMS.map(item => item.label)).toEqual(['View', 'Copy address', 'Profile', 'Settings']);
   });

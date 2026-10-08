@@ -51,7 +51,7 @@ function shape(items: HomeListItem[]): string[] {
 describe('groupRows by category', () => {
   test('direct messages first, categories A to Z, no category last, rows keep their order', () => {
     expect(shape(groupRows([work, dm, loose, work2, alpha], 'category', new Set(), false, nameOf)))
-      .toEqual(['# Direct messages', 'dm', '# Alpha', 'alpha', '# Work', 'work', 'work2', '# No category', 'loose']);
+      .toEqual(['# Direct messages', 'dm', '# Alpha', 'alpha', '# Work', 'work', 'work2', '# No project', 'loose']);
   });
 
   test('categories merge case-insensitively under the first spelling seen', () => {
@@ -63,18 +63,18 @@ describe('groupRows by category', () => {
   test('a collapsed group keeps its header and hides its rows, a search expands it again', () => {
     const collapsed = new Set(['category:work']);
     const folded = groupRows([work, work2, loose], 'category', collapsed, false, nameOf);
-    expect(shape(folded)).toEqual(['# Work', '# No category', 'loose']);
+    expect(shape(folded)).toEqual(['# Work', '# No project', 'loose']);
     expect(folded[0]).toMatchObject({ header: { collapsed: true, unread: 1, count: 2 } });
     expect(rowsOf(folded).map(r => r.convId)).toEqual(['loose']);
     expect(shape(groupRows([work, work2, loose], 'category', collapsed, true, nameOf)))
-      .toEqual(['# Work', 'work', 'work2', '# No category', 'loose']);
+      .toEqual(['# Work', 'work', 'work2', '# No project', 'loose']);
   });
 
   test('a saved order ranks categories first, the rest follow A to Z, direct messages and no category stay put', () => {
     const ops = row('ops', { category: 'Ops' });
     const order = ['category:work', 'category:ops'];
     expect(shape(groupRows([dm, alpha, loose, ops, work], 'category', new Set(), false, nameOf, order)))
-      .toEqual(['# Direct messages', 'dm', '# Work', 'work', '# Ops', 'ops', '# Alpha', 'alpha', '# No category', 'loose']);
+      .toEqual(['# Direct messages', 'dm', '# Work', 'work', '# Ops', 'ops', '# Alpha', 'alpha', '# No project', 'loose']);
     expect(shape(groupRows([alpha, ops, work], 'category', new Set(), false, nameOf, ['category:zzz', 'category:ops'])))
       .toEqual(['# Ops', 'ops', '# Alpha', 'alpha', '# Work', 'work']);
   });
@@ -291,8 +291,8 @@ describe('one category order for the chat list and the board', () => {
 
   test('the same order drives the chat sections and the board columns, no category last in both', () => {
     const order = ['category:ops', 'category:work'];
-    expect(sections(order)).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No category']);
-    expect(columns(order)).toEqual(['Ops', 'Work', 'Alpha', 'No category']);
+    expect(sections(order)).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No project']);
+    expect(columns(order)).toEqual(['Ops', 'Work', 'Alpha', 'No project']);
     expect(sections([]).slice(1)).toEqual(columns([]));
   });
 
@@ -309,14 +309,14 @@ describe('one category order for the chat list and the board', () => {
     const order = await loadCategoryOrder('ann');
     expect(order).toEqual(['category:Work', 'category:Alpha', 'category:Ops']);
     expect(sent).toEqual([order]);
-    expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No category']);
+    expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No project']);
   });
 
   test('a chat section drag reorders the board columns', async () => {
     const visible = sectionBlocks(groupRows(rows, 'category', new Set(), false, nameOf, await loadCategoryOrder('ann')), 40, 67).ids;
     moveCategory('category:ops', 'category:work', visible);
     await settle();
-    expect(columns(await loadCategoryOrder('ann'))).toEqual(['Ops', 'Work', 'Alpha', 'No category']);
+    expect(columns(await loadCategoryOrder('ann'))).toEqual(['Ops', 'Work', 'Alpha', 'No project']);
   });
 
   test('no category stays last on the board: it is not dragged and takes no column', () => {
@@ -354,7 +354,7 @@ describe('one category order for the chat list and the board', () => {
     moveCategory('category:work', 'category:fde team', ['category:work', 'category:FDE Team']);
     await settle();
     expect(await loadCategoryOrder('edited')).toEqual(['category:Work', 'category:FDE Team']);
-    expect(sections(['category:Ops', 'category:Work'])).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No category']);
+    expect(sections(['category:Ops', 'category:Work'])).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No project']);
     setCategoryOrder(['category:Work']);
     await settle();
     expect(await loadCategoryOrder('edited')).toEqual(['category:Work']);

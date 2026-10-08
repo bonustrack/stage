@@ -42,6 +42,7 @@ interface EditorProps {
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
+  fields?: React.ReactNode;
   hasContent: boolean;
   busy?: boolean;
   dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
@@ -127,10 +128,16 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
+function QuickSlot({ p }: { p: EditorProps }): React.ReactElement | null {
+  if (p.fields !== undefined) return <>{p.fields}</>;
+  if (!p.quickIcon || !p.onQuick) return null;
+  return <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />;
+}
+
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const { fg, chipBg } = p;
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const showQuick = !!p.quickIcon && !!p.onQuick;
+  const filled = p.fields !== undefined || (!!p.quickIcon && !!p.onQuick);
   const close = (): void => { p.setAttachMenuOpen(() => false); };
   return (
     <>
@@ -139,11 +146,9 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
         label="Attach"
         onPress={(e) => { setAnchor(menuPointAbove(e)); p.setAttachMenuOpen(() => true); }}
         fg={fg} hoverFg={p.head} chipBg={chipBg}
-        mr={showQuick ? -12 : undefined}
+        mr={filled ? -12 : undefined}
       />
-      {showQuick && p.quickIcon && p.onQuick
-        ? <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={fg} hoverFg={p.head} chipBg={chipBg} />
-        : null}
+      <QuickSlot p={p}/>
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
         {(p.attachActions ?? []).map(([icon, label, action]) => (
           <MenuRow key={label} icon={icon} label={label} onPress={() => { close(); void action(); }} />

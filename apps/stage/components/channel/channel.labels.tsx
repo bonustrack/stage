@@ -16,7 +16,7 @@ import {
   addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels,
 } from '../../lib/xmtp.groups';
 import {
-  CHANNEL_PRIORITIES, channelFieldOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
+  CHANNEL_FIELD_NOUNS, CHANNEL_PRIORITIES, channelFieldOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
 } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -38,7 +38,7 @@ export function toastLabelError(e: unknown, what = 'labels'): void {
 }
 
 export function setChannelCategory(convId: string, category: string | null): void {
-  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => { toastLabelError(e, 'the category'); });
+  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => { toastLabelError(e, `the ${CHANNEL_FIELD_NOUNS.category}`); });
 }
 
 const NO_LABELS: string[] = [];
@@ -205,7 +205,7 @@ export function FieldPicker({ draft, toggle, field }: SectionDraft & { field: Ch
       ))}
     </PickerList>
   );
-  return <TagPicker draft={draft} options={field === 'category' ? sources.categories : sources.statuses} noun={field} pick={toggle}/>;
+  return <TagPicker draft={draft} options={field === 'category' ? sources.categories : sources.statuses} noun={CHANNEL_FIELD_NOUNS[field]} pick={toggle}/>;
 }
 
 export function ChannelLabels({ convId, labels }: {
@@ -229,7 +229,7 @@ export function ChannelLabels({ convId, labels }: {
 }
 
 const CHANNEL_FIELDS = {
-  category: { title: 'Category', icon: IconFolder1 },
+  category: { title: 'Project', icon: IconFolder1 },
   status: { title: 'Status', icon: IconCircleDashed },
   priority: { title: 'Priority', icon: IconFlag1 },
 };
@@ -239,13 +239,14 @@ function ChannelFieldSection({ convId, field }: { convId: string; field: Channel
   const value = useLiveChannelField(convId, field);
   if (value === null && !rights.appData) return null;
   const current = value === null ? [] : [value];
+  const noun = CHANNEL_FIELD_NOUNS[field];
   const commit = (edits: ListEdits): void => {
-    void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, `the ${field}`); });
+    void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, `the ${noun}`); });
   };
   return (
-    <SidebarSection {...CHANNEL_FIELDS[field]} editLabel={`Edit ${field}`} canEdit={rights.appData} current={current} single
+    <SidebarSection {...CHANNEL_FIELDS[field]} editLabel={`Edit ${noun}`} canEdit={rights.appData} current={current} single
       onCommit={commit} renderPicker={(draft) => <FieldPicker {...draft} field={field}/>}>
-      {value === null ? <SectionNote text={`No ${field} yet`}/> : (
+      {value === null ? <SectionNote text={`No ${noun} yet`}/> : (
         <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{value}</Text></Row>
       )}
     </SidebarSection>

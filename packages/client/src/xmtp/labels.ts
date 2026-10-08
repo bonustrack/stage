@@ -82,6 +82,7 @@ export function categoryOf(value: unknown): string | null {
 export const CHANNEL_PRIORITIES = ['Urgent', 'High', 'Medium', 'Low'] as const;
 export type ChannelPriority = typeof CHANNEL_PRIORITIES[number];
 export type ChannelField = 'category' | 'status' | 'priority';
+export const CHANNEL_FIELD_NOUNS: Record<ChannelField, string> = { category: 'project', status: 'status', priority: 'priority' };
 
 export function priorityOf(value: unknown): ChannelPriority | null {
   return CHANNEL_PRIORITIES.find(priority => priority === categoryOf(value)) ?? null;
@@ -199,9 +200,10 @@ export async function writeChannelField(
 ): Promise<string | null> {
   const next = channelFieldOf(field, value);
   if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
-  await writeTags(group, `the ${field}`, existing => {
+  const noun = CHANNEL_FIELD_NOUNS[field];
+  await writeTags(group, `the ${noun}`, existing => {
     if (expected !== undefined && channelFieldOf(field, existing[field])?.toLowerCase() !== channelFieldOf(field, expected)?.toLowerCase()) {
-      throw new Error(`The ${field} changed. Try again.`);
+      throw new Error(`The ${noun} changed. Try again.`);
     }
     return { [field]: next ?? undefined };
   });

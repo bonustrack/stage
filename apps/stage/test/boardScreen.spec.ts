@@ -111,7 +111,7 @@ describe('boardColumns by category and assignee', () => {
     expect(by('category')).toEqual([
       ['category:Alpha', 'Alpha', ['c']],
       ['category:Work', 'Work', ['a', 'b']],
-      ['category:', 'No category', ['d']],
+      ['category:', 'No project', ['d']],
     ]);
   });
 
@@ -124,7 +124,7 @@ describe('boardColumns by category and assignee', () => {
   });
 
   test('saved label columns and the empty catch-all stay out', () => {
-    expect(boardColumns([row('a', 1, ['Todo'])], [], ['label:Done'], 'category', nameOf).map(c => c.label)).toEqual(['No category']);
+    expect(boardColumns([row('a', 1, ['Todo'])], [], ['label:Done'], 'category', nameOf).map(c => c.label)).toEqual(['No project']);
     expect(boardColumns([{ ...row('a', 1), category: 'Ops' }], [], [], 'category', nameOf).map(c => c.label)).toEqual(['Ops']);
   });
 });

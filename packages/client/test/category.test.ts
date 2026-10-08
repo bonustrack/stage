@@ -41,14 +41,14 @@ describe('channel category', () => {
     const group: Group = { appData: '', updateAppData: () => Promise.reject(new Error('not authorized')) };
     const failure = writeCategory(group, 'Work');
     await expect(failure).rejects.toBeInstanceOf(LabelPermissionError);
-    await expect(failure).rejects.toThrow("You don't have permission to edit the category in this channel.");
+    await expect(failure).rejects.toThrow("You don't have permission to edit the project in this channel.");
   });
 
   test('describes the change in the channel feed', () => {
-    expect(describeAppDataChange(blob({}), blob({ category: 'Work' }))).toBe('set category "Work"');
-    expect(describeAppDataChange(blob({ category: 'Work' }), blob({ category: 'Ops' }))).toBe('changed category to "Ops"');
-    expect(describeAppDataChange(blob({ category: 'Ops' }), blob({ category: null }))).toBe('removed category "Ops"');
-    expect(describeAppDataChange(blob({ category: 'Ops' }), blob({}))).toBe('removed category "Ops"');
+    expect(describeAppDataChange(blob({}), blob({ category: 'Work' }))).toBe('set project "Work"');
+    expect(describeAppDataChange(blob({ category: 'Work' }), blob({ category: 'Ops' }))).toBe('changed project to "Ops"');
+    expect(describeAppDataChange(blob({ category: 'Ops' }), blob({ category: null }))).toBe('removed project "Ops"');
+    expect(describeAppDataChange(blob({ category: 'Ops' }), blob({}))).toBe('removed project "Ops"');
     expect(describeAppDataChange(blob({ category: 'Ops', labels: [] }), blob({ category: 'Ops', labels: ['Todo'] }))).toBe('added label "Todo"');
   });
 });

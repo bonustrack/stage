@@ -18,7 +18,7 @@ import {
 } from './searchFilter.model';
 
 const FIELD_NAMES: Record<FilterField, string> = {
-  member: 'Member', category: 'Category', status: 'Status', priority: 'Priority', label: 'Label', has: 'Has',
+  member: 'Member', category: 'Project', status: 'Status', priority: 'Priority', label: 'Label', has: 'Has',
 };
 const FIELD_ICONS: Record<FilterField, AppIconName> = {
   member: 'IconPeople', category: 'IconFolder1', status: 'IconCircleDashed', priority: 'IconFlag1', label: 'IconTag', has: 'IconFilter1',

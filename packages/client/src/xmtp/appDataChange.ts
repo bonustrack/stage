@@ -1,4 +1,4 @@
-import { assignedAddresses, channelFieldOf, parseObject, stringList, type ChannelField } from './labels';
+import { assignedAddresses, CHANNEL_FIELD_NOUNS, channelFieldOf, parseObject, stringList, type ChannelField } from './labels';
 import { mentionToken } from './mentions';
 
 function stringOf(value: unknown): string {
@@ -20,11 +20,12 @@ function labelClauses(before: string[], after: string[]): string[] {
 }
 
 function fieldClause(field: ChannelField, oldValue: unknown, newValue: unknown): string {
+  const noun = CHANNEL_FIELD_NOUNS[field];
   const before = channelFieldOf(field, oldValue);
   const after = channelFieldOf(field, newValue);
-  if (after === null) return before === null ? '' : `removed ${field} "${before}"`;
+  if (after === null) return before === null ? '' : `removed ${noun} "${before}"`;
   if (before === after) return '';
-  return before === null ? `set ${field} "${after}"` : `changed ${field} to "${after}"`;
+  return before === null ? `set ${noun} "${after}"` : `changed ${noun} to "${after}"`;
 }
 
 function githubClause(before: string, after: string): string {

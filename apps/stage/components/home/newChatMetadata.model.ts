@@ -1,4 +1,4 @@
-import { addLabel, assignedAddresses, categoryOf } from '@stage-labs/client/xmtp/labels';
+import { addLabel, assignedAddresses, categoryOf, parseObject } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { includesKey } from '../conversation/SidebarSection.model';
 
@@ -10,6 +10,20 @@ export interface NewChatMetadata {
 }
 
 export const NO_NEW_CHAT_METADATA: NewChatMetadata = { category: null, status: null, labels: [], assigned: [] };
+
+export type NewChatField = 'category' | 'status';
+export type NewChatFields = Pick<NewChatMetadata, NewChatField>;
+
+export const NO_NEW_CHAT_FIELDS: NewChatFields = { category: null, status: null };
+
+export function parseNewChatFields(raw: string): NewChatFields | undefined {
+  const blob = parseObject(raw);
+  return blob === null ? undefined : { category: categoryOf(blob.category), status: categoryOf(blob.status) };
+}
+
+export function withRememberedFields(metadata: NewChatMetadata, remembered: NewChatFields): NewChatMetadata {
+  return { ...metadata, category: metadata.category ?? remembered.category, status: metadata.status ?? remembered.status };
+}
 
 type Params = Record<string, string | string[] | undefined>;
 const values = (value: string | string[] | undefined): string[] => typeof value === 'string' ? value.split('\n') : value ?? [];

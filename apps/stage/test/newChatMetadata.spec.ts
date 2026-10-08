@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { createGroupWith } from '@stage-labs/client/xmtp/groups';
 import { resolveHref } from 'expo-router/build/link/href';
 import {
-  groupedChatMetadata, memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_METADATA,
+  groupedChatMetadata, memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_FIELDS, NO_NEW_CHAT_METADATA,
+  parseNewChatFields, withRememberedFields,
 } from '../components/home/newChatMetadata.model';
 
 const alice = `0x${'1'.repeat(40)}`;
@@ -33,7 +34,7 @@ describe('grouped new chat metadata', () => {
   });
 
   test('a real value named like an unset bucket is still valid', () => {
-    expect(groupedChatMetadata('category', 'category:no category', 'No category').category).toBe('No category');
+    expect(groupedChatMetadata('category', 'category:no project', 'No project').category).toBe('No project');
   });
 
   test('route metadata is normalized, bounded and deduplicated', () => {
@@ -89,5 +90,32 @@ describe('grouped new chat metadata', () => {
     }, async () => 'synthetic-inbox');
     expect(result).toEqual({ line: 'test:synthetic', id: 'synthetic' });
     expect(calls).toEqual([{ members: [alice], appData: '{"v":1,"category":"Stage","status":"To-do"}' }]);
+  });
+});
+
+describe('remembered project and status', () => {
+  test('fill only the unset fields of a new chat and reach its appData', () => {
+    const remembered = { category: 'Stage', status: 'To-do' };
+    expect(withRememberedFields(NO_NEW_CHAT_METADATA, remembered)).toEqual({ ...NO_NEW_CHAT_METADATA, ...remembered });
+    expect(withRememberedFields({ ...NO_NEW_CHAT_METADATA, category: 'Metro', labels: ['UI'] }, remembered))
+      .toEqual({ ...NO_NEW_CHAT_METADATA, category: 'Metro', status: 'To-do', labels: ['UI'] });
+    expect(withRememberedFields(NO_NEW_CHAT_METADATA, NO_NEW_CHAT_FIELDS)).toEqual(NO_NEW_CHAT_METADATA);
+    expect(newChatAppData(withRememberedFields(NO_NEW_CHAT_METADATA, { category: 'Stage', status: null }))).toBe('{"v":1,"category":"Stage"}');
+  });
+
+  test('a cleared route field keeps the remembered value until that is cleared too', () => {
+    const cleared = newChatMetadata(newChatParams(NO_NEW_CHAT_METADATA));
+    expect(withRememberedFields(cleared, { category: 'Stage', status: null }).category).toBe('Stage');
+    expect(withRememberedFields(cleared, NO_NEW_CHAT_FIELDS).category).toBeNull();
+  });
+
+  test('stored fields round trip and are normalized like channel fields', () => {
+    const fields = { category: 'Stage', status: 'To-do' };
+    expect(parseNewChatFields(JSON.stringify(fields))).toEqual(fields);
+    expect(parseNewChatFields(JSON.stringify({ category: '  Stage ', status: 'a'.repeat(40) }))).toEqual({ category: 'Stage', status: 'a'.repeat(24) });
+    expect(parseNewChatFields('{}')).toEqual(NO_NEW_CHAT_FIELDS);
+    expect(parseNewChatFields(JSON.stringify({ category: 7, status: '' }))).toEqual(NO_NEW_CHAT_FIELDS);
+    expect(parseNewChatFields('not json')).toBeUndefined();
+    expect(parseNewChatFields('[]')).toBeUndefined();
   });
 });

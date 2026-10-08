@@ -12,11 +12,11 @@ export interface GroupableRow {
 export type NameOf = (address: string) => string;
 
 export const GROUP_BY_LABELS: Record<GroupKey, string> = {
-  assignee: 'Assignees', category: 'Category', label: 'Label', status: 'Status',
+  assignee: 'Assignees', category: 'Project', label: 'Label', status: 'Status',
 };
 
 export const NO_GROUP_TITLES: Record<GroupKey, string> = {
-  assignee: 'Unassigned', category: 'No category', label: 'No label', status: 'No status',
+  assignee: 'Unassigned', category: 'No project', label: 'No label', status: 'No status',
 };
 
 export function groupValuesOf(row: GroupableRow, by: GroupKey): string[] {

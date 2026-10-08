@@ -58,6 +58,7 @@ interface Props {
   placeholder?: string;
   rounded?: boolean;
   metadata?: React.ReactNode;
+  fields?: React.ReactNode;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
@@ -190,6 +191,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickIcon={quick?.[0]}
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
+        fields={props.fields}
         hasContent={hasContent}
         busy={props.busy}
         dictation={nativeDictation(dictation)}

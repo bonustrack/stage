@@ -1,6 +1,6 @@
 import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
-import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
 import { homeSortOf, sortHomeRows } from '../home/sort.model';
 import { NO_GROUP_TITLES, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
@@ -250,12 +250,13 @@ export function deleteColumnConfirm(
   label: string, carriers: number, by: EditableColumnBy = 'label',
 ): { title: string; message: string } {
   const channels = carriers === 1 ? '1 channel' : `${carriers} channels`;
+  const noun = by === 'label' ? by : CHANNEL_FIELD_NOUNS[by];
   const moved = by === 'label' ? 'Channels with no other label leave the board.' : `They move to ${NO_GROUP_TITLES[by]}. Labels are kept.`;
   return {
     title: 'Delete column',
     message: carriers === 0
-      ? `No channel has the ${label} ${by}.`
-      : `This removes the ${label} ${by} from ${channels}. ${moved}`,
+      ? `No channel has the ${label} ${noun}.`
+      : `This removes the ${label} ${noun} from ${channels}. ${moved}`,
   };
 }
 
