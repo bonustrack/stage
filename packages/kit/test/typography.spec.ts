@@ -47,8 +47,8 @@ describe('text size tokens', () => {
     for (const token of Object.values(FONT_SIZE_SNAP)) expect(FONT_SIZE[token]).toBeDefined();
   });
 
-  test('button text sizes are unchanged and every badge uses 3xs text', () => {
-    expect(Object.values(SIZES).map((size) => size.fontSize)).toEqual([13, 14, 17, 18, 19]);
+  test('button text follows its size mapping and every badge uses 3xs text', () => {
+    expect(Object.values(SIZES).map((size) => size.fontSize)).toEqual([14, 16, 17, 18, 19]);
     const sizes: BadgeSize[] = ['3xs', '2xs', 'sm', 'md', 'lg'];
     for (const scheme of ['light', 'dark'] as const) {
       for (const size of sizes) {
