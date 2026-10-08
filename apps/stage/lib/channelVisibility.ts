@@ -21,6 +21,13 @@ export function cachedChannelAccess(convId: string | undefined): GroupAccess {
   return cached?.context.current() ? cached.access : 'checking';
 }
 
+export function rememberChannelMember(context: AccountClient, convId: string): void {
+  const id = convId.toLowerCase();
+  accessChecks.delete(id);
+  accessCache.set(id, { context, access: 'member' });
+  accessChanges.notify();
+}
+
 export function forgetChannelAccess(convId: string): void {
   accessCache.delete(convId.toLowerCase());
   accessChecks.delete(convId.toLowerCase());

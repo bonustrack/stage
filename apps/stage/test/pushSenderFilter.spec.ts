@@ -109,6 +109,48 @@ describe('account-wide sender publication without a push token', () => {
     expect(f.bodies).toHaveLength(4);
   });
 
+  test('a preference sync from the last thirty seconds is reused by the next notifying send', async () => {
+    const f = fixture();
+    let syncs = 0;
+    f.setSync(async () => { syncs += 1; });
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    expect(syncs).toBe(1);
+    f.advance(30_000);
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    expect(syncs).toBe(2);
+    f.publisher.clear();
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    expect(syncs).toBe(3);
+    expect(f.bodies).toHaveLength(2);
+  });
+
+  test('a warm-up sync while the user types lets the next notifying send skip its own sync', async () => {
+    const f = fixture();
+    let syncs = 0;
+    f.setSync(async () => { syncs += 1; });
+    await f.publisher.warm(f.input);
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    expect(syncs).toBe(1);
+    expect(f.bodies).toHaveLength(1);
+    f.setCurrent(false);
+    await f.publisher.warm(f.input);
+    expect(syncs).toBe(1);
+  });
+
+  test('a send joins a preference sync that is already running instead of starting another', async () => {
+    const f = fixture();
+    const gate = deferred();
+    let syncs = 0;
+    f.setSync(async () => { syncs += 1; await gate.promise; });
+    const warming = f.publisher.warm(f.input);
+    const sending = f.publisher.publish({ ...f.input, topic: TOPIC });
+    gate.release();
+    await Promise.all([warming, sending]);
+    expect(syncs).toBe(1);
+    expect(f.bodies).toHaveLength(1);
+  });
+
   test('an empty account still signs its own enrollment and never skips a changed group', async () => {
     const f = fixture();
     const input = { ...f.input, collectTopics: async () => ({ topics: [], hmacKeys: {} }) };

@@ -73,8 +73,11 @@ while a laptop with notifications disabled refreshes that group's filters.
 Each receiving device must run the updated JS once to sign its own enrollment.
 An unupgraded sleeping phone cannot be securely enrolled from a laptop. The
 sender does not need push permission or a delivery token. Before a notifying
-send, it syncs preferences and publishes dirty topic keys, with acknowledged
-fingerprints cached for four minutes. The 30-second deadline includes queue
+send, it syncs preferences (reusing a sync from the last thirty seconds) and
+publishes dirty topic keys, with acknowledged fingerprints cached for four
+minutes. The new-chat screen runs that preference sync while the first message
+is typed, so pressing Send only publishes the new topic's keys. The 30-second
+deadline includes queue
 wait. Failed publication blocks that send rather than knowingly allowing a stale
 own-message notification. Non-notifying call control bypasses publication while
 retaining account checks. Receiving-token registration and subscription refresh

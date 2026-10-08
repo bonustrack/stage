@@ -2,7 +2,7 @@ import type { Client } from '@xmtp/browser-sdk';
 import { groupIdOfTopic, groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import {
-  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission,
+  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission, warmSenderFilterSync,
   type PushPermission, type PushTopics, type PushRuntimeInput,
 } from './pushRegister.core';
 import { dismissConvNotifications } from './pushNotify.web';
@@ -107,6 +107,11 @@ export async function prepareSenderFilters(client: PushClient, topic: string): P
   const input = pushInput(client);
   if (!input) throw new Error('Sender filter account is not ready');
   await runSenderFilterPublication(input, topic);
+}
+
+export async function warmSenderFilters(client: PushClient): Promise<void> {
+  const input = pushInput(client);
+  if (input) await warmSenderFilterSync(input);
 }
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {

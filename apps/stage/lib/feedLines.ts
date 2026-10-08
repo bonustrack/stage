@@ -48,6 +48,19 @@ export function markFeedLoaded(line: string): void {
   loadedFeedLines.add(line);
 }
 
+const FRESH_FEED_MS = 60_000;
+const freshFeedLines = new Map<string, number>();
+
+export function markFreshFeed(line: string): void {
+  freshFeedLines.set(line, Date.now());
+}
+
+export function takeFreshFeed(line: string): boolean {
+  const markedAt = freshFeedLines.get(line);
+  freshFeedLines.delete(line);
+  return markedAt !== undefined && Date.now() - markedAt < FRESH_FEED_MS;
+}
+
 export function isFeedLoaded(line: string): boolean {
   return loadedFeedLines.has(line);
 }
@@ -57,4 +70,5 @@ export function resetFeedLines(): void {
   feedLineHolds.clear();
   activeFeedLines.clear();
   loadedFeedLines.clear();
+  freshFeedLines.clear();
 }

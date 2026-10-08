@@ -113,10 +113,10 @@ function streamConversations(client: NativeClient, onConv: (conv: Conversation) 
   };
 }
 
-function streamConsent(client: NativeClient, onChange: () => void): () => void {
+function streamConsent(client: NativeClient, onChange: (convIds: string[]) => void): () => void {
   let live = true;
-  void client.preferences.streamConsent(() => {
-    if (live) onChange();
+  void client.preferences.streamConsent((consent) => {
+    if (live) onChange([consent.value]);
     return Promise.resolve();
   }).catch(reported('xmtp.consentStream'));
   return () => {

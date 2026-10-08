@@ -146,10 +146,11 @@ async function streamAllMessages(
   return () => { ignore(handle.end(), 'cleanup'); };
 }
 
-function streamConsent(client: WebClient, onChange: () => void): () => void {
+function streamConsent(client: WebClient, onChange: (convIds: string[]) => void): () => void {
   return endWhenCancelled(client.preferences.streamConsent({
     onValue: (records: Consent[]) => {
-      if (records.some(c => c.entityType === ConsentEntityType.GroupId)) onChange();
+      const convIds = records.filter(c => c.entityType === ConsentEntityType.GroupId).map(c => c.entity);
+      if (convIds.length > 0) onChange(convIds);
     },
     onError: reported('xmtp.consentStream'),
   }));

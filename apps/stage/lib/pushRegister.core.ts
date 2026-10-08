@@ -37,16 +37,19 @@ export function toPermission(status: string): PushPermission {
 }
 
 export function makeTopicRefresh<C>(
-  getClient: () => C | null | undefined, register: (client: C) => Promise<void>,
-): () => void {
+  getClient: () => C | null | undefined, register: (client: C) => Promise<void>, now = Date.now,
+): (delayMs?: number) => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
-  return () => {
+  let dueAt = 0;
+  return (delayMs = TOPIC_REFRESH_DEBOUNCE_MS) => {
     if (timer) clearTimeout(timer);
+    dueAt = Math.max(dueAt, now() + delayMs);
     timer = setTimeout(() => {
       timer = null;
+      dueAt = 0;
       const client = getClient();
       if (client) void register(client);
-    }, TOPIC_REFRESH_DEBOUNCE_MS);
+    }, dueAt - now());
   };
 }
 
@@ -157,6 +160,10 @@ export async function runSenderFilterPublication(input: PushRuntimeInput, topic?
       post: (body, signal) => postJson(input.rpcUrl(PUSH_RPC.senderFilters), body, undefined, signal),
     });
   } finally { stopEpoch(); stopSelection(); }
+}
+
+export async function warmSenderFilterSync(input: PushRuntimeInput): Promise<void> {
+  await senderPublisher.warm(input);
 }
 
 export async function runPushRegistration(input: PushRuntimeInput): Promise<void> {

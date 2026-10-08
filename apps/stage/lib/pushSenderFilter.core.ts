@@ -31,15 +31,49 @@ export async function prepareNotifyingSend(shouldPush: boolean, prepare: () => P
 
 interface Published { signature: string; at: number }
 
-export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000) {
+type SyncInput = Pick<SenderFilterInput, 'installationId' | 'syncPreferences'>;
+
+export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, syncFreshMs = 30_000) {
   const pending = new Map<string, Promise<void>>();
   const published = new Map<string, Map<string, Published>>();
+  const syncedAt = new Map<string, number>();
+  const syncing = new Map<string, Promise<number>>();
+
+  function startSync(input: SyncInput): Promise<number> {
+    const known = syncing.get(input.installationId);
+    if (known) return known;
+    const started = now();
+    const run = input.syncPreferences().then(() => started);
+    syncing.set(input.installationId, run);
+    const release = (): void => { if (syncing.get(input.installationId) === run) syncing.delete(input.installationId); };
+    void run.then(release, release);
+    return run;
+  }
+
+  async function syncPreferences(input: SyncInput, assertCurrent: () => void, signal?: AbortSignal): Promise<void> {
+    const last = syncedAt.get(input.installationId);
+    if (last !== undefined && now() - last < syncFreshMs) return;
+    const run = startSync(input);
+    let started: number;
+    try {
+      started = await (signal ? abortable(run, signal) : run);
+    } catch (err) {
+      if (syncing.get(input.installationId) === run) syncing.delete(input.installationId);
+      throw err;
+    }
+    assertCurrent();
+    syncedAt.set(input.installationId, started);
+  }
+
+  async function warm(input: SyncInput & Pick<SenderFilterInput, 'current'>): Promise<void> {
+    if (!input.current()) return;
+    await syncPreferences(input, () => { if (!input.current()) throw new Error('Sender filter account changed'); });
+  }
 
   async function update(input: SenderFilterInput, signal: AbortSignal): Promise<void> {
     const assertCurrent = (): void => { if (!input.current() || signal.aborted) throw new Error('Sender filter account changed'); };
     assertCurrent();
-    await input.syncPreferences();
-    assertCurrent();
+    await syncPreferences(input, assertCurrent, signal);
     const collected = await input.collectTopics(input.topic);
     assertCurrent();
     const selected = input.topic ? collected.topics.filter(topic => topic === input.topic) : collected.topics;
@@ -82,7 +116,7 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000) {
     finally { clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
   }
 
-  return { publish, clear: () => { published.clear(); } };
+  return { publish, warm, clear: () => { published.clear(); syncedAt.clear(); syncing.clear(); } };
 }
 
 function fingerprint(groupKey: string, topic: SenderFilterTopic): string {

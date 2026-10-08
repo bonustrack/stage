@@ -7,7 +7,7 @@ import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
   listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent,
-  conversationIsSyncGroup, getConvConsentState, createdBySelf, groupAccessOf,
+  conversationIsSyncGroup, getConvConsentState, createdBySelf, groupAccessOf, isFreshOwnGroup,
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { summarizeConversation } from '../../modules/messaging/conversation';
@@ -270,7 +270,13 @@ function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
   }
 }
 
-function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
+async function reconcileUnlessOwnNew(convIds: string[], selfInboxId: string, reconcile: () => Promise<void>): Promise<void> {
+  const own = await Promise.all(convIds.map(id => isFreshOwnGroup(id, selfInboxId).catch(recover('home.ownConsent', false))));
+  if (own.length > 0 && own.every(Boolean)) return;
+  await reconcile();
+}
+
+function subscribeLiveStreams(run: SyncRun, r: Refreshers, selfInboxId: string): void {
   run.reconcileVisibility = r.reconcile;
   try {
     run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
@@ -280,7 +286,7 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
     report('home.messageStream', err);
   }
   try {
-    run.cancelConsentStream = streamConvConsent(() => { void r.reconcile(); });
+    run.cancelConsentStream = streamConvConsent((convIds) => { void reconcileUnlessOwnNew(convIds, selfInboxId, r.reconcile); });
   } catch (err) {
     report('home.consentStream', err);
   }
@@ -302,7 +308,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     await r.refresh();
     if (run.cancelled) return;
     subscribeConvStream(selfInboxId, run);
-    subscribeLiveStreams(run, r);
+    subscribeLiveStreams(run, r, selfInboxId);
     await syncPreferences();
   } catch (e) {
     if (run.cancelled || e instanceof NoAccountError) { clearTimeout(run.initTimer); return; }

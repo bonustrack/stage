@@ -22,6 +22,15 @@ export function createdBySelf(conv: Conv, selfInboxId: string): boolean {
   return selfInboxId !== '' && sdk.addedByInboxId(conv) === selfInboxId;
 }
 
+const OWN_GROUP_FRESH_MS = 60_000;
+
+export async function isFreshOwnGroup(convId: string, selfInboxId: string): Promise<boolean> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv || !sdk.isGroup(conv) || !createdBySelf(conv, selfInboxId)) return false;
+  if (Date.now() - sdk.createdAtNs(conv) / 1_000_000 > OWN_GROUP_FRESH_MS) return false;
+  return (await getConvConsentState(convId)) === 'allowed';
+}
+
 export async function conversationIsSyncGroup(conv: Conv): Promise<boolean> {
   return isSyncGroupName(await sdk.groupName(conv));
 }
@@ -174,9 +183,9 @@ export function streamNewConversations(cb: (conv: Conv) => void): () => void {
   return client ? sharedConversations(client, cb) : () => undefined;
 }
 
-const sharedConsent = makeSharedSource<ConvClient>((client, emit) => sdk.streamConsent(client, () => { emit(); }));
+const sharedConsent = makeSharedSource<ConvClient, string[]>((client, emit) => sdk.streamConsent(client, (convIds) => { emit(convIds); }));
 
-export function streamConvConsent(cb: () => void): () => void {
+export function streamConvConsent(cb: (convIds: string[]) => void): () => void {
   const client = sdk.cachedClient();
   return client ? sharedConsent(client, cb) : () => undefined;
 }

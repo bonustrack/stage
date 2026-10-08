@@ -29,7 +29,7 @@ import {
   startedChatWith, type DmPeer, type MemberHistory,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
-import { reported } from '../../lib/errorPolicy';
+import { ignored, reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/clearedChats';
 import { createValueStore } from '../../lib/persistedStore';
@@ -44,6 +44,8 @@ import { getConvConsentState } from '../../lib/xmtp.conv';
 import { rememberOwnGroup } from '../../modules/messaging/useConvConsent';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { uploadAttachments } from '../../lib/xmtp.attachments';
+import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
+import { xmtpClient } from '../../lib/xmtp.client';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { peerLabel } from '../conversation/convTitle';
 
@@ -61,6 +63,7 @@ const memberHistory = createValueStore<MemberHistory>({
 });
 
 const CENTERED_MAX_WIDTH = 640;
+const NEW_CHANNEL_PUSH_REFRESH_MS = 10_000;
 
 function clearNewChatDraft(draftKey: string | null): void {
   const membersKey = membersDraftKey(draftKey);
@@ -124,6 +127,13 @@ function useRecipients(drafting: boolean, draftKey: string | null, assigned: rea
   return { shown, picked, toggle, reset };
 }
 
+function useWarmSendPath(draft: ComposerState): void {
+  const drafting = draft.text.trim() !== '' || draft.pending.length > 0;
+  useEffect(() => {
+    if (drafting) void xmtpClient().then(warmSenderFilters).catch(ignored(undefined, 'optional'));
+  }, [drafting, draft.text, draft.pending.length]);
+}
+
 function useStartChat(draft: ComposerState, draftKey: string | null, metadata: Metadata, onOpened: (convId: string) => void): {
   creating: boolean; start: (addresses: readonly string[]) => Promise<void>;
 } {
@@ -136,6 +146,7 @@ function useStartChat(draft: ComposerState, draftKey: string | null, metadata: M
     if (addresses.length === 0) { capabilities.toast(NO_RECIPIENT_NOTE); return; }
     busy.current = true;
     setCreating(true);
+    schedulePushTopicRefresh(NEW_CHANNEL_PUSH_REFRESH_MS);
     uploadAttachments(fileInputs(draft.pending));
     try {
       const { line } = await createGroup([...addresses], newChatAppData(metadata));
@@ -216,7 +227,9 @@ export function NewChatScreen(): React.ReactElement {
   const defaults = useNewChatDefaults();
   const metadata = { ...newChatMetadata(useGlobalSearchParams()), ...defaults };
   const setMetadata = (next: Metadata): void => { router.setParams(newChatParams(next)); };
-  const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0, draftKey, metadata.assigned, account?.address ?? null);
+  const drafting = draft.text.trim() !== '' || draft.pending.length > 0;
+  useWarmSendPath(draft);
+  const recipients = useRecipients(drafting, draftKey, metadata.assigned, account?.address ?? null);
   const selectedMetadata = memberChatMetadata(metadata, recipients.picked, account?.address ?? null);
   const { creating, start } = useStartChat(draft, draftKey, selectedMetadata, (convId) => {
     recipients.reset();

@@ -8,7 +8,7 @@ import {
   PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce,
 } from '../../lib/xmtp.resync';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
-import { isFeedLoaded, markFeedLoaded, trackFirstPageLoad } from '../../lib/feedLines';
+import { isFeedLoaded, markFeedLoaded, takeFreshFeed, trackFirstPageLoad } from '../../lib/feedLines';
 import { cachedFeed, rememberFeed } from '../../lib/feedSnapshot';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
@@ -153,7 +153,7 @@ async function loadFirstPage(line: string, generation: number): Promise<HistoryE
   if (generation !== feedCache.generation()) return [];
   mergePageIntoFeed(line, page);
   markFeedLoaded(line);
-  void revalidateFeed(line, !sdk.isGroup(conv));
+  if (!takeFreshFeed(line)) void revalidateFeed(line, !sdk.isGroup(conv));
   return feedCache.get(line) ?? [];
 }
 

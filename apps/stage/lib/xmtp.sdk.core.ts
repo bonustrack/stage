@@ -75,7 +75,7 @@ interface ClientPrimitives<Cl, C, M> {
   newGroup: (client: Cl, addresses: string[], meta: GroupMeta) => Promise<C>;
   streamAllMessages: (client: Cl, onMessage: (m: M | undefined) => void, onClose: () => void) => Promise<() => void>;
   streamConversations: (client: Cl, onConv: (conv: C) => void) => () => void;
-  streamConsent: (client: Cl, onChange: () => void) => () => void;
+  streamConsent: (client: Cl, onChange: (convIds: string[]) => void) => () => void;
   streamPreferences: (client: Cl, onChange: () => void, onClose: () => void) => Promise<() => void>;
   streamDeletions: (client: Cl, onDeleted: (deletion: MessageDeletion) => void) => () => void;
   deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;

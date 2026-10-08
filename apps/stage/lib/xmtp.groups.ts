@@ -15,7 +15,8 @@ import { groupRowMeta } from '../modules/messaging/conversation';
 import { report, reported } from './errorPolicy';
 import { accountClient } from './xmtp.account';
 import { setChannelHidden } from './hiddenChannels';
-import { forgetChannelAccess, reconcileHiddenConsent } from './channelVisibility';
+import { forgetChannelAccess, reconcileHiddenConsent, rememberChannelMember } from './channelVisibility';
+import { markFreshFeed } from './feedLines';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -53,10 +54,14 @@ export function refreshGroupRow(convId: string | null): void {
 }
 
 export async function createGroup(addresses: string[], appData?: string): Promise<CreateGroupResult> {
-  const client = await sdk.client();
-  return createGroupWith(
+  const context = await accountClient();
+  const { client } = context;
+  const created = await createGroupWith(
     addresses, lineOfConv, (members) => sdk.newGroup(client, members, { appData }), (address) => sdk.inboxIdOfAddress(client, address),
   );
+  markFreshFeed(created.line);
+  rememberChannelMember(context, created.id);
+  return created;
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {

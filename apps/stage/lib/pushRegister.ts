@@ -10,6 +10,7 @@ import { dismissConvNotifications, getDeviceFcmToken } from './pushNotify';
 import { convIdOfNotificationData } from './pushNotify.model';
 import {
   directRpcUrl, makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission,
+  warmSenderFilterSync,
   type PushPermission, type PushTopics, type PushRuntimeInput,
 } from './pushRegister.core';
 import { getCachedXmtpClient } from './xmtp.state';
@@ -70,6 +71,10 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
 
 export async function prepareSenderFilters(client: PushClient, topic: string): Promise<void> {
   await runSenderFilterPublication(pushInput(client), topic);
+}
+
+export async function warmSenderFilters(client: PushClient): Promise<void> {
+  await warmSenderFilterSync(pushInput(client));
 }
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {
