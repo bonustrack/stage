@@ -17,7 +17,7 @@ import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { useWebTabRail } from '../../lib/webLayout';
 import { HoverIconButton } from '../hover';
-import { IconScanCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconScanCode';
+import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
@@ -58,7 +58,7 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
         key={search.key} autoFocus={search.key > 0}
         query={p.query} setQuery={p.setQuery} onClose={search.close} onOpen={search.open}
         head={head} sub={sub} border={border}
-        fieldAction={<HoverIconButton icon={IconScanCode} size={20} color={sub} role="button"
+        fieldAction={<HoverIconButton icon={IconQrCode} size={20} color={sub} role="button"
           label="Scan contact QR code" onPress={() => { capabilities.navigate('/scan'); }} />}
       />}
       <MessagingSetupBanner />
