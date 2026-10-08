@@ -14,6 +14,27 @@ export function swarmToHttp(url: string): string {
   return `${SWARM_GATEWAY}${ref}/`;
 }
 
+const SWARM_FALLBACK_GATEWAY = 'https://download.gateway.ethswarm.org/bzz/';
+const SWARMY_BZZ_REF = /^https:\/\/api\.swarmy\.cloud\/bzz\/([0-9a-f]{64}(?:[0-9a-f]{64})?)\/?$/i;
+
+export function swarmDownloadUrls(url: string): string[] {
+  const primary = swarmToHttp(url);
+  const ref = SWARMY_BZZ_REF.exec(primary)?.[1];
+  return ref === undefined ? [primary] : [primary, `${SWARM_FALLBACK_GATEWAY}${ref}/`];
+}
+
+export async function fromFirstUrl<T>(urls: readonly string[], load: (url: string) => Promise<T>): Promise<T> {
+  let failure: unknown = new Error('No download url.');
+  for (const url of urls) {
+    try {
+      return await load(url);
+    } catch (err) {
+      failure = err;
+    }
+  }
+  throw failure;
+}
+
 export function resolveSwarmyResponse(
   status: number, body: { swarmReference?: string } | null, filename: string,
 ): string {

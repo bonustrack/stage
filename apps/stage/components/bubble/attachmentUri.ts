@@ -16,6 +16,12 @@ export function inlineAttachmentUrl(att: Attachment): string {
     : att.url ?? '';
 }
 
+const REMOTE_RETRIES = 6;
+
+function remoteRetryDelay(failures: number): number {
+  return Math.min(2_000 * 2 ** failures, 30_000);
+}
+
 function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; mimeType?: string }> {
   if (!remote) throw new Error('attachment has no remote');
   return resolveRemoteAttachment(remote);
@@ -29,7 +35,8 @@ export function useRemoteAttachment(remote: Attachment['remote']): {
     queryFn: () => fetchRemote(remote),
     enabled: !!remote,
     staleTime: Infinity,
-    retry: false,
+    retry: REMOTE_RETRIES,
+    retryDelay: remoteRetryDelay,
   });
   return {
     uri: data?.fileUri ?? null,

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { resolveSwarmyResponse, swarmToHttp, SWARM_GATEWAY } from '../lib/swarmy';
+import { fromFirstUrl, resolveSwarmyResponse, swarmDownloadUrls, swarmToHttp, SWARM_GATEWAY } from '../lib/swarmy';
 
 describe('resolveSwarmyResponse', () => {
   test('returns the gateway url with trailing slash on success', () => {
@@ -43,5 +43,45 @@ describe('swarmToHttp', () => {
 
   test('passes through non-swarm urls unchanged', () => {
     expect(swarmToHttp('https://example.com/x.png')).toBe('https://example.com/x.png');
+  });
+});
+
+describe('swarmDownloadUrls', () => {
+  const ref = 'ab'.repeat(32);
+  const fallback = `https://download.gateway.ethswarm.org/bzz/${ref}/`;
+
+  test('adds the public Swarm gateway after Swarmy for a Swarm reference', () => {
+    expect(swarmDownloadUrls(`${SWARM_GATEWAY}${ref}/`)).toEqual([`${SWARM_GATEWAY}${ref}/`, fallback]);
+    expect(swarmDownloadUrls(`swarm://${ref}`)).toEqual([`${SWARM_GATEWAY}${ref}/`, fallback]);
+  });
+
+  test('keeps any other url as the only source', () => {
+    expect(swarmDownloadUrls('https://example.com/x.png')).toEqual(['https://example.com/x.png']);
+    expect(swarmDownloadUrls('swarm://abc123')).toEqual([`${SWARM_GATEWAY}abc123/`]);
+  });
+});
+
+describe('fromFirstUrl', () => {
+  test('falls back to the next url when the first fails', async () => {
+    const tried: string[] = [];
+    const result = await fromFirstUrl(['a', 'b'], (url) => {
+      tried.push(url);
+      return url === 'a' ? Promise.reject(new Error('500')) : Promise.resolve(`from ${url}`);
+    });
+    expect(result).toBe('from b');
+    expect(tried).toEqual(['a', 'b']);
+  });
+
+  test('stops at the first url that works', async () => {
+    const tried: string[] = [];
+    await fromFirstUrl(['a', 'b'], (url) => {
+      tried.push(url);
+      return Promise.resolve(url);
+    });
+    expect(tried).toEqual(['a']);
+  });
+
+  test('throws the last error when every url fails', async () => {
+    await expect(fromFirstUrl(['a', 'b'], (url) => Promise.reject(new Error(`down ${url}`)))).rejects.toThrow('down b');
   });
 });

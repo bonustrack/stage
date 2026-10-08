@@ -8,7 +8,7 @@ import { sendableConvOfLine } from './xmtp.sdk.web';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
-import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
+import { fromFirstUrl, swarmDownloadUrls, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -87,10 +87,12 @@ export async function xmtpSendMultiRemoteAttachment(
 export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{
   fileUri: string; mimeType?: string; filename?: string;
 }> {
-  const res = await fetch(swarmToHttp(info.url));
-  if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
-  const encrypted = new Uint8Array(await res.arrayBuffer());
-  const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, info));
+  const decrypted = await fromFirstUrl(swarmDownloadUrls(info.url), async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
+    const encrypted = new Uint8Array(await res.arrayBuffer());
+    return await withMainThreadWasm(() => decryptAttachment(encrypted, info));
+  });
   const blob = new Blob([decrypted.content.slice().buffer], { type: decrypted.mimeType });
   return {
     fileUri: URL.createObjectURL(blob),

@@ -10,7 +10,7 @@ import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
-import { swarmToHttp, uploadFormToSwarmy } from './swarmy';
+import { fromFirstUrl, swarmDownloadUrls, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -124,7 +124,6 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
 }> {
   const client = await xmtpClient();
   const dest = freshCacheFile('xmtp-att', 'bin');
-  await File.downloadFileAsync(swarmToHttp(info.url), dest, { idempotent: true });
   const metadata: RemoteAttachmentMetadata = {
     secret: info.secret, salt: info.salt, nonce: info.nonce,
     contentDigest: info.contentDigest, contentLength: info.contentLength,
@@ -134,6 +133,9 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
     encryptedLocalFileUri: asFileUri(dest.uri),
     metadata,
   };
-  const decrypted = await client.decryptAttachment(encrypted);
+  const decrypted = await fromFirstUrl(swarmDownloadUrls(info.url), async (url) => {
+    await File.downloadFileAsync(url, dest, { idempotent: true });
+    return await client.decryptAttachment(encrypted);
+  });
   return { fileUri: decrypted.fileUri, mimeType: decrypted.mimeType, filename: decrypted.filename };
 }
