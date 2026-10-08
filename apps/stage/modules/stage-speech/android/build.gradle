@@ -10,4 +10,13 @@ android {
     versionCode 1
     versionName '0.1.0'
   }
+  testOptions {
+    unitTests.all {
+      testLogging.events 'passed', 'skipped', 'failed'
+    }
+  }
+}
+
+dependencies {
+  testImplementation 'junit:junit:4.13.2'
 }

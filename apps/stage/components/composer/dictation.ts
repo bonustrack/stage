@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { requestRecordingPermissionsAsync } from 'expo-audio';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import { capabilities } from '../../lib/capabilities';
 import { callOwnsAudio, registerDictationRecorder, voiceOwnsAudio } from '../../lib/calls.audio.core';
 import { report } from '../../lib/errorPolicy';
 import { speech } from '../../lib/speech';
 import { makeDictation } from './dictation.core';
+import { makeDictationPress } from './dictation.press';
 import type { DictationDraft, DictationPhase } from './dictation.model';
 
 interface DictationArgs extends DictationDraft {
@@ -24,6 +25,11 @@ export function useDictation(args: DictationArgs) {
   const focused = useRef(true);
   const control = useRef<ReturnType<typeof makeDictation> | null>(null);
   const [phase, setPhase] = useState<DictationPhase>('idle');
+  const [press] = useState(() => makeDictationPress({
+    start: () => { void control.current?.start(); },
+    stop: () => { void control.current?.stop(); },
+    toggle: () => { void control.current?.toggle(); },
+  }));
 
   useEffect(() => {
     let mounted = true;
@@ -37,6 +43,7 @@ export function useDictation(args: DictationArgs) {
       },
       phase: value => { if (mounted) setPhase(value); },
       error: message => { if (mounted) current.current.setErr(message); },
+      microphoneGranted: async () => (await getRecordingPermissionsAsync()).granted,
       permission: async () => (await requestRecordingPermissionsAsync()).granted,
       confirmDownload: locale => capabilities.confirm({
         title: 'Download speech model?',
@@ -50,17 +57,18 @@ export function useDictation(args: DictationArgs) {
     setPhase('idle');
     const unregister = registerDictationRecorder(instance.cancel);
     const app = AppState.addEventListener('change', state => {
-      if (state === 'background') void instance.cancel();
+      if (state === 'background') instance.background();
       else if (state === 'inactive') instance.inactive();
     });
     return () => {
       mounted = false;
+      press.reset();
       app.remove();
       void instance.dispose();
       void unregister().catch((error: unknown) => { report('dictation.dispose', error); });
       if (control.current === instance) control.current = null;
     };
-  }, [args.key]);
+  }, [args.key, press]);
 
   useFocusEffect(useCallback(() => {
     focused.current = true;
@@ -73,7 +81,7 @@ export function useDictation(args: DictationArgs) {
 
   return {
     phase,
-    toggle: () => { void control.current?.toggle(); },
+    press,
     recordVoice: (action: () => Promise<void>) => control.current?.recordVoice(action) ?? Promise.resolve(),
     setText: (text: string) => {
       void control.current?.cancel();

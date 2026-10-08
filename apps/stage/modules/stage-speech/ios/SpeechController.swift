@@ -1,5 +1,6 @@
 import AVFoundation
 import Speech
+import UIKit
 
 struct SpeechFailure: LocalizedError {
   let message: String
@@ -16,6 +17,8 @@ struct SpeechFailure: LocalizedError {
   private let emit: ([String: Any]) -> Void
   private var session: NativeSpeechSession?
   private var sessionId: String?
+  private var lastSessionId: String?
+  private var interrupted = false
   private var timer: Task<Void, Never>?
   private var interruption: NSObjectProtocol?
   private var cleanups: [String: Task<String?, Never>] = [:]
@@ -25,7 +28,10 @@ struct SpeechFailure: LocalizedError {
     self.emit = emit
     interruption = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
       let began = (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue
-      if began { Task { @MainActor in await self?.cancelCurrent() } }
+      Task { @MainActor in
+        self?.interrupted = began
+        if began { await self?.cancelCurrent() }
+      }
     }
   }
 
@@ -48,6 +54,7 @@ struct SpeechFailure: LocalizedError {
   }
 
   func requestPermission() async -> Bool {
+    interrupted = false
     #if compiler(>=6.2)
     if #available(iOS 26.0, *), await modernLocale() != nil { return true }
     #endif
@@ -75,6 +82,9 @@ struct SpeechFailure: LocalizedError {
   }
 
   func start(_ id: String) async throws {
+    guard !interrupted, UIApplication.shared.applicationState == .active else {
+      throw SpeechFailure(message: "Open Stage and stop other audio capture before using dictation.")
+    }
     guard sessionId == nil, cleanups.isEmpty, retryCleanup.isEmpty else {
       throw SpeechFailure(message: "The previous dictation session has not released audio. Stop dictation and try again.")
     }
@@ -82,6 +92,7 @@ struct SpeechFailure: LocalizedError {
       throw SpeechFailure(message: "Allow microphone access in Settings to use dictation.")
     }
     sessionId = id
+    lastSessionId = id
     do {
       let next = try await makeSession(id)
       guard sessionId == id else { _ = await next.cancel(); return }
@@ -129,14 +140,15 @@ struct SpeechFailure: LocalizedError {
   }
 
   func cancel(_ id: String) async throws {
-    if let error = await finish(id, error: nil) { throw SpeechFailure(message: error) }
+    if let error = await finish(id, error: nil, reason: "cancelled") { throw SpeechFailure(message: error) }
   }
 
   func cancelCurrent() async {
-    if let sessionId { _ = await finish(sessionId, error: nil) }
+    if let sessionId { _ = await finish(sessionId, error: nil, reason: "cancelled") }
+    else if let lastSessionId { emit(["sessionId": lastSessionId, "state": "ended", "reason": "cancelled"]) }
   }
 
-  private func finish(_ id: String, error: String?) async -> String? {
+  private func finish(_ id: String, error: String?, reason: String = "segment") async -> String? {
     if let pending = cleanups[id] { return await pending.value }
     guard sessionId == id || retryCleanup[id] != nil else { return nil }
     let previous = session ?? retryCleanup[id]
@@ -149,7 +161,7 @@ struct SpeechFailure: LocalizedError {
     let cleanupError = await pending.value
     cleanups[id] = nil
     retryCleanup[id] = cleanupError == nil ? nil : previous
-    var event: [String: Any] = ["sessionId": id, "state": "ended"]
+    var event: [String: Any] = ["sessionId": id, "state": "ended", "reason": reason]
     if let message = error ?? cleanupError { event["error"] = message }
     emit(event)
     return cleanupError

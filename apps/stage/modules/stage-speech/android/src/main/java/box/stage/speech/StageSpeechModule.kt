@@ -31,6 +31,7 @@ class StageSpeechModule : Module() {
 
     AsyncFunction("requestPermission") {
       val context = appContext.reactContext ?: error("Speech context unavailable")
+      speechSupport().languages.reset()
       ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }.runOnQueue(Queues.MAIN)
 
@@ -44,7 +45,7 @@ class StageSpeechModule : Module() {
       check(Build.VERSION.SDK_INT >= 31 && speechSupport().available()) { "On-device dictation is unavailable." }
       val context = appContext.reactContext ?: error("Speech context unavailable")
       check(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { "Microphone permission required." }
-      val next = SpeechSession(context, id, { sendEvent("onSpeech", it) }, { session = null })
+      val next = SpeechSession(context, id, speechSupport().languages, { sendEvent("onSpeech", it) }, { session = null })
       session = next
       try { next.start() } catch (error: Exception) {
         next.cancel("Could not start on-device dictation. Check microphone access and try again. Your draft was kept.")

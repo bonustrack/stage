@@ -1,4 +1,4 @@
-export type DictationPhase = 'idle' | 'preparing' | 'downloading' | 'listening' | 'finishing';
+export type DictationPhase = 'idle' | 'preparing' | 'downloading' | 'listening' | 'restarting' | 'finishing';
 export interface DictationDraft { text: string; selection: { start: number; end: number } }
 
 export function dictationDraft(draft: DictationDraft, transcript: string): DictationDraft {
@@ -17,7 +17,8 @@ export function dictationLabel(phase: DictationPhase): string {
   switch (phase) {
     case 'preparing': return 'Preparing on-device dictation…';
     case 'downloading': return 'Downloading speech language model…';
-    case 'listening': return 'Listening on device. Tap the mic to stop.';
+    case 'listening': return 'Listening on device. Tap again or release your hold to stop.';
+    case 'restarting': return 'Continuing on-device dictation…';
     case 'finishing': return 'Finishing dictation…';
     case 'idle': return '';
   }

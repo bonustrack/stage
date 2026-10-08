@@ -3,13 +3,17 @@ export interface SpeechAvailability {
   locale: string;
   download: boolean;
   reason?: string;
+  notice?: string;
 }
 
 export interface SpeechEvent {
   sessionId: string;
   state?: 'listening' | 'finishing' | 'ended';
+  reason?: 'segment' | 'silence' | 'cancelled' | 'fallback';
   text?: string;
   error?: string;
+  notice?: string;
+  locale?: string;
 }
 
 export interface SpeechBridge {

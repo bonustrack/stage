@@ -33,8 +33,11 @@ import AVFoundation
       Task { @MainActor in
         guard let self, !self.cancelled else { return }
         if let transcription { self.result(transcription.bestTranscription.formattedString) }
-        if transcription?.isFinal == true { self.end(nil) }
-        else if error != nil { self.end("On-device dictation stopped. Your draft was kept. Tap the mic to try again.") }
+        if let error {
+          let failure = error as NSError
+          if failure.domain == "kAFAssistantErrorDomain", failure.code == 1110 { self.end(nil) }
+          else { self.end("On-device dictation stopped. Your draft was kept. Tap the mic to try again.") }
+        } else if transcription?.isFinal == true { self.end(nil) }
       }
     }
     let request = self.request
@@ -49,7 +52,7 @@ import AVFoundation
     timeout = Task { [weak self] in
       do { try await Task.sleep(nanoseconds: 5_000_000_000) }
       catch { return }
-      self?.end(nil)
+      self?.end("Dictation could not finish. Check your draft and tap the mic to try again.")
     }
   }
 
