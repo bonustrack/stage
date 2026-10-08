@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -21,6 +22,11 @@ jobs:
       TMPDIR: ${{ github.workspace }}/.metro-tmp
     steps:
       - uses: actions/checkout@v6
+
+      - name: Require source CI for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-gate.mjs
 
       - uses: oven-sh/setup-bun@v2
         with:

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
   workflow_dispatch:
 
@@ -12,6 +12,7 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -20,20 +21,8 @@ jobs:
       - run: bun install --frozen-lockfile
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      - name: Lint
-        run: bun run lint
-      - name: Typecheck
-        run: bun run typecheck
-      - name: Knip (unused files/deps/exports)
-        run: bun run knip
-      - name: Madge (circular dependencies)
-        run: bun run madge
-      - name: Build
-        run: bun run build
-      - name: Test
-        run: |
-          bun test apps/stage/scripts/test/typographyLint.test.mjs
-          bun run test
+      - name: Check source
+        run: bash scripts/check-source.sh
 
   android-compile:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/native-mic-dictation'

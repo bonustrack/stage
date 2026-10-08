@@ -40,8 +40,9 @@ env:
 jobs:
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 330
     permissions:
+      actions: read
       contents: write
     env:
       EXPO_NO_TELEMETRY: '1'
@@ -50,6 +51,11 @@ jobs:
       ROLLING: ${{ github.event_name == 'push' || inputs.publish_rolling }}
     steps:
       - uses: actions/checkout@v6
+
+      - name: Require source CI for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-gate.mjs
 
       - uses: oven-sh/setup-bun@v2
         with:

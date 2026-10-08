@@ -21,12 +21,6 @@ name: App preview
 #     commit status is the only mechanism GitHub honors for a custom link target
 #     (a github-actions[bot] Check Run has its details_url overridden).
 #
-# NATIVE-CHANGE GUARD: a JS OTA preview does NOT reflect native changes. We
-# compare the Expo fingerprint (the app's runtimeVersion) of the pushed commit
-# with the commit before the push and WARN loudly in the summary that a fresh
-# APK is needed when it differs, but still publish the JS update (never
-# silently mislead).
-#
 # CONCURRENCY: keyed on the branch ref so rapid pushes cancel the in-flight
 # superseded run (one live preview per branch) on PR branches only.
 # EXCEPTION (#437): main is NEVER cancelled. Rapid merges to main used to cancel
@@ -64,6 +58,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       pull-requests: read
       statuses: write
@@ -83,9 +78,11 @@ jobs:
       TMPDIR: ${{ github.workspace }}/.metro-tmp
     steps:
       - uses: actions/checkout@v6
-        with:
-          # Need at least the previous commit so we can diff for native changes.
-          fetch-depth: 2
+
+      - name: Require source CI for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-gate.mjs
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -111,40 +108,13 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # Detect native changes in this push: the Expo fingerprint (runtimeVersion)
-      # of the pushed commit vs the commit before the push (the parent on the
-      # first push to a branch). A JS OTA preview can't reflect them, so we set
-      # an output the publish + summary steps use to WARN (we still publish the
-      # JS update). The before commit is fingerprinted with its own install when
-      # bun.lock differs (a change under patches/ alone is not seen). If the
-      # check itself fails (before commit not fetchable, install or resolve
-      # error), it counts as no detectable native diff and never fails the job.
-      - name: Detect native changes
+      - name: Resolve required Android runtime
         id: native
+        working-directory: apps/stage
         run: |
-          set -uo pipefail
-          BEFORE='${{ github.event.before }}'
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            BEFORE="$(git rev-parse --verify -q HEAD~1 || true)"
-          fi
-          LOCK_SAME=true
-          runtime() { (cd apps/stage && bunx expo-updates runtimeversion:resolve --platform android | jq -re .runtimeVersion); }
-          compare() {
-            local after before
-            [ -n "$BEFORE" ] && git fetch -q --depth=1 origin "$BEFORE" || return 1
-            after="$(runtime)" || return 1
-            git diff --quiet "$BEFORE" "$GITHUB_SHA" -- bun.lock || LOCK_SAME=false
-            git checkout -q --detach "$BEFORE" || return 1
-            if [ "$LOCK_SAME" = false ]; then bun install --frozen-lockfile || return 1; fi
-            before="$(runtime)" || return 1
-            echo "Runtime before the push $before, after $after"
-            if [ "$before" = "$after" ]; then NATIVE=false; else NATIVE=true; fi
-          }
-          NATIVE=false
-          compare || { NATIVE=false; echo "::warning::Native change check failed; treating it as no native change."; }
-          git checkout -q --detach "$GITHUB_SHA" || exit 1
-          if [ "$LOCK_SAME" = false ]; then bun install --frozen-lockfile || exit 1; fi
-          echo "native=$NATIVE" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          RUNTIME="$(bunx expo-updates runtimeversion:resolve --platform android | jq -re '.runtimeVersion | strings | select(length > 0)')"
+          echo "runtime=$RUNTIME" >> "$GITHUB_OUTPUT"
 
       # NOTE (#437): we deliberately do NOT persist/restore the Metro transform
       # cache across runs. A stable cross-commit cache key once carried a
@@ -259,13 +229,9 @@ jobs:
             echo ""
             echo "**commit \`$SHORT_SHA\`** (\`${{ github.sha }}\`)"
             echo ""
-            if [ '${{ steps.native.outputs.native }}' = 'true' ]; then
-              echo "> [!WARNING]"
-              echo "> This push changed the native runtime (Expo fingerprint)."
-              echo "> A JS OTA preview will NOT reflect native changes — a fresh dev-client APK is needed."
-              echo "> The JS update below is still published (it just won't include the native delta)."
-              echo ""
-            fi
+            echo "**Required Android runtime:** \`${{ steps.native.outputs.runtime }}\`"
+            echo "A dev-client APK with this exact runtime is required. An incompatible APK cannot load this OTA."
+            echo ""
             echo "**Channel:** \`$BRANCH\` &nbsp;·&nbsp; **commit:** \`$SHORT_SHA\`"
             echo ""
             echo "[Open dev-client preview ($SHORT_SHA)]($LAUNCHER)"
@@ -288,11 +254,8 @@ jobs:
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
               'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
-            const native = `${{ steps.native.outputs.native }}` === 'true';
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
-            const description = native
-              ? `Open preview commit ${shortSha} (native changed - APK needed)`
-              : `Open dev-client preview commit ${shortSha}`;
+            const description = `Open dev-client preview ${shortSha} (matching runtime APK required)`;
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
