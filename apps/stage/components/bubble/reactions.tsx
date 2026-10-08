@@ -1,4 +1,3 @@
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
@@ -18,7 +17,7 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       background={pillBg}
     >
       <Text value={emoji} size="3xs" />
-      <Caption value={String(count)} color="secondary" />
+      <Text value={String(count)} size="3xs" color="secondary" />
       {own ? (
         <Box
           pointerEvents="none"
