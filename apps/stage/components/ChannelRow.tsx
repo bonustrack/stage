@@ -1,7 +1,6 @@
 import { memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -135,7 +134,7 @@ function TitleRow({ params, scheme, wrap }: {
       <TitleLine params={params} scheme={scheme} wrap={wrap} />
       {params.timestamp === '' ? null : (
         <Row align="center" height={titleLineHeight(wrap)}>
-          <Caption value={params.timestamp} color="secondary" />
+          <Text value={params.timestamp} size={params.timestampSize} color="secondary" />
         </Row>
       )}
     </Row>

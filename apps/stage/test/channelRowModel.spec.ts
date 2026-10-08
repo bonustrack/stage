@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { FONT_SIZE } from '@stage-labs/kit/tokens';
 import { channelRowModel } from '../components/ChannelRow.model';
 
 describe('channelRowModel', () => {
@@ -10,6 +11,7 @@ describe('channelRowModel', () => {
       preview: '',
       previewPrefix: undefined,
       timestamp: '',
+      timestampSize: '3xs',
       chips: undefined,
       pinned: undefined,
     });
@@ -33,6 +35,12 @@ describe('channelRowModel', () => {
       draftText: 'see [#Ops night shift](https://stage.box/#/channel/2e793fb8087052ca59109ca900e53de9) ',
     });
     expect(p.preview).toBe('see #Ops night shift');
+  });
+
+  test('the time uses the kit 3xs text size, smaller than the md title', () => {
+    const p = channelRowModel({ title: 'Alice', timestampLabel: '1:38 AM' });
+    expect(p.timestampSize).toBe('3xs');
+    expect(FONT_SIZE[p.timestampSize]).toBeLessThan(FONT_SIZE.md);
   });
 
   test('labels truncate to two with overflow chip', () => {

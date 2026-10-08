@@ -1,4 +1,5 @@
 import type { BadgeColor } from '@stage-labs/kit/badge';
+import type { FontSizeName } from '@stage-labs/kit/tokens';
 import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
 import { highlightSegments } from './HighlightText.model';
 
@@ -17,6 +18,7 @@ export interface ChannelRowParams {
   placeholderTitle?: boolean;
   preview: string;
   timestamp: string;
+  timestampSize: FontSizeName;
   titleSegments?: ChannelTitleSegment[];
   previewPrefix?: string;
   chips?: ChannelLabelChip[];
@@ -82,6 +84,7 @@ export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
     preview: resolvePreview(draft, d),
     previewPrefix: draft ? 'Draft:' : undefined,
     timestamp: d.timestampLabel,
+    timestampSize: '3xs',
     chips: resolveChips(draft, d.labels),
     pinned: d.pinned,
   };
