@@ -26,6 +26,8 @@ export type EditableColumnBy = Exclude<GroupKey, 'assignee'>;
 
 export const columnsEditable = (by: GroupKey): by is EditableColumnBy => by !== 'assignee';
 
+export const columnNoun = (by: EditableColumnBy): string => (by === 'label' ? by : CHANNEL_FIELD_NOUNS[by]);
+
 function rememberedColumns(order: readonly string[], known: ReadonlySet<string>, by: GroupKey, nameOf: NameOf): BoardColumn<never>[] {
   const seen = new Set(known);
   const prefix = columnKeyOf(by, '');
@@ -250,7 +252,7 @@ export function deleteColumnConfirm(
   label: string, carriers: number, by: EditableColumnBy = 'label',
 ): { title: string; message: string } {
   const channels = carriers === 1 ? '1 channel' : `${carriers} channels`;
-  const noun = by === 'label' ? by : CHANNEL_FIELD_NOUNS[by];
+  const noun = columnNoun(by);
   const moved = by === 'label' ? 'Channels with no other label leave the board.' : `They move to ${NO_GROUP_TITLES[by]}. Labels are kept.`;
   return {
     title: 'Delete column',

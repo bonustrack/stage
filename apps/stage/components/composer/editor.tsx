@@ -128,8 +128,8 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-function QuickSlot({ p }: { p: EditorProps }): React.ReactElement | null {
-  if (p.fields !== undefined) return <>{p.fields}</>;
+function quickSlot(p: EditorProps): React.ReactNode {
+  if (p.fields !== undefined) return p.fields;
   if (!p.quickIcon || !p.onQuick) return null;
   return <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />;
 }
@@ -137,7 +137,7 @@ function QuickSlot({ p }: { p: EditorProps }): React.ReactElement | null {
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const { fg, chipBg } = p;
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const filled = p.fields !== undefined || (!!p.quickIcon && !!p.onQuick);
+  const quick = quickSlot(p);
   const close = (): void => { p.setAttachMenuOpen(() => false); };
   return (
     <>
@@ -146,9 +146,9 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
         label="Attach"
         onPress={(e) => { setAnchor(menuPointAbove(e)); p.setAttachMenuOpen(() => true); }}
         fg={fg} hoverFg={p.head} chipBg={chipBg}
-        mr={filled ? -12 : undefined}
+        mr={quick === null || quick === undefined ? undefined : -12}
       />
-      <QuickSlot p={p}/>
+      {quick}
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
         {(p.attachActions ?? []).map(([icon, label, action]) => (
           <MenuRow key={label} icon={icon} label={label} onPress={() => { close(); void action(); }} />

@@ -228,7 +228,7 @@ export function ChannelLabels({ convId, labels }: {
   );
 }
 
-const CHANNEL_FIELDS = {
+export const FIELD_SECTIONS = {
   category: { title: 'Project', icon: IconFolder1 },
   status: { title: 'Status', icon: IconCircleDashed },
   priority: { title: 'Priority', icon: IconFlag1 },
@@ -244,7 +244,7 @@ function ChannelFieldSection({ convId, field }: { convId: string; field: Channel
     void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => { toastLabelError(e, `the ${noun}`); });
   };
   return (
-    <SidebarSection {...CHANNEL_FIELDS[field]} editLabel={`Edit ${noun}`} canEdit={rights.appData} current={current} single
+    <SidebarSection {...FIELD_SECTIONS[field]} editLabel={`Edit ${noun}`} canEdit={rights.appData} current={current} single
       onCommit={commit} renderPicker={(draft) => <FieldPicker {...draft} field={field}/>}>
       {value === null ? <SectionNote text={`No ${noun} yet`}/> : (
         <Row padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="md" truncate style={{ flexShrink: 1 }}>{value}</Text></Row>

@@ -2,22 +2,20 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { CHANNEL_FIELD_NOUNS } from '@stage-labs/client/xmtp/labels';
 import { IconChevronDownSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronDownSmall';
-import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
-import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { Box, Col, Row } from '../layout';
-import { FieldPicker } from '../channel/channel.labels';
+import { MenuRow } from '../MenuRows';
+import { FIELD_SECTIONS, FieldPicker } from '../channel/channel.labels';
 import { toggleKey } from '../conversation/SidebarSection.model';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import type { NewChatField, NewChatFields as Fields } from './newChatMetadata.model';
 
-const FIELDS: readonly { id: NewChatField; title: string; icon: CentralIcon }[] = [
-  { id: 'category', title: 'Project', icon: IconFolder1 },
-  { id: 'status', title: 'Status', icon: IconCircleDashed },
-];
+const FIELDS: readonly NewChatField[] = ['category', 'status'];
 const BUTTON_HEIGHT = 38;
 const VALUE_MAX_WIDTH = 150;
 const NO_SHRINK = { flexShrink: 0 } as const;
@@ -48,22 +46,27 @@ export function NewChatFields({ value, onChange }: {
   const anchored = useAnchoredMenus();
   const [editing, setEditing] = useState<{ field: NewChatField; anchor: MenuPoint } | null>(null);
   const draft = editing === null ? [] : [value[editing.field]].filter((item): item is string => item !== null);
-  const toggle = (key: string): void => {
+  const pick = (next: string | null): void => {
     if (editing === null) return;
-    onChange(editing.field, toggleKey(draft, key, true)[0] ?? null);
+    onChange(editing.field, next);
     setEditing(null);
   };
   return (
     <>
       <Row align="center" minWidth={0} style={{ flexShrink: 1 }}>
         {FIELDS.map(field => (
-          <FieldButton key={field.id} title={field.title} icon={field.icon} value={value[field.id]}
-            onPress={anchor => { setEditing({ field: field.id, anchor }); }}/>
+          <FieldButton key={field} title={FIELD_SECTIONS[field].title} icon={FIELD_SECTIONS[field].icon} value={value[field]}
+            onPress={anchor => { setEditing({ field, anchor }); }}/>
         ))}
       </Row>
       {editing === null ? null : (
-        <AnchoredMenu visible anchor={editing.anchor} onClose={() => { setEditing(null); }}>
-          <Col width={anchored ? 300 : undefined}><FieldPicker field={editing.field} draft={draft} toggle={toggle}/></Col>
+        <AnchoredMenu visible anchor={editing.anchor} onClose={() => { setEditing(null); }} avoidKeyboard>
+          <Col width={anchored ? 300 : undefined}>
+            <FieldPicker field={editing.field} draft={draft} toggle={key => { pick(toggleKey(draft, key, true)[0] ?? null); }}/>
+            {draft.length === 0 ? null : (
+              <MenuRow divider icon={IconCrossMedium} label={`Clear ${CHANNEL_FIELD_NOUNS[editing.field]}`} onPress={() => { pick(null); }}/>
+            )}
+          </Col>
         </AnchoredMenu>
       )}
     </>

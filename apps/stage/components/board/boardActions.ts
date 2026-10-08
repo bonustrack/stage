@@ -8,8 +8,9 @@ import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../channel/channel.labels';
+import { renameNewChatDefault } from '../home/newChatDefaults';
 import {
-  addedColumnOrder, cardColumnEdit, columnCarriers, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote,
+  addedColumnOrder, cardColumnEdit, columnCarriers, columnNoun, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote,
   movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag, type EditableColumnBy,
 } from './BoardScreen.model';
 
@@ -40,7 +41,7 @@ export function dropOnBoard(
   if (kept !== null) saveColumnOrder(kept, by);
   const line = lineOfConv(drag.convId);
   const write = edit.by === 'label' ? moveGroupLabel(line, edit.from, edit.to) : setGroupField(line, edit.by, edit.value);
-  void write.catch(toastLabelError);
+  void write.catch((e: unknown) => { toastLabelError(e, edit.by === 'label' ? 'labels' : `the ${columnNoun(edit.by)}`); });
 }
 
 function columnOutcome(
@@ -50,7 +51,7 @@ function columnOutcome(
   const refused = failed.filter(r => r.reason instanceof LabelPermissionError).length;
   if (failed.length > refused) return failure;
   if (refused === 0) return null;
-  const field = by === 'label' ? 'labels' : by;
+  const field = by === 'label' ? 'labels' : columnNoun(by);
   return refused === 1
     ? `1 channel ${refusal}, no permission to edit its ${field}.`
     : `${refused} channels ${refusal}, no permission to edit their ${field}.`;
@@ -61,10 +62,11 @@ export async function renameBoardColumn(
   from: string, to: string, by: EditableColumnBy,
 ): Promise<void> {
   saveColumnOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to, by), by);
+  if (by !== 'label') renameNewChatDefault(by, from, to);
   const results = await Promise.allSettled(columnCarriers(rows, from, by).map(convId => (
     by === 'label' ? renameGroupLabel(lineOfConv(convId), from, to) : setGroupField(lineOfConv(convId), by, to, from)
   )));
-  const outcome = columnOutcome(results, `Could not rename the ${by} in every channel. Try again.`, 'kept the old name', by);
+  const outcome = columnOutcome(results, `Could not rename the ${columnNoun(by)} in every channel. Try again.`, 'kept the old name', by);
   if (outcome !== null) capabilities.toast(outcome);
 }
 
@@ -75,10 +77,11 @@ export async function deleteBoardColumn(
   const confirm = deleteColumnConfirm(label, carriers.length, by);
   if (!await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true })) return;
   saveColumnOrder(deletedColumnOrder(columns.map(c => c.key), saved, label, by), by);
+  if (by !== 'label') renameNewChatDefault(by, label, null);
   const results = await Promise.allSettled(carriers.map(convId => (
     by === 'label' ? removeGroupLabel(lineOfConv(convId), label) : setGroupField(lineOfConv(convId), by, null, label)
   )));
-  const outcome = columnOutcome(results, `Could not remove the ${by} from every channel. Try again.`, `kept the ${by}`, by);
+  const outcome = columnOutcome(results, `Could not remove the ${columnNoun(by)} from every channel. Try again.`, `kept the ${columnNoun(by)}`, by);
   if (outcome !== null) capabilities.toast(outcome);
 }
 
@@ -88,7 +91,7 @@ export async function addToBoardColumn(convIds: readonly string[], label: string
   )));
   const added = results.flatMap(r => (r.status === 'fulfilled' && Array.isArray(r.value) ? [r.value] : []));
   const notes = [
-    columnOutcome(results, `Could not set the ${by} in every channel. Try again.`, `did not get the ${by}`, by),
+    columnOutcome(results, `Could not set the ${columnNoun(by)} in every channel. Try again.`, `did not get the ${columnNoun(by)}`, by),
     by === 'label' ? labelCapNote(added, label) : null,
   ].filter((note): note is string => note !== null);
   if (notes.length > 0) capabilities.toast(notes.join(' '));

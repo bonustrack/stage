@@ -21,18 +21,21 @@ export function parseNewChatFields(raw: string): NewChatFields | undefined {
   return blob === null ? undefined : { category: categoryOf(blob.category), status: categoryOf(blob.status) };
 }
 
-export function withRememberedFields(metadata: NewChatMetadata, remembered: NewChatFields): NewChatMetadata {
-  return { ...metadata, category: metadata.category ?? remembered.category, status: metadata.status ?? remembered.status };
+export function groupedChatField(by: GroupKey, metadata: NewChatMetadata): { field: NewChatField; value: string | null } | null {
+  return by === 'category' || by === 'status' ? { field: by, value: metadata[by] } : null;
+}
+
+export function renamedNewChatFields(fields: NewChatFields, field: NewChatField, from: string, to: string | null): NewChatFields {
+  const current = fields[field];
+  if (current === null || current.toLowerCase() !== categoryOf(from)?.toLowerCase()) return fields;
+  return { ...fields, [field]: to === null ? null : categoryOf(to) };
 }
 
 type Params = Record<string, string | string[] | undefined>;
 const values = (value: string | string[] | undefined): string[] => typeof value === 'string' ? value.split('\n') : value ?? [];
 
 export function newChatMetadata(params: Params): NewChatMetadata {
-  return {
-    category: categoryOf(params.category), status: categoryOf(params.status),
-    labels: values(params.labels).reduce(addLabel, []), assigned: assignedAddresses(values(params.assigned)),
-  };
+  return { ...NO_NEW_CHAT_METADATA, labels: values(params.labels).reduce(addLabel, []), assigned: assignedAddresses(values(params.assigned)) };
 }
 
 function metadataFields(metadata: NewChatMetadata): Params {
@@ -44,10 +47,7 @@ function metadataFields(metadata: NewChatMetadata): Params {
 }
 
 export function newChatParams(metadata: NewChatMetadata): Record<string, string> {
-  return {
-    category: metadata.category ?? '', status: metadata.status ?? '',
-    labels: metadata.labels.join('\n'), assigned: metadata.assigned.join('\n'),
-  };
+  return { labels: metadata.labels.join('\n'), assigned: metadata.assigned.join('\n') };
 }
 
 export function groupedChatMetadata(by: GroupKey, key: string, title: string): NewChatMetadata {

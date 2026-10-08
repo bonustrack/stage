@@ -19,10 +19,8 @@ import { includesKey, toggleKey, uniqueKeys } from '../conversation/SidebarSecti
 import { RecipientBar } from './RecipientBar';
 import { NewChatMetadata } from './NewChatMetadata';
 import { NewChatFields } from './NewChatFields';
-import {
-  memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_FIELDS, NO_NEW_CHAT_METADATA, parseNewChatFields,
-  withRememberedFields, type NewChatField, type NewChatFields as Fields, type NewChatMetadata as Metadata,
-} from './newChatMetadata.model';
+import { setNewChatDefault, useNewChatDefaults } from './newChatDefaults';
+import { memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata as Metadata } from './newChatMetadata.model';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
@@ -60,10 +58,6 @@ const NO_REQUESTS: ReadonlySet<string> = new Set();
 
 const memberHistory = createValueStore<MemberHistory>({
   key: 'new-chat.members.', default: NO_MEMBER_HISTORY, deserialize: parseMemberHistory, serialize: JSON.stringify, perAccount: true,
-});
-
-const lastFields = createValueStore<Fields>({
-  key: 'new-chat.fields.', default: NO_NEW_CHAT_FIELDS, deserialize: parseNewChatFields, serialize: JSON.stringify, perAccount: true,
 });
 
 const CENTERED_MAX_WIDTH = 640;
@@ -168,10 +162,10 @@ function useStartChat(draft: ComposerState, draftKey: string | null, metadata: M
 
 interface FormProps {
   recipients: Recipients; draft: ComposerState; draftKey: string | null; creating: boolean; onSubmit: () => void;
-  metadata: Metadata; setMetadata: (value: Metadata) => void; setField: (field: NewChatField, value: string | null) => void;
+  metadata: Metadata; setMetadata: (value: Metadata) => void;
 }
 
-function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded, metadata, setMetadata, setField }: FormProps & { rounded?: boolean }): React.ReactElement {
+function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded, metadata, setMetadata }: FormProps & { rounded?: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const focusNonce = useNewChatFocusNonce();
   const mentionCandidates = recipients.picked.map(address => ({ address, name: peerLabel(address) }));
@@ -182,7 +176,7 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded,
       <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
         placeholder={askPlaceholder(mentionCandidates.map(c => c.name))} rounded={rounded}
         metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>}
-        fields={<NewChatFields value={metadata} onChange={setField}/>}
+        fields={<NewChatFields value={metadata} onChange={setNewChatDefault}/>}
         autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
     </Box>
   );
@@ -219,13 +213,9 @@ export function NewChatScreen(): React.ReactElement {
   const draft = useComposerState();
   const account = useActiveAccountRecord();
   const draftKey = newChatDraftKey(account);
-  const remembered = lastFields.use();
-  const metadata = withRememberedFields(newChatMetadata(useGlobalSearchParams()), remembered);
+  const defaults = useNewChatDefaults();
+  const metadata = { ...newChatMetadata(useGlobalSearchParams()), ...defaults };
   const setMetadata = (next: Metadata): void => { router.setParams(newChatParams(next)); };
-  const setField = (field: NewChatField, value: string | null): void => {
-    lastFields.set({ ...remembered, [field]: value });
-    setMetadata({ ...metadata, [field]: value });
-  };
   const recipients = useRecipients(draft.text.trim() !== '' || draft.pending.length > 0, draftKey, metadata.assigned, account?.address ?? null);
   const selectedMetadata = memberChatMetadata(metadata, recipients.picked, account?.address ?? null);
   const { creating, start } = useStartChat(draft, draftKey, selectedMetadata, (convId) => {
@@ -237,7 +227,7 @@ export function NewChatScreen(): React.ReactElement {
     if (includesKey(metadata.assigned, address)) setMetadata({ ...metadata, assigned: metadata.assigned.filter(a => a.toLowerCase() !== address.toLowerCase()) });
     recipients.toggle(address);
   };
-  const form = { recipients: { ...recipients, toggle: toggleRecipient }, draft, draftKey, creating, metadata: selectedMetadata, setMetadata, setField,
+  const form = { recipients: { ...recipients, toggle: toggleRecipient }, draft, draftKey, creating, metadata: selectedMetadata, setMetadata,
     onSubmit: () => { void start(recipients.picked); } };
   if (centered) return <CenteredNewChat {...form}/>;
   return (
