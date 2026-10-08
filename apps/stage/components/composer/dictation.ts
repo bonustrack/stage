@@ -7,6 +7,7 @@ import { callOwnsAudio, registerDictationRecorder, voiceOwnsAudio } from '../../
 import { report } from '../../lib/errorPolicy';
 import { speech } from '../../lib/speech';
 import { makeDictation } from './dictation.core';
+import { makeDictationPress } from './dictation.press';
 import type { DictationDraft, DictationPhase } from './dictation.model';
 
 interface DictationArgs extends DictationDraft {
@@ -24,6 +25,11 @@ export function useDictation(args: DictationArgs) {
   const focused = useRef(true);
   const control = useRef<ReturnType<typeof makeDictation> | null>(null);
   const [phase, setPhase] = useState<DictationPhase>('idle');
+  const [press] = useState(() => makeDictationPress({
+    start: () => { void control.current?.start(); },
+    stop: () => { void control.current?.stop(); },
+    toggle: () => { void control.current?.toggle(); },
+  }));
 
   useEffect(() => {
     let mounted = true;
@@ -56,12 +62,13 @@ export function useDictation(args: DictationArgs) {
     });
     return () => {
       mounted = false;
+      press.reset();
       app.remove();
       void instance.dispose();
       void unregister().catch((error: unknown) => { report('dictation.dispose', error); });
       if (control.current === instance) control.current = null;
     };
-  }, [args.key]);
+  }, [args.key, press]);
 
   useFocusEffect(useCallback(() => {
     focused.current = true;
@@ -74,7 +81,7 @@ export function useDictation(args: DictationArgs) {
 
   return {
     phase,
-    toggle: () => { void control.current?.toggle(); },
+    press,
     recordVoice: (action: () => Promise<void>) => control.current?.recordVoice(action) ?? Promise.resolve(),
     setText: (text: string) => {
       void control.current?.cancel();

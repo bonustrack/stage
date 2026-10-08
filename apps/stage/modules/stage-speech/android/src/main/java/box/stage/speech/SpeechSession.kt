@@ -33,21 +33,21 @@ internal class SpeechSession(
     handler.removeCallbacksAndMessages(null)
     recognizer.stopListening()
     emit(mapOf("sessionId" to id, "state" to "finishing"))
-    handler.postDelayed({ finish() }, 5000)
+    handler.postDelayed({ finish("Dictation could not finish. Check your draft and tap the mic to try again.", "cancelled") }, 5000)
   }
 
   fun cancel(error: String? = null) {
     if (ended) return
-    try { recognizer.cancel() } finally { finish(error) }
+    try { recognizer.cancel() } finally { finish(error, "cancelled") }
   }
 
-  private fun finish(error: String? = null) {
+  private fun finish(error: String? = null, reason: String = "segment") {
     if (ended) return
     ended = true
     handler.removeCallbacksAndMessages(null)
     recognizer.destroy()
     finished()
-    val event = mutableMapOf<String, Any>("sessionId" to id, "state" to "ended")
+    val event = mutableMapOf<String, Any>("sessionId" to id, "state" to "ended", "reason" to reason)
     if (error != null) event["error"] = error
     emit(event)
   }
@@ -67,8 +67,11 @@ internal class SpeechSession(
   override fun onResults(results: Bundle?) { update(results); finish() }
   override fun onEndOfSpeech() { stop() }
   override fun onError(error: Int) {
+    if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+      finish(reason = "silence")
+      return
+    }
     val message = when (error) {
-      SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> if (text.isEmpty()) "No speech was recognized. Tap the mic to try again." else null
       SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "On-device dictation is unavailable for your device language. Type or use + to record voice."
       SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "The speech language model is not installed. Download it in your device's speech settings, then try again."
       SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Allow microphone access in Settings to use dictation."

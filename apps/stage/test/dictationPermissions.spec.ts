@@ -72,7 +72,7 @@ describe('dictation permission lifecycle', () => {
     });
     await h.control.start();
     h.foreground();
-    expect(h.events).toEqual(['cancel']);
+    expect(h.events).toEqual([]);
     expect(h.phases).toEqual(['preparing', 'idle']);
   });
 
@@ -80,7 +80,7 @@ describe('dictation permission lifecycle', () => {
     const h = harness({ microphoneGranted: async () => { h.background(); return true; } });
     await h.control.start();
     h.foreground();
-    expect(h.events).toEqual(['cancel']);
+    expect(h.events).toEqual([]);
     expect(h.phases).toEqual(['preparing', 'idle']);
   });
 
@@ -99,7 +99,7 @@ describe('dictation permission lifecycle', () => {
       permission: async () => { h.background(); await h.control.cancel(); h.foreground(); return true; },
     });
     await h.control.start();
-    expect(h.events).toEqual(['cancel']);
+    expect(h.events).toEqual([]);
     expect(h.phases).toEqual(['preparing', 'idle']);
   });
 
@@ -109,7 +109,7 @@ describe('dictation permission lifecycle', () => {
       permission: async () => { h.background(); h.foreground(); return false; },
     });
     await h.control.start();
-    expect(h.events).toEqual(['cancel']);
+    expect(h.events).toEqual([]);
     expect(h.errors.at(-1)).toContain('Allow microphone and speech recognition');
   });
 

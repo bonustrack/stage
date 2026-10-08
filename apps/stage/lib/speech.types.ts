@@ -8,6 +8,7 @@ export interface SpeechAvailability {
 export interface SpeechEvent {
   sessionId: string;
   state?: 'listening' | 'finishing' | 'ended';
+  reason?: 'segment' | 'silence' | 'cancelled';
   text?: string;
   error?: string;
 }

@@ -11,6 +11,7 @@ import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { dictationLabel, type DictationPhase } from './dictation.model';
+import type { makeDictationPress } from './dictation.press';
 import { Box, Col, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 import { AnchoredMenu, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
@@ -43,7 +44,7 @@ interface EditorProps {
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   busy?: boolean;
-  dictation?: { phase: DictationPhase; toggle: () => void };
+  dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
   placeholder?: string;
   rounded?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
@@ -170,7 +171,12 @@ function ComposerMic({ p, recorder }: { p: EditorProps; recorder: React.ReactEle
     <HoverTooltip label={label}>
       <Button size="md" uniform pill dark={p.dark} variant={active ? 'solid' : 'ghost'}
         accessibilityLabel={label} accessibilityState={{ disabled: p.busy === true, selected: active }}
-        disabled={p.busy} onPress={p.dictation.toggle} tintBg={active ? p.head : 'transparent'}
+        accessibilityHint="Tap to start or stop. Hold on the mic to dictate. Release or slide off to stop."
+        disabled={p.busy} onPress={event => { p.dictation?.press.press(event.nativeEvent.identifier !== undefined); }}
+        onPressIn={event => { p.dictation?.press.pressIn(event.nativeEvent.identifier !== undefined); }}
+        onLongPress={p.dictation.press.hold} onPressOut={p.dictation.press.pressOut}
+        onTouchEnd={p.dictation.press.release} onTouchCancel={p.dictation.press.cancel}
+        delayLongPress={350} tintBg={active ? p.head : 'transparent'}
         icon={<Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg}/>} />
     </HoverTooltip>
   );

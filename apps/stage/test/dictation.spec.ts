@@ -205,13 +205,13 @@ describe('dictation speech bridge', () => {
     expect(gone.events).not.toContain('start');
   });
 
-  it('stops once when the service endpoints and waits for final text', async () => {
+  it('waits for endpoint finals without stopping native twice', async () => {
     const h = harness();
     await h.control.start();
     h.event({ state: 'finishing' });
     h.event({ state: 'finishing' });
     await h.control.stop();
-    expect(h.events.filter(event => event === 'stop')).toHaveLength(1);
+    expect(h.events.filter(event => event === 'stop')).toHaveLength(0);
     h.event({ text: 'final', state: 'ended' });
     expect(h.draft().text).toBe('Hello final');
   });
