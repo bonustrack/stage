@@ -41,7 +41,7 @@ describe('internalLinkPath', () => {
   test('reuses canonical app routes and preserves the complete query', () => {
     for (const [url, path] of [
       ['https://stage.box/#/settings', '/settings'],
-      ['HTTPS://STAGE.BOX/contacts', '/contacts'],
+      ['HTTPS://STAGE.BOX/contacts', '/settings/contacts'],
       ['stage://channels', '/'],
       ['stage://profile/channel72', '/profile/channel72'],
       ['metro://profile/alice', '/profile/alice'],

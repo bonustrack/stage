@@ -27,6 +27,7 @@ describe('routeForUrl', () => {
   test('keeps static routes ahead of handles and rejects junk', () => {
     expect(routeForUrl('https://stage.box/#/settings')).toEqual({ pathname: '/(tabs)/settings' });
     expect(routeForUrl('https://stage.box/#/board')).toEqual({ pathname: '/board' });
+    expect(routeForUrl('https://stage.box/#/contacts')).toEqual({ pathname: '/settings/contacts' });
     expect(routeForUrl('https://stage.box/#/')).toEqual({ pathname: '/(tabs)' });
     expect(routeForUrl('https://stage.box/#/-bad-')).toBeNull();
     expect(routeForUrl('https://stage.box/#/requests')).toBeNull();

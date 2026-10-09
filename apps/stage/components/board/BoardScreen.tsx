@@ -313,7 +313,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const order = columnBy === 'category' ? categoryOrder : boardOrder;
   const [error, setError] = useState<string>('');
   const [adding, setAdding] = useState<string | null>(null);
-  useChannelsSync({ accountEpoch: useAccountEpoch(), setError });
+  useChannelsSync({ accountEpoch: useAccountEpoch(), setError, enabled: Platform.OS === 'web' });
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(

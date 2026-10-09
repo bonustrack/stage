@@ -170,6 +170,7 @@ async function summarize(conv: Conversation, selfInboxId: string, alreadySynced 
 interface SyncArgs {
   accountEpoch: number;
   setError: Dispatch<SetStateAction<string>>;
+  enabled?: boolean;
 }
 
 function hasHomeRows(): boolean {
@@ -317,8 +318,9 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
 }
 
 export function useChannelsSync(args: SyncArgs): void {
-  const { accountEpoch, setError } = args;
+  const { accountEpoch, setError, enabled = true } = args;
   useEffect(() => {
+    if (!enabled) return;
     setError('');
     const run: SyncRun = {
       cancelled: false,
@@ -355,5 +357,5 @@ export function useChannelsSync(args: SyncArgs): void {
       const appStateSub = run.appStateSub;
       if (appStateSub) attempt(() => { appStateSub.remove(); }, 'cleanup');
     };
-  }, [accountEpoch]);
+  }, [accountEpoch, enabled]);
 }

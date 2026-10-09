@@ -6,7 +6,7 @@ export type ParsedRoute =
   | { pathname: '/profile/[id]'; params: { id: string } }
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
-  | { pathname: '/(tabs)/contacts'; params?: undefined }
+  | { pathname: '/settings/contacts'; params?: undefined }
   | { pathname: '/board'; params?: undefined };
 
 function stripAuthority(work: string): string {
@@ -54,7 +54,7 @@ function conversationRoute(
 const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
   settings: { pathname: '/(tabs)/settings' },
-  contacts: { pathname: '/(tabs)/contacts' },
+  contacts: { pathname: '/settings/contacts' },
   board: { pathname: '/board' },
 };
 

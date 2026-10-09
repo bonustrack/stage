@@ -1,5 +1,4 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { usePathname } from 'expo-router';
 import { Box, VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
@@ -10,7 +9,7 @@ import { HomeContactResults } from './contacts';
 import { HomeTopnavRight, type HomeMenuState } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
-import { BOARD_ROUTE } from '../tabs/splitRoutes';
+import { useBoardHome } from '../tabs/boardHome';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
@@ -108,7 +107,7 @@ interface HomeTopnavProps {
 export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: boolean): TopnavSlot {
   const { scope, query, setQuery, onFilterMenu, pane, menu } = p;
   const { text: sub, link: head, border } = usePalette();
-  const onPage = (scope === 'board') === (usePathname() === BOARD_ROUTE);
+  const onPage = (scope === 'board') === useBoardHome();
   const right = useMemo(
     () => <HomeTopnavRight head={sub} menu={menu}
       scope={scope} query={query} setQuery={setQuery} onFilterMenu={onFilterMenu}/>,
