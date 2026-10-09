@@ -3,7 +3,7 @@ import {
   DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, frameSourceOf, type DashboardContent, type DashboardWidget,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  FRAME_ADD_TOASTS, addFrameWidget, addWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, moveWidget,
+  FRAME_ADD_TOASTS, addFrameWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, moveWidget,
   packWidgets, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
@@ -31,13 +31,10 @@ const source = { conversationId: 'conv1', messageId: 'msg1' };
 const frameWidget = (id: string, from = source): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'frame', source: from });
 
 describe('dashboard widgets', () => {
-  test('a new widget is empty, half width and one row high, and ids stay unique', () => {
-    const one = addWidget([], 'a');
-    expect(one).toEqual([widget('a', 'half', 1)]);
-    expect(addWidget(one, 'a')).toBe(one);
+  test('a dashboard takes at most 48 widgets', () => {
     const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
     expect(canAddWidget(full)).toBe(false);
-    expect(addWidget(full, 'extra')).toBe(full);
+    expect(canAddWidget(full.slice(1))).toBe(true);
   });
 
   test('removing drops only that widget and an unknown id changes nothing', () => {
@@ -203,7 +200,7 @@ describe('dashboard store', () => {
     const sent: DashboardContent[] = [];
     const stop = onDashboardChanged(change => { sent.push(change.state); });
     expect(await loadDashboard('alice')).toBeNull();
-    changeDashboard(list => addWidget(list, 'a'));
+    changeDashboard(list => [...list, widget('a')]);
     changeDashboard(list => resizeWidget(list, 'a', { w: 'full', h: 2 }));
     changeDashboard(list => removeWidget(list, 'missing'));
     await settle();

@@ -37,11 +37,6 @@ export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
 }
 
-export function addWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {
-  if (!canAddWidget(widgets) || widgets.some(widget => widget.id === id)) return widgets;
-  return [...widgets, { id, w: 'half', h: 1 }];
-}
-
 export const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
 
 export type WidgetKind = 'empty' | 'frame' | 'unsupported';

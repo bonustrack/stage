@@ -42,7 +42,7 @@ export function changeDashboard(change: (widgets: DashboardWidget[]) => Dashboar
   localChanges.notify({ accountId, state: next });
 }
 
-export function newWidgetId(): string {
+function newWidgetId(): string {
   return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
 }
 
