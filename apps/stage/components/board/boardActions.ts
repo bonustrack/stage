@@ -8,7 +8,7 @@ import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../channel/channel.labels';
-import { renameNewChatDefault } from '../home/newChatDefaults';
+import { renameNewChatProject } from '../home/newChatDefaults';
 import {
   addedColumnOrder, cardColumnEdit, columnCarriers, columnNoun, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote,
   movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag, type EditableColumnBy,
@@ -62,7 +62,7 @@ export async function renameBoardColumn(
   from: string, to: string, by: EditableColumnBy,
 ): Promise<void> {
   saveColumnOrder(renamedColumnOrder(columns.map(c => c.key), saved, from, to, by), by);
-  if (by !== 'label') renameNewChatDefault(by, from, to);
+  if (by === 'category') renameNewChatProject(from, to);
   const results = await Promise.allSettled(columnCarriers(rows, from, by).map(convId => (
     by === 'label' ? renameGroupLabel(lineOfConv(convId), from, to) : setGroupField(lineOfConv(convId), by, to, from)
   )));
@@ -77,7 +77,7 @@ export async function deleteBoardColumn(
   const confirm = deleteColumnConfirm(label, carriers.length, by);
   if (!await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true })) return;
   saveColumnOrder(deletedColumnOrder(columns.map(c => c.key), saved, label, by), by);
-  if (by !== 'label') renameNewChatDefault(by, label, null);
+  if (by === 'category') renameNewChatProject(label, null);
   const results = await Promise.allSettled(carriers.map(convId => (
     by === 'label' ? removeGroupLabel(lineOfConv(convId), label) : setGroupField(lineOfConv(convId), by, null, label)
   )));

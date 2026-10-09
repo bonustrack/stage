@@ -11,31 +11,28 @@ export interface NewChatMetadata {
 
 export const NO_NEW_CHAT_METADATA: NewChatMetadata = { category: null, status: null, labels: [], assigned: [] };
 
-export type NewChatField = 'category' | 'status';
-export type NewChatFields = Pick<NewChatMetadata, NewChatField>;
+export type NewChatFields = Pick<NewChatMetadata, 'category'>;
 
-export const NO_NEW_CHAT_FIELDS: NewChatFields = { category: null, status: null };
+export const NO_NEW_CHAT_FIELDS: NewChatFields = { category: null };
 
 export function parseNewChatFields(raw: string): NewChatFields | undefined {
   const blob = parseObject(raw);
-  return blob === null ? undefined : { category: categoryOf(blob.category), status: categoryOf(blob.status) };
+  return blob === null ? undefined : { category: categoryOf(blob.category) };
 }
 
-export function groupedChatField(by: GroupKey, metadata: NewChatMetadata): { field: NewChatField; value: string | null } | null {
-  return by === 'category' || by === 'status' ? { field: by, value: metadata[by] } : null;
-}
-
-export function renamedNewChatFields(fields: NewChatFields, field: NewChatField, from: string, to: string | null): NewChatFields {
-  const current = fields[field];
-  if (current === null || current.toLowerCase() !== categoryOf(from)?.toLowerCase()) return fields;
-  return { ...fields, [field]: to === null ? null : categoryOf(to) };
+export function renamedNewChatFields(fields: NewChatFields, from: string, to: string | null): NewChatFields {
+  if (fields.category === null || fields.category.toLowerCase() !== categoryOf(from)?.toLowerCase()) return fields;
+  return { category: to === null ? null : categoryOf(to) };
 }
 
 type Params = Record<string, string | string[] | undefined>;
 const values = (value: string | string[] | undefined): string[] => typeof value === 'string' ? value.split('\n') : value ?? [];
 
 export function newChatMetadata(params: Params): NewChatMetadata {
-  return { ...NO_NEW_CHAT_METADATA, labels: values(params.labels).reduce(addLabel, []), assigned: assignedAddresses(values(params.assigned)) };
+  return {
+    ...NO_NEW_CHAT_METADATA, status: categoryOf(params.status),
+    labels: values(params.labels).reduce(addLabel, []), assigned: assignedAddresses(values(params.assigned)),
+  };
 }
 
 function metadataFields(metadata: NewChatMetadata): Params {
@@ -47,7 +44,7 @@ function metadataFields(metadata: NewChatMetadata): Params {
 }
 
 export function newChatParams(metadata: NewChatMetadata): Record<string, string> {
-  return { labels: metadata.labels.join('\n'), assigned: metadata.assigned.join('\n') };
+  return { status: metadata.status ?? '', labels: metadata.labels.join('\n'), assigned: metadata.assigned.join('\n') };
 }
 
 export function groupedChatMetadata(by: GroupKey, key: string, title: string): NewChatMetadata {

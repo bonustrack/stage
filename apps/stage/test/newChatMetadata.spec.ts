@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createGroupWith } from '@stage-labs/client/xmtp/groups';
 import { resolveHref } from 'expo-router/build/link/href';
 import {
-  groupedChatField, groupedChatMetadata, memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_FIELDS,
+  groupedChatMetadata, memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_FIELDS,
   NO_NEW_CHAT_METADATA, parseNewChatFields, renamedNewChatFields,
 } from '../components/home/newChatMetadata.model';
 
@@ -37,24 +37,25 @@ describe('grouped new chat metadata', () => {
     expect(groupedChatMetadata('category', 'category:no project', 'No project').category).toBe('No project');
   });
 
-  test('the route carries only labels and assignees, normalized and deduplicated', () => {
-    expect(newChatMetadata({ category: 'Stage', status: 'To-do', labels: ['UI', 'ui', ''], assigned: [alice, alice, 'Alice'] }))
-      .toEqual({ ...NO_NEW_CHAT_METADATA, labels: ['UI'], assigned: [alice] });
-    expect(newChatParams({ category: 'Stage', status: 'To-do', labels: ['UI'], assigned: [alice] })).toEqual({ labels: 'UI', assigned: alice });
+  test('the route carries status, labels and assignees, normalized and deduplicated, but never the project', () => {
+    expect(newChatMetadata({ category: 'Stage', status: ' To-do ', labels: ['UI', 'ui', ''], assigned: [alice, alice, 'Alice'] }))
+      .toEqual({ ...NO_NEW_CHAT_METADATA, status: 'To-do', labels: ['UI'], assigned: [alice] });
+    expect(newChatParams({ category: 'Stage', status: 'To-do', labels: ['UI'], assigned: [alice] }))
+      .toEqual({ status: 'To-do', labels: 'UI', assigned: alice });
   });
 
   test('supports a single label or assignee in route params', () => {
     expect(newChatMetadata({ labels: 'UI', assigned: alice })).toEqual({ ...NO_NEW_CHAT_METADATA, labels: ['UI'], assigned: [alice] });
   });
 
-  test('round trips labels and assignees through routing and sends everything in one appData payload', () => {
+  test('round trips status, labels and assignees through routing and sends everything in one appData payload', () => {
     const metadata = { category: 'Stage', status: 'To-do', labels: ['UI', 'Mobile'], assigned: [alice] };
-    expect(newChatMetadata(newChatParams(metadata))).toEqual({ ...metadata, category: null, status: null });
+    expect(newChatMetadata(newChatParams(metadata))).toEqual({ ...metadata, category: null });
     expect(JSON.parse(newChatAppData(metadata) ?? '')).toEqual({ v: 1, ...metadata });
   });
 
   test('preserves arrays and literal commas through the real router href serializer', () => {
-    const metadata = { ...NO_NEW_CHAT_METADATA, labels: ['UI,Mobile', 'Design'], assigned: [alice, bob] };
+    const metadata = { ...NO_NEW_CHAT_METADATA, status: 'In review', labels: ['UI,Mobile', 'Design'], assigned: [alice, bob] };
     const href = resolveHref({ pathname: '/new', params: newChatParams(metadata) });
     const params = Object.fromEntries(new URL(href, 'https://stage.box').searchParams);
     expect(newChatMetadata(params)).toEqual(metadata);
@@ -92,33 +93,31 @@ describe('grouped new chat metadata', () => {
   });
 });
 
-describe('project and status for the next new chat', () => {
-  test('a group header sets or clears only its own field', () => {
-    expect(groupedChatField('category', groupedChatMetadata('category', 'category:metro', 'Metro'))).toEqual({ field: 'category', value: 'Metro' });
-    expect(groupedChatField('category', groupedChatMetadata('category', 'none', 'No project'))).toEqual({ field: 'category', value: null });
-    expect(groupedChatField('status', groupedChatMetadata('status', 'status:', 'No status'))).toEqual({ field: 'status', value: null });
-    expect(groupedChatField('label', groupedChatMetadata('label', 'label:UI', 'UI'))).toBeNull();
-    expect(groupedChatField('assignee', groupedChatMetadata('assignee', `assignee:${alice}`, 'Alice'))).toBeNull();
+describe('project for the next new chat', () => {
+  test('a status header opens the new chat with its status and other headers with none', () => {
+    expect(newChatMetadata(newChatParams(groupedChatMetadata('status', 'status:In review', 'In review'))).status).toBe('In review');
+    expect(newChatMetadata(newChatParams(groupedChatMetadata('status', 'status:', 'No status'))).status).toBeNull();
+    expect(newChatMetadata(newChatParams(groupedChatMetadata('category', 'category:metro', 'Metro'))).status).toBeNull();
   });
 
-  test('the remembered project and status reach the new channel appData', () => {
+  test('the remembered project reaches the new channel appData', () => {
     const metadata = { ...newChatMetadata({ labels: 'UI' }), category: 'Stage', status: null };
     expect(newChatAppData(metadata)).toBe('{"v":1,"category":"Stage","labels":["UI"]}');
   });
 
-  test('a renamed or deleted board column updates the remembered value only when it matches', () => {
-    const fields = { category: 'FDE', status: 'To-do' };
-    expect(renamedNewChatFields(fields, 'category', 'fde', 'Clients')).toEqual({ category: 'Clients', status: 'To-do' });
-    expect(renamedNewChatFields(fields, 'category', 'FDE', null)).toEqual({ category: null, status: 'To-do' });
-    expect(renamedNewChatFields(fields, 'category', 'Metro', 'Ops')).toBe(fields);
-    expect(renamedNewChatFields(fields, 'status', 'Done', null)).toBe(fields);
-    expect(renamedNewChatFields(NO_NEW_CHAT_FIELDS, 'category', 'FDE', 'Clients')).toBe(NO_NEW_CHAT_FIELDS);
+  test('a renamed or deleted board column updates the remembered project only when it matches', () => {
+    const fields = { category: 'FDE' };
+    expect(renamedNewChatFields(fields, 'fde', 'Clients')).toEqual({ category: 'Clients' });
+    expect(renamedNewChatFields(fields, 'FDE', null)).toEqual({ category: null });
+    expect(renamedNewChatFields(fields, 'Metro', 'Ops')).toBe(fields);
+    expect(renamedNewChatFields(NO_NEW_CHAT_FIELDS, 'FDE', 'Clients')).toBe(NO_NEW_CHAT_FIELDS);
   });
 
-  test('stored fields round trip and are normalized like channel fields', () => {
-    const fields = { category: 'Stage', status: 'To-do' };
-    expect(parseNewChatFields(JSON.stringify(fields))).toEqual(fields);
-    expect(parseNewChatFields(JSON.stringify({ category: '  Stage ', status: 'a'.repeat(40) }))).toEqual({ category: 'Stage', status: 'a'.repeat(24) });
+  test('the stored project round trips, is normalized like channel fields and drops an old remembered status', () => {
+    expect(parseNewChatFields(JSON.stringify({ category: 'Stage' }))).toEqual({ category: 'Stage' });
+    expect(parseNewChatFields(JSON.stringify({ category: 'Stage', status: 'To-do' }))).toEqual({ category: 'Stage' });
+    expect(parseNewChatFields(JSON.stringify({ category: '  Stage ' }))).toEqual({ category: 'Stage' });
+    expect(parseNewChatFields(JSON.stringify({ category: 'a'.repeat(40) }))).toEqual({ category: 'a'.repeat(24) });
     expect(parseNewChatFields('{}')).toEqual(NO_NEW_CHAT_FIELDS);
     expect(parseNewChatFields(JSON.stringify({ category: 7, status: '' }))).toEqual(NO_NEW_CHAT_FIELDS);
     expect(parseNewChatFields('not json')).toBeUndefined();

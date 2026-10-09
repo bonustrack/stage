@@ -1,5 +1,6 @@
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { uniqueBy } from '@stage-labs/client/collections';
+import { cleanLabel } from '@stage-labs/client/xmtp/labels';
 
 export interface ListEdits { added: string[]; removed: string[] }
 
@@ -45,6 +46,12 @@ export function applyListEdits(list: readonly string[], edits: ListEdits): strin
 export function matchesQuery(query: string, ...texts: string[]): boolean {
   const q = query.trim().toLowerCase();
   return q === '' || texts.some((text) => text.toLowerCase().includes(q));
+}
+
+export function tagSearch(query: string, options: readonly string[], draft: readonly string[]): { shown: string[]; typed: string; creatable: boolean } {
+  const all = uniqueKeys([...options, ...draft]);
+  const typed = cleanLabel(query);
+  return { shown: all.filter((label) => matchesQuery(query, label)), typed, creatable: typed !== '' && !includesKey(all, typed) };
 }
 
 export function selectedFirst(list: readonly string[], selected: readonly string[]): string[] {

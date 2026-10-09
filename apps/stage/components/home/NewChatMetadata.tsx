@@ -8,7 +8,7 @@ import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu'
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { Col, PAGE_GUTTER, Row } from '../layout';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
-import { LabelPicker } from '../channel/channel.labels';
+import { FIELD_SECTIONS, LabelPicker } from '../channel/channel.labels';
 import { toggleKey } from '../conversation/SidebarSection.model';
 import { peerLabel } from '../conversation/convTitle';
 import { usePalette } from '../../lib/theme';
@@ -33,7 +33,7 @@ function MetadataChip({ label, field, icon, onRemove, onEdit }: {
   );
 }
 
-const isEmpty = (value: Metadata): boolean => value.labels.length === 0 && value.assigned.length === 0;
+const isEmpty = (value: Metadata): boolean => value.status === null && value.labels.length === 0 && value.assigned.length === 0;
 
 export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange: (next: Metadata) => void }): React.ReactElement | null {
   const anchored = useAnchoredMenus();
@@ -47,6 +47,9 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
   return (
     <>
       <Row wrap gap={8} padding={{ x: PAGE_GUTTER, top: 12, bottom: 4 }}>
+        {value.status === null ? null : (
+          <MetadataChip field="status" label={value.status} icon={FIELD_SECTIONS.status.icon} onRemove={() => { onChange({ ...value, status: null }); }}/>
+        )}
         {value.labels.map(label => (
           <MetadataChip key={label} field="label" label={label} icon={IconTag} onEdit={setAnchor}
             onRemove={() => { onChange({ ...value, labels: value.labels.filter(item => item !== label) }); }}/>

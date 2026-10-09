@@ -9,14 +9,14 @@ import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import {
   PickerList, PickerNote, PickerRow, PickerSearch, SectionNote, SidebarSection, type SectionDraft,
 } from '../conversation/SidebarSection';
-import { includesKey, matchesQuery, selectedFirst, uniqueKeys, type ListEdits } from '../conversation/SidebarSection.model';
+import { includesKey, selectedFirst, tagSearch, uniqueKeys, type ListEdits } from '../conversation/SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
   addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels,
 } from '../../lib/xmtp.groups';
 import {
-  CHANNEL_FIELD_NOUNS, CHANNEL_PRIORITIES, channelFieldOf, cleanLabel, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
+  CHANNEL_FIELD_NOUNS, CHANNEL_PRIORITIES, channelFieldOf, LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS, type ChannelField,
 } from '@stage-labs/client/xmtp/labels';
 import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -159,10 +159,7 @@ function TagPicker({ draft, options, noun, pick }: {
 }): React.ReactElement {
   const { text: fg, bg } = usePalette();
   const [query, setQuery] = useState('');
-  const all = uniqueKeys([...options, ...draft]);
-  const shown = all.filter(label => matchesQuery(query, label));
-  const typed = cleanLabel(query);
-  const creatable = typed !== '' && !includesKey(all, typed);
+  const { shown, typed, creatable } = tagSearch(query, options, draft);
   const create = (): void => {
     if (!creatable) return;
     pick(typed);

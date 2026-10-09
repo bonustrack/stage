@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  PICKER_MAX_WIDTH, applyListEdits, hasListEdits, includesKey, listEdits, matchesQuery, pickerAnchorOf, pickerWidth, selectedFirst, toggleKey,
+  PICKER_MAX_WIDTH, applyListEdits, hasListEdits, includesKey, listEdits, matchesQuery, pickerAnchorOf, pickerWidth, selectedFirst, tagSearch, toggleKey,
   uniqueKeys,
 } from '../components/conversation/SidebarSection.model';
 
@@ -37,6 +37,13 @@ describe('sidebar section draft', () => {
     expect(matchesQuery(' ALP ', 'Alpha')).toBe(true);
     expect(matchesQuery('0xab', 'Alice', '0xAB12')).toBe(true);
     expect(matchesQuery('zed', 'Alice', '0xAB12')).toBe(false);
+  });
+
+  test('searches options plus the current pick and offers to create only a new name', () => {
+    expect(tagSearch('', ['Stage', 'Metro'], ['FDE'])).toEqual({ shown: ['Stage', 'Metro', 'FDE'], typed: '', creatable: false });
+    expect(tagSearch(' met ', ['Stage', 'Metro'], [])).toEqual({ shown: ['Metro'], typed: 'met', creatable: true });
+    expect(tagSearch('metro', ['Stage', 'Metro'], [])).toEqual({ shown: ['Metro'], typed: 'metro', creatable: false });
+    expect(tagSearch('  New   project ', ['Stage'], [])).toEqual({ shown: [], typed: 'New project', creatable: true });
   });
 });
 

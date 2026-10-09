@@ -18,8 +18,8 @@ import { ChatColumn, FooterDock } from '../conversation/FooterDock';
 import { includesKey, toggleKey, uniqueKeys } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
 import { NewChatMetadata } from './NewChatMetadata';
-import { NewChatFields } from './NewChatFields';
-import { setNewChatDefault, useNewChatDefaults } from './newChatDefaults';
+import { NewChatProject } from './NewChatProject';
+import { setNewChatProject, useNewChatDefaults } from './newChatDefaults';
 import { memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata as Metadata } from './newChatMetadata.model';
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
@@ -187,7 +187,7 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded,
       <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
         placeholder={askPlaceholder(mentionCandidates.map(c => c.name))} rounded={rounded}
         metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>}
-        fields={<NewChatFields value={metadata} onChange={setNewChatDefault}/>}
+        fields={<NewChatProject value={metadata.category} onChange={setNewChatProject}/>}
         autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
     </Box>
   );
