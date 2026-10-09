@@ -54,8 +54,7 @@ import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
-import { addBoardColumn, addToBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } from './boardActions';
-import { AddItemButton, AddItemModal } from './BoardAddItem';
+import { addBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } from './boardActions';
 import {
   AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
 } from './BoardColumnEdit';
@@ -77,7 +76,6 @@ interface ColumnActions {
   drop: (drag: BoardDrag, key: string) => void;
   rename: (from: string, to: string) => void;
   remove: (label: string) => void;
-  add: (label: string) => void;
   create: (name: string) => void;
 }
 function columnMaxHeight(laneHeight: number): number | string | undefined {
@@ -212,7 +210,6 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
         </Row>
       )}
       <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
-      {editable ? <AddItemButton onPress={() => { actions.add(label); }}/> : null}
     </ColumnFrame>
   );
 }
@@ -312,7 +309,6 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const sort = homeSortOf(view);
   const order = columnBy === 'category' ? categoryOrder : boardOrder;
   const [error, setError] = useState<string>('');
-  const [adding, setAdding] = useState<string | null>(null);
   useChannelsSync({ accountEpoch: useAccountEpoch(), setError, enabled: Platform.OS === 'web' });
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
@@ -335,21 +331,9 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     remove: (label) => {
       if (columnsEditable(columnBy)) void deleteBoardColumn(rows, columns, order, label, columnBy).catch(reported('board.delete'));
     },
-    add: setAdding,
     create: (name) => { if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy); },
   };
-  const addPicked = (convIds: string[]): void => {
-    setAdding(null);
-    if (adding !== null && columnsEditable(columnBy)) void addToBoardColumn(convIds, adding, columnBy).catch(reported('board.add'));
-  };
-  return (
-    <>
-      <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering}/>
-      {columnsEditable(columnBy) ? (
-        <AddItemModal by={columnBy} label={adding} rows={rows} onClose={() => { setAdding(null); }} onAdd={addPicked}/>
-      ) : null}
-    </>
-  );
+  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering}/>;
 }
 function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
   pane: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;

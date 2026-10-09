@@ -1,6 +1,6 @@
-import { sortChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
+import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
-import { CHANNEL_FIELD_NOUNS, MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
 import { homeSortOf, sortHomeRows } from '../home/sort.model';
 import { NO_GROUP_TITLES, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../home/groupBy.model';
@@ -148,25 +148,7 @@ export function columnCarriers(rows: readonly ChannelListRow[], value: string, b
   return rows.filter(r => !r.peerAddress && carries(r, key, by)).map(r => r.convId);
 }
 
-export function addItemRows<T extends ChannelListRow>(
-  rows: readonly T[], label: string, query: string, picked: readonly string[], by: EditableColumnBy = 'label',
-): T[] {
-  const key = label.toLowerCase();
-  const needle = query.trim().toLowerCase();
-  return sortChannelRows(rows.filter(r => !r.peerAddress && !carries(r, key, by)
-    && (picked.includes(r.convId) || r.title.toLowerCase().includes(needle))));
-}
-
 const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');
-
-export function labelCapNote(added: readonly (readonly string[])[], label: string): string | null {
-  const key = typedName(label).slice(0, MAX_LABEL_LEN).toLowerCase();
-  const full = added.filter(labels => !labels.some(l => l.toLowerCase() === key)).length;
-  if (full === 0) return null;
-  return full === 1
-    ? `1 channel already has ${MAX_LABELS} labels.`
-    : `${full} channels already have ${MAX_LABELS} labels.`;
-}
 
 export function renameProblem(name: string): string | null {
   const typed = typedName(name);

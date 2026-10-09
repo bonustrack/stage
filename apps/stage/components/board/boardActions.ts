@@ -5,12 +5,12 @@ import { moveCategory, setCategoryOrder } from '../../lib/channelGroups';
 import { isCategoryKey } from '../../lib/channelGroups.model';
 import { capabilities } from '../../lib/capabilities';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
-import { addGroupLabel, moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../lib/xmtp.groups';
+import { moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../channel/channel.labels';
 import { renameNewChatProject } from '../home/newChatDefaults';
 import {
-  addedColumnOrder, cardColumnEdit, columnCarriers, columnNoun, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, labelCapNote,
+  addedColumnOrder, cardColumnEdit, columnCarriers, columnNoun, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder,
   movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag, type EditableColumnBy,
 } from './BoardScreen.model';
 
@@ -83,16 +83,4 @@ export async function deleteBoardColumn(
   )));
   const outcome = columnOutcome(results, `Could not remove the ${columnNoun(by)} from every channel. Try again.`, `kept the ${columnNoun(by)}`, by);
   if (outcome !== null) capabilities.toast(outcome);
-}
-
-export async function addToBoardColumn(convIds: readonly string[], label: string, by: EditableColumnBy): Promise<void> {
-  const results = await Promise.allSettled(convIds.map(convId => (
-    by === 'label' ? addGroupLabel(lineOfConv(convId), label) : setGroupField(lineOfConv(convId), by, label)
-  )));
-  const added = results.flatMap(r => (r.status === 'fulfilled' && Array.isArray(r.value) ? [r.value] : []));
-  const notes = [
-    columnOutcome(results, `Could not set the ${columnNoun(by)} in every channel. Try again.`, `did not get the ${columnNoun(by)}`, by),
-    by === 'label' ? labelCapNote(added, label) : null,
-  ].filter((note): note is string => note !== null);
-  if (notes.length > 0) capabilities.toast(notes.join(' '));
 }

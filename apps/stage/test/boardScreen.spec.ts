@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { MAX_LABELS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import {
   BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardsRightPadding, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
-  addItemRows, keptColumnOrder, labelCapNote, columnCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
+  keptColumnOrder, columnCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
 } from '../components/board/BoardScreen.model';
 
@@ -196,20 +195,6 @@ describe('columns left empty', () => {
   });
 });
 
-describe('adding channels to a column', () => {
-  test('lists the groups without the label whatever its case, newest first', () => {
-    const rows = [row('a', 4, ['todo']), row('b', 3, ['Done']), row('c', 5), dm('d', 6), row('e', 1, ['TODO', 'Done'])];
-    expect(addItemRows(rows, 'Todo', '', []).map(r => r.convId)).toEqual(['c', 'b']);
-  });
-
-  test('the search matches the name in any case and keeps picked channels listed', () => {
-    const rows = [row('Alpha', 3), row('beta', 2), row('Gamma', 1)];
-    expect(addItemRows(rows, 'Todo', ' AL ', []).map(r => r.convId)).toEqual(['Alpha']);
-    expect(addItemRows(rows, 'Todo', 'al', ['Gamma']).map(r => r.convId)).toEqual(['Alpha', 'Gamma']);
-    expect(addItemRows(rows, 'Todo', 'zzz', [])).toEqual([]);
-  });
-});
-
 describe('renaming a column', () => {
   const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label');
   const keys = columns.map(c => c.key);
@@ -350,23 +335,6 @@ describe('typing a column title in place', () => {
     expect(renameNote(columns, 'Todo', long, false)).toBe('Use at most 24 characters.');
     expect(renameNote(columns, 'Todo', 'done', false)).toBe('Channels move into the Done column.');
     expect(renameNote(columns, 'Todo', 'Doing', true)).toBeNull();
-  });
-});
-
-describe('labelCapNote', () => {
-  test('is silent when every group got the label, whatever its case', () => {
-    expect(labelCapNote([['a', 'Design'], ['design']], 'Design')).toBeNull();
-  });
-
-  test('counts the groups that came back without the label', () => {
-    expect(labelCapNote([['a'], ['Design']], 'Design')).toBe(`1 channel already has ${MAX_LABELS} labels.`);
-    expect(labelCapNote([['a'], ['b'], ['Design']], 'Design')).toBe(`2 channels already have ${MAX_LABELS} labels.`);
-  });
-
-  test('matches the label the way the group stores it', () => {
-    const long = 'x'.repeat(MAX_LABEL_LEN + 6);
-    expect(labelCapNote([['In review']], '  In   review ')).toBeNull();
-    expect(labelCapNote([[long.slice(0, MAX_LABEL_LEN)]], long)).toBeNull();
   });
 });
 

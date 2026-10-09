@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  addColumnProblem, addedColumnOrder, addItemRows, boardColumns, cardColumnEdit, columnCarriers, columnEditable, columnsEditable,
+  addColumnProblem, addedColumnOrder, boardColumns, cardColumnEdit, columnCarriers, columnEditable, columnsEditable,
   deleteColumnConfirm, deletedColumnOrder, keptColumnOrder, orderedColumns, renamedColumnOrder, renameTarget,
 } from '../components/board/BoardScreen.model';
 
@@ -90,10 +90,9 @@ describe('status board', () => {
     expect(cardColumnEdit(columns, 'status:Todo', 'status:Done', 'category')).toBeNull();
   });
 
-  test('add and rename target status carriers, not matching labels', () => {
+  test('rename and delete target status carriers, not matching labels', () => {
     expect(columnCarriers(rows, 'Done', 'status')).toEqual(['c']);
     expect(columnCarriers(rows, 'TODO', 'status')).toEqual(['a', 'b']);
-    expect(addItemRows(rows, 'Done', '', [], 'status').map(r => r.convId)).toEqual(['a', 'b', 'd', 'e']);
     expect(renamedColumnOrder(keys, ['label:Todo'], 'Todo', 'Doing', 'status'))
       .toEqual(['label:Todo', 'status:Done', 'status:Doing', 'status:']);
     expect(renamedColumnOrder(keys, [], 'Todo', 'Done', 'status')).toEqual(['status:Done', 'status:']);
