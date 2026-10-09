@@ -103,6 +103,21 @@ const dashboardWidgetSchema = z.object({
 
 export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
 
+export const DASHBOARD_FRAME_KIND = 'frame';
+
+const dashboardSourceSchema = z.object({
+  conversationId: z.string().min(1).max(128),
+  messageId: z.string().min(1).max(128),
+});
+
+export type DashboardSource = z.infer<typeof dashboardSourceSchema>;
+
+export function frameSourceOf(widget: DashboardWidget): DashboardSource | null {
+  if (widget.kind !== DASHBOARD_FRAME_KIND) return null;
+  const parsed = dashboardSourceSchema.safeParse(widget.source);
+  return parsed.success ? parsed.data : null;
+}
+
 function validWidgets(items: readonly unknown[]): DashboardWidget[] {
   const ids = new Set<string>();
   const widgets: DashboardWidget[] = [];

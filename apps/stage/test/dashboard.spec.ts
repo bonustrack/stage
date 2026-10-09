@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
-  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, type DashboardContent, type DashboardWidget,
+  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, frameSourceOf, type DashboardContent, type DashboardWidget,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  addWidget, canAddWidget, cellRects, dropTarget, gridColumns, moveWidget, packWidgets, removeWidget, resizeWidget,
-  widgetHeight, widgetSizeLabel, widgetSpan, widgetWidth,
+  FRAME_ADD_TOASTS, addFrameWidget, addWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, moveWidget,
+  packWidgets, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 
@@ -21,12 +21,14 @@ mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
-const { applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } = await import('../lib/dashboard');
+const { addFrameToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } = await import('../lib/dashboard');
 
 const widget = (id: string, w = 'half', h = 1): DashboardWidget => ({ id, w, h });
 const ids = (widgets: readonly DashboardWidget[]): string[] => widgets.map(item => item.id);
 const stored = (account: string): unknown => JSON.parse(values.get(`dashboard.v1.${account}`) ?? 'null');
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+const source = { conversationId: 'conv1', messageId: 'msg1' };
+const frameWidget = (id: string, from = source): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'frame', source: from });
 
 describe('dashboard widgets', () => {
   test('a new widget is empty, half width and one row high, and ids stay unique', () => {
@@ -73,6 +75,54 @@ describe('dashboard widgets', () => {
     expect(widgetSizeLabel(odd)).toBe('Half width · 512\u00a0px');
     expect(packWidgets([odd], 4).cells).toEqual([{ col: 0, row: 0, span: 2, rows: 4 }]);
     expect(resizeWidget([odd], 'x', { w: 'quarter' })).toEqual([widget('x', 'quarter', 6)]);
+  });
+});
+
+describe('frame widgets', () => {
+  test('a frame widget keeps only its chat and message ids, half width and 384 px unless asked wider', () => {
+    const list = addFrameWidget([], 'f', source);
+    expect(list).toEqual([frameWidget('f')]);
+    expect(list.map(item => [widgetKindOf(item), frameSourceOf(item), widgetSizeLabel(item)]))
+      .toEqual([['frame', source, 'Half width · 384\u00a0px']]);
+    expect(addFrameWidget([], 'f', source, 'full')).toEqual([{ ...frameWidget('f'), w: 'full' }]);
+  });
+
+  test('the same frame is added once, and never past the widget cap', () => {
+    const list = addFrameWidget([widget('a')], 'f', source);
+    expect(frameWidgetAdd(list, source)).toBe('exists');
+    expect(addFrameWidget(list, 'g', source)).toBe(list);
+    expect(addFrameWidget(list, 'f', { ...source, messageId: 'msg2' })).toBe(list);
+    expect(frameWidgetAdd(list, { ...source, messageId: 'msg2' })).toBe('added');
+    expect(frameWidgetAdd(list, { ...source, conversationId: 'conv2' })).toBe('added');
+    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
+    expect(frameWidgetAdd(full, source)).toBe('full');
+    expect(addFrameWidget(full, 'f', source)).toBe(full);
+    expect(FRAME_ADD_TOASTS).toEqual({ added: 'Added to your dashboard', exists: 'Already on your dashboard', full: 'Your dashboard is full' });
+  });
+
+  test('a widget without a kind is empty, and a kind this version does not know is unsupported', () => {
+    expect(widgetKindOf(widget('a'))).toBe('empty');
+    expect(widgetKindOf({ ...widget('b'), kind: 'chart' })).toBe('unsupported');
+    expect(widgetKindOf({ ...widget('c'), kind: 7 })).toBe('unsupported');
+  });
+
+  test('a frame widget with a broken reference has no source, and extra reference fields are not read', () => {
+    expect(frameSourceOf({ ...frameWidget('a'), source: { conversationId: 'conv1' } })).toBeNull();
+    expect(frameSourceOf({ ...frameWidget('b'), source: 'conv1/msg1' })).toBeNull();
+    expect(frameSourceOf({ ...frameWidget('c'), source: { conversationId: '', messageId: 'msg1' } })).toBeNull();
+    expect(frameSourceOf({ ...frameWidget('d'), kind: 'chart' })).toBeNull();
+    expect(frameSourceOf(widget('e'))).toBeNull();
+    const extended = { ...source, screen: 'home' };
+    expect(frameSourceOf(frameWidget('f', extended))).toEqual(source);
+  });
+
+  test('frame widgets and kinds this version does not know survive sync, moves and resizes untouched', () => {
+    const later = { id: 'x', w: 'half', h: 2, kind: 'chart', source: { query: 'q' }, title: 'kept' };
+    const raw = { widgets: [frameWidget('f'), later, widget('e')], at: 4 };
+    const synced = dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
+    expect(synced).toEqual(raw);
+    const edited = resizeWidget(moveWidget(synced.widgets, 'e', 'f'), 'f', { w: 'full' });
+    expect(edited).toEqual([widget('e'), { ...frameWidget('f'), w: 'full' }, later]);
   });
 });
 
@@ -173,6 +223,21 @@ describe('dashboard store', () => {
     expect(stored('alice')).toEqual({ widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
     await applyRemoteDashboard('carol', { widgets: [widget('c')], at: 7 });
     expect(stored('carol')).toEqual({ widgets: [widget('c')], at: 7 });
+  });
+
+  test('adding a frame saves a frame widget once and announces it for sync', async () => {
+    const sent: DashboardContent[] = [];
+    const stop = onDashboardChanged(change => { sent.push(change.state); });
+    expect(await addFrameToDashboard(source, 'full')).toBe('added');
+    expect(await addFrameToDashboard(source, 'half')).toBe('exists');
+    await settle();
+    const saved = await loadDashboard('alice');
+    const added = saved?.widgets.at(-1);
+    expect(added).toMatchObject({ w: 'full', h: 3, kind: 'frame', source });
+    expect(added?.id).toMatch(/^[0-9a-f]{16}$/);
+    expect(stored('alice')).toEqual(saved);
+    expect(sent).toHaveLength(1);
+    stop();
   });
 
   test('missing or broken saved data loads as an empty dashboard', async () => {

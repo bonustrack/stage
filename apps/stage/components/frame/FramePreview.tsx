@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleProp, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Frame } from '@stage-labs/kit/react-native/frame';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
@@ -29,6 +29,11 @@ const FADE_OVERLAY: ViewStyle = { position: 'absolute', left: 0, right: 0, botto
 const BUTTON_INSET = 6;
 const FULL_SCREEN_SPOT: ViewStyle = { position: 'absolute', top: BUTTON_INSET, right: BUTTON_INSET, ...OVERLAY_SHADOW };
 const SCROLL_STYLE: ViewStyle = { flexGrow: 0, flexShrink: 1 };
+const FILL_STYLE: ViewStyle = { flex: 1 };
+
+function tileLayout(fill: boolean, depth: number): { tile: ViewStyle; scroll: StyleProp<ViewStyle> } {
+  return fill ? { tile: FILL_STYLE, scroll: FILL_STYLE } : { tile: {}, scroll: [SCROLL_STYLE, { maxHeight: framePreviewCap(depth) }] };
+}
 
 function useScrollFade(screen: string): {
   ref: React.RefObject<ScrollView | null>;
@@ -77,8 +82,8 @@ function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElem
   );
 }
 
-export function FramePreview({ frame, line, messageId, disabled }: {
-  frame: FrameContent; line: string; messageId: string; disabled?: boolean;
+export function FrameTile({ frame, line, messageId, disabled, fill = false, onSent }: {
+  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; onSent?: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
@@ -88,38 +93,48 @@ export function FramePreview({ frame, line, messageId, disabled }: {
   const navigation = useFrameStack(messageId, parsed.ok ? parsed.doc.start : '');
   const { screen, depth, navigate } = navigation;
   const backdrop = useMemo(() => frameBackdrop(frame, scheme, pal, screen), [frame, scheme, pal, screen]);
-  const onAction = useFrameAction(line, messageId);
+  const onAction = useFrameAction(line, messageId, onSent);
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
   const convId = convIdOfLine(line);
+  const layout = tileLayout(fill, depth);
   const tile: ViewStyle = {
     overflow: 'hidden',
     borderRadius: BLOCK_RADIUS_DEFAULT,
     borderWidth: FRAME_PREVIEW_BORDER,
     borderColor: pal.border,
     backgroundColor: backdrop,
+    ...layout.tile,
   };
   return (
+    <Box style={tile} onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
+      {depth > 0 ? <FrameBar title={frameScreenTitle(frame, parsed, screen)} onBack={() => { navigate({ kind: 'back' }); }}/> : null}
+      <Scroll
+        ref={fade.ref} showsVerticalScrollIndicator={false} style={layout.scroll}
+        onLayout={fade.onLayout} onContentSizeChange={fade.onContentSizeChange} onScroll={fade.onScroll}
+        scrollEventThrottle={32} keyboardShouldPersistTaps="handled" nestedScrollEnabled={fill}
+      >
+        <Frame
+          widget={widget} dark={scheme === 'dark'} disabled={disabled} onAction={onAction} navigation={navigation}
+          fill={FRAME_PREVIEW_FILL} onOpenUrl={(url) => { openInBubbleLink(url); }}
+        />
+      </Scroll>
+      {fade.more ? (
+        <Box pointerEvents="none" style={FADE_OVERLAY}>
+          <GradientFade color={backdrop} height={FRAME_PREVIEW_FADE} solid="bottom"/>
+        </Box>
+      ) : null}
+      {convId !== null && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={() => { router.push(frameLinkOf(convId, messageId)); }}/> : null}
+    </Box>
+  );
+}
+
+export function FramePreview({ frame, line, messageId, disabled }: {
+  frame: FrameContent; line: string; messageId: string; disabled?: boolean;
+}): React.ReactElement {
+  return (
     <Box margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      <Box style={tile} onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
-        {depth > 0 ? <FrameBar title={frameScreenTitle(frame, parsed, screen)} onBack={() => { navigate({ kind: 'back' }); }}/> : null}
-        <Scroll
-          ref={fade.ref} showsVerticalScrollIndicator={false} style={[SCROLL_STYLE, { maxHeight: framePreviewCap(depth) }]}
-          onLayout={fade.onLayout} onContentSizeChange={fade.onContentSizeChange} onScroll={fade.onScroll}
-          scrollEventThrottle={32} keyboardShouldPersistTaps="handled"
-        >
-          <Frame
-            widget={widget} dark={scheme === 'dark'} disabled={disabled} onAction={onAction} navigation={navigation}
-            fill={FRAME_PREVIEW_FILL} onOpenUrl={(url) => { openInBubbleLink(url); }}
-          />
-        </Scroll>
-        {fade.more ? (
-          <Box pointerEvents="none" style={FADE_OVERLAY}>
-            <GradientFade color={backdrop} height={FRAME_PREVIEW_FADE} solid="bottom"/>
-          </Box>
-        ) : null}
-        {convId !== null && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={() => { router.push(frameLinkOf(convId, messageId)); }}/> : null}
-      </Box>
+      <FrameTile frame={frame} line={line} messageId={messageId} disabled={disabled} />
     </Box>
   );
 }

@@ -8,13 +8,12 @@ export interface MenuPlacement {
   dropdownAbove: boolean;
 }
 
-function actionDropdownHeight(hasText: boolean): number {
-  const actionCount = 2 + (hasText ? 2 : 0);
-  return actionCount * 48 + 16;
+function actionDropdownHeight(rows: number): number {
+  return rows * 48 + 16;
 }
 
-export function menuPlacement(anchorY: number, hasText: boolean, windowHeight: number): MenuPlacement {
-  const dropdownH = actionDropdownHeight(hasText);
+export function menuPlacement(anchorY: number, rows: number, windowHeight: number): MenuPlacement {
+  const dropdownH = actionDropdownHeight(rows);
   const maxStripTop = windowHeight - MENU_SCREEN_MARGIN - MENU_STRIP_HEIGHT;
   const stripTop = Math.max(MENU_SCREEN_MARGIN, Math.min(anchorY, maxStripTop));
   const roomBelow = windowHeight - MENU_SCREEN_MARGIN - (stripTop + MENU_STRIP_HEIGHT + STRIP_GAP);

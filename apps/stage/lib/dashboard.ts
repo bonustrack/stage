@@ -1,6 +1,8 @@
+import { bytesToHex } from 'viem';
 import {
-  dashboardSchema, EMPTY_DASHBOARD, type DashboardContent, type DashboardWidget,
+  dashboardSchema, EMPTY_DASHBOARD, type DashboardContent, type DashboardSource, type DashboardWidget, type DashboardWidth,
 } from '@stage-labs/client/xmtp/readState';
+import { addFrameWidget, frameWidgetAdd, type FrameWidgetAdd } from '../components/dashboard/dashboard.model';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
@@ -38,6 +40,18 @@ export function changeDashboard(change: (widgets: DashboardWidget[]) => Dashboar
   if (next === current) return;
   prefs.set(next);
   localChanges.notify({ accountId, state: next });
+}
+
+export function newWidgetId(): string {
+  return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
+}
+
+export async function addFrameToDashboard(source: DashboardSource, width: DashboardWidth): Promise<FrameWidgetAdd> {
+  await prefs.load();
+  if (prefs.accountId() === null) throw new Error('No active account for the dashboard');
+  const outcome = frameWidgetAdd(prefs.get().widgets, source);
+  if (outcome === 'added') changeDashboard(widgets => addFrameWidget(widgets, newWidgetId(), source, width));
+  return outcome;
 }
 
 export async function loadDashboard(forAccount: string): Promise<DashboardContent | null> {

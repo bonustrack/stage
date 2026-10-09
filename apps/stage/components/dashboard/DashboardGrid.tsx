@@ -16,6 +16,7 @@ import {
   DASHBOARD_GAP, DASHBOARD_ROW, cellRects, dropTarget, gridColumns, moveWidget, packWidgets, type WidgetRect,
 } from './dashboard.model';
 import { WidgetCard, WidgetMenu } from './WidgetCard';
+import type { WidgetGrip } from './widgetParts';
 
 const SHIFT_MS = 160;
 const INSET = DASHBOARD_GAP / 2;
@@ -120,7 +121,7 @@ function useCellGesture(args: CellGestureArgs): { gesture: PanGesture; holdNode:
   return { gesture, holdNode };
 }
 
-function useCellStyles(index: number, drag: GridDrag, position: CellPosition): {
+function useCellStyles(index: number, drag: GridDrag, position: CellPosition, backdrop: string): {
   cell: AnimatedStyle<ViewStyle>; ring: AnimatedStyle<ViewStyle>;
 } {
   const cell = useAnimatedStyle(() => {
@@ -130,6 +131,7 @@ function useCellStyles(index: number, drag: GridDrag, position: CellPosition): {
       top: position.y.value,
       zIndex: lifted ? 10 : 0,
       opacity: lifted ? LIFTED_OPACITY : 1,
+      backgroundColor: lifted ? backdrop : 'transparent',
       transform: [{ translateX: lifted ? drag.dx.value : 0 }, { translateY: lifted ? drag.dy.value : 0 }],
     };
   });
@@ -146,20 +148,21 @@ function DashboardCell({ widget, index, rect, rects, drag, drops, onDrop, onMenu
   widget: DashboardWidget; index: number; rect: WidgetRect; rects: readonly WidgetRect[]; drag: GridDrag; drops: number;
   onDrop: (from: number, to: number) => void; onMenu: (menu: OpenMenu) => void;
 }): React.ReactElement {
-  const { link } = usePalette();
+  const { link, bg } = usePalette();
   const openMenu = useCallback((anchor: MenuPoint) => { onMenu({ id: widget.id, anchor }); }, [onMenu, widget.id]);
   const position = useCellPosition(rect, drops);
   const { gesture, holdNode } = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
-  const styles = useCellStyles(index, drag, position);
+  const styles = useCellStyles(index, drag, position, bg);
+  const grip = useCallback<WidgetGrip>((handle, fill = false) => (
+    <GestureDetector gesture={gesture}><Box flex={fill ? 1 : undefined}>{handle}</Box></GestureDetector>
+  ), [gesture]);
   return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View ref={holdNode} style={[{ position: 'absolute', width: rect.width, height: rect.height, padding: INSET }, styles.cell]}>
-        <Box flex={1}>
-          <WidgetCard widget={widget} onMenu={openMenu} />
-          <Animated.View style={[RING, { borderColor: link }, styles.ring]} />
-        </Box>
-      </Animated.View>
-    </GestureDetector>
+    <Animated.View ref={holdNode} style={[{ position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT }, styles.cell]}>
+      <Box flex={1}>
+        <WidgetCard widget={widget} onMenu={openMenu} grip={grip} />
+        <Animated.View style={[RING, { borderColor: link }, styles.ring]} />
+      </Box>
+    </Animated.View>
   );
 }
 

@@ -1,5 +1,6 @@
 import {
-  DASHBOARD_HEIGHTS, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS, type DashboardHeight, type DashboardWidget, type DashboardWidth,
+  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS, frameSourceOf, type DashboardHeight,
+  type DashboardSource, type DashboardWidget, type DashboardWidth,
 } from '@stage-labs/client/xmtp/readState';
 
 export const DASHBOARD_ROW = 128;
@@ -39,6 +40,40 @@ export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
 export function addWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {
   if (!canAddWidget(widgets) || widgets.some(widget => widget.id === id)) return widgets;
   return [...widgets, { id, w: 'half', h: 1 }];
+}
+
+export const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
+
+export type WidgetKind = 'empty' | 'frame' | 'unsupported';
+
+export function widgetKindOf(widget: DashboardWidget): WidgetKind {
+  if (widget.kind === undefined) return 'empty';
+  return widget.kind === DASHBOARD_FRAME_KIND ? 'frame' : 'unsupported';
+}
+
+export type FrameWidgetAdd = 'added' | 'exists' | 'full';
+
+export const FRAME_ADD_TOASTS: Readonly<Record<FrameWidgetAdd, string>> = {
+  added: 'Added to your dashboard',
+  exists: 'Already on your dashboard',
+  full: 'Your dashboard is full',
+};
+
+function sameSource(widget: DashboardWidget, source: DashboardSource): boolean {
+  const own = frameSourceOf(widget);
+  return own !== null && own.conversationId === source.conversationId && own.messageId === source.messageId;
+}
+
+export function frameWidgetAdd(widgets: readonly DashboardWidget[], source: DashboardSource): FrameWidgetAdd {
+  if (widgets.some(widget => sameSource(widget, source))) return 'exists';
+  return canAddWidget(widgets) ? 'added' : 'full';
+}
+
+export function addFrameWidget(
+  widgets: DashboardWidget[], id: string, source: DashboardSource, w: DashboardWidth = FALLBACK_WIDTH,
+): DashboardWidget[] {
+  if (frameWidgetAdd(widgets, source) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
+  return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_FRAME_KIND, source }];
 }
 
 export function removeWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {

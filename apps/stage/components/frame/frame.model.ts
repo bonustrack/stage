@@ -1,4 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { deletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import {
   frameSummary, navigateFrame, parseFrameDoc, resolveFrameColor, type FrameAction, type FrameColor, type FrameDocResult,
@@ -51,6 +52,15 @@ export function frameCardModel(frame: FrameContent): FrameCardModel {
   const title = filled(frame.title) ?? filled(derived.title) ?? 'Frame';
   const description = filled(frame.description) ?? filled(derived.description);
   return description === undefined || description === title ? { title } : { title, description };
+}
+
+export function frameIsDeleted(entry: HistoryEntry, later: readonly HistoryEntry[], ownDeletes: ReadonlySet<string>): boolean {
+  return deletedMessages([entry, ...later], { ownDeletes }).has(entry.id);
+}
+
+export function frameIsFullWidth(frame: FrameContent): boolean {
+  const root = screenRootOf(frame);
+  return root?.type === 'Card' && root.props.size === 'full';
 }
 
 export function frameLinkOf(convId: string, messageId: string): FrameLink {

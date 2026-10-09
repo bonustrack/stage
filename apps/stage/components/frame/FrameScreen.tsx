@@ -10,6 +10,7 @@ import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
+import { useFrameMessage } from '../../lib/frameMessage';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
@@ -100,7 +101,10 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   const insets = useSafeAreaInsets();
   const line = lineOfConv(convId);
   const feed = useXmtpFeed(line, true);
-  const frame = useMemo(() => frameOf(feed.events.find((e) => e.id === messageId)), [feed.events, messageId]);
+  const fromFeed = useMemo(() => frameOf(feed.events.find((e) => e.id === messageId)), [feed.events, messageId]);
+  const lookup = fromFeed === null && feed.status !== 'loading';
+  const stored = useFrameMessage(convId, messageId, lookup);
+  const frame = fromFeed ?? (stored?.state === 'ready' ? stored.frame : null);
   const chat = `/channel/${convId}`;
   const canGoBack = router.canGoBack();
   const leave = useCallback(() => {
@@ -117,7 +121,7 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
             insetBottom={insets.bottom} navigation={screens.navigation} />
         ) : (
           <Box padding={PAGE_GUTTER}>
-            {feed.status === 'loading' ? <Box padding={24} align="center"><Spinner /></Box> : (
+            {feed.status === 'loading' || (lookup && stored === undefined) ? <Box padding={24} align="center"><Spinner /></Box> : (
               <EmptyState title="This frame is not available." />
             )}
           </Box>

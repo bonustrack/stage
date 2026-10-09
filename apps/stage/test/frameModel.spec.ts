@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { DELETE_MESSAGE_TYPE_ID } from '@stage-labs/client/xmtp/deleteMessage';
 import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { kitPalette } from '@stage-labs/kit/tokens';
 import {
-  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameLinkOf, frameMoreBelow, frameOf, framePreviewCap,
-  frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
+  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf, frameMoreBelow,
+  frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -58,8 +59,37 @@ describe('frame navigation and actions', () => {
     expect(frameActionContent('msg-frame-1', { type: 'pick' }, undefined)).toEqual({ frameId: 'msg-frame-1', action: { type: 'pick' } });
   });
 
+  test('only a full size card on the start screen asks for the full width', () => {
+    const wide = { type: 'Card', size: 'full', children: [{ type: 'Text', value: 'Wide' }] };
+    expect(frameIsFullWidth({ widget: wide })).toBe(true);
+    expect(frameIsFullWidth({ widget })).toBe(false);
+    expect(frameIsFullWidth({ widget: { ...wide, size: 'lg' } })).toBe(false);
+    expect(frameIsFullWidth({ widget: { type: 'ListView', children: [] } })).toBe(false);
+    expect(frameIsFullWidth({ screens: { home: widget, s1: wide } })).toBe(false);
+    expect(frameIsFullWidth({ screens: { home: widget, s1: wide }, start: 's1' })).toBe(true);
+  });
+
   test('an action too large to decode is not sent', () => {
     expect(frameActionContent('msg-frame-1', { type: 'save', payload: { note: 'x'.repeat(20_000) } }, 'Save')).toBeNull();
+  });
+});
+
+describe('frames deleted after they were sent', () => {
+  const frameEntry: HistoryEntry = { ...base, payload: { contentType: 'frame', frame: { widget } } };
+  const request = (id: string, from: string, deletes: string): HistoryEntry => ({
+    ...base, id, messageId: id, from, payload: { contentType: DELETE_MESSAGE_TYPE_ID, deletes },
+  });
+  const none: ReadonlySet<string> = new Set();
+
+  test('a delete from the frame sender, or one made on this device, removes the frame', () => {
+    expect(frameIsDeleted(frameEntry, [request('d1', base.from, 'msg-frame-1')], none)).toBe(true);
+    expect(frameIsDeleted(frameEntry, [], new Set(['msg-frame-1']))).toBe(true);
+  });
+
+  test('a delete from someone else or for another message leaves the frame', () => {
+    expect(frameIsDeleted(frameEntry, [request('d1', 'stage://xmtp/a/user/other', 'msg-frame-1')], none)).toBe(false);
+    expect(frameIsDeleted(frameEntry, [request('d1', base.from, 'msg-other')], none)).toBe(false);
+    expect(frameIsDeleted(frameEntry, [], none)).toBe(false);
   });
 });
 

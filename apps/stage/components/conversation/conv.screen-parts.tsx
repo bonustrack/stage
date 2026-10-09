@@ -37,6 +37,11 @@ import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
+import { addFrameToDashboard } from '../../lib/dashboard';
+import { FRAME_ADD_TOASTS } from '../dashboard/dashboard.model';
+import { frameIsFullWidth, frameOf } from '../frame/frame.model';
+import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 
@@ -50,6 +55,25 @@ async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promis
     await unmarkOwnDelete(messageId);
     capabilities.toast('Couldn’t delete the message');
   }
+}
+
+async function addFrameWidget(convId: string, messageId: string, frame: FrameContent): Promise<void> {
+  try {
+    const outcome = await addFrameToDashboard({ conversationId: convId, messageId }, frameIsFullWidth(frame) ? 'full' : 'half');
+    capabilities.toast(FRAME_ADD_TOASTS[outcome]);
+  } catch (err) {
+    report('dashboard.addFrame', err);
+    capabilities.toast('Could not add it to your dashboard');
+  }
+}
+
+function frameAdder(convId: string, entry: HistoryEntry | null, close: () => void): (() => void) | undefined {
+  const frame = frameOf(entry ?? undefined);
+  if (entry === null || frame === null) return undefined;
+  return () => {
+    void addFrameWidget(convId, entry.id, frame);
+    close();
+  };
 }
 
 function ChannelAccessNotice({ outside }: { outside: boolean }): React.ReactElement {
@@ -218,6 +242,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
           if (menuFor) setSelectedForCopy(menuFor.id);
           setMenuFor(null);
         }}
+        onAddToDashboard={frameAdder(convId, menuFor, () => { setMenuFor(null); })}
         onShareLink={() => {
           const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
           if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });

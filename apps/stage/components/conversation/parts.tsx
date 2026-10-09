@@ -97,17 +97,17 @@ function ReactionStrip({ stripBg, onReact }: {
 }
 
 interface BubbleActions {
-  reply: () => void; copy: () => void; select: () => void; shareLink: () => void; delete: () => void;
+  reply: () => void; copy: () => void; select: () => void; addToDashboard: () => void; shareLink: () => void; delete: () => void;
 }
 
 const SELECT_TEXT = Platform.OS !== 'web';
 
-function ActionDropdown({ hasText, canDelete, on }: {
-  hasText: boolean; canDelete: boolean; on: BubbleActions;
+function ActionDropdown({ items, on }: {
+  items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions;
 }): React.ReactElement {
   return (
     <DropdownMenu>
-      {bubbleMenuItems(hasText, { selectText: SELECT_TEXT, canDelete }).map(item => (
+      {items.map(item => (
         <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
       ))}
     </DropdownMenu>
@@ -141,12 +141,13 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
 }
 
 export function BubbleActionMenu({
-  target, anchor, canDelete, onClose, onReact, onReply, onCopy, onSelect, onShareLink, onDelete,
+  target, anchor, canDelete, onClose, onReact, onReply, onCopy, onSelect, onAddToDashboard, onShareLink, onDelete,
 }: {
   target: HistoryEntry | null; anchor: MenuAnchor; canDelete: boolean;
   onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onSelect: () => void;
+  onAddToDashboard?: () => void;
   onShareLink: () => void;
   onDelete: () => void;
 }): React.ReactElement {
@@ -154,13 +155,14 @@ export function BubbleActionMenu({
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
-  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, !!target?.text, windowHeight);
+  const items = bubbleMenuItems(!!target?.text, { selectText: SELECT_TEXT, canDelete, frame: onAddToDashboard !== undefined });
+  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   const dropdown = (
     <ActionDropdown
-      hasText={!!target?.text} canDelete={canDelete}
-      on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink, delete: onDelete }}
+      items={items}
+      on={{ reply: onReply, copy: onCopy, select: onSelect, addToDashboard: onAddToDashboard ?? onClose, shareLink: onShareLink, delete: onDelete }}
     />
   );
   const strip = (

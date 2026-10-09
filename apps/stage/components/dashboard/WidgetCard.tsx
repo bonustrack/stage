@@ -1,21 +1,14 @@
-import { Card } from '@stage-labs/kit/react-native/card';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import type { DashboardWidget } from '@stage-labs/client/xmtp/readState';
-import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
+import { frameSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
-import { AnchoredMenu, menuPointBelowEnd } from '../AnchoredMenu';
+import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
-import { useHover } from '../hover';
 import { Col, Row } from '../layout';
 import { changeDashboard } from '../../lib/dashboard';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetSizeLabel } from './dashboard.model';
-
-const CARD_PADDING = 12;
-const MENU_ICON = 20;
+import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetKindOf, widgetSizeLabel } from './dashboard.model';
+import { FrameWidget } from './FrameWidget';
+import { WidgetMenuButton, WidgetOutline, type WidgetGrip } from './widgetParts';
 
 export function WidgetMenu({ widget, anchor, onClose }: {
   widget: DashboardWidget; anchor: MenuPoint | null; onClose: () => void;
@@ -41,23 +34,27 @@ export function WidgetMenu({ widget, anchor, onClose }: {
   );
 }
 
-export function WidgetCard({ widget, onMenu }: {
-  widget: DashboardWidget; onMenu: (anchor: MenuPoint) => void;
+function EmptyWidget({ widget, onMenu, grip }: {
+  widget: DashboardWidget; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { sub, link } = usePalette();
-  const trigger = useHover();
-  return (
-    <Card dark={dark} padding={CARD_PADDING} style={{ flex: 1 }}>
+  const unsupported = widgetKindOf(widget) === 'unsupported';
+  return grip(
+    <WidgetOutline>
       <Row align="start" gap={8}>
         <Col flex={1} gap={2}>
-          <Text value="Empty widget" size="xs" weight="semibold" color="link" truncate />
-          <Text value={widgetSizeLabel(widget)} size="2xs" color="secondary" maxLines={2} />
+          <Text value={unsupported ? 'Unsupported widget' : 'Empty widget'} size="xs" weight="semibold" color="link" truncate />
+          <Text value={unsupported ? 'Update Stage to show it.' : widgetSizeLabel(widget)} size="2xs" color="secondary" maxLines={2} />
         </Col>
-        <Pressable onPress={(e) => { onMenu(menuPointBelowEnd(e)); }} hitSlop={10} accessibilityLabel="Widget options" {...trigger.hoverProps}>
-          <Glyph icon={IconDotGrid1x3Vertical} size={MENU_ICON} color={trigger.hovered ? link : sub} />
-        </Pressable>
+        <WidgetMenuButton onMenu={onMenu} />
       </Row>
-    </Card>
+    </WidgetOutline>,
+    true,
   );
+}
+
+export function WidgetCard({ widget, onMenu, grip }: {
+  widget: DashboardWidget; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
+}): React.ReactElement {
+  if (widgetKindOf(widget) !== 'frame') return <EmptyWidget widget={widget} onMenu={onMenu} grip={grip} />;
+  return <FrameWidget source={frameSourceOf(widget)} onMenu={onMenu} grip={grip} />;
 }

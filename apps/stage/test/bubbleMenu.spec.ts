@@ -15,6 +15,15 @@ describe('bubbleMenuItems', () => {
     expect(bubbleMenuItems(true, { selectText: false }).map(i => i.label)).toEqual(['Reply', 'Copy', 'Share link']);
   });
 
+  test('a frame can be added to the dashboard, before Share link', () => {
+    expect(bubbleMenuItems(true, { selectText: false, frame: true })).toContainEqual(
+      { id: 'addToDashboard', icon: 'IconLayoutDashboard', label: 'Add to dashboard' },
+    );
+    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true }).map(i => i.id))
+      .toEqual(['reply', 'copy', 'addToDashboard', 'shareLink', 'delete']);
+    expect(bubbleMenuItems(true, { selectText: false }).map(i => i.id)).not.toContain('addToDashboard');
+  });
+
   test('message without text offers only Reply and Share link', () => {
     expect(bubbleMenuItems(false, { selectText: true }).map(i => i.id)).toEqual(['reply', 'shareLink']);
     expect(bubbleMenuItems(false, { selectText: false }).map(i => i.id)).toEqual(['reply', 'shareLink']);
