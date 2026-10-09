@@ -7,14 +7,14 @@ import { conversationIsSyncGroup } from './xmtp.conv';
 import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg, XmtpConsent } from './xmtp.types';
 import { getActiveAccountId } from './accounts';
-import { useAccountEpoch } from './accountEpoch';
+import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { getCachedRows, knownActiveAccountId } from './channelsCache';
 import { listedConvRow } from '../modules/messaging/convRow.model';
 import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 import { onStorageIndexForgotten, readStorageIndex, writeStorageIndex } from './storageIndexStore';
 import {
-  applyFindings, emptyIndex, findingsOf, nextCursorNs, withCursor, type ScanFindings, type StorageIndex, type StoredFile,
+  applyFindings, emptyIndex, findingsOf, finishScan, nextCursorNs, type ScanFindings, type StorageIndex, type StoredFile,
 } from './storageIndex.model';
 import { ScanStopped, scanConversations, type ScanSink, type ScanSource } from './storageScan.model';
 
@@ -43,7 +43,7 @@ const INITIAL: StorageState = {
 let state = INITIAL;
 let held: { accountId: string; index: StorageIndex } | null = null;
 let publishTimer: ReturnType<typeof setTimeout> | null = null;
-let scanRun: Promise<void> | null = null;
+let scanRun: { epoch: number } | null = null;
 let scanAgain = false;
 const listeners = makeListeners();
 
@@ -98,12 +98,13 @@ async function showCached(): Promise<void> {
   setState({ ...INITIAL, accountId, files: index?.files ?? [], loaded: index !== null });
 }
 
-function sourceFor(context: AccountClient): ScanSource<Conv> {
+function sourceFor(context: AccountClient, live: () => boolean): ScanSource<Conv> {
   return {
+    idOf: (conv) => conv.id,
     page: async (conv, query) => (await sdk.messages(conv, query)).map(m => ({ ...sdk.rowOf(m), convId: conv.id })),
     skip: async (conv) => sdk.isGroup(conv) && await conversationIsSyncGroup(conv),
     superAdmins: async (conv) => new Set((await sdk.groupAdmins(conv)).superAdmins.map(id => id.toLowerCase())),
-    current: context.current,
+    current: () => live() && context.current(),
     failed: reported('storage.scanChat'),
   };
 }
@@ -116,6 +117,10 @@ function sinkFor(accountId: string): ScanSink {
   };
 }
 
+function stopUnless(live: () => boolean): void {
+  if (!live()) throw new ScanStopped();
+}
+
 async function startIndex(context: AccountClient): Promise<StorageIndex> {
   const accountId = context.account.id;
   const inboxId = context.client.inboxId;
@@ -126,20 +131,23 @@ async function startIndex(context: AccountClient): Promise<StorageIndex> {
   return start;
 }
 
-async function runScan(): Promise<void> {
+async function runScan(live: () => boolean): Promise<void> {
   const context = await accountClient();
+  stopUnless(live);
   const accountId = context.account.id;
   const start = await startIndex(context);
+  stopUnless(live);
   setState({ accountId, files: start.files, loaded: true, scanning: true, firstScan: start.cursorNs === 0, done: 0, total: 0, failed: false });
   const startedMs = Date.now();
   const convs = await sdk.listConvs(context.client, ALL_CONSENT);
+  stopUnless(live);
   context.assertCurrent();
   setState({ total: convs.length });
-  const complete = await scanConversations(convs, start.cursorNs, sourceFor(context), sinkFor(accountId));
-  const index = currentIndex(accountId);
-  commit(accountId, complete ? withCursor(index, nextCursorNs(startedMs)) : index);
+  const failed = await scanConversations(convs, start, sourceFor(context, live), sinkFor(accountId));
+  stopUnless(live);
+  commit(accountId, finishScan(currentIndex(accountId), nextCursorNs(startedMs), failed));
   publishNow();
-  setState({ scanning: false, firstScan: false, done: convs.length, failed: !complete });
+  setState({ scanning: false, firstScan: false, done: convs.length, failed: failed.size > 0 });
 }
 
 function isStop(err: unknown): boolean {
@@ -147,18 +155,29 @@ function isStop(err: unknown): boolean {
 }
 
 function scanEnded(err: unknown): void {
-  if (!isStop(err)) report('storage.scan', err);
-  setState({ scanning: false, firstScan: false, failed: !isStop(err) });
+  const stopped = isStop(err);
+  if (!stopped) report('storage.scan', err);
+  setState({ scanning: false, firstScan: false, failed: !stopped, loaded: state.loaded || !stopped });
 }
 
 function refreshStorage(): void {
-  if (scanRun !== null) { scanAgain = true; return; }
-  scanRun = runScan().catch(scanEnded).finally(() => {
+  const epoch = getAccountEpoch();
+  if (scanRun !== null && scanRun.epoch === epoch) { scanAgain = true; return; }
+  scanAgain = false;
+  const run = { epoch };
+  scanRun = run;
+  const live = (): boolean => scanRun === run && getAccountEpoch() === epoch;
+  void runScan(live).catch((err: unknown) => { if (live()) scanEnded(err); }).finally(() => {
+    if (scanRun !== run) return;
     scanRun = null;
     if (!scanAgain) return;
     scanAgain = false;
     refreshStorage();
   });
+}
+
+export function retryStorage(): void {
+  refreshStorage();
 }
 
 function onStreamMessage({ convId, msg }: StreamMsg): void {

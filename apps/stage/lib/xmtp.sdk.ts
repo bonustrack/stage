@@ -159,6 +159,11 @@ function streamDeletions(client: NativeClient, onDeleted: (deletion: MessageDele
   };
 }
 
+function absentMessage(err: unknown): undefined {
+  if (err instanceof Error && err.message.includes('parse null as a DecodedMessage')) return undefined;
+  throw err;
+}
+
 async function messageTarget(client: NativeClient, messageId: string): Promise<MessageTarget<Conversation> | null> {
   const message = await client.conversations.findMessage(asMessageId(messageId));
   const convId = message ? convIdFromTopic(message.topic) ?? conversationIdField(message) : undefined;
@@ -234,7 +239,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamDeletions,
   deletedEntryOf: () => Promise.resolve(null),
   messageTarget,
-  messageById: (client, messageId) => client.conversations.findMessage(asMessageId(messageId)),
+  messageById: (client, messageId) => client.conversations.findMessage(asMessageId(messageId)).catch(absentMessage),
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),

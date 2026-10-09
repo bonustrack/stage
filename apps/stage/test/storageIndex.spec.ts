@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   DELETED_LIMIT, FILE_PAGE_SIZE, applyFindings, decodeIndex, deletesToCheck, emptyIndex, encodeIndex, fileKey,
-  filesOfMessage, findingsOf, nextCursorNs, type ScannedMessage, type StorageIndex, type StoredFile,
+  filesOfMessage, findingsOf, finishScan, nextCursorNs, type ScannedMessage, type StorageIndex, type StoredFile,
 } from '../lib/storageIndex.model';
 import { ScanStopped, scanConversations, scanQuery, type ScanSink, type ScanSource } from '../lib/storageScan.model';
 import type { MessageQuery } from '../lib/xmtp.sdk.core';
@@ -19,11 +19,16 @@ function message(id: string, fields: Partial<ScannedMessage> = {}): ScannedMessa
   };
 }
 
-function file(messageId: string, sentMs: number, index = 0): StoredFile {
-  return { messageId, convId: 'c1', index, name: `${messageId}-${index}.bin`, size: 10, sentMs };
+function file(messageId: string, sentMs: number, index = 0, convId = 'c1'): StoredFile {
+  return { messageId, convId, index, name: `${messageId}-${index}.bin`, size: 10, sentMs };
+}
+
+function indexWith(fields: Partial<StorageIndex>): StorageIndex {
+  return { ...emptyIndex(ME), ...fields };
 }
 
 const keys = (index: StorageIndex): string[] => index.files.map(fileKey);
+const ids = (index: StorageIndex): string[] => index.files.map(f => f.messageId);
 
 describe('storage index model', () => {
   test('reads every file of a message with its position, name and size', () => {
@@ -58,6 +63,7 @@ describe('storage index model', () => {
     expect(findings.foreignDeletes).toEqual([{ convId: 'c1', target: 'mine', by: PEER }]);
     expect(deletesToCheck(emptyIndex(ME), findings)).toEqual(findings.foreignDeletes);
     expect(deletesToCheck(emptyIndex(ME), { ...findings, files: [] })).toEqual([]);
+    expect(deletesToCheck(indexWith({ files: [file('mine', 1, 0, 'c2')] }), { ...findings, files: [] })).toEqual([]);
   });
 
   test('merges files once each, newest first, and drops deleted messages for good', () => {
@@ -68,28 +74,34 @@ describe('storage index model', () => {
     expect(keys(deleted)).toEqual(['c:0', 'a:0']);
     expect(deleted.deleted).toEqual(['b']);
     expect(keys(applyFindings(deleted, { files: [file('b', 3)], deletedIds: [] }))).toEqual(['c:0', 'a:0']);
-    const many = Array.from({ length: DELETED_LIMIT + 5 }, (_, i) => `d${i}`);
-    expect(applyFindings(deleted, { files: [], deletedIds: many }).deleted).toHaveLength(DELETED_LIMIT);
+    const many = Array.from({ length: DELETED_LIMIT }, (_, i) => `d${i}`);
+    const full = applyFindings(deleted, { files: [], deletedIds: many });
+    expect(full.deleted).toHaveLength(DELETED_LIMIT);
+    const shifted = applyFindings(full, { files: [], deletedIds: ['late'] });
+    expect(shifted.deleted.at(-1)).toBe('late');
+    expect(shifted.deleted).toHaveLength(DELETED_LIMIT);
   });
 
   test('round-trips through storage and rejects damaged records', () => {
-    const index: StorageIndex = { inboxId: ME, cursorNs: 1_760_000_000_000 * MS, files: [file('a', 1), file('b', 2)], deleted: ['x'] };
+    const index = indexWith({ cursorNs: 1_760_000_000_000 * MS, files: [file('a', 1), file('b', 2)], deleted: ['x'], retry: { c9: 5 } });
     const decoded = decodeIndex(encodeIndex(index));
     expect(decoded?.cursorNs).toBe(index.cursorNs);
+    expect(decoded?.retry).toEqual({ c9: 5 });
     expect(decoded && keys(decoded)).toEqual(['b:0', 'a:0']);
     expect(decodeIndex('nope')).toBeNull();
     expect(decodeIndex(JSON.stringify({ v: 2, inboxId: ME, cursorNs: 0 }))).toBeNull();
-    expect(decodeIndex(JSON.stringify({ v: 1, inboxId: ME, cursorNs: 0, files: [{ messageId: 'a' }, file('b', 2)] }))?.files)
-      .toEqual([file('b', 2)]);
+    const partial = decodeIndex(JSON.stringify({ v: 1, inboxId: ME, cursorNs: 0, files: [{ messageId: 'a' }, file('b', 2)], retry: { c1: 'x' } }));
+    expect(partial?.files).toEqual([file('b', 2)]);
+    expect(partial?.retry).toEqual({});
   });
 });
 
 interface StoredMessage extends ScannedMessage { insertedNs: number }
 
 function fakeChats(chats: Record<string, StoredMessage[]>, failing = new Set<string>()) {
-  const queries: MessageQuery[] = [];
+  const queries: (MessageQuery & { conv: string })[] = [];
   const page = (conv: string, query: MessageQuery): Promise<ScannedMessage[]> => {
-    queries.push(query);
+    queries.push({ ...query, conv });
     if (failing.has(conv)) return Promise.reject(new Error('broken chat'));
     const rows = (chats[conv] ?? [])
       .filter(m => query.insertedAfterNs === undefined || m.insertedNs > query.insertedAfterNs)
@@ -114,6 +126,7 @@ function memorySink(start: StorageIndex): ScanSink & { progressed: number[] } {
 
 function source(page: ScanSource<string>['page'], overrides: Partial<ScanSource<string>> = {}): ScanSource<string> {
   return {
+    idOf: (conv) => conv,
     page,
     skip: (conv) => Promise.resolve(conv === 'sync'),
     superAdmins: () => Promise.resolve(new Set<string>()),
@@ -132,12 +145,20 @@ describe('storage scan', () => {
     const long = Array.from({ length: FILE_PAGE_SIZE * 2 + 3 }, (_, i) => stored(`m${i}`, 1_000 + i, 1_000 + i));
     const chats = fakeChats({ c1: long, c2: [stored('p', 5, 5, { convId: 'c2', senderInboxId: PEER })], sync: [stored('s', 6, 6)] });
     const sink = memorySink(emptyIndex(ME));
-    const complete = await scanConversations(['c1', 'c2', 'sync'], 0, source(chats.page), sink);
-    expect(complete).toBe(true);
+    const failed = await scanConversations(['c1', 'c2', 'sync'], emptyIndex(ME), source(chats.page), sink);
+    expect(failed.size).toBe(0);
     expect(sink.index().files).toHaveLength(long.length);
     expect(sink.progressed).toEqual([1, 2, 3]);
     expect(chats.queries.every(q => q.insertedAfterNs === undefined && q.filesOnly === true)).toBe(true);
-    expect(chats.queries.filter(q => q.beforeNs !== undefined)).toHaveLength(2);
+    expect(chats.queries.filter(q => q.conv === 'sync')).toEqual([]);
+  });
+
+  test('files that share the sent time of a page boundary are all found', async () => {
+    const tied = Array.from({ length: FILE_PAGE_SIZE + 1 }, (_, i) => stored(`t${i}`, i < FILE_PAGE_SIZE - 1 ? 2_000 + i : 1_000, 1));
+    const chats = fakeChats({ c1: tied });
+    const sink = memorySink(emptyIndex(ME));
+    await scanConversations(['c1'], emptyIndex(ME), source(chats.page), sink);
+    expect(sink.index().files).toHaveLength(tied.length);
   });
 
   test('a later scan reads only what was stored since, history imports and deletions included', async () => {
@@ -147,33 +168,48 @@ describe('storage scan', () => {
       stored('fresh', 9_100, 9_100),
       stored('del', 9_200, 9_200, { contentTypeId: 'deleteMessage', content: { messageId: 'kept' } }),
     ] });
-    const start: StorageIndex = { inboxId: ME, cursorNs: 5_000 * MS, files: [file('kept', 800)], deleted: [] };
+    const start = indexWith({ cursorNs: 5_000 * MS, files: [file('kept', 800)] });
     const sink = memorySink(start);
-    expect(await scanConversations(['c1'], start.cursorNs, source(chats.page), sink)).toBe(true);
-    expect(sink.index().files.map(f => f.messageId)).toEqual(['fresh', 'imported']);
-    expect(chats.queries[0]).toEqual(scanQuery(5_000 * MS, undefined));
+    expect((await scanConversations(['c1'], start, source(chats.page), sink)).size).toBe(0);
+    expect(ids(sink.index())).toEqual(['fresh', 'imported']);
+    expect(chats.queries[0]).toMatchObject(scanQuery(5_000 * MS, undefined));
     expect(nextCursorNs(1_760_000_000_000)).toBeLessThan(1_760_000_000_000 * MS);
   });
 
-  test('another member can delete my file only as a super admin', async () => {
-    const chats = fakeChats({ c1: [
-      stored('f1', 1, 1), stored('f2', 2, 2),
-      stored('x1', 3, 3, { senderInboxId: PEER, contentTypeId: 'deleteMessage', content: { messageId: 'f1' } }),
-      stored('x2', 4, 4, { senderInboxId: 'inbox-admin', contentTypeId: 'deleteMessage', content: { messageId: 'f2' } }),
-    ] });
+  test('another member can delete my file only as a super admin of that same chat', async () => {
+    const del = (id: string, by: string, target: string, convId = 'c1'): StoredMessage =>
+      stored(id, 9, 9, { senderInboxId: by, convId, contentTypeId: 'deleteMessage', content: { messageId: target } });
+    const chats = fakeChats({
+      c1: [stored('f1', 1, 1), stored('f2', 2, 2), stored('f3', 3, 3), del('x1', PEER, 'f1'), del('x2', 'inbox-admin', 'f2')],
+      c2: [del('x3', 'inbox-admin', 'f3', 'c2')],
+    });
     const sink = memorySink(emptyIndex(ME));
-    await scanConversations(['c1'], 0, source(chats.page, { superAdmins: () => Promise.resolve(new Set(['inbox-admin'])) }), sink);
-    expect(sink.index().files.map(f => f.messageId)).toEqual(['f1']);
+    await scanConversations(['c1', 'c2'], emptyIndex(ME), source(chats.page, { superAdmins: () => Promise.resolve(new Set(['inbox-admin'])) }), sink);
+    expect(ids(sink.index())).toEqual(['f3', 'f1']);
   });
 
-  test('a broken chat leaves the scan incomplete, and a switched account stops it', async () => {
+  test('a broken chat is retried from its own cursor while the others move on', async () => {
     const chats = fakeChats({ c1: [stored('a', 1, 1)], c2: [stored('b', 2, 2, { convId: 'c2' })] }, new Set(['c1']));
     const errors: unknown[] = [];
-    const sink = memorySink(emptyIndex(ME));
-    expect(await scanConversations(['c1', 'c2'], 0, source(chats.page, { failed: (err) => { errors.push(err); } }), sink)).toBe(false);
+    const start = indexWith({ cursorNs: 0 });
+    const sink = memorySink(start);
+    const failed = await scanConversations(['c1', 'c2'], start, source(chats.page, { failed: (err) => { errors.push(err); } }), sink);
     expect(errors).toHaveLength(1);
-    expect(sink.index().files.map(f => f.messageId)).toEqual(['b']);
-    const stopped = scanConversations(['c2'], 0, source(chats.page, { current: () => false }), memorySink(emptyIndex(ME)));
+    expect([...failed]).toEqual([['c1', 0]]);
+    expect(ids(sink.index())).toEqual(['b']);
+    const next = finishScan(sink.index(), 7_000 * MS, failed);
+    expect(next.retry).toEqual({ c1: 0 });
+    const again = fakeChats({ c1: [stored('a', 1, 1)], c2: [] });
+    const failedAgain = await scanConversations(['c1', 'c2'], next, source(again.page), memorySink(next));
+    expect(failedAgain.size).toBe(0);
+    expect(again.queries.find(q => q.conv === 'c1')?.insertedAfterNs).toBeUndefined();
+    expect(again.queries.find(q => q.conv === 'c2')?.insertedAfterNs).toBe(7_000 * MS);
+  });
+
+  test('a switched account stops the scan before the next query', async () => {
+    const chats = fakeChats({ c1: [stored('a', 1, 1)] });
+    const stopped = scanConversations(['c1'], emptyIndex(ME), source(chats.page, { current: () => false }), memorySink(emptyIndex(ME)));
     await expect(stopped).rejects.toBeInstanceOf(ScanStopped);
+    expect(chats.queries).toEqual([]);
   });
 });

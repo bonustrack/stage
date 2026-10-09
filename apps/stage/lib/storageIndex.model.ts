@@ -6,6 +6,7 @@ import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
 export const CURSOR_MARGIN_NS = 60_000_000_000;
+export const PAGE_OVERLAP_NS = 1_000;
 
 export interface StoredFile {
   messageId: string;
@@ -21,6 +22,7 @@ export interface StorageIndex {
   cursorNs: number;
   files: StoredFile[];
   deleted: string[];
+  retry: Record<string, number>;
 }
 
 export interface ScannedMessage extends StreamedMessage { convId: string }
@@ -38,7 +40,7 @@ export const NO_FINDINGS: ScanFindings = { files: [], deletedIds: [], foreignDel
 interface FilePart { name?: unknown; size?: unknown }
 
 export function emptyIndex(inboxId: string): StorageIndex {
-  return { inboxId, cursorNs: 0, files: [], deleted: [] };
+  return { inboxId, cursorNs: 0, files: [], deleted: [], retry: {} };
 }
 
 export function fileKey(file: Pick<StoredFile, 'messageId' | 'index'>): string {
@@ -126,8 +128,8 @@ export function joinFindings(a: ScanFindings, b: ScanFindings): ScanFindings {
 
 export function deletesToCheck(index: StorageIndex, findings: ScanFindings): ForeignDelete[] {
   if (findings.foreignDeletes.length === 0) return [];
-  const mine = new Set([...index.files, ...findings.files].map(f => f.messageId));
-  return findings.foreignDeletes.filter(d => mine.has(d.target));
+  const chatOf = new Map([...index.files, ...findings.files].map(f => [f.messageId, f.convId]));
+  return findings.foreignDeletes.filter(d => chatOf.get(d.target) === d.convId);
 }
 
 export function newestFirst(a: StoredFile, b: StoredFile): number {
@@ -151,23 +153,29 @@ export function applyFindings(index: StorageIndex, findings: Pick<ScanFindings, 
     if (!gone.has(file.messageId) && !byKey.has(fileKey(file))) byKey.set(fileKey(file), file);
   }
   const files = [...byKey.values()].sort(newestFirst);
-  const same = files.length === index.files.length && files.every((f, i) => f === index.files[i])
-    && deleted.length === index.deleted.length;
-  return same ? index : { ...index, files, deleted };
+  return sameList(files, index.files) && sameList(deleted, index.deleted) ? index : { ...index, files, deleted };
 }
 
-export function withCursor(index: StorageIndex, cursorNs: number): StorageIndex {
-  return index.cursorNs === cursorNs ? index : { ...index, cursorNs };
+function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, i) => item === b[i]);
+}
+
+export function sinceFor(index: StorageIndex, convId: string): number {
+  return index.retry[convId] ?? index.cursorNs;
+}
+
+export function finishScan(index: StorageIndex, cursorNs: number, failed: ReadonlyMap<string, number>): StorageIndex {
+  return { ...index, cursorNs, retry: Object.fromEntries(failed) };
 }
 
 export function nextCursorNs(scanStartedMs: number): number {
   return scanStartedMs * 1_000_000 - CURSOR_MARGIN_NS;
 }
 
-export function pageCursor(page: readonly { sentNs: number }[]): number | undefined {
+export function nextPageBeforeNs(page: readonly { sentNs: number }[]): number | undefined {
   let oldest: number | undefined;
   for (const m of page) if (oldest === undefined || m.sentNs < oldest) oldest = m.sentNs;
-  return oldest;
+  return oldest === undefined ? undefined : oldest + PAGE_OVERLAP_NS;
 }
 
 function isStoredFile(value: unknown): value is StoredFile {
@@ -180,12 +188,17 @@ export function indexRecord(index: StorageIndex): Record<string, unknown> {
   return { v: 1, ...index };
 }
 
+function retryOf(value: unknown): Record<string, number> {
+  const entries = Object.entries(objectOf(value) ?? {});
+  return Object.fromEntries(entries.filter((e): e is [string, number] => typeof e[1] === 'number'));
+}
+
 export function indexOfRecord(raw: unknown): StorageIndex | null {
   const o = objectOf(raw);
   if (o === null || o.v !== 1 || typeof o.inboxId !== 'string' || typeof o.cursorNs !== 'number') return null;
   const files = Array.isArray(o.files) ? o.files.filter(isStoredFile) : [];
   const deleted = Array.isArray(o.deleted) ? o.deleted.filter((id): id is string => typeof id === 'string') : [];
-  return { inboxId: o.inboxId, cursorNs: o.cursorNs, files: files.sort(newestFirst), deleted };
+  return { inboxId: o.inboxId, cursorNs: o.cursorNs, files: files.sort(newestFirst), deleted, retry: retryOf(o.retry) };
 }
 
 export function encodeIndex(index: StorageIndex): string {

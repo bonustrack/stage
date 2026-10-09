@@ -16,6 +16,7 @@ import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER, VirtualList } from '../layout';
+import { RetryNotice } from '../chrome/RetryNotice';
 import { StackHeader } from '../chrome/StackHeader';
 import { LabelChip } from '../LabelChip';
 import { SearchTopnavBar } from '../SearchTopnavBar';
@@ -26,7 +27,9 @@ import { useOwnDeletes } from '../../lib/ownDeletes';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { forgetStorageFile, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storage';
+import {
+  forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState,
+} from '../../lib/storage';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
 import { usePalette } from '../../lib/theme';
 import { FileUnavailableError, openStoredFile } from './storageOpen';
@@ -124,6 +127,9 @@ function ListHeader({ query, onQuery, filter, onFilter, storage, hidden }: {
 
 function EmptyList({ storage, filtered }: { storage: StorageState; filtered: boolean }): React.ReactElement | null {
   const { sub } = usePalette();
+  if (storage.failed && !storage.scanning && storage.files.length === 0) {
+    return <RetryNotice message="Could not read your chats. Check your connection and try again." onRetry={retryStorage} />;
+  }
   if (!storage.loaded || (storage.firstScan && storage.files.length === 0)) {
     return <Row justify="center" padding={{ y: 48 }}><Spinner size={24} color={sub} /></Row>;
   }
@@ -174,7 +180,7 @@ function useFileOpener(): { opening: string | null; unavailable: ReadonlySet<str
   return { opening, unavailable, open };
 }
 
-export function StorageScreen(): React.ReactElement {
+function StorageBody(): React.ReactElement {
   const storage = useStorage();
   const hidden = useOwnDeletes();
   const insets = useSafeAreaInsets();
@@ -204,4 +210,8 @@ export function StorageScreen(): React.ReactElement {
       />
     </Col>
   );
+}
+
+export function StorageScreen(): React.ReactElement {
+  return <StorageBody key={useAccountEpoch()} />;
 }
