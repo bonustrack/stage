@@ -8,7 +8,7 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Box, Col } from '../layout';
+import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MenuRow } from '../MenuRows';
 import { useSearchFilterSources } from '../FilterSearch';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
@@ -20,6 +20,7 @@ import { usePalette } from '../../lib/theme';
 const TITLE = FIELD_SECTIONS.category.title;
 const NOUN = CHANNEL_FIELD_NOUNS.category;
 const BUTTON_HEIGHT = 38;
+const TEXT_INSET = 10;
 const VALUE_MAX_WIDTH = 150;
 const PICKER_WIDTH = 300;
 const NO_SHRINK = { flexShrink: 0 } as const;
@@ -32,7 +33,7 @@ function ProjectButton({ value, onPress }: { value: string | null; onPress: (poi
     <Pressable accessibilityRole="button" accessibilityLabel={value === null ? TITLE : `${TITLE}: ${value}`}
       onPress={e => { onPress(menuPointAbove(e)); }} {...hoverProps}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 4, height: BUTTON_HEIGHT, paddingHorizontal: 10, borderRadius: 999,
+        flexDirection: 'row', alignItems: 'center', gap: 4, height: BUTTON_HEIGHT, paddingHorizontal: TEXT_INSET, borderRadius: 999,
         backgroundColor: pressed ? border : 'transparent', flexShrink: 1, minWidth: 0,
       })}>
       <Text size="md" color={color} truncate style={{ maxWidth: VALUE_MAX_WIDTH, flexShrink: 1, minWidth: 0 }}>{value ?? TITLE}</Text>
@@ -63,7 +64,9 @@ function ProjectMenu({ value, pick }: { value: string | null; pick: (next: strin
   );
 }
 
-export function NewChatProject({ value, onChange }: { value: string | null; onChange: (next: string | null) => void }): React.ReactElement {
+export function NewChatProject({ value, onChange, flush }: {
+  value: string | null; onChange: (next: string | null) => void; flush?: boolean;
+}): React.ReactElement {
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const pick = (next: string | null): void => {
@@ -72,7 +75,9 @@ export function NewChatProject({ value, onChange }: { value: string | null; onCh
   };
   return (
     <>
-      <ProjectButton value={value} onPress={setAnchor}/>
+      <Row padding={{ left: flush === true ? 0 : PAGE_GUTTER - TEXT_INSET }}>
+        <ProjectButton value={value} onPress={setAnchor}/>
+      </Row>
       {anchor === null ? null : (
         <AnchoredMenu visible anchor={anchor} onClose={() => { setAnchor(null); }} avoidKeyboard>
           <Col width={anchored ? PICKER_WIDTH : undefined}><ProjectMenu value={value} pick={pick}/></Col>

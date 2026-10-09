@@ -186,9 +186,9 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded,
         onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
       <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
         placeholder={askPlaceholder(mentionCandidates.map(c => c.name))} rounded={rounded}
-        metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>}
-        fields={<NewChatProject value={metadata.category} onChange={setNewChatProject}/>}
+        metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>} quickAttach={false}
         autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
+      <NewChatProject value={metadata.category} onChange={setNewChatProject} flush={rounded}/>
     </Box>
   );
 }
@@ -198,7 +198,7 @@ function NewChatFooter(props: FormProps): React.ReactElement {
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <NewChatForm {...props}/>
-      <Box height={insets.bottom} surface="raised"/>
+      <Box height={insets.bottom}/>
     </KeyboardStickyView>
   );
 }

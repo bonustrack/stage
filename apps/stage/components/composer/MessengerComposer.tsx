@@ -58,7 +58,7 @@ interface Props {
   placeholder?: string;
   rounded?: boolean;
   metadata?: React.ReactNode;
-  fields?: React.ReactNode;
+  quickAttach?: boolean;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
@@ -97,6 +97,12 @@ function composerAttachActions(
     openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
   });
   return draftOnly ? all.filter(([, label]) => DRAFT_ATTACH_LABELS.has(label)) : all;
+}
+
+function quickAttachAction(
+  actions: ReturnType<typeof buildAttachActions>, lastLabel: string | undefined, shown: boolean,
+): ReturnType<typeof buildAttachActions>[number] | undefined {
+  return shown ? actions.find(([, label]) => label === lastLabel) : undefined;
 }
 
 function useDroppedAndPasted(actions: ReturnType<typeof useComposerActions>, focus: () => void): DropZone {
@@ -164,7 +170,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   });
   const attachActions = composerAttachActions(actions, s, draftOnly, startRecording);
   const lastLabel = useLastAttachment();
-  const quick = attachActions.find(([, label]) => label === lastLabel);
+  const quick = quickAttachAction(attachActions, lastLabel, props.quickAttach !== false);
 
   return (
     <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
@@ -191,7 +197,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickIcon={quick?.[0]}
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
-        fields={props.fields}
         hasContent={hasContent}
         busy={props.busy}
         dictation={nativeDictation(dictation)}

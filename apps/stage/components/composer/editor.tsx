@@ -42,7 +42,6 @@ interface EditorProps {
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   attachActions?: [CentralIcon, string, () => void | Promise<void>][];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
-  fields?: React.ReactNode;
   hasContent: boolean;
   busy?: boolean;
   dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
@@ -128,8 +127,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-function quickSlot(p: EditorProps): React.ReactNode {
-  if (p.fields !== undefined) return p.fields;
+function quickSlot(p: EditorProps): React.ReactElement | null {
   if (!p.quickIcon || !p.onQuick) return null;
   return <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />;
 }
@@ -146,7 +144,7 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
         label="Attach"
         onPress={(e) => { setAnchor(menuPointAbove(e)); p.setAttachMenuOpen(() => true); }}
         fg={fg} hoverFg={p.head} chipBg={chipBg}
-        mr={quick === null || quick === undefined ? undefined : -12}
+        mr={quick === null ? undefined : -12}
       />
       {quick}
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
