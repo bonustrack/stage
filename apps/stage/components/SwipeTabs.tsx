@@ -7,10 +7,11 @@ import Animated, {
   useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS,
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
+import { useBoardHome } from './tabs/boardHome';
 
 import {
   FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
-  indexOfPathname,
+  homeTabIndex,
 } from './SwipeTabs.config';
 
 export function TabsPager(): React.ReactElement {
@@ -18,7 +19,7 @@ export function TabsPager(): React.ReactElement {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
 
-  const routeIndex = indexOfPathname(pathname);
+  const routeIndex = homeTabIndex(pathname, useBoardHome());
 
   const panRef = useRef<GestureType | undefined>(undefined);
 

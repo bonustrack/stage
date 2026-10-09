@@ -4,7 +4,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter } from 'expo-router';
 import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { TAB_HREF, TAB_ORDER, indexOfPathname, type TabName } from '../SwipeTabs.config';
+import { TAB_HREF, homeTabIndex, type TabName } from '../SwipeTabs.config';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
@@ -37,9 +37,7 @@ export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
 const TAB_LABELS: Record<TabName, string> = { index: 'Chats', board: 'Board', wallet: 'Wallet', settings: 'Settings' };
 
 function activeTabIndex(pathname: string, boardHome: boolean): number {
-  if (pathname.startsWith('/settings')) return -1;
-  const index = indexOfPathname(pathname);
-  return index === 0 && boardHome ? TAB_ORDER.indexOf('board') : index;
+  return pathname.startsWith('/settings') ? -1 : homeTabIndex(pathname, boardHome);
 }
 
 function TabIcon({ name, icon, active, unreadBadge }: {

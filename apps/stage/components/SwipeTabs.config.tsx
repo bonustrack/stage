@@ -22,12 +22,17 @@ export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => Re
   settings: SettingsMenu,
 };
 
-export function indexOfPathname(pathname: string): number {
+function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
   if (pathname === BOARD_ROUTE) return 1;
   if (pathname.startsWith('/wallet')) return 2;
   if (pathname.startsWith('/settings')) return 3;
   return 0;
+}
+
+export function homeTabIndex(pathname: string, boardHome: boolean): number {
+  const index = indexOfPathname(pathname);
+  return index === 0 && boardHome ? TAB_ORDER.indexOf('board') : index;
 }
 
 export const SWITCH_FRACTION = 0.2;
