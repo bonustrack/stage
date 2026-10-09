@@ -15,7 +15,7 @@ const SETTINGS_SECTIONS: Readonly<Record<SettingsSectionId, SettingsSectionInfo>
   wallet: { href: '/settings/wallet', icon: 'IconWallet4' },
   advanced: { href: '/settings/advanced', icon: 'IconCode' },
   inbox: { href: '/settings/inbox', icon: 'IconEmail1' },
-  dashboard: { href: '/settings/dashboard', icon: 'IconLayoutDashboard' },
+  dashboard: { href: '/settings/dashboard', icon: 'IconBento' },
   storage: { href: '/settings/storage', icon: 'IconFolder1' },
 };
 

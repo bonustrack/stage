@@ -9,7 +9,7 @@ export function bubbleMenuItems(
     { id: 'reply', icon: 'IconArrowUndoUp', label: 'Reply' },
     hasText && { id: 'copy', icon: 'IconSquareBehindSquare1', label: 'Copy' },
     hasText && selectText && { id: 'select', icon: 'IconFileBend', label: 'Select' },
-    frame && { id: 'addToDashboard', icon: 'IconLayoutDashboard', label: 'Add to dashboard' },
+    frame && { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
     { id: 'shareLink', icon: 'IconPaperPlane', label: 'Share link' },
     canDelete && { id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true },
   ];

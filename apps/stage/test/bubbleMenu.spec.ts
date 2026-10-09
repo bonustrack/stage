@@ -17,7 +17,7 @@ describe('bubbleMenuItems', () => {
 
   test('a frame can be added to the dashboard, before Share link', () => {
     expect(bubbleMenuItems(true, { selectText: false, frame: true })).toContainEqual(
-      { id: 'addToDashboard', icon: 'IconLayoutDashboard', label: 'Add to dashboard' },
+      { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
     );
     expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true }).map(i => i.id))
       .toEqual(['reply', 'copy', 'addToDashboard', 'shareLink', 'delete']);
