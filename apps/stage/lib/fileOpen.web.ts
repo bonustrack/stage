@@ -5,6 +5,18 @@ import { fileOpenAction, type OpenableFile } from './fileOpen.model';
 
 const inlineUrls = new Map<string, string>();
 
+type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<void>;
+
+function desktopOpen(): DesktopOpen | undefined {
+  const bridge = (globalThis as { stageDesktop?: { openFile?: unknown } }).stageDesktop;
+  return typeof bridge?.openFile === 'function' ? bridge.openFile as DesktopOpen : undefined;
+}
+
+async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<void> {
+  const res = await fetch(file.url);
+  await open(file.name, new Uint8Array(await res.arrayBuffer()));
+}
+
 function blobUrlFor(dataUrl: string, bytes: Uint8Array, mime: string): string {
   const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: mime }));
   inlineUrls.set(dataUrl, url);
@@ -12,6 +24,11 @@ function blobUrlFor(dataUrl: string, bytes: Uint8Array, mime: string): string {
 }
 
 export function openFile(file: OpenableFile): void {
+  const desktop = desktopOpen();
+  if (desktop !== undefined) {
+    void openOnDesktop(desktop, file).catch(reported('file.open'));
+    return;
+  }
   const cached = inlineUrls.get(file.url);
   if (cached !== undefined) {
     capabilities.openUrl(cached);

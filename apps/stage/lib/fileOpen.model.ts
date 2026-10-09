@@ -34,3 +34,36 @@ export function fileOpenAction(file: OpenableFile): FileOpenAction {
   const bytes = inlineBytes(file.url);
   return bytes === null ? { kind: 'open', url: file.url } : { kind: 'openInline', bytes, mime: type };
 }
+
+const FILE_EXTENSIONS: Readonly<Record<string, string>> = {
+  'application/pdf': 'pdf',
+  'text/plain': 'txt',
+  'text/csv': 'csv',
+  'text/markdown': 'md',
+  'application/json': 'json',
+  'application/zip': 'zip',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+  'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+};
+const NAME_RESERVED = '/\\:*?"<>|';
+const MAX_NAME_LENGTH = 120;
+
+function readableName(name: string): string {
+  const kept = Array.from(name, (c) => (c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 || NAME_RESERVED.includes(c) ? '_' : c)).join('');
+  const trimmed = kept.replace(/^[.\s]+/, '').trim().slice(-MAX_NAME_LENGTH);
+  return trimmed === '' ? 'attachment' : trimmed;
+}
+
+export function nativeFileName(name: string, mime: string | undefined): string {
+  const clean = readableName(name);
+  if (/\.[a-z0-9]{1,8}$/i.test(clean)) return clean;
+  const ext = FILE_EXTENSIONS[(mime ?? '').split(';')[0]?.trim().toLowerCase() ?? ''];
+  return ext === undefined ? clean : `${clean}.${ext}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fileOpenAction, inertBlobType } from '../lib/fileOpen.model';
+import { fileOpenAction, inertBlobType, nativeFileName } from '../lib/fileOpen.model';
 
 const b64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
 
@@ -67,5 +67,22 @@ describe('inertBlobType', () => {
     for (const mime of ['image/svg+xml', 'application/xhtml+xml', 'application/xml', 'application/javascript', 'application/octet-stream', '', undefined]) {
       expect(inertBlobType(mime)).toBe('application/octet-stream');
     }
+  });
+});
+
+describe('nativeFileName', () => {
+  test('keeps a normal name with its extension', () => {
+    expect(nativeFileName('Report 2026.pdf', 'application/pdf')).toBe('Report 2026.pdf');
+  });
+
+  test('adds an extension from the type when the name has none', () => {
+    expect(nativeFileName('file attachment', 'application/pdf')).toBe('file attachment.pdf');
+    expect(nativeFileName('', 'text/plain; charset=utf-8')).toBe('attachment.txt');
+    expect(nativeFileName('notes', 'application/x-unknown')).toBe('notes');
+  });
+
+  test('replaces folders and reserved characters so the copy stays in the cache folder', () => {
+    expect(nativeFileName('../../secret/a:b*c.txt', 'text/plain')).toBe('_.._secret_a_b_c.txt');
+    expect(nativeFileName('a\u0000b.pdf', 'application/pdf')).toBe('a_b.pdf');
   });
 });

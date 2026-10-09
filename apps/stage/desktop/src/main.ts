@@ -5,6 +5,7 @@ import { installMenu } from './menu';
 import { registerAppScheme, serveWebApp } from './serve';
 import { startUpdates } from './updates';
 import { createWindow, frontWindow } from './window';
+import { serveFileOpening } from './fileOpen';
 
 const ALLOWED_PERMISSIONS = new Set([
   'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
@@ -82,6 +83,7 @@ function start(): void {
     restrictPermissions();
     allowScreenShare();
     installMenu();
+    serveFileOpening(site);
     createWindow(site, pendingLink === null ? site : desktopRouteUrl(site, pendingLink));
     pendingLink = null;
     startUpdates();
