@@ -1,5 +1,4 @@
 
-import { capabilities } from '../../lib/capabilities';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -17,6 +16,7 @@ import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { Attachment } from './helpers';
 import { useRemoteAttachment } from './attachmentUri';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
+import { openFile } from '../../lib/fileOpen';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   const { bg } = usePalette();
@@ -36,7 +36,7 @@ export function AttachmentView({ att, fullUrl, fg, galleryKey }: {
   if (kind === 'video') return <MessengerVideoAttachment uri={fullUrl} />;
   if (kind === 'audio') return <AudioCard att={att} uri={fullUrl} />;
   const card = fileCardModel(att);
-  return <AttachmentFile label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
+  return <AttachmentFile label={card.title} subtitle={card.subtitle} fg={fg} onPress={() => { openFile({ url: fullUrl, mime: att.mime, name: att.name ?? card.title }); }} />;
 }
 
 function AttachmentFile({ label, subtitle, fg, onPress, pending = false }: {
