@@ -36,6 +36,17 @@ runtime - no Express, no origin, no laptop dependency.
   each next part goes to `upload/<id>`, and the archive is served once all
   its bytes are in. An archive is capped at 1 GB. The web app splits its
   uploads in the patched `@xmtp/browser-sdk` worker, in 50 MB parts.
+- **Chat attachments:** `POST /attachments` stores one client-encrypted file
+  in the `stage` R2 bucket as `attachments/<random 24-byte id>` and answers
+  `{ id }`; `GET` and `HEAD /attachments/<id>` serve it back as
+  `application/octet-stream` with immutable caching. The AES key travels inside
+  the XMTP message, so the Worker only ever sees ciphertext and no filename.
+  Uploads need a `Content-Length`, are capped at 100 MB and rate limited per
+  IP (20 a minute through the `ATTACHMENT_UPLOADS` binding). Workers Logs are
+  pinned off in `wrangler.toml`, so no request log of ids or IPs is kept beyond
+  Cloudflare's defaults. Messages from before 2026-10-09
+  point at Swarmy (`api.swarmy.cloud/bzz/<ref>/`); the app reads those from
+  Swarmy or, when it fails, the public Swarm gateway.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -129,7 +140,9 @@ bunx wrangler deploy
 
 `wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
 `bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace and
-the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration);
+the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
+and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
+dashboard; a deploy fails while it does not exist);
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
 with `wrangler secret put`, never committed. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any

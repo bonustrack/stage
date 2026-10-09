@@ -19,6 +19,24 @@ function preflight(path: string, method: string): Promise<Response> {
   });
 }
 
+describe('attachment routes', () => {
+  test('are wired, answer preflight and say when no bucket is bound', async () => {
+    const pre = await preflight('/attachments', 'POST');
+    expect(pre.status).toBe(204);
+    expect(pre.headers.get('access-control-allow-methods')).toContain('POST');
+    const res = await call('/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } });
+    expect(res.status).toBe(503);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect((await call(`/attachments/${'b'.repeat(32)}`)).status).toBe(503);
+  });
+
+  test('an upload refused by the edge rate limit is 429 before touching storage', async () => {
+    const limited = { ATTACHMENT_UPLOADS: { limit: () => Promise.resolve({ success: false }) } } as unknown as Parameters<typeof worker.fetch>[1];
+    const res = await worker.fetch(new Request('https://proxy.stage.box/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } }), limited, ctx);
+    expect(res.status).toBe(429);
+  });
+});
+
 describe('client route preflight', () => {
   test.each([
     ['/preview?url=https%3A%2F%2Fexample.com', 'GET'],

@@ -72,6 +72,26 @@ new_sqlite_classes = ["MailBoxes"]
 tag = "v5"
 deleted_classes = ["HistoryTransfers"]
 
+# Workers Logs stay off: an invocation log would keep every attachment id and
+# client IP for days.
+[observability]
+enabled = false
+
+# Encrypted chat attachments: Stage encrypts each file on the device (the key
+# travels inside the XMTP message) and POSTs the ciphertext to /attachments,
+# which stores it in the "stage" bucket as attachments/<random id>;
+# /attachments/<id> serves it back with immutable caching. The Worker never
+# sees a filename or a key.
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "stage"
+
+# Attachment uploads per client IP, enforced across the whole edge.
+[[ratelimits]]
+name = "ATTACHMENT_UPLOADS"
+namespace_id = "1081"
+simple = { limit = 20, period = 60 }
+
 # Mail API calls (key, sign-in, list, fetch) per client IP.
 [[ratelimits]]
 name = "MAIL_REQUESTS"
