@@ -44,9 +44,9 @@ runtime - no Express, no origin, no laptop dependency.
   Uploads need a `Content-Length`, are capped at 100 MB and rate limited per
   IP (20 a minute through the `ATTACHMENT_UPLOADS` binding). Workers Logs are
   pinned off in `wrangler.toml`, so no request log of ids or IPs is kept beyond
-  Cloudflare's defaults. Messages from before 2026-10-09
-  point at Swarmy (`api.swarmy.cloud/bzz/<ref>/`); the app reads those from
-  Swarmy or, when it fails, the public Swarm gateway.
+  Cloudflare's defaults. Messages from before 2026-10-09 carry Swarm links
+  (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
+  (`download.gateway.ethswarm.org`).
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.

@@ -1,37 +1,17 @@
-import { ignored, report } from './errorPolicy';
+import { ignored } from './errorPolicy';
 import { linkProxyBase } from './linkProxy';
 
 const UPLOAD_URL = `${linkProxyBase()}/attachments`;
 const UPLOAD_TIMEOUT_MS = 60_000;
 export const MAX_UPLOAD_BYTES = 100_000_000;
 
-export const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
-const SWARM_FALLBACK_GATEWAY = 'https://download.gateway.ethswarm.org/bzz/';
-const SWARMY_BZZ_REF = /^https:\/\/api\.swarmy\.cloud\/bzz\/([0-9a-f]{64}(?:[0-9a-f]{64})?)\/?$/i;
+const SWARM_GATEWAY = 'https://download.gateway.ethswarm.org/bzz/';
+const SWARM_LINK = /^https:\/\/[^/]+\/bzz\/([0-9a-f]{64}(?:[0-9a-f]{64})?)\/?$/i;
 
-export function swarmToHttp(url: string): string {
-  if (!url.startsWith('swarm://')) return url;
-  const ref = url.slice('swarm://'.length).replace(/\/+$/, '');
-  return `${SWARM_GATEWAY}${ref}/`;
-}
-
-export function swarmDownloadUrls(url: string): string[] {
-  const primary = swarmToHttp(url);
-  const ref = SWARMY_BZZ_REF.exec(primary)?.[1];
-  return ref === undefined ? [primary] : [primary, `${SWARM_FALLBACK_GATEWAY}${ref}/`];
-}
-
-export async function fromFirstUrl<T>(urls: readonly string[], load: (url: string) => Promise<T>): Promise<T> {
-  let failure: unknown = new Error('No download url.');
-  for (const url of urls) {
-    try {
-      return await load(url);
-    } catch (err) {
-      report('attachment.download', err);
-      failure = err;
-    }
-  }
-  throw failure;
+export function attachmentDownloadUrl(url: string): string {
+  if (url.startsWith('swarm://')) return `${SWARM_GATEWAY}${url.slice('swarm://'.length).replace(/\/+$/, '')}/`;
+  const ref = SWARM_LINK.exec(url)?.[1];
+  return ref === undefined ? url : `${SWARM_GATEWAY}${ref.toLowerCase()}/`;
 }
 
 export function resolveUploadResponse(

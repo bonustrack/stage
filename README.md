@@ -122,9 +122,9 @@ value is public). Set them in the Netlify site (web) and the EAS build profiles
 Attachments (already client-side encrypted) upload to the proxy Worker
 (`POST /attachments`), which stores the ciphertext in the `stage` R2 bucket
 as `attachments/<random id>` and serves it back from
-`proxy.stage.box/attachments/<id>`. Messages from before the move point at
-Swarmy (`api.swarmy.cloud/bzz/<ref>/`) and are read from Swarmy or, when it
-fails, the public Swarm gateway.
+`proxy.stage.box/attachments/<id>`. Messages from before the move carry Swarm
+links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
+(`download.gateway.ethswarm.org`).
 
 ## Releases
 

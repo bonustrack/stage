@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { assertUploadSize, fromFirstUrl, MAX_UPLOAD_BYTES, resolveUploadResponse, swarmDownloadUrls, swarmToHttp, SWARM_GATEWAY } from '../lib/attachmentStorage';
+import { assertUploadSize, attachmentDownloadUrl, MAX_UPLOAD_BYTES, resolveUploadResponse } from '../lib/attachmentStorage';
 
 const STORED_ID = 'Zm9vYmFyYmF6cXV4cXV1eGNvcmdlZ3Jh';
 const STORED_URL = `https://proxy.stage.box/attachments/${STORED_ID}`;
@@ -39,54 +39,21 @@ describe('assertUploadSize', () => {
   });
 });
 
-describe('swarmToHttp', () => {
-  test('rewrites a swarm:// ref to the swarmy bzz gateway', () => {
-    expect(swarmToHttp('swarm://abc123')).toBe(`${SWARM_GATEWAY}abc123/`);
-    expect(swarmToHttp('swarm://abc123///')).toBe(`${SWARM_GATEWAY}abc123/`);
-  });
-
-  test('passes through non-swarm urls unchanged', () => {
-    expect(swarmToHttp('https://example.com/x.png')).toBe('https://example.com/x.png');
-  });
-});
-
-describe('swarmDownloadUrls', () => {
+describe('attachmentDownloadUrl', () => {
   const ref = 'ab'.repeat(32);
-  const fallback = `https://download.gateway.ethswarm.org/bzz/${ref}/`;
+  const gateway = `https://download.gateway.ethswarm.org/bzz/${ref}/`;
 
-  test('adds the public Swarm gateway after Swarmy for a Swarm reference', () => {
-    expect(swarmDownloadUrls(`${SWARM_GATEWAY}${ref}/`)).toEqual([`${SWARM_GATEWAY}${ref}/`, fallback]);
-    expect(swarmDownloadUrls(`swarm://${ref}`)).toEqual([`${SWARM_GATEWAY}${ref}/`, fallback]);
+  test('reads an old Swarm link from the public Swarm gateway only', () => {
+    expect(attachmentDownloadUrl(`https://old-storage.example/bzz/${ref}/`)).toBe(gateway);
+    expect(attachmentDownloadUrl(`https://old-storage.example/bzz/${ref.toUpperCase()}`)).toBe(gateway);
+    expect(attachmentDownloadUrl(`swarm://${ref}`)).toBe(gateway);
+    expect(attachmentDownloadUrl(`swarm://${ref}///`)).toBe(gateway);
+    expect(attachmentDownloadUrl(gateway)).toBe(gateway);
   });
 
-  test('keeps a proxy link or any other url as the only source', () => {
-    expect(swarmDownloadUrls(STORED_URL)).toEqual([STORED_URL]);
-    expect(swarmDownloadUrls('https://example.com/x.png')).toEqual(['https://example.com/x.png']);
-    expect(swarmDownloadUrls('swarm://abc123')).toEqual([`${SWARM_GATEWAY}abc123/`]);
-  });
-});
-
-describe('fromFirstUrl', () => {
-  test('falls back to the next url when the first fails', async () => {
-    const tried: string[] = [];
-    const result = await fromFirstUrl(['a', 'b'], (url) => {
-      tried.push(url);
-      return url === 'a' ? Promise.reject(new Error('500')) : Promise.resolve(`from ${url}`);
-    });
-    expect(result).toBe('from b');
-    expect(tried).toEqual(['a', 'b']);
-  });
-
-  test('stops at the first url that works', async () => {
-    const tried: string[] = [];
-    await fromFirstUrl(['a', 'b'], (url) => {
-      tried.push(url);
-      return Promise.resolve(url);
-    });
-    expect(tried).toEqual(['a']);
-  });
-
-  test('throws the last error when every url fails', async () => {
-    await expect(fromFirstUrl(['a', 'b'], (url) => Promise.reject(new Error(`down ${url}`)))).rejects.toThrow('down b');
+  test('keeps a proxy link or any other url as it is', () => {
+    expect(attachmentDownloadUrl(STORED_URL)).toBe(STORED_URL);
+    expect(attachmentDownloadUrl('https://example.com/x.png')).toBe('https://example.com/x.png');
+    expect(attachmentDownloadUrl('https://example.com/bzz/short')).toBe('https://example.com/bzz/short');
   });
 });

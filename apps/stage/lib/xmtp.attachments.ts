@@ -10,7 +10,7 @@ import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
-import { fromFirstUrl, swarmDownloadUrls, uploadEncryptedAttachment } from './attachmentStorage';
+import { attachmentDownloadUrl, uploadEncryptedAttachment } from './attachmentStorage';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -131,9 +131,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
     encryptedLocalFileUri: asFileUri(dest.uri),
     metadata,
   };
-  const decrypted = await fromFirstUrl(swarmDownloadUrls(info.url), async (url) => {
-    await File.downloadFileAsync(url, dest, { idempotent: true });
-    return await client.decryptAttachment(encrypted);
-  });
+  await File.downloadFileAsync(attachmentDownloadUrl(info.url), dest, { idempotent: true });
+  const decrypted = await client.decryptAttachment(encrypted);
   return { fileUri: decrypted.fileUri, mimeType: decrypted.mimeType, filename: decrypted.filename };
 }
