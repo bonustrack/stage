@@ -11,6 +11,7 @@ import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-l
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
 import { LEAVE_CHANNEL_CONFIRM } from '../ChannelMenu.model';
+import { homeRoute } from '../tabs/boardHome';
 
 function convIdOf(line: string): string {
   const convId = convIdOfLine(line);
@@ -124,7 +125,7 @@ export function useChannelDetail(convId: string | undefined) {
     await run('leave', 'Couldn’t leave', async () => {
       const result = await leaveGroupConv(line);
       capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
-      router.replace('/');
+      router.replace(homeRoute());
     });
   };
 

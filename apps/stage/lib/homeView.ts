@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
@@ -18,11 +18,14 @@ const prefs = createValueStore<HomeViewContent>({
 
 export const useHomeView = prefs.use;
 
+export const getHomeView = prefs.get;
+
+export function useHomeViewOf(view: HomeViewContent['view']): HomeViewContent {
+  const stored = prefs.use();
+  return useMemo(() => (stored.view === view ? stored : { ...stored, view }), [stored, view]);
+}
+
 const boardQuery = makeValue('');
-
-export const getBoardQuery = boardQuery.get;
-
-export const subscribeBoardQuery = boardQuery.subscribe;
 
 export function useBoardQuery(): [string, (query: string) => void] {
   useEffect(() => () => { boardQuery.set(''); }, []);

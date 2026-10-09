@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { channelRouteConvId, isRailOnlyRoute, isSplitRoute, isTabRoute } from '../components/tabs/splitRoutes';
+import {
+  BOARD_ROUTE, channelRouteConvId, homeRouteOf, homeViewAt, isBoardHome, isRailOnlyRoute, isRailRoute, isSplitRoute, isTabRoute,
+} from '../components/tabs/splitRoutes';
 
 describe('isSplitRoute', () => {
   test('home, conversations, and direct messages split', () => {
@@ -34,10 +36,10 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/board')).toBe(false);
   });
 
-  test('the home page takes the full width when the board is the home view, channels still split', () => {
-    expect(isSplitRoute('/', true)).toBe(false);
-    expect(isSplitRoute('/channel/abc', true)).toBe(true);
-    expect(isSplitRoute('/new', true)).toBe(true);
+  test('the board page keeps the rail but not the channels pane, its channels still split', () => {
+    expect(isSplitRoute(BOARD_ROUTE)).toBe(false);
+    expect(isSplitRoute('/channel/abc')).toBe(true);
+    expect(isSplitRoute('/new')).toBe(true);
   });
 });
 
@@ -55,18 +57,49 @@ describe('channelRouteConvId', () => {
 });
 
 describe('isTabRoute', () => {
-  test('only the four tab pages count', () => {
+  test('only the four tab pages count, Board included and Contacts no longer', () => {
     expect(isTabRoute('/')).toBe(true);
+    expect(isTabRoute('/board')).toBe(true);
     expect(isTabRoute('/wallet')).toBe(true);
+    expect(isTabRoute('/contacts')).toBe(false);
     expect(isTabRoute('/wallet/send')).toBe(false);
     expect(isTabRoute('/settings/security')).toBe(false);
   });
 });
 
 describe('isRailOnlyRoute', () => {
-  test('only the home page in board view keeps the rail without the channels pane', () => {
-    expect(isRailOnlyRoute('/', true)).toBe(true);
-    expect(isRailOnlyRoute('/', false)).toBe(false);
-    expect(isRailOnlyRoute('/channel/abc', true)).toBe(false);
+  test('only the board page keeps the rail without the channels pane', () => {
+    expect(isRailOnlyRoute('/board')).toBe(true);
+    expect(isRailOnlyRoute('/')).toBe(false);
+    expect(isRailOnlyRoute('/channel/abc')).toBe(false);
+  });
+
+  test('the rail shows on split pages and on the board page only', () => {
+    expect(isRailRoute('/board')).toBe(true);
+    expect(isRailRoute('/')).toBe(true);
+    expect(isRailRoute('/channel/abc')).toBe(true);
+    expect(isRailRoute('/signup')).toBe(false);
+    expect(isRailRoute('/user/abc')).toBe(false);
+  });
+});
+
+describe('the board home', () => {
+  test('the Chats and Board pages set the home view, other routes keep the last one', () => {
+    expect(homeViewAt('/')).toBe('chats');
+    expect(homeViewAt('/board')).toBe('board');
+    expect(homeViewAt('/channel/abc')).toBeNull();
+    expect(homeViewAt('/settings/contacts')).toBeNull();
+  });
+
+  test('a channel opened from the board keeps the board beside it', () => {
+    expect(isBoardHome('/board', 'chats')).toBe(true);
+    expect(isBoardHome('/', 'board')).toBe(false);
+    expect(isBoardHome('/channel/abc', 'board')).toBe(true);
+    expect(isBoardHome('/channel/abc', 'chats')).toBe(false);
+  });
+
+  test('going home returns to the last home page', () => {
+    expect(homeRouteOf('board')).toBe('/board');
+    expect(homeRouteOf('chats')).toBe('/');
   });
 });

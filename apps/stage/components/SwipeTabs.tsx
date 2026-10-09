@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS,
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
-import { useHomeView } from '../lib/homeView';
 
 import {
   FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
@@ -20,7 +19,6 @@ export function TabsPager(): React.ReactElement {
   const { width } = useWindowDimensions();
 
   const routeIndex = indexOfPathname(pathname);
-  const boardHome = useHomeView().view === 'board';
 
   const panRef = useRef<GestureType | undefined>(undefined);
 
@@ -55,7 +53,7 @@ export function TabsPager(): React.ReactElement {
 
   const pan = Gesture.Pan()
     .withRef(panRef)
-    .enabled(!(boardHome && routeIndex === 0))
+    .enabled(TAB_ORDER[routeIndex] !== 'board')
     .activeOffsetX([-10, 10])
     .failOffsetY([-14, 14])
     .onUpdate((e) => {

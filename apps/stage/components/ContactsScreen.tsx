@@ -2,17 +2,20 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
-import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
+import { StackHeader } from './chrome/StackHeader';
 import { usePalette } from '../lib/theme';
+import { SETTINGS_ROUTE } from '../lib/routes';
+import { useSafeAreaInsets } from '../lib/safeArea';
 import { useAllContacts, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
 
-export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
+export function ContactsScreen(): React.ReactElement {
   const { bg } = usePalette();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { contacts } = useAllContacts();
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
@@ -43,14 +46,14 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
 
   return (
     <Col surface="surface" flex={1}>
+      <StackHeader title="Contacts" backTo={SETTINGS_ROUTE} />
       <VirtualList
-        simultaneousHandlers={panRef}
         data={contacts}
         keyExtractor={c => c.address}
         renderItem={renderItem}
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: insets.bottom }}
         ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
     </Col>

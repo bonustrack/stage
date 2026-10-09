@@ -11,7 +11,7 @@ import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { getActiveAccount } from '../../lib/accounts';
-import { setHomeView, useHomeView } from '../../lib/homeView';
+import { setHomeView, useHomeViewOf } from '../../lib/homeView';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
 import { memo, useEffect, useState } from 'react';
@@ -53,8 +53,8 @@ interface HomeFilterProps {
 }
 
 function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
-  const current = useHomeView();
-  const fields = useChannelFields(current.view);
+  const current = useHomeViewOf(filter.scope);
+  const fields = useChannelFields(filter.scope);
   const [page, setPage] = useState('view');
   const close = (): void => { setPage('view'); onClose(); };
   const back = (): void => { setPage('view'); };
@@ -65,7 +65,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
     if (id === 'grouping' || id === 'sorting' || id === 'filter' || id === 'fields') { setPage(id); return; }
     const edit = homeViewEdit(current, id);
     if (edit === null) return;
-    if (edit.view === undefined && page !== 'sorting') close();
+    if (page !== 'sorting') close();
     setHomeView(edit);
   };
   const filterCount = searchFilterCount(filter.query);
@@ -85,7 +85,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
           {CHANNEL_FIELDS.map(field => (
             <PickerRow key={field.id} label={field.label} selected={fields[field.id]}
               leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
-              onPress={() => { toggleChannelField(current.view, field.id); }}/>
+              onPress={() => { toggleChannelField(filter.scope, field.id); }}/>
           ))}
         </> : (page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping')).map((section, index) => (
           <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>

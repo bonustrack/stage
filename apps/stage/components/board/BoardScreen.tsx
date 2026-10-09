@@ -40,12 +40,12 @@ import { reported } from '../../lib/errorPolicy';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useChannelGroups } from '../../lib/channelGroups';
-import { useBoardQuery, useHomeView } from '../../lib/homeView';
+import { useBoardQuery, useHomeView, useHomeViewOf } from '../../lib/homeView';
 import { homeSortOf } from '../home/sort.model';
 import { capabilities } from '../../lib/capabilities';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
-import { channelRouteConvId } from '../tabs/splitRoutes';
+import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import {
   BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable, columnMovable, columnsEditable, orderedColumns,
   revealScrollX, searchedColumns, type BoardColumn, type BoardDrag,
@@ -131,7 +131,7 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
           }
           const press = boardCardPress(openConvId, item.convId);
           if (press === 'close') {
-            capabilities.backTo('/');
+            capabilities.backTo(BOARD_ROUTE);
             return;
           }
           onOpen();
@@ -307,7 +307,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const cleared = useClearedChats();
   const boardOrder = useBoardOrder();
   const categoryOrder = useChannelGroups().order;
-  const view = useHomeView();
+  const view = useHomeViewOf('board');
   const { columnBy } = view;
   const sort = homeSortOf(view);
   const order = columnBy === 'category' ? categoryOrder : boardOrder;

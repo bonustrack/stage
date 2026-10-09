@@ -1,6 +1,7 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.model';
 import { reactorsLabel } from '../conversation/reactors.model';
 import { uniqueKeys } from '../conversation/SidebarSection.model';
+import { BOARD_ROUTE } from '../tabs/splitRoutes';
 
 export const MAX_SHOWN_RECIPIENTS = 5;
 
@@ -17,7 +18,7 @@ interface NewChatNav { href: '/' | '/new'; push: boolean }
 export function newChatNav(wide: boolean, board: boolean, pathname: string): NewChatNav {
   if (!wide) return { href: '/new', push: true };
   if (!board) return { href: '/', push: false };
-  return { href: '/new', push: pathname === '/' };
+  return { href: '/new', push: pathname === BOARD_ROUTE };
 }
 
 export function membersDraftKey(draftKey: string | null): string | null {

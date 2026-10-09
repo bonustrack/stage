@@ -6,9 +6,9 @@ import {
 } from '@stage-labs/client/xmtp/readState';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
-import { GROUP_BY_LABELS, type GroupableRow } from './groupBy.model';
+import { GROUP_BY_LABELS } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
-import { boardColumns, labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
+import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
@@ -90,7 +90,6 @@ export interface ViewMenuSection {
   rows: ViewMenuRow[];
 }
 
-const VIEW_ID_PREFIX = 'view:';
 const GROUP_ID_PREFIX = 'group:';
 const GROUP_ICONS: Record<GroupKey, AppIconName> = {
   assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag', status: 'IconCircleDashed',
@@ -118,18 +117,12 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
   const board = current.view === 'board';
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
-  if (!grouping) return [
-    { rows: [
-      { id: `${VIEW_ID_PREFIX}chats`, label: 'Chats', icon: 'IconBubble3', selected: !board },
-      { id: `${VIEW_ID_PREFIX}board`, label: 'Board', icon: 'IconColumns3Wide', selected: board },
-    ] },
-    { rows: [
-      { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
-      { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
-      { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
-      { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
-    ] },
-  ];
+  if (!grouping) return [{ rows: [
+    { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
+    { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
+    { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
+    { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
+  ] }];
   const groups = GROUP_KEYS.map((key): ViewMenuRow => (
     { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
   ));
@@ -138,8 +131,6 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
 }
 
 export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {
-  const view = homeViewSchema.shape.view.safeParse(id.slice(VIEW_ID_PREFIX.length));
-  if (id.startsWith(VIEW_ID_PREFIX) && view.success) return { view: view.data };
   if (!id.startsWith(GROUP_ID_PREFIX)) return homeSortEdit(current, id);
   const value = id.slice(GROUP_ID_PREFIX.length);
   if (current.view === 'board') {
@@ -176,11 +167,7 @@ export function unreadRowCount(rows: readonly UnreadRow[]): number {
   return rows.filter(row => row.unreadCount > 0 || row.markedUnread === true).length;
 }
 
-type ListedRow = ChannelListRow & GroupableRow & ClearableRow;
-
 interface VisibleUnreadInputs<R> {
-  view: HomeViewContent['view'];
-  columnBy: GroupKey;
   rows: R[] | null;
   enabledLabels: Set<string>;
   unreadOnly: boolean;
@@ -188,17 +175,9 @@ interface VisibleUnreadInputs<R> {
   cleared: ClearedChats;
 }
 
-function listedRows<R extends ListedRow>(i: VisibleUnreadInputs<R>): R[] {
-  const hidden = (row: R): boolean => isRowCleared(i.cleared, row);
-  if (i.view === 'board') {
-    const cards = boardColumns(i.rows ?? [], [], [], i.columnBy, undefined, hidden).flatMap(column => column.rows);
-    return [...new Map(cards.map(row => [row.convId, row])).values()];
-  }
-  return filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly }).filter(row => !hidden(row));
-}
-
-export function visibleUnreadCount<R extends ListedRow>(i: VisibleUnreadInputs<R>): number {
-  return unreadRowCount(listedRows(i).filter(i.matches));
+export function visibleUnreadCount<R extends ChannelListRow & ClearableRow>(i: VisibleUnreadInputs<R>): number {
+  const listed = filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly });
+  return unreadRowCount(listed.filter(row => !isRowCleared(i.cleared, row) && i.matches(row)));
 }
 
 export function searchBarLabels(

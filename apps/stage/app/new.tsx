@@ -3,11 +3,12 @@ import { newChatMetadata, newChatParams } from '../components/home/newChatMetada
 import { NewChatScreen } from '../components/home/NewChatScreen';
 import { useWebTabRail } from '../lib/webLayout';
 import { useAccountEpoch } from '../lib/accountEpoch';
-import { useHomeView, useHomeViewLoaded } from '../lib/homeView';
+import { useHomeViewLoaded } from '../lib/homeView';
+import { useBoardHome } from '../components/tabs/boardHome';
 
 export default function NewChatRoute(): React.ReactElement {
   const wide = useWebTabRail();
-  const board = useHomeView().view === 'board';
+  const board = useBoardHome();
   const loaded = useHomeViewLoaded();
   const accountEpoch = useAccountEpoch();
   const params = newChatParams(newChatMetadata(useLocalSearchParams()));

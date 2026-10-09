@@ -12,8 +12,10 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import {
-  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, WebTabBar, WebTabRail, chatsTabOpensNewChat, useTabIcons,
+  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail, chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
+import { useRememberHomeView } from '../../components/tabs/boardHome';
+import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -23,7 +25,7 @@ import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
 
-const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
+const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
 
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
   const slot = useTopnavSlot();
@@ -94,7 +96,7 @@ export default function TabsLayout(): React.ReactElement {
   const rail = useWebTabRail();
   const gate = useAccountGate();
   const chatsTabListeners = useChatsTabListeners(pathname, rail);
-  const tabIcons = useTabIcons();
+  useRememberHomeView();
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
   const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
@@ -120,7 +122,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarIconStyle: TAB_ICON_FRAME,
         }}
 >
-        {tabIcons.map(([name, icon]) => (
+        {TAB_ICONS.map(([name, icon]) => (
           <Tabs.Screen
             key={name}
             name={name}
@@ -160,7 +162,7 @@ export default function TabsLayout(): React.ReactElement {
       <PagerOverlay
         insetTop={insets.top}
         tabBarHeight={tabBarHeight}
-        topnavHidden={rail && pathname === '/'}
+        topnavHidden={rail && (pathname === '/' || pathname === BOARD_ROUTE)}
         rail={rail}
         pathname={pathname}
       />

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useContactsFocused } from '../components/tabs/useWalletFocused';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { sdk } from './xmtp.sdk';
@@ -68,7 +67,7 @@ export function useContactList(enabled: boolean): Contact[] {
 }
 
 export function useAllContacts(): { contacts: Contact[] } {
-  const contacts = useContactList(useContactsFocused());
+  const contacts = useContactList(true);
   return { contacts };
 }
 

@@ -20,7 +20,3 @@ export function useTabFocused(base: string): boolean {
 export function useWalletFocused(): boolean {
   return useTabFocused('/wallet');
 }
-
-export function useContactsFocused(): boolean {
-  return useTabFocused('/contacts');
-}

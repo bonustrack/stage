@@ -127,15 +127,15 @@ describe('new chat member memory', () => {
 describe('newChatNav', () => {
   test('phones push the new chat page', () => {
     expect(newChatNav(false, false, '/')).toEqual({ href: '/new', push: true });
-    expect(newChatNav(false, true, '/')).toEqual({ href: '/new', push: true });
+    expect(newChatNav(false, true, '/board')).toEqual({ href: '/new', push: true });
   });
 
   test('desktop chats view goes home, where the new chat lives', () => {
     expect(newChatNav(true, false, '/channel/abc')).toEqual({ href: '/', push: false });
   });
 
-  test('desktop board view opens it beside the board like a channel', () => {
-    expect(newChatNav(true, true, '/')).toEqual({ href: '/new', push: true });
+  test('desktop board opens it beside the board like a channel', () => {
+    expect(newChatNav(true, true, '/board')).toEqual({ href: '/new', push: true });
     expect(newChatNav(true, true, '/channel/abc')).toEqual({ href: '/new', push: false });
   });
 });

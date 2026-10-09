@@ -10,8 +10,8 @@ import { WebTabRail } from './WebTabRail';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { channelsPaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
-import { useHomeView } from '../../lib/homeView';
 import { isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
+import { useBoardHome } from './boardHome';
 
 function usePaneScope(scope: string | null): void {
   useEffect(() => {
@@ -50,9 +50,9 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
 export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElement | null {
   const rail = useWebTabRail();
   const pathname = usePathname();
-  const boardHome = useHomeView().view === 'board';
-  const active = visible && rail && isSplitRoute(pathname, boardHome);
-  const railOnly = visible && rail && isRailOnlyRoute(pathname, boardHome);
+  const boardHome = useBoardHome();
+  const active = visible && rail && isSplitRoute(pathname);
+  const railOnly = visible && rail && isRailOnlyRoute(pathname);
   usePaneScope(paneScopeOf(active, railOnly));
   const unreadBadge = unreadBadgeLabel(useVisibleUnreadCount());
   if (!active && !railOnly) return null;
@@ -60,7 +60,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
     <>
       {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>}
       <SidePane full={railOnly}>
-        <HomeScreen pane/>
+        <HomeScreen pane board={boardHome}/>
       </SidePane>
     </>
   );

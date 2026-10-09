@@ -14,6 +14,7 @@ import { markChatCleared } from '../lib/clearedChats';
 import { channelProfileLinkOf, profileLinkOf } from '../lib/links';
 import { openAddMembers } from '../lib/memberList';
 import { capabilities } from '../lib/capabilities';
+import { homeRoute } from './tabs/boardHome';
 
 interface ChannelMenuProps {
   convId: string;
@@ -41,7 +42,7 @@ function confirmLeaveChannel(
     try {
       const result = await leaveGroupConv(lineOfConv(convId));
       onAfterLeave?.(result);
-      if (context === 'view') router.replace('/');
+      if (context === 'view') router.replace(homeRoute());
     } catch (e) {
       Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
     }
@@ -70,7 +71,7 @@ function confirmDeleteChat(
       try {
         await markChatCleared(peerAddress, Date.now());
         void markConvRead(convId);
-        if (context === 'view') router.replace('/');
+        if (context === 'view') router.replace(homeRoute());
         await (block ? blockRequestConv(convId) : unacceptConv(convId));
       } catch (e) {
         Alert.alert('Couldn’t delete', (e as Error).message ?? 'Unknown error');

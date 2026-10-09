@@ -23,7 +23,7 @@ import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMa
 import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
-import { useHomeView } from '../../lib/homeView';
+import { useHomeViewOf } from '../../lib/homeView';
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
@@ -33,19 +33,28 @@ import { useGroupedRows, useHomeState } from './state';
 import { useCategoryRowDrag, useListDragMeasurements, usePinDrag, useSectionDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
+import { useTabFocused } from '../tabs/useWalletFocused';
+import { BOARD_ROUTE } from '../tabs/splitRoutes';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
-export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement | null {
+export function HomeScreen({ panRef, pane, board = false }: {
+  panRef?: SimultaneousRefs; pane?: boolean; board?: boolean;
+} = {}): React.ReactElement | null {
   const splitHome = useWebTabRail() && pane !== true;
   const accountEpoch = useAccountEpoch();
-  const board = useHomeView().view === 'board';
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const menu = useMemo(() => ({ anchor, setAnchor }), [anchor]);
   useEffect(() => { setAnchor(null); }, [accountEpoch]);
   if (splitHome) return board ? null : <NewChatScreen key={accountEpoch}/>;
   if (board) return <BoardScreen pane={pane === true} menu={menu}/>;
   return <ChannelsHome panRef={panRef} pane={pane === true} menu={menu}/>;
+}
+
+export function BoardHome(): React.ReactElement | null {
+  const here = usePathname() === BOARD_ROUTE;
+  const opened = useTabFocused(BOARD_ROUTE);
+  return here || opened ? <HomeScreen board/> : null;
 }
 
 function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
@@ -57,7 +66,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const { rows, pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
-  const view = useHomeView();
+  const view = useHomeViewOf('chats');
   const { groupBy } = view;
   const sort = homeSortOf(view);
   const boardOrder = useBoardOrder();

@@ -44,6 +44,7 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
+import { homeRoute } from '../tabs/boardHome';
 
 async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
   if (!await capabilities.confirm(deleteConfirmOf(asAdmin))) return;
@@ -96,7 +97,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
-  const back = (): void => { router.replace('/'); };
+  const back = (): void => { router.replace(homeRoute()); };
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={back}>
       <ConvTopnavIdentity
