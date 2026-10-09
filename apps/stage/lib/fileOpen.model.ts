@@ -11,14 +11,14 @@ type FileOpenAction =
   | { kind: 'open'; url: string }
   | { kind: 'openInline'; bytes: Uint8Array; mime: string };
 
-const TAB_VIEWABLE = /^(application\/pdf|text\/)/i;
+const INERT_MEDIA = /^(image\/(png|jpe?g|gif|webp|avif|bmp|heic|heif)|video\/[a-z0-9.+-]+|audio\/[a-z0-9.+-]+)$/;
+const CHARSET = /charset=([a-z0-9_-]+)/i;
 
-function isViewableInTab(mime: string | undefined): mime is string {
-  return mime !== undefined && TAB_VIEWABLE.test(mime);
-}
-
-function tabMime(mime: string): string {
-  return /^text\//i.test(mime) && !/charset=/i.test(mime) ? `${mime};charset=utf-8` : mime;
+export function inertBlobType(mime: string | undefined): string {
+  const base = (mime ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
+  if (INERT_MEDIA.test(base) || base === 'application/pdf') return base;
+  if (base.startsWith('text/')) return `text/plain;charset=${CHARSET.exec(mime ?? '')?.[1] ?? 'utf-8'}`;
+  return 'application/octet-stream';
 }
 
 function inlineBytes(url: string): Uint8Array | null {
@@ -29,8 +29,8 @@ function inlineBytes(url: string): Uint8Array | null {
 }
 
 export function fileOpenAction(file: OpenableFile): FileOpenAction {
-  const mime = file.mime;
-  if (!isViewableInTab(mime)) return { kind: 'download' };
+  const type = inertBlobType(file.mime);
+  if (type !== 'application/pdf' && !type.startsWith('text/plain')) return { kind: 'download' };
   const bytes = inlineBytes(file.url);
-  return bytes === null ? { kind: 'open', url: file.url } : { kind: 'openInline', bytes, mime: tabMime(mime) };
+  return bytes === null ? { kind: 'open', url: file.url } : { kind: 'openInline', bytes, mime: type };
 }

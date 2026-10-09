@@ -9,6 +9,7 @@ import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
 import { attachmentDownloadUrl, uploadEncryptedAttachment } from './attachmentStorage';
+import { inertBlobType } from './fileOpen.model';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -89,7 +90,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{
   if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
   const encrypted = new Uint8Array(await res.arrayBuffer());
   const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, info));
-  const blob = new Blob([decrypted.content.slice().buffer], { type: decrypted.mimeType });
+  const blob = new Blob([decrypted.content.slice().buffer], { type: inertBlobType(decrypted.mimeType) });
   return {
     fileUri: URL.createObjectURL(blob),
     mimeType: decrypted.mimeType,

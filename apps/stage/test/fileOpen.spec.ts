@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fileOpenAction } from '../lib/fileOpen.model';
+import { fileOpenAction, inertBlobType } from '../lib/fileOpen.model';
 
 const b64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
 
@@ -26,7 +26,14 @@ describe('fileOpenAction', () => {
 
   test('keeps a charset the file already declares', () => {
     const action = fileOpenAction(inline('hello', 'text/csv;charset=iso-8859-1'));
-    expect(action.kind === 'openInline' && action.mime).toBe('text/csv;charset=iso-8859-1');
+    expect(action.kind === 'openInline' && action.mime).toBe('text/plain;charset=iso-8859-1');
+  });
+
+  test('shows an HTML or XML file as plain text instead of running it', () => {
+    for (const mime of ['text/html', 'text/xml', 'TEXT/HTML; charset=utf-8']) {
+      const action = fileOpenAction(inline('<script>alert(1)</script>', mime));
+      expect(action.kind === 'openInline' && action.mime).toBe('text/plain;charset=utf-8');
+    }
   });
 
   test('opens a decrypted or remote file link as it is', () => {
@@ -38,5 +45,27 @@ describe('fileOpenAction', () => {
     expect(fileOpenAction(inline('PK', 'application/zip'))).toEqual({ kind: 'download' });
     expect(fileOpenAction({ url: 'blob:https://stage.box/abc', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', name: 'a.docx' })).toEqual({ kind: 'download' });
     expect(fileOpenAction({ url: 'blob:https://stage.box/abc', name: 'unknown' })).toEqual({ kind: 'download' });
+  });
+});
+
+describe('inertBlobType', () => {
+  test('keeps media types that a browser shows without running code', () => {
+    expect(inertBlobType('image/png')).toBe('image/png');
+    expect(inertBlobType('image/jpg')).toBe('image/jpg');
+    expect(inertBlobType('video/mp4')).toBe('video/mp4');
+    expect(inertBlobType('audio/mp4; codecs=mp4a.40.2')).toBe('audio/mp4');
+    expect(inertBlobType('application/pdf')).toBe('application/pdf');
+  });
+
+  test('turns every text type into plain text and keeps a clean charset', () => {
+    expect(inertBlobType('text/html')).toBe('text/plain;charset=utf-8');
+    expect(inertBlobType('text/plain;charset=ISO-8859-1')).toBe('text/plain;charset=ISO-8859-1');
+    expect(inertBlobType('text/plain;charset="><script>')).toBe('text/plain;charset=utf-8');
+  });
+
+  test('makes anything that could run code an opaque download', () => {
+    for (const mime of ['image/svg+xml', 'application/xhtml+xml', 'application/xml', 'application/javascript', 'application/octet-stream', '', undefined]) {
+      expect(inertBlobType(mime)).toBe('application/octet-stream');
+    }
   });
 });
