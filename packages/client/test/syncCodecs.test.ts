@@ -17,13 +17,16 @@ const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }>
   homeView: {
     typeId: 'homeView', fallback: 'Stage home view', json: '{"view":"chats","groupBy":"category","columnBy":"label","at":1759500000006}',
   },
+  dashboard: {
+    typeId: 'dashboardLayout', fallback: 'Stage dashboard', json: '{"widgets":[{"id":"w1","w":"half","h":2}],"at":1759500000007}',
+  },
 };
 
 const OLD_REGISTRY = [
   'metro.box/poll:1.0:true', 'metro.box/signatureRequest:1.0:true', 'metro.box/signatureReference:1.0:true',
   'xmtp.org/walletSendCalls:1.0:true', 'stage.box/readState:1.0:false', 'stage.box/pinState:1.0:false',
   'stage.box/clearState:1.0:false', 'stage.box/boardState:1.0:false', 'stage.box/categoryOrderState:1.0:false',
-  'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/callInvite:1.0:true',
+  'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/dashboardLayout:1.0:false', 'stage.box/callInvite:1.0:true',
   'stage.box/callSignal:1.0:false', 'stage.box/frame:1.0:true', 'stage.box/frameAction:1.0:true', 'stage.box/deleteRequest:1.0:false',
 ];
 

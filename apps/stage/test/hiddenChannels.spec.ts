@@ -379,7 +379,7 @@ describe('departed channels across devices', () => {
 
   test('an old cursor does not skip hidden snapshots and a failed write does not acknowledge replay', async () => {
     convs.push({ id: 'replay-group', consent: 'allowed', group: true, active: true });
-    values.set('readSync.cursor.v2.phone.replay-group', '1000');
+    values.set('readSync.cursor.v3.phone.replay-group', '1000');
     messages.push({
       contentTypeId: 'stage.box/clearState:1.0', senderInboxId: 'owner', sentNs: 100,
       content: { cleared: {}, hidden: { replayed: { hidden: true, at: 90 } } },
@@ -390,11 +390,25 @@ describe('departed channels across devices', () => {
       state => applyRemoteChatVisibility('phone', state), () => undefined);
     storageFails = true;
     await expect(replay()).rejects.toThrow('disk full');
-    expect(values.has('readSync.cursor.v3.phone.replay-group')).toBe(false);
+    expect(values.has('readSync.cursor.v4.phone.replay-group')).toBe(false);
     storageFails = false;
     await replay();
     expect(isChannelHidden('replayed')).toBe(true);
-    expect(values.get('readSync.cursor.v3.phone.replay-group')).toBe('100');
+    expect(values.get('readSync.cursor.v4.phone.replay-group')).toBe('100');
+    messages.length = 0;
+  });
+
+  test('a dashboard saved while this device did not know dashboards is replayed past the old cursor', async () => {
+    convs.push({ id: 'dash-group', consent: 'allowed', group: true, active: true });
+    values.set('readSync.cursor.v3.phone.dash-group', '1000');
+    const layout = { widgets: [{ id: 'w1', w: 'half', h: 2 }], at: 90 };
+    messages.push({ contentTypeId: 'stage.box/dashboardLayout:1.0', senderInboxId: 'owner', sentNs: 200, content: layout });
+    const context = await accountClient();
+    let replayed: unknown = null;
+    await replaySyncGroups(context, 'dash-group', [{ id: 'dash-group', active: true, createdAtNs: 1 }],
+      async (state) => { replayed = state.latest.dashboard; }, () => undefined);
+    expect(replayed).toEqual(layout);
+    expect(values.get('readSync.cursor.v4.phone.dash-group')).toBe('200');
     messages.length = 0;
   });
 

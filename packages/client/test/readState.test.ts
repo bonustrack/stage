@@ -274,6 +274,22 @@ describe('restored sync groups', () => {
     expect(replayOf([]).latest.homeView).toBeNull();
   });
 
+  test('keeps the newest dashboard by its own clock and never reads it as a board', () => {
+    const DASHBOARD = 'stage.box/dashboardLayout:1.0';
+    const replay = replayOf([
+      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'a', w: 'half', h: 1 }], at: 5 }, sentNs: 1 },
+      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'b', w: 'full', h: 2 }, { id: 'x', w: 'wide', h: 1 }], at: 9 }, sentNs: 2 },
+      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'c', w: 'quarter', h: 1 }], at: 7 }, sentNs: 3 },
+      { contentTypeId: DASHBOARD, content: { widgets: [], at: NOW + DAY_MS + 1 }, sentNs: 4 },
+      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'd', w: 'half', h: 1 }] }, sentNs: 5 },
+    ]);
+    expect(replay.latest.dashboard).toEqual({ widgets: [{ id: 'b', w: 'full', h: 2 }, { id: 'x', w: 'wide', h: 1 }], at: 9 });
+    expect(replay.latest.board).toBeNull();
+    expect(isSyncType(DASHBOARD, 'board')).toBe(false);
+    expect(isSyncType(DASHBOARD, 'dashboard')).toBe(true);
+    expect(replayOf([]).latest.dashboard).toBeNull();
+  });
+
   test('replays the latest supplied sort choices across newer legacy snapshots', () => {
     const VIEW = 'stage.box/homeView:1.0';
     const base = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 10 };

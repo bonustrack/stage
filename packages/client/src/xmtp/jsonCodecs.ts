@@ -95,6 +95,7 @@ export const SYNC_CODECS: { [K in SyncKind]: JsonCodec<SyncContents[K]> } = {
   categoryOrder: syncCodec('categoryOrder'),
   search: syncCodec('search'),
   homeView: syncCodec('homeView'),
+  dashboard: syncCodec('dashboard'),
 };
 
 export const CALL_INVITE_CODEC = jsonCodec<CallInvite>(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');

@@ -1,12 +1,11 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
-import { Platform, Vibration, useWindowDimensions, type ViewStyle } from 'react-native';
+import { useWindowDimensions, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
 } from 'react-native-reanimated';
 import { CHANNEL_ROW_HEIGHT } from '../ChannelRow';
 import { setChannelCategory } from '../channel/channel.labels';
-import { LIST_CELL_SELECTOR } from '../layout/VirtualList.model';
 import { moveCategory } from '../../lib/channelGroups';
 import { movePin } from '../../lib/pins';
 import { makeListeners } from '../../lib/storeCore';
@@ -15,14 +14,12 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { GROUP_HEADER_HEIGHT } from './GroupHeader';
 import type { HomeListItem } from './groups.model';
 import {
-  NO_BLOCKS, NO_ZONES, NO_ROW_MEASUREMENTS, blockShift, categoryZones, domElementOf, dragTarget,
+  NO_BLOCKS, NO_ZONES, NO_ROW_MEASUREMENTS, blockShift, categoryZones, dragTarget,
   measuredRowHeights, recordRowMeasurement, rowBlocks, sectionBlocks, sectionShape, type DragBlocks, type RowMeasurements,
 } from './listDrag.model';
+import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from '../dragLift';
 
-const HOLD_MS = 250;
-const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
-const CLICK_GRACE_MS = 300;
 
 export interface ListDragMeasurements {
   heights: ReadonlyMap<string, number>;
@@ -120,56 +117,6 @@ export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: b
     if (category !== undefined) setChannelCategory(convId, category);
   }, [zones]);
   return useListDrag(zones.blocks, move);
-}
-
-function setDragging(on: boolean): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle('stage-dragging', on);
-}
-
-let lifted = false;
-
-export const isLifted = (): boolean => lifted;
-
-function blockScroll(event: TouchEvent): void {
-  if (lifted && event.cancelable) event.preventDefault();
-}
-
-const WEB = Platform.OS === 'web';
-
-function lockScrollOnLift(node: unknown): void {
-  domElementOf(node, WEB)?.addEventListener('touchmove', blockScroll, { passive: false });
-}
-
-let raisedCell: HTMLElement | null = null;
-
-function raiseCell(node: unknown): void {
-  raisedCell = domElementOf(node, WEB)?.closest<HTMLElement>(LIST_CELL_SELECTOR) ?? null;
-  if (raisedCell !== null) raisedCell.style.zIndex = '1';
-}
-
-function lift(node: unknown): void {
-  lifted = true;
-  raiseCell(node);
-  Vibration.vibrate(10);
-}
-
-function settle(): void {
-  lifted = false;
-  setDragging(false);
-  if (raisedCell !== null) raisedCell.style.zIndex = '';
-  raisedCell = null;
-}
-
-function swallowClick(event: Event): void {
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function suppressNextClick(): void {
-  if (typeof document === 'undefined') return;
-  document.addEventListener('click', swallowClick, { capture: true, once: true });
-  setTimeout(() => { document.removeEventListener('click', swallowClick, { capture: true }); }, CLICK_GRACE_MS);
 }
 
 function useBlockStyle(drag: ListDrag, index: number): AnimatedStyle<ViewStyle> {

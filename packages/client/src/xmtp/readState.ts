@@ -83,6 +83,47 @@ export type HomeViewEdit = Partial<Omit<HomeViewContent, 'at'>>;
 
 export const DEFAULT_HOME_VIEW: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 0 };
 
+export const DASHBOARD_WIDTHS = ['full', 'half', 'quarter'] as const;
+
+export type DashboardWidth = (typeof DASHBOARD_WIDTHS)[number];
+
+export const DASHBOARD_HEIGHTS = [1, 2, 3, 4] as const;
+
+export type DashboardHeight = (typeof DASHBOARD_HEIGHTS)[number];
+
+export const DASHBOARD_MAX_WIDGETS = 48;
+
+const DASHBOARD_KEPT_WIDGETS = 256;
+
+const dashboardWidgetSchema = z.object({
+  id: z.string().min(1).max(64),
+  w: z.string().min(1).max(32),
+  h: z.number().int().positive().max(64),
+}).passthrough();
+
+export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
+
+function validWidgets(items: readonly unknown[]): DashboardWidget[] {
+  const ids = new Set<string>();
+  const widgets: DashboardWidget[] = [];
+  for (const item of items) {
+    const parsed = dashboardWidgetSchema.safeParse(item);
+    if (!parsed.success || ids.has(parsed.data.id) || widgets.length === DASHBOARD_KEPT_WIDGETS) continue;
+    ids.add(parsed.data.id);
+    widgets.push(parsed.data);
+  }
+  return widgets;
+}
+
+export const dashboardSchema = z.object({
+  widgets: z.array(z.unknown()).transform(validWidgets),
+  at: z.number().nonnegative(),
+}).passthrough();
+
+export type DashboardContent = z.infer<typeof dashboardSchema>;
+
+export const EMPTY_DASHBOARD: DashboardContent = { widgets: [], at: 0 };
+
 export interface SyncContents {
   read: ReadStateContent;
   pin: PinStateContent;
@@ -91,11 +132,12 @@ export interface SyncContents {
   categoryOrder: BoardStateContent;
   search: SearchStateContent;
   homeView: HomeViewContent;
+  dashboard: DashboardContent;
 }
 
 export type SyncKind = keyof SyncContents;
 
-export type LatestKind = 'board' | 'categoryOrder' | 'search' | 'homeView';
+export type LatestKind = 'board' | 'categoryOrder' | 'search' | 'homeView' | 'dashboard';
 
 interface SyncType<T> {
   contentType: XmtpContentTypeId;
@@ -115,6 +157,7 @@ export const SYNC_TYPES: { [K in SyncKind]: SyncType<SyncContents[K]> } = {
   categoryOrder: syncType('categoryOrderState', boardStateSchema, 'Stage category order'),
   search: syncType('searchState', searchStateSchema, 'Stage search'),
   homeView: syncType('homeView', homeViewSchema, 'Stage home view'),
+  dashboard: syncType('dashboardLayout', dashboardSchema, 'Stage dashboard'),
 };
 
 export function isSyncType(contentTypeId: string | undefined, kind?: SyncKind): boolean {
@@ -310,6 +353,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
       categoryOrder: latestState(fresh, 'categoryOrder', maxAt),
       search: latestState(fresh, 'search', maxAt),
       homeView: latestHomeView(fresh, maxAt),
+      dashboard: latestState(fresh, 'dashboard', maxAt),
     },
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };

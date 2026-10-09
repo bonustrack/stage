@@ -11,7 +11,7 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
-import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
+import { Box, Col, Row, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
@@ -147,18 +147,20 @@ export function SettingsThemeRow(props: {
   );
 }
 
-export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, panRef, keyboardShouldPersistTaps, children }: {
+export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, panRef, keyboardShouldPersistTaps, trailing, children }: {
   title: string;
   root?: boolean;
   backTo?: string;
   panRef?: SimultaneousRefs;
   keyboardShouldPersistTaps?: 'handled';
+  trailing?: ReactNode;
   children: ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const actions = trailing === undefined ? undefined : <Row flex={1} justify="end">{trailing}</Row>;
   return (
     <Col surface="surface" flex={1}>
-      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} />}
+      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} trailing={actions} />}
       <ScreenScroll
         simultaneousHandlers={panRef}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}

@@ -1,5 +1,5 @@
 import {
-  DEFAULT_HOME_VIEW, type HomeViewContent, type HomeViewEdit, type SearchStateContent,
+  DEFAULT_HOME_VIEW, type DashboardContent, type DashboardWidget, type HomeViewContent, type HomeViewEdit, type SearchStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
 function stamped<T extends { at: number }>(current: T, change: Partial<NoInfer<T>>, now: number): T {
@@ -47,4 +47,12 @@ export function receiveHomeView(current: HomeViewContent, incoming: HomeViewCont
 
 export function syncedHomeView(state: HomeViewContent): HomeViewContent {
   return { ...state, view: DEFAULT_HOME_VIEW.view };
+}
+
+export function editDashboard(current: DashboardContent, widgets: DashboardWidget[], now: number): DashboardContent {
+  return widgets === current.widgets ? current : stamped(current, { widgets }, now);
+}
+
+export function receiveDashboard(current: DashboardContent, incoming: DashboardContent): DashboardContent {
+  return incoming.at > current.at ? incoming : current;
 }

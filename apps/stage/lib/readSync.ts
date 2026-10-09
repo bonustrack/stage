@@ -20,6 +20,7 @@ import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type Accoun
 import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
 import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
+import { applyRemoteDashboard, loadDashboard, onDashboardChanged } from './dashboard';
 import { rowIdOfConv } from './xmtp.conv';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { createVisibilityPublisher } from './pendingVisibility';
@@ -271,6 +272,10 @@ const LATEST_WINS: readonly LatestWins[] = [
   latestWins('homeView', {
     onLocal: (send) => { onHomeViewChanged((change) => { send(change.accountId, change.state); }); },
     apply: applyRemoteHomeView, load: loadHomeView,
+  }),
+  latestWins('dashboard', {
+    onLocal: (send) => { onDashboardChanged((change) => { send(change.accountId, change.state); }); },
+    apply: applyRemoteDashboard, load: loadDashboard,
   }),
 ];
 

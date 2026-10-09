@@ -8,7 +8,7 @@ import { syncTarget } from './syncTarget';
 import { sdk } from './xmtp.sdk';
 import { ignored, reported } from './errorPolicy';
 
-const CURSOR_PREFIX = 'readSync.cursor.v3.';
+const CURSOR_PREFIX = 'readSync.cursor.v4.';
 const REPLAY_LIMIT = 5000;
 interface GroupReplay { id: string; cursorKey: string; cursor: number; messages: RowMessage[] }
 
