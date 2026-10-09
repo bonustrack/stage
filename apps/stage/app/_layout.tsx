@@ -28,6 +28,7 @@ import { getOrCreateXmtpClient } from '../lib/xmtp.client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
+import { installPlainTextCopy } from '../lib/plainCopy';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
@@ -49,6 +50,7 @@ const APP_FONTS = {
 };
 
 applyWebGlobalStyles();
+installPlainTextCopy();
 installAlertShim();
 void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
 if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
