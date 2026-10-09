@@ -5,7 +5,7 @@ import { mailReadKey, parseReadKeys, withReadKey } from '../components/settings/
 import { getSelectedAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { ownedStageLabel } from './mailKey';
 import { mailboxKey, makeMailAccess, type InboxState, type Mailbox } from './mail.core';
 import { createValueStore } from './persistedStore';

@@ -116,15 +116,15 @@ value is public). Set them in the Netlify site (web) and the EAS build profiles
 |---|---|
 | `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project (Base) |
 | `EXPO_PUBLIC_ZERODEV_RPC` | Optional RPC override for the smart-account client |
-| `EXPO_PUBLIC_SWARMY_KEY` | Swarmy (`api.swarmy.cloud`) bearer key for encrypted attachment upload |
 | `EXPO_PUBLIC_LINKPROXY_URL` | Base URL of the proxy Worker (default `https://proxy.stage.box`) |
 | `EXPO_PUBLIC_PUSH_SERVER_URL` | Push server base URL |
 
-Attachments (already client-side encrypted) upload directly to Swarmy's
-`POST /api/files`; the encrypted blob is read back from the keyless gateway
-(`api.swarmy.cloud/bzz/<ref>/`). Because `EXPO_PUBLIC_*` values are inlined
-into the shipped bundle, `EXPO_PUBLIC_SWARMY_KEY` is client-visible — scope,
-rate-limit and rotate it.
+Attachments (already client-side encrypted) upload to the proxy Worker
+(`POST /attachments`), which stores the ciphertext in the `stage` R2 bucket
+as `attachments/<random id>` and serves it back from
+`proxy.stage.box/attachments/<id>`. Messages from before the move point at
+Swarmy (`api.swarmy.cloud/bzz/<ref>/`) and are read from Swarmy or, when it
+fails, the public Swarm gateway.
 
 ## Releases
 

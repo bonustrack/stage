@@ -12,7 +12,7 @@ import { avatarCacheKey, baseProfileClient, resolveOnchainProfile } from '@stage
 import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { PersistentStore } from './cache.shared';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { recover } from './errorPolicy';
 
 export {

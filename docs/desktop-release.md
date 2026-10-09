@@ -32,7 +32,7 @@ Repo `Settings -> Secrets and variables -> Actions`. All optional; without them 
 | `DESKTOP_MAC_CERT_PASSWORD` | The password chosen when exporting the `.p12`. |
 | `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `ASC_API_KEY_P8` | Shared with the iOS release (see `docs/mobile-release.md`). Used for notarization; only applied when the certificate is present. |
 
-`EXPO_PUBLIC_ZERODEV_PROJECT_ID` and `EXPO_PUBLIC_SWARMY_KEY` are the public values inlined into the web bundle.
+`EXPO_PUBLIC_ZERODEV_PROJECT_ID` is the public value inlined into the web bundle.
 
 ## Creating the Developer ID certificate
 

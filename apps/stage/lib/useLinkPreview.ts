@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-labs/client/x402';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 
 export type { X402Accept, X402Challenge };
 

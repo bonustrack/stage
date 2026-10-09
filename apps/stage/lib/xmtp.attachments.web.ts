@@ -8,7 +8,7 @@ import { sendableConvOfLine } from './xmtp.sdk.web';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
-import { fromFirstUrl, swarmDownloadUrls, uploadFormToSwarmy } from './swarmy';
+import { fromFirstUrl, swarmDownloadUrls, uploadEncryptedAttachment } from './attachmentStorage';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -41,10 +41,8 @@ export async function encryptSanitizedAttachment(
   }));
 }
 
-async function uploadEncryptedToSwarm(payload: Uint8Array, filename: string): Promise<string> {
-  const form = new FormData();
-  form.append('file', new Blob([payload.slice().buffer], { type: 'application/octet-stream' }), 'a.bin');
-  return await uploadFormToSwarmy(form, filename);
+async function uploadEncrypted(payload: Uint8Array, filename: string): Promise<string> {
+  return await uploadEncryptedAttachment(new Blob([payload.slice().buffer], { type: 'application/octet-stream' }), filename);
 }
 
 async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
@@ -55,7 +53,7 @@ async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttach
 
 async function storedRemoteAttachment(encrypted: EncryptedAttachment, f: LocalAttachmentInput): Promise<RemoteAttachment> {
   return {
-    url: await uploadEncryptedToSwarm(encrypted.payload, f.filename),
+    url: await uploadEncrypted(encrypted.payload, f.filename),
     contentDigest: encrypted.contentDigest,
     secret: encrypted.secret,
     salt: encrypted.salt,

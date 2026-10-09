@@ -10,7 +10,7 @@ import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
-import { fromFirstUrl, swarmDownloadUrls, uploadFormToSwarmy } from './swarmy';
+import { fromFirstUrl, swarmDownloadUrls, uploadEncryptedAttachment } from './attachmentStorage';
 import { attachmentMimeType } from './attachmentFiles';
 import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
 import { accountClient } from './xmtp.account';
@@ -65,15 +65,13 @@ function writeCleanImage(
   return asFileUri(dest.uri) as SanitizedFileUri;
 }
 
-async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
+async function uploadEncrypted(encryptedFileUri: string, filename: string): Promise<string> {
   const response = await fetch(encryptedFileUri);
   if (!response.ok) {
     throw new Error(`Couldn't send "${filename}": the encrypted file could not be read. Try attaching it again.`);
   }
   const blob = await response.blob();
-  const form = new FormData();
-  form.append('file', blob.slice(0, blob.size, 'application/octet-stream'), 'a.bin');
-  return await uploadFormToSwarmy(form, filename);
+  return await uploadEncryptedAttachment(blob.slice(0, blob.size, 'application/octet-stream'), filename);
 }
 
 interface AttachmentEncryptor {
@@ -97,7 +95,7 @@ async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedLocalA
 }
 
 async function storedRemoteAttachment(encrypted: EncryptedLocalAttachment, f: LocalAttachmentInput): Promise<RemoteAttachmentInfo> {
-  const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
+  const url = await uploadEncrypted(encrypted.encryptedLocalFileUri, f.filename);
   return MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, { ...encrypted.metadata, filename: f.filename });
 }
 

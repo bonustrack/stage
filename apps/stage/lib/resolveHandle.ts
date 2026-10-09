@@ -3,7 +3,7 @@ import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { baseProfileClient, resolveBasenameAddress } from '@stage-labs/client/identity/onchainProfile';
 import { fetchIssuedAddress } from '@stage-labs/client/identity/stageNames';
 import { parseHandle, stageLabelOf, type ParsedHandle } from '@stage-labs/client/routing/handles';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { getQueryClient } from './queryClient';
 import { recover } from './errorPolicy';
 

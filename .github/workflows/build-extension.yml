@@ -23,7 +23,6 @@ jobs:
       EXPO_NO_TELEMETRY: '1'
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
-      EXPO_PUBLIC_SWARMY_KEY: ${{ secrets.EXPO_PUBLIC_SWARMY_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -31,7 +30,7 @@ jobs:
           bun-version: '1.4.0'
       - name: Check public client configuration
         run: |
-          test -n "$EXPO_PUBLIC_ZERODEV_PROJECT_ID" && test -n "$EXPO_PUBLIC_SWARMY_KEY" || {
+          test -n "$EXPO_PUBLIC_ZERODEV_PROJECT_ID" || {
             printf '%s\n' 'Extension artifacts need the public client configuration. Fork PRs do not receive repository secrets.' >&2
             exit 1
           }

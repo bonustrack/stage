@@ -8,7 +8,7 @@ import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage
 import { PROFILE_TEXT_KEYS, baseProfileClient, resolverForNode } from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { getActiveAccount, getActiveViemAccount } from './accounts';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';
 import { sendCall } from './tx';
 import { kernelClientForRecord } from './zerodev/client';

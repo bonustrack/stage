@@ -6,7 +6,7 @@ import {
   type PushPermission, type PushTopics, type PushRuntimeInput,
 } from './pushRegister.core';
 import { dismissConvNotifications } from './pushNotify.web';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { getAccountEpoch } from './accountEpoch';

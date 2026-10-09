@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 BROWSER=none bun scripts/build-extension.mjs /absolute/path/to/stage-extension
 ```
 
-Choose an empty output directory. Use the same public `EXPO_PUBLIC_*` build configuration as the web app. In particular, `EXPO_PUBLIC_ZERODEV_PROJECT_ID` (or `EXPO_PUBLIC_ZERODEV_RPC`) is required for smart-account setup and `EXPO_PUBLIC_SWARMY_KEY` for uploads. These are client-side values, not private wallet keys. Never put a recovery phrase, private key, or server-only secret in build variables.
+Choose an empty output directory. Use the same public `EXPO_PUBLIC_*` build configuration as the web app. In particular, `EXPO_PUBLIC_ZERODEV_PROJECT_ID` (or `EXPO_PUBLIC_ZERODEV_RPC`) is required for smart-account setup. It is a client-side value, not a private wallet key. Never put a recovery phrase, private key, or server-only secret in build variables.
 
 The Chrome extension PR workflow also builds a `stage-chrome-extension` artifact with the repository's public client configuration. Download and extract it before loading it. This is an unpacked beta, not a Chrome Web Store release.
 

@@ -7,7 +7,7 @@ import { deriveMailKey, isMailboxLabel, mailPublicKeyHex } from '@stage-labs/cli
 import { stageLabelOf } from '@stage-labs/client/routing/handles';
 import { getActiveAccount, type AccountRecord } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
-import { linkProxyBase } from './historyServer';
+import { linkProxyBase } from './linkProxy';
 import { reported } from './errorPolicy';
 import { lazySigningKeyForRecord, signingKeyForRecord } from './xmtp.signing.core';
 

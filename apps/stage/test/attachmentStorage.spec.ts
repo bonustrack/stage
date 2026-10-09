@@ -1,37 +1,41 @@
 import { describe, expect, test } from 'bun:test';
-import { fromFirstUrl, resolveSwarmyResponse, swarmDownloadUrls, swarmToHttp, SWARM_GATEWAY } from '../lib/swarmy';
+import { assertUploadSize, fromFirstUrl, MAX_UPLOAD_BYTES, resolveUploadResponse, swarmDownloadUrls, swarmToHttp, SWARM_GATEWAY } from '../lib/attachmentStorage';
 
-describe('resolveSwarmyResponse', () => {
-  test('returns the gateway url with trailing slash on success', () => {
-    const ref = 'aa902c7392044a6492c5664b05364db15e7ae7bbc75fd505cd8b1a20f7389845';
-    expect(resolveSwarmyResponse(200, { swarmReference: ref }, 'a.png')).toBe(`${SWARM_GATEWAY}${ref}/`);
-    expect(resolveSwarmyResponse(201, { swarmReference: ref }, 'a.png')).toBe(`${SWARM_GATEWAY}${ref}/`);
+const STORED_ID = 'Zm9vYmFyYmF6cXV4cXV1eGNvcmdlZ3Jh';
+const STORED_URL = `https://proxy.stage.box/attachments/${STORED_ID}`;
+
+describe('resolveUploadResponse', () => {
+  test('builds the download link from the returned id and the proxy base', () => {
+    expect(resolveUploadResponse(200, { id: STORED_ID }, 'a.pdf')).toBe(STORED_URL);
+    expect(resolveUploadResponse(201, { id: STORED_ID }, 'a.pdf')).toBe(STORED_URL);
   });
 
-  test('reports a server size rejection without inventing a size limit', () => {
-    expect(() => resolveSwarmyResponse(413, null, 'big.mov')).toThrow(
-      'Couldn\'t send "big.mov": the upload service rejected the file size (413). Try a smaller file.',
+  test('explains a file that is too large', () => {
+    expect(() => resolveUploadResponse(413, null, 'big.mov')).toThrow(
+      'Couldn\'t send "big.mov": the file is too large (413). Try a smaller file.',
     );
   });
 
-  test('maps auth failures to a rejected message', () => {
-    expect(() => resolveSwarmyResponse(401, null, 'a.png')).toThrow(/rejected the request/);
-    expect(() => resolveSwarmyResponse(403, null, 'a.png')).toThrow(/rejected the request/);
+  test('explains a rate limit', () => {
+    expect(() => resolveUploadResponse(429, null, 'a.png')).toThrow(/too many uploads/);
   });
 
-  test('maps other non-2xx to a failure message carrying the status', () => {
-    expect(() => resolveSwarmyResponse(502, null, 'a.png')).toThrow(/upload failed \(502\)/);
+  test('reports other failures with the status', () => {
+    expect(() => resolveUploadResponse(502, null, 'a.png')).toThrow(/upload failed \(502\)/);
   });
 
-  test('throws when a 2xx response carries no reference', () => {
-    expect(() => resolveSwarmyResponse(200, {}, 'a.png')).toThrow(/returned no reference/);
-    expect(() => resolveSwarmyResponse(200, null, 'a.png')).toThrow(/returned no reference/);
+  test('rejects a 2xx answer without an id', () => {
+    expect(() => resolveUploadResponse(200, {}, 'a.png')).toThrow(/returned no id/);
+    expect(() => resolveUploadResponse(200, null, 'a.png')).toThrow(/returned no id/);
   });
+});
 
-  test('never mentions the dead blob.stage.box proxy host', () => {
-    let msg = '';
-    try { resolveSwarmyResponse(500, null, 'a.png'); } catch (e) { msg = String(e); }
-    expect(msg).not.toContain('blob.stage.box');
+describe('assertUploadSize', () => {
+  test('refuses a file over 100 MB before any upload, with the size message', () => {
+    expect(() => assertUploadSize(MAX_UPLOAD_BYTES, 'a.mov')).not.toThrow();
+    expect(() => assertUploadSize(MAX_UPLOAD_BYTES + 1, 'a.mov')).toThrow(
+      'Couldn\'t send "a.mov": the file is too large (over 100 MB). Try a smaller file.',
+    );
   });
 });
 
@@ -55,7 +59,8 @@ describe('swarmDownloadUrls', () => {
     expect(swarmDownloadUrls(`swarm://${ref}`)).toEqual([`${SWARM_GATEWAY}${ref}/`, fallback]);
   });
 
-  test('keeps any other url as the only source', () => {
+  test('keeps a proxy link or any other url as the only source', () => {
+    expect(swarmDownloadUrls(STORED_URL)).toEqual([STORED_URL]);
     expect(swarmDownloadUrls('https://example.com/x.png')).toEqual(['https://example.com/x.png']);
     expect(swarmDownloadUrls('swarm://abc123')).toEqual([`${SWARM_GATEWAY}abc123/`]);
   });

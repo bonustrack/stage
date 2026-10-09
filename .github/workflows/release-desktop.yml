@@ -59,7 +59,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
-      EXPO_PUBLIC_SWARMY_KEY: ${{ secrets.EXPO_PUBLIC_SWARMY_KEY }}
       EXPO_NO_TELEMETRY: '1'
       CSC_IDENTITY_AUTO_DISCOVERY: false
     steps:
