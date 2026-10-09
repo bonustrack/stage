@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fileOpenAction, inertBlobType, nativeFileName } from '../lib/fileOpen.model';
+import { fileOpenAction, inertBlobType, nativeFileName, normalizedMime } from '../lib/fileOpen.model';
 
 const b64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
 
@@ -90,5 +90,32 @@ describe('nativeFileName', () => {
   test('replaces folders and reserved characters so the copy stays in the cache folder', () => {
     expect(nativeFileName('../../secret/a:b*c.txt', 'text/plain')).toBe('_.._secret_a_b_c.txt');
     expect(nativeFileName('a\u0000b.pdf', 'application/pdf')).toBe('a_b.pdf');
+  });
+});
+
+describe('nativeFileName limits', () => {
+  test('fits a long name in 200 bytes and keeps its extension', () => {
+    const name = nativeFileName(`${'文'.repeat(120)}.pdf`, 'application/pdf');
+    expect(new TextEncoder().encode(name).length).toBeLessThanOrEqual(200);
+    expect(name.endsWith('.pdf')).toBe(true);
+  });
+
+  test('drops characters that disguise the real extension and avoids device names', () => {
+    expect(nativeFileName('invoice\u202efdp.exe', 'application/octet-stream')).toBe('invoice_fdp.exe');
+    expect(nativeFileName('CON.pdf', 'application/pdf')).toBe('_CON.pdf');
+    expect(nativeFileName('report.pdf. ', 'application/pdf')).toBe('report.pdf');
+  });
+});
+
+describe('normalizedMime', () => {
+  test('uses a clean lowercase type', () => {
+    expect(normalizedMime('Application/PDF', 'a.pdf')).toBe('application/pdf');
+    expect(normalizedMime('text/plain; charset=utf-8', 'a.txt')).toBe('text/plain');
+  });
+
+  test('infers the type from the name when it is missing', () => {
+    expect(normalizedMime(undefined, 'scan.pdf')).toBe('application/pdf');
+    expect(normalizedMime('', 'clip.MP4')).toBe('video/mp4');
+    expect(normalizedMime(undefined, 'archive.xyz')).toBe('application/octet-stream');
   });
 });

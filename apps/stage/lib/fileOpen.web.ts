@@ -1,11 +1,11 @@
 import { capabilities } from './capabilities';
 import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
-import { fileOpenAction, type OpenableFile } from './fileOpen.model';
+import { fileOpenAction, nativeFileName, type OpenableFile } from './fileOpen.model';
 
 const openedUrls = new Map<string, string>();
 
-type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<void>;
+type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<boolean>;
 
 function desktopOpen(): DesktopOpen | undefined {
   const bridge = (globalThis as { stageDesktop?: { openFile?: unknown } }).stageDesktop;
@@ -13,8 +13,10 @@ function desktopOpen(): DesktopOpen | undefined {
 }
 
 async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<void> {
+  const name = nativeFileName(file.name, file.mime);
   const res = await fetch(file.url);
-  await open(file.name, new Uint8Array(await res.arrayBuffer()));
+  if (await open(name, new Uint8Array(await res.arrayBuffer()))) return;
+  await downloadFile(file.url, name);
 }
 
 function blobUrlFor(dataUrl: string, bytes: Uint8Array, mime: string): string {
