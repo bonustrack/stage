@@ -39,7 +39,12 @@ export function attachmentPreview(
   return { uri: local?.uri ?? remote.uri, mime: remote.mime ?? local?.mime ?? att.mime };
 }
 
-export function resolvedAttachmentKind(att: { kind: string; mime?: string }): string {
+export function isSvgAttachment(att: { mime?: string; name?: string }): boolean {
+  return /^image\/svg/i.test(att.mime?.trim() ?? '') || /\.svgz?$/i.test(att.name?.trim() ?? '');
+}
+
+export function resolvedAttachmentKind(att: { kind: string; mime?: string; name?: string }): string {
+  if (isSvgAttachment(att)) return 'file';
   if (att.mime?.startsWith('image/')) return 'image';
   if (att.mime?.startsWith('audio/')) return 'audio';
   if (att.mime?.startsWith('video/')) return 'video';

@@ -36,8 +36,12 @@ describe('fileOpenAction', () => {
     }
   });
 
-  test('opens a decrypted or remote file link as it is', () => {
-    expect(fileOpenAction({ url: 'blob:https://stage.box/abc', mime: 'application/pdf', name: 'a.pdf' })).toEqual({ kind: 'open', url: 'blob:https://stage.box/abc' });
+  test('opens a blob link through an inert copy, even a file the user sent', () => {
+    expect(fileOpenAction({ url: 'blob:https://stage.box/abc', mime: 'application/pdf', name: 'a.pdf' })).toEqual({ kind: 'openBlob', url: 'blob:https://stage.box/abc', mime: 'application/pdf' });
+    expect(fileOpenAction({ url: 'blob:https://stage.box/own', mime: 'text/html', name: 'page.html' })).toEqual({ kind: 'openBlob', url: 'blob:https://stage.box/own', mime: 'text/plain;charset=utf-8' });
+  });
+
+  test('opens any other link as it is', () => {
     expect(fileOpenAction({ url: 'https://example.com/a.txt', mime: 'text/plain', name: 'a.txt' })).toEqual({ kind: 'open', url: 'https://example.com/a.txt' });
   });
 
@@ -61,10 +65,12 @@ describe('inertBlobType', () => {
     expect(inertBlobType('text/html')).toBe('text/plain;charset=utf-8');
     expect(inertBlobType('text/plain;charset=ISO-8859-1')).toBe('text/plain;charset=ISO-8859-1');
     expect(inertBlobType('text/plain;charset="><script>')).toBe('text/plain;charset=utf-8');
+    expect(inertBlobType(' text/html')).toBe('text/plain;charset=utf-8');
+    expect(inertBlobType('text/plain;xcharset=utf-16')).toBe('text/plain;charset=utf-8');
   });
 
   test('makes anything that could run code an opaque download', () => {
-    for (const mime of ['image/svg+xml', 'application/xhtml+xml', 'application/xml', 'application/javascript', 'application/octet-stream', '', undefined]) {
+    for (const mime of ['image/svg+xml', 'image/svg+xml; charset=utf-8', 'audio/svg+xml', 'video/x-foo+xml', 'video/mp4,text/html', 'application/xhtml+xml', 'application/xml', 'application/javascript', 'application/octet-stream', '', undefined]) {
       expect(inertBlobType(mime)).toBe('application/octet-stream');
     }
   });

@@ -3,7 +3,7 @@ import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
 import { fileOpenAction, type OpenableFile } from './fileOpen.model';
 
-const inlineUrls = new Map<string, string>();
+const openedUrls = new Map<string, string>();
 
 type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<void>;
 
@@ -19,8 +19,15 @@ async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<voi
 
 function blobUrlFor(dataUrl: string, bytes: Uint8Array, mime: string): string {
   const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: mime }));
-  inlineUrls.set(dataUrl, url);
+  openedUrls.set(dataUrl, url);
   return url;
+}
+
+async function openInertCopy(source: string, mime: string): Promise<void> {
+  const blob = await (await fetch(source)).blob();
+  const url = URL.createObjectURL(new Blob([blob], { type: mime }));
+  openedUrls.set(source, url);
+  capabilities.openUrl(url);
 }
 
 export function openFile(file: OpenableFile): void {
@@ -29,7 +36,7 @@ export function openFile(file: OpenableFile): void {
     void openOnDesktop(desktop, file).catch(reported('file.open'));
     return;
   }
-  const cached = inlineUrls.get(file.url);
+  const cached = openedUrls.get(file.url);
   if (cached !== undefined) {
     capabilities.openUrl(cached);
     return;
@@ -37,6 +44,10 @@ export function openFile(file: OpenableFile): void {
   const action = fileOpenAction(file);
   if (action.kind === 'download') {
     void downloadFile(file.url, file.name).catch(reported('file.download'));
+    return;
+  }
+  if (action.kind === 'openBlob') {
+    void openInertCopy(action.url, action.mime).catch(reported('file.open'));
     return;
   }
   capabilities.openUrl(action.kind === 'open' ? action.url : blobUrlFor(file.url, action.bytes, action.mime));

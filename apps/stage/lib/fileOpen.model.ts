@@ -9,10 +9,11 @@ export interface OpenableFile {
 type FileOpenAction =
   | { kind: 'download' }
   | { kind: 'open'; url: string }
+  | { kind: 'openBlob'; url: string; mime: string }
   | { kind: 'openInline'; bytes: Uint8Array; mime: string };
 
-const INERT_MEDIA = /^(image\/(png|jpe?g|gif|webp|avif|bmp|heic|heif)|video\/[a-z0-9.+-]+|audio\/[a-z0-9.+-]+)$/;
-const CHARSET = /charset=([a-z0-9_-]+)/i;
+const INERT_MEDIA = /^(image\/(png|jpe?g|gif|webp|avif|bmp|heic|heif)|video\/[a-z0-9.-]+|audio\/[a-z0-9.-]+)$/;
+const CHARSET = /(?:^|;)\s*charset=([a-z0-9_-]+)/i;
 
 export function inertBlobType(mime: string | undefined): string {
   const base = (mime ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
@@ -31,6 +32,7 @@ function inlineBytes(url: string): Uint8Array | null {
 export function fileOpenAction(file: OpenableFile): FileOpenAction {
   const type = inertBlobType(file.mime);
   if (type !== 'application/pdf' && !type.startsWith('text/plain')) return { kind: 'download' };
+  if (file.url.startsWith('blob:')) return { kind: 'openBlob', url: file.url, mime: type };
   const bytes = inlineBytes(file.url);
   return bytes === null ? { kind: 'open', url: file.url } : { kind: 'openInline', bytes, mime: type };
 }

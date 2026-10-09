@@ -1,4 +1,6 @@
-export interface GalleryAttachment { kind: string }
+import { isSvgAttachment } from './fileCard.model';
+
+export interface GalleryAttachment { kind: string; mime?: string; name?: string }
 
 export interface GalleryItem<A extends GalleryAttachment> {
   key: string;
@@ -31,7 +33,7 @@ export function galleryItemsOf<E extends { id: string }, A extends GalleryAttach
     const entry = newestFirst[i];
     if (!entry) continue;
     attachmentsOf(entry).forEach((att, index) => {
-      if (att.kind === 'image') items.push({ key: galleryKeyOf(entry.id, index), entryId: entry.id, index, att });
+      if (att.kind === 'image' && !isSvgAttachment(att)) items.push({ key: galleryKeyOf(entry.id, index), entryId: entry.id, index, att });
     });
   }
   return items;
