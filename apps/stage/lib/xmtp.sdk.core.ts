@@ -30,7 +30,10 @@ export function notAGroup(): never {
 
 export interface ConvLike { id: string }
 
-export interface MessageQuery { limit: number; beforeMs?: number; afterNs?: number; order?: 'asc' | 'desc' }
+export interface MessageQuery {
+  limit: number; beforeMs?: number; beforeNs?: number; afterNs?: number; insertedAfterNs?: number; order?: 'asc' | 'desc';
+  filesOnly?: boolean;
+}
 
 export interface DmLookup<C> {
   find: () => Promise<C | null | undefined>;
@@ -80,6 +83,7 @@ interface ClientPrimitives<Cl, C, M> {
   streamDeletions: (client: Cl, onDeleted: (deletion: MessageDeletion) => void) => () => void;
   deletedEntryOf: (client: Cl, messageId: string, line: string) => Promise<HistoryEntry | null>;
   messageTarget: (client: Cl, messageId: string) => Promise<MessageTarget<C> | null>;
+  messageById: (client: Cl, messageId: string) => Promise<M | null | undefined>;
   history: HistoryOps<Cl>;
   nativeErrorLog?: (work: () => Promise<unknown>) => Promise<string>;
 }

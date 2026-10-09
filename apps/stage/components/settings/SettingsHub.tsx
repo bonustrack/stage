@@ -154,13 +154,14 @@ function MoreGroup(): React.ReactElement {
   const boxes = useMailboxes().data;
   const hasMailbox = (boxes?.length ?? 0) > 0;
   useEffect(() => { if (boxes !== undefined) prefetchInbox(boxes); }, [boxes]);
-  const row = (id: 'dashboard' | 'inbox' | 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
+  const row = (id: 'dashboard' | 'storage' | 'inbox' | 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
     return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;
   };
   return (
     <SettingsGroup title="More">
       {row('dashboard', 'Dashboard')}
+      {row('storage', 'Storage')}
       {hasMailbox ? row('inbox', 'Inbox') : null}
       {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}

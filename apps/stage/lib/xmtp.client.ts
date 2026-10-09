@@ -12,6 +12,7 @@ import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmt
 import { makeClientLifecycle } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
+import { forgetStorageIndex } from './storageIndexStore';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
@@ -56,7 +57,7 @@ export const {
   cachedSelfEthAddress, selfEthAddress, syncPreferences, listXmtpInstallations, revokeXmtpInstallation,
 } = makeClientLifecycle<Client>({
   accounts: { active: getActiveAccount, list: loadAccounts, setActive: setActiveAccountId, remove: removeAccount },
-  store: { deleteFiles: deleteDbFiles, deleteKey: forgetAccountStore, wipe: wipeXmtpStore, forgetSaved: () => Promise.resolve() },
+  store: { deleteFiles: deleteDbFiles, deleteKey: forgetAccountStore, wipe: wipeXmtpStore, forgetSaved: forgetStorageIndex },
   client: {
     get: getCachedXmtpClient,
     getOrCreate: getOrCreateCachedClient,

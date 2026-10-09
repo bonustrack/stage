@@ -21,6 +21,7 @@ import { ignored, attempt } from './errorPolicy';
 import { afterFirstPages } from './feedLines';
 import { historyServerUrl } from './historyServer';
 import { forgetFeeds } from './feedSnapshot';
+import { forgetStorageIndex } from './storageIndexStore';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -111,6 +112,7 @@ function disposeCachedClient(): void {
 
 async function forgetSavedClient(id: string): Promise<void> {
   await forgetFeeds(id);
+  await forgetStorageIndex(id).catch(ignored(undefined, 'cleanup'));
   await secureStorage.delete(addressKeyFor(id)).catch(ignored(undefined, 'cleanup'));
   await secureStorage.delete(envKeyFor(id)).catch(ignored(undefined, 'cleanup'));
   await secureStorage.delete(installationKeyFor(id)).catch(ignored(undefined, 'cleanup'));

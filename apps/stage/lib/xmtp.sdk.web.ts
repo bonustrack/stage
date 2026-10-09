@@ -1,5 +1,5 @@
 import {
-  BackupElementSelectionOption, ConsentEntityType, ConsentState, Dm, Group, IdentifierKind,
+  BackupElementSelectionOption, ConsentEntityType, ConsentState, ContentType, Dm, Group, IdentifierKind,
   ReactionAction, ReactionSchema, SortDirection, encodeText,
   type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
   type Reaction, type Attachment as AttachmentContent,
@@ -86,11 +86,21 @@ function asGroup(conv: Conversation): Group {
   return conv instanceof Group ? conv : notAGroup();
 }
 
+const FILE_CONTENT_TYPES = [ContentType.Attachment, ContentType.RemoteAttachment, ContentType.MultiRemoteAttachment];
+
+function sentBeforeNs(q: MessageQuery): bigint | undefined {
+  if (q.beforeNs !== undefined) return BigInt(Math.floor(q.beforeNs));
+  return q.beforeMs === undefined ? undefined : BigInt(q.beforeMs) * BigInt(1_000_000);
+}
+
 function webQuery(q: MessageQuery): WebMessagesOptions {
+  const before = sentBeforeNs(q);
   return {
     limit: BigInt(q.limit),
-    ...(q.beforeMs === undefined ? {} : { sentBeforeNs: BigInt(q.beforeMs) * BigInt(1_000_000) }),
+    ...(before === undefined ? {} : { sentBeforeNs: before }),
     ...(q.afterNs === undefined ? {} : { sentAfterNs: BigInt(Math.floor(q.afterNs)) }),
+    ...(q.insertedAfterNs === undefined ? {} : { insertedAfterNs: BigInt(Math.floor(q.insertedAfterNs)) }),
+    ...(q.filesOnly === true ? { contentTypes: FILE_CONTENT_TYPES } : {}),
     direction: q.order === 'asc' ? SortDirection.Ascending : SortDirection.Descending,
   };
 }
@@ -236,6 +246,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   streamDeletions,
   deletedEntryOf,
   messageTarget,
+  messageById: (client, messageId) => client.conversations.getMessageById(messageId),
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),

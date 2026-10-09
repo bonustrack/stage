@@ -41,11 +41,24 @@ function asGroup(conv: Conversation): Group {
   return conv instanceof Group ? conv : notAGroup();
 }
 
+const NON_FILE_CONTENT_TYPES = [
+  'text', 'group_updated', 'group_membership_change', 'reaction', 'read_receipt', 'reply', 'leave_request',
+  'markdown', 'actions', 'intent', 'transaction_reference', 'wallet_send_calls',
+];
+
+function nativeBeforeNs(q: MessageQuery): number | undefined {
+  if (q.beforeNs !== undefined) return q.beforeNs;
+  return q.beforeMs === undefined ? undefined : q.beforeMs * 1_000_000;
+}
+
 function nativeQuery(q: MessageQuery): NativeMessagesOptions {
+  const beforeNs = nativeBeforeNs(q);
   return {
     limit: q.limit,
-    ...(q.beforeMs === undefined ? {} : { beforeNs: q.beforeMs * 1_000_000 }),
+    ...(beforeNs === undefined ? {} : { beforeNs }),
     ...(q.afterNs === undefined ? {} : { afterNs: q.afterNs }),
+    ...(q.insertedAfterNs === undefined ? {} : { insertedAfterNs: q.insertedAfterNs }),
+    ...(q.filesOnly === true ? { excludeContentTypes: NON_FILE_CONTENT_TYPES } : {}),
     ...(q.order === undefined ? {} : { direction: q.order === 'asc' ? 'ASCENDING' : 'DESCENDING' }),
   };
 }
@@ -221,6 +234,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamDeletions,
   deletedEntryOf: () => Promise.resolve(null),
   messageTarget,
+  messageById: (client, messageId) => client.conversations.findMessage(asMessageId(messageId)),
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
