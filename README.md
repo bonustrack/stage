@@ -22,7 +22,10 @@ apps/
               #   desktop/     Electron shell that bundles the web export (nested workspace)
               #   extension/   Chrome Manifest V3 shell around the same web export
   proxy/      # Cloudflare Worker: link previews, image resize, x402, XMTP history/push relays,
-              #   the *.stage.base.eth names service, and the bundler.stage.box manifest proxy
+              #   the *.stage.base.eth names service, user node publishing (/nodes), and the
+              #   bundler.stage.box manifest proxy
+  dispatch/   # Cloudflare Worker on nodes.stage.box: runs the nodes users publish, each in its own
+              #   Workers for Platforms sandbox (no node code in this repo)
   push/       # XMTP notification server (upstream image, deployed to Fly as stage-push)
 packages/
   client/     # @stage-labs/client — framework-agnostic shared logic (XMTP cores + codecs,
@@ -102,6 +105,7 @@ bun --cwd apps/stage ios                # build + run on iOS
 bun --cwd apps/stage web                # run the app in a browser
 bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/, config in apps/stage/netlify.toml)
 bun --cwd apps/proxy dev                # Cloudflare Worker (wrangler dev)
+bun --cwd apps/dispatch dev             # the nodes.stage.box dispatch Worker (wrangler dev)
 bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI
 bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, port 6006)
 ```
@@ -136,7 +140,7 @@ links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
 - **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
-- **Proxy / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
+- **Proxy / dispatch / push:** the proxy and dispatch Workers deploy through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates
 

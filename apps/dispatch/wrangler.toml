@@ -1,0 +1,23 @@
+name = "dispatch"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+workers_dev = false
+
+# nodes.stage.box/<node id> runs that user's node, the Worker "node-<node id>"
+# in the Workers for Platforms dispatch namespace "stage-nodes" (the proxy's
+# /nodes route uploads them). The custom domain is created on deploy.
+routes = [{ pattern = "nodes.stage.box", custom_domain = true }]
+
+[[dispatch_namespaces]]
+binding = "NODES"
+namespace = "stage-nodes"
+
+# Node calls per client IP.
+[[ratelimits]]
+name = "NODE_REQUESTS"
+namespace_id = "1083"
+simple = { limit = 120, period = 60 }
+
+# No Workers Logs: a request log would keep client IPs and node ids.
+[observability]
+enabled = false

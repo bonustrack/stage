@@ -42,6 +42,10 @@ export default defineConfig({
       type: 'worker',
       knip: { entry: [] },
     },
+    'apps/dispatch': {
+      type: 'worker',
+      knip: { entry: [] },
+    },
     'apps/stage/desktop': {
       type: 'library',
       knip: { entry: ['src/preload.ts', 'scripts/*.mjs'], ignoreBinaries: ['codesign'] },
@@ -76,6 +80,7 @@ export default defineConfig({
       'apps/stage/modules',
       'apps/stage/platform',
       'apps/proxy/src',
+      'apps/dispatch/src',
       'packages/client/src',
       'packages/config',
       'packages/kit/src',

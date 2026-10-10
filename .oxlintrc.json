@@ -27,6 +27,7 @@
       "files": [
         "apps/stage/**",
         "apps/proxy/**",
+        "apps/dispatch/**",
         "packages/client/**",
         "packages/kit/**"
       ],
@@ -95,6 +96,7 @@
       "files": [
         "apps/stage/**/*.{ts,tsx,mts,cts}",
         "apps/proxy/**/*.{ts,tsx,mts,cts}",
+        "apps/dispatch/**/*.{ts,tsx,mts,cts}",
         "packages/client/**/*.{ts,tsx,mts,cts}",
         "packages/kit/**/*.{ts,tsx,mts,cts}"
       ],
@@ -109,6 +111,7 @@
       "files": [
         "apps/stage/**/*.{ts,tsx,mts,cts}",
         "apps/proxy/**/*.{ts,tsx,mts,cts}",
+        "apps/dispatch/**/*.{ts,tsx,mts,cts}",
         "packages/client/**/*.{ts,tsx,mts,cts}",
         "packages/kit/**/*.{ts,tsx,mts,cts}"
       ],
@@ -180,6 +183,7 @@
     {
       "files": [
         "apps/proxy/src/**/*.{ts,tsx}",
+        "apps/dispatch/src/**/*.{ts,tsx}",
         "apps/stage/desktop/src/**/*.{ts,tsx}",
         "packages/client/src/**/*.{ts,tsx}",
         "packages/kit/src/**/*.{ts,tsx}",
