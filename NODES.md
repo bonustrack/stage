@@ -53,7 +53,7 @@ stage-node-v1
 <SHA-256 of the raw body as lowercase hex, of an empty body for GET>
 ```
 
-`<URL>` is the full URL as requested (scheme, host, path and query, no fragment), which a Worker reads as `request.url`. Stage normalizes it first the way Cloudflare does: escaped letters, digits and `-._~` are decoded, other escapes use uppercase hex, and characters such as `|` and `^` are escaped. To verify: reject a timestamp more than 5 minutes away from now, rebuild the text, then check the signature with the public key. WebCrypto `{ name: 'Ed25519' }` does this in Workers, Node, Bun and browsers. See `widgetKey` in `examples/btc-node/src/index.js`.
+`<URL>` is the full URL as requested (scheme, host, path and query, no fragment), which a Worker reads as `request.url`. Stage normalizes it first the way Cloudflare does: escaped letters, digits and `-._~` are decoded, other escapes use uppercase hex, and characters such as `|` and `^` are escaped. To verify: reject a timestamp more than 5 minutes away from now, rebuild the text, then check the signature with the public key. WebCrypto `{ name: 'Ed25519' }` does this in Workers, Node, Bun and browsers.
 
 Each widget gets its own key, made on the device and synced only through the owner's end-to-end encrypted self-sync. A node learns which widget is calling, never who the user is. A private node can keep a list of the keys it accepts.
 
@@ -76,11 +76,6 @@ Test vector, with the RFC 8032 test 1 key:
 ## Frames from chats
 
 A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Add to dashboard on that frame first asks, naming the node's host, then adds a live widget for that URL with a new key. The bubble in the chat stays as it was sent, and apps that do not know `source` ignore it.
-
-## Examples
-
-- [`examples/btc-node`](examples/btc-node): a Cloudflare Worker with the BTC price and a Refresh button, and a Deploy to Cloudflare button.
-- `https://proxy.stage.box/nodes/eth-price` and `https://proxy.stage.box/nodes/btc-price`: the ETH and BTC price nodes Stage hosts itself on its proxy Worker ([`apps/proxy/src/priceNode.ts`](apps/proxy/src/priceNode.ts)). They do not check signatures because the prices are public.
 
 ## Limits
 

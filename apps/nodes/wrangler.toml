@@ -1,8 +1,0 @@
-name = "stage-nodes"
-main = "src/index.ts"
-compatibility_date = "2026-06-01"
-workers_dev = false
-routes = [{ pattern = "nodes.stage.box", custom_domain = true }]
-
-[observability]
-enabled = false

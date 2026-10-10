@@ -1,3 +1,0 @@
-name = "stage-btc-node"
-main = "src/index.js"
-compatibility_date = "2026-06-01"

@@ -23,7 +23,6 @@ apps/
               #   extension/   Chrome Manifest V3 shell around the same web export
   proxy/      # Cloudflare Worker: link previews, image resize, x402, XMTP history/push relays,
               #   the *.stage.base.eth names service, and the bundler.stage.box manifest proxy
-  nodes/      # Cloudflare Worker stage-nodes on nodes.stage.box: Stage's own Dashboard widget nodes
   push/       # XMTP notification server (upstream image, deployed to Fly as stage-push)
 packages/
   client/     # @stage-labs/client — framework-agnostic shared logic (XMTP cores + codecs,
@@ -103,7 +102,6 @@ bun --cwd apps/stage ios                # build + run on iOS
 bun --cwd apps/stage web                # run the app in a browser
 bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/, config in apps/stage/netlify.toml)
 bun --cwd apps/proxy dev                # Cloudflare Worker (wrangler dev)
-bun --cwd apps/nodes dev                # the nodes Worker (wrangler dev)
 bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI
 bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, port 6006)
 ```
@@ -138,7 +136,7 @@ links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
 - **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
-- **Proxy / nodes / push:** the proxy and nodes Workers deploy through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
+- **Proxy / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates
 

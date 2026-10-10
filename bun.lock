@@ -16,17 +16,6 @@
         "typescript": "~5.9.2",
       },
     },
-    "apps/nodes": {
-      "name": "nodes",
-      "version": "0.1.0",
-      "dependencies": {
-        "@stage-labs/client": "workspace:*",
-      },
-      "devDependencies": {
-        "@cloudflare/workers-types": "^4.20250601.0",
-        "wrangler": "^4.100.0",
-      },
-    },
     "apps/proxy": {
       "name": "proxy",
       "version": "0.1.1",
@@ -2022,8 +2011,6 @@
     "node-releases": ["node-releases@2.0.50", "", {}, "sha512-J6l92tKHX6w8Jy5nO1Vuc01NoIiRGi/d6qBKVxh+IQ8Cr3b6HbVNfKiF8ZpFKufTwpwxMmce2W3iQZ861ZRyTg=="],
 
     "node-source-walk": ["node-source-walk@7.0.2", "", { "dependencies": { "@babel/parser": "^7.29.0" } }, "sha512-71kFFjYaSshDTA8/a2HiTYPLdASWjLJxUyJxGE+ffxU+KhxSBtM9kiLUX+R2yooFdSFKMFpi4n3PFtDy6qXv8A=="],
-
-    "nodes": ["nodes@workspace:apps/nodes"],
 
     "nopt": ["nopt@9.0.0", "", { "dependencies": { "abbrev": "^4.0.0" }, "bin": { "nopt": "bin/nopt.js" } }, "sha512-Zhq3a+yFKrYwSBluL4H9XP3m3y5uvQkB/09CwDruCiRmR/UJYnn9W4R48ry0uGC70aeTPKLynBtscP9efFFcPw=="],
 
