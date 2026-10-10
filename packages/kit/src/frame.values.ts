@@ -165,10 +165,11 @@ export function resolveFrameColor(c: FrameColor | undefined, scheme: Scheme, pal
   return c[scheme];
 }
 
-export const httpsUrl: Validator<string> = (raw) => {
-  if (typeof raw !== 'string' || raw.length > MAX_URL) return undefined;
-  return /^https:\/\/[^\s/?#]+\.[^\s/?#]+(?:[/?#]\S*)?$/i.test(raw) ? raw : undefined;
-};
+const HTTPS_URL = /^https:\/\/[^\s/?#@."\\<>]+(?:\.[^\s/?#@."\\<>]+)+\.?(?:[/?#][^\s"\\<>]*)?$/i;
+
+export const httpsUrl: Validator<string> = (raw) => (
+  typeof raw === 'string' && raw.length <= MAX_URL && HTTPS_URL.test(raw) ? raw : undefined
+);
 
 const ACTION_HANDLER = oneOf<FrameActionHandlerKind>(['client', 'server']);
 

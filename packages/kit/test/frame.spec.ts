@@ -215,6 +215,21 @@ describe('parseFrame: text and content nodes', () => {
       expect(only({ type: 'Image', src }).type).toBe('Unsupported');
     }
   });
+
+  test('Image sources can not break out of a CSS url() or hide their host', () => {
+    for (const src of [
+      'https://a.example/x.png"),url("https://b.example/y.png', 'https://a.example/x\\"),url(b.png)', 'https://a.example/<x>',
+      'https://stage.box@evil.example/x.png', 'https://u:p@a.example/x.png', 'https://a..example/x.png', 'https://a.example/x y',
+    ]) {
+      expect(only({ type: 'Image', src }).type).toBe('Unsupported');
+    }
+    for (const src of [
+      'https://en.wikipedia.org/wiki/Foo_(bar).png', 'https://medium.com/@user/a.png', 'https://a.example:8443/x.png?w=1#y',
+      'https://a.example./x.png', 'https://a.example/x%22.png',
+    ]) {
+      expect(only({ type: 'Image', src }).props).toEqual({ src });
+    }
+  });
 });
 
 describe('parseFrame: form controls', () => {
