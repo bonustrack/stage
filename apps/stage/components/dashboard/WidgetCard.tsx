@@ -1,13 +1,16 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { frameSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import { frameSourceOf, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
 import { Col, Row } from '../layout';
 import { changeDashboard } from '../../lib/dashboard';
+import { forgetLiveWidget, refreshLiveWidget } from '../../lib/liveWidget';
 import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetKindOf, widgetSizeLabel } from './dashboard.model';
 import { FrameWidget } from './FrameWidget';
+import { LiveWidget } from './LiveWidget';
 import { WidgetMenuButton, WidgetOutline, type WidgetGrip } from './widgetParts';
 
 export function WidgetMenu({ widget, anchor, onClose }: {
@@ -16,6 +19,11 @@ export function WidgetMenu({ widget, anchor, onClose }: {
   const pick = (change: (widgets: DashboardWidget[]) => DashboardWidget[]): void => {
     onClose();
     changeDashboard(change);
+  };
+  const live = widgetKindOf(widget) === 'live';
+  const remove = (): void => {
+    pick(widgets => removeWidget(widgets, widget.id));
+    if (live) forgetLiveWidget(widget.id);
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
@@ -29,7 +37,8 @@ export function WidgetMenu({ widget, anchor, onClose }: {
         <MenuRow key={option.value} label={option.label} selected={widget.h === option.value}
           onPress={() => { pick(widgets => resizeWidget(widgets, widget.id, { h: option.value })); }} />
       ))}
-      <MenuRow icon={IconTrashCan} label="Remove widget" danger onPress={() => { pick(widgets => removeWidget(widgets, widget.id)); }} />
+      {live ? <MenuRow icon={IconArrowRotateClockwise} label="Refresh" onPress={() => { onClose(); refreshLiveWidget(widget.id); }} /> : null}
+      <MenuRow icon={IconTrashCan} label="Remove widget" danger onPress={remove} />
     </AnchoredMenu>
   );
 }
@@ -55,6 +64,8 @@ function EmptyWidget({ widget, onMenu, grip }: {
 export function WidgetCard({ widget, onMenu, grip }: {
   widget: DashboardWidget; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
 }): React.ReactElement {
+  const live = liveSourceOf(widget);
+  if (live !== null) return <LiveWidget widgetId={widget.id} source={live} onMenu={onMenu} grip={grip} />;
   if (widgetKindOf(widget) !== 'frame') return <EmptyWidget widget={widget} onMenu={onMenu} grip={grip} />;
   return <FrameWidget source={frameSourceOf(widget)} onMenu={onMenu} grip={grip} />;
 }

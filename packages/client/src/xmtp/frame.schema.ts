@@ -10,6 +10,7 @@ const MAX_ID = 200;
 const MAX_ACTION_TYPE = 120;
 const MAX_SCREENS = 50;
 const MAX_SCREEN_ID = 120;
+const MAX_SOURCE_URL = 2048;
 
 function jsonChars(value: unknown): number {
   try {
@@ -31,12 +32,15 @@ const screensSchema = z.record(z.string().min(1).max(MAX_SCREEN_ID), screenSchem
   .refine(s => Object.keys(s).length > 0 && Object.keys(s).length <= MAX_SCREENS, { message: `a frame has 1 to ${MAX_SCREENS} screens` })
   .refine(s => jsonChars(s) <= FRAME_MAX_CHARS, { message: `screens are larger than ${FRAME_MAX_CHARS} characters` });
 
+export const frameSourceSchema = z.object({ url: z.string().trim().min(1).max(MAX_SOURCE_URL) });
+
 export const frameContentSchema = z.object({
   title: clipped(MAX_TITLE).optional(),
   description: clipped(MAX_DESCRIPTION).optional(),
   widget: widgetSchema.optional(),
   screens: screensSchema.optional(),
   start: z.string().min(1).max(MAX_SCREEN_ID).optional(),
+  source: frameSourceSchema.optional().catch(undefined),
 }).refine(f => (f.widget === undefined) !== (f.screens === undefined), { message: 'a frame has a widget or screens' });
 
 export type FrameContent = z.infer<typeof frameContentSchema>;

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import { frameSourceSchema } from './frame.schema';
 import type { OutputSchema } from '../validate';
 
 const readStateSchema = z.object({
@@ -116,6 +117,18 @@ export function frameSourceOf(widget: DashboardWidget): DashboardSource | null {
   if (widget.kind !== DASHBOARD_FRAME_KIND) return null;
   const parsed = dashboardSourceSchema.safeParse(widget.source);
   return parsed.success ? parsed.data : null;
+}
+
+export const DASHBOARD_LIVE_KIND = 'live';
+
+const liveWidgetSchema = z.object({ source: frameSourceSchema, key: z.string().regex(/^[0-9a-f]{64}$/) });
+
+export interface LiveSource { url: string; key: string }
+
+export function liveSourceOf(widget: DashboardWidget): LiveSource | null {
+  if (widget.kind !== DASHBOARD_LIVE_KIND) return null;
+  const parsed = liveWidgetSchema.safeParse(widget);
+  return parsed.success ? { url: parsed.data.source.url, key: parsed.data.key } : null;
 }
 
 function validWidgets(items: readonly unknown[]): DashboardWidget[] {

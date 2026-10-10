@@ -64,6 +64,15 @@ describe('frame content types', () => {
     ]) expect(frameContentSchema.safeParse(bad).success).toBe(false);
   });
 
+  test('a frame keeps a live source url and drops a malformed one without refusing the frame', () => {
+    const card = { type: 'Card' };
+    expect(frameContentSchema.parse({ widget: card, source: { url: ' https://btc.example.com/ ' } }))
+      .toEqual({ widget: card, source: { url: 'https://btc.example.com/' } });
+    for (const source of [{ url: '' }, { url: 7 }, 'https://btc.example.com/', { url: `https://x.com/${'a'.repeat(2100)}` }]) {
+      expect(frameContentSchema.parse({ widget: card, source }).source).toBeUndefined();
+    }
+  });
+
   test('a frame action needs a frame id and an action type', () => {
     expect(frameActionSchema.safeParse({ action: { type: 'a' } }).success).toBe(false);
     expect(frameActionSchema.safeParse({ frameId: 'f', action: {} }).success).toBe(false);

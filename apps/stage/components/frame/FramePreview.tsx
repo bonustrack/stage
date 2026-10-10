@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleProp, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Frame } from '@stage-labs/kit/react-native/frame';
+import { Frame, type FrameActionHandler } from '@stage-labs/kit/react-native/frame';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { parseFrameDoc } from '@stage-labs/kit/frame';
@@ -82,21 +82,18 @@ function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElem
   );
 }
 
-export function FrameTile({ frame, line, messageId, disabled, fill = false, onSent }: {
-  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; onSent?: () => void;
+export function FrameSurface({ frame, stackId, onAction, disabled, fill = false, onFullScreen }: {
+  frame: FrameContent; stackId: string; onAction?: FrameActionHandler; disabled?: boolean; fill?: boolean; onFullScreen?: () => void;
 }): React.ReactElement {
-  const router = useRouter();
   const pal = usePalette();
   const scheme = useEffectiveColorScheme();
   const widget = useMemo(() => frameInputOf(frame), [frame]);
   const parsed = useMemo(() => parseFrameDoc(widget), [widget]);
-  const navigation = useFrameStack(messageId, parsed.ok ? parsed.doc.start : '');
+  const navigation = useFrameStack(stackId, parsed.ok ? parsed.doc.start : '');
   const { screen, depth, navigate } = navigation;
   const backdrop = useMemo(() => frameBackdrop(frame, scheme, pal, screen), [frame, scheme, pal, screen]);
-  const onAction = useFrameAction(line, messageId, onSent);
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
-  const convId = convIdOfLine(line);
   const layout = tileLayout(fill, depth);
   const tile: ViewStyle = {
     overflow: 'hidden',
@@ -124,8 +121,22 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, onSe
           <GradientFade color={backdrop} height={FRAME_PREVIEW_FADE} solid="bottom"/>
         </Box>
       ) : null}
-      {convId !== null && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={() => { router.push(frameLinkOf(convId, messageId)); }}/> : null}
+      {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen}/> : null}
     </Box>
+  );
+}
+
+export function FrameTile({ frame, line, messageId, disabled, fill = false, onSent }: {
+  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; onSent?: () => void;
+}): React.ReactElement {
+  const router = useRouter();
+  const onAction = useFrameAction(line, messageId, onSent);
+  const convId = convIdOfLine(line);
+  return (
+    <FrameSurface
+      frame={frame} stackId={messageId} onAction={onAction} disabled={disabled} fill={fill}
+      onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
+    />
   );
 }
 

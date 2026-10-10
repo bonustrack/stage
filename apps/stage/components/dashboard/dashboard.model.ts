@@ -1,6 +1,6 @@
 import {
-  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS, frameSourceOf, type DashboardHeight,
-  type DashboardSource, type DashboardWidget, type DashboardWidth,
+  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_LIVE_KIND, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS, frameSourceOf, liveSourceOf,
+  type DashboardHeight, type DashboardSource, type DashboardWidget, type DashboardWidth, type LiveSource,
 } from '@stage-labs/client/xmtp/readState';
 
 export const DASHBOARD_ROW = 128;
@@ -39,11 +39,12 @@ export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
 
 export const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
 
-export type WidgetKind = 'empty' | 'frame' | 'unsupported';
+export type WidgetKind = 'empty' | 'frame' | 'live' | 'unsupported';
 
 export function widgetKindOf(widget: DashboardWidget): WidgetKind {
   if (widget.kind === undefined) return 'empty';
-  return widget.kind === DASHBOARD_FRAME_KIND ? 'frame' : 'unsupported';
+  if (widget.kind === DASHBOARD_FRAME_KIND) return 'frame';
+  return liveSourceOf(widget) === null ? 'unsupported' : 'live';
 }
 
 export type FrameWidgetAdd = 'added' | 'exists' | 'full';
@@ -69,6 +70,18 @@ export function addFrameWidget(
 ): DashboardWidget[] {
   if (frameWidgetAdd(widgets, source) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
   return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_FRAME_KIND, source }];
+}
+
+export function liveWidgetAdd(widgets: readonly DashboardWidget[], url: string): FrameWidgetAdd {
+  if (widgets.some(widget => liveSourceOf(widget)?.url === url)) return 'exists';
+  return canAddWidget(widgets) ? 'added' : 'full';
+}
+
+export function addLiveWidget(
+  widgets: DashboardWidget[], id: string, source: LiveSource, w: DashboardWidth = FALLBACK_WIDTH,
+): DashboardWidget[] {
+  if (liveWidgetAdd(widgets, source.url) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
+  return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key }];
 }
 
 export function removeWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {

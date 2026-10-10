@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
-  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, frameSourceOf, type DashboardContent, type DashboardWidget,
+  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, frameSourceOf, liveSourceOf, type DashboardContent, type DashboardWidget,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  FRAME_ADD_TOASTS, addFrameWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, moveWidget,
-  packWidgets, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
+  FRAME_ADD_TOASTS, addFrameWidget, addLiveWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, liveWidgetAdd,
+  moveWidget, packWidgets, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 
@@ -21,7 +21,9 @@ mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
-const { addFrameToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } = await import('../lib/dashboard');
+const {
+  addFrameToDashboard, addLiveToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged,
+} = await import('../lib/dashboard');
 
 const widget = (id: string, w = 'half', h = 1): DashboardWidget => ({ id, w, h });
 const ids = (widgets: readonly DashboardWidget[]): string[] => widgets.map(item => item.id);
@@ -120,6 +122,43 @@ describe('frame widgets', () => {
     expect(synced).toEqual(raw);
     const edited = resizeWidget(moveWidget(synced.widgets, 'e', 'f'), 'f', { w: 'full' });
     expect(edited).toEqual([widget('e'), { ...frameWidget('f'), w: 'full' }, later]);
+  });
+});
+
+describe('live widgets', () => {
+  const live = { url: 'https://btc.example.com/', key: 'ab'.repeat(32) };
+  const liveWidget = (id: string): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
+
+  test('a live widget keeps its node url and its own key, half width and 384 px unless asked wider', () => {
+    const list = addLiveWidget([], 'l', live);
+    expect(list).toEqual([liveWidget('l')]);
+    expect(list.map(item => [widgetKindOf(item), liveSourceOf(item), frameSourceOf(item)])).toEqual([['live', live, null]]);
+    expect(addLiveWidget([], 'l', live, 'full')).toEqual([{ ...liveWidget('l'), w: 'full' }]);
+  });
+
+  test('the same node url is added once, and never past the widget cap', () => {
+    const list = addLiveWidget([widget('a')], 'l', live);
+    expect(liveWidgetAdd(list, live.url)).toBe('exists');
+    expect(addLiveWidget(list, 'm', { ...live, key: 'cd'.repeat(32) })).toBe(list);
+    expect(liveWidgetAdd(list, 'https://eth.example.com/')).toBe('added');
+    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
+    expect(liveWidgetAdd(full, live.url)).toBe('full');
+    expect(addLiveWidget(full, 'l', live)).toBe(full);
+  });
+
+  test('a live widget without a valid url or key shows as unsupported', () => {
+    expect(widgetKindOf({ ...liveWidget('a'), key: 'short' })).toBe('unsupported');
+    expect(widgetKindOf({ ...liveWidget('b'), key: 'AB'.repeat(32) })).toBe('unsupported');
+    expect(widgetKindOf({ ...liveWidget('c'), source: { url: '' } })).toBe('unsupported');
+    expect(widgetKindOf({ ...liveWidget('d'), source: 'https://btc.example.com/' })).toBe('unsupported');
+    expect(liveSourceOf({ ...liveWidget('e'), kind: 'frame' })).toBeNull();
+  });
+
+  test('live widgets survive sync, moves and resizes with their key', () => {
+    const raw = { widgets: [liveWidget('l'), frameWidget('f')], at: 4 };
+    const synced = dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
+    expect(synced).toEqual(raw);
+    expect(resizeWidget(moveWidget(synced.widgets, 'f', 'l'), 'l', { h: 4 })).toEqual([frameWidget('f'), { ...liveWidget('l'), h: 4 }]);
   });
 });
 
@@ -233,6 +272,20 @@ describe('dashboard store', () => {
     expect(added).toMatchObject({ w: 'full', h: 3, kind: 'frame', source });
     expect(added?.id).toMatch(/^[0-9a-f]{16}$/);
     expect(stored('alice')).toEqual(saved);
+    expect(sent).toHaveLength(1);
+    stop();
+  });
+
+  test('adding a live widget saves it once with its key and announces it for sync', async () => {
+    const sent: DashboardContent[] = [];
+    const stop = onDashboardChanged(change => { sent.push(change.state); });
+    const live = { url: 'https://btc.example.com/', key: 'ef'.repeat(32) };
+    const first = await addLiveToDashboard(live, 'half');
+    expect(first.outcome).toBe('added');
+    expect((await addLiveToDashboard({ ...live, key: '01'.repeat(32) }, 'full')).outcome).toBe('exists');
+    await settle();
+    const added = (await loadDashboard('alice'))?.widgets.find(item => item.id === first.id);
+    expect(added).toEqual({ id: first.id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
     expect(sent).toHaveLength(1);
     stop();
   });

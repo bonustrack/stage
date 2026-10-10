@@ -37,7 +37,8 @@ import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
-import { addFrameToDashboard } from '../../lib/dashboard';
+import { addFrameToDashboard, addLiveToDashboard } from '../../lib/dashboard';
+import { newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
 import { FRAME_ADD_TOASTS } from '../dashboard/dashboard.model';
 import { frameIsFullWidth, frameOf } from '../frame/frame.model';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
@@ -59,8 +60,12 @@ async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promis
 }
 
 async function addFrameWidget(convId: string, messageId: string, frame: FrameContent): Promise<void> {
+  const width = frameIsFullWidth(frame) ? 'full' : 'half';
+  const node = frame.source === undefined ? null : nodeUrlOf(frame.source.url);
   try {
-    const outcome = await addFrameToDashboard({ conversationId: convId, messageId }, frameIsFullWidth(frame) ? 'full' : 'half');
+    const outcome = node?.ok === true
+      ? (await addLiveToDashboard({ url: node.url, key: newNodeKey() }, width)).outcome
+      : await addFrameToDashboard({ conversationId: convId, messageId }, width);
     capabilities.toast(FRAME_ADD_TOASTS[outcome]);
   } catch (err) {
     report('dashboard.addFrame', err);

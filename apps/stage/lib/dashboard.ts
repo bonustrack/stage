@@ -1,8 +1,11 @@
 import { bytesToHex } from 'viem';
 import {
   dashboardSchema, EMPTY_DASHBOARD, type DashboardContent, type DashboardSource, type DashboardWidget, type DashboardWidth,
+  type LiveSource,
 } from '@stage-labs/client/xmtp/readState';
-import { addFrameWidget, frameWidgetAdd, type FrameWidgetAdd } from '../components/dashboard/dashboard.model';
+import {
+  addFrameWidget, addLiveWidget, frameWidgetAdd, liveWidgetAdd, type FrameWidgetAdd,
+} from '../components/dashboard/dashboard.model';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
@@ -20,7 +23,9 @@ const prefs = createValueStore<DashboardContent>({
 
 export const useDashboard = prefs.use;
 
-const dashboardLoaded = (): boolean => prefs.accountId() !== null;
+export const dashboardAccountId = (): string | null => prefs.accountId();
+
+const dashboardLoaded = (): boolean => dashboardAccountId() !== null;
 
 export const useDashboardLoaded = (): boolean => useStoreValue(prefs.subscribe, dashboardLoaded, prefs.loadAsync);
 
@@ -46,12 +51,26 @@ function newWidgetId(): string {
   return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
 }
 
-export async function addFrameToDashboard(source: DashboardSource, width: DashboardWidth): Promise<FrameWidgetAdd> {
+interface WidgetAdded { outcome: FrameWidgetAdd; id: string }
+
+async function addWidget(
+  outcomeOf: (widgets: readonly DashboardWidget[]) => FrameWidgetAdd, add: (widgets: DashboardWidget[], id: string) => DashboardWidget[],
+): Promise<WidgetAdded> {
   await prefs.load();
   if (prefs.accountId() === null) throw new Error('No active account for the dashboard');
-  const outcome = frameWidgetAdd(prefs.get().widgets, source);
-  if (outcome === 'added') changeDashboard(widgets => addFrameWidget(widgets, newWidgetId(), source, width));
-  return outcome;
+  const id = newWidgetId();
+  const outcome = outcomeOf(prefs.get().widgets);
+  if (outcome === 'added') changeDashboard(widgets => add(widgets, id));
+  return { outcome, id };
+}
+
+export async function addFrameToDashboard(source: DashboardSource, width: DashboardWidth): Promise<FrameWidgetAdd> {
+  const added = await addWidget(widgets => frameWidgetAdd(widgets, source), (widgets, id) => addFrameWidget(widgets, id, source, width));
+  return added.outcome;
+}
+
+export function addLiveToDashboard(source: LiveSource, width: DashboardWidth): Promise<WidgetAdded> {
+  return addWidget(widgets => liveWidgetAdd(widgets, source.url), (widgets, id) => addLiveWidget(widgets, id, source, width));
 }
 
 export async function loadDashboard(forAccount: string): Promise<DashboardContent | null> {
