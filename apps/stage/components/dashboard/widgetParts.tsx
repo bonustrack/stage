@@ -13,21 +13,28 @@ const HEADER_HEIGHT = 28;
 
 export type WidgetGrip = (handle: React.ReactElement) => React.ReactElement;
 
-export function WidgetHeader({ title, onOpen, status, onMenu }: {
-  title: string; onOpen?: () => void; status?: string | null; onMenu: (anchor: MenuPoint) => void;
-}): React.ReactElement {
+function WidgetTitle({ title, onOpen }: { title: string; onOpen?: () => void }): React.ReactElement {
   const { sub, link } = usePalette();
   const name = useHover();
   return (
+    <Pressable
+      onPress={onOpen} disabled={onOpen === undefined} accessibilityRole={onOpen === undefined ? undefined : 'link'}
+      accessibilityLabel={onOpen === undefined ? title : `Open ${title}`}
+      style={{ flexShrink: 1, maxWidth: '100%' }} {...name.hoverProps}
+    >
+      <Text value={title} size="2xs" weight="semibold" color={name.hovered && onOpen ? link : sub} truncate />
+    </Pressable>
+  );
+}
+
+export function WidgetHeader({ title, onOpen, status, onMenu }: {
+  title?: string; onOpen?: () => void; status?: string | null; onMenu: (anchor: MenuPoint) => void;
+}): React.ReactElement {
+  const { sub } = usePalette();
+  return (
     <Row align="center" gap={8} height={HEADER_HEIGHT}>
       <Row flex={1} minWidth={0} align="center" gap={6}>
-        <Pressable
-          onPress={onOpen} disabled={onOpen === undefined} accessibilityRole={onOpen === undefined ? undefined : 'link'}
-          accessibilityLabel={onOpen === undefined ? title : `Open ${title}`}
-          style={{ flexShrink: 1, maxWidth: '100%' }} {...name.hoverProps}
-        >
-          <Text value={title} size="2xs" weight="semibold" color={name.hovered && onOpen ? link : sub} truncate />
-        </Pressable>
+        {title === undefined ? null : <WidgetTitle title={title} onOpen={onOpen} />}
         {status === undefined || status === null ? null : (
           <Box flex={1} minWidth={0}><Text value={status} size="2xs" color="secondary" truncate /></Box>
         )}

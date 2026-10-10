@@ -11,7 +11,7 @@ function EmptyDashboard(): React.ReactElement {
     <Col align="center" gap={6} padding={{ x: PAGE_GUTTER, top: 48 }}>
       <Text value="No widgets yet" size="xs" weight="semibold" color="link" textAlign="center" />
       <Text
-        value="Add a widget from a link, or in any chat open the menu of a frame (right click, or long press on a phone) and pick Add to dashboard."
+        value="Add a widget from a link, or in any chat open the three-dot menu of a frame and pick Add to dashboard."
         size="2xs" color="secondary" textAlign="center"
       />
     </Col>

@@ -14,6 +14,7 @@ import { TOPNAV_HEIGHT } from '../Topnav';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 
 const BACK_PAD = { padding: 4 } as const;
+const TITLE_SHRINK = { flexShrink: 1 } as const;
 
 function BackButton({ onBack, backColor }: {
   onBack: () => void;
@@ -40,7 +41,7 @@ function BackButton({ onBack, backColor }: {
 function HeaderTitle({ title, wallet, color }: { title: string; wallet: boolean; color: string }): React.ReactElement | null {
   if (title === '') return null;
   if (wallet) return <Text value={title} size="sm" weight="semibold" color={color} />;
-  return <Title size="sm" color={color}>{title}</Title>;
+  return <Title size="sm" color={color} style={TITLE_SHRINK}>{title}</Title>;
 }
 
 export function StackHeader({ title, trailing, backTo, onBack, inline, bordered = true, wallet = false }: {

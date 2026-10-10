@@ -7,20 +7,25 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
+import { menuPointBelowEnd } from '../AnchoredMenu';
+import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { useFrameMessage } from '../../lib/frameMessage';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { frameInputOf, frameOf, frameScreenTitle } from './frame.model';
+import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { useChatFrame } from './useFrameAction';
 import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
 import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
 import type { ScreenScrollHandle } from '../layout/ScreenScroll.types';
+import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 
 function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void; minHeight?: number } {
   const ref = useRef<View>(null);
@@ -71,10 +76,29 @@ function useFrameScreens(frame: FrameContent | null, messageId: string, leave: (
 
 const FILL_STYLE = { flexGrow: 1 } as const;
 
-function FrameBody({ frame, convId, onAction, insetBottom, navigation }: {
-  frame: FrameContent; convId: string; onAction: FrameActionHandler; insetBottom: number; navigation: FrameNavigation;
+function FramePageMenu({ frame, convId, messageId, consent, onRefresh }: {
+  frame: FrameContent | null; convId: string; messageId: string; consent: XmtpConsent | null | undefined; onRefresh: () => void;
+}): React.ReactElement | null {
+  const { text } = usePalette();
+  if (frame === null) return null;
+  return (
+    <ChatFrameMenu
+      frame={frame} convId={convId} messageId={messageId} onRefresh={consent === 'allowed' ? onRefresh : undefined}
+      trigger={(open) => (
+        <Box margin={{ left: 'auto' }}>
+          <HoverIconButton
+            icon={IconDotGrid1x3Vertical} label="More" color={text} placement="below" role="button"
+            onPress={(e) => { open(menuPointBelowEnd(e)); }}
+          />
+        </Box>
+      )}
+    />
+  );
+}
+
+function FrameBody({ frame, consent, onAction, insetBottom, navigation }: {
+  frame: FrameContent; consent: XmtpConsent | null | undefined; onAction: FrameActionHandler; insetBottom: number; navigation: FrameNavigation;
 }): React.ReactElement {
-  const consent = useConvConsentState(convId);
   const dark = useEffectiveColorScheme() === 'dark';
   const gated = consent !== 'allowed';
   const notice = consent === 'unknown' || consent === 'denied';
@@ -109,14 +133,16 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
     if (canGoBack) router.back();
     else router.replace(chat);
   }, [router, canGoBack, chat]);
-  const { frame, onAction } = useChatFrame(sent, line, messageId, leave);
+  const { frame, onAction, refresh } = useChatFrame(sent, line, messageId, leave);
+  const consent = useConvConsentState(convId);
   const screens = useFrameScreens(frame, messageId, leave);
+  const menu = <FramePageMenu frame={sent} convId={convId} messageId={messageId} consent={consent} onRefresh={refresh} />;
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} />
+      <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} trailing={menu} />
       <ScreenScroll ref={screens.scrollRef} contentContainerStyle={FILL_STYLE} keyboardShouldPersistTaps="handled">
         {frame !== null ? (
-          <FrameBody frame={frame} convId={convId} onAction={onAction} insetBottom={insets.bottom} navigation={screens.navigation} />
+          <FrameBody frame={frame} consent={consent} onAction={onAction} insetBottom={insets.bottom} navigation={screens.navigation} />
         ) : (
           <Box padding={PAGE_GUTTER}>
             {feed.status === 'loading' || (lookup && stored === undefined) ? <Box padding={24} align="center"><Spinner /></Box> : (

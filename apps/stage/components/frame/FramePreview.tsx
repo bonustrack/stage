@@ -11,8 +11,6 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
-import { AnchoredMenu } from '../AnchoredMenu';
-import type { MenuPoint } from '../AnchoredMenu.model';
 import { WidgetHeader } from '../dashboard/widgetParts';
 import { Box, Row } from '../layout';
 import { GradientFade } from '../GradientFade';
@@ -25,9 +23,8 @@ import {
   FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameInputOf,
   frameLinkOf, frameLocked, frameMoreBelow, framePreviewCap, frameScreenTitle,
 } from './frame.model';
-import { addChatFrameToDashboard } from './frameDashboard';
+import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
-import { LiveMenuRows } from './LiveMenuRows';
 import { useChatFrame } from './useFrameAction';
 
 const FADE_OVERLAY: ViewStyle = { position: 'absolute', left: 0, right: 0, bottom: 0 };
@@ -131,34 +128,24 @@ export function FrameSurface({ frame, stackId, onAction, disabled, fill = false,
   );
 }
 
-function dashboardAdder(convId: string | null, messageId: string, frame: FrameContent): (() => void) | undefined {
-  if (convId === null) return undefined;
-  return () => { void addChatFrameToDashboard(convId, messageId, frame); };
-}
-
 export function FrameTile({ frame, line, messageId, disabled, fill = false, menu = false, onSent }: {
   frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; menu?: boolean; onSent?: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const chat = useChatFrame(frame, line, messageId, onSent);
-  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const convId = convIdOfLine(line);
-  const node = menu && disabled !== true ? chat.node : null;
-  const close = (): void => { setAnchor(null); };
   return (
     <>
-      {node === null ? null : <WidgetHeader title={node.host} onMenu={setAnchor} />}
+      {menu && convId !== null ? (
+        <ChatFrameMenu
+          frame={frame} convId={convId} messageId={messageId} onRefresh={disabled === true ? undefined : chat.refresh}
+          trigger={(open) => <WidgetHeader title={chat.node?.host} onMenu={open} />}
+        />
+      ) : null}
       <FrameSurface
         frame={chat.frame ?? frame} stackId={messageId} onAction={chat.onAction} disabled={disabled} fill={fill}
         onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
       />
-      {node === null || anchor === null ? null : (
-        <AnchoredMenu visible onClose={close} anchor={anchor}>
-          <LiveMenuRows
-            url={node.url} onRefresh={chat.refresh} onAddToDashboard={dashboardAdder(convId, messageId, frame)} onClose={close}
-          />
-        </AnchoredMenu>
-      )}
     </>
   );
 }

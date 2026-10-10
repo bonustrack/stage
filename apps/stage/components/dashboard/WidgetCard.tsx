@@ -4,7 +4,7 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
-import { LiveMenuRows } from '../frame/LiveMenuRows';
+import { FrameMenuRows } from '../frame/FrameMenu';
 import { capabilities } from '../../lib/capabilities';
 import { changeDashboard } from '../../lib/dashboard';
 import { linkProxyBase } from '../../lib/linkProxy';
@@ -40,7 +40,7 @@ export function WidgetMenu({ widget, anchor, onClose }: {
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
-      {live === null ? null : <LiveMenuRows url={live.url} onRefresh={() => { refreshLiveWidget(widget.id); }} onClose={onClose} />}
+      {live === null ? null : <FrameMenuRows url={live.url} onRefresh={() => { refreshLiveWidget(widget.id); }} onClose={onClose} />}
       <MenuHeading text="Width" />
       {WIDTH_OPTIONS.map(option => (
         <MenuRow key={option.value} label={option.label} selected={widget.w === option.value}
