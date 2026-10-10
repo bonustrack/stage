@@ -6,7 +6,7 @@ A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github
 
 `GET <url>`, signed (see Signing). Answer `200` with JSON, one of:
 
-- a ChatKit widget root: `{"type": "Card", "children": [...]}` (or `ListView`, `Basic`);
+- a ChatKit widget root: `{"type": "Card", "children": [...]}` (or `ListView`, `Basic`; other types are refused);
 - a ChatKit widget item: `{"type": "widget", "widget": {...}}`;
 - a Stage frame: `{"title": "...", "widget": {...}}` or `{"screens": {...}, "start": "..."}`.
 
@@ -31,7 +31,7 @@ Answer like a ChatKit `sync_action()` handler, with a `SyncCustomActionResponse`
 {"updated_item": {"type": "widget", "widget": {"type": "Card", "children": []}}}
 ```
 
-Stage shows the new widget at once. `{}`, `{"updated_item": null}` or an empty `204` keep the current widget. Any reply accepted by Load works too. So a ChatKit server can serve a node by passing `params.action` to its action handler and returning the serialized response.
+Stage shows the new widget at once. `{}`, `{"updated_item": null}` or an empty `204` keep the current widget. Any reply accepted by Load works too, but an `updated_item` that is not a widget item is refused. So a ChatKit server can serve a node by passing `params.action` to its action handler and returning the serialized response.
 
 ## Signing
 
@@ -53,7 +53,7 @@ stage-node-v1
 <SHA-256 of the raw body as lowercase hex, of an empty body for GET>
 ```
 
-`<URL>` is the full URL as requested (scheme, host, path and query, no fragment), which a Worker reads as `request.url`. To verify: reject a timestamp more than 5 minutes away from now, rebuild the text, then check the signature with the public key. WebCrypto `{ name: 'Ed25519' }` does this in Workers, Node, Bun and browsers. See `widgetKey` in `examples/btc-node/src/index.js`.
+`<URL>` is the full URL as requested (scheme, host, path and query, no fragment), which a Worker reads as `request.url`. Stage normalizes it first the way Cloudflare does: escaped letters, digits and `-._~` are decoded, other escapes use uppercase hex, and characters such as `|` and `^` are escaped. To verify: reject a timestamp more than 5 minutes away from now, rebuild the text, then check the signature with the public key. WebCrypto `{ name: 'Ed25519' }` does this in Workers, Node, Bun and browsers. See `widgetKey` in `examples/btc-node/src/index.js`.
 
 Each widget gets its own key, made on the device and synced only through the owner's end-to-end encrypted self-sync. A node learns which widget is calling, never who the user is. A private node can keep a list of the keys it accepts.
 
@@ -68,14 +68,14 @@ Test vector, with the RFC 8032 test 1 key:
 
 - `https` only, and no user name or password in the URL.
 - No local names (`localhost`, `.local`, `.internal`, `.lan`, `.home.arpa`, names without a dot) and no private, loopback, link-local, shared (100.64/10) or multicast IP addresses.
-- No cookies or credentials, no referrer, no redirects, a 10 second timeout and replies up to 128 KB. Action requests are at most 16K characters.
+- No cookies or credentials, no referrer, no redirects, a 10 second timeout and replies up to 128 KB (reading stops there). Action requests are at most 16K characters. On phones, a host name must be plain ASCII (use the `xn--` form for international names).
 - The reply passes the same checks as a frame: at most 64K characters of widget JSON, depth 16, 500 nodes, `https` images only. No code from a node runs in Stage.
 - The widget header shows the node's host.
-- In browsers the node must answer CORS: `OPTIONS` with `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature`.
+- In browsers the node must answer CORS: `Access-Control-Allow-Origin: *` on every response, and `OPTIONS` with `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature`.
 
 ## Frames from chats
 
-A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Add to dashboard on that frame then adds a live widget for that URL with a new key. The bubble in the chat stays as it was sent, and apps that do not know `source` ignore it.
+A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Add to dashboard on that frame first asks, naming the node's host, then adds a live widget for that URL with a new key. The bubble in the chat stays as it was sent, and apps that do not know `source` ignore it.
 
 ## Examples
 

@@ -4,8 +4,9 @@ import {
   type LiveSource,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  addFrameWidget, addLiveWidget, frameWidgetAdd, liveWidgetAdd, type FrameWidgetAdd,
+  addFrameWidget, addLiveWidget, frameWidgetAdd, liveWidgetAdd, removedLiveIds, type FrameWidgetAdd,
 } from '../components/dashboard/dashboard.model';
+import { forgetLiveSnapshots } from './liveSnapshots';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
@@ -44,6 +45,7 @@ export function changeDashboard(change: (widgets: DashboardWidget[]) => Dashboar
   const next = editDashboard(current, change(current.widgets), Date.now());
   if (next === current) return;
   prefs.set(next);
+  forgetLiveSnapshots(accountId, removedLiveIds(current.widgets, next.widgets));
   localChanges.notify({ accountId, state: next });
 }
 
@@ -79,5 +81,9 @@ export async function loadDashboard(forAccount: string): Promise<DashboardConten
 }
 
 export function applyRemoteDashboard(forAccount: string, incoming: DashboardContent): Promise<void> {
-  return prefs.updateFor(forAccount, current => receiveDashboard(current, incoming));
+  return prefs.updateFor(forAccount, (current) => {
+    const next = receiveDashboard(current, incoming);
+    forgetLiveSnapshots(forAccount, removedLiveIds(current.widgets, next.widgets));
+    return next;
+  });
 }

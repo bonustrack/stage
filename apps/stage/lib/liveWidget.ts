@@ -5,41 +5,28 @@ import type { FrameActionHandler } from '@stage-labs/kit/react-native/frame';
 import { loadNode, sendNodeAction } from '@stage-labs/client/nodes/protocol';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
 import {
-  EMPTY_LIVE, LIVE_REFRESH_MS, liveProblemText, liveRefetchInterval, liveSnapshotJson, liveSnapshotOf, liveStateAfter,
-  type LiveState,
+  EMPTY_LIVE, LIVE_REFRESH_MS, liveProblemText, liveRefetchInterval, liveStateAfter, type LiveState,
 } from '../components/dashboard/liveWidget.model';
-import { appStorage } from '../platform/storage';
 import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { capabilities } from './capabilities';
 import { dashboardAccountId } from './dashboard';
 import { ignore, recover } from './errorPolicy';
+import { readLiveSnapshot, saveLiveSnapshot } from './liveSnapshots';
 import { getQueryClient } from './queryClient';
 import { useStoreValue } from './storeCore';
 
 const LIVE_QUERY = 'liveWidget';
 const SNAPSHOT_QUERY = 'liveSnapshot';
-const SNAPSHOT_PREFIX = 'liveFrame.v1.';
 
-function snapshotKey(widgetId: string): string | null {
+function readSnapshot(widgetId: string): Promise<LiveState> {
   const account = dashboardAccountId();
-  return account === null ? null : `${SNAPSHOT_PREFIX}${account}.${widgetId}`;
-}
-
-async function readSnapshot(widgetId: string): Promise<LiveState> {
-  const key = snapshotKey(widgetId);
-  return liveSnapshotOf(key === null ? null : await appStorage.get(key));
+  return account === null ? Promise.resolve(EMPTY_LIVE) : readLiveSnapshot(account, widgetId);
 }
 
 function saveSnapshot(widgetId: string, state: LiveState): void {
-  const key = snapshotKey(widgetId);
-  const json = liveSnapshotJson(state);
-  if (key !== null && json !== null) ignore(appStorage.set(key, json), 'cache');
-}
-
-export function forgetLiveWidget(widgetId: string): void {
-  const key = snapshotKey(widgetId);
-  if (key !== null) ignore(appStorage.delete(key), 'cleanup');
+  const account = dashboardAccountId();
+  if (account !== null) saveLiveSnapshot(account, widgetId, state);
 }
 
 function liveKey(widgetId: string, epoch: number, url: string): readonly unknown[] {
@@ -79,7 +66,8 @@ export function useLiveWidget(widgetId: string, source: LiveSource): { state: Li
   const live = useQuery({
     queryKey: key,
     queryFn: async ({ signal }) => {
-      const next = liveStateAfter(latestState(key, widgetId, epoch), await loadNode(source.url, source.key, signal), Date.now());
+      const result = await loadNode(source.url, source.key, signal);
+      const next = liveStateAfter(latestState(key, widgetId, epoch), result, Date.now());
       if (next.problem === null) saveSnapshot(widgetId, next);
       return next;
     },
@@ -90,7 +78,9 @@ export function useLiveWidget(widgetId: string, source: LiveSource): { state: Li
     retry: false,
   });
   const act = useCallback<FrameActionHandler>(async (action) => {
-    const next = liveStateAfter(latestState(key, widgetId, epoch), await sendNodeAction(source.url, source.key, action), Date.now());
+    await getQueryClient().cancelQueries({ queryKey: key });
+    const result = await sendNodeAction(source.url, source.key, action);
+    const next = liveStateAfter(latestState(key, widgetId, epoch), result, Date.now());
     const problem = liveProblemText(next);
     if (problem !== null) {
       capabilities.toast(`Could not send: ${problem.toLowerCase()}`);

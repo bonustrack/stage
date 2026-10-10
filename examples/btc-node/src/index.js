@@ -39,7 +39,7 @@ async function widgetKey(request, body) {
   const key = request.headers.get('Stage-Key');
   const timestamp = request.headers.get('Stage-Timestamp');
   const signature = request.headers.get('Stage-Signature');
-  if (!key || !timestamp || !signature) return null;
+  if (!key || !signature || !/^\d{1,12}$/.test(timestamp ?? '')) return null;
   if (Math.abs(Date.now() / 1000 - Number(timestamp)) > MAX_CLOCK_SKEW_SECONDS) return null;
   const message = [SIGNATURE_SCHEME, request.method, request.url, timestamp, await sha256Hex(body)].join('\n');
   return await signatureIsValid(key, signature, message) ? key : null;

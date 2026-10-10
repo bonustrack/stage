@@ -7,7 +7,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
 import { Col, Row } from '../layout';
 import { changeDashboard } from '../../lib/dashboard';
-import { forgetLiveWidget, refreshLiveWidget } from '../../lib/liveWidget';
+import { refreshLiveWidget } from '../../lib/liveWidget';
 import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetKindOf, widgetSizeLabel } from './dashboard.model';
 import { FrameWidget } from './FrameWidget';
 import { LiveWidget } from './LiveWidget';
@@ -21,10 +21,6 @@ export function WidgetMenu({ widget, anchor, onClose }: {
     changeDashboard(change);
   };
   const live = widgetKindOf(widget) === 'live';
-  const remove = (): void => {
-    pick(widgets => removeWidget(widgets, widget.id));
-    if (live) forgetLiveWidget(widget.id);
-  };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
       <MenuHeading text="Width" />
@@ -38,7 +34,7 @@ export function WidgetMenu({ widget, anchor, onClose }: {
           onPress={() => { pick(widgets => resizeWidget(widgets, widget.id, { h: option.value })); }} />
       ))}
       {live ? <MenuRow icon={IconArrowRotateClockwise} label="Refresh" onPress={() => { onClose(); refreshLiveWidget(widget.id); }} /> : null}
-      <MenuRow icon={IconTrashCan} label="Remove widget" danger onPress={remove} />
+      <MenuRow icon={IconTrashCan} label="Remove widget" danger onPress={() => { pick(widgets => removeWidget(widgets, widget.id)); }} />
     </AnchoredMenu>
   );
 }

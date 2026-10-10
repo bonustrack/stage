@@ -4,7 +4,7 @@ import {
 } from '@stage-labs/client/xmtp/readState';
 import {
   FRAME_ADD_TOASTS, addFrameWidget, addLiveWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, liveWidgetAdd,
-  moveWidget, packWidgets, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
+  moveWidget, packWidgets, removedLiveIds, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 
@@ -15,6 +15,7 @@ mock.module('../platform/storage', () => ({
   appStorage: {
     get: async (key: string): Promise<string | null> => values.get(key) ?? null,
     set: async (key: string, value: string): Promise<void> => { values.set(key, value); },
+    delete: async (key: string): Promise<void> => { values.delete(key); },
   },
 }));
 mock.module('../lib/accounts', () => ({
@@ -154,6 +155,13 @@ describe('live widgets', () => {
     expect(liveSourceOf({ ...liveWidget('e'), kind: 'frame' })).toBeNull();
   });
 
+  test('only live widgets that are gone count as removed', () => {
+    const before = [liveWidget('l'), liveWidget('m'), frameWidget('f'), widget('e')];
+    expect(removedLiveIds(before, [liveWidget('m')])).toEqual(['l']);
+    expect(removedLiveIds(before, before)).toEqual([]);
+    expect(removedLiveIds(before, [])).toEqual(['l', 'm']);
+  });
+
   test('live widgets survive sync, moves and resizes with their key', () => {
     const raw = { widgets: [liveWidget('l'), frameWidget('f')], at: 4 };
     const synced = dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
@@ -288,6 +296,21 @@ describe('dashboard store', () => {
     expect(added).toEqual({ id: first.id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
     expect(sent).toHaveLength(1);
     stop();
+  });
+
+  test('removing a live widget here or on another device drops its saved frame', async () => {
+    const one = await addLiveToDashboard({ url: 'https://one.example.com/', key: 'aa'.repeat(32) }, 'half');
+    const two = await addLiveToDashboard({ url: 'https://two.example.com/', key: 'bb'.repeat(32) }, 'half');
+    values.set(`liveFrame.v1.alice.${one.id}`, '{}');
+    values.set(`liveFrame.v1.alice.${two.id}`, '{}');
+    changeDashboard(widgets => removeWidget(widgets, one.id));
+    await settle();
+    expect(values.has(`liveFrame.v1.alice.${one.id}`)).toBe(false);
+    expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(true);
+    const current = (await loadDashboard('alice'))?.widgets ?? [];
+    await applyRemoteDashboard('alice', { widgets: current.filter(item => item.id !== two.id), at: Date.now() + 60_000 });
+    await settle();
+    expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(false);
   });
 
   test('missing or broken saved data loads as an empty dashboard', async () => {

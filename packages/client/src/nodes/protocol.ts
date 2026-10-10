@@ -1,6 +1,6 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { sha256 } from '@noble/hashes/sha2';
-import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { bytesToBase64 } from '../text/base64';
 import { FRAME_ACTION_MAX_CHARS, frameContentSchema, type FrameContent } from '../xmtp/frame.schema';
 
@@ -9,10 +9,14 @@ const ACTION_REQUEST = 'threads.sync_custom_action';
 const MAX_URL_CHARS = 2048;
 const NODE_TIMEOUT_MS = 10_000;
 const NODE_MAX_BYTES = 128 * 1024;
-const LOCAL_SUFFIXES = ['.localhost', '.local', '.internal', '.lan', '.home.arpa'];
+const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
 const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
-  [0, 0, 255], [10, 0, 255], [127, 0, 255], [169, 254, 254], [172, 16, 31], [192, 168, 168], [100, 64, 127],
+  [0, 0, 255], [10, 0, 255], [127, 0, 255], [169, 254, 254], [172, 16, 31], [192, 168, 168], [100, 64, 127], [198, 18, 19],
 ];
+const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
+const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
+const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
+const WIDGET_ROOTS = new Set(['Card', 'ListView', 'Basic']);
 
 export type NodeUrlProblem = 'invalid' | 'insecure' | 'credentials' | 'local';
 
@@ -53,7 +57,7 @@ function mappedV4(host: string): number[] | null {
 }
 
 function privateV6(host: string): boolean {
-  if (host === '::' || host === '::1' || /^f[c-f]/.test(host)) return true;
+  if (host === '::' || host === '::1' || PRIVATE_V6.test(host)) return true;
   const v4 = mappedV4(host);
   return v4 !== null && privateV4(v4);
 }
@@ -61,8 +65,16 @@ function privateV6(host: string): boolean {
 function isPublicHost(host: string): boolean {
   if (host.includes(':')) return !privateV6(host);
   const v4 = v4Octets(host);
-  if (v4 !== null) return !privateV4(v4);
+  if (v4 !== null || NUMERIC_LABEL.test(host.slice(host.lastIndexOf('.') + 1))) return v4 !== null && !privateV4(v4);
   return host.includes('.') && !LOCAL_SUFFIXES.some(suffix => host.endsWith(suffix));
+}
+
+function canonicalPart(part: string): string {
+  return part.replace(/%([0-9a-fA-F]{2})|[ "<>\\^`{|}[\]]/g, (match: string, hex: string | undefined) => {
+    if (hex === undefined) return encodeURIComponent(match);
+    const char = String.fromCharCode(parseInt(hex, 16));
+    return UNRESERVED.test(char) ? char : `%${hex.toUpperCase()}`;
+  });
 }
 
 function parsedUrl(raw: string): URL | null {
@@ -76,13 +88,13 @@ function parsedUrl(raw: string): URL | null {
 
 export function nodeUrlOf(raw: string): NodeUrl {
   const url = parsedUrl(raw.trim());
-  if (url === null) return { ok: false, problem: 'invalid' };
+  if (url === null || /[^\x21-\x7e]/.test(url.host)) return { ok: false, problem: 'invalid' };
   if (url.protocol !== 'https:') return { ok: false, problem: 'insecure' };
   if (url.username !== '' || url.password !== '') return { ok: false, problem: 'credentials' };
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   if (!isPublicHost(host)) return { ok: false, problem: 'local' };
-  url.hash = '';
-  return { ok: true, url: url.href, host: url.host };
+  const href = `https://${url.host}${canonicalPart(url.pathname)}${canonicalPart(url.search)}`;
+  return href.length > MAX_URL_CHARS ? { ok: false, problem: 'invalid' } : { ok: true, url: href, host: url.host };
 }
 
 function base64url(bytes: Uint8Array): string {
@@ -121,12 +133,18 @@ function frameReply(raw: unknown): NodeReply | null {
   return parsed.success ? { kind: 'frame', frame: parsed.data } : null;
 }
 
+function rootReply(widget: unknown): NodeReply | null {
+  return isRecord(widget) && typeof widget.type === 'string' && WIDGET_ROOTS.has(widget.type) ? frameReply({ widget }) : null;
+}
+
 export function nodeReplyOf(json: unknown): NodeReply | null {
   if (!isRecord(json)) return null;
   if (Object.keys(json).length === 0 || json.updated_item === null) return UNCHANGED;
-  const item = isRecord(json.updated_item) ? json.updated_item : json;
-  if (item.type === 'widget') return frameReply({ widget: item.widget });
-  return frameReply(typeof item.type === 'string' ? { widget: item } : item);
+  const item = json.updated_item ?? json;
+  if (!isRecord(item)) return null;
+  if (item.type === 'widget') return rootReply(item.widget);
+  if (item !== json) return null;
+  return typeof json.type === 'string' ? rootReply(json) : frameReply(json);
 }
 
 function parsedJson(text: string): unknown {
@@ -137,11 +155,30 @@ function parsedJson(text: string): unknown {
   }
 }
 
+async function cappedText(response: Response): Promise<string | null> {
+  const reader = response.body?.getReader();
+  if (reader === undefined) {
+    const text = await response.text();
+    return text.length > NODE_MAX_BYTES ? null : text;
+  }
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (let part = await reader.read(); !part.done; part = await reader.read()) {
+    size += part.value.byteLength;
+    if (size > NODE_MAX_BYTES) {
+      void reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(part.value);
+  }
+  return new TextDecoder().decode(concatBytes(...chunks));
+}
+
 async function readReply(response: Response): Promise<NodeResult> {
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
   if (Number(response.headers.get('content-length') ?? 0) > NODE_MAX_BYTES) return { ok: false, problem: 'too-large' };
-  const text = await response.text();
-  if (text.length > NODE_MAX_BYTES) return { ok: false, problem: 'too-large' };
+  const text = await cappedText(response);
+  if (text === null) return { ok: false, problem: 'too-large' };
   if (text.trim() === '') return { ok: true, reply: UNCHANGED };
   const reply = nodeReplyOf(parsedJson(text));
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };

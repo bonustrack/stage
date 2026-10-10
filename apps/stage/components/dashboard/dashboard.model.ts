@@ -84,6 +84,11 @@ export function addLiveWidget(
   return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key }];
 }
 
+export function removedLiveIds(before: readonly DashboardWidget[], after: readonly DashboardWidget[]): string[] {
+  const kept = new Set(after.map(widget => widget.id));
+  return before.filter(widget => widget.kind === DASHBOARD_LIVE_KIND && !kept.has(widget.id)).map(widget => widget.id);
+}
+
 export function removeWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {
   const next = widgets.filter(widget => widget.id !== id);
   return next.length === widgets.length ? widgets : next;

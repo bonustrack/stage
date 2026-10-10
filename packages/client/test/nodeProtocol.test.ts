@@ -40,6 +40,14 @@ describe('node url safety', () => {
     });
     expect(nodeUrlOf('https://1.1.1.1/').ok).toBe(true);
     expect(nodeUrlOf('https://[2606:4700:4700::1111]/').ok).toBe(true);
+    expect(nodeUrlOf('https://bücher.example/')).toEqual({ ok: true, url: 'https://xn--bcher-kva.example/', host: 'xn--bcher-kva.example' });
+  });
+
+  test('signs the url in the form a Cloudflare Worker sees it', () => {
+    expect(nodeUrlOf('https://x.example.com/a%7eb/%2f?q=a|b^c&d=%41')).toEqual({
+      ok: true, url: 'https://x.example.com/a~b/%2F?q=a%7Cb%5Ec&d=A', host: 'x.example.com',
+    });
+    expect(nodeUrlOf(`https://x.example.com/a${' '.repeat(700)}b`)).toEqual({ ok: false, problem: 'invalid' });
   });
 
   test('rejects other schemes, credentials and junk', () => {
@@ -59,7 +67,8 @@ describe('node url safety', () => {
       'https://0x7f.0.0.1', 'https://0.0.0.0', 'https://10.1.2.3', 'https://172.16.0.1', 'https://172.31.255.255',
       'https://192.168.1.10', 'https://169.254.169.254', 'https://100.64.0.1', 'https://224.0.0.1', 'https://[::1]',
       'https://[::]', 'https://[fe80::1]', 'https://[fd00::1]', 'https://[fc00::1]', 'https://[ff02::1]',
-      'https://[::ffff:127.0.0.1]', 'https://[::ffff:a9fe:a9fe]', 'https://[::ffff:192.168.0.1]',
+      'https://[::ffff:127.0.0.1]', 'https://[::ffff:a9fe:a9fe]', 'https://[::ffff:192.168.0.1]', 'https://localhost.localdomain',
+      'https://198.18.0.1', 'https://[64:ff9b::7f00:1]', 'https://[2002:7f00:1::1]', 'https://[::ffff:0:a00:1]', 'https://１２７.０.０.１',
     ];
     for (const url of blocked) expect([url, nodeUrlOf(url)]).toEqual([url, { ok: false, problem: 'local' }]);
     expect(nodeUrlOf('https://172.32.0.1').ok).toBe(true);
@@ -134,6 +143,11 @@ describe('node replies', () => {
     expect(nodeReplyOf({ price: 1 })).toBeNull();
     expect(nodeReplyOf({ type: 'widget' })).toBeNull();
     expect(nodeReplyOf({ type: 'Card', note: 'x'.repeat(70_000) })).toBeNull();
+    expect(nodeReplyOf({ type: 'error', message: 'oops' })).toBeNull();
+    expect(nodeReplyOf({ type: 'Text', value: 'not a root' })).toBeNull();
+    expect(nodeReplyOf({ updated_item: { type: 'assistant_message', content: [] } })).toBeNull();
+    expect(nodeReplyOf({ updated_item: { type: 'widget', widget: { type: 'Text', value: 'x' } } })).toBeNull();
+    expect(nodeReplyOf({ updated_item: 'Card' })).toBeNull();
   });
 });
 
@@ -173,6 +187,11 @@ describe('node calls', () => {
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => new Response('x'.repeat(140 * 1024)));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({ pull(controller) { pulled += 1; controller.enqueue(new Uint8Array(16 * 1024)); } });
+    stubFetch(() => new Response(endless));
+    expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
+    expect(pulled).toBeLessThan(12);
     stubFetch(() => new Response(null, { status: 204 }));
     expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'refresh' })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));

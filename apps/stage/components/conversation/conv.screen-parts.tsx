@@ -39,7 +39,8 @@ import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
 import { addFrameToDashboard, addLiveToDashboard } from '../../lib/dashboard';
 import { newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
-import { FRAME_ADD_TOASTS } from '../dashboard/dashboard.model';
+import { FRAME_ADD_TOASTS, type FrameWidgetAdd } from '../dashboard/dashboard.model';
+import { liveConfirmOf } from '../dashboard/liveWidget.model';
 import { frameIsFullWidth, frameOf } from '../frame/frame.model';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -59,14 +60,18 @@ async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promis
   }
 }
 
-async function addFrameWidget(convId: string, messageId: string, frame: FrameContent): Promise<void> {
+async function addedFromChat(convId: string, messageId: string, frame: FrameContent): Promise<FrameWidgetAdd | null> {
   const width = frameIsFullWidth(frame) ? 'full' : 'half';
   const node = frame.source === undefined ? null : nodeUrlOf(frame.source.url);
+  if (node?.ok !== true) return addFrameToDashboard({ conversationId: convId, messageId }, width);
+  if (!await capabilities.confirm(liveConfirmOf(node.host))) return null;
+  return (await addLiveToDashboard({ url: node.url, key: newNodeKey() }, width)).outcome;
+}
+
+async function addFrameWidget(convId: string, messageId: string, frame: FrameContent): Promise<void> {
   try {
-    const outcome = node?.ok === true
-      ? (await addLiveToDashboard({ url: node.url, key: newNodeKey() }, width)).outcome
-      : await addFrameToDashboard({ conversationId: convId, messageId }, width);
-    capabilities.toast(FRAME_ADD_TOASTS[outcome]);
+    const outcome = await addedFromChat(convId, messageId, frame);
+    if (outcome !== null) capabilities.toast(FRAME_ADD_TOASTS[outcome]);
   } catch (err) {
     report('dashboard.addFrame', err);
     capabilities.toast('Could not add it to your dashboard');

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { NodeResult } from '@stage-labs/client/nodes/protocol';
 import {
-  EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveProblemText, liveRefetchInterval, liveRefreshDelay, liveSnapshotJson,
+  EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveConfirmOf, liveProblemText, liveRefetchInterval, liveRefreshDelay, liveSnapshotJson,
   liveSnapshotOf, liveStateAfter, liveStatusText, type LiveState,
 } from '../components/dashboard/liveWidget.model';
 
@@ -55,6 +55,14 @@ describe('live widget status', () => {
     expect(liveStatusText({ ...EMPTY_LIVE, problem: 'timeout' }, timeOf)).toBe('Timed out');
     expect(liveProblemText({ problem: 'invalid', status: null })).toBe('Not a widget');
     expect(liveProblemText({ problem: null, status: null })).toBeNull();
+  });
+
+  test('adding a node from a chat frame names its host first', () => {
+    expect(liveConfirmOf('btc.example.com')).toEqual({
+      title: 'Add a live widget?',
+      message: 'It loads from btc.example.com every minute while your Dashboard is open. That site sees your IP address, not your account.',
+      confirmLabel: 'Add',
+    });
   });
 
   test('every blocked link gets a hint', () => {

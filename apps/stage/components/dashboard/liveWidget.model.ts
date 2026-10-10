@@ -36,6 +36,14 @@ export const NODE_URL_HINTS: Readonly<Record<NodeUrlProblem, string>> = {
   local: 'Local and private addresses are blocked',
 };
 
+export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
+  return {
+    title: 'Add a live widget?',
+    message: `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`,
+    confirmLabel: 'Add',
+  };
+}
+
 function renders(frame: FrameContent): boolean {
   return parseFrameDoc(frameInputOf(frame)).ok;
 }
