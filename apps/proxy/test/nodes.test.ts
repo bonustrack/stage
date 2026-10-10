@@ -71,8 +71,9 @@ describe('publishing a node', () => {
     expect(calls.map(call => `${call.method} ${call.url}`)).toEqual([`GET ${API_BASE}`, `PUT ${API_BASE}/scripts/node-${id}`]);
     expect(calls.every(call => call.auth === `Bearer ${TOKEN}`)).toBe(true);
     const form = calls[1]?.body;
-    const metadata = form?.get('metadata') as Blob;
-    expect(JSON.parse(await metadata.text())).toEqual({ main_module: 'node.js', compatibility_date: '2026-06-01', bindings: [] });
+    expect(JSON.parse(String(form?.get('metadata')))).toEqual({
+      main_module: 'node.js', compatibility_date: '2026-06-01', compatibility_flags: ['global_fetch_strictly_public'], bindings: [],
+    });
     const module = form?.get('node.js') as File;
     expect(module.type).toBe('application/javascript+module');
     expect(module.name).toBe('node.js');
@@ -180,6 +181,48 @@ describe('publishing a node', () => {
     expect(await unauthorized.json()).toEqual({ error: 'node hosting failed' });
     const deleteRefused = cloudflare({ [`DELETE /scripts/node-${idOf(key)}`]: badToken });
     expect((await run(signed('DELETE', key), deleteRefused.api)).status).toBe(502);
+  });
+});
+
+describe('signature edge cases', () => {
+  test('code starting with a byte order mark keeps its exact bytes', async () => {
+    const key = newNodeKey();
+    const { api, calls } = cloudflare();
+    const code = `\uFEFF${CODE}`;
+    expect((await run(signed('PUT', key, code), api)).status).toBe(200);
+    const module = calls[1]?.body?.get('node.js') as File;
+    expect(new Uint8Array(await module.arrayBuffer())).toEqual(new TextEncoder().encode(code));
+  });
+
+  test('a small order key with a forged signature is refused', async () => {
+    const identity = new Uint8Array(32);
+    identity[0] = 1;
+    const forged = new Uint8Array(64);
+    forged[0] = 1;
+    const b64url = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64url');
+    const { api, calls } = cloudflare();
+    const headers = { 'stage-key': b64url(identity), 'stage-timestamp': String(NOW / 1000), 'stage-signature': b64url(forged), 'content-length': String(CODE.length) };
+    expect((await run(new Request(URL_NODES, { method: 'PUT', body: CODE, headers }), api)).status).toBe(401);
+    expect(calls).toEqual([]);
+  });
+
+  test('a namespace answer without a script count still lets a node in', async () => {
+    const key = newNodeKey();
+    const { api, calls } = cloudflare({ 'GET ': () => Response.json({ success: true, result: {} }) });
+    expect((await run(signed('PUT', key, CODE), api)).status).toBe(200);
+    expect(calls.map(call => call.method)).toEqual(['GET', 'PUT']);
+  });
+
+  test('the proxy limits publishes per IPv6 /64 and in all', async () => {
+    const keys: string[] = [];
+    const allow = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: true }); } };
+    const deny = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: false }); } };
+    const env = { NODES_API_TOKEN: TOKEN, NODES_ACCOUNT_ID: ACCOUNT, NODE_PUBLISHES: allow, NODE_PUBLISHES_ALL: deny } as unknown as Parameters<typeof worker.fetch>[1];
+    const request = signed('PUT', newNodeKey(), CODE, Date.now());
+    const withIp = new Request(request, { headers: { ...Object.fromEntries(request.headers), 'cf-connecting-ip': '2001:db8:1:2:aaaa::1' } });
+    const res = await worker.fetch(withIp, env, {} as ExecutionContext);
+    expect(res.status).toBe(429);
+    expect(keys).toEqual(['2001:db8:1:2::/64', 'all']);
   });
 });
 

@@ -1,5 +1,5 @@
 import { NODE_CODE_MAX_BYTES, NODE_PUBLISH_PATH, hostedNodeUrl, nodeIdOf, nodeScriptName } from '@stage-labs/client/nodes/hosting';
-import { base64urlBytes, nodeSigningText } from '@stage-labs/client/nodes/signing';
+import { base64urlBytes, isStrongNodeKey, nodeSigningText } from '@stage-labs/client/nodes/signing';
 import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
 export const NODES_PATH = NODE_PUBLISH_PATH;
@@ -7,11 +7,11 @@ export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
 const MAIN_MODULE = 'node.js';
 const COMPATIBILITY_DATE = '2026-06-01';
+const COMPATIBILITY_FLAGS = ['global_fetch_strictly_public'];
 const CLOUDFLARE_API = 'https://api.cloudflare.com/client/v4';
 const API_TIMEOUT_MS = 15_000;
 const MAX_SKEW_SECONDS = 300;
 const DETAIL_MAX_CHARS = 300;
-const PUBLIC_KEY_BYTES = 32;
 const SIGNATURE_BYTES = 64;
 const ACCOUNT_ID = /^[0-9a-f]{32}$/;
 const TIMESTAMP = /^\d{1,12}$/;
@@ -66,13 +66,13 @@ function declaredLength(request: Request): number | null {
   return Number.isSafeInteger(size) && size >= 0 ? size : null;
 }
 
-async function readCode(request: Request): Promise<string | Response> {
+async function readCode(request: Request): Promise<Uint8Array | Response> {
   const length = declaredLength(request);
   if (length === null) return fail(411, 'content length required');
   if (length > NODE_CODE_MAX_BYTES) return fail(413, 'code too large');
   if (length === 0) return fail(400, 'code required');
-  const code = await request.text();
-  return new TextEncoder().encode(code).byteLength > NODE_CODE_MAX_BYTES ? fail(413, 'code too large') : code;
+  const code = new Uint8Array(await request.arrayBuffer());
+  return code.byteLength > NODE_CODE_MAX_BYTES ? fail(413, 'code too large') : code;
 }
 
 async function verified(publicKey: Uint8Array, signature: Uint8Array, text: string): Promise<boolean> {
@@ -95,11 +95,11 @@ function signedParts(request: Request, nowMs: number): SignedParts | null {
   const timestamp = request.headers.get('stage-timestamp') ?? '';
   const publicKey = base64urlBytes(keyId);
   const signature = base64urlBytes(request.headers.get('stage-signature') ?? '');
-  if (publicKey?.length !== PUBLIC_KEY_BYTES || signature?.length !== SIGNATURE_BYTES || !fresh(timestamp, nowMs)) return null;
+  if (publicKey === null || signature?.length !== SIGNATURE_BYTES || !fresh(timestamp, nowMs) || !isStrongNodeKey(publicKey)) return null;
   return { keyId, publicKey, signature, timestamp };
 }
 
-async function signerNodeId(request: Request, body: string, nowMs: number): Promise<string | null> {
+async function signerNodeId(request: Request, body: Uint8Array, nowMs: number): Promise<string | null> {
   const parts = signedParts(request, nowMs);
   if (parts === null) return null;
   const text = nodeSigningText(request.method, request.url, parts.timestamp, body);
@@ -115,31 +115,30 @@ function apiFailure(answer: ApiReply): Response {
   return answer.status === 429 ? fail(429, 'busy, try again in a minute') : fail(502, 'node hosting failed');
 }
 
-function scriptCount(answer: ApiReply): number | null {
+function scriptCount(answer: ApiReply): number {
   const count = (answer.result as { script_count?: unknown } | null)?.script_count;
-  return typeof count === 'number' ? count : null;
+  return typeof count === 'number' ? count : 0;
 }
 
 async function roomFor(api: NodesApi, script: string): Promise<Response | null> {
   const namespace = await api('GET', '');
   if (namespace.status === 404) return fail(503, 'nodes are not set up');
-  const count = namespace.status === 200 ? scriptCount(namespace) : null;
-  if (count === null) return apiFailure(namespace);
-  if (count < MAX_NODES) return null;
+  if (namespace.status !== 200) return apiFailure(namespace);
+  if (scriptCount(namespace) < MAX_NODES) return null;
   const existing = await api('GET', `/scripts/${script}`);
   if (existing.status === 200) return null;
   return existing.status === 404 ? fail(507, 'Stage hosts no more nodes for now') : apiFailure(existing);
 }
 
-function uploadForm(code: string): FormData {
+function uploadForm(code: Uint8Array): FormData {
   const form = new FormData();
-  const metadata = { main_module: MAIN_MODULE, compatibility_date: COMPATIBILITY_DATE, bindings: [] };
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append(MAIN_MODULE, new Blob([code], { type: 'application/javascript+module' }), MAIN_MODULE);
+  const metadata = { main_module: MAIN_MODULE, compatibility_date: COMPATIBILITY_DATE, compatibility_flags: COMPATIBILITY_FLAGS, bindings: [] };
+  form.set('metadata', JSON.stringify(metadata));
+  form.set(MAIN_MODULE, new File([code], MAIN_MODULE, { type: 'application/javascript+module' }));
   return form;
 }
 
-async function publish(api: NodesApi, id: string, code: string): Promise<Response> {
+async function publish(api: NodesApi, id: string, code: Uint8Array): Promise<Response> {
   const script = nodeScriptName(id);
   const full = await roomFor(api, script);
   if (full !== null) return full;
@@ -162,7 +161,7 @@ async function putNode(request: Request, api: NodesApi, nowMs: number): Promise<
 }
 
 async function deleteNode(request: Request, api: NodesApi, nowMs: number): Promise<Response> {
-  const id = await signerNodeId(request, '', nowMs);
+  const id = await signerNodeId(request, new Uint8Array(), nowMs);
   return id === null ? fail(401, 'invalid signature') : unpublish(api, id);
 }
 

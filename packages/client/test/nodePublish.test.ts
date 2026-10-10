@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { hostedNodeUrl, isNodeId, nodeIdOf, nodeScriptName } from '../src/nodes/hosting';
+import { clientRateKey, hostedNodeUrl, isNodeId, nodeIdOf, nodeScriptName } from '../src/nodes/hosting';
 import { nodeKeyId } from '../src/nodes/protocol';
 import { deleteNode, nodeCodeTooLarge, ownNodeUrl, publishNode } from '../src/nodes/publish';
-import { base64url, base64urlBytes, nodeSigningText } from '../src/nodes/signing';
+import { base64url, base64urlBytes, isStrongNodeKey, nodeSigningText } from '../src/nodes/signing';
 
 const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
 const RFC8032_PUBLIC = '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo';
@@ -55,6 +55,33 @@ describe('hosted node ids', () => {
     expect(base64urlBytes('-_8AAT4_')).toEqual(bytes);
     expect(base64urlBytes('+/8AAT4/')).toBeNull();
     expect(base64urlBytes('abcde')).toBeNull();
+  });
+});
+
+describe('node keys and rate keys', () => {
+  test('small order public keys are refused, real keys pass', () => {
+    const identity = new Uint8Array(32);
+    identity[0] = 1;
+    expect(isStrongNodeKey(identity)).toBe(false);
+    expect(isStrongNodeKey(new Uint8Array(32))).toBe(false);
+    expect(isStrongNodeKey(new Uint8Array(32).fill(255))).toBe(false);
+    expect(isStrongNodeKey(new Uint8Array(31))).toBe(false);
+    expect(isStrongNodeKey(base64urlBytes(RFC8032_PUBLIC) ?? new Uint8Array())).toBe(true);
+  });
+
+  test('the signing text hashes the same bytes for a string or its UTF-8', () => {
+    const body = '\uFEFFexport default {};';
+    expect(nodeSigningText('PUT', PROXY, '1', new TextEncoder().encode(body))).toBe(nodeSigningText('PUT', PROXY, '1', body));
+  });
+
+  test('an IPv6 client counts by its /64 and an IPv4 one by its address', () => {
+    expect(clientRateKey('203.0.113.7')).toBe('203.0.113.7');
+    expect(clientRateKey('2001:db8:1:2:3:4:5:6')).toBe('2001:db8:1:2::/64');
+    expect(clientRateKey('2001:DB8:0001:0002::9')).toBe('2001:db8:1:2::/64');
+    expect(clientRateKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(clientRateKey('::1')).toBe('0:0:0:0::/64');
+    expect(clientRateKey('::ffff:198.51.100.4')).toBe('198.51.100.4');
+    expect(clientRateKey('unknown')).toBe('unknown');
   });
 });
 

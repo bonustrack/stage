@@ -1,4 +1,5 @@
 
+import { clientRateKey } from '@stage-labs/client/nodes/hosting';
 import { BUNDLER_HOST, handleBundler } from './bundler.ts';
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
@@ -168,6 +169,7 @@ type ProxyEnv = NamesEnv & {
   NODES_API_TOKEN?: string;
   NODES_ACCOUNT_ID?: string;
   NODE_PUBLISHES?: RateLimit;
+  NODE_PUBLISHES_ALL?: RateLimit;
 };
 
 interface MailWiring { mailbox: (label: string) => ReturnType<typeof mailboxStub>; chain: MailChain }
@@ -199,9 +201,9 @@ function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Resp
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 
-async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimit | undefined): Promise<boolean> {
+async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimit | undefined, key = clientIp(request)): Promise<boolean> {
   if (rateLimited(request, budget)) return true;
-  return limiter !== undefined && !(await limiter.limit({ key: clientIp(request) })).success;
+  return limiter !== undefined && !(await limiter.limit({ key })).success;
 }
 
 async function routeAttachments(request: Request, env: ProxyEnv): Promise<Response> {
@@ -212,7 +214,8 @@ async function routeAttachments(request: Request, env: ProxyEnv): Promise<Respon
 function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
   return handleNodes(request, {
     api: cloudflareApi(env.NODES_API_TOKEN, env.NODES_ACCOUNT_ID),
-    limited: () => limitedBy(request, 'nodes', env.NODE_PUBLISHES),
+    limited: async () => await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))
+      || (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
   });
 }
 

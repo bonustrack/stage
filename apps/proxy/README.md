@@ -53,14 +53,16 @@ runtime - no Express, no origin, no laptop dependency.
   key (`Stage-Key`, `Stage-Timestamp`, `Stage-Signature`, the scheme of
   `NODES.md`) and the node id is the first 16 bytes of the SHA-256 of that
   public key, so a key owns exactly one node and nobody else can change or
-  remove it. The Worker checks the size, the signature and the rate limit (10
-  a minute per IP through the `NODE_PUBLISHES` binding), keeps the total at
-  1000 nodes, then uploads the code through the Cloudflare API into the
-  Workers for Platforms dispatch namespace `stage-nodes` as the Worker
-  `node-<id>`, with no bindings, secrets or logs. `apps/dispatch` serves it on
-  `https://nodes.stage.box/<id>`. The token and account id are the
-  `NODES_API_TOKEN` and `NODES_ACCOUNT_ID` secrets; without them `/nodes`
-  answers `503`.
+  remove it (small order keys are refused). The Worker checks the size, the
+  signature over the raw bytes, and the rate limits (10 a minute per IP, an
+  IPv6 address counted by its /64, through `NODE_PUBLISHES`, and 60 a minute
+  in all through `NODE_PUBLISHES_ALL`), keeps the total at 1000 nodes, then
+  uploads the code through the Cloudflare API into the Workers for Platforms
+  dispatch namespace `stage-nodes` as the Worker `node-<id>`, with no
+  bindings, secrets or logs and the `global_fetch_strictly_public` flag.
+  `apps/dispatch` serves it on `https://nodes.stage.box/<id>`. The token and
+  account id are the `NODES_API_TOKEN` and `NODES_ACCOUNT_ID` secrets; without
+  them `/nodes` answers `503`.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -115,7 +117,7 @@ DELETE /mail/box?label=<l>       -> 204, wipes the mailbox  Bearer token
 PUT  /nodes                      -> ES module source, signed -> { id, url }   (url https://nodes.stage.box/<id>)
 DELETE /nodes                    -> signed, no body -> { id }   404 no such node
      /nodes 400 code refused by Cloudflare (reason in error)   401 bad or stale signature   411 no length
-            413 code over 64 KB   429 rate limited (10 a minute per IP)   503 not set up   507 node limit reached
+            413 code over 64 KB   429 rate limited (10 a minute per IP, 60 in all)   503 not set up   507 node limit reached
 ```
 
 Every response carries `x-served-by: worker`.
@@ -162,8 +164,9 @@ the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
 and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
 dashboard; a deploy fails while it does not exist);
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
-with `wrangler secret put`, never committed. So are `NODES_API_TOKEN` (an API
-token with only Account, Workers Scripts, Edit on this account) and
+with `wrangler secret put`, never committed. So are `NODES_API_TOKEN` (an
+account API token, owned by the account rather than a person so its API budget
+is its own, with only Workers Scripts, Edit) and
 `NODES_ACCOUNT_ID`, set in the dashboard (Workers & Pages, proxy, Settings,
 Variables and Secrets, type Secret) so a deploy keeps them. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any
