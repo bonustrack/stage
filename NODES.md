@@ -99,9 +99,11 @@ export default {
 
 Each node runs as its own Worker in a Cloudflare Workers for Platforms dispatch namespace, isolated from the other nodes and from Stage:
 
-- No bindings, secrets or environment, and no shared cache. The code can call public URLs with `fetch`.
-- Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all. Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other.
-- `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP, and no calls from other Workers.
+- No bindings, secrets or environment, and no shared cache.
+- `fetch` reaches public `https` host names on the default port only: no IP addresses, local names or `*.stage.box`, and a redirect comes back to the code instead of being followed. Raw TCP sockets are off.
+- Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all.
+- Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other. Cookies and the caller's IP address and location headers are removed first, so a hosted node never sees the user's IP.
+- `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP (an IPv6 address counts by its /64), 600 calls a minute per node, and no calls from other Workers.
 - The reply keeps the node's status and body, at most 128 KB, and always goes out as `application/json` with no cookies or other headers. A redirect answers `502`, as does a crash or a hit limit; an unknown node answers `404`.
 
 Publishing is a signed request to the proxy, the same scheme as in Signing. The app does it for you:
@@ -116,9 +118,9 @@ Stage-Signature: ...
 <the code>
 ```
 
-It answers `{"id": "<id>", "url": "https://nodes.stage.box/<id>"}`. The id is the first 16 bytes of the SHA-256 of the 32 byte public key, as lowercase hex, so a key owns exactly one node: a new `PUT` with the same key replaces the code, and a signed `DELETE https://proxy.stage.box/nodes` with no body removes the node. Nobody else can change or remove it. The app makes a new key for each node and its widget signs with that same key, so removing the widget also deletes the node.
+The signature covers the raw bytes of the code as sent. It answers `{"id": "<id>", "url": "https://nodes.stage.box/<id>"}`. The id is the first 16 bytes of the SHA-256 of the 32 byte public key, as lowercase hex, so a key owns exactly one node (weak, small order keys are refused): a new `PUT` with the same key replaces the code, and a signed `DELETE https://proxy.stage.box/nodes` with no body removes the node. Nobody else can change or remove it. The app makes a new key for each node and its widget signs with that same key, so removing the widget also deletes the node.
 
-Errors: `400` the code was refused (the reason is in `error`), `401` a bad or stale signature, `411` no length, `413` more than 64 KB, `429` rate limited (10 a minute per IP), `503` node hosting is not set up yet, `507` Stage hosts no more nodes for now (1000 in all).
+Errors: `400` the code was refused (the reason is in `error`), `401` a bad or stale signature, `411` no length, `413` more than 64 KB, `429` rate limited (10 a minute per IP or IPv6 /64, 60 a minute in all), `503` node hosting is not set up yet, `507` Stage hosts no more nodes for now (1000 in all).
 
 ## Frames from chats
 
@@ -126,6 +128,6 @@ A frame message can name its node with `source`: `{"widget": {...}, "source": {"
 
 ## Limits
 
-- The node sees the device's IP address and what Stage sends it, as with an image in a frame.
+- The node sees the device's IP address and what Stage sends it, as with an image in a frame. A hosted node does not see the IP address.
 - Stage checks the host name, not the address DNS returns, so a public name that points to a private address is not caught.
 - A captured request can be replayed for up to 5 minutes. A node that needs more can reject a signature it has already seen.

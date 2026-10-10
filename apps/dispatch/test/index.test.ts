@@ -45,11 +45,15 @@ describe('routing', () => {
     expect(await seen[0]?.request.text()).toBe(body);
   });
 
-  test('never hands a node the cookies of stage.box', async () => {
+  test('never hands a node the cookies, address or location of the caller', async () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
     const body = '{}';
-    await call(new Request(NODE_URL, { method: 'POST', body, headers: { cookie: 'session=1', 'content-length': '2', 'stage-key': 'k' } }), { nodes });
-    expect(seen[0]?.request.headers.get('cookie')).toBeNull();
+    const caller = {
+      cookie: 'session=1', 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': '203.0.113.7', 'x-real-ip': '203.0.113.7',
+      'true-client-ip': '203.0.113.7', 'cf-ipcountry': 'CH', 'cf-ipcity': 'Zug', 'cf-timezone': 'Europe/Zurich',
+    };
+    await call(new Request(NODE_URL, { method: 'POST', body, headers: { ...caller, 'content-length': '2', 'stage-key': 'k' } }), { nodes });
+    for (const name of Object.keys(caller)) expect([name, seen[0]?.request.headers.get(name)]).toEqual([name, null]);
     expect(seen[0]?.request.headers.get('stage-key')).toBe('k');
     expect(await seen[0]?.request.text()).toBe(body);
   });
@@ -95,13 +99,16 @@ describe('abuse limits', () => {
     expect(seen).toEqual([]);
   });
 
-  test('rate limits per client address', async () => {
+  test('rate limits per client address, an IPv6 one by its /64, and per node', async () => {
     const keys: string[] = [];
-    const limiter = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: false }); } } as unknown as RateLimit;
+    const limit = (success: boolean): RateLimit => ({
+      limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success }); },
+    }) as unknown as RateLimit;
     const { nodes, seen } = namespace(() => new Response(CARD));
-    const res = await call(new Request(NODE_URL, { headers: { 'cf-connecting-ip': '203.0.113.7' } }), { nodes, limiter });
-    expect(res.status).toBe(429);
-    expect(keys).toEqual(['203.0.113.7']);
+    expect((await call(new Request(NODE_URL, { headers: { 'cf-connecting-ip': '203.0.113.7' } }), { nodes, limiter: limit(false) })).status).toBe(429);
+    const v6 = new Request(NODE_URL, { headers: { 'cf-connecting-ip': '2001:db8:1:2:3:4:5:6' } });
+    expect((await call(v6, { nodes, limiter: limit(true), nodeLimiter: limit(false) })).status).toBe(429);
+    expect(keys).toEqual(['203.0.113.7', '2001:db8:1:2::/64', ID]);
     expect(seen).toEqual([]);
   });
 

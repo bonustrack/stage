@@ -12,11 +12,22 @@ routes = [{ pattern = "nodes.stage.box", custom_domain = true }]
 binding = "NODES"
 namespace = "stage-nodes"
 
-# Node calls per client IP.
+# Every fetch() of a node goes through the Worker nodes-outbound
+# (outbound.toml), which also turns off raw TCP sockets for nodes.
+[dispatch_namespaces.outbound]
+service = "nodes-outbound"
+
+# Node calls per client IP (an IPv6 address counts by its /64).
 [[ratelimits]]
 name = "NODE_REQUESTS"
 namespace_id = "1083"
 simple = { limit = 120, period = 60 }
+
+# Calls per node, whoever makes them.
+[[ratelimits]]
+name = "NODE_CALLS"
+namespace_id = "1085"
+simple = { limit = 600, period = 60 }
 
 # No Workers Logs: a request log would keep client IPs and node ids.
 [observability]

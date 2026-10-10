@@ -24,8 +24,8 @@ apps/
   proxy/      # Cloudflare Worker: link previews, image resize, x402, XMTP history/push relays,
               #   the *.stage.base.eth names service, user node publishing (/nodes), and the
               #   bundler.stage.box manifest proxy
-  dispatch/   # Cloudflare Worker on nodes.stage.box: runs the nodes users publish, each in its own
-              #   Workers for Platforms sandbox (no node code in this repo)
+  dispatch/   # Cloudflare Workers dispatch (nodes.stage.box) and nodes-outbound: run the nodes users
+              #   publish, each in its own Workers for Platforms sandbox (no node code in this repo)
   push/       # XMTP notification server (upstream image, deployed to Fly as stage-push)
 packages/
   client/     # @stage-labs/client — framework-agnostic shared logic (XMTP cores + codecs,

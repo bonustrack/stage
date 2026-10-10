@@ -1,0 +1,15 @@
+name = "nodes-outbound"
+main = "src/outbound.ts"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["global_fetch_strictly_public"]
+workers_dev = false
+
+# The Outbound Worker of the "stage-nodes" dispatch namespace: every fetch() a
+# user node makes comes here first. Only https on the default port to public
+# host names (no IP addresses, local names or *.stage.box) goes out, redirects
+# are handed back instead of followed, and with an Outbound Worker attached
+# nodes can not open raw TCP sockets. global_fetch_strictly_public sends every
+# request through Cloudflare's front door, like any outside client.
+
+[observability]
+enabled = false

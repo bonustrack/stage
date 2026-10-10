@@ -1,9 +1,13 @@
-import { NODE_REPLY_MAX_BYTES, isNodeId, nodeScriptName } from '@stage-labs/client/nodes/hosting';
+import { NODE_REPLY_MAX_BYTES, clientRateKey, isNodeId, nodeScriptName } from '@stage-labs/client/nodes/hosting';
 
 export const NODE_LIMITS = { cpuMs: 50, subRequests: 5 };
 export const REQUEST_MAX_BYTES = 64 * 1024;
 const NODE_TIMEOUT_MS = 10_000;
 const NULL_BODY = new Set([204, 205]);
+const CALLER_HEADERS = [
+  'cookie', 'cf-connecting-ip', 'cf-connecting-ipv6', 'true-client-ip', 'x-forwarded-for', 'x-real-ip', 'cf-ipcountry', 'cf-ipcity',
+  'cf-ipcontinent', 'cf-iplatitude', 'cf-iplongitude', 'cf-region', 'cf-region-code', 'cf-metro-code', 'cf-postal-code', 'cf-timezone',
+];
 
 const HEADERS: Record<string, string> = {
   'access-control-allow-origin': '*',
@@ -21,12 +25,14 @@ const HEADERS: Record<string, string> = {
 export interface DispatchDeps {
   nodes?: DispatchNamespace;
   limiter?: RateLimit;
+  nodeLimiter?: RateLimit;
   timeoutMs?: number;
 }
 
 interface DispatchEnv {
   NODES?: DispatchNamespace;
   NODE_REQUESTS?: RateLimit;
+  NODE_CALLS?: RateLimit;
 }
 
 const answer = (body: BodyInit | null, status: number): Response => new Response(body, { status, headers: HEADERS });
@@ -39,9 +45,12 @@ function bodyTooLarge(request: Request): boolean {
   return !(Number.isSafeInteger(size) && size >= 0 && size <= REQUEST_MAX_BYTES);
 }
 
-async function limited(request: Request, limiter: RateLimit | undefined): Promise<boolean> {
-  if (limiter === undefined) return false;
-  return !(await limiter.limit({ key: request.headers.get('cf-connecting-ip') ?? 'unknown' })).success;
+async function over(limiter: RateLimit | undefined, key: string): Promise<boolean> {
+  return limiter !== undefined && !(await limiter.limit({ key })).success;
+}
+
+async function limited(request: Request, id: string, deps: DispatchDeps): Promise<boolean> {
+  return await over(deps.limiter, clientRateKey(request.headers.get('cf-connecting-ip') ?? 'unknown')) || over(deps.nodeLimiter, id);
 }
 
 async function cappedBody(response: Response): Promise<Blob | null> {
@@ -70,16 +79,15 @@ async function relay(response: Response): Promise<Response> {
   return answer(NULL_BODY.has(response.status) ? null : body, response.status);
 }
 
-function withoutCookies(request: Request): Request {
-  if (!request.headers.has('cookie')) return request;
+function anonymous(request: Request): Request {
   const headers = new Headers(request.headers);
-  headers.delete('cookie');
+  for (const name of CALLER_HEADERS) headers.delete(name);
   return new Request(request, { headers });
 }
 
 async function runNode(nodes: DispatchNamespace, id: string, request: Request): Promise<Response> {
   try {
-    return await relay(await nodes.get(nodeScriptName(id), {}, { limits: NODE_LIMITS }).fetch(withoutCookies(request)));
+    return await relay(await nodes.get(nodeScriptName(id), {}, { limits: NODE_LIMITS }).fetch(anonymous(request)));
   } catch (err) {
     return err instanceof Error && err.message.startsWith('Worker not found') ? fail(404, 'no such node') : fail(502, 'node failed');
   }
@@ -109,10 +117,12 @@ export async function dispatchNode(request: Request, deps: DispatchDeps): Promis
   if (refusal !== null) return refusal;
   const { nodes } = deps;
   if (nodes === undefined) return fail(503, 'nodes are not set up');
-  if (await limited(request, deps.limiter)) return fail(429, 'rate limited');
+  if (await limited(request, id, deps)) return fail(429, 'rate limited');
   return withTimeout(runNode(nodes, id, request), deps.timeoutMs ?? NODE_TIMEOUT_MS);
 }
 
 export default {
-  fetch: (request: Request, env: DispatchEnv): Promise<Response> => dispatchNode(request, { nodes: env.NODES, limiter: env.NODE_REQUESTS }),
+  fetch: (request: Request, env: DispatchEnv): Promise<Response> => dispatchNode(request, {
+    nodes: env.NODES, limiter: env.NODE_REQUESTS, nodeLimiter: env.NODE_CALLS,
+  }),
 };
