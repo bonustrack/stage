@@ -200,7 +200,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
-### Unreleased
+### 0.1.0-beta.4
 
 - New `Chart` component, `@stage-labs/kit/react-native/chart`, with the props and defaults of OpenAI ChatKit's `Chart` widget: bar, line and area series, stacks, d3 curves, legend, tooltip on hover or tap, optional y axis and ChatKit's chart colours. It is drawn with `react-native-svg`, so there is no new dependency. The layout core is `@stage-labs/kit/chart`. See Chart above.
 - `Frame` draws `Chart` nodes as charts instead of a table of their data, and a `Chart` in a `Row` shrinks like a box.
