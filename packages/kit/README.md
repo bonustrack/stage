@@ -200,6 +200,10 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.6
+
+- `Frame` refuses `Image` `src` and Markdown link URLs with a double quote, a backslash, angle brackets or a user name before the host (`https://stage.box@evil.example`). A double quote in an image `src` could add extra background images on web. The check now runs in linear time on long dotted hosts. Plain `https` URLs, ports, paths with parentheses or `@`, and a trailing dot still pass.
+
 ### 0.1.0-beta.5
 
 - `Badge` text follows its `size`: `md` is 15px and `lg` is 16px (both were 13px). `3xs`, `2xs` and `sm`, the default, stay 13px. Frame badges sized `md` or `lg` grow the same way. `textSize` still replaces it.
