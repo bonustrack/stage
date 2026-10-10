@@ -1,17 +1,32 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { frameSourceOf, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import { deleteNode } from '@stage-labs/client/nodes/publish';
+import { frameSourceOf, liveSourceOf, type DashboardWidget, type LiveSource } from '@stage-labs/client/xmtp/readState';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
+import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
 import { Col, Row } from '../layout';
+import { capabilities } from '../../lib/capabilities';
 import { changeDashboard } from '../../lib/dashboard';
+import { ignore } from '../../lib/errorPolicy';
+import { linkProxyBase } from '../../lib/linkProxy';
 import { refreshLiveWidget } from '../../lib/liveWidget';
 import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetKindOf, widgetSizeLabel } from './dashboard.model';
 import { FrameWidget } from './FrameWidget';
 import { LiveWidget } from './LiveWidget';
+import { ownsHostedNode } from './liveWidget.model';
 import { WidgetMenuButton, WidgetOutline, type WidgetGrip } from './widgetParts';
+
+function LiveRows({ source, widgetId, onClose }: { source: LiveSource; widgetId: string; onClose: () => void }): React.ReactElement {
+  return (
+    <>
+      <MenuRow icon={IconArrowRotateClockwise} label="Refresh" onPress={() => { onClose(); refreshLiveWidget(widgetId); }} />
+      <MenuRow icon={IconSquareBehindSquare1} label="Copy link" onPress={() => { onClose(); capabilities.copy('Link', source.url); }} />
+    </>
+  );
+}
 
 export function WidgetMenu({ widget, anchor, onClose }: {
   widget: DashboardWidget; anchor: MenuPoint | null; onClose: () => void;
@@ -20,7 +35,12 @@ export function WidgetMenu({ widget, anchor, onClose }: {
     onClose();
     changeDashboard(change);
   };
-  const live = widgetKindOf(widget) === 'live';
+  const live = liveSourceOf(widget);
+  const ownNode = live !== null && ownsHostedNode(live);
+  const remove = (): void => {
+    pick(widgets => removeWidget(widgets, widget.id));
+    if (ownNode) ignore(deleteNode(linkProxyBase(), live.key), 'cleanup');
+  };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
       <MenuHeading text="Width" />
@@ -33,8 +53,8 @@ export function WidgetMenu({ widget, anchor, onClose }: {
         <MenuRow key={option.value} label={option.label} selected={widget.h === option.value}
           onPress={() => { pick(widgets => resizeWidget(widgets, widget.id, { h: option.value })); }} />
       ))}
-      {live ? <MenuRow icon={IconArrowRotateClockwise} label="Refresh" onPress={() => { onClose(); refreshLiveWidget(widget.id); }} /> : null}
-      <MenuRow icon={IconTrashCan} label="Remove widget" danger onPress={() => { pick(widgets => removeWidget(widgets, widget.id)); }} />
+      {live === null ? null : <LiveRows source={live} widgetId={widget.id} onClose={onClose} />}
+      <MenuRow icon={IconTrashCan} label={ownNode ? 'Remove widget and node' : 'Remove widget'} danger onPress={remove} />
     </AnchoredMenu>
   );
 }

@@ -1,6 +1,6 @@
 # Stage nodes
 
-A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Settings, Dashboard, Add from URL). No agent and no Stage server are involved: the app talks to the node directly.
+A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Settings, Dashboard, Add from URL). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
 
 ## Load
 
@@ -71,7 +71,54 @@ Test vector, with the RFC 8032 test 1 key:
 - No cookies or credentials, no referrer, no redirects, a 10 second timeout and replies up to 128 KB (reading stops there). Action requests are at most 16K characters. On phones, a host name must be plain ASCII (use the `xn--` form for international names).
 - The reply passes the same checks as a frame: at most 64K characters of widget JSON, depth 16, 500 nodes, `https` images only. No code from a node runs in Stage.
 - The widget header shows the node's host.
-- In browsers the node must answer CORS: `Access-Control-Allow-Origin: *` on every response, and `OPTIONS` with `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature`.
+- In browsers the node must answer CORS: `Access-Control-Allow-Origin: *` on every response, and `OPTIONS` with `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature`. Hosted nodes get this from `nodes.stage.box`.
+
+## Hosted nodes
+
+Stage can put a node online for you. In the app: Settings, Dashboard, Add from URL, Code. Paste the code, tap Publish, and Stage shows the node at `https://nodes.stage.box/<id>` with its preview, then adds it as a widget. Anyone with the link can call it, like any node.
+
+The code is one ES module of at most 64 KB whose default export has a `fetch` handler, as in a Cloudflare Worker:
+
+```js
+const card = (time) => ({
+  type: 'Card',
+  children: [
+    { type: 'Text', value: time },
+    { type: 'Button', label: 'Refresh', onClickAction: { type: 'refresh' } },
+  ],
+});
+
+export default {
+  async fetch(request) {
+    const time = new Date().toISOString();
+    if (request.method === 'POST') return Response.json({ updated_item: { type: 'widget', widget: card(time) } });
+    return Response.json(card(time));
+  },
+};
+```
+
+Each node runs as its own Worker in a Cloudflare Workers for Platforms dispatch namespace, isolated from the other nodes and from Stage:
+
+- No bindings, secrets or environment, and no shared cache. The code can call public URLs with `fetch`.
+- Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all. Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other.
+- `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP, and no calls from other Workers.
+- The reply keeps the node's status and body, at most 128 KB, and always goes out as `application/json` with no cookies or other headers. A redirect answers `502`, as does a crash or a hit limit; an unknown node answers `404`.
+
+Publishing is a signed request to the proxy, the same scheme as in Signing. The app does it for you:
+
+```http
+PUT https://proxy.stage.box/nodes
+Content-Type: application/javascript
+Stage-Key: ...
+Stage-Timestamp: ...
+Stage-Signature: ...
+
+<the code>
+```
+
+It answers `{"id": "<id>", "url": "https://nodes.stage.box/<id>"}`. The id is the first 16 bytes of the SHA-256 of the 32 byte public key, as lowercase hex, so a key owns exactly one node: a new `PUT` with the same key replaces the code, and a signed `DELETE https://proxy.stage.box/nodes` with no body removes the node. Nobody else can change or remove it. The app makes a new key for each node and its widget signs with that same key, so removing the widget also deletes the node.
+
+Errors: `400` the code was refused (the reason is in `error`), `401` a bad or stale signature, `411` no length, `413` more than 64 KB, `429` rate limited (10 a minute per IP), `503` node hosting is not set up yet, `507` Stage hosts no more nodes for now (1000 in all).
 
 ## Frames from chats
 

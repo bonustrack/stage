@@ -1,6 +1,8 @@
 import { parseFrameDoc } from '@stage-labs/kit/frame';
 import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
+import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { LiveSource } from '@stage-labs/client/xmtp/readState';
 import { frameContentSchema } from '@stage-labs/client/xmtp/frame.schema';
 import { frameInputOf } from '../frame/frame.model';
 
@@ -35,6 +37,32 @@ export const NODE_URL_HINTS: Readonly<Record<NodeUrlProblem, string>> = {
   credentials: 'Links with a user name or password are not allowed',
   local: 'Local and private addresses are blocked',
 };
+
+const PUBLISH_PROBLEM_TEXT: Readonly<Record<PublishProblem, string>> = {
+  'too-large': 'The code is over 64 KB',
+  refused: 'The code was refused',
+  busy: 'Too many tries, wait a minute',
+  full: 'Stage hosts no more nodes for now',
+  'not-ready': 'Node hosting is not set up yet',
+  unreachable: 'Could not reach Stage, check your connection',
+  failed: 'Could not publish it, try again',
+};
+
+export function publishProblemText(problem: PublishProblem, detail?: string): string {
+  return problem === 'refused' && detail !== undefined ? `Code error: ${detail}` : PUBLISH_PROBLEM_TEXT[problem];
+}
+
+export function ownsHostedNode(source: LiveSource): boolean {
+  return ownNodeUrl(source.key) === source.url;
+}
+
+export interface LivePreview { url: string; host: string; frame: FrameContent; state: LiveState }
+
+export function livePreviewOf(url: string, host: string, state: LiveState): LivePreview | string {
+  const problem = liveProblemText(state);
+  if (problem !== null || state.frame === null) return `Could not load it: ${(problem ?? 'no widget').toLowerCase()}`;
+  return { url, host, frame: state.frame, state };
+}
 
 export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
   return {

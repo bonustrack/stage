@@ -1,37 +1,50 @@
 import { useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { loadNode, newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { frameIsFullWidth } from '../frame/frame.model';
-import { Col } from '../layout';
+import { LabelChip } from '../LabelChip';
+import { Col, Row } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { addLiveToDashboard } from '../../lib/dashboard';
 import { report } from '../../lib/errorPolicy';
 import { seedLiveWidget } from '../../lib/liveWidget';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { FRAME_ADD_TOASTS } from './dashboard.model';
-import { EMPTY_LIVE, NODE_URL_HINTS, liveProblemText, liveStateAfter, type LiveState } from './liveWidget.model';
+import { EMPTY_LIVE, NODE_URL_HINTS, livePreviewOf, liveStateAfter, type LivePreview } from './liveWidget.model';
+import { NodeCodeForm } from './NodeCodeForm';
 
 const NOTE = 'The widget loads from this link and refreshes every minute while you look at it. '
   + 'The site sees your IP and a key made for this widget, never your account.';
 
-interface Preview { url: string; host: string; frame: FrameContent; state: LiveState }
+type AddMode = 'link' | 'code';
+
+const MODES: readonly { value: AddMode; label: string; title: string }[] = [
+  { value: 'link', label: 'Link', title: 'Add widget from URL' },
+  { value: 'code', label: 'Code', title: 'Create node' },
+];
 
 function buttonLabel(busy: boolean, ready: boolean): string {
   if (busy) return 'Loading…';
   return ready ? 'Add widget' : 'Preview';
 }
 
-function previewOf(url: string, host: string, state: LiveState): Preview | string {
-  const problem = liveProblemText(state);
-  if (problem !== null || state.frame === null) return `Could not load it: ${(problem ?? 'no widget').toLowerCase()}`;
-  return { url, host, frame: state.frame, state };
+function ModePicker({ mode, onChange }: { mode: AddMode; onChange: (mode: AddMode) => void }): React.ReactElement {
+  return (
+    <Row gap={8}>
+      {MODES.map(({ value, label }) => (
+        <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: mode === value }} onPress={() => { onChange(value); }}>
+          <LabelChip label={label} selected={mode === value} />
+        </Pressable>
+      ))}
+    </Row>
+  );
 }
 
 function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
@@ -40,7 +53,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
   const [text, setText] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<Preview | null>(null);
+  const [preview, setPreview] = useState<LivePreview | null>(null);
   const node = nodeUrlOf(text);
   const ready = preview !== null && node.ok && preview.url === node.url;
 
@@ -48,13 +61,13 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
     if (!node.ok) { setHint(NODE_URL_HINTS[node.problem]); return; }
     setBusy(true);
     setPreview(null);
-    const loaded = previewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadNode(node.url, key), Date.now()));
+    const loaded = livePreviewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadNode(node.url, key), Date.now()));
     setBusy(false);
     if (typeof loaded === 'string') setHint(loaded);
     else setPreview(loaded);
   };
 
-  const add = async (picked: Preview): Promise<void> => {
+  const add = async (picked: LivePreview): Promise<void> => {
     setBusy(true);
     try {
       const { outcome, id } = await addLiveToDashboard({ url: picked.url, key }, frameIsFullWidth(picked.frame) ? 'full' : 'half');
@@ -99,15 +112,24 @@ export function AddLiveWidgetButton({ disabled }: { disabled: boolean }): React.
   const dark = useEffectiveColorScheme() === 'dark';
   const { link } = usePalette();
   const [open, setOpen] = useState(false);
-  const close = (): void => { setOpen(false); };
+  const [mode, setMode] = useState<AddMode>('link');
+  const close = (): void => {
+    setOpen(false);
+    setMode('link');
+  };
   return (
     <>
       <Button
         size="md" color="secondary" variant="solid" dark={dark} label="Add from URL" disabled={disabled}
         iconStart={<Glyph icon={IconPlusLarge} size={18} color={link} />} onPress={() => { setOpen(true); }}
       />
-      <AppModal visible={open} onClose={close} title="Add widget from URL">
-        {open ? <AddLiveForm onDone={close} /> : null}
+      <AppModal visible={open} onClose={close} title={MODES.find(item => item.value === mode)?.title}>
+        {open ? (
+          <Col gap={12}>
+            <ModePicker mode={mode} onChange={setMode} />
+            {mode === 'link' ? <AddLiveForm onDone={close} /> : <NodeCodeForm onDone={close} />}
+          </Col>
+        ) : null}
       </AppModal>
     </>
   );

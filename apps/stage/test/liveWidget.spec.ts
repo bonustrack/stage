@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import type { NodeResult } from '@stage-labs/client/nodes/protocol';
+import { newNodeKey, type NodeResult } from '@stage-labs/client/nodes/protocol';
+import { ownNodeUrl } from '@stage-labs/client/nodes/publish';
 import {
-  EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveConfirmOf, liveProblemText, liveRefetchInterval, liveRefreshDelay, liveSnapshotJson,
-  liveSnapshotOf, liveStateAfter, liveStatusText, type LiveState,
+  EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveConfirmOf, livePreviewOf, liveProblemText, liveRefetchInterval, liveRefreshDelay,
+  liveSnapshotJson, liveSnapshotOf, liveStateAfter, liveStatusText, ownsHostedNode, publishProblemText, type LiveState,
 } from '../components/dashboard/liveWidget.model';
 
 const CARD = { type: 'Card', children: [{ type: 'Title', value: '$100' }] };
@@ -82,5 +83,28 @@ describe('live widget snapshot', () => {
     for (const raw of [null, '{', '7', JSON.stringify({ frame: { widget: CARD } }), JSON.stringify({ frame: { title: 'x' }, at: 1 })]) {
       expect(liveSnapshotOf(raw)).toEqual(EMPTY_LIVE);
     }
+  });
+});
+
+describe('hosted nodes', () => {
+  test('a widget owns the node its own key publishes, not one added by link', () => {
+    const key = newNodeKey();
+    const url = ownNodeUrl(key) ?? '';
+    expect(url).toMatch(/^https:\/\/nodes\.stage\.box\/[0-9a-f]{32}$/);
+    expect(ownsHostedNode({ url, key })).toBe(true);
+    expect(ownsHostedNode({ url, key: newNodeKey() })).toBe(false);
+    expect(ownsHostedNode({ url: 'https://btc.example.com/', key })).toBe(false);
+  });
+
+  test('publish problems read as one short line, with the code error when there is one', () => {
+    expect(publishProblemText('not-ready')).toBe('Node hosting is not set up yet');
+    expect(publishProblemText('too-large')).toBe('The code is over 64 KB');
+    expect(publishProblemText('refused')).toBe('The code was refused');
+    expect(publishProblemText('refused', 'Uncaught SyntaxError: Unexpected token')).toBe('Code error: Uncaught SyntaxError: Unexpected token');
+  });
+
+  test('a preview needs a loaded frame', () => {
+    expect(livePreviewOf('https://n.example.com/', 'n.example.com', shown)).toEqual({ url: 'https://n.example.com/', host: 'n.example.com', frame: { widget: CARD }, state: shown });
+    expect(livePreviewOf('https://n.example.com/', 'n.example.com', { ...EMPTY_LIVE, problem: 'status', status: 502 })).toBe('Could not load it: node error 502');
   });
 });
