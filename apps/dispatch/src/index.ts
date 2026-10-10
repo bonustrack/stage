@@ -7,6 +7,7 @@ const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
   'cookie', 'cf-connecting-ip', 'cf-connecting-ipv6', 'true-client-ip', 'x-forwarded-for', 'x-real-ip', 'cf-ipcountry', 'cf-ipcity',
   'cf-ipcontinent', 'cf-iplatitude', 'cf-iplongitude', 'cf-region', 'cf-region-code', 'cf-metro-code', 'cf-postal-code', 'cf-timezone',
+  'cf-ray',
 ];
 
 const HEADERS: Record<string, string> = {

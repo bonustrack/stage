@@ -51,6 +51,7 @@ describe('routing', () => {
     const caller = {
       cookie: 'session=1', 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': '203.0.113.7', 'x-real-ip': '203.0.113.7',
       'true-client-ip': '203.0.113.7', 'cf-ipcountry': 'CH', 'cf-ipcity': 'Zug', 'cf-timezone': 'Europe/Zurich',
+      'cf-ray': '8f00000000000000-ZRH',
     };
     await call(new Request(NODE_URL, { method: 'POST', body, headers: { ...caller, 'content-length': '2', 'stage-key': 'k' } }), { nodes });
     for (const name of Object.keys(caller)) expect([name, seen[0]?.request.headers.get(name)]).toEqual([name, null]);
