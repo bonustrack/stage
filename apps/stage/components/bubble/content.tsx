@@ -21,22 +21,23 @@ import { FramePreview } from '../frame/FramePreview';
 import { CallCard } from './CallCard';
 import type { CallRecord } from './callCard.model';
 import type { MessengerBubbleProps } from './props';
-import { frameOf } from '../frame/frame.model';
+import { frameOf, isFrameActionEntry } from '../frame/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
-  BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, markdownRules, type MarkdownProps,
+  BubbleAttachments, BubbleBody, BubbleEmbeds, FrameActionLine, ReplyPreview, markdownRules, type MarkdownProps,
 } from './content.parts';
 
 function descriptorsOf(entry: HistoryEntry): {
   atts: ReturnType<typeof attachmentsOf>; question: ReturnType<typeof questionOf>;
   poll: ReturnType<typeof pollOf>; sigReq: ReturnType<typeof sigRequestOf>;
   sigRef: ReturnType<typeof sigReferenceOf>; txReq: ReturnType<typeof txRequestOf>;
-  txReceipt: ReturnType<typeof txReceiptOf>; frame: ReturnType<typeof frameOf>;
+  txReceipt: ReturnType<typeof txReceiptOf>; frame: ReturnType<typeof frameOf>; frameAction: boolean;
 } {
   return {
     atts: attachmentsOf(entry), question: questionOf(entry), poll: pollOf(entry),
     sigReq: sigRequestOf(entry), sigRef: sigReferenceOf(entry),
     txReq: txRequestOf(entry), txReceipt: txReceiptOf(entry), frame: frameOf(entry),
+    frameAction: isFrameActionEntry(entry),
   };
 }
 
@@ -109,7 +110,9 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
-      <BubbleMain d={d} entry={entry} fg={fg} call={props.call} highlight={highlight} markdownProps={markdownProps} />
+      {d.frameAction ? <FrameActionLine text={entry.text ?? ''} fg={fg} /> : (
+        <BubbleMain d={d} entry={entry} fg={fg} call={props.call} highlight={highlight} markdownProps={markdownProps} />
+      )}
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       {props.call ? <CallCard record={props.call} line={entry.line} /> : null}
       <BubbleCards d={d} p={props} />

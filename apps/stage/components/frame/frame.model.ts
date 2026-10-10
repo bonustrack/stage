@@ -33,6 +33,11 @@ export function frameOf(entry: HistoryEntry | undefined): FrameContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export function isFrameActionEntry(entry: HistoryEntry): boolean {
+  const action = (entry.payload as { frameAction?: unknown } | undefined)?.frameAction;
+  return typeof action === 'object' && action !== null;
+}
+
 function filled(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed === undefined || trimmed === '' ? undefined : trimmed;

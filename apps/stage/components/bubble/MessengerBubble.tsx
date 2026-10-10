@@ -12,6 +12,7 @@ import { ReactionsRow } from './reactions';
 import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
+import { isFrameActionEntry } from '../frame/frame.model';
 import { useBubbleGestures } from './gestures';
 import { MessageSelection } from './MessageSelection';
 import { messageInteraction, type MessageInteraction } from './messageInteraction.model';
@@ -56,7 +57,8 @@ function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
 
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const { entry, dark, replyTarget, senderEthAddress, onAvatarPress } = props;
-  const muted = (entry.payload as { system?: boolean } | undefined)?.system === true || isDeletedPlaceholder(entry);
+  const muted = (entry.payload as { system?: boolean } | undefined)?.system === true || isDeletedPlaceholder(entry)
+    || isFrameActionEntry(entry);
   const pal = usePalette();
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;

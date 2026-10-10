@@ -82,8 +82,8 @@ describe('frame content types', () => {
 
   test('display texts', () => {
     expect(frameFallbackText({ widget: { type: 'Card' } })).toBe('Frame');
-    expect(frameActionText(action)).toBe('Approve');
-    expect(frameActionText({ frameId: 'f', action: { type: 'pick' } })).toBe('pick');
+    expect(frameActionText(action)).toBe('Tapped "Approve"');
+    expect(frameActionText({ frameId: 'f', action: { type: 'pick' } })).toBe('Tapped pick');
     expect(frameActionFallbackText({ frameId: 'f', action: { type: 'pick' } })).toBe('Frame action: pick');
   });
 });
@@ -98,12 +98,13 @@ describe('frame envelopes', () => {
     expect(e.payload).toEqual({ contentType: 'frame', frame });
   });
 
-  test('a decoded frame action reads as its label', () => {
+  test('a decoded frame action reads as a tap on its label and quotes its frame', () => {
     const e = mapDecodedToEnvelope({
       id: 'msg-action-1', senderInboxId: 'inbox-less', sentNs: NS,
       contentTypeId: 'stage.box/frameAction:1.0', content: () => action,
     }, 'stage://xmtp/a/conv1');
-    expect(e.text).toBe('Approve');
+    expect(e.text).toBe('Tapped "Approve"');
+    expect(e.replyTo).toBe('msg-frame-1');
     expect(e.payload).toEqual({ contentType: 'frameAction', frameAction: action });
   });
 
@@ -118,11 +119,12 @@ describe('frame envelopes', () => {
 });
 
 describe('frame chat-list previews', () => {
-  test('a frame reads as its title, an action as its label or type', () => {
+  test('a frame reads as its title, an action as a tap on its label or type', () => {
     expect(previewOfXmtpContent(frame, 'stage.box/frame:1.0')).toBe('Frame: Weekly report');
     expect(previewOfXmtpContent({ widget: {} }, 'stage.box/frame:1.0')).toBe('Frame');
-    expect(previewOfXmtpContent(action, 'stage.box/frameAction:1.0')).toBe('Approve');
-    expect(previewOfXmtpContent({ frameId: 'f', action: { type: 'pick' } }, 'stage.box/frameAction:1.0')).toBe('pick');
+    expect(previewOfXmtpContent(action, 'stage.box/frameAction:1.0')).toBe('Tapped "Approve"');
+    expect(previewOfXmtpContent({ frameId: 'f', action: { type: 'pick' } }, 'stage.box/frameAction:1.0')).toBe('Tapped pick');
+    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: {} }, 'stage.box/frameAction:1.0')).toBe('[frame action]');
     expect(previewOfXmtpContent(null, 'stage.box/frameAction:1.0')).toBe('[frame action]');
   });
 });

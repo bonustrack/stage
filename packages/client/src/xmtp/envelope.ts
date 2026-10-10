@@ -181,10 +181,13 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
     ...base, text: frameFallbackText(decoded as FrameContent),
     payload: { contentType: typeId, frame: decoded as FrameContent },
   }),
-  frameAction: (base, typeId, decoded) => ({
-    ...base, text: frameActionText(decoded as FrameActionContent),
-    payload: { contentType: typeId, frameAction: decoded as FrameActionContent },
-  }),
+  frameAction: (base, typeId, decoded) => {
+    const content = decoded as FrameActionContent;
+    return {
+      ...base, text: frameActionText(content), replyTo: content.frameId,
+      payload: { contentType: typeId, frameAction: content },
+    };
+  },
   callInvite: callEnvelope('callInvite', parseCallInvite),
   callSignal: callEnvelope('callSignal', parseCallSignal),
   reply: replyEnvelope,

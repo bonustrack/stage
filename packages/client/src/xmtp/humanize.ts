@@ -9,6 +9,7 @@ import {
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 import { parseOpenVote, parseVoteKey } from './poll-tally';
 import { paymentRequestPreview, receiptTitle, type TransactionReferenceContent, type WalletSendCallsContent } from './tx';
+import { frameActionText } from './frame';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -134,8 +135,9 @@ function previewFrame(decoded: unknown): string {
 
 function previewFrameAction(decoded: unknown): string {
   const a = decoded as { label?: unknown; action?: { type?: unknown } } | null;
-  if (typeof a?.label === 'string' && a.label !== '') return a.label;
-  return typeof a?.action?.type === 'string' ? a.action.type : '[frame action]';
+  const label = typeof a?.label === 'string' ? a.label : '';
+  const type = typeof a?.action?.type === 'string' ? a.action.type : '';
+  return label === '' && type === '' ? '[frame action]' : frameActionText({ label, action: { type } });
 }
 
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {

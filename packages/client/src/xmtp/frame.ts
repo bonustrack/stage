@@ -16,8 +16,8 @@ export function frameFallbackText(frame: FrameContent): string {
   return frame.description ? `${title}\n${frame.description}` : title;
 }
 
-export function frameActionText(content: FrameActionContent): string {
-  return content.label === undefined || content.label === '' ? content.action.type : content.label;
+export function frameActionText(content: { label?: string; action: { type: string } }): string {
+  return content.label === undefined || content.label === '' ? `Tapped ${content.action.type}` : `Tapped "${content.label}"`;
 }
 
 export function frameActionFallbackText(content: FrameActionContent): string {

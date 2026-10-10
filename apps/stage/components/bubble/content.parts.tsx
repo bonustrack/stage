@@ -8,7 +8,7 @@ import { ChannelCard, GitHubLinkCard, LinkPreviewCard, PreviewLinkCard } from '.
 import type { CardLink } from '@stage-labs/client/embed/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
-import { Box, Col } from '../layout';
+import { Box, Col, Row } from '../layout';
 import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './helpers';
 import type { Attachment, LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
@@ -36,6 +36,7 @@ import {
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareCheck';
 import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
+import { IconPointer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPointer';
 
 const LINE_HEIGHT = 23;
 
@@ -230,6 +231,15 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
         </Box>
       ))}
     </>
+  );
+}
+
+export function FrameActionLine({ text, fg }: { text: string; fg: string }): React.ReactElement {
+  return (
+    <Row align="center" gap={6} style={{ alignSelf: 'stretch' }}>
+      <Glyph icon={IconPointer} size={16} color={fg}/>
+      <Text size="sm" color={fg} selectable={Platform.OS === 'web'} style={{ flexShrink: 1 }}>{text}</Text>
+    </Row>
   );
 }
 

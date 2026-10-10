@@ -5,6 +5,7 @@ import {
 } from '@stage-labs/client/xmtp/deletions';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
+import { isFrameActionEntry } from '../frame/frame.model';
 
 const DELETE_MESSAGE_CONFIRM: ConfirmOptions = {
   title: 'Delete message?',
@@ -46,7 +47,9 @@ export function replyQuoteOf(
   if (!target) return undefined;
   const by = deleted.get(target);
   if (by) return deletedTextOf(by);
-  return previewOf(lookup(target) ?? item);
+  const quoted = lookup(target);
+  if (quoted) return previewOf(quoted);
+  return isFrameActionEntry(item) ? 'Frame' : previewOf(item);
 }
 
 export function deletedViewCache(): (item: HistoryEntry, by: DeletedBy) => HistoryEntry {

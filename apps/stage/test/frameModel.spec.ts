@@ -5,7 +5,8 @@ import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { kitPalette } from '@stage-labs/kit/tokens';
 import {
   frameActionContent, frameActionTarget, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf,
-  frameLocked, frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
+  frameLocked, frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, isFrameActionEntry, withFrameNav,
+  type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -28,6 +29,16 @@ describe('frameOf', () => {
     expect(frameOf(base)).toBeNull();
     expect(frameOf(undefined)).toBeNull();
     expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget: 'Card' } } })).toBeNull();
+  });
+});
+
+describe('isFrameActionEntry', () => {
+  test('only an entry carrying a decoded frame action is a frame tap', () => {
+    const frameAction = { frameId: 'msg-frame-1', action: { type: 'approve' }, label: 'Approve' };
+    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frameAction', frameAction } })).toBe(true);
+    expect(isFrameActionEntry({ ...base, text: 'Frame action: approve', payload: { contentType: 'frameAction' } })).toBe(false);
+    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frame', frame: { widget } } })).toBe(false);
+    expect(isFrameActionEntry(base)).toBe(false);
   });
 });
 

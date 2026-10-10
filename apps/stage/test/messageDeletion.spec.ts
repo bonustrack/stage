@@ -73,6 +73,17 @@ describe('reply quote', () => {
     expect(replyQuoteOf(answer, none, lookup)).toBe('hello');
     expect(replyQuoteOf(theirs, none, lookup)).toBeUndefined();
   });
+
+  test('a frame tap quotes its frame, or just Frame while the frame is not loaded', () => {
+    const frame = entry('f1', { from: PEER, text: 'Frame: Deploy?', payload: { contentType: 'frame' } });
+    const tap = entry('t1', {
+      from: ME, text: 'Tapped "Ship it"', replyTo: 'f1',
+      payload: { contentType: 'frameAction', frameAction: { frameId: 'f1', action: { type: 'ship' }, label: 'Ship it' } },
+    });
+    expect(replyQuoteOf(tap, none, id => (id === 'f1' ? frame : undefined))).toBe('Frame: Deploy?');
+    expect(replyQuoteOf(tap, none, () => undefined)).toBe('Frame');
+    expect(replyQuoteOf(tap, new Map([['f1', 'sender']]), () => undefined)).toBe('Message deleted');
+  });
 });
 
 describe('deleted row', () => {
