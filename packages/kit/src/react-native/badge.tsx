@@ -3,11 +3,18 @@ import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { resolveBadgeStyle, type BadgeColor, type BadgeColorValue, type BadgeSize, type BadgeVariant } from '../badge';
 import type { ResolvedBoxBorder } from '../layout';
 import type { TextSizeToken, TextWeight } from '../text.styles';
+import { FONT_SIZE } from '../tokens';
 import { Box } from './box';
 import { Text } from './text';
 import { useKitScheme } from './theme-context';
 
 export type { BadgeColor, BadgeColorValue, BadgeSize, BadgeVariant };
+
+export interface BadgeTextProps {
+  weight: TextWeight;
+  color: string;
+  style: TextStyle;
+}
 
 export interface BadgeProps {
   label: string;
@@ -20,7 +27,7 @@ export interface BadgeProps {
   textSize?: TextSizeToken;
   weight?: TextWeight;
   truncate?: boolean;
-  children?: ReactNode;
+  children?: ReactNode | ((text: BadgeTextProps) => ReactNode);
   style?: StyleProp<ViewStyle>;
   textStyle?: TextStyle;
 }
@@ -44,6 +51,11 @@ export function Badge({
 }: BadgeProps): React.ReactElement {
   const scheme = useKitScheme();
   const styled = resolveBadgeStyle(color, background, size, dark === undefined ? scheme : (dark ? 'dark' : 'light'), variant);
+  const text: BadgeTextProps = {
+    weight,
+    color: styled.foreground,
+    style: { fontSize: textSize === undefined ? styled.fontSize : FONT_SIZE[textSize], ...textStyle },
+  };
   return (
     <Box
       direction="row"
@@ -54,8 +66,8 @@ export function Badge({
       border={outlineBorder(styled.borderColor)}
       style={style}
     >
-      {children ?? (
-        <Text value={label} size={textSize ?? styled.fontToken} weight={weight} color={styled.foreground} truncate={truncate} style={textStyle} />
+      {typeof children === 'function' ? children(text) : children ?? (
+        <Text value={label} truncate={truncate} {...text} />
       )}
     </Box>
   );

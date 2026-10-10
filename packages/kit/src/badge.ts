@@ -1,5 +1,5 @@
 
-import { readableForeground, resolveColor, type Color, type Scheme } from './tokens';
+import { FONT_SIZE, readableForeground, resolveColor, type Color, type Scheme } from './tokens';
 
 export type BadgeColor =
   | 'secondary'
@@ -41,20 +41,18 @@ function isSemanticBadgeColor(
   return typeof value === 'string' && BADGE_COLOR_NAMES.has(value as BadgeColor);
 }
 
-export type BadgeFontToken = '3xs';
-
-const BADGE_FONT_TOKEN: Record<BadgeSize, BadgeFontToken> = {
-  '3xs': '3xs',
-  '2xs': '3xs',
-  sm: '3xs',
-  md: '3xs',
-  lg: '3xs',
+const BADGE_FONT_SIZE: Record<BadgeSize, number> = {
+  '3xs': FONT_SIZE['3xs'],
+  '2xs': FONT_SIZE['3xs'],
+  sm: FONT_SIZE['3xs'],
+  md: 15,
+  lg: FONT_SIZE.xs,
 };
 
 export interface ResolvedBadgeStyle {
   background: string;
   foreground: string;
-  fontToken: BadgeFontToken;
+  fontSize: number;
   borderColor?: string;
 }
 
@@ -69,15 +67,15 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 function tonedStyle(
-  tone: string, variant: BadgeVariant, fontToken: BadgeFontToken,
+  tone: string, variant: BadgeVariant, fontSize: number,
 ): ResolvedBadgeStyle {
   if (variant === 'soft') {
-    return { background: withAlpha(tone, SOFT_ALPHA), foreground: tone, fontToken };
+    return { background: withAlpha(tone, SOFT_ALPHA), foreground: tone, fontSize };
   }
   if (variant === 'outline') {
-    return { background: 'transparent', foreground: tone, fontToken, borderColor: tone };
+    return { background: 'transparent', foreground: tone, fontSize, borderColor: tone };
   }
-  return { background: tone, foreground: readableForeground(tone), fontToken };
+  return { background: tone, foreground: readableForeground(tone), fontSize };
 }
 
 export function resolveBadgeStyle(
@@ -87,20 +85,20 @@ export function resolveBadgeStyle(
   scheme: Scheme,
   variant: BadgeVariant = 'solid',
 ): ResolvedBadgeStyle {
-  const fontToken = BADGE_FONT_TOKEN[size ?? 'sm'];
+  const fontSize = BADGE_FONT_SIZE[size ?? 'sm'];
   if (background !== undefined) {
     const bg = resolveColor(background, scheme);
     const fg =
       color === undefined || isSemanticBadgeColor(color)
         ? readableForeground(bg)
         : resolveColor(color, scheme);
-    return { background: bg, foreground: fg, fontToken };
+    return { background: bg, foreground: fg, fontSize };
   }
   if (color !== undefined && !isSemanticBadgeColor(color)) {
-    return tonedStyle(resolveColor(color, scheme), variant, fontToken);
+    return tonedStyle(resolveColor(color, scheme), variant, fontSize);
   }
   const tone = isSemanticBadgeColor(color) ? color : 'secondary';
   const semantic = BADGE_SEMANTIC_BG[tone];
-  if (variant === 'solid') return { background: semantic, foreground: '#ffffff', fontToken };
-  return tonedStyle(semantic, variant, fontToken);
+  if (variant === 'solid') return { background: semantic, foreground: '#ffffff', fontSize };
+  return tonedStyle(semantic, variant, fontSize);
 }

@@ -7,6 +7,7 @@ import { TEXT_FONTS } from '../src/text.styles';
 mock.module('react-native', () => ReactNativeWeb);
 
 const { Badge } = await import('../src/react-native/badge');
+const { Text } = await import('../src/react-native/text');
 
 describe('Badge', () => {
   test('is fully rounded by default and keeps the sm radius with pill false', () => {
@@ -29,5 +30,19 @@ describe('Badge', () => {
     const html = renderToStaticMarkup(<Badge label="Label"><ReactNativeWeb.Text>Custom</ReactNativeWeb.Text></Badge>);
     expect(html).toContain('Custom');
     expect(html).not.toContain('>Label<');
+  });
+
+  test('sizes its text by size and hands its text props to a function child', () => {
+    expect(renderToStaticMarkup(<Badge label="New" />)).toContain(`font-size:${FONT_SIZE['3xs']}px`);
+    expect(renderToStaticMarkup(<Badge label="New" size="md" />)).toContain('font-size:15px');
+    const html = renderToStaticMarkup(
+      <Badge label="Label" size="lg" weight="normal" color="#111111" background="#eeeeee">
+        {(text) => <Text value="Custom" {...text} />}
+      </Badge>,
+    );
+    expect(html).toContain('>Custom<');
+    expect(html).toContain(`font-size:${FONT_SIZE.xs}px`);
+    expect(html).toContain('color:rgba(17,17,17,1.00)');
+    expect(html).toContain(`font-family:${TEXT_FONTS.normal}`);
   });
 });
