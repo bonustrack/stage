@@ -11,7 +11,7 @@ import { Col, Row, SCROLLBAR_ON_HOVER } from '../layout';
 import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
 import { CountTag } from '../CountTag';
-import { OverflowMenu } from '../MenuRows';
+import { OverflowMenu, SMALL_OVERFLOW_ICON } from '../MenuRows';
 import { HoverIconButton, useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
@@ -84,7 +84,7 @@ const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan,
 
 export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
   const { text } = usePalette();
-  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={16}/>;
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={SMALL_OVERFLOW_ICON}/>;
 }
 
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {
