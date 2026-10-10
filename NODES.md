@@ -4,11 +4,11 @@ A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github
 
 ## Load
 
-`GET <url>`, signed (see Signing). Answer `200` with a ChatKit widget root as JSON: `{"type": "Card", "children": [...]}`, or a `ListView` or `Basic` root. Anything else is refused.
+`GET <url>`, signed (see Signing). Answer `200` with a ChatKit widget root as JSON: `{"type": "Card", "children": [...]}`, or a `ListView` or `Basic` root. Any other body is refused.
 
 Stage loads it when the widget shows, then every minute while the Dashboard is open and the app is in front. After a failure it waits longer, up to 5 minutes. Offline or on an error, the widget keeps the last good version and its header says why and since when.
 
-Every widget menu (the three dots) has Refresh, which loads the node again at once, and Copy link. A node does not need a Refresh button of its own.
+The menu of a live widget (the three dots) has Refresh, which loads the node again at once, and Copy link. A node does not need a Refresh button of its own.
 
 ## Actions
 

@@ -72,7 +72,7 @@ export function resizeWidget(widgets: DashboardWidget[], id: string, size: Widge
   const index = widgets.findIndex(widget => widget.id === id);
   const current = widgets[index];
   if (current === undefined) return widgets;
-  const next = { ...current, ...size };
+  const next = { ...current, w: size.w ?? current.w, h: size.h ?? current.h };
   if (next.w === current.w && next.h === current.h) return widgets;
   return widgets.map((widget, i) => (i === index ? next : widget));
 }

@@ -1,10 +1,9 @@
 import { parseFrameDoc } from '@stage-labs/kit/frame';
-import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
+import { loadReplyOf, type NodeProblem, type NodeResult, type NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
 import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
-import { frameContentSchema } from '@stage-labs/client/xmtp/frame.schema';
 import { frameInputOf } from '../frame/frame.model';
 
 export const LIVE_REFRESH_MS = 60_000;
@@ -123,13 +122,19 @@ function snapshotJson(raw: string): unknown {
   }
 }
 
+function snapshotFrame(frame: unknown): FrameContent | null {
+  if (typeof frame !== 'object' || frame === null || !('widget' in frame) || Object.keys(frame).length !== 1) return null;
+  const reply = loadReplyOf(frame.widget);
+  return reply?.kind === 'frame' && renders(reply.frame) ? reply.frame : null;
+}
+
 export function liveSnapshotOf(raw: string | null): LiveState {
   const json = raw === null ? null : snapshotJson(raw);
   if (typeof json !== 'object' || json === null) return EMPTY_LIVE;
   const { frame, at } = json as { frame?: unknown; at?: unknown };
-  const parsed = frameContentSchema.safeParse(frame);
-  if (!parsed.success || typeof at !== 'number' || !renders(parsed.data)) return EMPTY_LIVE;
-  return { ...EMPTY_LIVE, frame: parsed.data, at };
+  const saved = snapshotFrame(frame);
+  if (saved === null || typeof at !== 'number') return EMPTY_LIVE;
+  return { ...EMPTY_LIVE, frame: saved, at };
 }
 
 export function liveSnapshotJson(state: LiveState): string | null {

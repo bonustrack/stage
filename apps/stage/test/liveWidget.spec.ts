@@ -84,6 +84,11 @@ describe('live widget snapshot', () => {
       expect(liveSnapshotOf(raw)).toEqual(EMPTY_LIVE);
     }
   });
+
+  test('a snapshot in an older reply format loads as empty', () => {
+    const older = [{ title: 'BTC', widget: CARD }, { screens: { a: CARD }, start: 'a' }, { widget: { type: 'Text', value: 'x' } }];
+    for (const frame of older) expect([frame, liveSnapshotOf(JSON.stringify({ frame, at: 1 }))]).toEqual([frame, EMPTY_LIVE]);
+  });
 });
 
 describe('hosted nodes', () => {

@@ -194,6 +194,11 @@ describe('node calls', () => {
     stubFetch(() => new Response(endless));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
     expect(pulled).toBeLessThan(12);
+    stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
+    expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'unreachable' });
+  });
+
+  test('a load takes only a widget root and a tap only a sync action response', async () => {
     stubFetch(() => Response.json({}));
     expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
@@ -203,8 +208,6 @@ describe('node calls', () => {
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => Response.json(CARD));
     expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'invalid' });
-    stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
-    expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'unreachable' });
   });
 
   test('refuses an action payload that is too large', async () => {
