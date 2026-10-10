@@ -3,6 +3,9 @@ import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
 import { TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
 import { FONT_SIZE } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export type LabelSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type LabelWeight = 'normal' | 'medium' | 'semibold' | 'bold';

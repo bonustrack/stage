@@ -5,6 +5,9 @@ import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Glyph } from './glyph';
 import { styleList } from '../control.styles';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface CheckboxProps {
   name?: string;

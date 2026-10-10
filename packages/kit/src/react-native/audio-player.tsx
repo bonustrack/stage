@@ -6,6 +6,9 @@ import { createAudioPlayer, type AudioPlayer as ExpoAudioPlayer, type AudioStatu
 import { Glyph } from './glyph';
 import { IconPause } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 const DEFAULT_BAR_COUNT = 34;
 

@@ -3,6 +3,9 @@ import { type TextStyle } from 'react-native';
 import RNMarkdown from 'react-native-markdown-display';
 import { markdownStyles } from '../markdown.styles';
 import { schemePalette } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface MarkdownProps {
   value: string;

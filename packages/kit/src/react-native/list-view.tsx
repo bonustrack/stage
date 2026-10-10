@@ -3,6 +3,9 @@ import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
 import { FONT_SIZE, fontName, schemePalette } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 

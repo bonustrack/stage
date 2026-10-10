@@ -16,6 +16,9 @@ import {
   type TextFieldVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface TextFieldProps {
   name?: string;

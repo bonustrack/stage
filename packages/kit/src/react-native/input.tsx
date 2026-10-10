@@ -19,6 +19,9 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export const SEARCH_INPUT_PROPS = Platform.OS === 'web' ? {
   inputMode: 'search' as const,

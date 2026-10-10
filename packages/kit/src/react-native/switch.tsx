@@ -1,6 +1,9 @@
 
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import { FONT_SIZE, fontName } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface SwitchProps {
   name?: string;

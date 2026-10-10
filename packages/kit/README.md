@@ -59,7 +59,7 @@ The two Central Icons packages and `qrcode` come with the kit. The app provides 
 
 ### Fonts
 
-Kit ships Calibre Medium and Calibre Semibold (`src/fonts/`) and loads them by itself, so a new project renders kit text in Calibre with no setup. Loading starts when `KitThemeProvider` or a component that uses it (`Text`, `Title`, `Caption`, `Button`, `Badge`, `Tabs`, `Modal`, ...) is first imported. On web, Kit adds `@font-face` rules for `Calibre-Medium` and `Calibre-Semibold` (Vite and Expo both turn the font files into URLs). On iOS and Android it registers them with `expo-font`. Native text drawn before the fonts finish loading keeps the system font until it re-renders, so an app that wants Calibre on its very first frame waits with `useFonts(KIT_FONTS)` from `expo-font`, where `KIT_FONTS` (family name to font file) comes from `@stage-labs/kit/react-native/fonts`. Stage does this.
+Kit ships Calibre Medium and Calibre Semibold (`src/fonts/`) and loads them by itself, so a new project renders kit text in Calibre with no setup. Loading starts as soon as `KitThemeProvider` or any kit component that draws text is imported. On web, Kit adds `@font-face` rules for `Calibre-Medium` and `Calibre-Semibold` (Vite and Expo both turn the font files into URLs). On iOS and Android it registers them with `expo-font`. Native text drawn before the fonts finish loading keeps the system font until it re-renders, so an app that wants Calibre on its very first frame waits with `useFonts(KIT_FONTS)` from `expo-font`, where `KIT_FONTS` (family name to font file) comes from `@stage-labs/kit/react-native/fonts`. Stage does this.
 
 ## Usage
 
@@ -140,7 +140,7 @@ src/
   markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
   text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
   link.ts            # web link helpers: NEW_TAB (target _blank, rel noopener noreferrer) and isPlainClick, shared with the app's links
-  fonts/             # Calibre Medium and Semibold, loaded by react-native/fonts.ts
+  fonts/             # Calibre Medium and Semibold (KIT_FONTS in react-native/fonts.ts, loaded by react-native/fonts.load.ts on web and fonts.load.native.ts on iOS and Android)
   react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
 stories/             # one story file per component (controls for every prop + variant matrices)

@@ -18,6 +18,9 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 function lineHeight(size: ControlSize): number {
   return Math.round(CONTROL_SIZES[size].fontSize * 1.4);

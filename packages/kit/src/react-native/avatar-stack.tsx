@@ -2,6 +2,9 @@
 import { Text as RNText, View } from 'react-native';
 import { fontName } from '../tokens';
 import { AvatarView } from './avatar.view';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface AvatarStackEntry {
   src?: string;

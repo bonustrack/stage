@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { styleList } from '../control.styles';
+import { loadKitFonts } from './fonts.load';
+
+loadKitFonts();
 
 export interface RadioOption {
   label: string;
