@@ -39,9 +39,12 @@ export interface FrameBorder {
   left?: FrameBorderSide;
 }
 
+type FrameActionHandlerKind = 'client' | 'server';
+
 export interface FrameAction {
   type: string;
   payload?: Record<string, unknown>;
+  handler?: FrameActionHandlerKind;
 }
 
 export interface FrameOption {
@@ -167,11 +170,15 @@ export const httpsUrl: Validator<string> = (raw) => {
   return /^https:\/\/[^\s/?#]+\.[^\s/?#]+(?:[/?#]\S*)?$/i.test(raw) ? raw : undefined;
 };
 
+const ACTION_HANDLER = oneOf<FrameActionHandlerKind>(['client', 'server']);
+
 export const action: Validator<FrameAction> = (raw) => {
   if (!isRecord(raw)) return undefined;
   const type = typeof raw.type === 'string' ? raw.type.trim().slice(0, MAX_ACTION_TYPE) : '';
   if (type === '') return undefined;
-  return isRecord(raw.payload) ? { type, payload: raw.payload } : { type };
+  const handler = ACTION_HANDLER(raw.handler);
+  const base: FrameAction = isRecord(raw.payload) ? { type, payload: raw.payload } : { type };
+  return handler === undefined ? base : { ...base, handler };
 };
 
 export const options: Validator<FrameOption[]> = (raw) => {

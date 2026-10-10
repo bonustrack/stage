@@ -72,8 +72,12 @@ describe('parseFrame: layout nodes', () => {
     });
   });
 
-  test('Form keeps its submit action', () => {
+  test('Form keeps its submit action and its ChatKit handler, and drops loadingBehavior', () => {
     expect(only({ type: 'Form', onSubmitAction: { type: 'save', handler: 'client', loadingBehavior: 'self' } }).props)
+      .toEqual({ onSubmitAction: { type: 'save', handler: 'client' } });
+    expect(only({ type: 'Form', onSubmitAction: { type: 'save', handler: 'server' } }).props)
+      .toEqual({ onSubmitAction: { type: 'save', handler: 'server' } });
+    expect(only({ type: 'Form', onSubmitAction: { type: 'save', handler: 'chat' } }).props)
       .toEqual({ onSubmitAction: { type: 'save' } });
   });
 
@@ -369,6 +373,7 @@ describe('form values', () => {
     expect(withFormValues({ type: 'save', payload: { id: 7, title: 'keep' } }, { title: 'new', 'todo.done': true, note: 'n' }))
       .toEqual({ type: 'save', payload: { id: 7, title: 'keep', todo: { done: true }, note: 'n' } });
     expect(withFormValues({ type: 'a' }, {})).toEqual({ type: 'a' });
+    expect(withFormValues({ type: 'ask', handler: 'client' }, { q: 'why' })).toEqual({ type: 'ask', handler: 'client', payload: { q: 'why' } });
   });
 
   test('prototype keys are ignored', () => {

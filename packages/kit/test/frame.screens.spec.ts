@@ -113,5 +113,6 @@ describe('withScreen', () => {
     expect(withScreen({ type: 'vote' }, 's1')).toEqual({ type: 'vote', payload: { screen: 's1' } });
     expect(withScreen({ type: 'vote', payload: { id: 3 } }, 's1')).toEqual({ type: 'vote', payload: { screen: 's1', id: 3 } });
     expect(withScreen({ type: 'vote', payload: { screen: 'mine' } }, 's1')).toEqual({ type: 'vote', payload: { screen: 'mine' } });
+    expect(withScreen({ type: 'ask', handler: 'client' }, 's1')).toEqual({ type: 'ask', handler: 'client', payload: { screen: 's1' } });
   });
 });

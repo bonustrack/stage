@@ -160,7 +160,7 @@ export function navigateFrame(stack: readonly string[], nav: FrameNav): readonly
 }
 
 export function withScreen(action: FrameAction, screen: string): FrameAction {
-  return { type: action.type, payload: { screen, ...action.payload } };
+  return { ...action, payload: { screen, ...action.payload } };
 }
 
 export interface FrameSummary {
@@ -222,7 +222,7 @@ export function withFormValues(action: FrameAction, values: Readonly<Record<stri
   if (names.length === 0) return action;
   const payload: Record<string, unknown> = { ...action.payload };
   for (const name of names) setPath(payload, name.split('.'), values[name]);
-  return { type: action.type, payload };
+  return { ...action, payload };
 }
 
 export function missingRequired(required: Iterable<string>, values: Readonly<Record<string, unknown>>): string[] {
