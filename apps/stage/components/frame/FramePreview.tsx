@@ -23,7 +23,7 @@ import { isCoarsePointer } from '../../lib/webLayout';
 import { ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
 import {
   FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameInputOf,
-  frameLinkOf, frameMoreBelow, framePreviewCap, frameScreenTitle,
+  frameLinkOf, frameLocked, frameMoreBelow, framePreviewCap, frameScreenTitle,
 } from './frame.model';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { LiveMenuRows } from './LiveMenuRows';
@@ -155,12 +155,12 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, menu
   );
 }
 
-export function FramePreview({ frame, line, messageId, disabled }: {
-  frame: FrameContent; line: string; messageId: string; disabled?: boolean;
+export function FramePreview({ frame, line, messageId, consentAllowed }: {
+  frame: FrameContent; line: string; messageId: string; consentAllowed?: boolean;
 }): React.ReactElement {
   return (
     <Box margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      <FrameTile frame={frame} line={line} messageId={messageId} disabled={disabled} menu />
+      <FrameTile frame={frame} line={line} messageId={messageId} disabled={frameLocked(frame, consentAllowed)} menu />
     </Box>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { loadNode, newNodeKey, sendNodeAction, type NodeAction } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
-import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
+import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { capabilities } from './capabilities';
 import { makeLiveFrames } from './liveFrame.core';
 import { useStoreValue } from './storeCore';
@@ -13,6 +13,8 @@ const frames = makeLiveFrames({
   now: () => Date.now(),
   toast: (message) => { capabilities.toast(message); },
 });
+
+subscribeAccountEpoch(() => { frames.clear(); });
 
 function slotOf(epoch: number, messageId: string): string {
   return `${epoch}:${messageId}`;

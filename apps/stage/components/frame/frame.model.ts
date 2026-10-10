@@ -76,6 +76,10 @@ export function frameNodeOf(frame: FrameContent): FrameNodeLink | null {
   return node.ok ? { url: node.url, host: node.host } : null;
 }
 
+export function frameLocked(frame: FrameContent, consentAllowed: boolean | undefined): boolean {
+  return frameNodeOf(frame) === null ? consentAllowed === false : consentAllowed !== true;
+}
+
 export function frameActionTarget(action: FrameAction, hasNode: boolean): 'chat' | 'node' {
   return hasNode && action.handler !== 'client' ? 'node' : 'chat';
 }

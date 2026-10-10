@@ -5,7 +5,7 @@ import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { kitPalette } from '@stage-labs/kit/tokens';
 import {
   frameActionContent, frameActionTarget, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf,
-  frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
+  frameLocked, frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -86,6 +86,13 @@ describe('frames with a node source', () => {
     expect(frameNodeOf({ widget, source: { url: 'http://btc.example.com/' } })).toBeNull();
     expect(frameNodeOf({ widget, source: { url: 'https://localhost/' } })).toBeNull();
     expect(frameNodeOf({ widget, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
+  });
+
+  test('a frame with a node stays read only until the chat is known to be accepted', () => {
+    const sourced = { widget, source: { url: 'https://nodes.stage.box/abc' } };
+    expect([true, false, undefined].map(allowed => frameLocked(sourced, allowed))).toEqual([false, true, true]);
+    expect([true, false, undefined].map(allowed => frameLocked({ widget }, allowed))).toEqual([false, true, false]);
+    expect(frameLocked({ widget, source: { url: 'http://btc.example.com/' } }, undefined)).toBe(false);
   });
 
   test('actions go to the node, a client handled action to the chat, and every action to the chat without a node', () => {

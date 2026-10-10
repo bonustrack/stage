@@ -25,7 +25,7 @@ Content-Type: application/json
 {"type": "threads.sync_custom_action", "params": {"thread_id": "<key id>", "item_id": "<key id>", "action": {"type": "refresh", "payload": {}}}}
 ```
 
-`action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `loadingBehavior` is ignored: the tapped button shows its own loading state until the reply. An action with ChatKit's `"handler": "client"` never goes to the node: Stage handles it and sends it to the chat (see Frames in chats).
+`action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. In a frame with screens, `payload.screen` is the screen the tap came from, unless the payload already has a `screen`. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `loadingBehavior` is ignored: the tapped button shows its own loading state until the reply. An action with ChatKit's `"handler": "client"` never goes to the node: Stage handles it and sends it to the chat (see Frames in chats).
 
 Answer like a ChatKit `sync_action()` handler, with a `SyncCustomActionResponse`:
 
@@ -118,7 +118,7 @@ Errors: `400` the code was refused (the reason is in `error`), `401` a bad or st
 
 A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Apps that do not know `source` ignore it and show the frame as sent.
 
-In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Nothing loads by itself, so a node never learns that someone just opened the chat, and nothing works before the chat is accepted. Calls are signed and checked as on the Dashboard. The reply replaces the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
+In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Stage does not call the node before a tap, and nothing works before the chat is accepted. Images in the frame still load when it shows, as in any frame. Calls are signed and checked as on the Dashboard. The reply replaces the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
 
 A tap sends the action to the node. An action with ChatKit's `"handler": "client"` goes to the chat instead, as a frame action message, like every action of a frame without `source`. So one frame can have a button its node answers and a button for the agent that sent it:
 
@@ -130,6 +130,6 @@ Add to dashboard on that frame first asks, naming the node's host, then adds a l
 
 ## Limits
 
-- The node sees the device's IP address and what Stage sends it, as with an image in a frame (in a chat, only after a tap). A hosted node does not see the IP address.
+- The node sees the device's IP address and what Stage sends it, as with an image in a frame (in a chat, Stage calls it only after a tap). A hosted node does not see the IP address.
 - Stage checks the host name, not the address DNS returns, so a public name that points to a private address is not caught.
 - A captured request can be replayed for up to 5 minutes. A node that needs more can reject a signature it has already seen.

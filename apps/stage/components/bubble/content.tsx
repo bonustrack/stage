@@ -84,7 +84,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
       ) : null}
       {d.txReceipt ? <TxReceiptCard receipt={d.txReceipt} ts={p.entry.ts} dark={p.dark} /> : null}
       {d.frame ? (
-        <FramePreview frame={d.frame} line={p.entry.line} messageId={p.entry.id} disabled={p.consentAllowed === false} />
+        <FramePreview frame={d.frame} line={p.entry.line} messageId={p.entry.id} consentAllowed={p.consentAllowed} />
       ) : null}
     </>
   );

@@ -85,6 +85,23 @@ describe('live frames in chats', () => {
     expect(h.toasts).toEqual(['Could not refresh: not a widget']);
   });
 
+  test('clearing drops every frame, and a call still running then changes nothing', async () => {
+    const h = harness();
+    await h.frames.refresh('m1', SENT, NODE);
+    const slow = Promise.withResolvers<NodeResult>();
+    h.reply(() => slow.promise);
+    const pending = h.frames.act('m1', SENT, NODE, { type: 'buy' });
+    h.frames.clear();
+    expect(h.frames.frameOf('m1')).toBeNull();
+    slow.resolve({ ok: false, problem: 'unreachable' });
+    await pending;
+    expect(h.frames.frameOf('m1')).toBeNull();
+    expect(h.toasts).toEqual([]);
+    h.reply(() => Promise.resolve(frameReply(LATER)));
+    await h.frames.refresh('m1', SENT, NODE);
+    expect(h.calls.at(-1)).toEqual({ method: 'GET', url: NODE, key: 'key2' });
+  });
+
   test('only the latest call on a frame updates it', async () => {
     const h = harness();
     const slow = Promise.withResolvers<NodeResult>();

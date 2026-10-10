@@ -24,9 +24,21 @@ async function deletedLater(line: string, entry: HistoryEntry, sentNs: number): 
   return frameIsDeleted(entry, later.map(m => sdk.envelopeOf(m, line)), await ownDeletesReady());
 }
 
+async function inChat(client: Awaited<ReturnType<typeof sdk.client>>, own: string | null | undefined, convId: string): Promise<boolean> {
+  if (!own) return false;
+  if (own === convId) return true;
+  const [mine, shown] = await Promise.all([sdk.findConv(client, own), sdk.findConv(client, convId)]);
+  if (!mine || !shown) return false;
+  if (mine.id === shown.id) return true;
+  const minePeer = sdk.dmPeerInboxId(mine);
+  const shownPeer = sdk.dmPeerInboxId(shown);
+  return minePeer !== null && shownPeer !== null && await minePeer() === await shownPeer();
+}
+
 async function loadFrameMessage(convId: string, messageId: string): Promise<FrameMessage> {
-  const message = await sdk.messageById(await sdk.client(), messageId);
-  if (!message) return MISSING;
+  const client = await sdk.client();
+  const message = await sdk.messageById(client, messageId);
+  if (!message || !await inChat(client, sdk.convIdOf(message), convId)) return MISSING;
   if (isDeletedPlaceholderType(sdk.rowOf(message).contentTypeId)) return DELETED;
   const line = lineOfConv(convId);
   const entry = sdk.envelopeOf(message, line);

@@ -15,6 +15,7 @@ interface LiveFrameEntry { key: string; state: LiveState; calls: number }
 
 export interface LiveFrames {
   frameOf: (id: string) => FrameContent | null;
+  clear: () => void;
   subscribe: (listener: () => void) => () => void;
   refresh: (id: string, sent: FrameContent, url: string) => Promise<void>;
   act: (id: string, sent: FrameContent, url: string, action: NodeAction) => Promise<void>;
@@ -35,7 +36,7 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
     entry.calls += 1;
     const ticket = entry.calls;
     const result = await request(entry.key);
-    if (ticket !== entry.calls) return;
+    if (entries.get(id) !== entry || ticket !== entry.calls) return;
     const next = liveStateAfter(entry.state, result, deps.now());
     const problem = liveProblemText(next);
     if (problem !== null) {
@@ -47,6 +48,10 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
   };
   return {
     frameOf: id => entries.get(id)?.state.frame ?? null,
+    clear: () => {
+      entries.clear();
+      notify();
+    },
     subscribe,
     refresh: (id, sent, url) => call(id, sent, key => deps.load(url, key), 'Could not refresh'),
     act: (id, sent, url, action) => call(id, sent, key => deps.act(url, key, action), 'Could not send'),
