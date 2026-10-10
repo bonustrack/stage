@@ -12,4 +12,6 @@ function addFontFaces(doc: Document): void {
   doc.head.appendChild(style);
 }
 
-if (typeof document !== 'undefined') addFontFaces(document);
+export function loadKitFonts(): void {
+  if (typeof document !== 'undefined') addFontFaces(document);
+}

@@ -1,9 +1,11 @@
 
 import { createContext, createElement, useContext, type ReactNode } from 'react';
 import { kitPalette, type KitPalette } from '../tokens';
-import './fonts.load';
+import { loadKitFonts } from './fonts.load';
 
 export type { KitPalette } from '../tokens';
+
+loadKitFonts();
 
 export interface KitThemeValue {
   palette: KitPalette;
