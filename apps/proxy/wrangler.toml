@@ -97,3 +97,16 @@ simple = { limit = 20, period = 60 }
 name = "MAIL_REQUESTS"
 namespace_id = "1080"
 simple = { limit = 30, period = 60 }
+
+# User nodes: PUT /nodes uploads a user's node code (one ES module, 64 KB at
+# most, no bindings) into the Workers for Platforms dispatch namespace
+# "stage-nodes" through the Cloudflare API, and DELETE /nodes removes it. The
+# request is signed with the node's Ed25519 key and the node id is derived from
+# that key, so only its owner can change it. The API token (Workers Scripts:
+# Edit on this account only) and the account id are the NODES_API_TOKEN and
+# NODES_ACCOUNT_ID secrets, set in the dashboard; without them /nodes answers
+# 503. apps/dispatch serves the nodes on nodes.stage.box.
+[[ratelimits]]
+name = "NODE_PUBLISHES"
+namespace_id = "1082"
+simple = { limit = 10, period = 60 }

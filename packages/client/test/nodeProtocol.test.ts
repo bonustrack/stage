@@ -3,8 +3,9 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
 import {
-  loadNode, newNodeKey, nodeActionBody, nodeHeaders, nodeKeyId, nodeReplyOf, nodeSigningText, nodeUrlOf, sendNodeAction,
+  loadNode, newNodeKey, nodeActionBody, nodeHeaders, nodeKeyId, nodeReplyOf, nodeUrlOf, sendNodeAction,
 } from '../src/nodes/protocol';
+import { nodeSigningText } from '../src/nodes/signing';
 
 const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
 const RFC8032_PUBLIC = '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo';

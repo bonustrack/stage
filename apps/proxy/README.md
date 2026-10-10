@@ -47,6 +47,20 @@ runtime - no Express, no origin, no laptop dependency.
   Cloudflare's defaults. Messages from before 2026-10-09 carry Swarm links
   (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
   (`download.gateway.ethswarm.org`).
+- **User nodes:** `PUT /nodes` puts a user's [node](../../NODES.md) online
+  and `DELETE /nodes` takes it down. The body of a `PUT` is the node's code,
+  one ES module of at most 64 KB. Requests are signed with the node's Ed25519
+  key (`Stage-Key`, `Stage-Timestamp`, `Stage-Signature`, the scheme of
+  `NODES.md`) and the node id is the first 16 bytes of the SHA-256 of that
+  public key, so a key owns exactly one node and nobody else can change or
+  remove it. The Worker checks the size, the signature and the rate limit (10
+  a minute per IP through the `NODE_PUBLISHES` binding), keeps the total at
+  1000 nodes, then uploads the code through the Cloudflare API into the
+  Workers for Platforms dispatch namespace `stage-nodes` as the Worker
+  `node-<id>`, with no bindings, secrets or logs. `apps/dispatch` serves it on
+  `https://nodes.stage.box/<id>`. The token and account id are the
+  `NODES_API_TOKEN` and `NODES_ACCOUNT_ID` secrets; without them `/nodes`
+  answers `503`.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -98,6 +112,10 @@ GET  /mail/message?label=&id=    -> sealed mail bytes       Bearer token   404 n
 DELETE /mail/message?label=&id=  -> 204                     Bearer token
 DELETE /mail/box?label=<l>       -> 204, wipes the mailbox  Bearer token
      /mail/* 401 bad or expired session   403 the name has a new owner   429 rate limited (30 a minute per IP)
+PUT  /nodes                      -> ES module source, signed -> { id, url }   (url https://nodes.stage.box/<id>)
+DELETE /nodes                    -> signed, no body -> { id }   404 no such node
+     /nodes 400 code refused by Cloudflare (reason in error)   401 bad or stale signature   411 no length
+            413 code over 64 KB   429 rate limited (10 a minute per IP)   503 not set up   507 node limit reached
 ```
 
 Every response carries `x-served-by: worker`.
@@ -144,7 +162,10 @@ the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
 and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
 dashboard; a deploy fails while it does not exist);
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
-with `wrangler secret put`, never committed. Both hostnames are proxied
+with `wrangler secret put`, never committed. So are `NODES_API_TOKEN` (an API
+token with only Account, Workers Scripts, Edit on this account) and
+`NODES_ACCOUNT_ID`, set in the dashboard (Workers & Pages, proxy, Settings,
+Variables and Secrets, type Secret) so a deploy keeps them. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any
 origin. Cloudflare Workers Builds deploys it on every push to `main` that touches `apps/proxy/`, `packages/client/`, `bun.lock` or the root `package.json`: it installs with `bun install --frozen-lockfile` (Bun 1.4.0 via the `BUN_VERSION` build variable), runs `bun run typecheck` and `bun run test` in `apps/proxy`, then `bunx wrangler deploy`. Builds and logs are in the Cloudflare dashboard under the `proxy` Worker.
 

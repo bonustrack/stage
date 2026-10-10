@@ -1,14 +1,12 @@
 import { ed25519 } from '@noble/curves/ed25519';
-import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { bytesToBase64 } from '../text/base64';
 import { FRAME_ACTION_MAX_CHARS, frameContentSchema, type FrameContent } from '../xmtp/frame.schema';
+import { NODE_REPLY_MAX_BYTES } from './hosting';
+import { base64url, nodeSigningText } from './signing';
 
-const SIGNATURE_SCHEME = 'stage-node-v1';
 const ACTION_REQUEST = 'threads.sync_custom_action';
 const MAX_URL_CHARS = 2048;
 const NODE_TIMEOUT_MS = 10_000;
-const NODE_MAX_BYTES = 128 * 1024;
 const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
 const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
   [0, 0, 255], [10, 0, 255], [127, 0, 255], [169, 254, 254], [172, 16, 31], [192, 168, 168], [100, 64, 127], [198, 18, 19],
@@ -97,10 +95,6 @@ export function nodeUrlOf(raw: string): NodeUrl {
   return href.length > MAX_URL_CHARS ? { ok: false, problem: 'invalid' } : { ok: true, url: href, host: url.host };
 }
 
-function base64url(bytes: Uint8Array): string {
-  return bytesToBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
 export function newNodeKey(): string {
   return bytesToHex(ed25519.utils.randomPrivateKey());
 }
@@ -109,11 +103,7 @@ export function nodeKeyId(key: string): string {
   return base64url(ed25519.getPublicKey(hexToBytes(key)));
 }
 
-export function nodeSigningText(method: string, url: string, timestamp: string, body: string): string {
-  return [SIGNATURE_SCHEME, method, url, timestamp, bytesToHex(sha256(utf8ToBytes(body)))].join('\n');
-}
-
-export function nodeHeaders(method: NodeMethod, url: string, body: string, key: string, nowMs: number): Record<string, string> {
+export function nodeHeaders(method: string, url: string, body: string, key: string, nowMs: number): Record<string, string> {
   const timestamp = String(Math.floor(nowMs / 1000));
   const signature = ed25519.sign(utf8ToBytes(nodeSigningText(method, url, timestamp, body)), hexToBytes(key));
   return { 'Stage-Key': nodeKeyId(key), 'Stage-Timestamp': timestamp, 'Stage-Signature': base64url(signature) };
@@ -159,13 +149,13 @@ async function cappedText(response: Response): Promise<string | null> {
   const reader = response.body?.getReader();
   if (reader === undefined) {
     const text = await response.text();
-    return text.length > NODE_MAX_BYTES ? null : text;
+    return text.length > NODE_REPLY_MAX_BYTES ? null : text;
   }
   const chunks: Uint8Array[] = [];
   let size = 0;
   for (let part = await reader.read(); !part.done; part = await reader.read()) {
     size += part.value.byteLength;
-    if (size > NODE_MAX_BYTES) {
+    if (size > NODE_REPLY_MAX_BYTES) {
       void reader.cancel().catch(() => undefined);
       return null;
     }
@@ -176,7 +166,7 @@ async function cappedText(response: Response): Promise<string | null> {
 
 async function readReply(response: Response): Promise<NodeResult> {
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
-  if (Number(response.headers.get('content-length') ?? 0) > NODE_MAX_BYTES) return { ok: false, problem: 'too-large' };
+  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
   const text = await cappedText(response);
   if (text === null) return { ok: false, problem: 'too-large' };
   if (text.trim() === '') return { ok: true, reply: UNCHANGED };

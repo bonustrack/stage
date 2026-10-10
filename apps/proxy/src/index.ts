@@ -13,6 +13,7 @@ import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from
 import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
+import { NODES_PATH, cloudflareApi, handleNodes } from './nodes.ts';
 import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
@@ -27,7 +28,7 @@ const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
 const hits = new Map<string, { count: number; reset: number }>();
 
-type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names' | 'attachments';
+type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names' | 'attachments' | 'nodes';
 
 function clientIp(request: Request): string {
   return request.headers.get('cf-connecting-ip')
@@ -164,6 +165,9 @@ type ProxyEnv = NamesEnv & {
   MAIL_REQUESTS?: RateLimit;
   ATTACHMENTS?: R2Bucket;
   ATTACHMENT_UPLOADS?: RateLimit;
+  NODES_API_TOKEN?: string;
+  NODES_ACCOUNT_ID?: string;
+  NODE_PUBLISHES?: RateLimit;
 };
 
 interface MailWiring { mailbox: (label: string) => ReturnType<typeof mailboxStub>; chain: MailChain }
@@ -195,19 +199,26 @@ function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Resp
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 
-async function uploadLimited(request: Request, env: ProxyEnv): Promise<boolean> {
-  if (rateLimited(request, 'attachments')) return true;
-  const limiter = env.ATTACHMENT_UPLOADS;
+async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimit | undefined): Promise<boolean> {
+  if (rateLimited(request, budget)) return true;
   return limiter !== undefined && !(await limiter.limit({ key: clientIp(request) })).success;
 }
 
 async function routeAttachments(request: Request, env: ProxyEnv): Promise<Response> {
-  if (request.method === 'POST' && await uploadLimited(request, env)) return json({ error: 'rate limited' }, 429);
+  if (request.method === 'POST' && await limitedBy(request, 'attachments', env.ATTACHMENT_UPLOADS)) return json({ error: 'rate limited' }, 429);
   return handleAttachments(request, env.ATTACHMENTS === undefined ? undefined : r2AttachmentStore(env.ATTACHMENTS));
+}
+
+function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
+  return handleNodes(request, {
+    api: cloudflareApi(env.NODES_API_TOKEN, env.NODES_ACCOUNT_ID),
+    limited: () => limitedBy(request, 'nodes', env.NODE_PUBLISHES),
+  });
 }
 
 function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promise<Response> | Response | null {
   if (isAttachmentPath(pathname)) return routeAttachments(request, env);
+  if (pathname === NODES_PATH) return routeNodes(request, env);
   if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
   if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
   if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);
