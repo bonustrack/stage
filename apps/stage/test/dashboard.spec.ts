@@ -1,10 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
-  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, frameSourceOf, liveSourceOf, type DashboardContent, type DashboardWidget,
+  DASHBOARD_MAX_WIDGETS, dashboardSchema, EMPTY_DASHBOARD, liveSourceOf, type DashboardContent, type DashboardHeight,
+  type DashboardWidget, type DashboardWidth,
 } from '@stage-labs/client/xmtp/readState';
 import {
-  FRAME_ADD_TOASTS, addFrameWidget, addLiveWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd, gridColumns, liveWidgetAdd,
-  moveWidget, packWidgets, removedLiveIds, removeWidget, resizeWidget, widgetHeight, widgetKindOf, widgetSizeLabel, widgetSpan, widgetWidth,
+  FRAME_ADD_TOASTS, HEIGHT_OPTIONS, WIDTH_OPTIONS, addFrameWidget, addLiveWidget, canAddWidget, cellRects, dropTarget, frameWidgetAdd,
+  gridColumns, liveWidgetAdd, moveWidget, packWidgets, removedLiveIds, removeWidget, resizeWidget, widgetSpan,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 
@@ -26,10 +27,13 @@ const {
   addFrameToDashboard, addLiveToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged,
 } = await import('../lib/dashboard');
 
-const widget = (id: string, w = 'half', h = 1): DashboardWidget => ({ id, w, h });
+const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1): DashboardWidget => ({
+  id, w, h, kind: 'frame', source: { conversationId: 'conv0', messageId: id },
+});
 const ids = (widgets: readonly DashboardWidget[]): string[] => widgets.map(item => item.id);
 const stored = (account: string): unknown => JSON.parse(values.get(`dashboard.v1.${account}`) ?? 'null');
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+const synced = (raw: unknown): DashboardContent => dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
 const source = { conversationId: 'conv1', messageId: 'msg1' };
 const frameWidget = (id: string, from = source): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'frame', source: from });
 
@@ -46,10 +50,10 @@ describe('dashboard widgets', () => {
     expect(removeWidget(list, 'x')).toBe(list);
   });
 
-  test('resizing changes width or height, keeps unknown fields and ignores no-op sizes', () => {
-    const list: DashboardWidget[] = [{ ...widget('a'), content: { kind: 'later' } }, widget('b')];
+  test('resizing changes width or height and ignores no-op sizes', () => {
+    const list = [widget('a'), widget('b')];
     const wider = resizeWidget(list, 'a', { w: 'full' });
-    expect(wider[0]).toEqual({ id: 'a', w: 'full', h: 1, content: { kind: 'later' } });
+    expect(wider[0]).toEqual(widget('a', 'full', 1));
     expect(wider[1]).toBe(list[1]);
     expect(resizeWidget(wider, 'a', { h: 4 })[0]).toMatchObject({ w: 'full', h: 4 });
     expect(resizeWidget(list, 'a', { w: 'half', h: 1 })).toBe(list);
@@ -65,103 +69,91 @@ describe('dashboard widgets', () => {
     expect(moveWidget(list, 'b', 'x')).toBe(list);
   });
 
-  test('the size label names the width and the height in pixels', () => {
-    expect(widgetSizeLabel(widget('a', 'quarter', 3))).toBe('Quarter width · 384\u00a0px');
-  });
-
-  test('sizes this version does not know show as half width and at most 512 px, and keep their stored value', () => {
-    const odd = widget('x', 'third', 6);
-    expect([widgetWidth(odd), widgetHeight(odd)]).toEqual(['half', 4]);
-    expect(widgetSizeLabel(odd)).toBe('Half width · 512\u00a0px');
-    expect(packWidgets([odd], 4).cells).toEqual([{ col: 0, row: 0, span: 2, rows: 4 }]);
-    expect(resizeWidget([odd], 'x', { w: 'quarter' })).toEqual([widget('x', 'quarter', 6)]);
+  test('the size menu names the widths and the heights in pixels', () => {
+    expect(WIDTH_OPTIONS.map(option => option.label)).toEqual(['Full', 'Half', 'Quarter']);
+    expect(HEIGHT_OPTIONS.map(option => option.label)).toEqual(['128\u00a0px', '256\u00a0px', '384\u00a0px', '512\u00a0px']);
   });
 });
 
 describe('frame widgets', () => {
-  test('a frame widget keeps only its chat and message ids, half width and 384 px unless asked wider', () => {
-    const list = addFrameWidget([], 'f', source);
-    expect(list).toEqual([frameWidget('f')]);
-    expect(list.map(item => [widgetKindOf(item), frameSourceOf(item), widgetSizeLabel(item)]))
-      .toEqual([['frame', source, 'Half width · 384\u00a0px']]);
+  test('a frame widget keeps only its chat and message ids, 384 px high at the width asked', () => {
+    expect(addFrameWidget([], 'f', source, 'half')).toEqual([frameWidget('f')]);
     expect(addFrameWidget([], 'f', source, 'full')).toEqual([{ ...frameWidget('f'), w: 'full' }]);
   });
 
   test('the same frame is added once, and never past the widget cap', () => {
-    const list = addFrameWidget([widget('a')], 'f', source);
+    const list = addFrameWidget([widget('a')], 'f', source, 'half');
     expect(frameWidgetAdd(list, source)).toBe('exists');
-    expect(addFrameWidget(list, 'g', source)).toBe(list);
-    expect(addFrameWidget(list, 'f', { ...source, messageId: 'msg2' })).toBe(list);
+    expect(addFrameWidget(list, 'g', source, 'half')).toBe(list);
+    expect(addFrameWidget(list, 'f', { ...source, messageId: 'msg2' }, 'half')).toBe(list);
     expect(frameWidgetAdd(list, { ...source, messageId: 'msg2' })).toBe('added');
     expect(frameWidgetAdd(list, { ...source, conversationId: 'conv2' })).toBe('added');
     const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
     expect(frameWidgetAdd(full, source)).toBe('full');
-    expect(addFrameWidget(full, 'f', source)).toBe(full);
+    expect(addFrameWidget(full, 'f', source, 'half')).toBe(full);
     expect(FRAME_ADD_TOASTS).toEqual({ added: 'Added to your dashboard', exists: 'Already on your dashboard', full: 'Your dashboard is full' });
   });
 
-  test('a widget without a kind is empty, and a kind this version does not know is unsupported', () => {
-    expect(widgetKindOf(widget('a'))).toBe('empty');
-    expect(widgetKindOf({ ...widget('b'), kind: 'chart' })).toBe('unsupported');
-    expect(widgetKindOf({ ...widget('c'), kind: 7 })).toBe('unsupported');
+  test('only frame and live widgets are kept: no kind, another kind or a broken reference drops the widget', () => {
+    const raw = {
+      widgets: [
+        { id: 'a', w: 'half', h: 1 }, { ...frameWidget('b'), kind: 'chart' }, { ...frameWidget('c'), kind: 7 },
+        { ...frameWidget('d'), source: { conversationId: 'conv1' } }, { ...frameWidget('e'), source: 'conv1/msg1' },
+        { ...frameWidget('f'), source: { conversationId: '', messageId: 'msg1' } }, frameWidget('g'),
+      ],
+      at: 4,
+    };
+    expect(synced(raw)).toEqual({ widgets: [frameWidget('g')], at: 4 });
   });
 
-  test('a frame widget with a broken reference has no source, and extra reference fields are not read', () => {
-    expect(frameSourceOf({ ...frameWidget('a'), source: { conversationId: 'conv1' } })).toBeNull();
-    expect(frameSourceOf({ ...frameWidget('b'), source: 'conv1/msg1' })).toBeNull();
-    expect(frameSourceOf({ ...frameWidget('c'), source: { conversationId: '', messageId: 'msg1' } })).toBeNull();
-    expect(frameSourceOf({ ...frameWidget('d'), kind: 'chart' })).toBeNull();
-    expect(frameSourceOf(widget('e'))).toBeNull();
+  test('frame widgets survive sync, moves and resizes, without fields this version does not write', () => {
     const extended = { ...source, screen: 'home' };
-    expect(frameSourceOf(frameWidget('f', extended))).toEqual(source);
-  });
-
-  test('frame widgets and kinds this version does not know survive sync, moves and resizes untouched', () => {
-    const later = { id: 'x', w: 'half', h: 2, kind: 'chart', source: { query: 'q' }, title: 'kept' };
-    const raw = { widgets: [frameWidget('f'), later, widget('e')], at: 4 };
-    const synced = dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
-    expect(synced).toEqual(raw);
-    const edited = resizeWidget(moveWidget(synced.widgets, 'e', 'f'), 'f', { w: 'full' });
-    expect(edited).toEqual([widget('e'), { ...frameWidget('f'), w: 'full' }, later]);
+    const raw = { widgets: [{ ...frameWidget('f', extended), title: 'dropped' }, widget('e')], at: 4 };
+    const list = synced(raw).widgets;
+    expect(list).toEqual([frameWidget('f'), widget('e')]);
+    expect(resizeWidget(moveWidget(list, 'e', 'f'), 'f', { w: 'full' })).toEqual([widget('e'), { ...frameWidget('f'), w: 'full' }]);
   });
 });
 
 describe('live widgets', () => {
   const live = { url: 'https://btc.example.com/', key: 'ab'.repeat(32) };
-  const liveWidget = (id: string): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
+  const liveWidget = (id: string): DashboardWidget & { kind: 'live' } => ({
+    id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key,
+  });
 
-  test('a live widget keeps its node url and its own key, half width and 384 px unless asked wider', () => {
-    const list = addLiveWidget([], 'l', live);
-    expect(list).toEqual([liveWidget('l')]);
-    expect(list.map(item => [widgetKindOf(item), liveSourceOf(item), frameSourceOf(item)])).toEqual([['live', live, null]]);
+  test('a live widget keeps its node url and its own key, 384 px high at the width asked', () => {
+    expect(addLiveWidget([], 'l', live, 'half')).toEqual([liveWidget('l')]);
+    expect(liveSourceOf(liveWidget('l'))).toEqual(live);
     expect(addLiveWidget([], 'l', live, 'full')).toEqual([{ ...liveWidget('l'), w: 'full' }]);
   });
 
-  test('a live widget added from a chat remembers that frame, and a broken origin is ignored', () => {
+  test('a live widget added from a chat remembers that frame', () => {
     const fromChat = { ...live, origin: source };
-    const list = addLiveWidget([], 'l', fromChat);
+    const list = addLiveWidget([], 'l', fromChat, 'half');
     expect(list).toEqual([{ ...liveWidget('l'), origin: source }]);
-    expect(liveSourceOf(list[0] ?? widget('x'))).toEqual(fromChat);
-    expect(liveSourceOf({ ...liveWidget('m'), origin: { conversationId: '' } })).toEqual(live);
-    expect(widgetKindOf({ ...liveWidget('n'), origin: 'conv1' })).toBe('live');
+    expect(liveSourceOf({ ...liveWidget('l'), origin: source })).toEqual(fromChat);
   });
 
   test('the same node url is added once, and never past the widget cap', () => {
-    const list = addLiveWidget([widget('a')], 'l', live);
+    const list = addLiveWidget([widget('a')], 'l', live, 'half');
     expect(liveWidgetAdd(list, live.url)).toBe('exists');
-    expect(addLiveWidget(list, 'm', { ...live, key: 'cd'.repeat(32) })).toBe(list);
+    expect(addLiveWidget(list, 'm', { ...live, key: 'cd'.repeat(32) }, 'half')).toBe(list);
     expect(liveWidgetAdd(list, 'https://eth.example.com/')).toBe('added');
     const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
     expect(liveWidgetAdd(full, live.url)).toBe('full');
-    expect(addLiveWidget(full, 'l', live)).toBe(full);
+    expect(addLiveWidget(full, 'l', live, 'half')).toBe(full);
   });
 
-  test('a live widget without a valid url or key shows as unsupported', () => {
-    expect(widgetKindOf({ ...liveWidget('a'), key: 'short' })).toBe('unsupported');
-    expect(widgetKindOf({ ...liveWidget('b'), key: 'AB'.repeat(32) })).toBe('unsupported');
-    expect(widgetKindOf({ ...liveWidget('c'), source: { url: '' } })).toBe('unsupported');
-    expect(widgetKindOf({ ...liveWidget('d'), source: 'https://btc.example.com/' })).toBe('unsupported');
-    expect(liveSourceOf({ ...liveWidget('e'), kind: 'frame' })).toBeNull();
+  test('a live widget without a valid url, key or origin is dropped', () => {
+    const raw = {
+      widgets: [
+        { ...liveWidget('a'), key: 'short' }, { ...liveWidget('b'), key: 'AB'.repeat(32) }, { ...liveWidget('c'), source: { url: '' } },
+        { ...liveWidget('d'), source: 'https://btc.example.com/' }, { ...liveWidget('e'), origin: { conversationId: '' } },
+        { ...liveWidget('f'), origin: 'conv1' }, liveWidget('g'),
+      ],
+      at: 4,
+    };
+    expect(synced(raw)).toEqual({ widgets: [liveWidget('g')], at: 4 });
   });
 
   test('only live widgets that are gone count as removed', () => {
@@ -173,9 +165,8 @@ describe('live widgets', () => {
 
   test('live widgets survive sync, moves and resizes with their key', () => {
     const raw = { widgets: [liveWidget('l'), frameWidget('f')], at: 4 };
-    const synced = dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
-    expect(synced).toEqual(raw);
-    expect(resizeWidget(moveWidget(synced.widgets, 'f', 'l'), 'l', { h: 4 })).toEqual([frameWidget('f'), { ...liveWidget('l'), h: 4 }]);
+    expect(synced(raw)).toEqual(raw);
+    expect(resizeWidget(moveWidget(synced(raw).widgets, 'f', 'l'), 'l', { h: 4 })).toEqual([frameWidget('f'), { ...liveWidget('l'), h: 4 }]);
   });
 });
 
@@ -216,20 +207,18 @@ describe('dashboard grid', () => {
 });
 
 describe('dashboard sync state', () => {
-  test('stored or synced layouts keep each widget with an id once, with unknown sizes and fields intact', () => {
+  test('stored or synced layouts keep each current widget once, at most 48, and drop the rest', () => {
     const raw = {
       widgets: [
-        widget('a'), { id: 'a', w: 'full', h: 2 }, { id: 'b', w: 'third', h: 1 }, { id: 'c', w: 'half', h: 0 },
-        { w: 'half', h: 1 }, 'nope', { id: 'd', w: 'quarter', h: 4, title: 'kept' },
+        widget('a'), widget('a', 'full', 2), { ...widget('b'), w: 'third' }, { ...widget('c'), h: 0 }, { ...widget('d'), h: 6 },
+        { ...widget('e'), h: 1.5 }, { w: 'half', h: 1 }, 'nope', widget('f', 'quarter', 4),
       ],
       at: 5,
-      theme: 'later',
+      theme: 'dropped',
     };
-    expect(dashboardSchema.parse(raw)).toEqual({
-      widgets: [widget('a'), widget('b', 'third', 1), { id: 'd', w: 'quarter', h: 4, title: 'kept' }], at: 5, theme: 'later',
-    });
+    expect(dashboardSchema.parse(raw)).toEqual({ widgets: [widget('a'), widget('f', 'quarter', 4)], at: 5 });
     const many = { widgets: Array.from({ length: DASHBOARD_MAX_WIDGETS + 5 }, (_, i) => widget(`w${i}`)), at: 1 };
-    expect(dashboardSchema.parse(many).widgets).toHaveLength(DASHBOARD_MAX_WIDGETS + 5);
+    expect(ids(dashboardSchema.parse(many).widgets)).toEqual(ids(many.widgets.slice(0, DASHBOARD_MAX_WIDGETS)));
     expect(dashboardSchema.safeParse({ widgets: [] }).success).toBe(false);
     expect(dashboardSchema.safeParse({ widgets: 'x', at: 1 }).success).toBe(false);
   });
@@ -239,7 +228,6 @@ describe('dashboard sync state', () => {
     expect(editDashboard(current, current.widgets, 10)).toBe(current);
     expect(editDashboard(current, [], 10)).toEqual({ widgets: [], at: 51 });
     expect(editDashboard(current, [], 99)).toEqual({ widgets: [], at: 99 });
-    expect(editDashboard({ ...current, theme: 'later' }, [], 99)).toEqual({ widgets: [], at: 99, theme: 'later' });
   });
 
   test('the newest layout wins whichever device sent it', () => {

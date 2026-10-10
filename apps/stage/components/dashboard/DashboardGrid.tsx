@@ -153,8 +153,8 @@ function DashboardCell({ widget, index, rect, rects, drag, drops, onDrop, onMenu
   const position = useCellPosition(rect, drops);
   const { gesture, holdNode } = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
   const styles = useCellStyles(index, drag, position, bg);
-  const grip = useCallback<WidgetGrip>((handle, fill = false) => (
-    <GestureDetector gesture={gesture}><Box flex={fill ? 1 : undefined}>{handle}</Box></GestureDetector>
+  const grip = useCallback<WidgetGrip>((handle) => (
+    <GestureDetector gesture={gesture}><Box>{handle}</Box></GestureDetector>
   ), [gesture]);
   return (
     <Animated.View ref={holdNode} style={[{ position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT }, styles.cell]}>

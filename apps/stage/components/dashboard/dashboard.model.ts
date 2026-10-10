@@ -1,5 +1,5 @@
 import {
-  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_LIVE_KIND, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS, frameSourceOf, liveSourceOf,
+  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_LIVE_KIND, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS,
   type DashboardHeight, type DashboardSource, type DashboardWidget, type DashboardWidth, type LiveSource,
 } from '@stage-labs/client/xmtp/readState';
 
@@ -8,9 +8,6 @@ export const DASHBOARD_GAP = 12;
 const WIDE_GRID_MIN = 560;
 const SPAN: Readonly<Record<DashboardWidth, number>> = { full: 4, half: 2, quarter: 1 };
 const WIDTH_LABEL: Readonly<Record<DashboardWidth, string>> = { full: 'Full', half: 'Half', quarter: 'Quarter' };
-
-const FALLBACK_WIDTH: DashboardWidth = 'half';
-const MAX_HEIGHT = DASHBOARD_HEIGHTS.length;
 
 interface WidgetSize { w?: DashboardWidth; h?: DashboardHeight }
 
@@ -21,31 +18,11 @@ function heightLabel(h: number): string {
 export const WIDTH_OPTIONS = DASHBOARD_WIDTHS.map(value => ({ value, label: WIDTH_LABEL[value] }));
 export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map(value => ({ value, label: heightLabel(value) }));
 
-export function widgetWidth(widget: DashboardWidget): DashboardWidth {
-  return DASHBOARD_WIDTHS.find(width => width === widget.w) ?? FALLBACK_WIDTH;
-}
-
-export function widgetHeight(widget: DashboardWidget): number {
-  return Math.min(Math.max(widget.h, 1), MAX_HEIGHT);
-}
-
-export function widgetSizeLabel(widget: DashboardWidget): string {
-  return `${WIDTH_LABEL[widgetWidth(widget)]} width · ${heightLabel(widgetHeight(widget))}`;
-}
-
 export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
 }
 
 export const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
-
-export type WidgetKind = 'empty' | 'frame' | 'live' | 'unsupported';
-
-export function widgetKindOf(widget: DashboardWidget): WidgetKind {
-  if (widget.kind === undefined) return 'empty';
-  if (widget.kind === DASHBOARD_FRAME_KIND) return 'frame';
-  return liveSourceOf(widget) === null ? 'unsupported' : 'live';
-}
 
 export type FrameWidgetAdd = 'added' | 'exists' | 'full';
 
@@ -56,8 +33,8 @@ export const FRAME_ADD_TOASTS: Readonly<Record<FrameWidgetAdd, string>> = {
 };
 
 function sameSource(widget: DashboardWidget, source: DashboardSource): boolean {
-  const own = frameSourceOf(widget);
-  return own !== null && own.conversationId === source.conversationId && own.messageId === source.messageId;
+  if (widget.kind !== DASHBOARD_FRAME_KIND) return false;
+  return widget.source.conversationId === source.conversationId && widget.source.messageId === source.messageId;
 }
 
 export function frameWidgetAdd(widgets: readonly DashboardWidget[], source: DashboardSource): FrameWidgetAdd {
@@ -65,21 +42,17 @@ export function frameWidgetAdd(widgets: readonly DashboardWidget[], source: Dash
   return canAddWidget(widgets) ? 'added' : 'full';
 }
 
-export function addFrameWidget(
-  widgets: DashboardWidget[], id: string, source: DashboardSource, w: DashboardWidth = FALLBACK_WIDTH,
-): DashboardWidget[] {
+export function addFrameWidget(widgets: DashboardWidget[], id: string, source: DashboardSource, w: DashboardWidth): DashboardWidget[] {
   if (frameWidgetAdd(widgets, source) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
   return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_FRAME_KIND, source }];
 }
 
 export function liveWidgetAdd(widgets: readonly DashboardWidget[], url: string): FrameWidgetAdd {
-  if (widgets.some(widget => liveSourceOf(widget)?.url === url)) return 'exists';
+  if (widgets.some(widget => widget.kind === DASHBOARD_LIVE_KIND && widget.source.url === url)) return 'exists';
   return canAddWidget(widgets) ? 'added' : 'full';
 }
 
-export function addLiveWidget(
-  widgets: DashboardWidget[], id: string, source: LiveSource, w: DashboardWidth = FALLBACK_WIDTH,
-): DashboardWidget[] {
+export function addLiveWidget(widgets: DashboardWidget[], id: string, source: LiveSource, w: DashboardWidth): DashboardWidget[] {
   if (liveWidgetAdd(widgets, source.url) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
   const widget: DashboardWidget = { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key };
   return [...widgets, source.origin === undefined ? widget : { ...widget, origin: source.origin }];
@@ -156,7 +129,7 @@ function firstFit(taken: readonly boolean[][], span: number, rows: number, colum
 export function packWidgets(widgets: readonly DashboardWidget[], columns: number): GridLayout {
   const taken: boolean[][] = [];
   const cells = widgets.map((widget) => {
-    const cell = firstFit(taken, widgetSpan(widgetWidth(widget), columns), widgetHeight(widget), columns);
+    const cell = firstFit(taken, widgetSpan(widget.w, columns), widget.h, columns);
     occupy(taken, cell);
     return cell;
   });

@@ -94,17 +94,9 @@ export type DashboardHeight = (typeof DASHBOARD_HEIGHTS)[number];
 
 export const DASHBOARD_MAX_WIDGETS = 48;
 
-const DASHBOARD_KEPT_WIDGETS = 256;
-
-const dashboardWidgetSchema = z.object({
-  id: z.string().min(1).max(64),
-  w: z.string().min(1).max(32),
-  h: z.number().int().positive().max(64),
-}).passthrough();
-
-export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
-
-export const DASHBOARD_FRAME_KIND = 'frame';
+function isDashboardHeight(h: number): h is DashboardHeight {
+  return DASHBOARD_HEIGHTS.some(height => height === h);
+}
 
 const dashboardSourceSchema = z.object({
   conversationId: z.string().min(1).max(128),
@@ -113,27 +105,36 @@ const dashboardSourceSchema = z.object({
 
 export type DashboardSource = z.infer<typeof dashboardSourceSchema>;
 
-export function frameSourceOf(widget: DashboardWidget): DashboardSource | null {
-  if (widget.kind !== DASHBOARD_FRAME_KIND) return null;
-  const parsed = dashboardSourceSchema.safeParse(widget.source);
-  return parsed.success ? parsed.data : null;
-}
+export const DASHBOARD_FRAME_KIND = 'frame';
 
 export const DASHBOARD_LIVE_KIND = 'live';
 
+const widgetFields = {
+  id: z.string().min(1).max(64),
+  w: z.enum(DASHBOARD_WIDTHS),
+  h: z.number().refine(isDashboardHeight),
+};
+
+const frameWidgetSchema = z.object({ ...widgetFields, kind: z.literal(DASHBOARD_FRAME_KIND), source: dashboardSourceSchema });
+
 const liveWidgetSchema = z.object({
+  ...widgetFields,
+  kind: z.literal(DASHBOARD_LIVE_KIND),
   source: frameSourceSchema,
   key: z.string().regex(/^[0-9a-f]{64}$/),
-  origin: dashboardSourceSchema.optional().catch(undefined),
+  origin: dashboardSourceSchema.optional(),
 });
+
+const dashboardWidgetSchema = z.discriminatedUnion('kind', [frameWidgetSchema, liveWidgetSchema]);
+
+export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
+
+type LiveDashboardWidget = z.infer<typeof liveWidgetSchema>;
 
 export interface LiveSource { url: string; key: string; origin?: DashboardSource }
 
-export function liveSourceOf(widget: DashboardWidget): LiveSource | null {
-  if (widget.kind !== DASHBOARD_LIVE_KIND) return null;
-  const parsed = liveWidgetSchema.safeParse(widget);
-  if (!parsed.success) return null;
-  const { source, key, origin } = parsed.data;
+export function liveSourceOf(widget: LiveDashboardWidget): LiveSource {
+  const { source, key, origin } = widget;
   return origin === undefined ? { url: source.url, key } : { url: source.url, key, origin };
 }
 
@@ -142,7 +143,7 @@ function validWidgets(items: readonly unknown[]): DashboardWidget[] {
   const widgets: DashboardWidget[] = [];
   for (const item of items) {
     const parsed = dashboardWidgetSchema.safeParse(item);
-    if (!parsed.success || ids.has(parsed.data.id) || widgets.length === DASHBOARD_KEPT_WIDGETS) continue;
+    if (!parsed.success || ids.has(parsed.data.id) || widgets.length === DASHBOARD_MAX_WIDGETS) continue;
     ids.add(parsed.data.id);
     widgets.push(parsed.data);
   }
@@ -152,7 +153,7 @@ function validWidgets(items: readonly unknown[]): DashboardWidget[] {
 export const dashboardSchema = z.object({
   widgets: z.array(z.unknown()).transform(validWidgets),
   at: z.number().nonnegative(),
-}).passthrough();
+});
 
 export type DashboardContent = z.infer<typeof dashboardSchema>;
 

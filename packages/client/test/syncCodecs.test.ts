@@ -18,7 +18,8 @@ const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }>
     typeId: 'homeView', fallback: 'Stage home view', json: '{"view":"chats","groupBy":"category","columnBy":"label","at":1759500000006}',
   },
   dashboard: {
-    typeId: 'dashboardLayout', fallback: 'Stage dashboard', json: '{"widgets":[{"id":"w1","w":"half","h":2}],"at":1759500000007}',
+    typeId: 'dashboardLayout', fallback: 'Stage dashboard',
+    json: '{"widgets":[{"id":"w1","w":"half","h":2,"kind":"frame","source":{"conversationId":"c1","messageId":"m1"}}],"at":1759500000007}',
   },
 };
 

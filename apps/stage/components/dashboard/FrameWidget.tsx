@@ -23,7 +23,6 @@ const CHAT_RECHECK_MS = 15_000;
 const FALLBACK_TITLE = 'Frame';
 const NOT_SYNCED = 'This frame is not on this device yet';
 const NOT_SYNCED_DETAIL = 'It shows here once its chat syncs to this device.';
-const UNREADABLE = 'This frame is not available';
 const DELETED = 'This frame was deleted';
 
 interface WidgetChat { title: string; isGroup: boolean; open?: () => void }
@@ -68,7 +67,7 @@ function FrameBody({ source, isGroup }: { source: DashboardSource; isGroup: bool
   );
 }
 
-function SourcedFrameWidget({ source, onMenu, grip }: {
+export function FrameWidget({ source, onMenu, grip }: {
   source: DashboardSource; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
 }): React.ReactElement {
   const chat = useWidgetChat(source.conversationId);
@@ -76,18 +75,6 @@ function SourcedFrameWidget({ source, onMenu, grip }: {
     <Col flex={1} gap={6}>
       {grip(<WidgetHeader title={chat.title} onOpen={chat.open} onMenu={onMenu} />)}
       <FrameBody source={source} isGroup={chat.isGroup} />
-    </Col>
-  );
-}
-
-export function FrameWidget({ source, onMenu, grip }: {
-  source: DashboardSource | null; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
-}): React.ReactElement {
-  if (source !== null) return <SourcedFrameWidget source={source} onMenu={onMenu} grip={grip} />;
-  return (
-    <Col flex={1} gap={6}>
-      {grip(<WidgetHeader title={NO_CHAT.title} onMenu={onMenu} />)}
-      <Unavailable title={UNREADABLE} />
     </Col>
   );
 }

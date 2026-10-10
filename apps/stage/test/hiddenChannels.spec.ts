@@ -401,7 +401,7 @@ describe('departed channels across devices', () => {
   test('a dashboard saved while this device did not know dashboards is replayed past the old cursor', async () => {
     convs.push({ id: 'dash-group', consent: 'allowed', group: true, active: true });
     values.set('readSync.cursor.v3.phone.dash-group', '1000');
-    const layout = { widgets: [{ id: 'w1', w: 'half', h: 2 }], at: 90 };
+    const layout = { widgets: [{ id: 'w1', w: 'half', h: 2, kind: 'frame', source: { conversationId: 'c1', messageId: 'm1' } }], at: 90 };
     messages.push({ contentTypeId: 'stage.box/dashboardLayout:1.0', senderInboxId: 'owner', sentNs: 200, content: layout });
     const context = await accountClient();
     let replayed: unknown = null;

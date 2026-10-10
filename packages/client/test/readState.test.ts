@@ -276,14 +276,17 @@ describe('restored sync groups', () => {
 
   test('keeps the newest dashboard by its own clock and never reads it as a board', () => {
     const DASHBOARD = 'stage.box/dashboardLayout:1.0';
+    const frame = (id: string, w = 'half', h = 1): Record<string, unknown> => ({
+      id, w, h, kind: 'frame', source: { conversationId: 'conv', messageId: id },
+    });
     const replay = replayOf([
-      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'a', w: 'half', h: 1 }], at: 5 }, sentNs: 1 },
-      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'b', w: 'full', h: 2 }, { id: 'x', w: 'wide', h: 1 }], at: 9 }, sentNs: 2 },
-      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'c', w: 'quarter', h: 1 }], at: 7 }, sentNs: 3 },
+      { contentTypeId: DASHBOARD, content: { widgets: [frame('a')], at: 5 }, sentNs: 1 },
+      { contentTypeId: DASHBOARD, content: { widgets: [frame('b', 'full', 2), frame('x', 'wide')], at: 9 }, sentNs: 2 },
+      { contentTypeId: DASHBOARD, content: { widgets: [frame('c', 'quarter')], at: 7 }, sentNs: 3 },
       { contentTypeId: DASHBOARD, content: { widgets: [], at: NOW + DAY_MS + 1 }, sentNs: 4 },
-      { contentTypeId: DASHBOARD, content: { widgets: [{ id: 'd', w: 'half', h: 1 }] }, sentNs: 5 },
+      { contentTypeId: DASHBOARD, content: { widgets: [frame('d')] }, sentNs: 5 },
     ]);
-    expect(replay.latest.dashboard).toEqual({ widgets: [{ id: 'b', w: 'full', h: 2 }, { id: 'x', w: 'wide', h: 1 }], at: 9 });
+    expect(replay.latest.dashboard).toEqual({ widgets: [frame('b', 'full', 2)], at: 9 });
     expect(replay.latest.board).toBeNull();
     expect(isSyncType(DASHBOARD, 'board')).toBe(false);
     expect(isSyncType(DASHBOARD, 'dashboard')).toBe(true);
