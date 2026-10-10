@@ -59,7 +59,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       <Row gap={8} padding={CHIPS_PADDING}>
         {chips.map((chip) => (
           <ChipPress key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
-            <LabelChip label={chip.label} selected={chip.selected === true} size="2xs" />
+            <LabelChip label={chip.label} selected={chip.selected === true} size="md" />
           </ChipPress>
         ))}
       </Row>
