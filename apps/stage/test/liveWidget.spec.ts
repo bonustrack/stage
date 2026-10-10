@@ -108,9 +108,10 @@ describe('hosted nodes', () => {
     expect(publishProblemText('refused', 'Uncaught SyntaxError: Unexpected token')).toBe('Code error: Uncaught SyntaxError: Unexpected token');
   });
 
-  test('adding a hosted node from a chat says its code does not see the IP address', () => {
+  test('adding a hosted node from a chat says its code does not see the account and its images see the IP address', () => {
     expect(liveConfirmOf('nodes.stage.box').message).toBe(
-      'It runs code a Stage user put on nodes.stage.box, every minute while your Dashboard is open. That code does not see your IP address or your account.',
+      'It runs code a Stage user put on nodes.stage.box, every minute while your Dashboard is open. That code does not see your account. '
+      + 'Images it shows load from their own sites, which see your IP address.',
     );
   });
 

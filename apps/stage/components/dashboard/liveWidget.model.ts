@@ -71,9 +71,11 @@ export const NODE_DELETE_FAILED = {
   destructive: true,
 };
 
+const HOSTED_NODE_NOTE = 'That code does not see your account. Images it shows load from their own sites, which see your IP address.';
+
 export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
   const message = host === NODES_HOST
-    ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. That code does not see your IP address or your account.`
+    ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. ${HOSTED_NODE_NOTE}`
     : `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`;
   return { title: 'Add a live widget?', message, confirmLabel: 'Add' };
 }

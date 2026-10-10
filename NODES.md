@@ -91,7 +91,7 @@ Each node runs as its own Worker in a Cloudflare Workers for Platforms dispatch 
 - `fetch` reaches public `https` host names on the default port only: no IP addresses, local names or `*.stage.box`, and a redirect comes back to the code instead of being followed. Cloudflare `cf` options on a `fetch` are dropped. Raw TCP sockets are off.
 - A node can not call itself: `ctx.exports` is off and the code can not `import` (so no `cloudflare:workers` or `cloudflare:sockets`), since a call to itself would skip these limits.
 - Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all.
-- Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other. Cookies and the caller's IP address and location headers are removed first, so a hosted node never sees the user's IP.
+- Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other. Cookies and the caller's IP address and location headers are removed first, so a hosted node never sees the user's IP. Images in its reply still load from the device, so the sites that serve them do see it.
 - `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP (an IPv6 address counts by its /64), 600 calls a minute per node, and no calls from other Workers.
 - The reply keeps the node's status and body, at most 128 KB, and always goes out as `application/json` with no cookies or other headers. A redirect answers `502`, as does a crash or a hit limit; an unknown node answers `404`.
 
@@ -127,6 +127,6 @@ Add to dashboard, in the frame's menu (the three dots) or in the message menu, f
 
 ## Limits
 
-- The node sees the device's IP address and what Stage sends it, as with an image in a frame (in a chat, Stage calls it only after a tap). A hosted node does not see the IP address.
+- The node sees the device's IP address and what Stage sends it, as with an image in a frame (in a chat, Stage calls it only after a tap). A hosted node does not see the IP address, but the sites of the images in its reply do.
 - Stage checks the host name, not the address DNS returns, so a public name that points to a private address is not caught.
 - A captured request can be replayed for up to 5 minutes. A node that needs more can reject a signature it has already seen.
