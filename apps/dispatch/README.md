@@ -40,18 +40,21 @@ Workers Logs are off for both.
 
 ## Setup
 
-Once, in the Cloudflare dashboard:
+Once, in the Cloudflare dashboard: Workers for Platforms enabled, with the
+dispatch namespace `stage-nodes` (keep it untrusted, the default).
 
-1. Workers for Platforms enabled, with the dispatch namespace `stage-nodes`
-   (keep it untrusted, the default).
-2. Workers & Pages, Create, Import a repository, `bonustrack/stage`, twice,
-   both with root directory `apps/dispatch`, build command
-   `bun install --frozen-lockfile && bun run typecheck && bun run test`, build
-   variable `BUN_VERSION=1.4.0` and build watch paths `apps/dispatch/*`,
-   `packages/client/*`, `bun.lock`, `package.json`:
-   - first `nodes-outbound`, deploy command `bunx wrangler deploy -c outbound.toml`;
-   - then `dispatch`, deploy command `bunx wrangler deploy`. The deploy adds
-     the custom domain `nodes.stage.box`.
+GitHub Actions deploys both Workers (`.github/workflows/deploy-nodes.yml`) on
+every push to `main` that touches `apps/dispatch/`, `packages/client/`,
+`bun.lock` or the root `package.json`, and on demand: typecheck and tests,
+then `nodes-outbound` (`bunx wrangler deploy -c outbound.toml`), then
+`dispatch` (`bunx wrangler deploy`), which attaches the custom domain
+`nodes.stage.box`. It needs two repository secrets, else it skips the deploy
+with a notice:
+
+- `CLOUDFLARE_API_TOKEN`: an API token from the "Edit Cloudflare Workers"
+  template, limited to the zone `stage.box`. The deploy uses its Workers
+  Scripts Edit (account) and Workers Routes Edit (`stage.box`) permissions.
+- `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID.
 
 ```sh
 bun --cwd apps/dispatch dev    # wrangler dev (the namespace needs remote mode)
