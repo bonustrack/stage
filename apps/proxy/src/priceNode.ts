@@ -1,26 +1,31 @@
 import { getCurrentPrices, getPriceChanges } from '@stage-labs/client/api/defillama';
 import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
-export const ETH_NODE_PATH = '/nodes/eth-price';
+interface PriceAsset { coin: string; name: string }
 
-const COIN = 'coingecko:ethereum';
+const PRICE_NODES: ReadonlyMap<string, PriceAsset> = new Map([
+  ['/nodes/eth-price', { coin: 'coingecko:ethereum', name: 'Ethereum' }],
+  ['/nodes/btc-price', { coin: 'coingecko:bitcoin', name: 'Bitcoin' }],
+]);
+
 const CACHE_SECONDS = 20;
 const LOAD_MAX_AGE_MS = CACHE_SECONDS * 1000;
 const TAP_MAX_AGE_MS = 5000;
-const CACHE_KEY = 'https://proxy.stage.box/nodes/eth-price?cached=widget';
 const NODE_CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature');
 const NO_STORE = { ...NODE_CORS, 'cache-control': 'no-store' };
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-interface EthQuote { usd: number; change: number | null; at: number }
+interface Quote { usd: number; change: number | null; at: number }
 
 type Widget = Record<string, unknown>;
 
-async function ethQuote(): Promise<EthQuote | null> {
+export const isPriceNodePath = (pathname: string): boolean => PRICE_NODES.has(pathname);
+
+async function fetchQuote(coin: string): Promise<Quote | null> {
   try {
-    const [prices, changes] = await Promise.all([getCurrentPrices([COIN]), getPriceChanges([COIN]).catch((): Record<string, number> => ({}))]);
-    const price = prices[COIN];
-    return price === undefined ? null : { usd: price.usd, change: changes[COIN] ?? null, at: Date.now() };
+    const [prices, changes] = await Promise.all([getCurrentPrices([coin]), getPriceChanges([coin]).catch((): Record<string, number> => ({}))]);
+    const price = prices[coin];
+    return price === undefined ? null : { usd: price.usd, change: changes[coin] ?? null, at: Date.now() };
   } catch {
     return null;
   }
@@ -32,13 +37,13 @@ function changeBadge(change: number | null): Widget[] {
   return [{ type: 'Badge', label, color: change >= 0 ? 'success' : 'danger' }];
 }
 
-export function ethWidget(quote: EthQuote | null): Widget {
+export function priceWidget(name: string, quote: Quote | null): Widget {
   const time = quote === null ? '' : new Date(quote.at).toISOString().slice(11, 19);
   return {
     type: 'Card',
     size: 'sm',
     children: [
-      { type: 'Row', children: [{ type: 'Caption', value: 'Ethereum', size: 'sm' }, { type: 'Spacer' }, ...changeBadge(quote?.change ?? null)] },
+      { type: 'Row', children: [{ type: 'Caption', value: name, size: 'sm' }, { type: 'Spacer' }, ...changeBadge(quote?.change ?? null)] },
       { type: 'Title', value: quote === null ? 'Unavailable' : USD.format(quote.usd), size: '3xl' },
       { type: 'Caption', value: quote === null ? 'The price source did not answer' : `Updated ${time} UTC` },
       {
@@ -49,23 +54,23 @@ export function ethWidget(quote: EthQuote | null): Widget {
   };
 }
 
-function cachedQuote(raw: unknown): EthQuote | null {
+function cachedQuote(raw: unknown): Quote | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   if (typeof o.usd !== 'number' || typeof o.at !== 'number') return null;
   return { usd: o.usd, at: o.at, change: typeof o.change === 'number' ? o.change : null };
 }
 
-async function currentWidget(cache: Cache | undefined, maxAgeMs: number): Promise<Widget> {
-  const key = new Request(CACHE_KEY);
+async function currentWidget(path: string, asset: PriceAsset, cache: Cache | undefined, maxAgeMs: number): Promise<Widget> {
+  const key = new Request(`https://proxy.stage.box${path}?cached=widget`);
   const hit = await cache?.match(key);
   const cached = hit ? cachedQuote(await hit.json()) : null;
-  if (cached !== null && Date.now() - cached.at < maxAgeMs) return ethWidget(cached);
-  const quote = await ethQuote();
+  if (cached !== null && Date.now() - cached.at < maxAgeMs) return priceWidget(asset.name, cached);
+  const quote = await fetchQuote(asset.coin);
   if (quote !== null && cache !== undefined) {
     await cache.put(key, jsonResponse(quote, 200, { 'cache-control': `public, max-age=${CACHE_SECONDS}` }));
   }
-  return ethWidget(quote ?? cached);
+  return priceWidget(asset.name, quote ?? cached);
 }
 
 function actionType(body: string): string | null {
@@ -77,10 +82,13 @@ function actionType(body: string): string | null {
   }
 }
 
-export async function handleEthNode(request: Request, cache: Cache | undefined): Promise<Response> {
+export async function handlePriceNode(request: Request, cache: Cache | undefined): Promise<Response> {
+  const path = new URL(request.url).pathname;
+  const asset = PRICE_NODES.get(path);
+  if (asset === undefined) return jsonResponse({ error: 'not found' }, 404, NO_STORE);
   if (request.method === 'OPTIONS') return corsResponse(NODE_CORS, null, 204);
   if (request.method !== 'GET' && request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405, NO_STORE);
-  if (request.method === 'GET') return jsonResponse(await currentWidget(cache, LOAD_MAX_AGE_MS), 200, NO_STORE);
+  if (request.method === 'GET') return jsonResponse(await currentWidget(path, asset, cache, LOAD_MAX_AGE_MS), 200, NO_STORE);
   if (actionType(await request.text()) !== 'refresh') return jsonResponse({}, 200, NO_STORE);
-  return jsonResponse({ updated_item: { type: 'widget', widget: await currentWidget(cache, TAP_MAX_AGE_MS) } }, 200, NO_STORE);
+  return jsonResponse({ updated_item: { type: 'widget', widget: await currentWidget(path, asset, cache, TAP_MAX_AGE_MS) } }, 200, NO_STORE);
 }

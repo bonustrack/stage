@@ -80,7 +80,7 @@ A frame message can name its node with `source`: `{"widget": {...}, "source": {"
 ## Examples
 
 - [`examples/btc-node`](examples/btc-node): a Cloudflare Worker with the BTC price and a Refresh button, and a Deploy to Cloudflare button.
-- `https://proxy.stage.box/nodes/eth-price`: the ETH price node Stage hosts itself on its proxy Worker ([`apps/proxy/src/ethNode.ts`](apps/proxy/src/ethNode.ts)). It does not check signatures because the price is public.
+- `https://proxy.stage.box/nodes/eth-price` and `https://proxy.stage.box/nodes/btc-price`: the ETH and BTC price nodes Stage hosts itself on its proxy Worker ([`apps/proxy/src/priceNode.ts`](apps/proxy/src/priceNode.ts)). They do not check signatures because the prices are public.
 
 ## Limits
 

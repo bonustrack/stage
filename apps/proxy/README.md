@@ -11,12 +11,12 @@ runtime - no Express, no origin, no laptop dependency.
   `/x402-settle` settles one.
 - **Image resize:** `/img` fetches and resizes remote images so avatars and
   previews load cross-origin under the app's COEP policy.
-- **ETH price node:** `/nodes/eth-price` is a live Dashboard widget node (see
-  `NODES.md` at the repo root). It answers OpenAI ChatKit widget JSON with the
-  ETH price and its 24h change from DefiLlama, cached 20 s at the edge, and
-  answers a Refresh tap with a ChatKit sync action response and a price at
-  most 5 s old. It reads no bindings, needs no signature (the price is
-  public) and logs nothing.
+- **Price nodes:** `/nodes/eth-price` and `/nodes/btc-price` are live
+  Dashboard widget nodes (see `NODES.md` at the repo root). Each answers
+  OpenAI ChatKit widget JSON with the ETH or BTC price and its 24h change
+  from DefiLlama, cached 20 s at the edge, and answers a Refresh tap with a
+  ChatKit sync action response and a price at most 5 s old. They read no
+  bindings, need no signature (the prices are public) and log nothing.
 - **Stage names:** `/names/*` issues free `<label>.stage.base.eth` subnames on
   Base. The Worker holds the operator key (`NAMES_OPERATOR_KEY`) and a KV of
   issued labels (`NAMES_KV`); claims are signed by the wallet in the app and
@@ -86,9 +86,9 @@ GET  /preview?url=<encoded>      -> 200 { url, title, description, image, siteNa
 GET  /img?url=<encoded>&w=<px>   -> resized image
 POST /x402-settle                -> settlement result
 OPTIONS /preview, /img, /x402-settle -> 204 CORS preflight (allows the x-stage-client header)
-GET  /nodes/eth-price            -> ChatKit Card: ETH price, 24h change, Refresh button
-POST /nodes/eth-price            -> threads.sync_custom_action with action type 'refresh' -> { updated_item: { type: 'widget', widget } }, other actions {}
-OPTIONS /nodes/eth-price         -> 204 CORS preflight (allows content-type and the Stage-Key, Stage-Timestamp, Stage-Signature headers)
+GET  /nodes/<eth|btc>-price      -> ChatKit Card: ETH or BTC price, 24h change, Refresh button
+POST /nodes/<eth|btc>-price      -> threads.sync_custom_action with action type 'refresh' -> { updated_item: { type: 'widget', widget } }, other actions {}
+OPTIONS /nodes/<eth|btc>-price   -> 204 CORS preflight (allows content-type and the Stage-Key, Stage-Timestamp, Stage-Signature headers)
 GET  /names/check?label=<label>  -> { valid, available, reason? }
 GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
