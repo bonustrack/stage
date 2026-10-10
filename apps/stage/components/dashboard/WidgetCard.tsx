@@ -1,12 +1,11 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { deleteNode } from '@stage-labs/client/nodes/publish';
-import { frameSourceOf, liveSourceOf, type DashboardWidget, type LiveSource } from '@stage-labs/client/xmtp/readState';
-import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
-import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { frameSourceOf, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
+import { LiveMenuRows } from '../frame/LiveMenuRows';
 import { Col, Row } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { changeDashboard } from '../../lib/dashboard';
@@ -22,15 +21,6 @@ async function removeWithNode(widgetId: string, key: string): Promise<void> {
   if (await deleteNode(linkProxyBase(), key) || await capabilities.confirm(NODE_DELETE_FAILED)) {
     changeDashboard(widgets => removeWidget(widgets, widgetId));
   }
-}
-
-function LiveRows({ source, widgetId, onClose }: { source: LiveSource; widgetId: string; onClose: () => void }): React.ReactElement {
-  return (
-    <>
-      <MenuRow icon={IconArrowRotateClockwise} label="Refresh" onPress={() => { onClose(); refreshLiveWidget(widgetId); }} />
-      <MenuRow icon={IconSquareBehindSquare1} label="Copy link" onPress={() => { onClose(); capabilities.copy('Link', source.url); }} />
-    </>
-  );
 }
 
 export function WidgetMenu({ widget, anchor, onClose }: {
@@ -52,6 +42,7 @@ export function WidgetMenu({ widget, anchor, onClose }: {
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
+      {live === null ? null : <LiveMenuRows url={live.url} onRefresh={() => { refreshLiveWidget(widget.id); }} onClose={onClose} />}
       <MenuHeading text="Width" />
       {WIDTH_OPTIONS.map(option => (
         <MenuRow key={option.value} label={option.label} selected={widget.w === option.value}
@@ -62,7 +53,6 @@ export function WidgetMenu({ widget, anchor, onClose }: {
         <MenuRow key={option.value} label={option.label} selected={widget.h === option.value}
           onPress={() => { pick(widgets => resizeWidget(widgets, widget.id, { h: option.value })); }} />
       ))}
-      {live === null ? null : <LiveRows source={live} widgetId={widget.id} onClose={onClose} />}
       <MenuRow icon={IconTrashCan} label={nodeKey === null ? 'Remove widget' : 'Remove widget and node'} danger onPress={remove} />
     </AnchoredMenu>
   );

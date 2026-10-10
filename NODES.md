@@ -1,6 +1,6 @@
 # Stage nodes
 
-A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Settings, Dashboard, Add from URL). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
+A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Settings, Dashboard, Add from URL), and a frame sent in a chat can name its node too (see Frames in chats). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
 
 ## Load
 
@@ -11,6 +11,8 @@ A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github
 - a Stage frame: `{"title": "...", "widget": {...}}` or `{"screens": {...}, "start": "..."}`.
 
 Stage loads it when the widget shows, then every minute while the Dashboard is open and the app is in front. After a failure it waits longer, up to 5 minutes. Offline or on an error, the widget keeps the last good version and its header says why and since when.
+
+Every widget menu (the three dots) has Refresh, which loads the node again at once, and Copy link. A node does not need a Refresh button of its own.
 
 ## Actions
 
@@ -23,7 +25,7 @@ Content-Type: application/json
 {"type": "threads.sync_custom_action", "params": {"thread_id": "<key id>", "item_id": "<key id>", "action": {"type": "refresh", "payload": {}}}}
 ```
 
-`action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `handler` and `loadingBehavior` are ignored: the tapped button shows its own loading state until the reply.
+`action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `loadingBehavior` is ignored: the tapped button shows its own loading state until the reply. An action with ChatKit's `"handler": "client"` never goes to the node: Stage handles it and sends it to the chat (see Frames in chats).
 
 Answer like a ChatKit `sync_action()` handler, with a `SyncCustomActionResponse`:
 
@@ -80,19 +82,9 @@ Stage can put a node online for you. In the app: Settings, Dashboard, Add from U
 The code is one ES module of at most 64 KB whose default export has a `fetch` handler, as in a Cloudflare Worker:
 
 ```js
-const card = (time) => ({
-  type: 'Card',
-  children: [
-    { type: 'Text', value: time },
-    { type: 'Button', label: 'Refresh', onClickAction: { type: 'refresh' } },
-  ],
-});
-
 export default {
-  async fetch(request) {
-    const time = new Date().toISOString();
-    if (request.method === 'POST') return Response.json({ updated_item: { type: 'widget', widget: card(time) } });
-    return Response.json(card(time));
+  async fetch() {
+    return Response.json({ type: 'Card', children: [{ type: 'Text', value: new Date().toISOString() }] });
   },
 };
 ```
@@ -122,12 +114,22 @@ The signature covers the raw bytes of the code as sent. It answers `{"id": "<id>
 
 Errors: `400` the code was refused (the reason is in `error`), `401` a bad or stale signature, `411` no length, `413` more than 64 KB, `429` rate limited (10 a minute per IP or IPv6 /64, 60 a minute in all), `503` node hosting is not set up yet, `507` Stage hosts no more nodes for now (1000 in all).
 
-## Frames from chats
+## Frames in chats
 
-A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Add to dashboard on that frame first asks, naming the node's host, then adds a live widget for that URL with a new key. The bubble in the chat stays as it was sent, and apps that do not know `source` ignore it.
+A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Apps that do not know `source` ignore it and show the frame as sent.
+
+In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Nothing loads by itself, so a node never learns that someone just opened the chat, and nothing works before the chat is accepted. Calls are signed and checked as on the Dashboard. The reply replaces the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
+
+A tap sends the action to the node. An action with ChatKit's `"handler": "client"` goes to the chat instead, as a frame action message, like every action of a frame without `source`. So one frame can have a button its node answers and a button for the agent that sent it:
+
+```json
+{"type": "Button", "label": "Ask the agent", "onClickAction": {"type": "ask", "handler": "client"}}
+```
+
+Add to dashboard on that frame first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them.
 
 ## Limits
 
-- The node sees the device's IP address and what Stage sends it, as with an image in a frame. A hosted node does not see the IP address.
+- The node sees the device's IP address and what Stage sends it, as with an image in a frame (in a chat, only after a tap). A hosted node does not see the IP address.
 - Stage checks the host name, not the address DNS returns, so a public name that points to a private address is not caught.
 - A captured request can be replayed for up to 5 minutes. A node that needs more can reject a signature it has already seen.

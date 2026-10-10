@@ -121,14 +121,20 @@ export function frameSourceOf(widget: DashboardWidget): DashboardSource | null {
 
 export const DASHBOARD_LIVE_KIND = 'live';
 
-const liveWidgetSchema = z.object({ source: frameSourceSchema, key: z.string().regex(/^[0-9a-f]{64}$/) });
+const liveWidgetSchema = z.object({
+  source: frameSourceSchema,
+  key: z.string().regex(/^[0-9a-f]{64}$/),
+  origin: dashboardSourceSchema.optional().catch(undefined),
+});
 
-export interface LiveSource { url: string; key: string }
+export interface LiveSource { url: string; key: string; origin?: DashboardSource }
 
 export function liveSourceOf(widget: DashboardWidget): LiveSource | null {
   if (widget.kind !== DASHBOARD_LIVE_KIND) return null;
   const parsed = liveWidgetSchema.safeParse(widget);
-  return parsed.success ? { url: parsed.data.source.url, key: parsed.data.key } : null;
+  if (!parsed.success) return null;
+  const { source, key, origin } = parsed.data;
+  return origin === undefined ? { url: source.url, key } : { url: source.url, key, origin };
 }
 
 function validWidgets(items: readonly unknown[]): DashboardWidget[] {

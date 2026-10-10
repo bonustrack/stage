@@ -4,8 +4,8 @@ import { DELETE_MESSAGE_TYPE_ID } from '@stage-labs/client/xmtp/deleteMessage';
 import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { kitPalette } from '@stage-labs/kit/tokens';
 import {
-  frameActionContent, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf, frameMoreBelow,
-  frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
+  frameActionContent, frameActionTarget, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf,
+  frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, withFrameNav, type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 
@@ -71,6 +71,29 @@ describe('frame navigation and actions', () => {
 
   test('an action too large to decode is not sent', () => {
     expect(frameActionContent('msg-frame-1', { type: 'save', payload: { note: 'x'.repeat(20_000) } }, 'Save')).toBeNull();
+  });
+
+  test('the chat message keeps only the action type and payload, not its handler', () => {
+    expect(frameActionContent('msg-frame-1', { type: 'ask', payload: { q: 1 }, handler: 'client' }, undefined))
+      .toEqual({ frameId: 'msg-frame-1', action: { type: 'ask', payload: { q: 1 } } });
+  });
+});
+
+describe('frames with a node source', () => {
+  test('a frame names its node only with an allowed https link', () => {
+    expect(frameNodeOf({ widget, source: { url: 'https://nodes.stage.box/abc' } })).toEqual({ url: 'https://nodes.stage.box/abc', host: 'nodes.stage.box' });
+    expect(frameNodeOf({ widget })).toBeNull();
+    expect(frameNodeOf({ widget, source: { url: 'http://btc.example.com/' } })).toBeNull();
+    expect(frameNodeOf({ widget, source: { url: 'https://localhost/' } })).toBeNull();
+    expect(frameNodeOf({ widget, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
+  });
+
+  test('actions go to the node, a client handled action to the chat, and every action to the chat without a node', () => {
+    expect(frameActionTarget({ type: 'refresh' }, true)).toBe('node');
+    expect(frameActionTarget({ type: 'refresh', handler: 'server' }, true)).toBe('node');
+    expect(frameActionTarget({ type: 'ask', handler: 'client' }, true)).toBe('chat');
+    expect(frameActionTarget({ type: 'refresh' }, false)).toBe('chat');
+    expect(frameActionTarget({ type: 'ask', handler: 'client' }, false)).toBe('chat');
   });
 });
 

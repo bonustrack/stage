@@ -11,6 +11,9 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
+import { AnchoredMenu } from '../AnchoredMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
+import { WidgetHeader } from '../dashboard/widgetParts';
 import { Box, Row } from '../layout';
 import { GradientFade } from '../GradientFade';
 import { HoverIconButton } from '../hover';
@@ -23,7 +26,8 @@ import {
   frameLinkOf, frameMoreBelow, framePreviewCap, frameScreenTitle,
 } from './frame.model';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
-import { useFrameAction } from './useFrameAction';
+import { LiveMenuRows } from './LiveMenuRows';
+import { useChatFrame } from './useFrameAction';
 
 const FADE_OVERLAY: ViewStyle = { position: 'absolute', left: 0, right: 0, bottom: 0 };
 const BUTTON_INSET = 6;
@@ -126,17 +130,28 @@ export function FrameSurface({ frame, stackId, onAction, disabled, fill = false,
   );
 }
 
-export function FrameTile({ frame, line, messageId, disabled, fill = false, onSent }: {
-  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; onSent?: () => void;
+export function FrameTile({ frame, line, messageId, disabled, fill = false, menu = false, onSent }: {
+  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; menu?: boolean; onSent?: () => void;
 }): React.ReactElement {
   const router = useRouter();
-  const onAction = useFrameAction(line, messageId, onSent);
+  const chat = useChatFrame(frame, line, messageId, onSent);
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const convId = convIdOfLine(line);
+  const node = menu && disabled !== true ? chat.node : null;
+  const close = (): void => { setAnchor(null); };
   return (
-    <FrameSurface
-      frame={frame} stackId={messageId} onAction={onAction} disabled={disabled} fill={fill}
-      onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
-    />
+    <>
+      {node === null ? null : <WidgetHeader title={node.host} onMenu={setAnchor} />}
+      <FrameSurface
+        frame={chat.frame ?? frame} stackId={messageId} onAction={chat.onAction} disabled={disabled} fill={fill}
+        onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
+      />
+      {node === null || anchor === null ? null : (
+        <AnchoredMenu visible onClose={close} anchor={anchor}>
+          <LiveMenuRows url={node.url} onRefresh={chat.refresh} onClose={close} />
+        </AnchoredMenu>
+      )}
+    </>
   );
 }
 
@@ -145,7 +160,7 @@ export function FramePreview({ frame, line, messageId, disabled }: {
 }): React.ReactElement {
   return (
     <Box margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      <FrameTile frame={frame} line={line} messageId={messageId} disabled={disabled} />
+      <FrameTile frame={frame} line={line} messageId={messageId} disabled={disabled} menu />
     </Box>
   );
 }

@@ -81,7 +81,8 @@ export function addLiveWidget(
   widgets: DashboardWidget[], id: string, source: LiveSource, w: DashboardWidth = FALLBACK_WIDTH,
 ): DashboardWidget[] {
   if (liveWidgetAdd(widgets, source.url) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
-  return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key }];
+  const widget: DashboardWidget = { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key };
+  return [...widgets, source.origin === undefined ? widget : { ...widget, origin: source.origin }];
 }
 
 export function removedLiveIds(before: readonly DashboardWidget[], after: readonly DashboardWidget[]): string[] {

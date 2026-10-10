@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Frame, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
+import { Frame, type FrameActionHandler, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { frameInputOf, frameOf, frameScreenTitle } from './frame.model';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
-import { useFrameAction } from './useFrameAction';
+import { useChatFrame } from './useFrameAction';
 import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
 import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
@@ -71,9 +71,8 @@ function useFrameScreens(frame: FrameContent | null, messageId: string, leave: (
 
 const FILL_STYLE = { flexGrow: 1 } as const;
 
-function FrameBody({ frame, convId, line, messageId, onSent, insetBottom, navigation }: {
-  frame: FrameContent; convId: string; line: string; messageId: string; onSent: () => void; insetBottom: number;
-  navigation: FrameNavigation;
+function FrameBody({ frame, convId, onAction, insetBottom, navigation }: {
+  frame: FrameContent; convId: string; onAction: FrameActionHandler; insetBottom: number; navigation: FrameNavigation;
 }): React.ReactElement {
   const consent = useConvConsentState(convId);
   const dark = useEffectiveColorScheme() === 'dark';
@@ -81,7 +80,6 @@ function FrameBody({ frame, convId, line, messageId, onSent, insetBottom, naviga
   const notice = consent === 'unknown' || consent === 'denied';
   const viewport = useFillViewport();
   const widget = useMemo(() => frameInputOf(frame), [frame]);
-  const onAction = useFrameAction(line, messageId, onSent);
   return (
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <Frame widget={widget} dark={dark} disabled={gated} onAction={onAction} navigation={navigation}
@@ -104,21 +102,21 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   const fromFeed = useMemo(() => frameOf(feed.events.find((e) => e.id === messageId)), [feed.events, messageId]);
   const lookup = fromFeed === null && feed.status !== 'loading';
   const stored = useFrameMessage(convId, messageId, lookup);
-  const frame = fromFeed ?? (stored?.state === 'ready' ? stored.frame : null);
+  const sent = fromFeed ?? (stored?.state === 'ready' ? stored.frame : null);
   const chat = `/channel/${convId}`;
   const canGoBack = router.canGoBack();
   const leave = useCallback(() => {
     if (canGoBack) router.back();
     else router.replace(chat);
   }, [router, canGoBack, chat]);
+  const { frame, onAction } = useChatFrame(sent, line, messageId, leave);
   const screens = useFrameScreens(frame, messageId, leave);
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} />
       <ScreenScroll ref={screens.scrollRef} contentContainerStyle={FILL_STYLE} keyboardShouldPersistTaps="handled">
         {frame !== null ? (
-          <FrameBody frame={frame} convId={convId} line={line} messageId={messageId} onSent={leave}
-            insetBottom={insets.bottom} navigation={screens.navigation} />
+          <FrameBody frame={frame} convId={convId} onAction={onAction} insetBottom={insets.bottom} navigation={screens.navigation} />
         ) : (
           <Box padding={PAGE_GUTTER}>
             {feed.status === 'loading' || (lookup && stored === undefined) ? <Box padding={24} align="center"><Spinner /></Box> : (

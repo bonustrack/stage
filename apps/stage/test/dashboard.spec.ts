@@ -137,6 +137,15 @@ describe('live widgets', () => {
     expect(addLiveWidget([], 'l', live, 'full')).toEqual([{ ...liveWidget('l'), w: 'full' }]);
   });
 
+  test('a live widget added from a chat remembers that frame, and a broken origin is ignored', () => {
+    const fromChat = { ...live, origin: source };
+    const list = addLiveWidget([], 'l', fromChat);
+    expect(list).toEqual([{ ...liveWidget('l'), origin: source }]);
+    expect(liveSourceOf(list[0] ?? widget('x'))).toEqual(fromChat);
+    expect(liveSourceOf({ ...liveWidget('m'), origin: { conversationId: '' } })).toEqual(live);
+    expect(widgetKindOf({ ...liveWidget('n'), origin: 'conv1' })).toBe('live');
+  });
+
   test('the same node url is added once, and never past the widget cap', () => {
     const list = addLiveWidget([widget('a')], 'l', live);
     expect(liveWidgetAdd(list, live.url)).toBe('exists');

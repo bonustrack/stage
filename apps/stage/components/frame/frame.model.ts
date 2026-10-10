@@ -1,3 +1,4 @@
+import { nodeUrlOf } from '@stage-labs/client/nodes/protocol';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
@@ -65,6 +66,18 @@ export function frameIsFullWidth(frame: FrameContent): boolean {
 
 export function frameLinkOf(convId: string, messageId: string): FrameLink {
   return { pathname: FRAME_ROUTE, params: { convId, id: messageId } };
+}
+
+export interface FrameNodeLink { url: string; host: string }
+
+export function frameNodeOf(frame: FrameContent): FrameNodeLink | null {
+  if (frame.source === undefined) return null;
+  const node = nodeUrlOf(frame.source.url);
+  return node.ok ? { url: node.url, host: node.host } : null;
+}
+
+export function frameActionTarget(action: FrameAction, hasNode: boolean): 'chat' | 'node' {
+  return hasNode && action.handler !== 'client' ? 'node' : 'chat';
 }
 
 export function frameActionContent(frameId: string, action: FrameAction, label: string | undefined): FrameActionContent | null {
