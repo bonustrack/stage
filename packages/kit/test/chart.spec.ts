@@ -16,6 +16,14 @@ describe('chartTicks', () => {
     expect(chartTicks(-18, 42)).toEqual([-20, 0, 20, 40, 60]);
     expect(chartTicks(0, 0)).toEqual([0, 1, 2, 3, 4]);
   });
+
+  test('stays finite and short on extreme ranges', () => {
+    for (const [min, max] of [[0, 1.7e308], [-1.7e308, 1.7e308], [0, 5e-324], [0, Number.MAX_VALUE]]) {
+      const ticks = chartTicks(min ?? 0, max ?? 0);
+      expect(ticks.length).toBeLessThanOrEqual(10);
+      expect(ticks.every(Number.isFinite)).toBe(true);
+    }
+  });
 });
 
 describe('chartSeriesColors', () => {
@@ -122,6 +130,31 @@ describe('chartGeometry', () => {
     const hidden = chartGeometry({ data, xAxis: { dataKey: 'd', hide: true }, width: 320, height: 240, series: [{ type: 'line', dataKey: 'v' }] });
     expect(hidden.labels).toEqual([]);
     expect(hidden.plot.bottom).toBe(240 - 7 - 5);
+  });
+
+  test('never puts NaN or Infinity in a path, whatever the numbers', () => {
+    const cases: { data: ChartDatum[]; series: ChartSeries[] }[] = [
+      { data: [{ x: 'a', v: 1.7e308 }], series: [{ type: 'bar', dataKey: 'v' }] },
+      { data: [{ x: 'a', v: 1e300, w: 1e300 }], series: [{ type: 'bar', dataKey: 'v', stack: 's' }, { type: 'area', dataKey: 'w', stack: 's' }] },
+      { data: [{ x: 'a', v: -1e300 }, { x: 'b', v: 1e300 }], series: [{ type: 'bar', dataKey: 'v' }, { type: 'line', dataKey: 'v' }] },
+      { data: [{ x: 'a', v: 5e-324 }, { x: 'b', v: 0 }], series: [{ type: 'line', dataKey: 'v' }] },
+    ];
+    for (const { data, series } of cases) {
+      const g = chartGeometry({ data, series, xAxis: 'x', width: 320, height: 240, showYAxis: true });
+      const paths = [...g.bars.map((b) => b.path), ...g.shapes.flatMap((sh) => [sh.line, sh.area ?? ''])].join(' ');
+      expect(paths).not.toMatch(/NaN|Infinity/);
+      const numbers = [
+        ...g.ticks.flatMap((t) => [t.value, t.y]), ...Object.values(g.plot),
+        ...g.shapes.flatMap((sh) => sh.points.flatMap((p) => p ?? [])),
+      ];
+      expect(numbers.every(Number.isFinite)).toBe(true);
+    }
+  });
+
+  test('draws a dot for a point with no neighbours', () => {
+    const data: ChartDatum[] = [{ d: 'a', v: 1 }, { d: 'b', v: 'n/a' }, { d: 'c', v: 3 }, { d: 'd', v: 4 }, { d: 'e', v: '' }, { d: 'f', v: 6 }];
+    const g = chartGeometry({ data, xAxis: 'd', width: 320, height: 240, series: [{ type: 'line', dataKey: 'v' }] });
+    expect(g.shapes[0]?.dots.map((p) => p[0])).toEqual([g.categories[0]?.x, g.categories[5]?.x]);
   });
 
   test('makes room for the y axis and the legend', () => {

@@ -15,14 +15,15 @@ function count(html: string, needle: string): number {
 }
 
 describe('Chart', () => {
-  test('draws a bar per value, the axis labels and the legend, with no tab stops', () => {
+  test('draws a bar per value, the axis labels and the legend, with no tab stops or buttons', () => {
     const html = renderToStaticMarkup(
       <Chart width={320} height={240} xAxis="day" data={DATA}
         series={[{ type: 'bar', dataKey: 'web', label: 'Web' }, { type: 'bar', dataKey: 'mobile', label: 'Mobile' }]} />,
     );
     expect(count(html, '<path d="M')).toBe(6);
     for (const text of ['>Mon<', '>Tue<', '>Wed<', '>Web<', '>Mobile<']) expect(html).toContain(text);
-    expect(html).not.toContain('tabindex="0"');
+    expect(html).not.toContain('tabindex');
+    expect(html).not.toContain('role="button"');
   });
 
   test('follows dark, hides the legend and draws lines', () => {

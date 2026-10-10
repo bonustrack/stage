@@ -18,7 +18,7 @@ interface Pen {
 type Curve = (points: readonly ChartPoint[], pen: Pen) => void;
 
 function num(n: number): string {
-  return String(Math.round(n * 100) / 100);
+  return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : '0';
 }
 
 function xy(pen: Pen, x: number, y: number): string {

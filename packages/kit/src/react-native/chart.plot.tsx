@@ -114,6 +114,7 @@ function Curve({ geometry, colors, uid, index }: MarkProps & { index: number }):
     <G>
       {shape.area === undefined ? null : <Path d={shape.area} fill={`url(#${uid}area${index})`} stroke="none" />}
       <Path d={shape.line} fill="none" stroke={color} strokeWidth={LINE_WIDTH} strokeLinejoin="round" strokeLinecap="round" />
+      {shape.dots.map((dot, i) => <Circle key={i} cx={dot[0]} cy={dot[1]} r={LINE_WIDTH} fill={color} />)}
     </G>
   );
 }

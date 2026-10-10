@@ -1,5 +1,5 @@
-import { useId, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Platform, Pressable, View, type DimensionValue, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
+import { useId, useMemo, useState } from 'react';
+import { Platform, View, type DimensionValue, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import {
   CHART_DEFAULTS, CHART_MARGIN, chartAspectRatio, chartBarColor, chartGeometry, chartSeriesColors, chartTooltipRows,
   chartXLabel, type ChartCategory, type ChartDatum, type ChartSeries, type ChartXAxis,
@@ -7,6 +7,7 @@ import {
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
 import { Row } from './box';
+import { ChartBands } from './chart.bands';
 import { ChartPlot } from './chart.plot';
 import { Text } from './text';
 import { useKitPalette, useKitScheme } from './theme-context';
@@ -63,6 +64,7 @@ const TIP_PAD_Y = 6;
 const TIP_ROW_GAP = 6;
 const TIP_NAME_GAP = 12;
 const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
+const MAX_NATIVE_AREA = 1_500_000;
 
 function useChartTheme(dark: boolean | undefined): { scheme: Scheme; palette: KitPalette } {
   const contextScheme = useKitScheme();
@@ -145,18 +147,9 @@ function ChartTooltip({ props, colors, palette, category, index, width, top }: T
   );
 }
 
-function HoverBands({ categories, height, setActive }: { categories: readonly ChartCategory[]; height: number; setActive: Dispatch<SetStateAction<number | undefined>> }): React.ReactElement {
-  return (
-    <>
-      {categories.map((c, i) => (
-        <Pressable key={i} accessible={false} tabIndex={-1}
-          style={{ position: 'absolute', top: 0, left: c.start, width: Math.max(1, c.end - c.start), height, cursor: 'auto' }}
-          onHoverIn={() => { setActive(i); }}
-          onHoverOut={() => { setActive((current) => (current === i ? undefined : current)); }}
-          onPress={() => { setActive((current) => (IS_WEB || current !== i ? i : undefined)); }} />
-      ))}
-    </>
-  );
+function drawableSize(size: Size): Size {
+  if (IS_WEB || size.width * size.height <= MAX_NATIVE_AREA) return size;
+  return { width: size.width, height: Math.max(1, Math.floor(MAX_NATIVE_AREA / Math.max(1, size.width))) };
 }
 
 interface ChartModel {
@@ -187,8 +180,9 @@ interface BodyProps {
   size: Size;
 }
 
-function ChartBody({ props, model, palette, size }: BodyProps): React.ReactElement {
+function ChartBody({ props, model, palette, size: measured }: BodyProps): React.ReactElement {
   const { data, series, xAxis, barGap, barCategoryGap } = props;
+  const size = useMemo(() => drawableSize(measured), [measured]);
   const { colors, legend, showYAxis, showTooltip, perBar } = model;
   const [active, setActive] = useState<number | undefined>();
   const uid = `chart${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -201,7 +195,7 @@ function ChartBody({ props, model, palette, size }: BodyProps): React.ReactEleme
       <ChartPlot geometry={geometry} series={series} colors={colors} perBar={perBar} palette={palette}
         barColor={(seriesIndex, index) => chartBarColor(series, colors, seriesIndex, index)}
         width={size.width} height={size.height} showYAxis={showYAxis} active={shown === undefined ? undefined : active} uid={uid} />
-      {showTooltip ? <HoverBands categories={geometry.categories} height={size.height} setActive={setActive} /> : null}
+      {showTooltip ? <ChartBands categories={geometry.categories} height={size.height} setActive={setActive} /> : null}
       {shown === undefined || active === undefined ? null : (
         <ChartTooltip props={props} colors={colors} palette={palette} category={shown} index={active} width={size.width} top={geometry.plot.top} />
       )}

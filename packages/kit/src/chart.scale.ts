@@ -5,9 +5,12 @@ export interface ChartStackable {
   stack?: string;
 }
 
-export const CHART_TICK_COUNT = 5;
+const CHART_TICK_COUNT = 5;
+
+const CHART_MAX_VALUE = 1e300;
 
 const MAX_CORRECTION = 64;
+const MAX_TICKS = CHART_TICK_COUNT * 2;
 
 function fix(n: number): number {
   return Number(n.toPrecision(12));
@@ -55,17 +58,19 @@ export function chartTicks(min: number, max: number): number[] {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
   if (!(max > min)) return Array.from({ length: CHART_TICK_COUNT }, (_, i) => fix(min + i));
   const { step, lo, hi } = tickSpan(min, max, 0);
-  if (!(step > 0)) return [lo, hi];
+  if (!(step > 0) || !Number.isFinite(lo) || !Number.isFinite(hi) || !(hi > lo)) return [min, max];
   const ticks: number[] = [];
-  for (let value = lo; value <= hi + step / 10; value = fix(value + step)) ticks.push(value);
+  for (let value = lo; ticks.length < MAX_TICKS && value <= hi + step / 10; value = fix(value + step)) ticks.push(value);
   return ticks;
 }
 
+function bounded(n: number): number | undefined {
+  return Number.isFinite(n) && Math.abs(n) <= CHART_MAX_VALUE ? n : undefined;
+}
+
 export function chartNumber(raw: unknown): number | undefined {
-  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
-  if (typeof raw !== 'string' || raw.trim() === '') return undefined;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : undefined;
+  if (typeof raw === 'number') return bounded(raw);
+  return typeof raw === 'string' && raw.trim() !== '' ? bounded(Number(raw)) : undefined;
 }
 
 export function chartExtents(
@@ -81,8 +86,10 @@ export function chartExtents(
       if (value === undefined) return undefined;
       if (running === undefined) return [0, value];
       const base = running[i] ?? 0;
-      running[i] = base + value;
-      return [base, base + value];
+      const top = bounded(base + value);
+      if (top === undefined) return undefined;
+      running[i] = top;
+      return [base, top];
     });
   });
 }

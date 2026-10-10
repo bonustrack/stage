@@ -109,6 +109,7 @@ export interface ChartShape {
   line: string;
   area?: string;
   points: readonly (ChartPoint | undefined)[];
+  dots: readonly ChartPoint[];
 }
 
 export interface ChartGeometry {
@@ -166,7 +167,7 @@ export function chartBarColor(series: readonly ChartSeries[], colors: readonly s
 }
 
 function num(n: number): string {
-  return String(Math.round(n * 100) / 100);
+  return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : '0';
 }
 
 function yAxisWidth(ticks: readonly number[]): number {
@@ -308,7 +309,8 @@ function shapeOf(s: ChartSeries, si: number, extents: readonly ChartExtent[], ca
   const parts = segments(pairs);
   const line = parts.map((part) => chartCurvePath(part.map((p) => p[0]), curve, 'line')).join('');
   const area = s.type === 'area' ? parts.map((part) => chartAreaPath(part.map((p) => p[0]), part.map((p) => p[1]), curve)).join('') : undefined;
-  return { series: si, line, area, points: pairs.map((p) => p?.[0]) };
+  const dots = parts.flatMap((part) => (part.length === 1 && part[0] !== undefined ? [part[0][0]] : []));
+  return { series: si, line, area, points: pairs.map((p) => p?.[0]), dots };
 }
 
 export function chartGeometry(input: ChartGeometryInput): ChartGeometry {
