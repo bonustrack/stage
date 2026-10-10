@@ -3,10 +3,12 @@ import worker, { allowedTarget, outbound } from '../src/outbound.ts';
 
 const realFetch = globalThis.fetch;
 
-function stubFetch(): Request[] {
-  const seen: Request[] = [];
-  globalThis.fetch = Object.assign(async (input: RequestInfo | URL): Promise<Response> => {
-    seen.push(input as Request);
+interface Forwarded { input: RequestInfo | URL; init?: RequestInit; request: Request }
+
+function stubFetch(): Forwarded[] {
+  const seen: Forwarded[] = [];
+  globalThis.fetch = Object.assign(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    seen.push({ input, init, request: new Request(input, init) });
     return new Response('ok');
   }, { preconnect: realFetch.preconnect });
   return seen;
@@ -27,6 +29,8 @@ describe('node outbound filter', () => {
       'https://blob.stage.box/', 'https://STAGE.BOX./', 'http://example.com/', 'https://example.com:8443/', 'https://example.com:443x/',
       'https://1.1.1.1/', 'https://2130706433/', 'https://[2606:4700::1111]/', 'https://localhost/', 'https://printer.local/',
       'https://db.internal/', 'https://intranet/', 'https://user:pass@example.com/', 'ftp://example.com/', 'not a url',
+      'https://nodes.stage.box../0123456789abcdef0123456789abcdef', 'https://proxy.stage.box../health', 'https://stage.box.../',
+      'https://localhost../', 'https://printer.local../',
     ];
     for (const url of blocked) expect([url, allowedTarget(url)]).toEqual([url, false]);
   });
@@ -36,10 +40,21 @@ describe('node outbound filter', () => {
     const res = await worker.fetch(new Request('https://example.com/data', { method: 'POST', body: 'x', headers: { 'x-a': '1' } }));
     expect(await res.text()).toBe('ok');
     expect(seen).toHaveLength(1);
-    expect(seen[0]?.url).toBe('https://example.com/data');
-    expect(seen[0]?.method).toBe('POST');
-    expect(seen[0]?.redirect).toBe('manual');
-    expect(seen[0]?.headers.get('x-a')).toBe('1');
+    expect(seen[0]?.request.url).toBe('https://example.com/data');
+    expect(seen[0]?.request.method).toBe('POST');
+    expect(seen[0]?.request.redirect).toBe('manual');
+    expect(seen[0]?.request.headers.get('x-a')).toBe('1');
+    expect(await seen[0]?.request.text()).toBe('x');
+  });
+
+  test('never passes the Cloudflare options of a node fetch on', async () => {
+    const seen = stubFetch();
+    const call = new Request('https://example.com/data');
+    Object.defineProperty(call, 'cf', { value: { cacheEverything: true, cacheTtl: 300 } });
+    await outbound(call);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.input).toBe('https://example.com/data');
+    expect(Object.keys(seen[0]?.init ?? {}).sort()).toEqual(['body', 'headers', 'method', 'redirect']);
   });
 
   test('answers 403 for a blocked call without any network request', async () => {

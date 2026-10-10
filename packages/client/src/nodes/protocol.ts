@@ -89,7 +89,7 @@ export function nodeUrlOf(raw: string): NodeUrl {
   if (url === null || /[^\x21-\x7e]/.test(url.host)) return { ok: false, problem: 'invalid' };
   if (url.protocol !== 'https:') return { ok: false, problem: 'insecure' };
   if (url.username !== '' || url.password !== '') return { ok: false, problem: 'credentials' };
-  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.+$/, '');
   if (!isPublicHost(host)) return { ok: false, problem: 'local' };
   const href = `https://${url.host}${canonicalPart(url.pathname)}${canonicalPart(url.search)}`;
   return href.length > MAX_URL_CHARS ? { ok: false, problem: 'invalid' } : { ok: true, url: href, host: url.host };
