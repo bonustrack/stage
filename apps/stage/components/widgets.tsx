@@ -1,6 +1,6 @@
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
 import { APP_ICONS, type AppIconName } from './appIcons';
@@ -51,7 +51,7 @@ export function WalletActionButton({ label, icon, bg, onPress }: {
         iconStart={<Glyph icon={icon} size={24} dark={dark} />}
         onPress={onPress}
       />
-      <Caption value={label} weight="semibold" />
+      <Text value={label} size="xs" weight="semibold" role="secondary" />
     </Col>
   );
 }
