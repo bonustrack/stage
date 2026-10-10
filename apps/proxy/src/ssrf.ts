@@ -66,7 +66,7 @@ function isPrivateV6(ip: string): boolean {
 }
 
 function isBlockedHost(host: string): boolean {
-  const h = host.toLowerCase().replace(/\.$/, '');
+  const h = host.toLowerCase().replace(/\.+$/, '');
   if (BLOCKED_HOSTS.has(h)) return true;
   return BLOCKED_HOST_SUFFIXES.some(s => (s.startsWith('.') ? h.endsWith(s) : h === s));
 }

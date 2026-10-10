@@ -13,6 +13,9 @@ void test('rejects blocked internal hosts', () => {
   assert.throws(() => assertPublicUrl('https://preview.stage.box/x'), SsrfError);
   assert.throws(() => assertPublicUrl('https://stage.box/x'), SsrfError);
   assert.throws(() => assertPublicUrl('http://metadata.google.internal/'), SsrfError);
+  for (const url of ['https://proxy.stage.box../x', 'https://stage.box../', 'http://localhost../', 'https://db.internal.../']) {
+    assert.throws(() => assertPublicUrl(url), SsrfError, url);
+  }
 });
 
 void test('rejects literal private IPv4', () => {
