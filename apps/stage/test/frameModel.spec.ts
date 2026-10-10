@@ -96,10 +96,10 @@ describe('frames with a node source', () => {
   });
 
   test('actions go to the node, a client handled action to the chat, and every action to the chat without a node', () => {
-    expect(frameActionTarget({ type: 'refresh' }, true)).toBe('node');
-    expect(frameActionTarget({ type: 'refresh', handler: 'server' }, true)).toBe('node');
+    expect(frameActionTarget({ type: 'vote' }, true)).toBe('node');
+    expect(frameActionTarget({ type: 'vote', handler: 'server' }, true)).toBe('node');
     expect(frameActionTarget({ type: 'ask', handler: 'client' }, true)).toBe('chat');
-    expect(frameActionTarget({ type: 'refresh' }, false)).toBe('chat');
+    expect(frameActionTarget({ type: 'vote' }, false)).toBe('chat');
     expect(frameActionTarget({ type: 'ask', handler: 'client' }, false)).toBe('chat');
   });
 });

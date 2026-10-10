@@ -4,11 +4,7 @@ A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github
 
 ## Load
 
-`GET <url>`, signed (see Signing). Answer `200` with JSON, one of:
-
-- a ChatKit widget root: `{"type": "Card", "children": [...]}` (or `ListView`, `Basic`; other types are refused);
-- a ChatKit widget item: `{"type": "widget", "widget": {...}}`;
-- a Stage frame: `{"title": "...", "widget": {...}}` or `{"screens": {...}, "start": "..."}`.
+`GET <url>`, signed (see Signing). Answer `200` with a ChatKit widget root as JSON: `{"type": "Card", "children": [...]}`, or a `ListView` or `Basic` root. Anything else is refused.
 
 Stage loads it when the widget shows, then every minute while the Dashboard is open and the app is in front. After a failure it waits longer, up to 5 minutes. Offline or on an error, the widget keeps the last good version and its header says why and since when.
 
@@ -22,7 +18,7 @@ A button (`onClickAction`), a form submit (`onSubmitAction`) or a field change (
 POST <url>
 Content-Type: application/json
 
-{"type": "threads.sync_custom_action", "params": {"thread_id": "<key id>", "item_id": "<key id>", "action": {"type": "refresh", "payload": {}}}}
+{"type": "threads.sync_custom_action", "params": {"thread_id": "<key id>", "item_id": "<key id>", "action": {"type": "vote", "payload": {"option": "yes"}}}}
 ```
 
 `action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. In a frame with screens, `payload.screen` is the screen the tap came from, unless the payload already has a `screen`. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `loadingBehavior` is ignored: the tapped button shows its own loading state until the reply. An action with ChatKit's `"handler": "client"` never goes to the node: Stage handles it and sends it to the chat (see Frames in chats).
@@ -33,7 +29,7 @@ Answer like a ChatKit `sync_action()` handler, with a `SyncCustomActionResponse`
 {"updated_item": {"type": "widget", "widget": {"type": "Card", "children": []}}}
 ```
 
-Stage shows the new widget at once. `{}`, `{"updated_item": null}` or an empty `204` keep the current widget. Any reply accepted by Load works too, but an `updated_item` that is not a widget item is refused. So a ChatKit server can serve a node by passing `params.action` to its action handler and returning the serialized response.
+Stage shows the new widget at once. `{}` or `{"updated_item": null}` keep the current widget. Anything else is refused, an empty body included. So a ChatKit server can serve a node by passing `params.action` to its action handler and returning the serialized response.
 
 ## Signing
 
@@ -116,7 +112,7 @@ Errors: `400` the code was refused (the reason is in `error`), `401` a bad or st
 
 ## Frames in chats
 
-A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Apps that do not know `source` ignore it and show the frame as sent.
+A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. A frame without `source`, or whose `source` is not a node URL Stage calls (see What Stage enforces), is a plain frame: it shows as sent and its actions go to the chat.
 
 In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Stage does not call the node before a tap, and nothing works before the chat is accepted. Images in the frame still load when it shows, as in any frame. Calls are signed and checked as on the Dashboard. The reply replaces the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
 
@@ -126,7 +122,7 @@ A tap sends the action to the node. An action with ChatKit's `"handler": "client
 {"type": "Button", "label": "Ask the agent", "onClickAction": {"type": "ask", "handler": "client"}}
 ```
 
-Add to dashboard, in the frame's menu (the three dots) or in the message menu, first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them.
+Add to dashboard, in the frame's menu (the three dots) or in the message menu, first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them. On a plain frame, Add to dashboard adds a widget that shows that message as it was sent, and its actions go to that chat.
 
 ## Limits
 

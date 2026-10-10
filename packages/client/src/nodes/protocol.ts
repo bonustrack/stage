@@ -118,23 +118,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function frameReply(raw: unknown): NodeReply | null {
-  const parsed = frameContentSchema.safeParse(raw);
+export function loadReplyOf(widget: unknown): NodeReply | null {
+  if (!isRecord(widget) || typeof widget.type !== 'string' || !WIDGET_ROOTS.has(widget.type)) return null;
+  const parsed = frameContentSchema.safeParse({ widget });
   return parsed.success ? { kind: 'frame', frame: parsed.data } : null;
 }
 
-function rootReply(widget: unknown): NodeReply | null {
-  return isRecord(widget) && typeof widget.type === 'string' && WIDGET_ROOTS.has(widget.type) ? frameReply({ widget }) : null;
-}
-
-export function nodeReplyOf(json: unknown): NodeReply | null {
+export function actionReplyOf(json: unknown): NodeReply | null {
   if (!isRecord(json)) return null;
-  if (Object.keys(json).length === 0 || json.updated_item === null) return UNCHANGED;
-  const item = json.updated_item ?? json;
-  if (!isRecord(item)) return null;
-  if (item.type === 'widget') return rootReply(item.widget);
-  if (item !== json) return null;
-  return typeof json.type === 'string' ? rootReply(json) : frameReply(json);
+  const item = json.updated_item;
+  if (item === null || (item === undefined && Object.keys(json).length === 0)) return UNCHANGED;
+  return isRecord(item) && item.type === 'widget' ? loadReplyOf(item.widget) : null;
 }
 
 function parsedJson(text: string): unknown {
@@ -164,13 +158,12 @@ async function cappedText(response: Response): Promise<string | null> {
   return new TextDecoder().decode(concatBytes(...chunks));
 }
 
-async function readReply(response: Response): Promise<NodeResult> {
+async function readReply(response: Response, replyOf: (json: unknown) => NodeReply | null): Promise<NodeResult> {
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
   if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
   const text = await cappedText(response);
   if (text === null) return { ok: false, problem: 'too-large' };
-  if (text.trim() === '') return { ok: true, reply: UNCHANGED };
-  const reply = nodeReplyOf(parsedJson(text));
+  const reply = replyOf(parsedJson(text));
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };
 }
 
@@ -186,7 +179,7 @@ async function callNode(method: NodeMethod, rawUrl: string, key: string, body: s
       credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
     });
-    return await readReply(response);
+    return await readReply(response, method === 'GET' ? loadReplyOf : actionReplyOf);
   } catch {
     return { ok: false, problem: timeout.aborted ? 'timeout' : 'unreachable' };
   }

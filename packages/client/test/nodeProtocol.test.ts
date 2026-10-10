@@ -3,7 +3,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
 import {
-  loadNode, newNodeKey, nodeActionBody, nodeHeaders, nodeKeyId, nodeReplyOf, nodeUrlOf, sendNodeAction,
+  actionReplyOf, loadNode, loadReplyOf, newNodeKey, nodeActionBody, nodeHeaders, nodeKeyId, nodeUrlOf, sendNodeAction,
 } from '../src/nodes/protocol';
 import { nodeSigningText } from '../src/nodes/signing';
 
@@ -102,7 +102,7 @@ describe('node request signing', () => {
   });
 
   test('a node verifies the signature with WebCrypto Ed25519', async () => {
-    const body = nodeActionBody(RFC8032_PUBLIC, { type: 'refresh' });
+    const body = nodeActionBody(RFC8032_PUBLIC, { type: 'vote' });
     const headers = nodeHeaders('POST', URL_A, body, RFC8032_KEY, NOW);
     const publicKey = await crypto.subtle.importKey('raw', bytesOf(RFC8032_PUBLIC), { name: 'Ed25519' }, false, ['verify']);
     const signed = utf8ToBytes(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
@@ -112,43 +112,44 @@ describe('node request signing', () => {
 
 describe('node action request', () => {
   test('mirrors the ChatKit threads.sync_custom_action request', () => {
-    expect(JSON.parse(nodeActionBody('kid', { type: 'refresh' }))).toEqual({
-      type: 'threads.sync_custom_action', params: { thread_id: 'kid', item_id: 'kid', action: { type: 'refresh' } },
+    expect(JSON.parse(nodeActionBody('kid', { type: 'vote' }))).toEqual({
+      type: 'threads.sync_custom_action', params: { thread_id: 'kid', item_id: 'kid', action: { type: 'vote' } },
     });
     expect(JSON.parse(nodeActionBody('kid', { type: 'buy', payload: { qty: 2 } })).params.action).toEqual({ type: 'buy', payload: { qty: 2 } });
   });
 });
 
 describe('node replies', () => {
-  test('accepts a bare ChatKit widget, a widget item and a sync action response', () => {
-    const frame = { kind: 'frame', frame: { widget: CARD } };
-    expect(nodeReplyOf(CARD)).toEqual(frame);
-    expect(nodeReplyOf({ id: 'w1', type: 'widget', widget: CARD, copy_text: '$100' })).toEqual(frame);
-    expect(nodeReplyOf({ updated_item: { id: 'w1', thread_id: 't', type: 'widget', widget: CARD } })).toEqual(frame);
+  const frame = { kind: 'frame', frame: { widget: CARD } };
+
+  test('a load answers a ChatKit widget root', () => {
+    expect(loadReplyOf(CARD)).toEqual(frame);
+    const list = { type: 'ListView', children: [] };
+    expect(loadReplyOf(list)).toEqual({ kind: 'frame', frame: { widget: list } });
   });
 
-  test('accepts a Stage frame with a title or screens', () => {
-    expect(nodeReplyOf({ title: 'BTC', widget: CARD })).toEqual({ kind: 'frame', frame: { title: 'BTC', widget: CARD } });
-    expect(nodeReplyOf({ screens: { a: CARD }, start: 'a' })).toEqual({ kind: 'frame', frame: { screens: { a: CARD }, start: 'a' } });
+  test('an action answers a sync action response, and no updated item keeps the current widget', () => {
+    expect(actionReplyOf({ updated_item: { id: 'w1', thread_id: 't', type: 'widget', widget: CARD } })).toEqual(frame);
+    expect(actionReplyOf({})).toEqual({ kind: 'unchanged' });
+    expect(actionReplyOf({ updated_item: null })).toEqual({ kind: 'unchanged' });
   });
 
-  test('an empty reply or a null updated item keeps the current widget', () => {
-    expect(nodeReplyOf({})).toEqual({ kind: 'unchanged' });
-    expect(nodeReplyOf({ updated_item: null })).toEqual({ kind: 'unchanged' });
+  test('a load refuses anything but a widget root', () => {
+    const refused = [
+      null, undefined, [CARD], 'Card', {}, { price: 1 }, { type: 'widget', widget: CARD }, { title: 'BTC', widget: CARD },
+      { screens: { a: CARD }, start: 'a' }, { updated_item: { type: 'widget', widget: CARD } }, { type: 'Card', note: 'x'.repeat(70_000) },
+      { type: 'error', message: 'oops' }, { type: 'Text', value: 'not a root' },
+    ];
+    for (const reply of refused) expect([reply, loadReplyOf(reply)]).toEqual([reply, null]);
   });
 
-  test('rejects anything that is not a frame', () => {
-    expect(nodeReplyOf(null)).toBeNull();
-    expect(nodeReplyOf([CARD])).toBeNull();
-    expect(nodeReplyOf('Card')).toBeNull();
-    expect(nodeReplyOf({ price: 1 })).toBeNull();
-    expect(nodeReplyOf({ type: 'widget' })).toBeNull();
-    expect(nodeReplyOf({ type: 'Card', note: 'x'.repeat(70_000) })).toBeNull();
-    expect(nodeReplyOf({ type: 'error', message: 'oops' })).toBeNull();
-    expect(nodeReplyOf({ type: 'Text', value: 'not a root' })).toBeNull();
-    expect(nodeReplyOf({ updated_item: { type: 'assistant_message', content: [] } })).toBeNull();
-    expect(nodeReplyOf({ updated_item: { type: 'widget', widget: { type: 'Text', value: 'x' } } })).toBeNull();
-    expect(nodeReplyOf({ updated_item: 'Card' })).toBeNull();
+  test('an action refuses anything but a sync action response', () => {
+    const refused = [
+      null, undefined, [CARD], 'Card', CARD, { price: 1 }, { type: 'widget', widget: CARD }, { title: 'BTC', widget: CARD },
+      { updated_item: { type: 'assistant_message', content: [] } }, { updated_item: { type: 'widget', widget: { type: 'Text', value: 'x' } } },
+      { updated_item: { type: 'widget' } }, { updated_item: 'Card' },
+    ];
+    for (const reply of refused) expect([reply, actionReplyOf(reply)]).toEqual([reply, null]);
   });
 });
 
@@ -167,17 +168,17 @@ describe('node calls', () => {
 
   test('posts an action as JSON and returns the updated widget', async () => {
     const seen = stubFetch(() => Response.json({ updated_item: { type: 'widget', widget: CARD } }));
-    const result = await sendNodeAction(URL_A, RFC8032_KEY, { type: 'refresh', payload: { coin: 'BTC' } });
+    const result = await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote', payload: { coin: 'BTC' } });
     expect(result).toEqual({ ok: true, reply: { kind: 'frame', frame: { widget: CARD } } });
     expect(seen[0]?.init.method).toBe('POST');
     expect((seen[0]?.init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
-    expect(JSON.parse(String(seen[0]?.init.body)).params.action).toEqual({ type: 'refresh', payload: { coin: 'BTC' } });
+    expect(JSON.parse(String(seen[0]?.init.body)).params.action).toEqual({ type: 'vote', payload: { coin: 'BTC' } });
   });
 
   test('never calls a blocked url', async () => {
     const seen = stubFetch(() => Response.json(CARD));
     expect(await loadNode('https://192.168.0.2/', RFC8032_KEY)).toEqual({ ok: false, problem: 'blocked' });
-    expect(await sendNodeAction('http://example.com/', RFC8032_KEY, { type: 'refresh' })).toEqual({ ok: false, problem: 'blocked' });
+    expect(await sendNodeAction('http://example.com/', RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'blocked' });
     expect(seen).toHaveLength(0);
   });
 
@@ -193,8 +194,15 @@ describe('node calls', () => {
     stubFetch(() => new Response(endless));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
     expect(pulled).toBeLessThan(12);
+    stubFetch(() => Response.json({}));
+    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
+    expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => new Response(null, { status: 204 }));
-    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'refresh' })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
+    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'invalid' });
+    stubFetch(() => Response.json({ updated_item: { type: 'widget', widget: CARD } }));
+    expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
+    stubFetch(() => Response.json(CARD));
+    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'unreachable' });
   });
