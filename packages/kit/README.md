@@ -200,7 +200,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
-### Unreleased
+### 0.1.0-beta.5
 
 - `Badge` text follows its `size`: `md` is 15px and `lg` is 16px (both were 13px). `3xs`, `2xs` and `sm`, the default, stay 13px. Frame badges sized `md` or `lg` grow the same way. `textSize` still replaces it.
 - `Badge` `children` can be a function. It gets the badge's text props (`weight`, `color` and a `style` with the font size), so composed content such as a label with an icon uses the badge's text size.

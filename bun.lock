@@ -159,7 +159,7 @@
     },
     "packages/kit": {
       "name": "@stage-labs/kit",
-      "version": "0.1.0-beta.4",
+      "version": "0.1.0-beta.5",
       "dependencies": {
         "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",
         "@central-icons-react-native/round-outlined-radius-1-stroke-2": "1.2.1",
