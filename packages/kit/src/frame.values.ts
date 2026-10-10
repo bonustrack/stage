@@ -135,7 +135,7 @@ const FIXED_TOKENS: Record<string, string> = { warning: colors.warn, caution: co
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const FUNCTIONAL = /^(?:rgba?|hsla?)\(\s*[\d.\s,/%+-]+\)$/i;
 
-function cssColor(raw: unknown): string | undefined {
+export function cssColor(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
   const v = raw.trim();
   if (v === 'transparent' || HEX.test(v) || (v.length <= 64 && FUNCTIONAL.test(v))) return v;

@@ -32,6 +32,7 @@
     "./badge": "./src/badge.ts",
     "./markdown-styles": "./src/markdown.styles.ts",
     "./frame": "./src/frame.ts",
+    "./chart": "./src/chart.ts",
     "./link": "./src/link.ts",
     "./react-native/button": "./src/react-native/button.tsx",
     "./react-native/text": "./src/react-native/text.tsx",
@@ -79,7 +80,8 @@
     "./react-native/tooltip": "./src/react-native/tooltip.tsx",
     "./overlay.styles": "./src/overlay.styles.ts",
     "./react-native/modal": "./src/react-native/modal.tsx",
-    "./react-native/frame": "./src/react-native/frame.tsx"
+    "./react-native/frame": "./src/react-native/frame.tsx",
+    "./react-native/chart": "./src/react-native/chart.tsx"
   },
   "dependencies": {
     "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",

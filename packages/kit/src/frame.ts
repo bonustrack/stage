@@ -1,7 +1,5 @@
 import { isRecord, type FrameAction, type FrameSpacing } from './frame.values';
-import {
-  isFrameNodeType, schemaOf, type FrameChartNode, type FrameNode, type FrameUnsupportedNode,
-} from './frame.schema';
+import { isFrameNodeType, schemaOf, type FrameNode, type FrameUnsupportedNode } from './frame.schema';
 
 export type { FrameAction, FrameColor, FrameOption, FrameSpacing } from './frame.values';
 export { resolveFrameColor, FRAME_SPACING_UNIT } from './frame.values';
@@ -16,9 +14,6 @@ export const FRAME_LIMITS = {
   maxScreens: 50,
 } as const;
 
-const MAX_CHART_ROWS = 200;
-const MAX_CHART_SERIES = 12;
-const MAX_CELL = 200;
 const MAX_TYPE_NAME = 60;
 const SUMMARY_SCAN = 80;
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -53,34 +48,6 @@ function pickProps(raw: Record<string, unknown>, schema: Record<string, (v: unkn
   return out;
 }
 
-function cell(value: unknown): string {
-  if (typeof value === 'string') return value.slice(0, MAX_CELL);
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
-}
-
-function chartAxis(raw: unknown): { key: string; labels: Record<string, unknown> } | undefined {
-  if (typeof raw === 'string') return { key: raw, labels: {} };
-  if (!isRecord(raw) || typeof raw.dataKey !== 'string') return undefined;
-  return { key: raw.dataKey, labels: isRecord(raw.labels) ? raw.labels : {} };
-}
-
-function chartNode(raw: Record<string, unknown>): FrameChartNode | FrameUnsupportedNode {
-  const axis = chartAxis(raw.xAxis);
-  const series = (Array.isArray(raw.series) ? raw.series : [])
-    .filter(isRecord)
-    .filter((s): s is Record<string, unknown> & { dataKey: string } => typeof s.dataKey === 'string')
-    .slice(0, MAX_CHART_SERIES);
-  if (axis === undefined || series.length === 0) return unsupported('Chart');
-  const data = (Array.isArray(raw.data) ? raw.data : []).filter(isRecord).slice(0, MAX_CHART_ROWS);
-  const header = [axis.key, ...series.map((s) => (typeof s.label === 'string' ? cell(s.label) : s.dataKey))];
-  const rows = data.map((row) => {
-    const x = cell(row[axis.key]);
-    const shown = Object.hasOwn(axis.labels, x) ? cell(axis.labels[x]) : x;
-    return [shown, ...series.map((s) => cell(row[s.dataKey]))];
-  });
-  return { type: 'Chart', props: { header, rows }, children: [] };
-}
-
 function childList(raw: unknown, kind: 'nodes' | 'single' | undefined): unknown[] {
   if (kind === 'single') return Array.isArray(raw) ? raw.slice(0, 1) : raw === undefined ? [] : [raw];
   if (kind === 'nodes' && Array.isArray(raw)) return raw.slice(0, FRAME_LIMITS.maxChildren);
@@ -97,7 +64,6 @@ function overLimit(depth: number, walk: Walk): boolean {
 function normalizeNode(raw: unknown, depth: number, walk: Walk): FrameNode {
   if (overLimit(depth, walk)) return unsupported('');
   if (!isRecord(raw) || typeof raw.type !== 'string') return unsupported('');
-  if (raw.type === 'Chart') return chartNode(raw);
   if (!isFrameNodeType(raw.type)) return unsupported(raw.type);
   const schema = schemaOf(raw.type);
   const props = pickProps(raw, schema.props);
@@ -281,7 +247,7 @@ type FrameFlex = Readonly<{ flexShrink: 0 | 1; minWidth?: 0 }>;
 const SHRINK: FrameFlex = { flexShrink: 1, minWidth: 0 };
 const SHRINK_OWN_MIN: FrameFlex = { flexShrink: 1 };
 const KEEP: FrameFlex = { flexShrink: 0 };
-const BOX_TYPES: ReadonlySet<FrameNode['type']> = new Set(['Box', 'Row', 'Col', 'Form']);
+const BOX_TYPES: ReadonlySet<FrameNode['type']> = new Set(['Box', 'Row', 'Col', 'Form', 'Chart']);
 const KEEP_MAX_CHARS = 12;
 
 function keepsWidth(value: string): boolean {

@@ -34,7 +34,7 @@ Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.git
 
 **Caveat: shapes match, generators are Kit's own.** OpenAI publishes ChatKit's theme *types* but not the colour maths behind them, so Kit implements the documented semantics itself: `tint` is saturation in 1% steps, `shade` shifts lightness by 3% per step (negative lighter, positive darker), and `level` mutes the accent toward the surface foreground in 18% steps with `3` meaning "primary unchanged". `grayscaleHex`/`accentHex`/`grayscaleFromHex` in `theme-derive.ts` are the entry points, and the defaults are lossless: `grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')` is exactly `#282a2d`, guarded by tests.
 
-Component coverage: Kit implements **every ChatKit widget node**, and `Frame` renders ChatKit widget JSON with them: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
+Component coverage: Kit implements **every ChatKit widget node**, and `Frame` renders ChatKit widget JSON with them: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Chart`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
 
 ## Install
 
@@ -92,7 +92,7 @@ The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `roun
 
 ## Frame
 
-`Frame` (`@stage-labs/kit/react-native/frame`) renders OpenAI ChatKit widget JSON with kit components. It takes the same JSON ChatKit streams as a widget item: a `Card`, `ListView` or `Basic` root with the ChatKit nodes inside (`Box`, `Row`, `Col`, `Form`, `Text`, `Title`, `Caption`, `Label`, `Markdown`, `Badge`, `Icon`, `Image`, `Button`, `Spacer`, `Divider`, `Transition`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`, `Table`, `Table.Row`, `Table.Cell`), with ChatKit's prop names and values. `Chart` shows its data as a table.
+`Frame` (`@stage-labs/kit/react-native/frame`) renders OpenAI ChatKit widget JSON with kit components. It takes the same JSON ChatKit streams as a widget item: a `Card`, `ListView` or `Basic` root with the ChatKit nodes inside (`Box`, `Row`, `Col`, `Form`, `Text`, `Title`, `Caption`, `Label`, `Markdown`, `Badge`, `Icon`, `Image`, `Button`, `Spacer`, `Divider`, `Transition`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`, `Table`, `Table.Row`, `Table.Cell`, `Chart`), with ChatKit's prop names and values. `Chart` draws a Kit `Chart` (see Chart below).
 
 ```tsx
 import { Frame } from '@stage-labs/kit/react-native/frame';
@@ -109,7 +109,7 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 
 - The JSON is checked first by `parseFrame` (`@stage-labs/kit/frame`, no React): at most 64K characters, depth 16, 500 nodes and 200 children per node. A frame over a limit, or not an object, shows a short notice instead.
 - Unknown props are dropped. An unknown node type, or a node without a required prop (`Text.value`, `Image.src`, `Select.options`, ...), shows a small "Unsupported" box. Nothing throws, and an error boundary catches render errors.
-- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs. On web, with `onOpenUrl`, such a link is a real link (`href`, new tab): middle-click, Ctrl or Cmd click and the browser link menu work, and a plain click still calls `onOpenUrl`.
+- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. A `Chart` series `color` takes ChatKit's chart colours (`blue`, `purple`, ...) and primitive tokens (`blue-500`, `gray-300`, `alpha-10`) instead of the semantic tokens. A `Chart` keeps at most 200 rows and 12 series. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs. On web, with `onOpenUrl`, such a link is a real link (`href`, new tab): middle-click, Ctrl or Cmd click and the browser link menu work, and a plain click still calls `onOpenUrl`.
 - Icons (`Icon.name`, `Button.iconStart`, `Button.iconEnd`) take ChatKit's 63 icon names, plus nine Stage names that ChatKit does not have: `arrow-up`, `chevron-down`, `chevron-up`, `copy`, `mic`, `send`, `share`, `thumbs-down` and `thumbs-up`. Any other name makes an `Icon` unsupported, and a `Button` drops it.
 - Text sizes are the kit's own, with no frame text scale: `size` on `Text`, `Title`, `Caption` and `Label` takes any `FONT_SIZE` name (`3xs` 13px, `2xs` 14px, `xs` 16px, `sm` 17px, `md` 18px, `lg` 19px, `xl` 20px, `2xl` 24px, `3xl` 26px), and defaults to `md` (18px). Removed or unknown names are ignored. `Markdown` text is `md` too. Editable `Text` uses the field's control size. `Icon` keeps its separate size scale unchanged: `4xs` 13px, `3xs` 14px, `2xs` 15px, `xs` through `2xl` as above, `3xl` 32px and `4xl` 40px. `Badge`, `Button` and the fields keep their control sizes.
 - Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
@@ -122,6 +122,31 @@ import { Frame } from '@stage-labs/kit/react-native/frame';
 - `frameSummary(root)` gives a title and description from the first `Title` and text nodes, for previews.
 - Screens: `widget` may also be `{ screens: { <id>: <widget> or { title, widget } }, start? }`, several screens in one frame (`start` defaults to the first id that is not a number, since JSON lists number keys first). In a frame with screens, an action of type `frame.open` with `payload.screen` opens that screen and `frame.back` goes back, with no `onAction` call, even when the frame is read only (a plain widget sends them like any action). Every other action gets `screen` (the current screen id) in its payload, unless the payload has one. The 64K characters cover all the screens together, at most 50 screens, and depth and node limits apply per screen. An unknown screen shows a short notice. `parseFrameDoc` (`@stage-labs/kit/frame`) parses both shapes, and `frameNavOf`, `navigateFrame` and `withScreen` are the pure navigation steps.
 - `Frame` keeps its own back stack. A host that shows its own back button passes `navigation` from `useFrameNavigation(start)` (`{ screen, depth, navigate }`) and calls `navigate({ kind: 'back' })` from it.
+
+## Chart
+
+`Chart` (`@stage-labs/kit/react-native/chart`) draws OpenAI ChatKit's `Chart` widget with `react-native-svg`, on web, iOS and Android. It takes the same props, with the same defaults, so the JSON of a ChatKit chart works as is. The layout maths (scales, bars, curves, colours) is in `@stage-labs/kit/chart`, with no React.
+
+```tsx
+import { Chart } from '@stage-labs/kit/react-native/chart';
+
+<Chart
+  data={[{ month: 'Jan', web: 186, mobile: 80 }, { month: 'Feb', web: 305, mobile: 200 }]}
+  xAxis="month"
+  series={[
+    { type: 'bar', dataKey: 'web', label: 'Web' },
+    { type: 'line', dataKey: 'mobile', label: 'Mobile', color: 'orange' },
+  ]}
+/>
+```
+
+- `data` is a list of rows of `string` or `number` values. `xAxis` is the key of the category, or `{ dataKey, hide, labels }`, where `labels` maps a value to the text shown for it.
+- `series` are `bar` (with `stack`), `area` (with `stack` and `curveType`) and `line` (with `curveType`), each with `dataKey`, `label` and `color`. Series with the same `stack` are stacked. `curveType` takes d3's curve names: `natural` (the default), `linear`, `monotone`, `step`, `stepBefore`, `stepAfter`, `basis`, `bump` and the rest of ChatKit's list. A row without a number for a series leaves a gap.
+- Defaults are ChatKit's: no y axis (`showYAxis`), a legend when a series has a `label` (`showLegend`), a tooltip (`showTooltip`), `aspectRatio` 4/3, and 5 round y ticks from 0, like Recharts. `barGap` is the space between the bars of one category (3px by default) and `barCategoryGap` the space on each side of a category (10% of it by default), in pixels.
+- Colours: a series without `color` takes ChatKit's chart colours in order (`blue`, `purple`, `orange`, `green`, `red`, `yellow`, `pink`). A chart with a single bar series and no `color` gets one colour per bar, as in ChatKit. `color` also takes a primitive token (`blue-500`, `gray-300`, `alpha-10`), a Kit colour token (`primary`, `success`, ...), a CSS colour or `{ light, dark }`. The grid, axes, labels, legend and tooltip use the Kit theme.
+- Size: `width` (`100%` by default), `height`, `size`, `minWidth`, `minHeight`, `minSize`, `maxWidth`, `maxHeight`, `maxSize` and `flex`, as on a `Box`. Without `height` or `size`, the height comes from `aspectRatio` (a number or a string such as `"16/9"`). The height includes the axis labels and the legend.
+- The tooltip shows the category and the value of each series. On web it opens on hover over a category; on iOS and Android a tap opens it and a second tap closes it.
+- `dark` picks the scheme. Without it the chart follows `KitThemeProvider`.
 
 ## Project structure
 
@@ -140,6 +165,7 @@ src/
   markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
   text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
   link.ts            # web link helpers: NEW_TAB (target _blank, rel noopener noreferrer) and isPlainClick, shared with the app's links
+  chart.ts           # Chart layout core: scales, bars, curves and colours (chart.scale.ts, chart.curves.ts, chart.colors.ts)
   fonts/             # Calibre Medium and Semibold (KIT_FONTS in react-native/fonts.ts, loaded by react-native/fonts.load.ts on web and fonts.load.native.ts on iOS and Android)
   react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
@@ -173,6 +199,12 @@ Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
 ## Changelog
+
+### Unreleased
+
+- New `Chart` component, `@stage-labs/kit/react-native/chart`, with the props and defaults of OpenAI ChatKit's `Chart` widget: bar, line and area series, stacks, d3 curves, legend, tooltip on hover or tap, optional y axis and ChatKit's chart colours. It is drawn with `react-native-svg`, so there is no new dependency. The layout core is `@stage-labs/kit/chart`. See Chart above.
+- `Frame` draws `Chart` nodes as charts instead of a table of their data, and a `Chart` in a `Row` shrinks like a box.
+- Breaking for code that reads parsed frames: a `Chart` node (`FrameNodeOf<'Chart'>`) now has ChatKit's props (`data`, `series`, `xAxis`, `showYAxis`, `showLegend`, `showTooltip`, `barGap`, `barCategoryGap`, the sizes and `aspectRatio`) instead of `{ header, rows }`.
 
 ### 0.1.0-beta.3
 

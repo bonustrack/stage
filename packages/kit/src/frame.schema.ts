@@ -2,6 +2,7 @@ import {
   action, bool, border, cardAction, color, editable, fieldName, httpsUrl, int, label, length, oneOf, options,
   padding, px, ratio, space, status, text, type Validator,
 } from './frame.values';
+import { chartData, chartSeries, chartXAxis } from './frame.chart';
 import { FONT_SIZE, type FontSizeName } from './tokens';
 
 const CHATKIT_ICONS = [
@@ -162,6 +163,14 @@ export const FRAME_NODE_SCHEMAS = {
     props: { width: length, padding, align: TEXT_ALIGN, vAlign: TEXT_ALIGN, colSpan: int(1, 12) },
     children: 'nodes',
   },
+  Chart: {
+    props: {
+      data: chartData, series: chartSeries, xAxis: chartXAxis, showYAxis: bool, showLegend: bool, showTooltip: bool,
+      barGap: px, barCategoryGap: px, flex: FLEX, height: length, width: length, size: length, minHeight: length,
+      minWidth: length, minSize: length, maxHeight: length, maxWidth: length, maxSize: length, aspectRatio: ratio,
+    },
+    required: ['series', 'xAxis'],
+  },
 } as const satisfies Record<string, NodeSchema>;
 
 export type FrameNodeType = keyof typeof FRAME_NODE_SCHEMAS;
@@ -176,19 +185,13 @@ export type FrameSchemaNode = {
   };
 }[FrameNodeType];
 
-export interface FrameChartNode {
-  type: 'Chart';
-  props: { header: string[]; rows: string[][] };
-  children: FrameNode[];
-}
-
 export interface FrameUnsupportedNode {
   type: 'Unsupported';
   props: { name: string };
   children: FrameNode[];
 }
 
-export type FrameNode = FrameSchemaNode | FrameChartNode | FrameUnsupportedNode;
+export type FrameNode = FrameSchemaNode | FrameUnsupportedNode;
 
 export type FrameNodeOf<T extends FrameNode['type']> = Extract<FrameNode, { type: T }>;
 

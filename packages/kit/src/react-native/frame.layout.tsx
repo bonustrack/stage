@@ -11,11 +11,11 @@ import { Box, Col, Row } from './box';
 import { Button } from './button';
 import { Caption } from './caption';
 import { Card } from './card';
+import { Chart } from './chart';
 import { Divider } from './divider';
 import { ListView, ListViewItem } from './list-view';
 import { Spacer } from './spacer';
 import { Table, TableCell, TableRow } from './table';
-import { Text } from './text';
 import {
   FrameFormScope, FrameThemeScope, useFormScope, useFrameColor, useFrameFlow, useFrameRuntime,
 } from './frame.runtime';
@@ -258,21 +258,11 @@ export function FrameTableCell({ node, children }: FrameNodeProps<'Table.Cell'>)
   );
 }
 
-export function FrameChart({ node }: FrameNodeProps<'Chart'>): React.ReactElement {
+export function FrameChart({ node }: FrameNodeProps<'Chart'>): React.ReactElement | null {
   const { dark } = useFrameRuntime();
-  const { header, rows } = node.props;
-  return (
-    <Table dark={dark}>
-      <TableRow dark={dark} header>
-        {header.map((h, i) => <TableCell key={i}><Text size="2xs" weight="semibold" value={h} /></TableCell>)}
-      </TableRow>
-      {rows.map((row, r) => (
-        <TableRow key={r} dark={dark}>
-          {row.map((v, i) => <TableCell key={i}><Text size="2xs" value={v} /></TableCell>)}
-        </TableRow>
-      ))}
-    </Table>
-  );
+  const { data, series, xAxis, ...rest } = node.props;
+  if (series === undefined || xAxis === undefined) return null;
+  return <Chart {...rest} data={data ?? []} series={series} xAxis={xAxis} dark={dark} style={frameFlex(node)} />;
 }
 
 export function FrameTransition({ children }: FrameNodeProps<'Transition'>): React.ReactElement {

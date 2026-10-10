@@ -93,17 +93,46 @@ describe('parseFrame: layout nodes', () => {
     expect(table.children[0]?.children[0]?.props).toEqual({ align: 'end', colSpan: 2 });
   });
 
-  test('Chart becomes a table of its data', () => {
+  test('Chart keeps the ChatKit props', () => {
     const chart = only({
-      type: 'Chart', xAxis: { dataKey: 'day', labels: { mon: 'Monday' } },
-      series: [{ type: 'bar', dataKey: 'sales', label: 'Sales' }, { type: 'line', dataKey: 'refunds' }],
-      data: [{ day: 'mon', sales: 10, refunds: 1 }, { day: 'tue', sales: 7 }],
+      type: 'Chart', xAxis: { dataKey: 'day', hide: false, labels: { mon: 'Monday', tue: 2 } },
+      series: [
+        { type: 'bar', dataKey: 'sales', label: 'Sales', stack: 'a', color: 'blue-500', curveType: 'step' },
+        { type: 'line', dataKey: 'refunds', color: { light: 'red', dark: '#ff8583' }, curveType: 'monotone', stack: 'a' },
+        { type: 'area', dataKey: 'fees', curveType: 'cubic', color: 'url(https://example.com/x)' },
+      ],
+      data: [{ day: 'mon', sales: 10, refunds: 1, note: { x: 1 }, nan: Number.NaN }, 'row', { day: 'tue', sales: '7' }],
+      showYAxis: true, showLegend: false, showTooltip: false, barGap: 2, barCategoryGap: 8, flex: 1,
+      height: 240, width: '100%', size: 200, minHeight: 120, maxWidth: 480, aspectRatio: '16/9',
     });
     expect(chart).toEqual({
       type: 'Chart', children: [],
-      props: { header: ['day', 'Sales', 'refunds'], rows: [['Monday', '10', '1'], ['tue', '7', '']] },
+      props: {
+        data: [{ day: 'mon', sales: 10, refunds: 1 }, { day: 'tue', sales: '7' }],
+        series: [
+          { type: 'bar', dataKey: 'sales', label: 'Sales', stack: 'a', color: 'blue-500' },
+          { type: 'line', dataKey: 'refunds', color: { light: 'red', dark: '#ff8583' }, curveType: 'monotone' },
+          { type: 'area', dataKey: 'fees' },
+        ],
+        xAxis: { dataKey: 'day', hide: false, labels: { mon: 'Monday' } },
+        showYAxis: true, showLegend: false, showTooltip: false, barGap: 2, barCategoryGap: 8, flex: 1,
+        height: 240, width: '100%', size: 200, minHeight: 120, maxWidth: 480, aspectRatio: 16 / 9,
+      },
     });
+  });
+
+  test('Chart needs a series and an x axis, and keeps its limits', () => {
     expect(only({ type: 'Chart', data: [] }).type).toBe('Unsupported');
+    expect(only({ type: 'Chart', xAxis: 'd', series: [{ type: 'pie', dataKey: 'v' }] }).type).toBe('Unsupported');
+    expect(only({ type: 'Chart', xAxis: { labels: {} }, series: [{ type: 'bar', dataKey: 'v' }] }).type).toBe('Unsupported');
+    const series = Array.from({ length: 20 }, (_, i) => ({ type: 'line', dataKey: `s${i}` }));
+    const data = Array.from({ length: 300 }, (_, i) => ({ d: i, ['__proto__']: 1, v: i }));
+    const chart = only({ type: 'Chart', xAxis: 'd', series, data });
+    if (chart.type !== 'Chart') throw new Error('not a chart');
+    expect(chart.props.series).toHaveLength(12);
+    expect(chart.props.data).toHaveLength(200);
+    expect(chart.props.data?.[0]).toEqual({ d: 0, v: 0 });
+    expect(frameFlex(chart)).toEqual({ flexShrink: 1, minWidth: 0 });
   });
 });
 

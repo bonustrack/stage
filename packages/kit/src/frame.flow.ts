@@ -15,7 +15,7 @@ const DIRECTED_TYPES: ReadonlySet<FrameNodeType> = new Set(['Box', 'Form', 'Basi
 const FILL_TYPES: ReadonlySet<FrameNodeType> = new Set(['Box', 'Row', 'Col', 'Form']);
 
 function axisOf(node: FrameNode): FrameAxis | undefined {
-  if (node.type === 'Chart' || node.type === 'Unsupported') return undefined;
+  if (node.type === 'Unsupported') return undefined;
   if (ROW_TYPES.has(node.type)) return 'row';
   if (COL_TYPES.has(node.type)) return 'col';
   if (!DIRECTED_TYPES.has(node.type)) return undefined;
@@ -23,7 +23,7 @@ function axisOf(node: FrameNode): FrameAxis | undefined {
 }
 
 function hasBackground(node: FrameNode): boolean {
-  if (node.type === 'Chart' || node.type === 'Unsupported' || !FILL_TYPES.has(node.type)) return false;
+  if (node.type === 'Unsupported' || !FILL_TYPES.has(node.type)) return false;
   return (node.props as { background?: unknown }).background !== undefined;
 }
 
