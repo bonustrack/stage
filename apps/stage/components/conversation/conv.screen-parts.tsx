@@ -37,12 +37,8 @@ import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
-import { addFrameToDashboard, addLiveToDashboard } from '../../lib/dashboard';
-import { newNodeKey } from '@stage-labs/client/nodes/protocol';
-import { FRAME_ADD_TOASTS, type FrameWidgetAdd } from '../dashboard/dashboard.model';
-import { liveConfirmOf } from '../dashboard/liveWidget.model';
-import { frameIsFullWidth, frameNodeOf, frameOf } from '../frame/frame.model';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import { frameOf } from '../frame/frame.model';
+import { addChatFrameToDashboard } from '../frame/frameDashboard';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
@@ -60,30 +56,11 @@ async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promis
   }
 }
 
-async function addedFromChat(convId: string, messageId: string, frame: FrameContent): Promise<FrameWidgetAdd | null> {
-  const width = frameIsFullWidth(frame) ? 'full' : 'half';
-  const origin = { conversationId: convId, messageId };
-  const node = frameNodeOf(frame);
-  if (node === null) return addFrameToDashboard(origin, width);
-  if (!await capabilities.confirm(liveConfirmOf(node.host))) return null;
-  return (await addLiveToDashboard({ url: node.url, key: newNodeKey(), origin }, width)).outcome;
-}
-
-async function addFrameWidget(convId: string, messageId: string, frame: FrameContent): Promise<void> {
-  try {
-    const outcome = await addedFromChat(convId, messageId, frame);
-    if (outcome !== null) capabilities.toast(FRAME_ADD_TOASTS[outcome]);
-  } catch (err) {
-    report('dashboard.addFrame', err);
-    capabilities.toast('Could not add it to your dashboard');
-  }
-}
-
 function frameAdder(convId: string, entry: HistoryEntry | null, close: () => void): (() => void) | undefined {
   const frame = frameOf(entry ?? undefined);
   if (entry === null || frame === null) return undefined;
   return () => {
-    void addFrameWidget(convId, entry.id, frame);
+    void addChatFrameToDashboard(convId, entry.id, frame);
     close();
   };
 }

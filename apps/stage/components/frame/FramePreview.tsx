@@ -25,6 +25,7 @@ import {
   FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameInputOf,
   frameLinkOf, frameLocked, frameMoreBelow, framePreviewCap, frameScreenTitle,
 } from './frame.model';
+import { addChatFrameToDashboard } from './frameDashboard';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { LiveMenuRows } from './LiveMenuRows';
 import { useChatFrame } from './useFrameAction';
@@ -130,6 +131,11 @@ export function FrameSurface({ frame, stackId, onAction, disabled, fill = false,
   );
 }
 
+function dashboardAdder(convId: string | null, messageId: string, frame: FrameContent): (() => void) | undefined {
+  if (convId === null) return undefined;
+  return () => { void addChatFrameToDashboard(convId, messageId, frame); };
+}
+
 export function FrameTile({ frame, line, messageId, disabled, fill = false, menu = false, onSent }: {
   frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; menu?: boolean; onSent?: () => void;
 }): React.ReactElement {
@@ -148,7 +154,9 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, menu
       />
       {node === null || anchor === null ? null : (
         <AnchoredMenu visible onClose={close} anchor={anchor}>
-          <LiveMenuRows url={node.url} onRefresh={chat.refresh} onClose={close} />
+          <LiveMenuRows
+            url={node.url} onRefresh={chat.refresh} onAddToDashboard={dashboardAdder(convId, messageId, frame)} onClose={close}
+          />
         </AnchoredMenu>
       )}
     </>

@@ -126,7 +126,7 @@ A tap sends the action to the node. An action with ChatKit's `"handler": "client
 {"type": "Button", "label": "Ask the agent", "onClickAction": {"type": "ask", "handler": "client"}}
 ```
 
-Add to dashboard on that frame first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them.
+Add to dashboard, in the frame's menu (the three dots) or in the message menu, first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them.
 
 ## Limits
 
