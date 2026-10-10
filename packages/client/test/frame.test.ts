@@ -83,7 +83,7 @@ describe('frame content types', () => {
   test('display texts', () => {
     expect(frameFallbackText({ widget: { type: 'Card' } })).toBe('Frame');
     expect(frameActionText(action)).toBe('Tapped "Approve"');
-    expect(frameActionText({ frameId: 'f', action: { type: 'pick' } })).toBe('Tapped pick');
+    expect(frameActionText({ action: { type: 'pick' } })).toBe('Tapped pick');
     expect(frameActionFallbackText({ frameId: 'f', action: { type: 'pick' } })).toBe('Frame action: pick');
   });
 });
