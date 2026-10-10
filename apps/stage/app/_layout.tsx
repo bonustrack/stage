@@ -17,6 +17,7 @@ import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
+import { KIT_FONTS } from '@stage-labs/kit/react-native/fonts';
 import { parseHex } from '@stage-labs/kit/theme-derive';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
@@ -44,15 +45,10 @@ import { TabStandby } from '../components/system/TabStandby';
 
 const queryClient = getQueryClient();
 
-const APP_FONTS = {
-  'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf') as number,
-  'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
-};
-
 applyWebGlobalStyles();
 installPlainTextCopy();
 installAlertShim();
-void loadAsync(APP_FONTS).catch(reported('boot.fonts'));
+void loadAsync(KIT_FONTS).catch(reported('boot.fonts'));
 if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
   void ensureActiveAccount().then(() => getOrCreateXmtpClient('production')).catch(ignored(undefined, 'optional'));
 }
@@ -133,7 +129,7 @@ function RootLayoutInner(): React.ReactElement {
   useEffect(() => { ensureMessagingStreamSync(); }, []);
   useOwnMailKey(onboarding.hasAccount);
 
-  const [loaded] = useFonts(APP_FONTS);
+  const [loaded] = useFonts(KIT_FONTS);
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);

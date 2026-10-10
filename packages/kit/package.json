@@ -26,6 +26,7 @@
     "./icons": "./src/icons.ts",
     "./theme": "./src/theme.ts",
     "./react-native/theme-context": "./src/react-native/theme-context.tsx",
+    "./react-native/fonts": "./src/react-native/fonts.ts",
     "./avatar": "./src/avatar.ts",
     "./layout": "./src/layout.ts",
     "./badge": "./src/badge.ts",
@@ -96,7 +97,8 @@
     "expo-audio": "*",
     "expo-video": "*",
     "expo-document-picker": "*",
-    "expo-image-picker": "*"
+    "expo-image-picker": "*",
+    "expo-font": "*"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",

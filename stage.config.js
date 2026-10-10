@@ -57,7 +57,7 @@ export default defineConfig({
     'packages/kit': {
       type: 'library',
       knip: {
-        entry: ['stories/*.stories.tsx'],
+        entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'],
         project: ['src/**', 'stories/**', 'gallery/**'],
         ignoreDependencies: ['react-native-web'],
       },

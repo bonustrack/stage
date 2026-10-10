@@ -27,7 +27,7 @@ Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.git
 | `density: 'compact' \| 'normal' \| 'spacious'`    | `Density` + `DENSITY_SCALE`                          |
 | `typography.baseSize: 14\|15\|16\|17\|18`         | `BaseSize` + `BASE_SIZE_DEFAULT`                     |
 | `typography.fontFamily` / `fontFamilyMono`        | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN)  |
-| `typography.fontSources`                          | N/A, RN loads fonts via `expo-font`                  |
+| `typography.fontSources`                          | N/A, Kit loads its own Calibre (see Fonts below)     |
 | `color.surface: { background, foreground }`       | `SurfaceColors` (`theme-derive.ts`)                  |
 | `color.accent: { primary, level: 0\|1\|2\|3 }`    | `AccentColor`                                        |
 | `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions`                                   |
@@ -55,7 +55,11 @@ Other apps install it from npm. Releases go out under the `beta` tag, so ask for
 bun add @stage-labs/kit@beta
 ```
 
-The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker` and `expo-image-picker`. `expo-av` is no longer needed.
+The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`. `expo-av` is no longer needed.
+
+### Fonts
+
+Kit ships Calibre Medium and Calibre Semibold (`src/fonts/`) and loads them by itself, so a new project renders kit text in Calibre with no setup. Loading starts when `KitThemeProvider` or a component that uses it (`Text`, `Title`, `Caption`, `Button`, `Badge`, `Tabs`, `Modal`, ...) is first imported. On web, Kit adds `@font-face` rules for `Calibre-Medium` and `Calibre-Semibold` (Vite and Expo both turn the font files into URLs). On iOS and Android it registers them with `expo-font`. Native text drawn before the fonts finish loading keeps the system font until it re-renders, so an app that wants Calibre on its very first frame waits with `useFonts(KIT_FONTS)` from `expo-font`, where `KIT_FONTS` (family name to font file) comes from `@stage-labs/kit/react-native/fonts`. Stage does this.
 
 ## Usage
 
@@ -136,6 +140,7 @@ src/
   markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
   text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
   link.ts            # web link helpers: NEW_TAB (target _blank, rel noopener noreferrer) and isPlainClick, shared with the app's links
+  fonts/             # Calibre Medium and Semibold, loaded by react-native/fonts.ts
   react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
 stories/             # one story file per component (controls for every prop + variant matrices)
@@ -171,6 +176,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ### Unreleased
 
+- Kit now ships Calibre Medium and Calibre Semibold and loads them by itself: `@font-face` rules on web, `expo-font` on iOS and Android. A new project no longer falls back to the system font. New export `@stage-labs/kit/react-native/fonts` with `KIT_FONTS` (family name to font file, for `useFonts`). `expo-font` is a new peer dependency.
 - `Badge` is fully rounded by default. Pass `pill={false}` for the former 8px (`sm`) radius. Frame badges without `pill` are fully rounded too.
 - New `Badge` props: `background`, any colour for `color` (as `resolveBadgeStyle` already accepted), `textSize`, `weight`, `truncate`, `style`, `textStyle` and `children` (in place of the label text). Stage draws its labels with `Badge` and keeps their look.
 - `Text size="3xl"` is now 26px instead of 32px, matching the landing paragraph. Mail H1 and Frame `Text`/`Title`/`Caption`/`Label` explicitly sized `3xl` also render at 26px, including existing payloads; no legacy mapping is added. The 26px snap entry uses `3xl`. Icons retain their separate 32px `3xl` size.

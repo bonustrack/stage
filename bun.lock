@@ -178,6 +178,7 @@
       "peerDependencies": {
         "expo-audio": "*",
         "expo-document-picker": "*",
+        "expo-font": "*",
         "expo-image-picker": "*",
         "expo-video": "*",
         "react": "*",
