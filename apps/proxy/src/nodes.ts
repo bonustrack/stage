@@ -7,7 +7,8 @@ export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
 const MAIN_MODULE = 'node.js';
 const COMPATIBILITY_DATE = '2026-06-01';
-const COMPATIBILITY_FLAGS = ['global_fetch_strictly_public'];
+const COMPATIBILITY_FLAGS = ['global_fetch_strictly_public', 'disable_ctx_exports'];
+const IMPORT = /\bimport\b/;
 const CLOUDFLARE_API = 'https://api.cloudflare.com/client/v4';
 const API_TIMEOUT_MS = 15_000;
 const MAX_SKEW_SECONDS = 300;
@@ -156,6 +157,7 @@ async function unpublish(api: NodesApi, id: string): Promise<Response> {
 async function putNode(request: Request, api: NodesApi, nowMs: number): Promise<Response> {
   const code = await readCode(request);
   if (code instanceof Response) return code;
+  if (IMPORT.test(new TextDecoder().decode(code))) return fail(400, 'nodes can not use import');
   const id = await signerNodeId(request, code, nowMs);
   return id === null ? fail(401, 'invalid signature') : publish(api, id, code);
 }

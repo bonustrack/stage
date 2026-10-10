@@ -72,7 +72,8 @@ describe('publishing a node', () => {
     expect(calls.every(call => call.auth === `Bearer ${TOKEN}`)).toBe(true);
     const form = calls[1]?.body;
     expect(JSON.parse(String(form?.get('metadata')))).toEqual({
-      main_module: 'node.js', compatibility_date: '2026-06-01', compatibility_flags: ['global_fetch_strictly_public'], bindings: [],
+      main_module: 'node.js', compatibility_date: '2026-06-01', compatibility_flags: ['global_fetch_strictly_public', 'disable_ctx_exports'],
+      bindings: [],
     });
     const module = form?.get('node.js') as File;
     expect(module.type).toBe('application/javascript+module');
@@ -115,6 +116,22 @@ describe('publishing a node', () => {
     const elsewhere = signed('PUT', key, CODE, NOW, 'https://proxy.stage.box/nodes?x=1');
     expect((await run(new Request(URL_NODES, { method: 'PUT', body: CODE, headers: elsewhere.headers }), api)).status).toBe(401);
     expect(calls).toEqual([]);
+  });
+
+  test('refuses code that imports a module, so a node can not call itself past its limits', async () => {
+    const { api, calls } = cloudflare();
+    for (const code of [
+      `import { exports } from 'cloudflare:workers';\n${CODE}`, `import{connect}from"cloudflare:sockets";${CODE}`,
+      'export default { fetch: async () => (await import("cloudflare:workers")).exports.default.fetch("https://x/") };',
+      `import * as w from 'cloudflare:workers'; ${CODE}`,
+    ]) {
+      const res = await run(signed('PUT', newNodeKey(), code), api);
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ error: 'nodes can not use import' });
+    }
+    expect(calls).toEqual([]);
+    const important = `const important = 'Import'; ${CODE}`;
+    expect((await run(signed('PUT', newNodeKey(), important), api)).status).toBe(200);
   });
 
   test('checks the size before it reads or verifies anything', async () => {

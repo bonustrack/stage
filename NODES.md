@@ -75,7 +75,7 @@ Test vector, with the RFC 8032 test 1 key:
 
 Stage can put a node online for you. In the app: Settings, Dashboard, Add from URL, Code. Paste the code, tap Publish, and Stage shows the node at `https://nodes.stage.box/<id>` with its preview, then adds it as a widget. Anyone with the link can call it, like any node.
 
-The code is one ES module of at most 64 KB whose default export has a `fetch` handler, as in a Cloudflare Worker:
+The code is one ES module of at most 64 KB, with no `import`, whose default export has a `fetch` handler, as in a Cloudflare Worker:
 
 ```js
 export default {
@@ -88,7 +88,8 @@ export default {
 Each node runs as its own Worker in a Cloudflare Workers for Platforms dispatch namespace, isolated from the other nodes and from Stage:
 
 - No bindings, secrets or environment, and no shared cache.
-- `fetch` reaches public `https` host names on the default port only: no IP addresses, local names or `*.stage.box`, and a redirect comes back to the code instead of being followed. Raw TCP sockets are off.
+- `fetch` reaches public `https` host names on the default port only: no IP addresses, local names or `*.stage.box`, and a redirect comes back to the code instead of being followed. Cloudflare `cf` options on a `fetch` are dropped. Raw TCP sockets are off.
+- A node can not call itself: `ctx.exports` is off and the code can not `import` (so no `cloudflare:workers` or `cloudflare:sockets`), since a call to itself would skip these limits.
 - Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all.
 - Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other. Cookies and the caller's IP address and location headers are removed first, so a hosted node never sees the user's IP.
 - `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP (an IPv6 address counts by its /64), 600 calls a minute per node, and no calls from other Workers.
