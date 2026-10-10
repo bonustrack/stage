@@ -36,7 +36,7 @@ export function internalLinkPath(url: string): string | null {
     const parsed = new URL(href);
     if (!/^https?:$/.test(parsed.protocol) || parsed.host !== 'stage.box' || parsed.username || parsed.password) return;
     const route = parsed.hash.startsWith('#/') ? parsed.hash.slice(1) : parsed.pathname + parsed.search;
-    if (/[#]/.test(route) || /^(?:\/expo-development-client\/|\/preview-launcher\.html)/.test(route)) return;
+    if (/[#]/.test(route) || /^(?:\/\/|\/expo-development-client\/|\/preview-launcher\.html)/.test(route)) return;
     path = appPath(route);
   }, 'probe');
   return path;

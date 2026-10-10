@@ -65,6 +65,13 @@ describe('internalLinkPath', () => {
     ]) expect(internalLinkPath(url)).toBeNull();
   });
 
+  test('never routes a stage.box link to a path the router opens as another site', () => {
+    for (const url of [
+      'https://stage.box//evil.test/', 'https://stage.box/#//evil.test', 'https://stage.box/#///evil.test',
+      'stage:///evil.test', 'stage:////evil.test', 'metro:///evil.test',
+    ]) expect(internalLinkPath(url)).toBeNull();
+  });
+
   test('keeps preview-build launch actions outside the app router', () => {
     expect(internalLinkPath('stage://expo-development-client/?url=https%3A%2F%2Fu.expo.dev%2Fbuild')).toBeNull();
     expect(internalLinkPath('https://stage.box/preview-launcher.html?u=build')).toBeNull();
