@@ -98,7 +98,7 @@ function WalletValidatorRow(): React.ReactElement {
       <Col flex={1} gap={3}>
         <Row align="center" gap={8}>
           <Text value="ECDSA owner key" size="xs" color="text" />
-          <Badge label="SUDO" color="success" />
+          <Badge label="SUDO" color="success" pill={false} />
         </Row>
         <Text value="Main key (recovery phrase)" size="3xs" color="secondary" />
       </Col>

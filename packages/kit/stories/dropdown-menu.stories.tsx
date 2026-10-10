@@ -41,7 +41,7 @@ export const CustomContent: Story = () => {
       <DropdownMenuItem label="Fields (2)" onPress={() => undefined}>
         <Row align="center" gap={DROPDOWN_MENU.itemGap}>
           <Text {...menuText}>Fields</Text>
-          <Badge label="2" color="secondary" variant="soft" pill/>
+          <Badge label="2" color="secondary" variant="soft"/>
         </Row>
       </DropdownMenuItem>
     </DropdownMenu>
