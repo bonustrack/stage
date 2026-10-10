@@ -77,9 +77,10 @@ Test vector, with the RFC 8032 test 1 key:
 
 A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. Add to dashboard on that frame then adds a live widget for that URL with a new key. The bubble in the chat stays as it was sent, and apps that do not know `source` ignore it.
 
-## Example
+## Examples
 
-[`examples/btc-node`](examples/btc-node): a Cloudflare Worker with the BTC price and a Refresh button, and a Deploy to Cloudflare button.
+- [`examples/btc-node`](examples/btc-node): a Cloudflare Worker with the BTC price and a Refresh button, and a Deploy to Cloudflare button.
+- `https://proxy.stage.box/nodes/eth-price`: the ETH price node Stage hosts itself on its proxy Worker ([`apps/proxy/src/ethNode.ts`](apps/proxy/src/ethNode.ts)). It does not check signatures because the price is public.
 
 ## Limits
 

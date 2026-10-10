@@ -14,6 +14,7 @@ import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
 import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
+import { ETH_NODE_PATH, handleEthNode } from './ethNode.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
@@ -225,6 +226,7 @@ export default {
     }
     const clientRoute = CLIENT_ROUTES.get(pathname);
     if (clientRoute) return request.method === 'OPTIONS' ? corsResponse(CLIENT_CORS, null, 204) : clientRoute(request, ctx);
+    if (pathname === ETH_NODE_PATH) return handleEthNode(request, caches.default);
     return routePrefixed(request, env, pathname) ?? json({ error: 'not found' }, 404);
   },
 
