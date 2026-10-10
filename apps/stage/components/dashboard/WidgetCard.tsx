@@ -10,14 +10,19 @@ import { MenuHeading, MenuRow } from '../MenuRows';
 import { Col, Row } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { changeDashboard } from '../../lib/dashboard';
-import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
 import { refreshLiveWidget } from '../../lib/liveWidget';
 import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget, widgetKindOf, widgetSizeLabel } from './dashboard.model';
 import { FrameWidget } from './FrameWidget';
 import { LiveWidget } from './LiveWidget';
-import { ownsHostedNode } from './liveWidget.model';
+import { NODE_DELETE_FAILED, ownsHostedNode } from './liveWidget.model';
 import { WidgetMenuButton, WidgetOutline, type WidgetGrip } from './widgetParts';
+
+async function removeWithNode(widgetId: string, key: string): Promise<void> {
+  if (await deleteNode(linkProxyBase(), key) || await capabilities.confirm(NODE_DELETE_FAILED)) {
+    changeDashboard(widgets => removeWidget(widgets, widgetId));
+  }
+}
 
 function LiveRows({ source, widgetId, onClose }: { source: LiveSource; widgetId: string; onClose: () => void }): React.ReactElement {
   return (
@@ -36,10 +41,14 @@ export function WidgetMenu({ widget, anchor, onClose }: {
     changeDashboard(change);
   };
   const live = liveSourceOf(widget);
-  const ownNode = live !== null && ownsHostedNode(live);
+  const nodeKey = live !== null && ownsHostedNode(live) ? live.key : null;
   const remove = (): void => {
-    pick(widgets => removeWidget(widgets, widget.id));
-    if (ownNode) ignore(deleteNode(linkProxyBase(), live.key), 'cleanup');
+    if (nodeKey === null) {
+      pick(widgets => removeWidget(widgets, widget.id));
+      return;
+    }
+    onClose();
+    void removeWithNode(widget.id, nodeKey);
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
@@ -54,7 +63,7 @@ export function WidgetMenu({ widget, anchor, onClose }: {
           onPress={() => { pick(widgets => resizeWidget(widgets, widget.id, { h: option.value })); }} />
       ))}
       {live === null ? null : <LiveRows source={live} widgetId={widget.id} onClose={onClose} />}
-      <MenuRow icon={IconTrashCan} label={ownNode ? 'Remove widget and node' : 'Remove widget'} danger onPress={remove} />
+      <MenuRow icon={IconTrashCan} label={nodeKey === null ? 'Remove widget' : 'Remove widget and node'} danger onPress={remove} />
     </AnchoredMenu>
   );
 }

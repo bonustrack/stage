@@ -103,6 +103,12 @@ describe('hosted nodes', () => {
     expect(publishProblemText('refused', 'Uncaught SyntaxError: Unexpected token')).toBe('Code error: Uncaught SyntaxError: Unexpected token');
   });
 
+  test('adding a hosted node from a chat says its code does not see the IP address', () => {
+    expect(liveConfirmOf('nodes.stage.box').message).toBe(
+      'It runs code a Stage user put on nodes.stage.box, every minute while your Dashboard is open. That code does not see your IP address or your account.',
+    );
+  });
+
   test('a preview needs a loaded frame', () => {
     expect(livePreviewOf('https://n.example.com/', 'n.example.com', shown)).toEqual({ url: 'https://n.example.com/', host: 'n.example.com', frame: { widget: CARD }, state: shown });
     expect(livePreviewOf('https://n.example.com/', 'n.example.com', { ...EMPTY_LIVE, problem: 'status', status: 502 })).toBe('Could not load it: node error 502');

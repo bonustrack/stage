@@ -16,8 +16,8 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { FRAME_ADD_TOASTS } from './dashboard.model';
 import { EMPTY_LIVE, livePreviewOf, liveStateAfter, publishProblemText, type LivePreview } from './liveWidget.model';
 
-const NOTE = 'Stage runs this code at nodes.stage.box in its own sandbox, with no secrets, 50 ms of CPU and 5 requests per call. '
-  + 'Anyone with the link can call it. Removing the widget deletes the node.';
+const NOTE = 'Stage runs this code at nodes.stage.box in its own sandbox: no secrets, only public https calls, '
+  + '50 ms of CPU and 5 requests per call. Anyone with the link can call it. Removing the widget deletes the node.';
 const PLACEHOLDER = "export default {\n  fetch: () => Response.json({ type: 'Card', children: [{ type: 'Text', value: 'Hello' }] }),\n};";
 
 const FRESH_RETRY_MS = 2_000;
@@ -45,12 +45,17 @@ async function publishAndLoad(key: string, code: string): Promise<Published | st
   return typeof preview === 'string' ? `Published, but ${preview.charAt(0).toLowerCase()}${preview.slice(1)}` : { ...preview, code };
 }
 
-function useUnaddedNodeCleanup(key: string): { mark: (pending: boolean) => void } {
-  const pending = useRef(false);
+function useUnaddedNodeCleanup(key: string): { track: (work: Promise<unknown>) => void; keep: () => void } {
+  const pending = useRef<Promise<unknown> | null>(null);
   useEffect(() => () => {
-    if (pending.current) ignore(deleteNode(linkProxyBase(), key), 'cleanup');
+    const work = pending.current;
+    const remove = (): Promise<boolean> => deleteNode(linkProxyBase(), key);
+    if (work !== null) ignore(work.then(remove, remove), 'cleanup');
   }, [key]);
-  return { mark: (value) => { pending.current = value; } };
+  return {
+    track: (work) => { pending.current = work; },
+    keep: () => { pending.current = null; },
+  };
 }
 
 function PublishedNode({ node, stackId }: { node: Published; stackId: string }): React.ReactElement {
@@ -79,8 +84,9 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
   const publish = async (): Promise<void> => {
     setBusy(true);
     setPublished(null);
-    cleanup.mark(true);
-    const outcome = await publishAndLoad(key, code);
+    const work = publishAndLoad(key, code);
+    cleanup.track(work);
+    const outcome = await work;
     setBusy(false);
     if (typeof outcome === 'string') setHint(outcome);
     else setPublished(outcome);
@@ -91,7 +97,7 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
     try {
       const { outcome, id } = await addLiveToDashboard({ url: node.url, key }, frameIsFullWidth(node.frame) ? 'full' : 'half');
       if (outcome === 'added') {
-        cleanup.mark(false);
+        cleanup.keep();
         seedLiveWidget(id, node.url, node.state);
       }
       capabilities.toast(FRAME_ADD_TOASTS[outcome]);

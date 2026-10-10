@@ -1,5 +1,6 @@
 import { parseFrameDoc } from '@stage-labs/kit/frame';
 import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
+import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
@@ -64,12 +65,18 @@ export function livePreviewOf(url: string, host: string, state: LiveState): Live
   return { url, host, frame: state.frame, state };
 }
 
+export const NODE_DELETE_FAILED = {
+  title: 'Could not delete the node',
+  message: 'Remove the widget anyway? The node then stays online.',
+  confirmLabel: 'Remove',
+  destructive: true,
+};
+
 export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
-  return {
-    title: 'Add a live widget?',
-    message: `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`,
-    confirmLabel: 'Add',
-  };
+  const message = host === NODES_HOST
+    ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. That code does not see your IP address or your account.`
+    : `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`;
+  return { title: 'Add a live widget?', message, confirmLabel: 'Add' };
 }
 
 function renders(frame: FrameContent): boolean {
