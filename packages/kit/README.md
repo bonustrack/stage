@@ -174,7 +174,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
-### Unreleased
+### 0.1.0-beta.3
 
 - Kit now ships Calibre Medium and Calibre Semibold and loads them by itself: `@font-face` rules on web, `expo-font` on iOS and Android. A new project no longer falls back to the system font. New export `@stage-labs/kit/react-native/fonts` with `KIT_FONTS` (family name to font file, for `useFonts`). `expo-font` is a new peer dependency.
 - `Badge` is fully rounded by default. Pass `pill={false}` for the former 8px (`sm`) radius. Frame badges without `pill` are fully rounded too.
@@ -188,6 +188,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 - `FONT_SIZE_SNAP` now uses `3xs` for 10 through 13, `2xs` for 14, and `xs` for 15 and 16. The 15px font token no longer exists; larger snap entries are unchanged.
 - Frame text and gallery URL arguments use the new names literally. The previous `2xs` to `xs` normalization is removed, so newly selected `2xs` is 14px, not 16px. Gallery Text controls and the matrix include all nine current sizes. A removed size in a gallery URL uses the default text size.
 - Existing `stage.box/frame:1.0` payloads and gallery URLs also use the new text scale, so their historical rendering can change. An unchanged old `3xs` now means 13px rather than 14px, and an old Frame/gallery `2xs` now means 14px rather than the previous 16px normalization. Removed Frame text sizes `4xs` and `4xl` are ignored and fall back to `md` (18px). No typography version, legacy-size mapping or persisted-payload migration is added. Historical changelog entries below describe their release's names.
+- `DropdownMenuItem` takes optional `children` in place of its label text, and `react-native/menu` exports `useDropdownMenuText`, the shared dropdown and sheet menu text style.
+- `Dialog` and `DropdownMenuSheet` take `avoidKeyboard`, which keeps the panel above the keyboard on iOS.
+- `react-native/input` exports `SEARCH_INPUT_PROPS`: web props for search fields that keep password managers out and stop Escape from clearing the field.
+- `Button` labels use Calibre Medium instead of Semibold, and `xs` and `sm` buttons use `2xs` (14px) and `xs` (16px) text. `Caption` `sm` and `md` use the `Text` sizes of the same name (17px and 18px).
+- Frame buttons with a long label wrap it and grow instead of cutting it off.
 
 ### 0.1.0-beta.2
 
