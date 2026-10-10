@@ -16,6 +16,7 @@ import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberL
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
 import { ChannelFields, ChannelLabels, useLiveChannelLabels } from './channel.labels';
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -76,23 +77,15 @@ function ChannelTitle({ name, description }: { name: string | null; description:
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
 }): React.ReactElement {
-  const scheme = dark ? 'dark' : 'light';
   const owner = badge.role === 'owner';
   return (
-    <Box
-      direction="row"
-      align="center"
-      padding={{ x: 8, y: 2 }}
-      radius="full"
-      background={owner ? MEMBER_OWNER_BG[scheme] : border}
-    >
-      <Text
-        value={badge.label}
-        weight="medium"
-        color={owner ? MEMBER_OWNER_FG[scheme] : sub}
-        size="3xs"
-      />
-    </Box>
+    <Badge
+      label={badge.label}
+      weight="medium"
+      color={owner ? MEMBER_OWNER_FG : sub}
+      background={owner ? MEMBER_OWNER_BG : border}
+      dark={dark}
+    />
   );
 }
 

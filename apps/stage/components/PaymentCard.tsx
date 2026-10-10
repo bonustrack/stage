@@ -1,3 +1,4 @@
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -134,6 +135,8 @@ export function PaymentCard({
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
+const X402_BADGE_STYLE = { paddingTop: 3, paddingBottom: 3 } as const;
+
 function x402Description(challenge: X402Challenge, accept: X402Accept): string {
   if (accept.description != null && accept.description !== '') return accept.description;
   if (challenge.error != null && challenge.error !== '') return challenge.error;
@@ -231,11 +234,7 @@ export function X402Card({ challenge, dark }: {
     return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
   };
 
-  const badge = (
-    <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
-      <Text weight="semibold" color={pal.primary} size="3xs">x402</Text>
-    </Box>
-  );
+  const badge = <Badge label="x402" color={pal.primary} background={withAlpha(pal.primary, 0.16)} style={X402_BADGE_STYLE} />;
 
   return (
     <PaymentCard

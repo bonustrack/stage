@@ -1,4 +1,5 @@
 
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -13,16 +14,14 @@ import { usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
 import type { useConversationState } from './useConversationState';
 
-function IntroLabelChips({ labels, fg }: {
-  labels: string[]; fg: string;
+function IntroLabelChips({ labels, fg, bg }: {
+  labels: string[]; fg: string; bg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }} key={label.toLowerCase()}>
-          <Text size="xs" color={fg}>{label}</Text>
-        </Box>
+        <Badge key={label.toLowerCase()} label={label} textSize="xs" weight="normal" color={fg} background={bg}/>
       ))}
     </Row>
   );
@@ -32,7 +31,7 @@ export function ConversationIntro({ c, convId }: {
   c: ReturnType<typeof useConversationState>; convId: string;
 }): React.ReactElement | null {
   const { isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels } = c;
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, inputBg } = usePalette();
   const router = useRouter();
   if (isGroup) {
     const desc = groupDescription.trim();
@@ -49,7 +48,7 @@ export function ConversationIntro({ c, convId }: {
           title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
           style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         />
-        <IntroLabelChips labels={groupLabels} fg={fg}/>
+        <IntroLabelChips labels={groupLabels} fg={fg} bg={inputBg}/>
         {desc ? (
           <Text size="xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}

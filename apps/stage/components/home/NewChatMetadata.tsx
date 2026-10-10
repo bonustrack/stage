@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
@@ -14,13 +15,15 @@ import { peerLabel } from '../conversation/convTitle';
 import { usePalette } from '../../lib/theme';
 import type { NewChatMetadata as Metadata } from './newChatMetadata.model';
 
+const METADATA_CHIP_STYLE = { maxWidth: '100%', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } as const;
+
 function MetadataChip({ label, field, icon, onRemove, onEdit }: {
   label: string; field: string; icon: CentralIcon; onRemove: () => void; onEdit?: (point: MenuPoint) => void;
 }): React.ReactElement {
   const { border, text } = usePalette();
   const chip = <LabelChip label={label} leading={<Glyph icon={icon} size={LABEL_CHIP_ICON_SIZE} color={text}/>}/>;
   return (
-    <Row align="center" background={border} radius="full" style={{ maxWidth: '100%' }}>
+    <Badge label={label} background={border} style={METADATA_CHIP_STYLE}>
       {onEdit ? (
         <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${field}: ${label}`} onPress={e => { onEdit(menuPointAbove(e)); }}
           style={{ flexShrink: 1 }}>{chip}</Pressable>
@@ -29,7 +32,7 @@ function MetadataChip({ label, field, icon, onRemove, onEdit }: {
         style={{ paddingRight: 9, paddingVertical: 6 }}>
         <Glyph icon={IconCrossSmall} size={LABEL_CHIP_ICON_SIZE} color={text}/>
       </Pressable>
-    </Row>
+    </Badge>
   );
 }
 
