@@ -5,6 +5,8 @@ export const ETH_NODE_PATH = '/nodes/eth-price';
 
 const COIN = 'coingecko:ethereum';
 const CACHE_SECONDS = 20;
+const LOAD_MAX_AGE_MS = CACHE_SECONDS * 1000;
+const TAP_MAX_AGE_MS = 5000;
 const CACHE_KEY = 'https://proxy.stage.box/nodes/eth-price?cached=widget';
 const NODE_CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature');
 const NO_STORE = { ...NODE_CORS, 'cache-control': 'no-store' };
@@ -18,7 +20,7 @@ async function ethQuote(): Promise<EthQuote | null> {
   try {
     const [prices, changes] = await Promise.all([getCurrentPrices([COIN]), getPriceChanges([COIN]).catch((): Record<string, number> => ({}))]);
     const price = prices[COIN];
-    return price === undefined ? null : { usd: price.usd, change: changes[COIN] ?? null, at: price.timestamp * 1000 };
+    return price === undefined ? null : { usd: price.usd, change: changes[COIN] ?? null, at: Date.now() };
   } catch {
     return null;
   }
@@ -38,7 +40,7 @@ export function ethWidget(quote: EthQuote | null): Widget {
     children: [
       { type: 'Row', children: [{ type: 'Caption', value: 'Ethereum', size: 'sm' }, { type: 'Spacer' }, ...changeBadge(quote?.change ?? null)] },
       { type: 'Title', value: quote === null ? 'Unavailable' : USD.format(quote.usd), size: '3xl' },
-      { type: 'Caption', value: quote === null ? 'The price source did not answer' : `Price at ${time} UTC` },
+      { type: 'Caption', value: quote === null ? 'The price source did not answer' : `Updated ${time} UTC` },
       {
         type: 'Row',
         children: [{ type: 'Button', label: 'Refresh', iconStart: 'reload', variant: 'outline', size: 'sm', onClickAction: { type: 'refresh' } }],
@@ -54,15 +56,16 @@ function cachedQuote(raw: unknown): EthQuote | null {
   return { usd: o.usd, at: o.at, change: typeof o.change === 'number' ? o.change : null };
 }
 
-async function currentWidget(cache: Cache | undefined): Promise<Widget> {
+async function currentWidget(cache: Cache | undefined, maxAgeMs: number): Promise<Widget> {
   const key = new Request(CACHE_KEY);
   const hit = await cache?.match(key);
-  if (hit) return ethWidget(cachedQuote(await hit.json()));
+  const cached = hit ? cachedQuote(await hit.json()) : null;
+  if (cached !== null && Date.now() - cached.at < maxAgeMs) return ethWidget(cached);
   const quote = await ethQuote();
   if (quote !== null && cache !== undefined) {
     await cache.put(key, jsonResponse(quote, 200, { 'cache-control': `public, max-age=${CACHE_SECONDS}` }));
   }
-  return ethWidget(quote);
+  return ethWidget(quote ?? cached);
 }
 
 function actionType(body: string): string | null {
@@ -77,7 +80,7 @@ function actionType(body: string): string | null {
 export async function handleEthNode(request: Request, cache: Cache | undefined): Promise<Response> {
   if (request.method === 'OPTIONS') return corsResponse(NODE_CORS, null, 204);
   if (request.method !== 'GET' && request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405, NO_STORE);
-  if (request.method === 'GET') return jsonResponse(await currentWidget(cache), 200, NO_STORE);
+  if (request.method === 'GET') return jsonResponse(await currentWidget(cache, LOAD_MAX_AGE_MS), 200, NO_STORE);
   if (actionType(await request.text()) !== 'refresh') return jsonResponse({}, 200, NO_STORE);
-  return jsonResponse({ updated_item: { type: 'widget', widget: await currentWidget(cache) } }, 200, NO_STORE);
+  return jsonResponse({ updated_item: { type: 'widget', widget: await currentWidget(cache, TAP_MAX_AGE_MS) } }, 200, NO_STORE);
 }

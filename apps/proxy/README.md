@@ -14,8 +14,9 @@ runtime - no Express, no origin, no laptop dependency.
 - **ETH price node:** `/nodes/eth-price` is a live Dashboard widget node (see
   `NODES.md` at the repo root). It answers OpenAI ChatKit widget JSON with the
   ETH price and its 24h change from DefiLlama, cached 20 s at the edge, and
-  answers a Refresh tap with a ChatKit sync action response. It reads no
-  bindings, needs no signature (the price is public) and logs nothing.
+  answers a Refresh tap with a ChatKit sync action response and a price at
+  most 5 s old. It reads no bindings, needs no signature (the price is
+  public) and logs nothing.
 - **Stage names:** `/names/*` issues free `<label>.stage.base.eth` subnames on
   Base. The Worker holds the operator key (`NAMES_OPERATOR_KEY`) and a KV of
   issued labels (`NAMES_KV`); claims are signed by the wallet in the app and

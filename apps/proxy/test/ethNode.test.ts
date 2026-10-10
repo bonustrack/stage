@@ -40,7 +40,7 @@ describe('eth price node', () => {
     const widget = await res.json() as Parameters<typeof children>[0];
     expect((widget as { type: string }).type).toBe('Card');
     expect(children(widget)).toEqual([
-      '"value":"Ethereum"', '"label":"+0.34% 24h"', '"value":"$2,487.69"', expect.stringMatching(/^"value":"Price at \d\d:\d\d:\d\d UTC"$/), '"label":"Refresh"',
+      '"value":"Ethereum"', '"label":"+0.34% 24h"', '"value":"$2,487.69"', expect.stringMatching(/^"value":"Updated \d\d:\d\d:\d\d UTC"$/), '"label":"Refresh"',
     ]);
   });
 
@@ -61,6 +61,24 @@ describe('eth price node', () => {
     expect(pre.status).toBe(204);
     expect(pre.headers.get('access-control-allow-headers')).toBe('content-type, stage-key, stage-timestamp, stage-signature');
     expect((await handleEthNode(new Request(NODE, { method: 'DELETE' }), undefined)).status).toBe(405);
+  });
+
+  test('a load reuses a price up to 20 s old, a Refresh tap one up to 5 s old', async () => {
+    const cache = memoryCache();
+    const key = new Request('https://proxy.stage.box/nodes/eth-price?cached=widget');
+    await cache.put(key, Response.json({ usd: 2000, change: 1, at: Date.now() - 10_000 }));
+    const calls = stubPrices(2100, 2);
+    const load = await (await handleEthNode(new Request(NODE), cache)).json() as Parameters<typeof children>[0];
+    expect(children(load)).toContain('"value":"$2,000.00"');
+    expect(calls).toHaveLength(0);
+    const tap = { type: 'threads.sync_custom_action', params: { action: { type: 'refresh' } } };
+    const tapped = await (await handleEthNode(new Request(NODE, { method: 'POST', body: JSON.stringify(tap) }), cache)).json() as { updated_item: { widget: Parameters<typeof children>[0] } };
+    expect(children(tapped.updated_item.widget)).toContain('"value":"$2,100.00"');
+    expect(calls).toHaveLength(2);
+    globalThis.fetch = Object.assign(async (): Promise<Response> => new Response('down', { status: 503 }), { preconnect: realFetch.preconnect });
+    await cache.put(key, Response.json({ usd: 2000, change: 1, at: Date.now() - 10_000 }));
+    const stale = await (await handleEthNode(new Request(NODE, { method: 'POST', body: JSON.stringify(tap) }), cache)).json() as { updated_item: { widget: Parameters<typeof children>[0] } };
+    expect(children(stale.updated_item.widget)).toContain('"value":"$2,000.00"');
   });
 
   test('many loads share one cached price, and a failing source shows Unavailable without caching it', async () => {
