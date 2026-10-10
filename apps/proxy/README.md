@@ -61,8 +61,8 @@ runtime - no Express, no origin, no laptop dependency.
   dispatch namespace `stage-nodes` as the Worker `node-<id>`, with no
   bindings, secrets or logs and the `global_fetch_strictly_public` flag.
   `apps/dispatch` serves it on `https://nodes.stage.box/<id>`. The token and
-  account id are the `NODES_API_TOKEN` and `NODES_ACCOUNT_ID` secrets; without
-  them `/nodes` answers `503`.
+  account id are the `NODES_CF_API_TOKEN` and `NODES_CF_ACCOUNT_ID` secrets;
+  without them `/nodes` answers `503`.
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -164,10 +164,10 @@ the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
 and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
 dashboard; a deploy fails while it does not exist);
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
-with `wrangler secret put`, never committed. So are `NODES_API_TOKEN` (an
+with `wrangler secret put`, never committed. So are `NODES_CF_API_TOKEN` (an
 account API token, owned by the account rather than a person so its API budget
 is its own, with only Workers Scripts, Edit) and
-`NODES_ACCOUNT_ID`, set in the dashboard (Workers & Pages, proxy, Settings,
+`NODES_CF_ACCOUNT_ID`, set in the dashboard (Workers & Pages, proxy, Settings,
 Variables and Secrets, type Secret) so a deploy keeps them. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any
 origin. Cloudflare Workers Builds deploys it on every push to `main` that touches `apps/proxy/`, `packages/client/`, `bun.lock` or the root `package.json`: it installs with `bun install --frozen-lockfile` (Bun 1.4.0 via the `BUN_VERSION` build variable), runs `bun run typecheck` and `bun run test` in `apps/proxy`, then `bunx wrangler deploy`. Builds and logs are in the Cloudflare dashboard under the `proxy` Worker.

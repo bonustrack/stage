@@ -104,15 +104,16 @@ simple = { limit = 30, period = 60 }
 # request is signed with the node's Ed25519 key and the node id is derived from
 # that key, so only its owner can change it. The API token (an account API
 # token with only Workers Scripts: Edit) and the account id are the
-# NODES_API_TOKEN and NODES_ACCOUNT_ID secrets, set in the dashboard; without
-# them /nodes answers 503. apps/dispatch serves the nodes on nodes.stage.box.
+# NODES_CF_API_TOKEN and NODES_CF_ACCOUNT_ID secrets, set in the dashboard;
+# without them /nodes answers 503. apps/dispatch serves the nodes on
+# nodes.stage.box.
 [[ratelimits]]
 name = "NODE_PUBLISHES"
 namespace_id = "1082"
 simple = { limit = 10, period = 60 }
 
 # All node publishes together, a ceiling per location for the Cloudflare API
-# budget of NODES_API_TOKEN.
+# budget of NODES_CF_API_TOKEN.
 [[ratelimits]]
 name = "NODE_PUBLISHES_ALL"
 namespace_id = "1084"

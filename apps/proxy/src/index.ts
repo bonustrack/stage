@@ -166,8 +166,8 @@ type ProxyEnv = NamesEnv & {
   MAIL_REQUESTS?: RateLimit;
   ATTACHMENTS?: R2Bucket;
   ATTACHMENT_UPLOADS?: RateLimit;
-  NODES_API_TOKEN?: string;
-  NODES_ACCOUNT_ID?: string;
+  NODES_CF_API_TOKEN?: string;
+  NODES_CF_ACCOUNT_ID?: string;
   NODE_PUBLISHES?: RateLimit;
   NODE_PUBLISHES_ALL?: RateLimit;
 };
@@ -213,7 +213,7 @@ async function routeAttachments(request: Request, env: ProxyEnv): Promise<Respon
 
 function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
   return handleNodes(request, {
-    api: cloudflareApi(env.NODES_API_TOKEN, env.NODES_ACCOUNT_ID),
+    api: cloudflareApi(env.NODES_CF_API_TOKEN, env.NODES_CF_ACCOUNT_ID),
     limited: async () => await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))
       || (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
   });

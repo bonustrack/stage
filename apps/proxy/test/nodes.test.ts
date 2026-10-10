@@ -217,7 +217,7 @@ describe('signature edge cases', () => {
     const keys: string[] = [];
     const allow = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: true }); } };
     const deny = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: false }); } };
-    const env = { NODES_API_TOKEN: TOKEN, NODES_ACCOUNT_ID: ACCOUNT, NODE_PUBLISHES: allow, NODE_PUBLISHES_ALL: deny } as unknown as Parameters<typeof worker.fetch>[1];
+    const env = { NODES_CF_API_TOKEN: TOKEN, NODES_CF_ACCOUNT_ID: ACCOUNT, NODE_PUBLISHES: allow, NODE_PUBLISHES_ALL: deny } as unknown as Parameters<typeof worker.fetch>[1];
     const request = signed('PUT', newNodeKey(), CODE, Date.now());
     const withIp = new Request(request, { headers: { ...Object.fromEntries(request.headers), 'cf-connecting-ip': '2001:db8:1:2:aaaa::1' } });
     const res = await worker.fetch(withIp, env, {} as ExecutionContext);
