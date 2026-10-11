@@ -27,11 +27,34 @@
   EXPO_UNSTABLE_TREE_SHAKING = "1"
   SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
 
+# Content Security Policy. Scripts run only from this site, plus WebAssembly for
+# XMTP and the inline scripts of public/index.html (theme) and
+# public/preview-launcher.html, each allowed by its sha256: when one of them
+# changes, put its new hash here. Styles may be inline (react-native-web and the
+# kit inject them). Images, media and requests may use any https URL (avatars,
+# frame images, user nodes), plus data: and blob: for decrypted attachments.
+# Workers may be blob: because Expo wraps the XMTP workers in one when the page
+# is cross-origin isolated. No frames, plugins, form posts or <base>, and no
+# other site may frame stage.box.
 [[headers]]
   for = "/*"
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Embedder-Policy = "credentialless"
+    Content-Security-Policy = """\
+      default-src 'self'; \
+      script-src 'self' 'wasm-unsafe-eval' 'sha256-cDvZqdnIlWVbafnDl0bEkebRwQDKRBqLwLWAgYQI4aI=' 'sha256-ucsOOU04elePji19W95Vpo0NKtGsPQrY53QQlGDB8mI='; \
+      style-src 'self' 'unsafe-inline'; \
+      img-src 'self' https: data: blob:; \
+      media-src 'self' https: data: blob:; \
+      font-src 'self'; \
+      connect-src 'self' https: data: blob:; \
+      worker-src 'self' blob:; \
+      frame-src 'none'; \
+      object-src 'none'; \
+      base-uri 'none'; \
+      form-action 'none'; \
+      frame-ancestors 'none'"""
 
 [[headers]]
   for = "/_expo/static/*"
