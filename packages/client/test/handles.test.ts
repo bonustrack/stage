@@ -43,6 +43,15 @@ describe('isPeerHandleSegment', () => {
 });
 
 describe('paths', () => {
+  test('reserved page names use addresses for chat links but keep their profile slugs', () => {
+    for (const label of ['contacts', 'dashboard', 'storage', 'inbox']) {
+      const handle = `${label}.stage.base.eth`;
+      expect(conversationPathFor(ADDR, handle)).toBe(`/${ADDR.toLowerCase()}`);
+      expect(profileSlugFor(ADDR, handle)).toBe(label);
+    }
+    expect(conversationPathFor(ADDR, 'boorger.stage.base.eth')).toBe('/boorger');
+  });
+
   test('prefer the stage label and fall back to the address', () => {
     expect(stageLabelOf('Boorger.stage.base.eth')).toBe('boorger');
     expect(stageLabelOf('shrek.base.eth')).toBeNull();

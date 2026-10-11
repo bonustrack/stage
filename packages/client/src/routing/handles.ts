@@ -47,7 +47,8 @@ export function profileSlugFor(address: string, handle?: string | null): string 
 }
 
 export function conversationPathFor(peerAddress: string, handle?: string | null): string {
-  return `/${profileSlugFor(peerAddress, handle)}`;
+  const slug = profileSlugFor(peerAddress, handle);
+  return `/${isPeerHandleSegment(slug) ? slug : peerAddress.toLowerCase()}`;
 }
 
 export function shareUrlFor(path: string): string {
