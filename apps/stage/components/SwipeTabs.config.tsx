@@ -3,6 +3,7 @@ import { BoardHome, HomeScreen } from './home/HomeScreen';
 import { WalletScreen } from './wallet/screen/WalletScreen';
 import { SettingsMenu } from './settings/SettingsHub';
 import { BOARD_ROUTE } from './tabs/splitRoutes';
+import { isMenuPageRoute } from './tabs/menuPages';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 
 export const TAB_ORDER = ['index', 'board', 'wallet', 'settings'] as const;
@@ -26,7 +27,7 @@ function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
   if (pathname === BOARD_ROUTE) return 1;
   if (pathname.startsWith('/wallet')) return 2;
-  if (pathname.startsWith('/settings')) return 3;
+  if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return 3;
   return 0;
 }
 

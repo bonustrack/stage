@@ -23,12 +23,14 @@ import { listXmtpInstallations } from '../../lib/xmtp.client';
 import { prefetchInbox, useMailboxes } from '../../lib/mail';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
+import { useWebTabRail } from '../../lib/webLayout';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { EditProfileModal } from './EditProfileModal';
 import { applyPush } from './NotificationsSettings';
 import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
+import { menuPagesFor } from '../tabs/menuPages';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
   const candidate = peerName ?? label;
@@ -110,18 +112,17 @@ function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
   const address = useActiveAccountRecord()?.address;
   const boxes = useMailboxes().data;
-  const hasMailbox = (boxes?.length ?? 0) > 0;
+  const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0);
   useEffect(() => { if (boxes !== undefined) prefetchInbox(boxes); }, [boxes]);
-  const row = (id: 'contacts' | 'dashboard' | 'storage' | 'inbox' | 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
+  const row = (id: 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
     return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;
   };
   return (
     <SettingsGroup title="More">
-      {row('contacts', 'Contacts')}
-      {row('dashboard', 'Dashboard')}
-      {row('storage', 'Storage')}
-      {hasMailbox ? row('inbox', 'Inbox') : null}
+      {pages.map((page) => (
+        <SettingsNavRow key={page.href} label={page.label} iconStart={page.icon} onPress={() => { capabilities.navigate(page.href); }} />
+      ))}
       {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
       {row('wallet', 'Wallet', address ? shortAddress(address) : undefined)}

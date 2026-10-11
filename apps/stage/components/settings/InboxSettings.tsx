@@ -9,17 +9,19 @@ import { capabilities } from '../../lib/capabilities';
 import { channelTimestamp } from '../../lib/format';
 import { useInbox, useMailboxes, useReadMail, type InboxState, type Mailbox } from '../../lib/mail';
 import { usePalette } from '../../lib/theme';
+import { useWebTabRail } from '../../lib/webLayout';
 import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { inboxRows, type InboxRow } from './Inbox.model';
 import { SettingsGroup, SettingsPage } from './SettingsPage';
+import { INBOX_ROUTE } from '../tabs/menuPages';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
 
 const ROW_PADDING = { paddingTop: 12, paddingBottom: 12, paddingLeft: 14, paddingRight: 14 };
 const DOT = 8;
 
 function mailRoute(label: string, id: string): string {
-  return `/settings/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
+  return `${INBOX_ROUTE}/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
 }
 
 function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
@@ -105,8 +107,9 @@ function InboxBody(): React.ReactElement {
 }
 
 export function InboxSettings(): React.ReactElement {
+  const rail = useWebTabRail();
   return (
-    <SettingsPage title="Inbox">
+    <SettingsPage title="Inbox" back={!rail}>
       <InboxBody />
     </SettingsPage>
   );

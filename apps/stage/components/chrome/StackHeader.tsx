@@ -16,14 +16,19 @@ import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius
 const BACK_PAD = { padding: 4 } as const;
 const TITLE_SHRINK = { flexShrink: 1 } as const;
 
-function BackButton({ onBack, backColor }: {
-  onBack: () => void;
+function BackButton({ onBack, backTo, backColor }: {
+  onBack?: () => void;
+  backTo?: string;
   backColor: string;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { link } = usePalette();
+  const press = onBack ?? (() => {
+    if (backTo === undefined) capabilities.back();
+    else capabilities.backTo(backTo);
+  });
   return (
-    <GesturePressable onPress={onBack} hitSlop={8}>
+    <GesturePressable onPress={press} hitSlop={8}>
       <HoverTint style={BACK_PAD}>
         {(hovered) => (
           <Glyph
@@ -44,7 +49,7 @@ function HeaderTitle({ title, wallet, color }: { title: string; wallet: boolean;
   return <Title size="sm" color={color} style={TITLE_SHRINK}>{title}</Title>;
 }
 
-export function StackHeader({ title, trailing, backTo, onBack, inline, bordered = true, wallet = false }: {
+export function StackHeader({ title, trailing, backTo, onBack, inline, bordered = true, wallet = false, back }: {
   title: string;
   trailing?: ReactNode;
   backTo?: string;
@@ -52,6 +57,7 @@ export function StackHeader({ title, trailing, backTo, onBack, inline, bordered 
   inline?: boolean;
   bordered?: boolean;
   wallet?: boolean;
+  back?: boolean;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, link: head, border, toolbarBg: surface } = usePalette();
@@ -68,13 +74,7 @@ export function StackHeader({ title, trailing, backTo, onBack, inline, bordered 
         style={STICKY_TOP}
         padding={{ x: PAGE_GUTTER, top: (wallet ? 8 : 0) + top, bottom: wallet ? 10 : 0 }}
       >
-        <BackButton
-          onBack={onBack ?? (() => {
-            if (backTo === undefined) capabilities.back();
-            else capabilities.backTo(backTo);
-          })}
-          backColor={fg}
-        />
+        {back === false ? null : <BackButton onBack={onBack} backTo={backTo} backColor={fg} />}
         <HeaderTitle title={title} wallet={wallet} color={head} />
         {trailing}
       </Row>

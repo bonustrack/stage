@@ -147,10 +147,11 @@ export function SettingsThemeRow(props: {
   );
 }
 
-export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, panRef, keyboardShouldPersistTaps, trailing, children }: {
+export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, back, panRef, keyboardShouldPersistTaps, trailing, children }: {
   title: string;
   root?: boolean;
   backTo?: string;
+  back?: boolean;
   panRef?: SimultaneousRefs;
   keyboardShouldPersistTaps?: 'handled';
   trailing?: ReactNode;
@@ -160,7 +161,7 @@ export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, pan
   const actions = trailing === undefined ? undefined : <Row flex={1} justify="end">{trailing}</Row>;
   return (
     <Col surface="surface" flex={1}>
-      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} trailing={actions} />}
+      {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} back={back} trailing={actions} />}
       <ScreenScroll
         simultaneousHandlers={panRef}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}

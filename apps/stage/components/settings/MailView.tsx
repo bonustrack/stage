@@ -15,7 +15,7 @@ import {
 } from './Inbox.model';
 import { MailBlocks } from './MailBlocks';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
-import { settingsSection } from './settingsCatalog.model';
+import { INBOX_ROUTE } from '../tabs/menuPages';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileDownload } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileDownload';
 
@@ -111,7 +111,7 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
 
 export function MailView({ label, id }: { label: string; id: string }): React.ReactElement {
   return (
-    <SettingsPage title="Mail" backTo={settingsSection('inbox').href}>
+    <SettingsPage title="Mail" backTo={INBOX_ROUTE}>
       <MailBodyState label={label} id={id} />
     </SettingsPage>
   );

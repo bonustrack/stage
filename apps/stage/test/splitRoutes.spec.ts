@@ -18,13 +18,17 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/import')).toBe(false);
   });
 
-  test('profiles, settings, wallet and contacts split', () => {
+  test('profiles, settings, wallet and the menu pages split', () => {
     expect(isSplitRoute('/profile/0xabc')).toBe(true);
     expect(isSplitRoute('/settings')).toBe(true);
     expect(isSplitRoute('/settings/security')).toBe(true);
     expect(isSplitRoute('/wallet')).toBe(true);
     expect(isSplitRoute('/wallet/send')).toBe(true);
     expect(isSplitRoute('/contacts')).toBe(true);
+    expect(isSplitRoute('/dashboard')).toBe(true);
+    expect(isSplitRoute('/storage')).toBe(true);
+    expect(isSplitRoute('/inbox')).toBe(true);
+    expect(isSplitRoute('/inbox/mail')).toBe(true);
   });
 
   test('add members keeps the sidebar', () => {
@@ -88,7 +92,7 @@ describe('the board home', () => {
     expect(homeViewAt('/')).toBe('chats');
     expect(homeViewAt('/board')).toBe('board');
     expect(homeViewAt('/channel/abc')).toBeNull();
-    expect(homeViewAt('/settings/contacts')).toBeNull();
+    expect(homeViewAt('/contacts')).toBeNull();
   });
 
   test('a channel opened from the board keeps the board beside it', () => {

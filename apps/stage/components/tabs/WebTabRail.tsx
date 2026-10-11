@@ -1,7 +1,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { TAB_HREF, homeTabIndex, type TabName } from '../SwipeTabs.config';
@@ -9,12 +9,14 @@ import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
+import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { useBoardHome } from './boardHome';
+import { MENU_PAGES, isMenuPageOpen, isMenuPageRoute } from './menuPages';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
   return !wide && pathname === '/';
@@ -36,12 +38,14 @@ export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
 
 const TAB_LABELS: Record<TabName, string> = { index: 'Chats', board: 'Board', wallet: 'Wallet', settings: 'Settings' };
 
+const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
+
 function activeTabIndex(pathname: string, boardHome: boolean): number {
   return pathname.startsWith('/settings') ? -1 : homeTabIndex(pathname, boardHome);
 }
 
-function TabIcon({ name, icon, active, unreadBadge }: {
-  name: TabName; icon: CentralIcon; active: boolean; unreadBadge: string | undefined;
+function TabIcon({ icon, active, badge }: {
+  icon: CentralIcon; active: boolean; badge?: string;
 }): React.ReactElement {
   const pal = usePalette();
   return (
@@ -49,13 +53,13 @@ function TabIcon({ name, icon, active, unreadBadge }: {
       {(hovered) => (
     <Box width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
       <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text}/>
-      {name === 'index' && unreadBadge !== undefined ? (
+      {badge !== undefined ? (
         <Box
           minWidth={TAB_BADGE_SIZE} height={TAB_BADGE_SIZE} padding={{ x: 4 }} radius="full" background={pal.link}
           align="center" justify="center"
           style={TAB_BADGE_POSITION}
 >
-          <Text weight="semibold" color={pal.bg} size="3xs">{unreadBadge}</Text>
+          <Text weight="semibold" color={pal.bg} size="3xs">{badge}</Text>
         </Box>
       ) : null}
     </Box>
@@ -64,29 +68,37 @@ function TabIcon({ name, icon, active, unreadBadge }: {
   );
 }
 
+function useRailNavigate(pathname: string): (href: Href) => void {
+  const router = useRouter();
+  const fromMenuPage = isMenuPageRoute(pathname);
+  return (href) => {
+    if (fromMenuPage) router.dismissTo(href);
+    else router.navigate(href);
+  };
+}
+
 function TabButtons({ pathname, unreadBadge, vertical }: {
   pathname: string;
   unreadBadge: string | undefined;
   vertical: boolean;
 }): React.ReactElement {
-  const router = useRouter();
+  const navigate = useRailNavigate(pathname);
   const openNewChat = useOpenNewChat();
   const activeIndex = activeTabIndex(pathname, useBoardHome());
   return (
     <>
       {TAB_ICONS.map(([name, icon], i) => {
-        const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
+        const icn = <TabIcon icon={icon} active={i === activeIndex} badge={name === 'index' ? unreadBadge : undefined}/>;
         const go = (): void => {
           if (name === 'index' && chatsTabOpensNewChat(pathname, vertical)) {
             openNewChat();
             return;
           }
           if (name === 'index') requestNewChatFocus();
-          router.navigate(TAB_HREF[name]);
+          navigate(TAB_HREF[name]);
         };
         return vertical ? (
-          <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go} placement="beside"
-            style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}>
+          <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go} placement="beside" style={RAIL_BUTTON}>
             {icn}
           </RailTooltip>
         ) : (
@@ -95,6 +107,19 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
           </Pressable>
         );
       })}
+    </>
+  );
+}
+
+function MenuPageButtons({ pathname }: { pathname: string }): React.ReactElement {
+  const navigate = useRailNavigate(pathname);
+  return (
+    <>
+      {MENU_PAGES.map((page) => (
+        <RailTooltip key={page.href} label={page.label} onPress={() => { navigate(page.href); }} placement="beside" style={RAIL_BUTTON}>
+          <TabIcon icon={appIcon(page.icon)} active={isMenuPageOpen(pathname, page.href)}/>
+        </RailTooltip>
+      ))}
     </>
   );
 }
@@ -137,6 +162,7 @@ export function WebTabRail({ pathname, unreadBadge }: {
       ]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
+      <MenuPageButtons pathname={pathname}/>
       <Box flex={1}/>
       <Box align="center" padding={{ bottom: 16 }}>
         <AccountAvatarButton size={32}/>

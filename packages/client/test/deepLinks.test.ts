@@ -24,10 +24,20 @@ describe('routeForUrl', () => {
     expect(routeForUrl(`https://stage.box/#/embed/${CHANNEL}`)).toBeNull();
   });
 
+  test('opens an inbox mail link with its mailbox and message id', () => {
+    expect(routeForUrl('https://stage.box/#/inbox/mail?label=alice&id=a%2Fb')).toEqual({
+      pathname: '/inbox/mail', params: { label: 'alice', id: 'a/b' },
+    });
+    expect(routeForUrl('stage://inbox/mail?label=alice')).toBeNull();
+  });
+
   test('keeps static routes ahead of handles and rejects junk', () => {
     expect(routeForUrl('https://stage.box/#/settings')).toEqual({ pathname: '/(tabs)/settings' });
     expect(routeForUrl('https://stage.box/#/board')).toEqual({ pathname: '/board' });
-    expect(routeForUrl('https://stage.box/#/contacts')).toEqual({ pathname: '/settings/contacts' });
+    expect(routeForUrl('https://stage.box/#/contacts')).toEqual({ pathname: '/contacts' });
+    expect(routeForUrl('https://stage.box/#/dashboard')).toEqual({ pathname: '/dashboard' });
+    expect(routeForUrl('stage://storage')).toEqual({ pathname: '/storage' });
+    expect(routeForUrl('https://stage.box/#/inbox')).toEqual({ pathname: '/inbox' });
     expect(routeForUrl('https://stage.box/#/')).toEqual({ pathname: '/(tabs)' });
     expect(routeForUrl('https://stage.box/#/-bad-')).toBeNull();
     expect(routeForUrl('https://stage.box/#/requests')).toBeNull();

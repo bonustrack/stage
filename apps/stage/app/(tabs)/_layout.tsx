@@ -16,6 +16,7 @@ import {
 } from '../../components/tabs/WebTabRail';
 import { useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
+import { isMenuPageRoute } from '../../components/tabs/menuPages';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -39,7 +40,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
   insetTop: number; tabBarHeight: number; topnavHidden: boolean; rail: boolean; pathname: string;
 }): React.ReactElement | null {
   if (Platform.OS === 'web') {
-    if (pathname.startsWith('/settings')) return null;
+    if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return null;
     return (
       <Col flex={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}

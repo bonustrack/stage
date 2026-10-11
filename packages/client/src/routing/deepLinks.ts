@@ -6,7 +6,8 @@ export type ParsedRoute =
   | { pathname: '/profile/[id]'; params: { id: string } }
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
-  | { pathname: '/settings/contacts'; params?: undefined }
+  | { pathname: '/contacts' | '/dashboard' | '/storage' | '/inbox'; params?: undefined }
+  | { pathname: '/inbox/mail'; params: { label: string; id: string } }
   | { pathname: '/board'; params?: undefined };
 
 function stripAuthority(work: string): string {
@@ -54,13 +55,21 @@ function conversationRoute(
 const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
   settings: { pathname: '/(tabs)/settings' },
-  contacts: { pathname: '/settings/contacts' },
+  contacts: { pathname: '/contacts' },
+  dashboard: { pathname: '/dashboard' },
+  storage: { pathname: '/storage' },
+  inbox: { pathname: '/inbox' },
   board: { pathname: '/board' },
 };
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel']);
 
-function entityRoute(head: string, second: string | undefined): ParsedRoute | null | undefined {
+function entityRoute(head: string, second: string | undefined, query: URLSearchParams): ParsedRoute | null | undefined {
+  if (head === 'inbox' && second === 'mail') {
+    const label = query.get('label');
+    const id = query.get('id');
+    return label && id ? { pathname: '/inbox/mail', params: { label, id } } : null;
+  }
   if (head !== 'profile') return undefined;
   return second ? { pathname: '/profile/[id]', params: { id: second } } : null;
 }
@@ -73,7 +82,7 @@ function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | nu
       ? conversationRoute('/[convId]', third, query)
       : conversationRoute('/channel/[convId]', second, query);
   }
-  const entity = entityRoute(head, second);
+  const entity = entityRoute(head, second, query);
   if (entity !== undefined) return entity;
   const fixed = STATIC_ROUTES[head];
   if (fixed) return fixed;

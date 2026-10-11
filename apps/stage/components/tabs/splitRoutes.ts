@@ -1,6 +1,7 @@
 import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
 import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import { isOnboardingRoute } from '../onboarding/nextRoute.model';
+import { MENU_PAGES } from './menuPages';
 
 export const BOARD_ROUTE = '/board';
 
@@ -9,7 +10,7 @@ const TAB_ROUTES = new Set(['/', BOARD_ROUTE, '/wallet', '/settings']);
 const CHANNEL_PREFIX = '/channel/';
 
 const SPLIT_PREFIXES = [
-  CHANNEL_PREFIX, '/profile/', '/settings', '/wallet', '/contacts', '/add-members', '/frame',
+  CHANNEL_PREFIX, '/profile/', '/settings', '/wallet', '/add-members', '/frame', ...MENU_PAGES.map((page) => page.href),
 ];
 
 type HomeView = HomeViewContent['view'];

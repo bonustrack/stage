@@ -1,6 +1,6 @@
 # Stage nodes
 
-A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Settings, Dashboard, Add from URL), and a frame sent in a chat can name its node too (see Frames in chats). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
+A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Dashboard, Add from URL), and a frame sent in a chat can name its node too (see Frames in chats). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
 
 ## Load
 
@@ -73,7 +73,7 @@ Test vector, with the RFC 8032 test 1 key:
 
 ## Hosted nodes
 
-Stage can put a node online for you. In the app: Settings, Dashboard, Add from URL, Code. Paste the code, tap Publish, and Stage shows the node at `https://nodes.stage.box/<id>` with its preview, then adds it as a widget. Anyone with the link can call it, like any node.
+Stage can put a node online for you. In the app: Dashboard, Add from URL, Code. Paste the code, tap Publish, and Stage shows the node at `https://nodes.stage.box/<id>` with its preview, then adds it as a widget. Anyone with the link can call it, like any node.
 
 The code is one ES module of at most 64 KB, with no `import`, whose default export has a `fetch` handler, as in a Cloudflare Worker:
 

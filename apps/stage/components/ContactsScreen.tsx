@@ -7,6 +7,7 @@ import { ChannelRow } from './ChannelRow';
 import { StackHeader } from './chrome/StackHeader';
 import { usePalette } from '../lib/theme';
 import { SETTINGS_ROUTE } from '../lib/routes';
+import { useWebTabRail } from '../lib/webLayout';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { useAllContacts, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
@@ -17,6 +18,7 @@ export function ContactsScreen(): React.ReactElement {
   const { bg } = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const rail = useWebTabRail();
   const { contacts } = useAllContacts();
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
@@ -46,7 +48,7 @@ export function ContactsScreen(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Contacts" backTo={SETTINGS_ROUTE} />
+      <StackHeader title="Contacts" backTo={SETTINGS_ROUTE} back={!rail} />
       <VirtualList
         data={contacts}
         keyExtractor={c => c.address}

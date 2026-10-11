@@ -2,6 +2,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, PAGE_GUTTER } from '../layout';
 import { SettingsPage } from '../settings/SettingsPage';
 import { useDashboard, useDashboardLoaded } from '../../lib/dashboard';
+import { useWebTabRail } from '../../lib/webLayout';
 import { AddLiveWidgetButton } from './AddLiveWidget';
 import { canAddWidget } from './dashboard.model';
 import { DashboardGrid } from './DashboardGrid';
@@ -22,9 +23,10 @@ export function DashboardScreen(): React.ReactElement {
   const loaded = useDashboardLoaded();
   const { widgets } = useDashboard();
   const empty = widgets.length === 0;
+  const rail = useWebTabRail();
   return (
     <SettingsPage
-      title="Dashboard" keyboardShouldPersistTaps="handled" trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
+      title="Dashboard" back={!rail} keyboardShouldPersistTaps="handled" trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
     >
       {loaded && empty ? <EmptyDashboard /> : null}
       {loaded && !empty ? <DashboardGrid widgets={widgets} /> : null}

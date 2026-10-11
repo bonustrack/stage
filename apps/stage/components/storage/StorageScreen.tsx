@@ -26,6 +26,7 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { SETTINGS_ROUTE } from '../../lib/routes';
+import { useWebTabRail } from '../../lib/webLayout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import {
   forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState,
@@ -185,6 +186,7 @@ function StorageBody(): React.ReactElement {
   const hidden = useOwnDeletes();
   const insets = useSafeAreaInsets();
   const { bg } = usePalette();
+  const rail = useWebTabRail();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StorageFilter>('all');
   const { opening, unavailable, open } = useFileOpener();
@@ -194,7 +196,7 @@ function StorageBody(): React.ReactElement {
   ), [opening, unavailable, open]);
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Storage" backTo={SETTINGS_ROUTE} />
+      <StackHeader title="Storage" backTo={SETTINGS_ROUTE} back={!rail} />
       <VirtualList
         data={rows}
         keyExtractor={row => row.key}
