@@ -84,7 +84,7 @@ function WrappedTitle({ texts, pinned, scheme }: {
 }): React.ReactElement {
   return (
     <Box flex={1} minWidth={0}>
-      <Text size="md" weight="semibold" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
+      <Text size="md" weight="medium" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
         {pinned ? <Box width={PIN_ICON_SIZE + PIN_GAP} height={1} /> : null}
         {texts}
       </Text>
@@ -108,7 +108,7 @@ function TitleLine({ params, scheme, wrap }: {
       key={`${seg.text}-${i}`}
       value={seg.text}
       size="md"
-      weight="semibold"
+      weight="medium"
       truncate={!wrap}
       {...titleTone(params.placeholderTitle)}
       style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}

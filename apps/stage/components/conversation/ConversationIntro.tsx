@@ -45,7 +45,7 @@ export function ConversationIntro({ c, convId }: {
           style={{ backgroundColor: border }}
 />
         <TitleText
-          title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
+          title={convTitle({ isGroup, groupName, peerAddr })} weight="medium" size="2xl" color={head}
           style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         />
         <IntroLabelChips labels={groupLabels} fg={fg} bg={inputBg}/>

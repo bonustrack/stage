@@ -77,7 +77,7 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
       <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
-      <TitleText title={title} weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
+      <TitleText title={title} weight={isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
     </Pressable>
   );
 }
