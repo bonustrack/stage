@@ -51,7 +51,7 @@ export function WalletActionButton({ label, icon, bg, onPress }: {
         iconStart={<Glyph icon={icon} size={24} dark={dark} />}
         onPress={onPress}
       />
-      <Text value={label} size="xs" weight="semibold" role="secondary" />
+      <Text value={label} size="2xs" weight="semibold" />
     </Col>
   );
 }
