@@ -23,10 +23,10 @@ function parsedYAxis(yAxis: unknown): unknown {
 
 describe('Chart yAxis.domain', () => {
   test('Frame keeps only the official finite domain tuple', () => {
-    for (const domain of [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], ['dataMin', 0]]) {
+    for (const domain of [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], [1, 1], ['dataMin', 0]]) {
       expect(parsedYAxis({ domain, ignored: true })).toEqual({ domain });
     }
-    for (const domain of [[], [0], [0, 1, 2], [null, 1], ['0', 1], ['dataMin - 10', 'dataMax'], [NaN, 1], [0, Infinity], [0, 1e308], [2, 1], [1, 1]]) {
+    for (const domain of [[], [0], [0, 1, 2], [null, 1], ['0', 1], ['dataMin - 10', 'dataMax'], [NaN, 1], [0, Infinity], [0, 1e308], [2, 1]]) {
       expect(chartDomain(domain)).toBeUndefined();
       expect(parsedYAxis({ domain })).toBeUndefined();
     }
@@ -58,6 +58,8 @@ describe('Chart yAxis.domain', () => {
   test('numeric bounds expand to contain data and auto bounds use nice ticks', () => {
     expect(scale([10, 20], [5, 30])).toMatchObject({ lo: 5, hi: 30 });
     expect(scale([10, 20], [12, 18])).toMatchObject({ lo: 10, hi: 20 });
+    expect(scale([10, 20], [10, 10])).toMatchObject({ lo: 10, hi: 20 });
+    expect(scale([10, 20], [5, 'auto'])).toEqual({ lo: 4, hi: 20, ticks: [4, 8, 12, 16, 20] });
     expect(scale([-20, -10])).toMatchObject({ lo: -20, hi: -10 });
     expect(scale([-20, 10])).toMatchObject({ lo: -20, hi: 10 });
     const auto = scale([2491.23, 2504.56], ['auto', 'auto']);
@@ -65,6 +67,13 @@ describe('Chart yAxis.domain', () => {
     expect(auto.hi).toBeGreaterThanOrEqual(2504.56);
     expect(auto.lo).toBeGreaterThan(2400);
     expect(scale([2491.23, 2504.56])).toMatchObject({ lo: 2491.23, hi: 2504.56 });
+  });
+
+  test('narrow ranges around large values keep distinct ticks through the upper bound', () => {
+    const value = scale([999999999999, 1000000000001], ['auto', 'auto']);
+    expect(value.ticks).toEqual([999999999999, 999999999999.5, 1000000000000, 1000000000000.5, 1000000000001]);
+    expect(value.lo).toBe(999999999999);
+    expect(value.hi).toBe(1000000000001);
   });
 
   test('ranges include every series and stack base and total', () => {

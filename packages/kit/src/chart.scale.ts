@@ -20,8 +20,8 @@ const CHART_MAX_VALUE = 1e300;
 const MAX_CORRECTION = 64;
 const MAX_TICKS = CHART_TICK_COUNT * 2;
 
-function fix(n: number): number {
-  return Number(n.toPrecision(12));
+function fix(n: number, precision = 12): number {
+  return Number(n.toPrecision(precision));
 }
 
 function digitCount(value: number): number {
@@ -42,6 +42,7 @@ function adaptiveStep(rough: number, correction: number): number {
 }
 
 interface TickSpan {
+  precision: number;
   step: number;
   lo: number;
   hi: number;
@@ -49,8 +50,9 @@ interface TickSpan {
 
 function tickSpan(min: number, max: number, correction: number): TickSpan {
   const step = adaptiveStep((max - min) / (CHART_TICK_COUNT - 1), correction);
+  const precision = Math.min(17, Math.max(12, digitCount(Math.max(Math.abs(min), Math.abs(max))) - digitCount(step) + 2));
   const half = (min + max) / 2;
-  const middle = min <= 0 && max >= 0 ? 0 : fix(half - (half % step));
+  const middle = min <= 0 && max >= 0 ? 0 : fix(half - (half % step), precision);
   let below = Math.ceil(fix((middle - min) / step));
   let up = Math.ceil(fix((max - middle) / step));
   const count = below + up + 1;
@@ -59,16 +61,25 @@ function tickSpan(min: number, max: number, correction: number): TickSpan {
     if (max > 0) up += CHART_TICK_COUNT - count;
     else below += CHART_TICK_COUNT - count;
   }
-  return { step, lo: fix(middle - below * step), hi: fix(middle + up * step) };
+  return { step, precision, lo: fix(middle - below * step, precision), hi: fix(middle + up * step, precision) };
 }
 
 export function chartTicks(min: number, max: number): number[] {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
   if (!(max > min)) return Array.from({ length: CHART_TICK_COUNT }, (_, i) => fix(min + i));
-  const { step, lo, hi } = tickSpan(min, max, 0);
+  const { step, precision, lo, hi } = tickSpan(min, max, 0);
   if (!(step > 0) || !Number.isFinite(lo) || !Number.isFinite(hi) || !(hi > lo)) return [min, max];
+  return ticksInSpan({ step, precision, lo, hi });
+}
+
+function ticksInSpan({ step, precision, lo, hi }: TickSpan): number[] {
   const ticks: number[] = [];
-  for (let value = lo; ticks.length < MAX_TICKS && value <= hi + step / 10; value = fix(value + step)) ticks.push(value);
+  for (let i = 0; i < MAX_TICKS; i += 1) {
+    const value = fix(lo + i * step, precision);
+    const previous = ticks[ticks.length - 1];
+    if (value > hi + step / 10 || (previous !== undefined && value <= previous)) break;
+    ticks.push(value);
+  }
   return ticks;
 }
 
@@ -130,7 +141,7 @@ export function chartDomain(raw: unknown): ChartDomain | undefined {
   const lo = domainBound(raw[0]);
   const hi = domainBound(raw[1]);
   if (lo === undefined || hi === undefined) return undefined;
-  if (typeof lo === 'number' && typeof hi === 'number' && lo >= hi) return undefined;
+  if (typeof lo === 'number' && typeof hi === 'number' && lo > hi) return undefined;
   return [lo, hi];
 }
 
@@ -163,8 +174,10 @@ function domainScale(min: number, max: number, domain: ChartDomain): ChartValueS
     hi += pad;
   }
   const nice = chartTicks(lo, hi);
-  if (domain[0] === 'auto') lo = Math.min(lo, nice[0] ?? lo);
-  if (domain[1] === 'auto') hi = Math.max(hi, nice[nice.length - 1] ?? hi);
+  if (domain.includes('auto')) {
+    lo = Math.min(lo, nice[0] ?? lo);
+    hi = Math.max(hi, nice[nice.length - 1] ?? hi);
+  }
   const ticks = [...new Set(nice.filter((t) => t >= lo && t <= hi))];
   return { lo, hi, ticks: ticks.length >= 2 ? ticks : [lo, hi] };
 }

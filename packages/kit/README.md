@@ -201,6 +201,10 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.8
+
+- Chart mixed `auto` domains expand both ends to the nice ticks, equal numeric bounds expand against the data, and ticks retain their precision in narrow ranges around large values.
+
 ### 0.1.0-beta.7
 
 - `Chart` and Frame Chart nodes support the official ChatKit `yAxis.domain` tuple with `showYAxis: true`, including data-based line ranges, numeric bounds and `auto`. Existing zero-based chart defaults are unchanged.
