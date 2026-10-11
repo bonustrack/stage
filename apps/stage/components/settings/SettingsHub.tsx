@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -13,11 +12,10 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
-import { canExportPrivateKey } from '../../lib/accounts';
 import { usePushEnabled } from '../../lib/pushPref';
 import { isPushSupported } from '../../lib/pushRegister';
 import {
-  setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, usePalette, useThemePreference,
+  setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference,
   type ThemePreference,
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
@@ -27,14 +25,10 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { EditProfileModal } from './EditProfileModal';
-import { useWalletBackedUp } from './RecoveryPhraseRow';
 import { applyPush } from './NotificationsSettings';
 import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
-import { protectionSteps, protectionTitle, type ProtectionStep } from './protection.model';
-import { IconCircleCheck } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleCheck';
-import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
   const candidate = peerName ?? label;
@@ -81,42 +75,6 @@ function useDeviceCount(): number | null {
     retry: false,
   });
   return data ?? null;
-}
-
-function StepRow({ step }: { step: ProtectionStep }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { success, sub } = usePalette();
-  return (
-    <Row align="center" gap={12} padding={{ y: 8 }}>
-      <Glyph icon={step.done ? IconCircleCheck : IconCircleDashed} size={24} color={step.done ? success : sub} />
-      <Text value={step.label} size="xs" color="link" style={{ flex: 1 }} />
-      {step.done ? <Text value={step.doneText} size="xs" color="secondary" /> : (
-        <Button label={step.action} size="sm" color="primary" variant="solid" dark={dark}
-          onPress={() => { capabilities.navigate(settingsSection('security').href); }} />
-      )}
-    </Row>
-  );
-}
-
-function ProtectionCard(): React.ReactElement | null {
-  const { border, success } = usePalette();
-  const rec = useActiveAccountRecord();
-  const backedUp = useWalletBackedUp();
-  if (rec === null) return null;
-  const steps = protectionSteps({
-    isSmart: rec.type === 'smart', backedUp,
-    canExportKey: canExportPrivateKey(rec),
-  });
-  if (steps.length === 0) return null;
-  return (
-    <Box margin={{ x: PAGE_GUTTER, top: 24 }} padding={16} radius="sm" style={{ borderWidth: 1, borderColor: border }}>
-      <Text value={protectionTitle(steps)} size="sm" weight="semibold" color="link" />
-      <Row gap={4} padding={{ top: 12, bottom: 8 }}>
-        {steps.map((s) => <Box key={s.id} flex={1} height={4} radius="xs" background={s.done ? success : border} />)}
-      </Row>
-      {steps.map((s) => <StepRow key={s.id} step={s} />)}
-    </Box>
-  );
 }
 
 const THEME_TABS = THEME_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
@@ -176,7 +134,6 @@ function SettingsHub(): React.ReactElement {
   return (
     <Col>
       <IdentityHero />
-      <ProtectionCard />
       <PreferencesGroup />
       <MoreGroup />
     </Col>
