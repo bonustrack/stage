@@ -1,6 +1,7 @@
 import {
-  CHART_CURVE_TYPES, isChartColorToken, type ChartColor, type ChartDatum, type ChartSeries, type ChartValue, type ChartXAxis,
+  CHART_CURVE_TYPES, isChartColorToken, type ChartColor, type ChartDatum, type ChartSeries, type ChartValue, type ChartXAxis, type ChartYAxisConfig,
 } from './chart';
+import { chartDomain } from './chart.scale';
 import { bool, cssColor, isRecord, label, oneOf, str, type Validator } from './frame.values';
 
 const MAX_ROWS = 200;
@@ -81,4 +82,10 @@ export const chartXAxis: Validator<ChartXAxis> = (raw) => {
   if (key !== undefined || !isRecord(raw)) return key;
   const axisKey = dataKey(raw.dataKey);
   return axisKey === undefined ? undefined : compact({ dataKey: axisKey, hide: bool(raw.hide), labels: axisLabels(raw.labels) });
+};
+
+export const chartYAxis: Validator<ChartYAxisConfig> = (raw) => {
+  if (!isRecord(raw)) return undefined;
+  const domain = chartDomain(raw.domain);
+  return domain === undefined ? undefined : { domain };
 };

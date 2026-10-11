@@ -1,3 +1,11 @@
+export type ChartDomainBound = number | 'auto' | 'dataMin' | 'dataMax';
+
+export type ChartDomain = readonly [ChartDomainBound, ChartDomainBound];
+
+export interface ChartYAxisConfig {
+  domain?: ChartDomain;
+}
+
 export type ChartExtent = readonly [number, number] | undefined;
 
 export interface ChartStackable {
@@ -100,7 +108,7 @@ export interface ChartValueScale {
   hi: number;
 }
 
-export function chartValueScale(extents: readonly ChartExtent[][]): ChartValueScale {
+function defaultScale(extents: readonly ChartExtent[][]): ChartValueScale {
   let min = 0;
   let max = 0;
   for (const extent of extents.flat()) {
@@ -110,4 +118,64 @@ export function chartValueScale(extents: readonly ChartExtent[][]): ChartValueSc
   }
   const ticks = chartTicks(min, max);
   return { ticks, lo: Math.min(min, ticks[0] ?? min), hi: Math.max(max, ticks[ticks.length - 1] ?? max) };
+}
+
+function domainBound(raw: unknown): ChartDomainBound | undefined {
+  if (raw === 'auto' || raw === 'dataMin' || raw === 'dataMax') return raw;
+  return typeof raw === 'number' ? bounded(raw) : undefined;
+}
+
+export function chartDomain(raw: unknown): ChartDomain | undefined {
+  if (!Array.isArray(raw) || raw.length !== 2) return undefined;
+  const lo = domainBound(raw[0]);
+  const hi = domainBound(raw[1]);
+  if (lo === undefined || hi === undefined) return undefined;
+  if (typeof lo === 'number' && typeof hi === 'number' && lo >= hi) return undefined;
+  return [lo, hi];
+}
+
+function dataRange(extents: readonly ChartExtent[][], series: readonly ChartStackable[]): readonly [number, number] {
+  let min = Infinity;
+  let max = -Infinity;
+  extents.forEach((values, i) => {
+    for (const e of values) {
+      if (e === undefined) continue;
+      const base = series[i]?.stack === undefined ? e[1] : e[0];
+      min = Math.min(min, base, e[1]);
+      max = Math.max(max, base, e[1]);
+    }
+  });
+  return min <= max ? [min, max] : [0, 0];
+}
+
+function resolveBound(bound: ChartDomainBound, min: number, max: number, fallback: number): number {
+  if (typeof bound === 'number') return bound;
+  if (bound === 'dataMin') return min;
+  return bound === 'dataMax' ? max : fallback;
+}
+
+function domainScale(min: number, max: number, domain: ChartDomain): ChartValueScale {
+  let lo = Math.min(min, resolveBound(domain[0], min, max, min));
+  let hi = Math.max(max, resolveBound(domain[1], min, max, max));
+  if (lo === hi) {
+    const pad = Math.abs(lo) * 0.01 || 1;
+    lo -= pad;
+    hi += pad;
+  }
+  const nice = chartTicks(lo, hi);
+  if (domain[0] === 'auto') lo = Math.min(lo, nice[0] ?? lo);
+  if (domain[1] === 'auto') hi = Math.max(hi, nice[nice.length - 1] ?? hi);
+  const ticks = [...new Set(nice.filter((t) => t >= lo && t <= hi))];
+  return { lo, hi, ticks: ticks.length >= 2 ? ticks : [lo, hi] };
+}
+
+export function chartValueScale(
+  extents: readonly ChartExtent[][],
+  series: readonly ChartStackable[],
+  requested?: ChartDomain,
+): ChartValueScale {
+  const domain = chartDomain(requested);
+  if (domain === undefined || (domain[0] === 0 && domain[1] === 'auto')) return defaultScale(extents);
+  const [min, max] = dataRange(extents, series);
+  return domainScale(min, max, domain);
 }

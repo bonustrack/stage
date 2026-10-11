@@ -35,4 +35,17 @@ describe('Chart', () => {
     expect(html).toContain('stroke="#00a240"');
     expect(html).not.toContain('>Web<');
   });
+
+  test('passes the official y axis domain to the plotted line', () => {
+    const html = renderToStaticMarkup(
+      <Chart width={320} height={114} xAxis="x" showYAxis showLegend={false} yAxis={{ domain: ['dataMin', 'dataMax'] }}
+        data={[{ x: 'a', v: 2490 }, { x: 'b', v: 2505 }]}
+        series={[{ type: 'line', dataKey: 'v', label: 'USD', curveType: 'linear' }]} />,
+    );
+    expect(html).toContain('>2490<');
+    expect(html).toContain('>2505<');
+    expect(html).not.toContain('>0<');
+    expect(html).toContain('L315,5');
+  });
+
 });

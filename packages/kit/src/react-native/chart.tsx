@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { Platform, View, type DimensionValue, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import {
   CHART_DEFAULTS, CHART_MARGIN, chartAspectRatio, chartBarColor, chartGeometry, chartSeriesColors, chartTooltipRows,
-  chartXLabel, type ChartCategory, type ChartDatum, type ChartSeries, type ChartXAxis,
+  chartXLabel, type ChartCategory, type ChartDatum, type ChartSeries, type ChartXAxis, type ChartYAxisConfig,
 } from '../chart';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
@@ -15,7 +15,7 @@ import { TOOLTIP } from './tooltip';
 
 export type {
   ChartAreaSeries, ChartBarSeries, ChartColor, ChartCurveType, ChartDatum, ChartLineSeries, ChartSeries, ChartValue,
-  ChartXAxis, ChartXAxisConfig,
+  ChartXAxis, ChartXAxisConfig, ChartDomain, ChartDomainBound, ChartYAxisConfig,
 } from '../chart';
 
 type Length = number | string;
@@ -25,6 +25,7 @@ export interface ChartProps {
   series: readonly ChartSeries[];
   xAxis: ChartXAxis;
   showYAxis?: boolean;
+  yAxis?: ChartYAxisConfig;
   showLegend?: boolean;
   showTooltip?: boolean;
   barGap?: number;
@@ -181,14 +182,14 @@ interface BodyProps {
 }
 
 function ChartBody({ props, model, palette, size: measured }: BodyProps): React.ReactElement {
-  const { data, series, xAxis, barGap, barCategoryGap } = props;
+  const { data, series, xAxis, yAxis, barGap, barCategoryGap } = props;
   const size = useMemo(() => drawableSize(measured), [measured]);
   const { colors, legend, showYAxis, showTooltip, perBar } = model;
   const [active, setActive] = useState<number | undefined>();
   const uid = `chart${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const geometry = useMemo(() => chartGeometry({
-    data, series, xAxis, width: size.width, height: size.height, showYAxis, legend, barGap, barCategoryGap,
-  }), [data, series, xAxis, size, showYAxis, legend, barGap, barCategoryGap]);
+    data, series, xAxis, yAxis, width: size.width, height: size.height, showYAxis, legend, barGap, barCategoryGap,
+  }), [data, series, xAxis, yAxis, size, showYAxis, legend, barGap, barCategoryGap]);
   const shown = showTooltip && active !== undefined ? geometry.categories[active] : undefined;
   return (
     <>

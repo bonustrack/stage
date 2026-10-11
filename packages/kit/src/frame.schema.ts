@@ -2,7 +2,7 @@ import {
   action, bool, border, cardAction, color, editable, fieldName, httpsUrl, int, label, length, oneOf, options,
   padding, px, ratio, space, status, text, type Validator,
 } from './frame.values';
-import { chartData, chartSeries, chartXAxis } from './frame.chart';
+import { chartData, chartSeries, chartXAxis, chartYAxis } from './frame.chart';
 import { FONT_SIZE, type FontSizeName } from './tokens';
 
 const CHATKIT_ICONS = [
@@ -165,7 +165,7 @@ export const FRAME_NODE_SCHEMAS = {
   },
   Chart: {
     props: {
-      data: chartData, series: chartSeries, xAxis: chartXAxis, showYAxis: bool, showLegend: bool, showTooltip: bool,
+      data: chartData, series: chartSeries, xAxis: chartXAxis, yAxis: chartYAxis, showYAxis: bool, showLegend: bool, showTooltip: bool,
       barGap: px, barCategoryGap: px, flex: FLEX, height: length, width: length, size: length, minHeight: length,
       minWidth: length, minSize: length, maxHeight: length, maxWidth: length, maxSize: length, aspectRatio: ratio,
     },

@@ -143,6 +143,7 @@ import { Chart } from '@stage-labs/kit/react-native/chart';
 - `data` is a list of rows of `string` or `number` values. `xAxis` is the key of the category, or `{ dataKey, hide, labels }`, where `labels` maps a value to the text shown for it. Numbers beyond 1e300 count as missing.
 - `series` are `bar` (with `stack`), `area` (with `stack` and `curveType`) and `line` (with `curveType`), each with `dataKey`, `label` and `color`. Series with the same `stack` are stacked. `curveType` takes d3's curve names: `natural` (the default), `linear`, `monotone`, `step`, `stepBefore`, `stepAfter`, `basis`, `bump` and the rest of ChatKit's list. A row without a number for a series leaves a gap.
 - Defaults are ChatKit's: no y axis (`showYAxis`), a legend when a series has a `label` (`showLegend`), a tooltip (`showTooltip`), `aspectRatio` 4/3, and 5 round y ticks from 0, like Recharts. `barGap` is the space between the bars of one category (3px by default) and `barCategoryGap` the space on each side of a category (10% of it by default), in pixels.
+- `yAxis.domain` follows the current ChatKit Widget Builder: a two-item tuple of finite numbers, `"auto"`, `"dataMin"` or `"dataMax"`, applied with `showYAxis: true`. Use `{ domain: ["dataMin", "dataMax"] }` for a data-based price range; omitted domains keep the zero-based default (`[0, "auto"]`). Numeric bounds expand to contain the data, `auto` uses round ticks, stacks include their bases and totals, and constant values get a nonzero range. Invalid domains or numeric bounds beyond 1e300 are ignored. Values and tooltips are never transformed.
 - Colours: a series without `color` takes ChatKit's chart colours in order (`blue`, `purple`, `orange`, `green`, `red`, `yellow`, `pink`). A chart with a single bar series and no `color` gets one colour per bar, as in ChatKit. `color` also takes a primitive token (`blue-500`, `gray-300`, `alpha-10`), a Kit colour token (`primary`, `success`, ...), a CSS colour or `{ light, dark }`. The grid, axes, labels, legend and tooltip use the Kit theme.
 - Size: `width` (`100%` by default), `height`, `size`, `minWidth`, `minHeight`, `minSize`, `maxWidth`, `maxHeight`, `maxSize` and `flex`, as on a `Box`. Without `height` or `size`, the height comes from `aspectRatio` (a number or a string such as `"16/9"`). The height includes the axis labels and the legend.
 - The tooltip shows the category and the value of each series. It opens on hover over a category with a mouse. On a touch screen a tap opens it and a second tap closes it, and the tap still reaches a pressable parent such as a `ListViewItem`.
@@ -199,6 +200,10 @@ Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
 ## Changelog
+
+### 0.1.0-beta.7
+
+- `Chart` and Frame Chart nodes support the official ChatKit `yAxis.domain` tuple with `showYAxis: true`, including data-based line ranges, numeric bounds and `auto`. Existing zero-based chart defaults are unchanged.
 
 ### 0.1.0-beta.6
 

@@ -35,6 +35,7 @@ interface ChartStoryArgs {
   seriesCount: number;
   curveType: ChartCurveType;
   showYAxis: boolean;
+  dataDomain: boolean;
   showLegend: boolean;
   showTooltip: boolean;
   hideXAxis: boolean;
@@ -61,6 +62,7 @@ export const Controls: Story<ChartStoryArgs> = (args) => (
       data={MONTHS}
       series={seriesOf(args.type, args.seriesCount, args.stacked, args.curveType)}
       xAxis={{ dataKey: 'month', hide: args.hideXAxis }}
+      yAxis={args.dataDomain ? { domain: ['dataMin', 'dataMax'] } : undefined}
       showYAxis={args.showYAxis} showLegend={args.showLegend} showTooltip={args.showTooltip}
       barGap={args.barGap} barCategoryGap={args.barCategoryGap > 0 ? args.barCategoryGap : undefined}
       aspectRatio={args.aspectRatio} height={args.height > 0 ? args.height : undefined}
@@ -69,11 +71,11 @@ export const Controls: Story<ChartStoryArgs> = (args) => (
 );
 Controls.args = {
   type: 'bar', stacked: false, seriesCount: 2, curveType: 'natural', showYAxis: false, showLegend: true, showTooltip: true,
-  hideXAxis: false, barGap: 3, barCategoryGap: 0, aspectRatio: '4/3', height: 0,
+  dataDomain: false, hideXAxis: false, barGap: 3, barCategoryGap: 0, aspectRatio: '4/3', height: 0,
 };
 Controls.argTypes = {
   type: select(['bar', 'line', 'area']), stacked: bool, seriesCount: select([1, 2, 3]), curveType: select(CHART_CURVE_TYPES),
-  showYAxis: bool, showLegend: bool, showTooltip: bool, hideXAxis: bool, barGap: number, barCategoryGap: number,
+  dataDomain: bool, showYAxis: bool, showLegend: bool, showTooltip: bool, hideXAxis: bool, barGap: number, barCategoryGap: number,
   aspectRatio: text, height: number,
 };
 
@@ -126,6 +128,11 @@ export const Axes: Story = () => (
     </Sample>
     <Sample title="Negative values">
       <Chart data={BALANCE} xAxis="quarter" showYAxis series={[{ type: 'bar', dataKey: 'profit', label: 'Profit', color: 'purple' }]} />
+    </Sample>
+    <Sample title="Data-based price range (USD)">
+      <Chart data={[{ day: 'Mon', usd: 2490 }, { day: 'Tue', usd: 2505 }, { day: 'Wed', usd: 2499 }]}
+        xAxis="day" showYAxis showLegend={false} yAxis={{ domain: ['dataMin', 'dataMax'] }}
+        series={[{ type: 'line', dataKey: 'usd', label: 'USD', curveType: 'linear' }]} />
     </Sample>
     <Sample title="Fixed height">
       <Chart data={MONTHS} xAxis="month" height={180} series={[{ type: 'line', dataKey: 'desktop', label: 'Desktop', color: { light: 'blue-600', dark: 'blue-300' } }]} />

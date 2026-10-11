@@ -1,6 +1,6 @@
 import { chartCategoryColor, type ChartColor } from './chart.colors';
 import { chartAreaPath, chartCurvePath, type ChartCurveType, type ChartPoint } from './chart.curves';
-import { chartExtents, chartNumber, chartValueScale, type ChartExtent } from './chart.scale';
+import { chartExtents, chartNumber, chartValueScale, type ChartExtent, type ChartYAxisConfig } from './chart.scale';
 import { FONT_SIZE } from './tokens';
 
 export {
@@ -8,7 +8,7 @@ export {
   type ChartColor, type ChartColorName,
 } from './chart.colors';
 export { CHART_CURVE_TYPES, type ChartCurveType, type ChartPoint } from './chart.curves';
-export { chartNumber, chartTicks } from './chart.scale';
+export { chartNumber, chartTicks, type ChartDomain, type ChartDomainBound, type ChartYAxisConfig } from './chart.scale';
 
 export type ChartValue = string | number;
 
@@ -129,6 +129,7 @@ export interface ChartGeometryInput {
   width: number;
   height: number;
   showYAxis?: boolean;
+  yAxis?: ChartYAxisConfig;
   legend?: boolean;
   barGap?: number;
   barCategoryGap?: number;
@@ -314,10 +315,11 @@ function shapeOf(s: ChartSeries, si: number, extents: readonly ChartExtent[], ca
 }
 
 export function chartGeometry(input: ChartGeometryInput): ChartGeometry {
-  const extents = chartExtents(input.data, input.series.map((s) => ({ dataKey: s.dataKey, stack: s.type === 'line' ? undefined : s.stack })));
-  const { ticks, lo, hi } = chartValueScale(extents);
+  const stackable = input.series.map((s) => ({ dataKey: s.dataKey, stack: s.type === 'line' ? undefined : s.stack }));
+  const extents = chartExtents(input.data, stackable);
+  const { ticks, lo, hi } = chartValueScale(extents, stackable, input.showYAxis === true ? input.yAxis?.domain : undefined);
   const plot = plotOf(input, ticks);
-  const y = (v: number): number => plot.bottom - ((v - lo) / (hi - lo || 1)) * (plot.bottom - plot.top);
+  const y = (v: number): number => plot.bottom - ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo || 1)) * (plot.bottom - plot.top);
   const banded = input.series.some((s) => s.type === 'bar');
   const categories = categoriesOf(input, plot, banded);
   const scale: Scale = { y, band: (plot.right - plot.left) / Math.max(1, input.data.length) };
