@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { resolveBadgeStyle, type BadgeSize } from '../src/badge';
 import { SIZES } from '../src/button.styles';
-import { CONTROL_SIZES, controlColors, controlTextStyle } from '../src/control.styles';
+import { CONTROL_SIZES, controlBoxStyle, controlColors, controlTextStyle, textFieldStyle, type ControlSize } from '../src/control.styles';
 import { markdownStyles } from '../src/markdown.styles';
 import { resolveTextSize } from '../src/text.styles';
 import { FONT_SIZE, FONT_SIZE_SNAP, fontName, fontSize, type FontSizeName } from '../src/tokens';
@@ -65,13 +65,30 @@ describe('xs typography', () => {
     expect(resolveTextSize(undefined, 'caption')).toBe(13);
   });
 
-  test('medium controls use xs text without resizing the control', () => {
-    expect(CONTROL_SIZES.md).toEqual({
-      minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: FONT_SIZE.xs,
+  test('input text matches each Text size without resizing controls or changing TextField', () => {
+    expect(CONTROL_SIZES).toEqual({
+      xs: { minHeight: 32, paddingHorizontal: 10, paddingVertical: 5, fontSize: 14 },
+      sm: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, fontSize: 14 },
+      md: { minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: 16 },
+      lg: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16 },
+      xl: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 12, fontSize: 17 },
     });
-    expect(Object.values(CONTROL_SIZES).map((size) => size.fontSize)).toEqual([14, 14, 16, 16, 17]);
-    for (const dark of [false, true]) {
-      expect(controlTextStyle('md', controlColors('soft', dark)).fontSize).toBe(16);
+    for (const size of Object.keys(CONTROL_SIZES) as ControlSize[]) {
+      for (const variant of ['soft', 'outline'] as const) {
+        for (const dark of [false, true]) {
+          const colors = controlColors(variant, dark);
+          expect(controlTextStyle(size, colors)).toEqual({
+            color: colors.text, fontSize: resolveTextSize(size, undefined),
+            fontFamily: fontName.sans, padding: 0, margin: 0,
+          });
+          expect(controlBoxStyle(size, variant, colors, 8)).toMatchObject({
+            minHeight: CONTROL_SIZES[size].minHeight,
+            paddingHorizontal: CONTROL_SIZES[size].paddingHorizontal,
+            paddingVertical: CONTROL_SIZES[size].paddingVertical,
+          });
+          expect(textFieldStyle({ defaultRadius: 8, baseColors: colors }).text.fontSize).toBe(16);
+        }
+      }
     }
   });
 

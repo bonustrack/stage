@@ -91,7 +91,7 @@ export function controlBoxStyle(
 export function controlTextStyle(size: ControlSize, colors: ControlColors): TextStyle {
   return {
     color: colors.text,
-    fontSize: CONTROL_SIZES[size].fontSize,
+    fontSize: FONT_SIZE[size],
     fontFamily: fontName.sans,
     padding: 0,
     margin: 0,
