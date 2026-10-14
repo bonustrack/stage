@@ -32,6 +32,21 @@
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Embedder-Policy = "credentialless"
+    Content-Security-Policy = """\
+      default-src 'none'; \
+      script-src 'self' 'wasm-unsafe-eval' 'sha256-cDvZqdnIlWVbafnDl0bEkebRwQDKRBqLwLWAgYQI4aI=' 'sha256-ucsOOU04elePji19W95Vpo0NKtGsPQrY53QQlGDB8mI='; \
+      script-src-attr 'none'; \
+      style-src 'self' 'unsafe-inline'; \
+      img-src 'self' https: data: blob:; \
+      media-src 'self' https: data: blob:; \
+      font-src 'self'; \
+      connect-src 'self' https: data: blob:; \
+      worker-src 'self' blob:; \
+      frame-src 'none'; \
+      object-src 'none'; \
+      base-uri 'none'; \
+      form-action 'none'; \
+      frame-ancestors 'none'"""
 
 [[headers]]
   for = "/_expo/static/*"
