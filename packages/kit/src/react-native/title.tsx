@@ -29,9 +29,9 @@ export function Title(props: TitleProps): React.ReactElement {
 
   const base: TextStyle = {
     color: color != null ? resolveColorToken(color, scheme) : palette.link,
-    fontSize: LEVEL_SIZE[lvl],
-    fontFamily: fontName.head,
-    ...(hero === undefined ? {} : HERO_TITLE_STYLE[hero]),
+    ...(hero === undefined
+      ? { fontSize: LEVEL_SIZE[lvl], fontFamily: fontName.head }
+      : HERO_TITLE_STYLE[hero]),
   };
 
   return (

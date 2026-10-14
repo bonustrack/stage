@@ -201,6 +201,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.9
+
+- `Title` sets its default font size and family only when there is no hero, fixing TS2783 for strict TypeScript 5.9 consumers. All rendered styles are unchanged.
+- This maintenance release uses the beta.8 source baseline; later Input and Textarea typography changes on main are not included.
+
 ### 0.1.0-beta.8
 
 - Chart mixed `auto` domains expand both ends to the nice ticks, equal numeric bounds expand against the data, and ticks retain their precision in narrow ranges around large values.
