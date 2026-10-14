@@ -115,12 +115,12 @@ function ChannelRowItemBase({
       hideAvatar={hideAvatar}
       square={isGroup}
       lastPreview={preview}
+      showPreview={fields.lastMessage}
       timestamp={channelTimestamp(item.lastTs)}
       unreadCount={item.unreadCount}
       markedUnread={item.markedUnread}
       pinned={pinned}
       draftText={draftText}
-      labels={isGroup && fields.labels ? item.labels : undefined}
       fields={<ChannelRowFields data={item} fields={fields}/>}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}

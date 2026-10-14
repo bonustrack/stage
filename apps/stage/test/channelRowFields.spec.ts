@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { visibleChannelFields } from '../components/ChannelRowFields.model';
 import { CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../components/home/fields.model';
 
-const all: ChannelFields = { members: true, assignees: true, category: true, status: true, labels: true, priority: true, avatar: true };
+const all: ChannelFields = { members: true, assignees: true, category: true, status: true, labels: true, priority: true, avatar: true, lastMessage: true };
 const data = {
   peerAddress: null,
   inboxToAddr: { self: '0xabc', friend: '0xDEF', duplicate: '0xAbC', empty: '' },
@@ -40,6 +40,24 @@ describe('channel row metadata', () => {
     }
     expect(visibleChannelFields(data, { ...all, labels: false })).toEqual(visibleChannelFields(data, all));
     expect(visibleChannelFields(data, { ...all, avatar: false })).toEqual(visibleChannelFields(data, all));
+  });
+
+  test('labels follow status on the metadata row, with the existing overflow limit', () => {
+    const fields = visibleChannelFields({ ...data, labels: ['design', 'important', 'planning', 'urgent'] }, all);
+    expect(fields.map(field => field.id)).toEqual(['members', 'assignees', 'category', 'status', 'labels', 'priority']);
+    expect(fields.find(field => field.id === 'labels')).toEqual({
+      id: 'labels', label: 'Labels', value: '', addresses: [], labels: ['design', 'important', '+2'],
+    });
+  });
+
+  test('labels are independent of status and last message visibility', () => {
+    const labelled = { labels: ['important'], status: 'In review' };
+    const labelsOnly = visibleChannelFields(labelled, DEFAULT_CHANNEL_FIELDS.chats);
+    expect(labelsOnly.map(field => field.id)).toEqual(['labels']);
+    expect(visibleChannelFields(labelled, { ...DEFAULT_CHANNEL_FIELDS.chats, lastMessage: false })).toEqual(labelsOnly);
+    expect(visibleChannelFields({ labels: ['important'] }, all)).toEqual(labelsOnly);
+    expect(visibleChannelFields(labelled, { ...DEFAULT_CHANNEL_FIELDS.chats, labels: false })).toEqual([]);
+    expect(visibleChannelFields({ ...labelled, peerAddress: '0xdef' }, all)).toEqual([]);
   });
 
   test('missing and blank metadata produces no empty fields or spacer', () => {

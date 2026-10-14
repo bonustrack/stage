@@ -114,12 +114,12 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
         avatarUri={item.avatarUri} avatarAddress={rowAvatarAddress(item, !item.peerAddress)} square={!item.peerAddress}
         hideAvatar={!fields.avatar} wrapTitle
         lastPreview={rowPreview(item)}
+        showPreview={fields.lastMessage}
         timestamp={channelTimestamp(item.lastTs)}
         unreadCount={item.unreadCount}
         markedUnread={item.markedUnread}
         pinned={pinned}
         draftText={draftText}
-        labels={!item.peerAddress && fields.labels ? item.labels : undefined}
         fields={<ChannelRowFields data={item} fields={fields}/>}
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => {

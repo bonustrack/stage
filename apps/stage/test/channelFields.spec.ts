@@ -26,7 +26,7 @@ const { toggleChannelField } = await import('../lib/channelFields');
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.fields.${id}`) ?? 'null');
 
-const hidden = { members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false };
+const hidden = { members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false, lastMessage: true };
 
 beforeEach(() => {
   values.clear();
@@ -36,30 +36,32 @@ beforeEach(() => {
 });
 
 describe('channel field preferences', () => {
-  test('lists all seven fields in display order and preserves existing view defaults', () => {
+  test('lists all eight fields in display order and preserves existing view defaults', () => {
     expect(CHANNEL_FIELDS.map(({ id, label }) => [id, label])).toEqual([
       ['members', 'Members'], ['assignees', 'Assignees'], ['category', 'Project'],
-      ['status', 'Status'], ['labels', 'Labels'], ['priority', 'Priority'], ['avatar', 'Avatar'],
+      ['status', 'Status'], ['labels', 'Labels'], ['priority', 'Priority'], ['avatar', 'Avatar'], ['lastMessage', 'Last message'],
     ]);
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });
   });
 
   test('counts currently visible fields, including zero, independently for each view', () => {
     let prefs = parseChannelFields('{}');
-    expect(visibleChannelFieldCount(prefs.chats)).toBe(2);
+    expect(visibleChannelFieldCount(prefs.chats)).toBe(3);
+    expect(visibleChannelFieldCount(prefs.board)).toBe(1);
+    prefs = toggleChannelFieldIn(prefs, 'board', 'lastMessage');
     expect(visibleChannelFieldCount(prefs.board)).toBe(0);
     for (const [index, { id }] of CHANNEL_FIELDS.entries()) {
       prefs = toggleChannelFieldIn(prefs, 'board', id);
       expect(visibleChannelFieldCount(prefs.board)).toBe(index + 1);
-      expect(visibleChannelFieldCount(prefs.chats)).toBe(2);
+      expect(visibleChannelFieldCount(prefs.chats)).toBe(3);
     }
     for (const [index, { id }] of CHANNEL_FIELDS.entries()) {
       prefs = toggleChannelFieldIn(prefs, 'board', id);
       expect(visibleChannelFieldCount(prefs.board)).toBe(CHANNEL_FIELDS.length - index - 1);
     }
     const unknownField = { ...prefs.chats, future: true };
-    expect(visibleChannelFieldCount(unknownField)).toBe(2);
-    expect(visibleChannelFieldCount(parseChannelFields('{"chats":{"labels":false}}').chats)).toBe(1);
+    expect(visibleChannelFieldCount(unknownField)).toBe(3);
+    expect(visibleChannelFieldCount(parseChannelFields('{"chats":{"labels":false}}').chats)).toBe(2);
   });
 
   test('missing or invalid persisted data falls back without throwing', () => {
@@ -90,10 +92,20 @@ describe('channel field preferences', () => {
     expect(parseChannelFields('{"chats":{"avatar":"true"}}', false).chats.avatar).toBe(false);
   });
 
+  test('last message defaults on for existing views while explicit choices are preserved', () => {
+    const previous = { ...hidden };
+    const sevenFields = { ...previous, lastMessage: undefined };
+    expect(parseChannelFields(JSON.stringify({ chats: sevenFields, board: sevenFields }))).toEqual({ chats: previous, board: previous });
+    const prefs = parseChannelFields('{"chats":{"lastMessage":false},"board":{"lastMessage":false}}');
+    expect(prefs.chats).toEqual({ ...DEFAULT_CHANNEL_FIELDS.chats, lastMessage: false });
+    expect(prefs.board).toEqual({ ...DEFAULT_CHANNEL_FIELDS.board, lastMessage: false });
+    expect(parseChannelFields('{"chats":{"lastMessage":"false"},"board":{"lastMessage":null}}')).toEqual(DEFAULT_CHANNEL_FIELDS);
+  });
+
   test('saved preferences round trip all fields in both views', () => {
     const prefs = {
-      chats: { members: true, assignees: false, category: true, status: false, labels: false, priority: true, avatar: false },
-      board: { members: false, assignees: true, category: false, status: true, labels: true, priority: false, avatar: true },
+      chats: { members: true, assignees: false, category: true, status: false, labels: false, priority: true, avatar: false, lastMessage: false },
+      board: { members: false, assignees: true, category: false, status: true, labels: true, priority: false, avatar: true, lastMessage: true },
     };
     expect(parseChannelFields(JSON.stringify(prefs))).toEqual(prefs);
   });
@@ -138,6 +150,27 @@ describe('channel field storage', () => {
     expect(stored('alice')).toEqual({ chats: { ...aliceChats, avatar: false }, board: { ...hidden, priority: true } });
     expect(stored('bob')).toEqual({ chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, avatar: true } });
     expect([...values.keys()]).toEqual(['home.fields.alice', 'home.fields.bob']);
+  });
+
+  test('persists last message choices independently by view and account', async () => {
+    activeId = 'last-message-alice';
+    values.set(`home.fields.${activeId}`, '{"chats":{"status":true},"board":{"labels":true}}');
+    toggleChannelField('chats', 'lastMessage');
+    await settle();
+    const alice = {
+      chats: { ...DEFAULT_CHANNEL_FIELDS.chats, status: true, lastMessage: false },
+      board: { ...DEFAULT_CHANNEL_FIELDS.board, labels: true },
+    };
+    expect(stored(activeId)).toEqual(alice);
+    activeId = 'last-message-bob';
+    toggleChannelField('board', 'lastMessage');
+    await settle();
+    expect(stored(activeId)).toEqual({ chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, lastMessage: false } });
+    expect(stored('last-message-alice')).toEqual(alice);
+    activeId = 'last-message-alice';
+    toggleChannelField('board', 'lastMessage');
+    await settle();
+    expect(stored(activeId)).toEqual({ ...alice, board: { ...alice.board, lastMessage: false } });
   });
 
   test('migrates missing storage and six-field preferences from legacy avatars without writing the global key', async () => {

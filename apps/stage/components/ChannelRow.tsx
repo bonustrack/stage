@@ -1,13 +1,11 @@
 import { memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
-import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import type { TextStyle, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box, PAGE_GUTTER } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
@@ -34,11 +32,11 @@ interface ChannelRowProps {
   timestamp?: string | null;
   subtitle?: string | null;
   previewLines?: number;
+  showPreview?: boolean;
   unreadCount?: number;
   markedUnread?: boolean;
   pinned?: boolean;
   draftText?: string | null;
-  labels?: string[];
   active?: boolean;
   onPress?: () => void;
   linkProps?: BubbleLinkProps;
@@ -73,6 +71,10 @@ function TrailingBadge({ unreadCount, markedUnread }: {
 
 function titleLineHeight(wrap: boolean): number {
   return wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT;
+}
+
+function rowMinHeight(showPreview: boolean): number | undefined {
+  return showPreview ? CHANNEL_ROW_HEIGHT : undefined;
 }
 
 function PinGlyph({ scheme }: { scheme: Scheme }): React.ReactElement {
@@ -127,8 +129,8 @@ function TitleLine({ params, scheme, wrap }: {
   );
 }
 
-function TitleRow({ params, scheme, wrap }: {
-  params: ChannelRowParams; scheme: Scheme; wrap: boolean;
+function TitleRow({ params, scheme, wrap, trailing }: {
+  params: ChannelRowParams; scheme: Scheme; wrap: boolean; trailing: React.ReactNode;
 }): React.ReactElement {
   return (
     <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
@@ -138,41 +140,7 @@ function TitleRow({ params, scheme, wrap }: {
           <Text value={params.timestamp} size={params.timestampSize} color="secondary" />
         </Row>
       )}
-    </Row>
-  );
-}
-
-const CHIP_TEXT_SIZE = '2xs';
-const CHIP_HEIGHT = 20;
-const CHIP_PADDING_X = 7;
-const CHIP_GAP = 3;
-const CHIP_STYLE: ViewStyle = {
-  height: CHIP_HEIGHT, paddingLeft: CHIP_PADDING_X, paddingRight: CHIP_PADDING_X, paddingTop: 0, paddingBottom: 0, flexShrink: 1, minWidth: 0,
-};
-const CHIP_TEXT_STYLE: TextStyle = { lineHeight: CHIP_HEIGHT, flexShrink: 1, userSelect: 'none' };
-const CHIP_SPACER_STYLE: ViewStyle = { opacity: 0, overflow: 'hidden' };
-const CHIP_OVERLAY_STYLE: ViewStyle = {
-  position: 'absolute', top: (PREVIEW_LINE_HEIGHT - CHIP_HEIGHT) / 2, left: 0, maxWidth: '100%', overflow: 'hidden',
-};
-
-function PreviewChips({ chips, fg, bg }: {
-  chips: NonNullable<ChannelRowParams['chips']>; fg: string; bg: string;
-}): React.ReactElement {
-  return (
-    <Row gap={CHIP_GAP}>
-      {chips.map((chip, i) => (
-        <Badge
-          key={`${chip.label}-${i}`}
-          label={chip.label}
-          textSize={CHIP_TEXT_SIZE}
-          weight="normal"
-          truncate
-          color={fg}
-          background={bg}
-          style={CHIP_STYLE}
-          textStyle={CHIP_TEXT_STYLE}
-        />
-      ))}
+      {trailing}
     </Row>
   );
 }
@@ -180,24 +148,12 @@ function PreviewChips({ chips, fg, bg }: {
 function PreviewParagraph({ params, hasPrefix, lines = 2 }: {
   params: ChannelRowParams; hasPrefix: boolean; lines?: number;
 }): React.ReactElement {
-  const { text: fg, inputBg } = usePalette();
-  const chips = params.chips !== undefined && params.chips.length > 0 ? params.chips : null;
   return (
     <Box flex={1} minWidth={0}>
       <Text size="xs" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
-        {chips === null ? null : (
-          <Box height={1} padding={{ right: CHIP_GAP }} aria-hidden style={CHIP_SPACER_STYLE}>
-            <PreviewChips chips={chips} fg={fg} bg={inputBg} />
-          </Box>
-        )}
         {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="xs" color="danger" /> : null}
         {params.preview}
       </Text>
-      {chips === null ? null : (
-        <Box style={CHIP_OVERLAY_STYLE}>
-          <PreviewChips chips={chips} fg={fg} bg={inputBg} />
-        </Box>
-      )}
     </Box>
   );
 }
@@ -209,20 +165,22 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
     <Col gap={LINE_GAP} flex={1}>
-      <TitleRow params={params} scheme={scheme} wrap={wrapTitle} />
-      <Row align="start" gap={12}>
-        <PreviewParagraph params={params} hasPrefix={hasPrefix} lines={previewLines} />
-        {trailing}
-      </Row>
+      <TitleRow params={params} scheme={scheme} wrap={wrapTitle} trailing={params.showPreview ? null : trailing} />
+      {params.showPreview ? (
+        <Row align="start" gap={12}>
+          <PreviewParagraph params={params} hasPrefix={hasPrefix} lines={previewLines} />
+          {trailing}
+        </Row>
+      ) : null}
     </Col>
   );
 }
 
 function ChannelRowBase({
   title, placeholderTitle, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
-  lastPreview, timestamp, subtitle, previewLines, unreadCount = 0, markedUnread,
+  lastPreview, timestamp, subtitle, previewLines, showPreview, unreadCount = 0, markedUnread,
   pinned, draftText, active,
-  onPress, linkProps, onPressIn, onLongPress, onContextMenu, labels, highlightQuery, accessory, fields, mark,
+  onPress, linkProps, onPressIn, onLongPress, onContextMenu, highlightQuery, accessory, fields, mark,
 }: ChannelRowProps): React.ReactElement {
   const { border } = usePalette();
   const params = channelRowModel({
@@ -232,7 +190,7 @@ function ChannelRowBase({
     lastPreview,
     subtitle,
     draftText,
-    labels,
+    showPreview,
     pinned,
     timestampLabel: timestamp ?? '',
   });
@@ -251,7 +209,7 @@ function ChannelRowBase({
       {...contextMenuProps(onContextMenu ?? onLongPress)}
       {...mark}
 >
-      <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
+      <Row minHeight={rowMinHeight(params.showPreview)} padding={{ y: 9 }} align="center" gap={12}>
         {hideAvatar === true ? null : (
           <Avatar
             imageUri={avatarUri}

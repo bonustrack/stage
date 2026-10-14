@@ -1,12 +1,6 @@
-import type { BadgeColor } from '@stage-labs/kit/badge';
 import type { FontSizeName } from '@stage-labs/kit/tokens';
 import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
 import { highlightSegments } from './HighlightText.model';
-
-interface ChannelLabelChip {
-  label: string;
-  color?: BadgeColor;
-}
 
 interface ChannelTitleSegment {
   text: string;
@@ -17,15 +11,13 @@ export interface ChannelRowParams {
   title: string;
   placeholderTitle?: boolean;
   preview: string;
+  showPreview: boolean;
   timestamp: string;
   timestampSize: FontSizeName;
   titleSegments?: ChannelTitleSegment[];
   previewPrefix?: string;
-  chips?: ChannelLabelChip[];
   pinned?: boolean;
 }
-
-const MAX_VISIBLE_LABELS = 2;
 
 interface ChannelRowDomain {
   title: string;
@@ -34,7 +26,7 @@ interface ChannelRowDomain {
   subtitle?: string | null;
   timestampLabel: string;
   draftText?: string | null;
-  labels?: string[];
+  showPreview?: boolean;
   highlightQuery?: string;
   pinned?: boolean;
 }
@@ -51,17 +43,6 @@ function resolvePreview(
   if (d.lastPreview && d.lastPreview.length > 0) return d.lastPreview;
   if (d.subtitle && d.subtitle.length > 0) return d.subtitle;
   return '';
-}
-
-function resolveChips(
-  draft: string | null,
-  labels?: string[],
-): ChannelLabelChip[] | undefined {
-  if (draft || labels === undefined || labels.length === 0) return undefined;
-  const visible = labels.slice(0, MAX_VISIBLE_LABELS);
-  const overflow = labels.length - visible.length;
-  const all = overflow > 0 ? [...visible, `+${overflow}`] : visible;
-  return all.map((label) => ({ label }));
 }
 
 function resolveTitleSegments(
@@ -82,10 +63,10 @@ export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
     placeholderTitle: d.placeholderTitle,
     titleSegments: resolveTitleSegments(d.title, d.highlightQuery),
     preview: resolvePreview(draft, d),
+    showPreview: d.showPreview !== false,
     previewPrefix: draft ? 'Draft:' : undefined,
     timestamp: d.timestampLabel,
     timestampSize: '3xs',
-    chips: resolveChips(draft, d.labels),
     pinned: d.pinned,
   };
 }

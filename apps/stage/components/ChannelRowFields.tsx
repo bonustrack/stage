@@ -1,4 +1,7 @@
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
+import type { TextStyle, ViewStyle } from 'react-native';
+import { usePalette } from '../lib/theme';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { Avatar } from './Avatar';
 import { Row } from './layout';
@@ -9,6 +12,26 @@ import type { ChannelFields } from './home/fields.model';
 import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 
 const MAX_PEOPLE = 3;
+const CHIP_HEIGHT = 20;
+const CHIP_PADDING_X = 7;
+const CHIP_STYLE: ViewStyle = {
+  height: CHIP_HEIGHT, paddingLeft: CHIP_PADDING_X, paddingRight: CHIP_PADDING_X, paddingTop: 0, paddingBottom: 0, flexShrink: 1, minWidth: 0,
+};
+const CHIP_TEXT_STYLE: TextStyle = { lineHeight: CHIP_HEIGHT, flexShrink: 1, userSelect: 'none' };
+
+function FieldLabels({ labels }: { labels: string[] }): React.ReactElement {
+  const { text, inputBg } = usePalette();
+  return (
+    <Row wrap align="center" gap={3} minWidth={0} style={{ flexShrink: 1 }}>
+      {labels.map((label, i) => (
+        <Badge
+          key={`${label}-${i}`} label={label} textSize="2xs" weight="normal" truncate
+          color={text} background={inputBg} style={CHIP_STYLE} textStyle={CHIP_TEXT_STYLE}
+        />
+      ))}
+    </Row>
+  );
+}
 
 function FieldPeople({ addresses, label }: { addresses: string[]; label: string }): React.ReactElement {
   usePeerProfiles(addresses.slice(0, MAX_PEOPLE));
@@ -30,7 +53,7 @@ export function ChannelRowFields({ data, fields }: {
   if (visible.length === 0) return null;
   return (
     <Row wrap align="center" gap={8} padding={{ top: 6 }}>
-      {visible.map(field => (
+      {visible.map(field => field.labels ? <FieldLabels key={field.id} labels={field.labels}/> : (
         <Row key={field.id} align="center" gap={4} minWidth={0} style={{ flexShrink: 1 }}>
           {field.icon === undefined ? null : <AppIcon name={field.icon} size={14} color="secondary"/>}
           {field.addresses.length > 0 ? <FieldPeople addresses={field.addresses} label={field.label}/> : (

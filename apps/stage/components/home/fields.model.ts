@@ -1,6 +1,6 @@
 import type { AppIconName } from '../appIcons';
 
-export type ChannelField = 'members' | 'assignees' | 'category' | 'status' | 'labels' | 'priority' | 'avatar';
+export type ChannelField = 'members' | 'assignees' | 'category' | 'status' | 'labels' | 'priority' | 'avatar' | 'lastMessage';
 export type ChannelFields = Record<ChannelField, boolean>;
 export type ChannelFieldView = 'chats' | 'board';
 export type ChannelFieldPreferences = Record<ChannelFieldView, ChannelFields>;
@@ -13,15 +13,16 @@ export const CHANNEL_FIELDS: readonly { id: ChannelField; label: string; icon?: 
   { id: 'labels', label: 'Labels', icon: 'IconTag' },
   { id: 'priority', label: 'Priority', icon: 'IconFlag1' },
   { id: 'avatar', label: 'Avatar', icon: 'IconPeopleCircle' },
+  { id: 'lastMessage', label: 'Last message', icon: 'IconBubble3' },
 ];
 
-const hiddenFields: ChannelFields = {
-  members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false,
+const defaultFields: ChannelFields = {
+  members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false, lastMessage: true,
 };
 
 export const DEFAULT_CHANNEL_FIELDS: ChannelFieldPreferences = {
-  chats: { ...hiddenFields, labels: true, avatar: true },
-  board: hiddenFields,
+  chats: { ...defaultFields, labels: true, avatar: true },
+  board: defaultFields,
 };
 
 export function visibleChannelFieldCount(fields: ChannelFields): number {
