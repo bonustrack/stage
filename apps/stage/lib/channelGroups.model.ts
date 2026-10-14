@@ -26,11 +26,22 @@ export function categoryKeysOf(keys: readonly string[]): string[] {
   return uniqueKeys(keys.filter(isNamedCategory));
 }
 
+export const isCategorySectionKey = (key: string): boolean => key === 'dm' || key === 'none' || isNamedCategory(key);
+
+export function categorySectionKeysOf(keys: readonly string[]): string[] {
+  return uniqueKeys(keys.filter(isCategorySectionKey));
+}
+
+export function categorySectionOrderWith(order: readonly string[], visible: readonly string[]): string[] {
+  const full = categoryOrderWith(order, categoryKeysOf(visible));
+  return [...(full.includes('dm') ? [] : ['dm']), ...full, ...(full.includes('none') ? [] : ['none'])];
+}
+
 export function movedCategoryOrder(
   order: readonly string[], visible: readonly string[], key: string, targetKey: string,
 ): string[] {
-  const shown = categoryKeysOf(visible);
-  const full = categoryOrderWith(order, shown);
+  const shown = categorySectionKeysOf(visible);
+  const full = categorySectionOrderWith(order, shown);
   const named = (value: string): string | undefined => (
     shown.some(item => item.toLowerCase() === value.toLowerCase())
       ? full.find(item => item.toLowerCase() === value.toLowerCase()) : undefined

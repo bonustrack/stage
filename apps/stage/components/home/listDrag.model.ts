@@ -1,4 +1,4 @@
-import { isCategoryKey } from '../../lib/channelGroups.model';
+import { isCategoryKey, isCategorySectionKey } from '../../lib/channelGroups.model';
 import { NO_GROUP_KEY, isGroupHeader, listKeyOf, type ChannelGroupHeader, type HomeListItem } from './groups.model';
 
 export interface DragBlocks {
@@ -83,7 +83,7 @@ export function sectionBlocks(
   let current = -1;
   for (const item of items) {
     if (isGroupHeader(item)) {
-      current = isCategoryKey(item.header.key) ? ids.length : -1;
+      current = isCategorySectionKey(item.header.key) ? ids.length : -1;
       if (current === -1) continue;
       ids.push(item.header.key);
       heights.push(headerHeight);

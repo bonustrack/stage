@@ -122,10 +122,10 @@ describe('category order', () => {
 
   test('a drop moves the category to the target slot and keeps hidden categories in place', () => {
     const visible = ['category:a', 'category:b', 'category:c'];
-    expect(movedCategoryOrder([], visible, 'category:a', 'category:c')).toEqual(['category:b', 'category:c', 'category:a']);
-    expect(movedCategoryOrder([], visible, 'category:c', 'category:a')).toEqual(['category:c', 'category:a', 'category:b']);
+    expect(movedCategoryOrder([], visible, 'category:a', 'category:c')).toEqual(['dm', 'category:b', 'category:c', 'category:a', 'none']);
+    expect(movedCategoryOrder([], visible, 'category:c', 'category:a')).toEqual(['dm', 'category:c', 'category:a', 'category:b', 'none']);
     expect(movedCategoryOrder(['category:a', 'category:x', 'category:b', 'category:c'], visible, 'category:a', 'category:c'))
-      .toEqual(['category:x', 'category:b', 'category:c', 'category:a']);
+      .toEqual(['dm', 'category:x', 'category:b', 'category:c', 'category:a', 'none']);
   });
 });
 
@@ -154,18 +154,18 @@ describe('list drag blocks', () => {
     expect(blocks.blockOf.get('c')).toBe(2);
   });
 
-  test('a section block is its header plus its visible rows, direct messages and no category are not blocks', () => {
+  test('a section block is its header plus visible rows, including direct messages and no project', () => {
     const items = groupRows([dm, work, work2, alpha, loose], 'category', new Set(['category:work']), false, nameOf);
     const blocks = sectionBlocks(items, HEADER, ROW);
-    expect(blocks.ids).toEqual(['category:alpha', 'category:work']);
-    expect(blocks.heights).toEqual([HEADER + ROW, HEADER]);
-    expect(blocks.tops).toEqual([0, HEADER + ROW]);
-    expect(blocks.blockOf.get('group:category:alpha')).toBe(0);
-    expect(blocks.blockOf.get('alpha')).toBe(0);
-    expect(blocks.blockOf.get('group:category:work')).toBe(1);
-    expect(blocks.blockOf.has('dm')).toBe(false);
-    expect(blocks.blockOf.has('group:dm')).toBe(false);
-    expect(blocks.blockOf.has('loose')).toBe(false);
+    expect(blocks.ids).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
+    expect(blocks.heights).toEqual([HEADER + ROW, HEADER + ROW, HEADER, HEADER + ROW]);
+    expect(blocks.tops).toEqual([0, HEADER + ROW, 2 * (HEADER + ROW), 3 * HEADER + 2 * ROW]);
+    expect(blocks.blockOf.get('group:category:alpha')).toBe(1);
+    expect(blocks.blockOf.get('alpha')).toBe(1);
+    expect(blocks.blockOf.get('group:category:work')).toBe(2);
+    expect(blocks.blockOf.get('dm')).toBe(0);
+    expect(blocks.blockOf.get('group:dm')).toBe(0);
+    expect(blocks.blockOf.get('loose')).toBe(3);
   });
 
   test('only category sections are blocks, so other groupings cannot be dragged', () => {
@@ -307,7 +307,7 @@ describe('one category order for the chat list and the board', () => {
     moveCategory('category:Work', 'category:Alpha', board);
     await settle();
     const order = await loadCategoryOrder('ann');
-    expect(order).toEqual(['category:Work', 'category:Alpha', 'category:Ops']);
+    expect(order).toEqual(['dm', 'category:Work', 'category:Alpha', 'category:Ops', 'none']);
     expect(sent).toEqual([order]);
     expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No project']);
   });
@@ -342,25 +342,25 @@ describe('one category order for the chat list and the board', () => {
 
   test('edited empty categories retain spelling, persist and sync without changing collapsed groups', async () => {
     activeId = 'edited';
-    values.set('channels.groups.edited', JSON.stringify({ collapsed: ['category:work'], order: ['category:fde', 'category:work'] }));
-    await applyRemoteCategoryOrder('edited', ['category:fde', 'category:work']);
+    values.set('channels.groups.edited', JSON.stringify({ collapsed: ['category:work'], order: ['dm', 'category:fde', 'none', 'category:work'] }));
+    await applyRemoteCategoryOrder('edited', ['dm', 'category:fde', 'none', 'category:work']);
     sent.length = 0;
-    setCategoryOrder(['category:FDE Team', 'category:Work', 'category:WORK', 'category:', 'label:Todo']);
+    setCategoryOrder(['dm', 'category:FDE Team', 'none', 'category:Work', 'category:WORK', 'category:', 'label:Todo']);
     await settle();
-    const order = ['category:FDE Team', 'category:Work'];
+    const order = ['dm', 'category:FDE Team', 'none', 'category:Work'];
     expect(await loadCategoryOrder('edited')).toEqual(order);
     expect(JSON.parse(values.get('channels.groups.edited') ?? '{}')).toEqual({ collapsed: ['category:work'], order, orderConfigured: true });
     expect(sent).toEqual([order]);
     moveCategory('category:work', 'category:fde team', ['category:work', 'category:FDE Team']);
     await settle();
-    expect(await loadCategoryOrder('edited')).toEqual(['category:Work', 'category:FDE Team']);
+    expect(await loadCategoryOrder('edited')).toEqual(['dm', 'category:Work', 'category:FDE Team', 'none']);
     expect(sections(['category:Ops', 'category:Work'])).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No project']);
-    setCategoryOrder(['category:Work']);
+    setCategoryOrder(['dm', 'category:Work', 'none']);
     await settle();
-    expect(await loadCategoryOrder('edited')).toEqual(['category:Work']);
+    expect(await loadCategoryOrder('edited')).toEqual(['dm', 'category:Work', 'none']);
     sent.length = 0;
-    await applyRemoteCategoryOrder('edited', ['category:Remote', 'category:Work']);
-    expect(await loadCategoryOrder('edited')).toEqual(['category:Remote', 'category:Work']);
+    await applyRemoteCategoryOrder('edited', ['none', 'category:Remote', 'dm', 'category:Work']);
+    expect(await loadCategoryOrder('edited')).toEqual(['none', 'category:Remote', 'dm', 'category:Work']);
     expect(sent).toEqual([]);
   });
 

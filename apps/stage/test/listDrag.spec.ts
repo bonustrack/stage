@@ -43,14 +43,14 @@ describe('measured list drag geometry', () => {
 
   test('section blocks add the measured heights of visible rows only', () => {
     const blocks = sectionBlocks(items, HEADER, ROW, heights);
-    expect(blocks.ids).toEqual(['category:alpha', 'category:beta']);
-    expect(blocks.heights).toEqual([161, 280]);
-    expect(blocks.tops).toEqual([0, 161]);
+    expect(blocks.ids).toEqual(['category:alpha', 'category:beta', 'none']);
+    expect(blocks.heights).toEqual([161, 280, HEADER + ROW]);
+    expect(blocks.tops).toEqual([0, 161, 441]);
     expect(target(blocks, 0, 100)).toBe(0);
     expect(target(blocks, 0, 141)).toBe(1);
     const folded = groupRows([a, b, c, loose], 'category', new Set(['category:beta']), false, address => address);
     const collapsed = sectionBlocks(folded, HEADER, ROW, heights);
-    expect(collapsed.heights).toEqual([161, HEADER]);
+    expect(collapsed.heights).toEqual([161, HEADER, HEADER + ROW]);
     expect(target(collapsed, 0, 21)).toBe(1);
   });
 
@@ -70,7 +70,7 @@ describe('measured list drag geometry', () => {
   test('unmeasured rows use the existing fallback without overriding measured neighbours', () => {
     const measured = new Map([['b', 157]]);
     expect(rowBlocks(['a', 'b', 'c'], ROW, measured).heights).toEqual([ROW, 157, ROW]);
-    expect(sectionBlocks(items, HEADER, ROW, measured).heights).toEqual([HEADER + ROW, HEADER + 157 + ROW]);
+    expect(sectionBlocks(items, HEADER, ROW, measured).heights).toEqual([HEADER + ROW, HEADER + 157 + ROW, HEADER + ROW]);
     expect(categoryZones(items, HEADER, ROW, measured).blocks.heights).toEqual([HEADER, ROW, HEADER, 157, ROW, HEADER, ROW]);
   });
 

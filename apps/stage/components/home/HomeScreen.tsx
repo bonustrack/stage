@@ -123,7 +123,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     [list.grouped, visibleRows, pinned],
   );
   const pinDrag = usePinDrag(pinned, visiblePinned, dragMeasurements.heights);
-  const sectionDrag = useSectionDrag(list.items, list.grouped, dragMeasurements.heights);
+  const sectionDrag = useSectionDrag(list.items, groupBy === 'category', dragMeasurements.heights);
   const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category', dragMeasurements.heights);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {

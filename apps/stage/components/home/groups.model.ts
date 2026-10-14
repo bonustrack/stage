@@ -1,6 +1,7 @@
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
+import { categorySectionOrderWith } from '../../lib/channelGroups.model';
 import { NO_GROUP_TITLES, bucketRows, type Bucket, type NameOf } from './groupBy.model';
 import { unreadRowCount, type Row } from './model';
 
@@ -48,14 +49,14 @@ function orderedBuckets<R extends GroupRow>(
 ): Bucket<R>[] {
   const dm = rows.filter(row => row.peerAddress !== null);
   const { buckets, none } = bucketRows(rows.filter(row => row.peerAddress === null), by, nameOf, value => sectionKeyOf(by, value));
-  const grouped = by === 'category'
-    ? savedFirst(buckets, order.map(key => key.toLowerCase()), b => b.key, (a, b) => compareNames(a.key, b.key))
-    : buckets.sort((a, b) => compareNames(a.title, b.title));
-  return [
+  const sections = [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
-    ...grouped,
+    ...buckets.sort((a, b) => compareNames(a.title, b.title)),
     ...(none.length === 0 ? [] : [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by], rows: none }]),
   ];
+  return by === 'category'
+    ? savedFirst(sections, categorySectionOrderWith(order, buckets.map(b => b.key)).map(key => key.toLowerCase()), b => b.key)
+    : sections;
 }
 
 function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[] {

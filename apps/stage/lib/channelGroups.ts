@@ -1,6 +1,6 @@
 import { toggleKey } from '../components/conversation/SidebarSection.model';
 import {
-  NO_GROUPS_PREFS, categoryKeysOf, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs,
+  NO_GROUPS_PREFS, categoryKeysOf, categorySectionKeysOf, movedCategoryOrder, parseChannelGroupsPrefs, type ChannelGroupsPrefs,
 } from './channelGroups.model';
 import { reported } from './errorPolicy';
 import { loadBoardOrder, type AccountOrderChange } from './boardOrder';
@@ -40,7 +40,7 @@ function changeCategoryOrder(next: (order: string[]) => string[]): void {
 }
 
 export function setCategoryOrder(order: readonly string[]): void {
-  changeCategoryOrder(() => categoryKeysOf(order));
+  changeCategoryOrder(() => categorySectionKeysOf(order));
 }
 
 export function moveCategory(key: string, targetKey: string, visible: readonly string[]): void {
