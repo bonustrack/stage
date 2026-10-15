@@ -113,7 +113,7 @@ function PollQuestionView({ block, qi, colors, onVote }: {
           <PollOptionView option={option} colors={colors} />
         </GesturePressable>
       ))}
-      <Caption value={block.totalLabel} size="sm" color="secondary" />
+      <Text value={block.totalLabel} size="xs" weight="medium" textAlign="start" color="secondary" />
     </Col>
   );
 }
