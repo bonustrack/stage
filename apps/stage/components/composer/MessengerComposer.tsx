@@ -10,6 +10,7 @@ import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import type { DropZone } from './droppedFiles.model';
 import { useComposerDrafts, useComposerFocus, useCaretToEnd } from './hooks';
+import { useWarmSendPath } from './useWarmSendPath';
 import { useLastAttachment } from '../../lib/drafts';
 import { useChannelSuggest, useMentionEditor } from './mentions';
 import { ReplyBanner, SuggestMenu, PendingRow } from './parts';
@@ -155,6 +156,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
   const drop = useDroppedAndPasted(actions, () => { caretToEnd(); s.bumpFocus(); });
   useComposerDrafts(draftKey, s, mention.restore);
+  useWarmSendPath(props.xmtpLine, s);
   useHandedSend(convId, (started) => { void actions.adoptSend(started); });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId ?? '');

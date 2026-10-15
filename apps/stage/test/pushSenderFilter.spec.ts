@@ -151,6 +151,34 @@ describe('account-wide sender publication without a push token', () => {
     expect(f.bodies).toHaveLength(1);
   });
 
+  test('expired warming is refreshed before a notifying send publishes', async () => {
+    const f = fixture();
+    let syncs = 0;
+    f.setSync(async () => { syncs += 1; });
+    await f.publisher.warm(f.input);
+    f.advance(30_000);
+    await f.publisher.publish({ ...f.input, topic: TOPIC });
+    expect(syncs).toBe(2);
+    expect(f.bodies).toHaveLength(1);
+  });
+
+  test('failed warming is not cached and cannot let a notifying send bypass preparation', async () => {
+    const f = fixture();
+    let syncs = 0;
+    f.setSync(async () => { syncs += 1; throw new Error('offline'); });
+    await expect(f.publisher.warm(f.input)).rejects.toThrow('offline');
+    let sent = false;
+    const prepare = (): Promise<void> => f.publisher.publish({ ...f.input, topic: TOPIC });
+    await expect(prepareNotifyingSend(true, prepare, () => undefined).then(() => { sent = true; })).rejects.toThrow('offline');
+    expect(sent).toBe(false);
+    expect(syncs).toBe(2);
+    expect(f.bodies).toHaveLength(0);
+    f.setSync(async () => { syncs += 1; });
+    await prepareNotifyingSend(true, prepare, () => undefined);
+    expect(syncs).toBe(3);
+    expect(f.bodies).toHaveLength(1);
+  });
+
   test('an empty account still signs its own enrollment and never skips a changed group', async () => {
     const f = fixture();
     const input = { ...f.input, collectTopics: async () => ({ topics: [], hmacKeys: {} }) };
