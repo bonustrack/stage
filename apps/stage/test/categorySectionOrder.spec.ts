@@ -5,7 +5,7 @@ import {
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
 import { sectionBlocks } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
-import { categorySectionKeysOf, categorySectionOrderWith, movedCategoryOrder } from '../lib/channelGroups.model';
+import { categoryOrderWith, categorySectionKeysOf, categorySectionOrderWith, movedCategoryOrder } from '../lib/channelGroups.model';
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
@@ -25,6 +25,30 @@ const sections = (order: readonly string[], selected = rows): string[] => (
 );
 
 describe('category section ordering', () => {
+  test('project grouping and reordering work without toSorted and do not mutate inputs', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'toSorted');
+    Object.defineProperty(Array.prototype, 'toSorted', { configurable: true, value: undefined });
+    try {
+      const visible = Object.freeze(['category:work', 'category:alpha']);
+      const legacy = Object.freeze(['category:work', 'category:hidden']);
+      const reordered = Object.freeze(['none', 'category:work', 'dm', 'category:alpha']);
+      expect(sections([], [])).toEqual([]);
+      expect(sections([])).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
+      expect(categoryOrderWith(legacy, visible)).toEqual(['category:work', 'category:hidden', 'category:alpha']);
+      expect(sections(legacy)).toEqual(['dm', 'category:work', 'category:alpha', 'none']);
+      expect(sections(reordered)).toEqual(reordered);
+      expect(sections(reordered, [work, alpha])).toEqual(['category:work', 'category:alpha']);
+      expect(movedCategoryOrder(reordered, ['none', ...visible, 'dm'], 'dm', 'none'))
+        .toEqual(['dm', 'none', 'category:work', 'category:alpha']);
+      expect(visible).toEqual(['category:work', 'category:alpha']);
+      expect(legacy).toEqual(['category:work', 'category:hidden']);
+      expect(reordered).toEqual(['none', 'category:work', 'dm', 'category:alpha']);
+    } finally {
+      if (descriptor) Object.defineProperty(Array.prototype, 'toSorted', descriptor);
+      else Reflect.deleteProperty(Array.prototype, 'toSorted');
+    }
+  });
+
   test('legacy orders keep direct messages first and no project last without mutating the saved order', () => {
     const legacy = ['category:work', 'category:hidden'];
     expect(sections(legacy)).toEqual(['dm', 'category:work', 'category:alpha', 'none']);

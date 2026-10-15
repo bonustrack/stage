@@ -17,7 +17,7 @@ export function isCategoryKey(key: string): boolean {
 }
 
 export function categoryOrderWith(order: readonly string[], visible: readonly string[]): string[] {
-  return uniqueKeys([...order, ...visible.toSorted(compareNames)]);
+  return uniqueKeys([...order, ...[...visible].sort(compareNames)]);
 }
 
 const isNamedCategory = (key: string): boolean => isCategoryKey(key) && key.length > CATEGORY_KEY_PREFIX.length;
