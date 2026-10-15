@@ -1,6 +1,7 @@
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
+import { matchesLastActivity } from './home/activity.model';
 
 export type FilterField = 'label' | 'member' | 'has' | ChannelField;
 
@@ -27,6 +28,7 @@ interface SearchFilter extends FilterValues {
 }
 
 export interface FilterRow extends ChannelListRow {
+  createdTs?: number | null;
   inboxToAddr?: Record<string, string>;
   selfInboxId?: string;
   category?: string | null;
@@ -242,6 +244,7 @@ const metadataMatches = (row: FilterRow, field: ChannelField, value: string): bo
 
 export function searchRowMatcher(
   filter: SearchFilter, namesOf: MemberNames, draftOf: (convId: string) => string = () => '',
+  activityCutoff: number | null = null,
 ): (row: FilterRow) => boolean {
   const text = filter.text.toLowerCase();
   const tests: Record<FilterField, (row: FilterRow, value: string) => boolean> = {
@@ -257,7 +260,7 @@ export function searchRowMatcher(
     const hit = (value: string): boolean => tests[field](row, value);
     return (filter[key].length === 0 || filter[key].some(hit)) && !filter.exclude[key].some(hit);
   };
-  return row => FILTER_FIELDS.every(field => kept(row, field)) && rowMatchesQuery(row, text);
+  return row => matchesLastActivity(row, activityCutoff) && FILTER_FIELDS.every(field => kept(row, field)) && rowMatchesQuery(row, text);
 }
 
 const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = {

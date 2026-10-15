@@ -6,9 +6,11 @@ import { CHANNEL_FIELDS, visibleChannelFieldCount } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { CHANNELS_OVERFLOW_ITEMS, VIEW_ITEM, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
+import { CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
+import { isLastActivity } from './activity.model';
+import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
-import { AnchoredMenu } from '../AnchoredMenu';
+import { AnchoredMenu, menuPointBelow, menuPointOnLayout } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { getActiveAccount } from '../../lib/accounts';
 import { setHomeView, useHomeViewOf } from '../../lib/homeView';
@@ -19,6 +21,8 @@ import { SearchFilterMenu } from '../SearchFilterMenu';
 import { searchFilterCount, type FilterScope } from '../searchFilter.model';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
+import { IconSettingsSliderVer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsSliderVer';
+import type { LayoutChangeEvent } from 'react-native';
 
 const BUBBLE =
   'M12.363 3.007A9 9 0 0 0 3 12C3 13.4247 3.33104 14.7721 3.9204 15.9694C3.9709 16.072 3.98746 16.1883 3.96447 16.3003L3.14957 20.2712C3.07816 20.6191 3.38218 20.9285 3.73132 20.8632L7.83545 20.0953C7.94223 20.0753 8.05242 20.091 8.15059 20.1376C9.31767 20.6906 10.6227 21 12 21A9 9 0 0 0 20.942 13.016';
@@ -55,6 +59,7 @@ interface HomeFilterProps {
 function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
   const current = useHomeViewOf(filter.scope);
   const fields = useChannelFields(filter.scope);
+  const activity = useLastActivity(filter.scope);
   const [page, setPage] = useState('view');
   const close = (): void => { setPage('view'); onClose(); };
   const back = (): void => { setPage('view'); };
@@ -62,7 +67,12 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   const { onFilterMenu } = filter;
   useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
   const pick = (id: string): void => {
-    if (id === 'grouping' || id === 'sorting' || id === 'filter' || id === 'fields') { setPage(id); return; }
+    if (['grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) { setPage(id); return; }
+    if (id.startsWith('activity:')) {
+      const window = id.slice('activity:'.length);
+      if (isLastActivity(window)) setLastActivity(filter.scope, window);
+      return;
+    }
     const edit = homeViewEdit(current, id);
     if (edit === null) return;
     if (page !== 'sorting') close();
@@ -73,6 +83,9 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
     filter: filterCount > 0 ? filterCount : undefined,
     fields: visibleChannelFieldCount(fields),
   };
+  const picker = page === 'sorting' || page === 'activity';
+  const sections = page === 'activity' ? homeActivityMenu(activity)
+    : page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping', activity);
   return (
     <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
       {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}/> : <>
@@ -87,10 +100,11 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
               leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
               onPress={() => { toggleChannelField(filter.scope, field.id); }}/>
           ))}
-        </> : (page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping')).map((section, index) => (
+        </> : sections.map((section, index) => (
           <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-            {section.rows.map(row => page === 'sorting' ? (
+            {section.rows.map(row => picker ? (
               <PickerRow key={row.id} label={row.label} selected={row.selected}
+                role={page === 'activity' ? 'radio' : 'checkbox'} autoFocus={page === 'activity' && row.selected}
                 leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link"/>}
                 onPress={() => { pick(row.id); }}/>
             ) : <MenuRow key={row.id} icon={row.icon}
@@ -115,23 +129,33 @@ function Section({ divider, heading, children }: {
   );
 }
 
-function HomeOverflowMenu({ color, onProfile, onSettings, menu, ...filter }: HomeFilterProps & {
-  color: string; onProfile: () => void; onSettings: () => void; menu: HomeMenuState;
+function HomeViewOptions({ color, menu, ...filter }: HomeFilterProps & {
+  color: string; menu: HomeMenuState;
 }): React.ReactElement {
-  const { anchor: viewAnchor, setAnchor: setViewAnchor } = menu;
-  const reanchor = (point: MenuPoint): void => { setViewAnchor(current => current === null ? null : point); };
-  const handlers: Record<string, ((anchor: MenuPoint) => void) | undefined> = {
-    [VIEW_ITEM]: (anchor) => { setTimeout(() => { setViewAnchor(anchor); }, 0); },
+  const { anchor, setAnchor } = menu;
+  const reanchor = (event: LayoutChangeEvent): void => {
+    const point = menuPointOnLayout(event);
+    if (point !== null) setAnchor(current => current === null ? null : point);
+  };
+  return (
+    <>
+      <HoverIconButton icon={IconSettingsSliderVer} label="View options" color={color} placement="below"
+        role="button" expanded={anchor !== null} onLayout={reanchor}
+        onPress={(event) => { setAnchor(menuPointBelow(event)); }}/>
+      <HomeViewMenu {...filter} anchor={anchor} onClose={() => { setAnchor(null); }}/>
+    </>
+  );
+}
+
+function HomeOverflowMenu({ color, onProfile, onSettings }: {
+  color: string; onProfile: () => void; onSettings: () => void;
+}): React.ReactElement {
+  const handlers: Record<string, (() => void) | undefined> = {
     'copy-address': copyActiveAddress,
     profile: onProfile,
     settings: onSettings,
   };
-  return (
-    <>
-      <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onAnchorLayout={reanchor} onSelect={(id, anchor) => { handlers[id]?.(anchor); }}/>
-      <HomeViewMenu {...filter} anchor={viewAnchor} onClose={() => { setViewAnchor(null); }}/>
-    </>
-  );
+  return <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id) => { handlers[id]?.(); }}/>;
 }
 
 export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: string; menu: HomeMenuState }): React.ReactElement {
@@ -140,8 +164,9 @@ export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: s
   return (
     <>
       <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
+      <HomeViewOptions {...filter} color={head}/>
       <HomeOverflowMenu
-        {...filter} color={head}
+        color={head}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));

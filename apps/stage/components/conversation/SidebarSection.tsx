@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Platform, useWindowDimensions, type GestureResponderEvent } from 'react-native';
+import { Platform, useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -113,8 +113,16 @@ function checkboxKeys(onPress: () => void, disabled: boolean) {
   };
 }
 
-export function PickerRow({ selected, disabled = false, label, text = label, count, onPress, leading, children }: {
+function focusPickerRow(event: LayoutChangeEvent): void {
+  const target: unknown = 'target' in event.nativeEvent ? event.nativeEvent.target : null;
+  if (Platform.OS !== 'web' || typeof target !== 'object' || target === null) return;
+  const node = target as { focus?: () => void };
+  if (typeof node.focus === 'function') node.focus();
+}
+
+export function PickerRow({ selected, disabled = false, label, text = label, count, onPress, leading, children, role = 'checkbox', autoFocus }: {
   selected: boolean; disabled?: boolean; label: string; text?: string; count?: number; onPress: () => void; leading?: ReactNode; children?: ReactNode;
+  role?: 'checkbox' | 'radio'; autoFocus?: boolean;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
@@ -123,7 +131,8 @@ export function PickerRow({ selected, disabled = false, label, text = label, cou
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole="checkbox"
+      accessibilityRole={role}
+      onLayout={autoFocus === true ? focusPickerRow : undefined}
       accessibilityState={{ checked: selected, disabled }}
       aria-checked={selected}
       aria-disabled={disabled}

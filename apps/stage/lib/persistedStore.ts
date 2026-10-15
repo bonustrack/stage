@@ -26,6 +26,7 @@ export interface ValueStore<T> {
   loadFor: (accountId: string) => Promise<T>;
   updateFor: (accountId: string, next: (current: T) => T) => Promise<void>;
   accountId: () => string | null;
+  isCurrentAccount: () => boolean;
   subscribe: (cb: () => void) => () => void;
   use: () => T;
 }
@@ -54,6 +55,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const storage = opts.storage ?? appStorage;
   let cache: T = opts.default;
   let accountId: string | null | undefined;
+  let accountEpoch: number | undefined;
   const { notify, subscribe } = makeListeners();
   const durable = durableWriter(storedFor, (id, value) => storage.set(opts.key + id, serialize(value)), (id, value) => {
     if (id === accountId && serialize(cache) !== serialize(value)) commit(value);
@@ -76,13 +78,12 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (!opts.perAccount) return apply(await storage.get(opts.key));
     const epoch = getAccountEpoch();
     const id = (await getActiveAccount())?.id ?? null;
-    if (id === accountId) return false;
+    if (id === accountId) { const changed = accountEpoch !== epoch; accountEpoch = epoch; return changed; }
     await durable.ready();
     const raw = id === null ? null : await storage.get(opts.key + id);
     if (epoch !== getAccountEpoch()) return read();
     if (!opts.restore || accountId !== undefined) cache = opts.default;
-    accountId = id;
-    apply(raw);
+    accountId = id; accountEpoch = epoch; apply(raw);
     return true;
   }
 
@@ -166,5 +167,6 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
 
-  return { load, loadAsync, get, set, setAsync, update, loadFor, updateFor, accountId: () => accountId ?? null, subscribe, use };
+  return { load, loadAsync, get, set, setAsync, update, loadFor, updateFor, accountId: () => accountId ?? null,
+    isCurrentAccount: () => !opts.perAccount || accountEpoch === getAccountEpoch(), subscribe, use };
 }

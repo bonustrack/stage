@@ -9,6 +9,7 @@ import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
 import { GROUP_BY_LABELS } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
 import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
+import { LAST_ACTIVITY_WINDOWS, lastActivityLabel, type LastActivity } from './activity.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
@@ -68,10 +69,7 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-export const VIEW_ITEM = 'view';
-
 export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
-  { id: VIEW_ITEM, label: 'View', icon: 'IconEyeOpen' },
   COPY_ADDRESS_ITEM,
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },
@@ -113,11 +111,18 @@ export function homeSortMenu(current: HomeViewContent): ViewMenuSection[] {
   ];
 }
 
-export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
+export function homeActivityMenu(current: LastActivity): ViewMenuSection[] {
+  return [{ heading: 'Last activity', rows: LAST_ACTIVITY_WINDOWS.map(window => ({
+    id: `activity:${window}`, label: lastActivityLabel(window), selected: current === window,
+  })) }];
+}
+
+export function homeViewMenu(current: HomeViewContent, grouping = false, activity: LastActivity = 'all'): ViewMenuSection[] {
   const board = current.view === 'board';
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
   if (!grouping) return [{ rows: [
+    { id: 'activity', label: 'Last activity', value: lastActivityLabel(activity), icon: 'IconClock', selected: false },
     { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
     { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
     { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },

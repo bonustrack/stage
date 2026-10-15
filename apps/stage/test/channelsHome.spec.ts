@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW } from '@stage-labs/client/xmtp/readState';
 import {
-  CHANNELS_OVERFLOW_ITEMS, homeSortMenu, homeViewEdit, homeViewMenu, searchBarLabels, type ViewMenuSection,
+  CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeSortMenu, homeViewEdit, homeViewMenu, searchBarLabels, type ViewMenuSection,
 } from '../components/home/model';
 
 describe('filter chips follow the search', () => {
@@ -24,8 +24,8 @@ describe('the View menu', () => {
   const labels = (sections: ViewMenuSection[]): string[][] => sections.map(s => s.rows.map(r => `${r.label}${r.value === undefined ? '' : `: ${r.value}`}${r.selected ? '*' : ''}`));
 
   test('the root holds only the submenu entries of its page, with no Chats or Board choice', () => {
-    expect(labels(homeViewMenu(chats))).toEqual([['Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
-    expect(labels(homeViewMenu(board))).toEqual([['Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(chats))).toEqual([['Last activity: All', 'Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(board))).toEqual([['Last activity: All', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
     expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
   });
 
@@ -50,6 +50,15 @@ describe('the View menu', () => {
     }
   });
 
+  test('Last activity shows the selected window and exactly the reference choices', () => {
+    expect(labels(homeActivityMenu('3d'))).toEqual([['1d', '3d*', '7d', '30d', 'All']]);
+    for (const view of [chats, board]) {
+      expect(homeViewMenu(view, false, '3d')[0]?.rows[0]).toMatchObject({
+        id: 'activity', label: 'Last activity', value: '3d',
+      });
+    }
+  });
+
   test('Group by uses a distinct grouping icon', () => {
     const rows = homeViewMenu(chats).flatMap(section => section.rows);
     const icon = rows.find(row => row.id === 'grouping')?.icon;
@@ -59,9 +68,9 @@ describe('the View menu', () => {
 
   test('the Chats and Board pages keep independent grouping preferences', () => {
     const grouped = { ...chats, ...homeViewEdit(chats, 'group:assignee') };
-    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([['Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([['Last activity: All', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
     const columns = { ...grouped, ...homeViewEdit({ ...grouped, view: 'board' }, 'group:category') };
-    expect(labels(homeViewMenu(columns))).toEqual([['Group by: Assignees', 'Sort by: Updated', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(columns))).toEqual([['Last activity: All', 'Group by: Assignees', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(labels(homeViewMenu({ ...columns, view: 'board' }, true))).toEqual([['Assignees', 'Project*', 'Label', 'Status']]);
   });
 
@@ -105,6 +114,6 @@ describe('the View menu', () => {
     expect(labels(homeViewMenu({ ...DEFAULT_HOME_VIEW, view: 'board' }, true)))
       .toEqual([['Assignees', 'Project', 'Label', 'Status*']]);
     expect(homeViewEdit(board, 'group:status')).toEqual({ columnBy: 'status' });
-    expect(CHANNELS_OVERFLOW_ITEMS.map(item => item.label)).toEqual(['View', 'Copy address', 'Profile', 'Settings']);
+    expect(CHANNELS_OVERFLOW_ITEMS.map(item => item.label)).toEqual(['Copy address', 'Profile', 'Settings']);
   });
 });

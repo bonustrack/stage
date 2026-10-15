@@ -8,6 +8,7 @@ import { memberNamesOf } from '../FilterSearch';
 import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
 import { visibleUnreadCount } from './model';
 import { homeRows } from './state';
+import { useLastActivityCutoff } from '../../lib/lastActivity';
 
 function subscribeSources(onChange: () => void): () => void {
   const offs = [
@@ -23,15 +24,16 @@ function primeSources(): void {
   void loadDrafts();
 }
 
-function chatsUnreadCount(): number {
+function chatsUnreadCount(activityCutoff: number | null): number {
   const search = getSearchState();
   return visibleUnreadCount({
     rows: homeRows(), enabledLabels: new Set(search.labels), unreadOnly: search.unreadOnly,
-    matches: searchRowMatcher(parseSearchFilter(search.query), memberNamesOf, getDraft),
+    matches: searchRowMatcher(parseSearchFilter(search.query), memberNamesOf, getDraft, activityCutoff),
     cleared: getClearedChats(),
   });
 }
 
 export function useVisibleUnreadCount(): number {
-  return useStoreValue(subscribeSources, chatsUnreadCount, primeSources);
+  const activityCutoff = useLastActivityCutoff('chats');
+  return useStoreValue(subscribeSources, () => chatsUnreadCount(activityCutoff), primeSources);
 }

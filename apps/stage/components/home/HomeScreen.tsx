@@ -35,6 +35,7 @@ import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
+import { useLastActivityCutoff } from '../../lib/lastActivity';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
@@ -76,9 +77,10 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   ]);
   const draftsVersion = useDraftsVersion();
   const search = useMemo(() => parseSearchFilter(query), [query]);
+  const activityCutoff = useLastActivityCutoff('chats');
   const matches = useMemo(
-    () => searchRowMatcher(search, memberNamesOf, getDraft),
-    [search, channelProfilesVersion, draftsVersion],
+    () => searchRowMatcher(search, memberNamesOf, getDraft, activityCutoff),
+    [search, channelProfilesVersion, draftsVersion, activityCutoff],
   );
 
   const sortedRows = useMemo(

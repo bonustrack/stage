@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import type { GestureResponderEvent, ViewStyle } from 'react-native';
+import type { GestureResponderEvent, LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box } from './layout';
@@ -33,16 +33,19 @@ export function HoverTint({ children, style }: {
   );
 }
 
-export function HoverIconButton({ icon, label, color, size = 24, placement, shortcut, onShortcut, role, onPress, onPointerDown }: {
+export function HoverIconButton({ icon, label, color, size = 24, placement, shortcut, onShortcut, role, expanded, onLayout, onPress, onPointerDown }: {
   icon: CentralIcon; label: string; color: string; size?: number;
   placement?: 'beside' | 'above' | 'below'; shortcut?: Shortcut; onShortcut?: () => void;
-  role?: 'button'; onPress: (event: GestureResponderEvent) => void; onPointerDown?: () => void;
+  role?: 'button'; expanded?: boolean; onLayout?: (event: LayoutChangeEvent) => void;
+  onPress: (event: GestureResponderEvent) => void; onPointerDown?: () => void;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
   return (
     <HoverTooltip label={label} placement={placement} shortcut={shortcut} onShortcut={onShortcut}>
-      <Pressable onPointerDown={onPointerDown} onPress={onPress} hitSlop={8} accessibilityRole={role} accessibilityLabel={label} {...hoverProps}>
+      <Pressable onPointerDown={onPointerDown} onPress={onPress} onLayout={onLayout} hitSlop={8}
+        accessibilityRole={role} accessibilityLabel={label}
+        accessibilityState={expanded === undefined ? undefined : { expanded }} aria-expanded={expanded} {...hoverProps}>
         <Glyph icon={icon} size={size} color={hovered ? link : color}/>
       </Pressable>
     </HoverTooltip>

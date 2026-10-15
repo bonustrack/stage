@@ -20,6 +20,7 @@ import { useWebTabRail } from '../../lib/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
+import { useLastActivity } from '../../lib/lastActivity';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
@@ -126,15 +127,16 @@ export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: bool
 }
 
 function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsListProps): void {
-  const applied = useRef({ enabledLabels, unreadOnly });
+  const activity = useLastActivity('chats');
+  const applied = useRef({ enabledLabels, unreadOnly, activity });
   useLayoutEffect(() => {
-    if (applied.current.enabledLabels === enabledLabels && applied.current.unreadOnly === unreadOnly) return;
-    applied.current = { enabledLabels, unreadOnly };
+    if (applied.current.enabledLabels === enabledLabels && applied.current.unreadOnly === unreadOnly && applied.current.activity === activity) return;
+    applied.current = { enabledLabels, unreadOnly, activity };
     scroll.savedOffsetRef.current = 0;
     scroll.didRestoreRef.current = true;
     if ((peekScrollOffset(CHANNELS_SCROLL_KEY) ?? 0) <= 0) return;
     scroll.listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [enabledLabels, unreadOnly, scroll.listRef, scroll.savedOffsetRef, scroll.didRestoreRef]);
+  }, [enabledLabels, unreadOnly, activity, scroll.listRef, scroll.savedOffsetRef, scroll.didRestoreRef]);
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {

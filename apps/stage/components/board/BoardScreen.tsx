@@ -16,6 +16,7 @@ import type { HomeMenuState } from '../home/topnavRight';
 import { ChannelRow } from '../ChannelRow';
 import { ChannelRowFields } from '../ChannelRowFields';
 import { useChannelFields } from '../../lib/channelFields';
+import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
 import { NewChatAction } from '../home/NewChatAction';
@@ -316,9 +317,10 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, assigneeName, r => isRowCleared(cleared, r), sort, boardOrder), order),
     [rows, cleared, pinned, order, columnBy, profiles, sort, boardOrder],
   );
+  const activityCutoff = useLastActivityCutoff('board');
   const shown = useMemo(
-    () => searchedColumns(columns, query, memberNamesOf, getDraft),
-    [columns, query, profiles, draftsVersion],
+    () => searchedColumns(columns, query, memberNamesOf, getDraft, activityCutoff),
+    [columns, query, profiles, draftsVersion, activityCutoff],
   );
   if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
   if (!rows) return <HomeSpinner head={head}/>;

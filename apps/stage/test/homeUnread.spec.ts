@@ -42,6 +42,17 @@ describe('the chats badge counts what the chat list shows', () => {
     expect([count({ query: 'status:Todo' }), count({ query: '-label:Stage' }), count({ query: 'member:alice123' }), count({ query: 'b' })]).toEqual([1, 3, 1, 1]);
   });
 
+  test('Last activity keeps the badge and visible list consistent, including pinned chats', () => {
+    const recent = rows.map((row, index) => ({ ...row, lastTs: index < 2 ? 100 : 1 }));
+    const matches = searchRowMatcher(parseSearchFilter(''), namesOf, () => '', 50);
+    const listed = deriveSortedRows({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: ['c'] });
+    const visible = listed.filter(matches);
+    expect(visible.map(row => row.convId)).toEqual(['a']);
+    expect(visibleUnreadCount({
+      rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, matches, cleared: {},
+    })).toBe(unreadRowCount(visible));
+  });
+
   test('leaves out a deleted direct chat until a newer message revives it', () => {
     expect(count({ cleared: { '0xpeer': 20 } })).toBe(4);
     expect(count({ cleared: { '0xpeer': 5 } })).toBe(5);

@@ -36,6 +36,10 @@ const timestamp = (value: number | null | undefined): number | null => (
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
 );
 
+export function updatedTimestamp(row: { lastTs?: number | null; createdTs?: number | null }): number | null {
+  return timestamp(row.lastTs) ?? timestamp(row.createdTs);
+}
+
 function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Map<string, number> {
   const statuses = [...new Set(rows.flatMap(row => {
     const status = categoryOf(row.status);
@@ -48,7 +52,7 @@ function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Ma
 
 function valueOf(row: SortableRow, by: HomeSort['by'], statuses: ReadonlyMap<string, number>): number | null {
   if (by === 'created') return timestamp(row.createdTs);
-  if (by === 'updated') return timestamp(row.lastTs) ?? timestamp(row.createdTs);
+  if (by === 'updated') return updatedTimestamp(row);
   if (by === 'status') return statuses.get(categoryOf(row.status)?.toLowerCase() ?? '') ?? null;
   const priority = priorityOf(row.priority);
   return priority === null ? null : CHANNEL_PRIORITIES.length - CHANNEL_PRIORITIES.indexOf(priority);
