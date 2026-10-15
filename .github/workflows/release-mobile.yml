@@ -26,6 +26,10 @@ on:
         type: choice
         default: all
         options: [all, android, ios]
+      apk_only:
+        description: 'Build a standalone production APK artifact without publishing'
+        type: boolean
+        default: false
 
 concurrency:
   group: release-mobile-${{ github.ref }}
@@ -60,7 +64,7 @@ jobs:
           VERSION=$(extract HEAD)
           [ -n "$VERSION" ] || { echo "::error::Could not read version from $FILE"; exit 1; }
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
+          PLATFORM="${{ inputs.apk_only && 'android' || github.event.inputs.platform || 'all' }}"
           echo "android=$([ "$PLATFORM" != ios ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ios=$([ "$PLATFORM" != android ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -75,7 +79,7 @@ jobs:
 
   android-store:
     needs: guard
-    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.android == 'true'
+    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.android == 'true' && !inputs.apk_only
     runs-on: ubuntu-latest
     timeout-minutes: 90
     defaults:
@@ -167,7 +171,7 @@ jobs:
 
   ios:
     needs: guard
-    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ios == 'true'
+    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ios == 'true' && !inputs.apk_only
     runs-on: ubuntu-latest
     timeout-minutes: 120
     defaults:
@@ -238,7 +242,7 @@ jobs:
 
   testers:
     needs: [guard, android-apk]
-    if: needs.guard.outputs.changed == 'true' && needs.android-apk.result == 'success'
+    if: needs.guard.outputs.changed == 'true' && needs.android-apk.result == 'success' && !inputs.apk_only
     runs-on: ubuntu-latest
     env:
       SA_JSON: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA_JSON }}
@@ -267,7 +271,7 @@ jobs:
 
   github-release:
     needs: [guard, android-apk]
-    if: needs.guard.outputs.changed == 'true' && needs.android-apk.result == 'success'
+    if: needs.guard.outputs.changed == 'true' && needs.android-apk.result == 'success' && !inputs.apk_only
     runs-on: ubuntu-latest
     permissions:
       contents: write
