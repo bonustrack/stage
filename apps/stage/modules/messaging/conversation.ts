@@ -113,11 +113,9 @@ function rowAvatar(
 }
 
 function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRowData): GroupRowMeta {
-  const topic: string | undefined = conv.topic;
   const title = channelRowTitle({
     peerAddress, groupName: data.groupMeta.name,
     memberCount: data.memberAddresses.length,
-    fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
   });
   return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), ...data.tags };
 }

@@ -33,16 +33,23 @@ describe('channelRowTitle', () => {
   test('peer address short form wins', () => {
     const title = channelRowTitle({
       peerAddress: '0x1234567890abcdef1234567890abcdef12345678',
-      groupName: 'Team', memberCount: 3, fallbackId: 'conv',
+      groupName: 'Team', memberCount: 3,
     });
     expect(title).toContain('0x1234');
   });
 
-  test('trimmed group name, then member count, then fallback id slice', () => {
+  test('trimmed group name, then member count, then a clean unnamed fallback', () => {
     const base = { peerAddress: null, memberCount: 0, fallbackId: 'abcdefghijklmnop' };
     expect(channelRowTitle({ ...base, groupName: '  Team  ' })).toBe('Team');
     expect(channelRowTitle({ ...base, groupName: ' ', memberCount: 2 })).toBe('3 members');
-    expect(channelRowTitle({ ...base, groupName: '' })).toBe('abcdefghijkl');
+    expect(channelRowTitle({ ...base, groupName: '' })).toBe('Untitled channel');
+  });
+
+  test('never presents the topic suffix while members resolve, without hiding an explicit proto name', () => {
+    const loading = { peerAddress: null, groupName: '', memberCount: 0, fallbackId: 'proto' };
+    expect(channelRowTitle(loading)).toBe('Untitled channel');
+    expect(channelRowTitle({ ...loading, memberCount: 1 })).toBe('2 members');
+    expect(channelRowTitle({ ...loading, groupName: 'proto' })).toBe('proto');
   });
 });
 

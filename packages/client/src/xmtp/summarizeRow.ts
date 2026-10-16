@@ -41,7 +41,6 @@ export interface ChannelRowTitleInputs {
   peerAddress: string | null;
   groupName: string;
   memberCount: number;
-  fallbackId: string;
 }
 
 export function channelRowTitle(i: ChannelRowTitleInputs): string {
@@ -52,7 +51,7 @@ export function channelRowTitle(i: ChannelRowTitleInputs): string {
     const total = i.memberCount + 1;
     return `${total} member${total === 1 ? '' : 's'}`;
   }
-  return i.fallbackId.slice(0, 12);
+  return 'Untitled channel';
 }
 
 export function isUnnamedChannelRow(row: { peerAddress?: unknown; groupName?: unknown }): boolean {

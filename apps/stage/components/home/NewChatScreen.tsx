@@ -24,7 +24,7 @@ import { memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_
 import { homeRows } from './state';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_MEMBER_HISTORY, NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, membersDraftKey, newChatDraftKey, pickedRecipients,
+  NO_MEMBER_HISTORY, NO_PICKS, NO_RECIPIENT_NOTE, REQUEST_CHECK_LIMIT, askPlaceholder, firstMessageChannelName, membersDraftKey, newChatDraftKey, pickedRecipients,
   parseMemberHistory, rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients,
   startedChatWith, type DmPeer, type MemberHistory,
 } from './newChat.model';
@@ -47,7 +47,7 @@ import { uploadAttachments } from '../../lib/xmtp.attachments';
 import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
 import { xmtpClient } from '../../lib/xmtp.client';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
-import { peerLabel } from '../conversation/convTitle';
+import { mentionLabelOf, peerLabel } from '../conversation/convTitle';
 
 interface Recipients {
   shown: string[];
@@ -147,15 +147,15 @@ function useStartChat(draft: ComposerState, draftKey: string | null, metadata: M
     busy.current = true;
     setCreating(true);
     schedulePushTopicRefresh(NEW_CHANNEL_PUSH_REFRESH_MS);
-    uploadAttachments(fileInputs(draft.pending));
+    const { text } = latest.current;
+    uploadAttachments(fileInputs(latest.current.pending));
     try {
-      const { line } = await createGroup([...addresses], newChatAppData(metadata));
+      const { line } = await createGroup([...addresses], newChatAppData(metadata), firstMessageChannelName(text, mentionLabelOf));
       const convId = convIdOfLine(line);
       if (convId === null) return;
       rememberOwnGroup(convId);
       void memberHistory.update(current => startedChatWith(current, addresses, Date.now())).catch(reported('newChatMembers.save'));
-      const { text, pending } = latest.current;
-      handSendTo(convId, startSend(line, text, pending));
+      handSendTo(convId, startSend(line, text, latest.current.pending));
       clearNewChatDraft(draftKey);
       draft.setText('');
       draft.setPending([]);

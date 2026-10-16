@@ -2,7 +2,7 @@ import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
 import {
-  applyRead, applyUnread, applySentPatch,
+  applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle,
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
@@ -46,7 +46,10 @@ function fileNameFor(id: string): string {
 
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
-  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, rows => visibleCachedRows(id, rows)); stores.set(id, s); }
+  if (!s) {
+    s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, async rows => (await visibleCachedRows(id, rows)).map(normalizeChannelRowTitle));
+    stores.set(id, s);
+  }
   return s;
 }
 
@@ -80,7 +83,7 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
 
 
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
-export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
+export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next?.map(normalizeChannelRowTitle) ?? null); }
 export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';

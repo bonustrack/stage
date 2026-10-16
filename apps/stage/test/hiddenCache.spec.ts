@@ -12,6 +12,8 @@ mock.module('../lib/cache', () => ({
 }));
 const { PersistentStore } = await import('../lib/cache.shared');
 const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
+const { getCachedRows, hydrateCachedRows, setActiveAccountForCache, setCachedRows } = await import('../lib/channelsCache');
+const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');
 
 test('cache hydration never publishes a durable hidden channel', async () => {
   const rows = [{ convId: 'hidden', peerAddress: null }, { convId: 'shown', peerAddress: null }];
@@ -22,6 +24,26 @@ test('cache hydration never publishes a durable hidden channel', async () => {
   store.subscribe(value => { published.push(value); });
   expect(await store.hydrate()).toEqual([rows[1]]);
   expect(published).toEqual([[rows[1]]]);
+});
+
+test('actual channel-cache hydration and writes publish the same safe title used for search', async () => {
+  const row = { convId: 'unnamed', title: 'proto', peerAddress: null, groupName: '', inboxToAddr: {}, selfInboxId: 'self', unreadCount: 0, lastReadNs: 0, lastTs: null, lastPreview: '' };
+  cached.set('channels-cache.title-test.json', [row]);
+  setActiveAccountForCache('title-test');
+  await hydrateCachedRows();
+  expect(getCachedRows()?.[0]?.title).toBe('Untitled channel');
+  const hydrated = getCachedRows() as (typeof row)[];
+  expect(filterChannelRows(hydrated, { query: 'Untitled channel' })).toHaveLength(1);
+  expect(filterChannelRows(hydrated, { query: 'proto' })).toHaveLength(0);
+  setCachedRows([{ ...row, inboxToAddr: { self: '0xself', other: '0xother' } }]);
+  expect(getCachedRows()?.[0]?.title).toBe('2 members');
+  const resolved = getCachedRows() as (typeof row)[];
+  expect(filterChannelRows(resolved, { query: '2 members' })).toHaveLength(1);
+  expect(filterChannelRows(resolved, { query: 'proto' })).toHaveLength(0);
+  setCachedRows([{ ...row, groupName: 'proto' }]);
+  expect(getCachedRows()?.[0]?.title).toBe('proto');
+  setCachedRows([{ ...row, title: 'Old title', groupName: 'Edited title' }]);
+  expect(getCachedRows()?.[0]?.title).toBe('Edited title');
 });
 
 test('a slow hydration filter cannot replace newer live rows', async () => {

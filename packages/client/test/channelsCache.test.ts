@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyGroupMeta, applyInbound, applyRead, applyReadUpTo, applyUnread, applySentPatch,
+  applyGroupMeta, applyInbound, applyRead, applyReadUpTo, applyUnread, applySentPatch, normalizeChannelRowTitle,
   type CachedChannelRow, type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
@@ -15,6 +15,27 @@ const base: Row[] = [
   { convId: 'a', unreadCount: 3, lastReadNs: 100, markedUnread: true, lastTs: 1 },
   { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
 ];
+
+describe('normalizeChannelRowTitle', () => {
+  const row = { convId: 'a', unreadCount: 0, lastReadNs: 0, peerAddress: null, groupName: '', title: 'proto', selfInboxId: 'self', inboxToAddr: {} };
+
+  test('normalizes known group metadata before the row is published or searched', () => {
+    expect(normalizeChannelRowTitle(row).title).toBe('Untitled channel');
+    expect(normalizeChannelRowTitle({ ...row, inboxToAddr: { self: '0xself', other: '0xother', unresolved: '' } }).title).toBe('2 members');
+    expect(normalizeChannelRowTitle({ ...row, groupName: '  Edited title  ' }).title).toBe('Edited title');
+    expect(normalizeChannelRowTitle({ ...row, groupName: 'proto' }).title).toBe('proto');
+    expect(row.title).toBe('proto');
+  });
+
+  test('keeps direct chats, unknown legacy names and unchanged row identities', () => {
+    const dm = { ...row, peerAddress: '0xpeer', title: 'Direct chat' };
+    const legacy = { ...row, groupName: undefined, title: 'Legacy name' };
+    const unchanged = { ...row, title: 'Untitled channel' };
+    expect(normalizeChannelRowTitle(dm)).toBe(dm);
+    expect(normalizeChannelRowTitle(legacy)).toBe(legacy);
+    expect(normalizeChannelRowTitle(unchanged)).toBe(unchanged);
+  });
+});
 
 describe('applyRead', () => {
   test('zeros unread, sets lastReadNs, clears markedUnread, keeps order', () => {

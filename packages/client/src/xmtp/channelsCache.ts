@@ -1,5 +1,5 @@
 
-import { ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
+import { channelRowTitle, ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
 import type { GroupTags } from './labels';
 
 export interface CachedChannelRow {
@@ -8,6 +8,15 @@ export interface CachedChannelRow {
   lastReadNs: number;
   markedUnread?: boolean;
   [key: string]: unknown;
+}
+
+export function normalizeChannelRowTitle<R extends CachedChannelRow>(row: R): R {
+  if (row.peerAddress || typeof row.groupName !== 'string') return row;
+  const members = row.inboxToAddr;
+  const memberCount = members && typeof members === 'object'
+    ? Object.entries(members).filter(([id, address]) => id !== row.selfInboxId && typeof address === 'string' && address !== '').length : 0;
+  const title = channelRowTitle({ peerAddress: null, groupName: row.groupName, memberCount });
+  return title === row.title ? row : { ...row, title };
 }
 
 function findRowIndex(

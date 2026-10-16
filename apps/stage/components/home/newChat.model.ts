@@ -2,6 +2,25 @@ import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.mode
 import { reactorsLabel } from '../conversation/reactors.model';
 import { uniqueKeys } from '../conversation/SidebarSection.model';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
+import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
+import { toDisplay, type LabelOf } from '../composer/mentions.model';
+
+export function firstMessageChannelName(text: string, labelOf: LabelOf = address => mentionLabel(shortAddress(address))): string | undefined {
+  const plain = toDisplay(text, labelOf).replace(/[\s\p{Cc}]+/gu, ' ').trim();
+  const encoder = new TextEncoder();
+  let name = '';
+  let bytes = 0;
+  for (const char of plain) {
+    const size = encoder.encode(char).length;
+    if (bytes + size > CHANNEL_NAME_MAX) break;
+    name += char;
+    bytes += size;
+  }
+  return (isSyncGroupName(name) ? `S${name.slice(1)}` : name).trim() || undefined;
+}
 
 export const MAX_SHOWN_RECIPIENTS = 5;
 
