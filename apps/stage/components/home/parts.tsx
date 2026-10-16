@@ -14,7 +14,7 @@ import { ChannelMenu } from '../ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { Draggable, MeasuredDragRow, Shifted, type ListDrag, type ListDragMeasurements } from './listDrag';
 import { isLifted } from '../dragLift';
-import { GroupHeader } from './GroupHeader';
+import { GroupHeader, useGroupHover } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetActiveXmtpStore } from '../../lib/xmtp.client';
@@ -149,19 +149,21 @@ export function useChannelRowRenderer(
     channelProfilesVersion: number; draftsVersion: number;
     pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; pinDrag: ListDrag;
     sectionDrag: ListDrag; rowDrag: ListDrag; hideAvatar: boolean; fields: ChannelFields; dragMeasurements: ListDragMeasurements;
+    items: readonly HomeListItem[];
   },
 ): ({ item }: { item: HomeListItem }) => React.ReactElement {
   const {
     channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag, rowDrag, hideAvatar, fields, dragMeasurements,
   } = deps;
+  const { hoveredGroup, wrapItem } = useGroupHover(deps.items);
   return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
     if (isGroupHeader(item)) {
-      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed}
+      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed} sectionHovered={hoveredGroup === item.header.key}
         wrapToggle={node => inBlock(sectionDrag, item.convId, node, true, undefined, false)}/>;
-      return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), false);
+      return wrapItem(item, inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), false));
     }
     const title = rowTitle(item);
-    return inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (
+    return wrapItem(item, inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (
       <MeasuredDragRow item={item} measure={dragMeasurements.measure}>
         <ChannelRowItem
           item={item}
@@ -180,10 +182,10 @@ export function useChannelRowRenderer(
           fields={fields}
         />
       </MeasuredDragRow>
-    ), true, rowMenuOpener(item, setRowMenu)), false);
+    ), true, rowMenuOpener(item, setRowMenu)), false));
   }, [
     router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, pinDrag, sectionDrag,
-    rowDrag, hideAvatar, fields, dragMeasurements,
+    rowDrag, hideAvatar, fields, dragMeasurements, hoveredGroup, wrapItem,
   ]);
 }
 

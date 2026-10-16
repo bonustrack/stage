@@ -44,6 +44,16 @@ export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? 
 
 export const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
+export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string, string> {
+  const keys = new Map<string, string>();
+  let group: string | undefined;
+  for (const item of items) {
+    if (isGroupHeader(item)) group = item.header.key;
+    if (group !== undefined) keys.set(listKeyOf(item), group);
+  }
+  return keys;
+}
+
 function orderedBuckets<R extends GroupRow>(
   rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[],
 ): Bucket<R>[] {
