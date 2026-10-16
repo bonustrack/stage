@@ -1,8 +1,6 @@
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
 import type { AccountRecord } from './accounts';
-import { registerPushWithServer } from './pushRegister';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
-import { setCachedXmtpClient } from './xmtp.state';
 import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import { isInstallationLimit, isStoreCorruption as isStoreCorruptionCore } from '@stage-labs/client/xmtp/clientErrors';
@@ -52,8 +50,6 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
 
 export const finalizeClient = clientFinalizer<Client>({
   discard: () => undefined,
-  setCached: setCachedXmtpClient,
-  registerPush: registerPushWithServer,
 });
 
 export async function createClientForAccount(
@@ -61,9 +57,9 @@ export async function createClientForAccount(
   recovered = false, slotFreed = false,
 ): Promise<Client> {
   const signer = await signerForRecord(rec);
+  let created: Client;
   try {
-    const created = await createWithTimeout(signer, opts);
-    return await finalizeClient(created, rec, env, { markRegistered: true });
+    created = await createWithTimeout(signer, opts);
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeXmtpStore(rec.id, rec.dbDir);
@@ -81,4 +77,5 @@ export async function createClientForAccount(
     if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
     throw e;
   }
+  return finalizeClient(created, rec, env, { markRegistered: true });
 }

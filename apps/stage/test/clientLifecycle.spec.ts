@@ -8,7 +8,7 @@ function account(id: string): AccountRecord {
 
 interface FakeClient { id: string; address: string }
 
-function harness(initial: AccountRecord[], activeId: string | null) {
+function harness(initial: AccountRecord[], activeId: string | null, ready = false) {
   const log: string[] = [];
   let records = [...initial];
   let active = activeId;
@@ -34,6 +34,7 @@ function harness(initial: AccountRecord[], activeId: string | null) {
         log.push(`build:${rec.id}`);
         return failBuild ? Promise.reject(new Error('boom')) : Promise.resolve({ id: rec.id, address: rec.address });
       },
+      ...(ready ? { ready: (client: FakeClient) => { if (cached !== client) throw new Error('client not ready'); log.push(`ready:${client.id}`); return Promise.resolve(); } } : {}),
       dispose: () => { log.push('dispose'); cached = null; },
       selfAddressOf: (c) => c.address,
       syncPreferences: () => Promise.resolve(),
@@ -62,6 +63,14 @@ describe('makeClientLifecycle', () => {
     expect(switched.id).toBe('b');
     expect(log).toEqual(['build:a', 'dispose', 'setActive:b', 'build:b', 'epoch']);
     expect(lifecycle.cachedSelfEthAddress()).toBe('0xb');
+  });
+
+  test('optional push starts only after the complete client is cached and the switch epoch is current', async () => {
+    const { lifecycle, log } = harness([account('a'), account('b')], 'a', true);
+    await lifecycle.xmtpClient();
+    await lifecycle.xmtpClient();
+    await lifecycle.switchToAccount('b');
+    expect(log).toEqual(['build:a', 'ready:a', 'dispose', 'setActive:b', 'build:b', 'epoch', 'ready:b']);
   });
 
   test('a failed switch still bumps the epoch and rethrows', async () => {

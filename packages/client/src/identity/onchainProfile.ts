@@ -147,6 +147,29 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
   return name === null ? null : profileForName(client, name, address);
 }
 
+export async function inspectNameSetup(
+  client: PublicClient, address: string, name: string, records: Record<string, string>,
+): Promise<{ owned: boolean; ready: boolean }> {
+  const blockNumber = await client.getBlockNumber({ cacheTime: 0 });
+  const node = namehash(normalize(name));
+  const owner = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'owner', args: [node], blockNumber });
+  if (owner.toLowerCase() !== address.toLowerCase()) return { owned: false, ready: false };
+  const resolver = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [node], blockNumber });
+  if (resolver === ZERO_ADDRESS) return { owned: true, ready: false };
+  const reverseNode = baseReverseNode(address);
+  const reverseResolver = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [reverseNode], blockNumber });
+  if (reverseResolver === ZERO_ADDRESS) return { owned: true, ready: false };
+  const [forward, primary, text] = await Promise.all([
+    client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node], blockNumber }),
+    client.readContract({ address: reverseResolver, abi: L2_RESOLVER_ABI, functionName: 'name', args: [reverseNode], blockNumber }),
+    Promise.all(Object.entries(records).map(async ([key, value]) => {
+      const stored = await client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'text', args: [node, key], blockNumber });
+      return stored === value;
+    })),
+  ]);
+  return { owned: true, ready: forward.toLowerCase() === address.toLowerCase() && primary === name && text.every(Boolean) };
+}
+
 export type IssuedNameLookup = (address: string) => Promise<string | null>;
 
 export async function resolveOnchainProfile(

@@ -1,6 +1,6 @@
 import type { Stage } from './flow';
 
-export type SetupRetry = 'restart' | 'messaging';
+export type SetupRetry = 'restart' | 'messaging' | 'create';
 
 export interface SetupErr { message: string; accountId?: string; retry: SetupRetry }
 
@@ -43,7 +43,7 @@ export function setupStages(plan: SetupPlan): Stage[] {
 }
 
 export function setupLinks(err: SetupErr | null): SetupLinkKind[] {
-  if (err === null || err.retry === 'messaging') return [];
+  if (err === null || err.retry !== 'restart') return [];
   return ['startOver'];
 }
 
@@ -62,5 +62,6 @@ export function setupTitle(err: SetupErr | null, plan: SetupPlan = {}): string {
 export function setupHint(err: SetupErr | null): string {
   if (err === null) return SETUP_HINT;
   if (err.retry === 'messaging') return MESSAGING_RETRY_HINT;
+  if (err.retry === 'create') return `${err.message} Try again to continue the same setup. A saved wallet will not be replaced.`;
   return `We could not finish setting up. ${err.message}`;
 }

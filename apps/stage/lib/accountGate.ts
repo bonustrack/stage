@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { loadAccounts } from './accounts';
+import { loadAccountsForWrite } from './accounts';
+import { readPendingSetup, subscribePendingSetup } from './onboardingPending';
+import { report } from './errorPolicy';
 import { useAccountEpoch } from './accountEpoch';
 import { makeListeners, useStoreValue } from './storeCore';
 
@@ -14,14 +16,24 @@ export function useAccountGate(): AccountGate {
   const [hasAccount, setHasAccount] = useState(false);
 
   useEffect(() => {
+    let generation = 0;
     let alive = true;
-    void (async () => {
-      const list = await loadAccounts();
-      if (!alive) return;
-      setHasAccount(list.length > 0);
-      setReady(true);
-    })();
-    return () => { alive = false; };
+    const refresh = (): void => {
+      const current = ++generation;
+      void Promise.all([loadAccountsForWrite(), readPendingSetup()]).then(([list, pending]) => {
+        if (!alive || current !== generation) return;
+        setHasAccount(list.length > 0 && pending === null);
+        setReady(true);
+      }).catch((e: unknown) => {
+        if (!alive || current !== generation) return;
+        report('onboarding.gate', e);
+        setHasAccount(false);
+        setReady(true);
+      });
+    };
+    refresh();
+    const stop = subscribePendingSetup(refresh);
+    return () => { alive = false; stop(); };
   }, [epoch]);
 
   return { ready, hasAccount };

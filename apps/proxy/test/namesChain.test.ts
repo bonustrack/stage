@@ -20,6 +20,7 @@ interface RpcCall { method: string; params: unknown[] }
 
 const owners = new Map<Hex, Hex>();
 const sent: Hex[] = [];
+let receiptStatus = '0x1';
 
 function readRegistry(data: Hex): Hex {
   const call = decodeFunctionData({ abi: ABI, data });
@@ -38,7 +39,7 @@ function answer({ method, params }: RpcCall): unknown {
     case 'eth_blockNumber': return '0x10';
     case 'eth_getBlockByNumber': return { number: '0x10', baseFeePerGas: '0x1', hash: `0x${'1'.repeat(64)}`, transactions: [] };
     case 'eth_sendRawTransaction': sent.push(params[0] as Hex); return keccak256(params[0] as Hex);
-    case 'eth_getTransactionReceipt': return { status: '0x1', blockNumber: '0x10', transactionHash: params[0], logs: [] };
+    case 'eth_getTransactionReceipt': return { status: receiptStatus, blockNumber: '0x10', transactionHash: params[0], logs: [] };
     default: throw new Error(`unexpected ${method}`);
   }
 }
@@ -46,6 +47,7 @@ function answer({ method, params }: RpcCall): unknown {
 beforeEach(() => {
   owners.clear();
   sent.length = 0;
+  receiptStatus = '0x1';
   spyOn(globalThis, 'fetch').mockImplementation((async (_input: string | URL | Request, init?: RequestInit) => {
     const request = JSON.parse(String(init?.body)) as RpcCall & { id: number };
     return Response.json({ jsonrpc: '2.0', id: request.id, result: answer(request) });
@@ -81,6 +83,12 @@ describe('issuing a stage name on Base', () => {
     await makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER);
     expect(sentCalls().map((call) => [call.functionName, call.args[2]])).toEqual([['setSubnodeRecord', USER]]);
   });
+
+  test('a reverted receipt never causes the transaction to be sent again', async () => {
+    receiptStatus = '0x0';
+    await expect(makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER)).rejects.toThrow('reverted');
+    expect(sent).toHaveLength(1);
+  }, 15_000);
 
   test('a name someone else owns is refused before any transaction', async () => {
     owners.set(namehash('fabien.stage.base.eth'), '0x00000000000000000000000000000000000000b2');

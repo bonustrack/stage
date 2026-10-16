@@ -7,22 +7,9 @@ import type { NamesChain } from './namesTypes.ts';
 
 const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
-const WRITE_ATTEMPTS = 4;
-const WRITE_RETRY_MS = 2_000;
 
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function withRetries<T>(attempt: () => Promise<T>): Promise<T> {
-  let lastError: unknown;
-  for (let i = 0; i < WRITE_ATTEMPTS; i++) {
-    try {
-      return await attempt();
-    } catch (err) {
-      lastError = err;
-      await delay(WRITE_RETRY_MS);
-    }
-  }
-  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+export class NameTransactionRevertedError extends Error {
+  constructor(hash: Hex) { super(`transaction ${hash} reverted`); this.name = 'NameTransactionRevertedError'; }
 }
 
 const REGISTRY_ABI = [
@@ -47,10 +34,9 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
 
   const mined = async (hash: Hex): Promise<Hex> => {
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== 'success') throw new Error(`transaction ${hash} reverted`);
+    if (receipt.status !== 'success') throw new NameTransactionRevertedError(hash);
     return hash;
   };
-  const write = (send: () => Promise<Hex>): Promise<Hex> => withRetries(async () => mined(await send()));
 
   return {
     operator: account.address,
@@ -59,16 +45,19 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
       const owner = await publicClient.readContract({ ...registry, functionName: 'owner', args: [namehash(stageNameOf(label))] });
       return owner === ZERO || owner.toLowerCase() === account.address.toLowerCase() ? null : owner;
     },
-    issue: async (label, owner) => {
+    confirm: mined,
+    issue: async (label, owner, onSubmitted) => {
       const node = namehash(stageNameOf(label));
       const resolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [parentNode] });
       if (resolver === ZERO) throw new Error('parent name has no resolver');
       const current = await publicClient.readContract({ ...registry, functionName: 'owner', args: [node] });
       if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
-      return write(() => wallet.writeContract({
+      const hash = await wallet.writeContract({
         ...registry, functionName: 'setSubnodeRecord',
         args: [parentNode, keccak256(stringToBytes(label)), owner, resolver, 0n],
-      }));
+      });
+      await onSubmitted?.(hash);
+      return mined(hash);
     },
   };
 }

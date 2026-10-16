@@ -53,8 +53,8 @@ export interface UsernameInput {
 
 const FROZEN_PHASES = new Set<ClaimState['phase']>(['claiming', 'claimed']);
 
-export function useUsernameInput(): UsernameInput {
-  const [raw, setRaw] = useState('');
+export function useUsernameInput(initialLabel = ''): UsernameInput {
+  const [raw, setRaw] = useState(initialLabel);
   const [state, setState] = useState<ClaimState>({ label: '', phase: 'idle' });
   const label = normalizeLabel(raw);
   const frozen = FROZEN_PHASES.has(state.phase);

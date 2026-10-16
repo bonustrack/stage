@@ -11,6 +11,7 @@
     "./collections": "./src/collections.ts",
     "./profile/avatar": "./src/profile/avatar.ts",
     "./profile/upload": "./src/profile/upload.ts",
+    "./profile/setup": "./src/profile/setup.ts",
     "./xmtp/humanize": "./src/xmtp/humanize.ts",
     "./xmtp/poll": "./src/xmtp/poll.ts",
     "./xmtp/poll.schema": "./src/xmtp/poll.schema.ts",

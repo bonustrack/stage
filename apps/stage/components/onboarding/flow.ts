@@ -1,11 +1,14 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { createSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
+import { createSmartAccount, resumeSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
 import { addPhrase } from '../../lib/zerodev/keyring';
 import { AccountManager } from '../../modules/messaging/account';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount } from '../../lib/accounts';
 import { applyProfileSetup } from '../../lib/profile';
 import type { ProfileSetup } from './Onboarding.profile.model';
+import { makeOnboarding } from '../../lib/onboarding.core';
+import { readPendingSetup, writePendingSetup, clearPendingSetup } from '../../lib/onboardingPending';
+import { preserveProfileImage } from '../../lib/onboardingImage';
 
 export type Stage = 'wallet' | 'messaging' | 'profile' | 'history' | 'finishing';
 
@@ -31,24 +34,24 @@ export async function bringMessagingOnline(
 
 export type SetupWarning = { title: string; message: string } | null;
 
-const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
-
-async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s: Stage) => void): Promise<SetupWarning> {
-  onStage?.('profile');
-  try {
-    await applyProfileSetup(address, profile);
-    return null;
-  } catch (e) {
-    return { title: 'Profile not saved', message: `${errorMessage(e)} ${PROFILE_LATER}` };
-  }
-}
+const creation = makeOnboarding({
+  read: readPendingSetup, write: writePendingSetup, clear: clearPendingSetup,
+  preserveImage: preserveProfileImage, create: createSmartAccount, resume: resumeSmartAccount,
+  messaging: (id) => bringMessagingOnline(id),
+  profile: (account, profile, progress, checkpoint) => applyProfileSetup(account.address, profile, progress, checkpoint),
+});
 
 export async function createWallet(onStage?: (s: Stage) => void, profile?: ProfileSetup): Promise<SetupWarning> {
-  onStage?.('wallet');
-  const rec = await createSmartAccount();
-  await bringMessagingOnline(rec.id, onStage);
-  if (profile === undefined) return null;
-  return setUpProfile(rec.address, profile, onStage);
+  await creation.run(profile, onStage);
+  return null;
+}
+
+export const editableCreatedProfile = creation.editableProfile;
+export const editCreatedProfile = creation.editProfile;
+
+export async function resumeCreatedWallet(onStage?: (s: Stage) => void): Promise<SetupWarning> {
+  await creation.resume(onStage);
+  return null;
 }
 
 export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void): Promise<SetupWarning> {

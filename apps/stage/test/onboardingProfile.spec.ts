@@ -9,6 +9,11 @@ describe('profileSetupFrom', () => {
     expect(profileSetupFrom('', details({ displayName: 'Someone', image }))).toBeNull();
   });
 
+  test('picker-only metadata does not enter the durable public profile', () => {
+    const picked = { ...image, type: 'image', name: 'synthetic.png' };
+    expect(profileSetupFrom('synthetic123', details({ image: picked }))?.image).toEqual({ ...image, name: 'synthetic.png' });
+  });
+
   test('keeps only the fields that were filled in', () => {
     expect(profileSetupFrom('less', details({ displayName: '  ' }))).toEqual({ label: 'less' });
     expect(profileSetupFrom('less', details({ displayName: ' Less ', description: ' Builder ', image })))

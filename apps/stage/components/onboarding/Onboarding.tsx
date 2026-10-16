@@ -9,6 +9,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
+import { ProfileRecoveryStep } from './Onboarding.recovery';
 import { useOnboardingFlow } from './useOnboardingFlow';
 import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
@@ -62,6 +63,7 @@ type Flow = ReturnType<typeof useOnboardingFlow>;
 
 function stepBack(f: Flow): (() => void) | null {
   if (f.step === 'profile') return f.onProfileBack;
+  if (f.step === 'edit') return f.onRecoveryBack;
   return null;
 }
 
@@ -101,13 +103,14 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       <StepChrome f={f} top={STEP_ICON_INSET + insets.top} color={pal.link} />
       <KeptStep f={f} own="username"><UsernameStep dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} /></KeptStep>
       <KeptStep f={f} own="profile"><ProfileStep dark={dark} busy={f.busy} onContinue={f.onProfileContinue} /></KeptStep>
+      {f.step === 'edit' && f.profileRecovery !== null ? <ProfileRecoveryStep recovery={f.profileRecovery} dark={dark} busy={f.busy} onSave={f.onRecoverySave} /> : null}
       {f.step === 'import' ? (
         <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
       ) : null}
       {f.step === 'setup' ? (
         <SetupStep
           dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} plan={f.plan}
-          onRetry={f.onSetupRetry} onBack={f.onSetupBack} history={f.history}
+          onRetry={f.onSetupRetry} onBack={f.onSetupBack} onEdit={f.onSetupEdit} history={f.history}
         />
       ) : null}
     </Col>

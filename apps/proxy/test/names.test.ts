@@ -21,6 +21,7 @@ function fakeChain(opts: { valid?: boolean; taken?: string[]; fail?: boolean; fa
   return {
     issued,
     operator: '0x00000000000000000000000000000000000000EE',
+    confirm: (hash) => Promise.resolve(hash),
     verifyClaim: async (_a, message, signature) => (opts.valid ?? true) && signature === '0x5169' && message.startsWith('Claim '),
     subnameOwner: async (label) => (opts.taken ?? []).includes(label) ? '0x00000000000000000000000000000000000000B2' : null,
     issue: async (label) => {
@@ -56,6 +57,19 @@ describe('claim', () => {
     expect(again.status).toBe(409);
   });
 
+  test('a signed retry for a name already owned by the claimant succeeds without another transaction', async () => {
+    const chain = fakeChain();
+    chain.subnameOwner = () => Promise.resolve(ALICE);
+    const store = memoryStore();
+    const response = await handleNames(claimRequest(goodClaim), deps(chain, store));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ name: 'fabien.stage.base.eth', alreadyOwned: true });
+    expect(chain.issued).toEqual([]);
+    expect(await store.get(`addr:${ALICE.toLowerCase()}`)).toBe('fabien');
+    expect((await handleNames(claimRequest({ ...goodClaim, signature: '0x0bad' }), deps(chain, store))).status).toBe(401);
+    expect((await handleNames(claimRequest({ ...goodClaim, issuedAt: NOW - 3_600_000 }), deps(chain, store))).status).toBe(400);
+  });
+
   test('rejects short labels, stale claims, bad signatures and taken names', async () => {
     const store = memoryStore();
     expect((await handleNames(claimRequest({ ...goodClaim, label: 'abc' }), deps(fakeChain(), store))).status).toBe(400);
@@ -65,12 +79,62 @@ describe('claim', () => {
     expect((await handleNames(claimRequest({ label: 'fabien' }), deps(fakeChain(), store))).status).toBe(400);
   });
 
-  test('releases the label lock when the chain write fails', async () => {
+  test('retains the reservation when a chain write has an uncertain outcome', async () => {
     const store = memoryStore();
     const res = await handleNames(claimRequest(goodClaim), deps(fakeChain({ fail: true }), store));
     expect(res.status).toBe(502);
-    expect(await store.get('label:fabien')).toBeNull();
-    expect(await store.get(`addr:${ALICE.toLowerCase()}`)).toBeNull();
+    expect(await store.get('label:fabien')).toBe(ALICE.toLowerCase());
+    expect(await store.get(`addr:${ALICE.toLowerCase()}`)).toBe('fabien');
+    const d = deps(fakeChain(), store);
+    expect(await (await handleNames(new Request(`https://proxy.stage.box/names/status?address=${ALICE}`), d)).json()).toEqual({ name: null });
+    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json()).toEqual({ address: null });
+  });
+
+  test('a broadcast with no returned hash is never resubmitted by a signed retry', async () => {
+    const chain = fakeChain({ fail: true }); const store = memoryStore();
+    let attempts = 0;
+    chain.issue = () => { attempts += 1; return Promise.reject(new Error('broadcast response lost')); };
+    expect((await handleNames(claimRequest(goodClaim), deps(chain, store))).status).toBe(502);
+    expect((await handleNames(claimRequest(goodClaim), deps(chain, store))).status).toBe(502);
+    expect(attempts).toBe(1);
+    expect(await store.get('tx:fabien')).toBe('unknown');
+    chain.subnameOwner = () => Promise.resolve(ALICE);
+    expect((await handleNames(claimRequest(goodClaim), deps(chain, store))).status).toBe(200);
+    expect(attempts).toBe(1);
+  });
+
+  test('an interrupted receipt resumes the stored transaction instead of issuing another', async () => {
+    const hash = `0x${'1'.repeat(64)}` as const;
+    const chain = fakeChain();
+    let submitted = 0;
+    const confirmed: string[] = [];
+    chain.issue = async (_label, _owner, onSubmitted) => {
+      submitted += 1;
+      await onSubmitted?.(hash);
+      throw new Error('receipt unavailable');
+    };
+    chain.confirm = (value) => { confirmed.push(value); return Promise.resolve(value); };
+    const store = memoryStore();
+    expect((await handleNames(claimRequest(goodClaim), deps(chain, store))).status).toBe(502);
+    expect(await store.get('tx:fabien')).toBe(hash);
+    const retried = await handleNames(claimRequest(goodClaim), deps(chain, store));
+    expect(retried.status).toBe(200);
+    expect(submitted).toBe(1);
+    expect(confirmed).toEqual([hash]);
+    expect(await store.get('tx:fabien')).toBeNull();
+  });
+
+  test('partial reservation writes never publish a pending name or broadcast a transaction', async () => {
+    for (const key of ['pending:fabien', 'label:fabien', `addr:${ALICE.toLowerCase()}`, 'tx:fabien']) {
+      const store = memoryStore();
+      const put = store.put;
+      store.put = async (name, value) => { await put(name, value); if (name === key) throw new Error('storage interrupted'); };
+      const chain = fakeChain();
+      const d = deps(chain, store);
+      expect((await handleNames(claimRequest(goodClaim), d)).status).toBe(502);
+      expect(chain.issued).toEqual([]);
+      expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json()).toEqual({ address: null });
+    }
   });
 
   test('a claim interrupted mid-issue can be resumed by its claimant but not taken by someone else', async () => {
@@ -87,7 +151,7 @@ describe('claim', () => {
   test('a failed registration never echoes the chain error, which can carry the RPC URL', async () => {
     const res = await handleNames(claimRequest(goodClaim), deps(fakeChain({ fail: true }), memoryStore()));
     expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({ error: 'registration failed, try again' });
+    expect(await res.json()).toEqual({ error: 'registration could not be confirmed, try again to check it' });
   });
 
   test('a name taken onchain mid-claim is reported as taken and releases the reservation', async () => {

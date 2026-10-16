@@ -13,6 +13,7 @@ import { makeClientLifecycle } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
 import { forgetStorageIndex } from './storageIndexStore';
+import { registerPushWithServer } from './pushRegister';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
@@ -23,12 +24,12 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
   const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
   let opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
   if (rec.registered) {
+    let built: Client | null = null;
     try {
-      const built = await Promise.race<Client | null>([
+      built = await Promise.race<Client | null>([
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
         new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, REGISTERED_BUILD_TIMEOUT_MS)),
       ]);
-      if (built) return await finalizeClient(built, rec, env, { markRegistered: false });
     } catch (e) {
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);
@@ -37,6 +38,7 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
         opts = { env, dbDirectory: dir, dbEncryptionKey: key, codecs: XMTP_CODECS };
       }
     }
+    if (built) return finalizeClient(built, rec, env, { markRegistered: false });
   }
   return whileRegistering(() => createClientForAccount(rec, env, opts));
 }
@@ -62,6 +64,7 @@ export const {
     get: getCachedXmtpClient,
     getOrCreate: getOrCreateCachedClient,
     build: buildClientForAccount,
+    ready: registerPushWithServer,
     dispose: resetClientScopedState,
     selfAddressOf: (client) => client.publicIdentity.identifier,
     syncPreferences: (client) => client.preferences.sync(),

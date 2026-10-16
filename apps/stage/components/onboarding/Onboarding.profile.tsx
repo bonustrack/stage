@@ -4,7 +4,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
+import type { ProfileImage } from './Onboarding.profile.model';
 import { Col } from '../layout';
 import { FormField } from '../FormField';
 import { OnboardingCard } from './OnboardingCard';
@@ -18,7 +18,7 @@ const PROFILE_TITLE = 'Set up your profile';
 const PROFILE_ABOUT = 'Add a picture, your name and a few words about you.';
 
 function PicturePicker({ image, busy, onPick }: {
-  image: PickedFile | null; busy: boolean; onPick: (file: PickedFile) => void;
+  image: ProfileImage | null; busy: boolean; onPick: (file: ProfileImage) => void;
 }): React.ReactElement {
   const pal = usePalette();
   const [pickNonce, setPickNonce] = useState(0);
@@ -36,20 +36,21 @@ function PicturePicker({ image, busy, onPick }: {
   );
 }
 
-export function ProfileStep({ dark, busy, onContinue }: {
-  dark: boolean; busy: boolean;
+export function ProfileStep({ dark, busy, onContinue, initial = EMPTY_DETAILS, before, continueDisabled = false }: {
+  dark: boolean; busy: boolean; initial?: ProfileDetails; before?: React.ReactNode; continueDisabled?: boolean;
   onContinue: (details: ProfileDetails) => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const [details, setDetails] = useState<ProfileDetails>(EMPTY_DETAILS);
+  const [details, setDetails] = useState<ProfileDetails>(initial);
   const problem = profileDetailsProblem(details);
   const footer = (
     <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
-      label="Continue" disabled={busy || problem !== null}
+      label="Continue" disabled={busy || continueDisabled || problem !== null}
       onPress={() => { onContinue(details); }} />
   );
   return (
     <OnboardingCard title={PROFILE_TITLE} about={PROFILE_ABOUT} footer={footer}>
+      {before}
       <PicturePicker image={details.image} busy={busy} onPick={(image) => { setDetails({ ...details, image }); }} />
       <FormField label="Name" placeholder="e.g. Alice" value={details.displayName} onChangeText={(displayName) => { setDetails({ ...details, displayName }); }} disabled={busy} />
       <FormField label="About" placeholder="A few words about you" multiline value={details.description} onChangeText={(description) => { setDetails({ ...details, description }); }} disabled={busy} />

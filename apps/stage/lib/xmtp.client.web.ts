@@ -3,7 +3,6 @@ import { secureStorage } from '../platform/storage';
 import {
   getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord,
 } from './accounts';
-import { getSecure, setSecure } from './cache.shared';
 import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
@@ -22,6 +21,9 @@ import { afterFirstPages } from './feedLines';
 import { historyServerUrl } from './historyServer';
 import { forgetFeeds } from './feedSnapshot';
 import { forgetStorageIndex } from './storageIndexStore';
+import { registerPushWithServer } from './pushRegister.web';
+import { clientFinalizer } from './xmtp.recover.core';
+import { openFinalizedClient } from './xmtp.finalize.core';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -67,23 +69,27 @@ async function opfsHasDatabase(): Promise<boolean> {
   }
 }
 
+const finalizeClient = clientFinalizer<WebXmtpClient>({ discard: client => { client.close(); } });
+
 async function openSavedOrOnline(
   rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedIfPersisted: Promise<string | null> | null,
 ): Promise<WebXmtpClient> {
-  try {
-    return (await openClientForAccount(rec, env, opts, savedIfPersisted)).client;
-  } catch (e) {
-    if (!opts.allowOffline || isStoreLocked(e)) throw e;
-    await secureStorage.delete(inboxKeyFor(rec.id)).catch(ignored(undefined, 'cleanup'));
-    return (await openClientForAccount(rec, env, onlineOpts(opts), savedIfPersisted)).client;
-  }
+  return openFinalizedClient({
+    open: async () => (await openClientForAccount(rec, env, opts, savedIfPersisted)).client,
+    canFallback: error => opts.allowOffline === true && !isStoreLocked(error),
+    fallback: async () => {
+      await secureStorage.delete(inboxKeyFor(rec.id)).catch(ignored(undefined, 'cleanup'));
+      return (await openClientForAccount(rec, env, onlineOpts(opts), savedIfPersisted)).client;
+    },
+    finalize: client => finalizeClient(client, rec, env, { markRegistered: true }),
+  });
 }
 
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<WebXmtpClient> {
   const address = rec.address.toLowerCase();
   const [savedAddress, savedEnv, savedInstallation, savedInbox] = await Promise.all([
-    getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)),
-    getSecure(installationKeyFor(rec.id)), getSecure(inboxKeyFor(rec.id)),
+    secureStorage.get(addressKeyFor(rec.id)), secureStorage.get(envKeyFor(rec.id)),
+    secureStorage.get(installationKeyFor(rec.id)), secureStorage.get(inboxKeyFor(rec.id)),
   ]);
   const sameAccount = canReuseSavedClient(savedAddress, savedEnv, address, env);
   const offline = offlineOpenOptions(savedInbox, sameAccount);
@@ -97,11 +103,16 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   const client = await perfTime('xmtp.client.open', () => openSavedOrOnline(rec, env, opts, savedIfPersisted));
   perfLog('xmtp.client opened', { installation: client.installationId, offline: offline !== null });
   if (offline) void afterFirstPages().then(() => client.preferences.fetchInboxState()).catch(ignored(undefined, 'optional'));
-  await setSecure(addressKeyFor(rec.id), address);
-  await setSecure(envKeyFor(rec.id), env);
-  await setSecure(installationKeyFor(rec.id), client.installationId ?? '');
-  await setSecure(inboxKeyFor(rec.id), client.inboxId ?? '');
-  return client;
+  try {
+    await secureStorage.set(addressKeyFor(rec.id), address);
+    await secureStorage.set(envKeyFor(rec.id), env);
+    await secureStorage.set(installationKeyFor(rec.id), client.installationId ?? '');
+    await secureStorage.set(inboxKeyFor(rec.id), client.inboxId ?? '');
+    return client;
+  } catch (e) {
+    attempt(() => { client.close(); }, 'cleanup');
+    throw e;
+  }
 }
 
 function disposeCachedClient(): void {
@@ -139,6 +150,7 @@ export const {
     get: getCachedXmtpClient,
     getOrCreate: getOrCreateCachedClient,
     build: buildClientForAccount,
+    ready: registerPushWithServer,
     dispose: disposeCachedClient,
     selfAddressOf: (client) => client.accountIdentifier?.identifier ?? null,
     syncPreferences: (client) => client.preferences.sync(),

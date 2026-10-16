@@ -1,6 +1,6 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { XmtpEnv } from './xmtp.types';
-import { report } from './errorPolicy';
+import { report, reported } from './errorPolicy';
 
 export class NoAccountError extends Error {
   constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
@@ -42,6 +42,7 @@ interface ClientPort<C> {
   get: () => C | null;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
   build: (rec: AccountRecord, env: XmtpEnv) => Promise<C>;
+  ready?: (client: C) => Promise<void>;
   dispose: () => void;
   selfAddressOf: (client: C) => string | null;
   syncPreferences: (client: C) => Promise<unknown>;
@@ -72,6 +73,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
       try {
         const built = await client.getOrCreate(() => client.build(rec, env));
         deps.bumpEpoch();
+        if (client.ready) void client.ready(built).catch(reported('xmtp.push'));
         return built;
       } catch (e) {
         deps.bumpEpoch();
@@ -107,11 +109,18 @@ export function makeClientLifecycle<C>(deps: LifecycleDeps<C>): ReturnType<typeo
   revokeXmtpInstallation: (installationId: string) => Promise<void>;
 } {
   const { accounts, client } = deps;
-  const getOrCreateXmtpClient = (env: XmtpEnv = 'production'): Promise<C> => client.getOrCreate(async () => {
-    const account = await accounts.active();
-    if (!account) throw new NoAccountError();
-    return client.build(account, env);
-  });
+  const getOrCreateXmtpClient = async (env: XmtpEnv = 'production'): Promise<C> => {
+    let created = false;
+    const built = await client.getOrCreate(async () => {
+      const account = await accounts.active();
+      if (!account) throw new NoAccountError();
+      const value = await client.build(account, env);
+      created = true;
+      return value;
+    });
+    if (created && client.ready) void client.ready(built).catch(reported('xmtp.push'));
+    return built;
+  };
   const xmtpClient = async (): Promise<C> => client.get() ?? await getOrCreateXmtpClient('production');
   return {
     ...accountSwitching(deps),

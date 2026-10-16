@@ -1,13 +1,11 @@
 import { Client } from '@xmtp/browser-sdk';
 import type { AccountRecord } from './accounts';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
-import { setCachedXmtpClient } from './xmtp.state.web';
 import { whileRegistering } from './xmtp.state.core';
-import { registerPushWithServer } from './pushRegister.web';
 import { perfLog } from './perf';
 import { errorMessage } from '@stage-labs/client/errors';
 import { openPersistedClient, type OpenedClient } from '@stage-labs/client/xmtp/clientConfig';
-import { XmtpInstallationLimitError, clientFinalizer, withCreateTimeout } from './xmtp.recover.core';
+import { XmtpInstallationLimitError, withCreateTimeout } from './xmtp.recover.core';
 import type { XmtpEnv } from './xmtp.types';
 import { wipeXmtpStore } from './xmtp.dbkey';
 import { isInstallationLimit, isStoreLocked, isStoreCorruption } from '@stage-labs/client/xmtp/clientErrors';
@@ -39,19 +37,14 @@ const CREATE_TIMEOUT_MESSAGE = 'Opening the local message store timed out.';
 
 type WebXmtpClient = Client<unknown>;
 
-const finalizeClient = clientFinalizer<WebXmtpClient>({
-  discard: (client) => { client.close(); },
-  setCached: setCachedXmtpClient,
-  registerPush: registerPushWithServer,
-});
-
 export async function openClientForAccount(
   rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedInstallationId: string | null | Promise<string | null>,
   recovered = false,
 ): Promise<OpenedClient<WebXmtpClient>> {
   const signer = await signerForRecord(rec);
+  let opened: OpenedClient<WebXmtpClient>;
   try {
-    const opened = await openPersistedClient<WebXmtpClient>({
+    opened = await openPersistedClient<WebXmtpClient>({
       open: () => withCreateTimeout(
         () => Client.create(signer, { ...opts, disableAutoRegister: true }),
         CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE,
@@ -65,8 +58,6 @@ export async function openClientForAccount(
       retryable: isStoreLocked,
       onEvent: (event, e) => { void Promise.resolve(savedInstallationId).then((saved) => { reportOpenEvent(event, saved, e); }); },
     });
-    await finalizeClient(opened.client, rec, env, { markRegistered: true });
-    return opened;
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeXmtpStore(rec.id, rec.dbDir);
@@ -75,4 +66,5 @@ export async function openClientForAccount(
     if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
     throw e;
   }
+  return opened;
 }

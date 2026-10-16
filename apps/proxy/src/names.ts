@@ -5,7 +5,7 @@ import {
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailPublicKey, isMailboxLabel } from '@stage-labs/client/mail/mailbox';
 import { mailboxStub, saveMailKey } from './mailBox.ts';
-import { makeNamesChain } from './namesChain.ts';
+import { makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
@@ -22,6 +22,7 @@ export interface NamesEnv {
 
 const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;
+const pendingKey = (label: string): string => `pending:${label}`;
 
 function reply(body: unknown, status = 200): Response {
   return jsonResponse(body, status, CORS);
@@ -31,6 +32,10 @@ async function status(url: URL, deps: NamesDeps): Promise<Response> {
   const address = url.searchParams.get('address') ?? '';
   if (!isAddress(address, { strict: false })) return reply({ error: 'address required' }, 400);
   const label = await deps.store.get(addressKey(address));
+  if (label !== null && (await deps.store.get(pendingKey(label))) !== null) {
+    const owner = await deps.chain.subnameOwner(label);
+    if (owner?.toLowerCase() !== address.toLowerCase()) return reply({ name: null });
+  }
   return reply({ name: label ? stageNameOf(label) : null });
 }
 
@@ -38,7 +43,8 @@ async function resolve(url: URL, deps: NamesDeps): Promise<Response> {
   const label = (url.searchParams.get('label') ?? '').toLowerCase();
   if (validateStageLabel(label)) return reply({ error: 'invalid label' }, 400);
   const owner = await deps.chain.subnameOwner(label);
-  const address = owner ?? (await deps.store.get(labelKey(label))) ?? null;
+  const pending = (await deps.store.get(pendingKey(label))) !== null;
+  const address = owner ?? (pending ? null : await deps.store.get(labelKey(label)));
   return reply({ address: address ? address.toLowerCase() : null });
 }
 
@@ -85,27 +91,39 @@ async function rejectClaim(claim: ClaimBody, deps: NamesDeps): Promise<Response 
 
 async function unavailableReply(claim: ClaimBody, deps: NamesDeps): Promise<Response | null> {
   const owner = await deps.chain.subnameOwner(claim.label);
-  if (owner !== null) {
-    const own = owner.toLowerCase() === claim.address.toLowerCase();
-    return reply({ error: own ? 'this address already has a name' : NAME_TAKEN }, 409);
-  }
-  const reservedBy = await deps.store.get(labelKey(claim.label));
+  if (owner !== null && owner.toLowerCase() !== claim.address.toLowerCase()) return reply({ error: NAME_TAKEN }, 409);
+  const reservedBy = (await deps.store.get(labelKey(claim.label))) ?? (await deps.store.get(pendingKey(claim.label)));
   return reservedBy !== null && reservedBy !== claim.address.toLowerCase() ? reply({ error: NAME_TAKEN }, 409) : null;
 }
 
 async function releaseReservation(body: ClaimBody, deps: NamesDeps): Promise<void> {
   if ((await deps.store.get(labelKey(body.label))) === body.address.toLowerCase()) await deps.store.put(labelKey(body.label), '');
   if ((await deps.store.get(addressKey(body.address))) === body.label) await deps.store.put(addressKey(body.address), '');
+  await deps.store.put(pendingKey(body.label), '');
 }
+
+const transactionKey = (label: string): string => `tx:${label}`;
 
 async function issueName(body: ClaimBody, deps: NamesDeps): Promise<Hex | Response> {
   try {
-    return await deps.chain.issue(body.label, body.address);
+    const pending = await deps.store.get(transactionKey(body.label));
+    if (pending !== null && !/^0x[0-9a-fA-F]{64}$/.test(pending)) throw new Error('The pending name transaction cannot be confirmed yet.');
+    if (pending === null) await deps.store.put(transactionKey(body.label), 'unknown');
+    const txHash = pending === null
+      ? await deps.chain.issue(body.label, body.address, (hash) => deps.store.put(transactionKey(body.label), hash))
+      : await deps.chain.confirm(pending as Hex);
+    await deps.store.put(transactionKey(body.label), '');
+    await deps.store.put(pendingKey(body.label), '');
+    return txHash;
   } catch (err) {
-    await releaseReservation(body, deps);
-    if (err instanceof Error && err.message === NAME_TAKEN) return reply({ error: NAME_TAKEN }, 409);
-    console.error('names claim failed', err);
-    return reply({ error: 'registration failed, try again' }, 502);
+    const taken = err instanceof Error && err.message === NAME_TAKEN;
+    if (taken || err instanceof NameTransactionRevertedError) {
+      await releaseReservation(body, deps);
+      await deps.store.put(transactionKey(body.label), '');
+    }
+    if (taken) return reply({ error: NAME_TAKEN }, 409);
+    console.error('names claim could not be confirmed');
+    return reply({ error: 'registration could not be confirmed, try again to check it' }, 502);
   }
 }
 
@@ -136,8 +154,14 @@ async function claim(request: Request, deps: NamesDeps): Promise<Response> {
   if (!body) return reply({ error: 'label, address, issuedAt and signature required' }, 400);
   const rejection = await rejectClaim(body, deps);
   if (rejection) return rejection;
+  await deps.store.put(pendingKey(body.label), body.address.toLowerCase());
   await deps.store.put(labelKey(body.label), body.address.toLowerCase());
   await deps.store.put(addressKey(body.address), body.label);
+  if ((await deps.chain.subnameOwner(body.label))?.toLowerCase() === body.address.toLowerCase()) {
+    await deps.store.put(transactionKey(body.label), '');
+    await deps.store.put(pendingKey(body.label), '');
+    return reply({ name: stageNameOf(body.label), alreadyOwned: true, ...(await saveClaimedMailKey(body, deps)) });
+  }
   const txHash = await issueName(body, deps);
   if (txHash instanceof Response) return txHash;
   return reply({ name: stageNameOf(body.label), txHash, ...(await saveClaimedMailKey(body, deps)) });

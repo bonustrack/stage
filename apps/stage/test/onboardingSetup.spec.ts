@@ -37,6 +37,8 @@ describe('setup copy', () => {
   test('a messaging retry keeps the existing wallet, other failures may start over', () => {
     expect(setupLinks({ message: 'x', retry: 'restart' })).toEqual(['startOver']);
     expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'messaging' })).toEqual([]);
+    expect(setupLinks({ message: 'unreadable checkpoint', retry: 'create' })).toEqual([]);
+    expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'create' })).toEqual([]);
     expect(setupLinks(null)).toEqual([]);
   });
 });

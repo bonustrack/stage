@@ -193,7 +193,36 @@ describe('openPersistedClient', () => {
   test('a registration probe that throws surfaces instead of creating a new installation', async () => {
     const { d, calls } = deps({ isRegistered: () => Promise.reject(new Error('worker gone')) });
     await expect(openPersistedClient(d)).rejects.toThrow('worker gone');
-    expect(calls).toEqual(['open']);
+    expect(calls).toEqual(['open', 'close:inst-a']);
+  });
+
+  test('registration rejection closes the opened client without retrying or changing the error', async () => {
+    const failure = new Error('registration offline');
+    const { d, calls } = deps({
+      isRegistered: () => Promise.resolve(false),
+      register: () => Promise.reject(failure),
+    });
+    await expect(openPersistedClient(d)).rejects.toBe(failure);
+    expect(calls).toEqual(['open', 'close:inst-a']);
+  });
+
+  test('cleanup failure never replaces the registration failure', async () => {
+    const failure = new Error('registration offline');
+    const { d } = deps({
+      isRegistered: () => Promise.reject(failure),
+      close: () => { throw new Error('close failed'); },
+    });
+    await expect(openPersistedClient(d)).rejects.toBe(failure);
+  });
+
+  test('failed saved metadata lookup also closes its opened client', async () => {
+    const failure = new Error('storage unavailable');
+    const saved = Promise.withResolvers<string | null>();
+    const { d, calls } = deps({ savedInstallationId: saved.promise });
+    const opening = openPersistedClient(d);
+    saved.reject(failure);
+    await expect(opening).rejects.toBe(failure);
+    expect(calls).toEqual(['open', 'close:inst-a']);
   });
 
   test('defaults to five attempts', () => {

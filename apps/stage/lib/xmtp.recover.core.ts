@@ -1,8 +1,9 @@
 import { INSTALLATION_LIMIT_MESSAGE } from '@stage-labs/client/xmtp/clientErrors';
 import { secureStorage } from '../platform/storage';
-import { getActiveAccount, markRegistered, setActiveAccountId, type AccountRecord } from './accounts';
+import { getActiveAccount, getSelectedAccount, markRegistered, type AccountRecord } from './accounts';
 import { XMTP_ENV_KEY, type XmtpEnv } from './xmtp.types';
-import { ignored, attempt } from './errorPolicy';
+import { ignored } from './errorPolicy';
+import { makeClientFinalizer, type FinalizeDeps } from './xmtp.finalize.core';
 
 export class XmtpInstallationLimitError extends Error {
   constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
@@ -31,36 +32,11 @@ export async function withCreateTimeout<C>(
   }
 }
 
-const STALE_ACCOUNT_MESSAGE = 'The account changed while messaging was starting.';
-
-export async function assertStillActiveAccount(accountId: string, discard: () => void): Promise<void> {
-  let activeId: string | null;
-  try {
-    activeId = (await getActiveAccount())?.id ?? null;
-  } catch {
-    return;
-  }
-  if (activeId === accountId) return;
-  attempt(discard, 'cleanup');
-  throw new Error(STALE_ACCOUNT_MESSAGE);
-}
-
-interface FinalizeDeps<C> {
-  discard: (client: C) => void;
-  setCached: (client: C) => void;
-  registerPush: (client: C) => Promise<void>;
-}
-
-export function clientFinalizer<C>(deps: FinalizeDeps<C>): (
+export function clientFinalizer<C>(deps: Pick<FinalizeDeps<C>, 'discard'>): (
   client: C, rec: AccountRecord, env: XmtpEnv, opts: { markRegistered: boolean },
 ) => Promise<C> {
-  return async (client, rec, env, opts) => {
-    await assertStillActiveAccount(rec.id, () => { deps.discard(client); });
-    deps.setCached(client);
-    if (opts.markRegistered) await markRegistered(rec.id);
-    await setActiveAccountId(rec.id);
-    await secureStorage.set(XMTP_ENV_KEY, env);
-    void deps.registerPush(client);
-    return client;
-  };
+  return makeClientFinalizer({
+    ...deps, active: getSelectedAccount, markRegistered,
+    saveEnv: (env) => secureStorage.set(XMTP_ENV_KEY, env),
+  });
 }

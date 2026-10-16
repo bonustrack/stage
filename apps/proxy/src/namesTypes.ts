@@ -5,7 +5,8 @@ export interface NamesChain {
   operator: Hex;
   verifyClaim(address: Hex, message: string, signature: Hex): Promise<boolean>;
   subnameOwner(label: string): Promise<Hex | null>;
-  issue(label: string, owner: Hex): Promise<Hex>;
+  issue(label: string, owner: Hex, onSubmitted?: (hash: Hex) => Promise<void>): Promise<Hex>;
+  confirm(hash: Hex): Promise<Hex>;
 }
 
 export interface NamesStore {

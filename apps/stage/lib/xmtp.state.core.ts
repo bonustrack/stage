@@ -2,6 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
 import { makeListeners, useStoreValue } from './storeCore';
 import { resetFeedLines } from './feedLines';
+import { attempt } from './errorPolicy';
 
 export const inboxEthCache = new Map<string, string>();
 
@@ -96,22 +97,30 @@ const READY_CAP_MS = 60_000;
 
 interface ClientSlot<C> {
   get: () => C | null;
-  set: (client: C | null) => void;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
   waitForReady: () => Promise<boolean>;
   reset: () => void;
 }
 
-export function createClientSlot<C>(onReset: () => void): ClientSlot<C> {
+export function createClientSlot<C>(onReset: () => void, discard?: (client: C) => void): ClientSlot<C> {
   let cached: C | null = null;
   let inFlight: Promise<C> | null = null;
+  let generation = 0;
   return {
     get: () => cached,
-    set: (client) => { cached = client; },
     getOrCreate: async (create) => {
       if (cached) return cached;
       if (inFlight) return inFlight;
-      const pending = create();
+      const started = generation;
+      const pending = (async (): Promise<C> => {
+        const client = await create();
+        if (generation !== started) {
+          if (discard) attempt(() => { discard(client); }, 'cleanup');
+          throw new Error('The account changed while messaging was starting.');
+        }
+        cached = client;
+        return client;
+      })();
       inFlight = pending;
       try { return await pending; } finally { if (inFlight === pending) inFlight = null; }
     },
@@ -121,6 +130,7 @@ export function createClientSlot<C>(onReset: () => void): ClientSlot<C> {
       return cached !== null;
     },
     reset: () => {
+      generation += 1;
       cached = null;
       inFlight = null;
       onReset();

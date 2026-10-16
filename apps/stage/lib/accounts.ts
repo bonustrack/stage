@@ -89,7 +89,7 @@ export function loadAccounts(): Promise<AccountRecord[]> {
   return loadList(false);
 }
 
-function loadAccountsForWrite(): Promise<AccountRecord[]> {
+export function loadAccountsForWrite(): Promise<AccountRecord[]> {
   return loadList(true);
 }
 
@@ -134,10 +134,10 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
   const list = await loadAccountsForWrite();
   const existing = list.find(a => a.id === id);
   if (existing) {
-    Object.assign(existing, rec, { id });
-    await persist(list);
+    const updated = { ...existing, ...rec, id };
+    await persist(list.map(a => (a.id === id ? updated : a)));
     await setActiveAccountId(id);
-    return existing;
+    return updated;
   }
   const created = { ...rec, id };
   const next = [...list, created];
@@ -164,7 +164,7 @@ export async function nextSmartHdIndex(phraseId: string): Promise<number> {
 export async function markRegistered(id: string): Promise<void> {
   const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id);
-  if (rec && !rec.registered) { rec.registered = true; await persist(list); }
+  if (rec && !rec.registered) await persist(list.map(a => (a.id === id ? { ...a, registered: true } : a)));
 }
 
 export async function removeAccount(id: string): Promise<AccountRecord[]> {

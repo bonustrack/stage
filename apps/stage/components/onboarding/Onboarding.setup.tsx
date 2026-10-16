@@ -93,16 +93,16 @@ function SetupLink({ busy, setupErr, onBack, history }: {
   );
 }
 
-export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, history }: {
+export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, onEdit, history }: {
   dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
-  onRetry: () => void; onBack: () => void; history: HistoryControls;
+  onRetry: () => void; onBack: () => void; onEdit: () => void; history: HistoryControls;
 }): React.ReactElement {
   const stages = setupStages(plan);
   const historyHint = useHistoryStepHint(stage === 'history' && setupErr === null, history.stalled);
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
   const link = SetupLink({ busy, setupErr, onBack, history });
   return (
-    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={link}>
+    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={<Col gap={16}>{setupErr?.retry === 'create' && plan.profile === true ? <SkipLink label="Edit profile" disabled={busy} onPress={onEdit} /> : null}{link}</Col>}>
       <Col width="100%">
         {stages.map((s) => (
           <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null || (history.stalled && s === 'history')} />

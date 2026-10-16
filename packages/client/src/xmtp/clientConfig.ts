@@ -77,6 +77,10 @@ function mismatchIsPersistent(previous: string | null, current: string): boolean
   return previous !== null && previous === current;
 }
 
+function closeOpenedClient<C>(deps: PersistedClientDeps<C>, client: C): void {
+  try { deps.close(client); } catch { }
+}
+
 async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: string | null): Promise<Attempt<C>> {
   let client: C;
   try {
@@ -85,22 +89,32 @@ async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: st
     deps.onEvent?.('open-failed', e);
     return { kind: deps.retryable?.(e) === true ? 'retry' : 'fail', error: e };
   }
-  if (matchesSavedInstallation(deps, client, await deps.savedInstallationId)) return { kind: 'ready', client };
+  try {
+    if (matchesSavedInstallation(deps, client, await deps.savedInstallationId)) return { kind: 'ready', client };
+  } catch (e) {
+    closeOpenedClient(deps, client);
+    throw e;
+  }
   const installationId = deps.installationIdOf(client);
   if (mismatchIsPersistent(previousMismatch, installationId)) {
     deps.onEvent?.('installation-adopted');
     return { kind: 'ready', client };
   }
   deps.onEvent?.('installation-mismatch');
-  try { deps.close(client); } catch { }
+  closeOpenedClient(deps, client);
   return { kind: 'retry', error: new Error(STORE_LOCKED_MESSAGE), mismatched: installationId };
 }
 
 async function registerIfNeeded<C>(deps: PersistedClientDeps<C>, client: C): Promise<OpenedClient<C>> {
-  if (await deps.isRegistered(client)) return { client, registered: false };
-  await deps.register(client);
-  deps.onEvent?.('registered');
-  return { client, registered: true };
+  try {
+    if (await deps.isRegistered(client)) return { client, registered: false };
+    await deps.register(client);
+    deps.onEvent?.('registered');
+    return { client, registered: true };
+  } catch (e) {
+    closeOpenedClient(deps, client);
+    throw e;
+  }
 }
 
 export async function openPersistedClient<C>(deps: PersistedClientDeps<C>): Promise<OpenedClient<C>> {

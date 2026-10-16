@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { usePathname } from 'expo-router';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
+import type { EditableProfile } from '../../lib/onboarding.core';
+import type { ProfileSetup } from './Onboarding.profile.model';
 import type { Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
 import { IMPORT_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
-export type Step = 'username' | 'profile' | 'import' | 'setup';
+export type Step = 'username' | 'profile' | 'import' | 'setup' | 'edit';
 
 export interface OnboardingFlow {
   step: Step;
@@ -23,6 +25,10 @@ export interface OnboardingFlow {
   history: HistoryControls;
   onSetupRetry: () => void;
   onSetupBack: () => void;
+  onSetupEdit: () => void;
+  profileRecovery: EditableProfile | null;
+  onRecoverySave: (profile: ProfileSetup) => void;
+  onRecoveryBack: () => void;
 }
 
 function createChoice(label: string, details: ProfileDetails): Choice {
@@ -38,9 +44,10 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [flowStep, setStep] = useState<Step>('username');
   const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
+  const [profileRecovery, setProfileRecovery] = useState<EditableProfile | null>(null);
   const runner = useSetupRunner(onDone);
   const atImportRoute = usePathname() === IMPORT_ROUTE;
-  const step: Step = flowStep === 'username' && atImportRoute ? 'import' : flowStep;
+  const step: Step = runner.recovering && flowStep !== 'edit' ? 'setup' : flowStep === 'username' && atImportRoute ? 'import' : flowStep;
 
   const start = (choice: Choice): void => {
     setPending(choice);
@@ -49,14 +56,17 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   };
 
   const startOver = (): void => {
-    runner.startOver();
-    setPending(null); setLabel('');
-    setStep('username');
+    void runner.startOver().then((cleared) => {
+      if (!cleared) return;
+      setPending(null); setLabel('');
+      setStep('username');
+    });
   };
 
   const onSetupRetry = (): void => {
     const err = runner.setupErr;
-    if (err?.accountId !== undefined && err.retry === 'messaging') runner.resume(err.accountId);
+    if (err?.retry === 'create') runner.resume();
+    else if (err?.accountId !== undefined && err.retry === 'messaging') runner.resume(err.accountId);
     else if (pending) start(pending);
     else { runner.reset(); setStep('username'); }
   };
@@ -72,5 +82,9 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,
+    onSetupEdit: () => { void runner.editableProfile().then(value => { if (value !== null) { setProfileRecovery(value); setStep('edit'); } }); },
+    profileRecovery,
+    onRecoverySave: (profile) => { setProfileRecovery(null); start({ kind: 'editProfile', profile }); },
+    onRecoveryBack: () => { setProfileRecovery(null); setStep('setup'); },
   };
 }
