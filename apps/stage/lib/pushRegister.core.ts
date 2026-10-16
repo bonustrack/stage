@@ -9,6 +9,7 @@ import { subscribeAccountEpoch } from './accountEpoch';
 import { subscribeAccountSelection } from './accountSelection';
 import { makePushRetry } from './pushRetry.core';
 import { makeSenderFilterPublisher, maintainPushPaths } from './pushSenderFilter.core';
+import { timeSendPhase, type SendTiming } from './sendTiming.core';
 
 export type { PushTopics } from './pushRegistration.core';
 import { onReadStateChanged } from './channelsCache';
@@ -144,17 +145,17 @@ async function senderGroupKey(account: AccountRecord, inboxId: string): Promise<
   return pending;
 }
 
-export async function runSenderFilterPublication(input: PushRuntimeInput, topic?: string): Promise<void> {
+export async function runSenderFilterPublication(input: PushRuntimeInput, topic?: string, timing?: SendTiming): Promise<void> {
   const controller = new AbortController();
   const abort = (): void => { controller.abort(); };
   const stopEpoch = subscribeAccountEpoch(abort);
   const stopSelection = subscribeAccountSelection(abort);
   const current = (): boolean => !controller.signal.aborted && input.current();
   try {
-    const account = await getActiveAccount();
+    const account = await timeSendPhase(timing, 'filter.account', getActiveAccount);
     if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) throw new Error('Sender filter account changed');
     await senderPublisher.publish({
-      installationId: input.installationId, current, signal: controller.signal, topic,
+      installationId: input.installationId, current, signal: controller.signal, topic, timing,
       groupKey: () => senderGroupKey(account, input.inboxId), sign: input.signInstallation,
       syncPreferences: input.syncPreferences, collectTopics: input.collectSenderTopics,
       post: (body, signal) => postJson(input.rpcUrl(PUSH_RPC.senderFilters), body, undefined, signal),

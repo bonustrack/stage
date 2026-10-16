@@ -8,6 +8,8 @@ import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage
 import type { FrameActionContent } from '@stage-labs/client/xmtp/frame';
 import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
+import { beginSendTiming } from './sendTiming';
+import { timeSendPhase } from './sendTiming.core';
 import {
   DELETE_REQUEST_CODEC, POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, FRAME_ACTION_CODEC, type JsonCodec,
@@ -46,7 +48,14 @@ export function xmtpDeleteMessage(messageId: string): Promise<string> {
 }
 
 function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>, shouldPush = true): Promise<string> {
-  return withReadableSendError(async () => send(await sendableConvOfLine(line, shouldPush)));
+  const timing = shouldPush ? beginSendTiming() : undefined;
+  if (!timing) return withReadableSendError(async () => send(await sendableConvOfLine(line, shouldPush)));
+  return withReadableSendError(async () => {
+    try {
+      const conv = await sendableConvOfLine(line, shouldPush, timing);
+      return await timeSendPhase(timing, 'sdk.send', () => send(conv));
+    } finally { timing?.finish(); }
+  });
 }
 
 export function xmtpSendText(line: string, text: string): Promise<string> {

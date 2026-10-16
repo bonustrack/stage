@@ -16,6 +16,7 @@ import {
 import { getCachedXmtpClient } from './xmtp.state';
 import { getAccountEpoch } from './accountEpoch';
 import { attempt, recover, reported } from './errorPolicy';
+import type { SendTiming } from './sendTiming.core';
 
 type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity' | 'inboxId' | 'signWithInstallationKey'>;
 
@@ -69,8 +70,8 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   await runPushRegistration(pushInput(client));
 }
 
-export async function prepareSenderFilters(client: PushClient, topic: string): Promise<void> {
-  await runSenderFilterPublication(pushInput(client), topic);
+export async function prepareSenderFilters(client: PushClient, topic: string, timing?: SendTiming): Promise<void> {
+  await runSenderFilterPublication(pushInput(client), topic, timing);
 }
 
 export async function warmSenderFilters(client: PushClient): Promise<void> {

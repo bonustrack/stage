@@ -4,6 +4,7 @@ import {
 } from '@stage-labs/client/xmtp/pushServer';
 import type { PushTopics } from './pushRegistration.core';
 import { abortable } from './abortable.core';
+import { timeSendPhase, type SendTiming } from './sendTiming.core';
 
 export interface SenderFilterInput {
   installationId: string;
@@ -14,6 +15,7 @@ export interface SenderFilterInput {
   syncPreferences: () => Promise<unknown>;
   collectTopics: (topic?: string) => Promise<PushTopics>;
   topic?: string;
+  timing?: SendTiming;
   post: (body: { payload: string; signature: string }, signal: AbortSignal) => Promise<void>;
 }
 
@@ -73,13 +75,13 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
   async function update(input: SenderFilterInput, signal: AbortSignal): Promise<void> {
     const assertCurrent = (): void => { if (!input.current() || signal.aborted) throw new Error('Sender filter account changed'); };
     assertCurrent();
-    await syncPreferences(input, assertCurrent, signal);
-    const collected = await input.collectTopics(input.topic);
+    await timeSendPhase(input.timing, 'filter.preferences', () => syncPreferences(input, assertCurrent, signal));
+    const collected = await timeSendPhase(input.timing, 'filter.keys', () => input.collectTopics(input.topic));
     assertCurrent();
     const selected = input.topic ? collected.topics.filter(topic => topic === input.topic) : collected.topics;
     const topics = senderFilterTopics(selected, collected.hmacKeys);
     if (input.topic && topics.length === 0) throw new Error('Sender filter key is not ready');
-    const groupKey = await input.groupKey();
+    const groupKey = await timeSendPhase(input.timing, 'filter.group_key', () => input.groupKey());
     assertCurrent();
     const cache = published.get(input.installationId) ?? new Map<string, Published>();
     const dirty = topics.filter(topic => {
@@ -90,9 +92,10 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     if (dirty.length === 0 && cache.get('')?.signature === groupSignature) return;
     for (let start = 0; start < Math.max(dirty.length, 1); start += SENDER_FILTER_BATCH_SIZE) {
       const batch = dirty.slice(start, start + SENDER_FILTER_BATCH_SIZE);
-      const body = await signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign);
+      const body = await timeSendPhase(input.timing, 'filter.sign', () =>
+        signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign));
       assertCurrent();
-      await input.post(body, signal);
+      await timeSendPhase(input.timing, 'filter.http', () => input.post(body, signal));
       assertCurrent();
       for (const topic of batch) cache.set(topic.topic, { signature: fingerprint(groupKey, topic), at: now() });
       cache.set('', { signature: groupSignature, at: now() });
@@ -107,13 +110,17 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     else input.signal.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(() => { controller.abort(new Error('Sender filter refresh timed out')); }, timeoutMs);
     const previous = pending.get(input.installationId);
-    const run = (): Promise<void> => abortable(update(input, controller.signal), controller.signal);
+    const endQueue = input.timing?.phase('filter.queue');
+    const run = (): Promise<void> => {
+      endQueue?.();
+      return abortable(update(input, controller.signal), controller.signal);
+    };
     const next = previous ? previous.then(run, run) : run();
     pending.set(input.installationId, next);
     const release = (): void => { if (pending.get(input.installationId) === next) pending.delete(input.installationId); };
     void next.then(release, release);
     try { await abortable(next, controller.signal); }
-    finally { clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
+    finally { endQueue?.(); clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
   }
 
   return { publish, warm, clear: () => { published.clear(); syncedAt.clear(); syncing.clear(); } };

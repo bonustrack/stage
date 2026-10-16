@@ -11,6 +11,7 @@ import { recover } from './errorPolicy';
 import { getAccountEpoch } from './accountEpoch';
 import { AccountChangedError } from './xmtp.client.core';
 import { prepareNotifyingSend } from './pushSenderFilter.core';
+import { timeSendPhase, type SendTiming } from './sendTiming.core';
 
 export interface GroupMeta { name?: string; imageUrl?: string; appData?: string }
 
@@ -129,21 +130,21 @@ export function convFinder<Cl, C extends ConvLike, M>(
 }
 
 export function sendableFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>, prepare: (client: Cl, conv: C) => Promise<void>,
-): (line: string, shouldPush?: boolean) => Promise<C> {
+  sdk: XmtpSdk<Cl, C, M>, prepare: (client: Cl, conv: C, timing?: SendTiming) => Promise<void>,
+): (line: string, shouldPush?: boolean, timing?: SendTiming) => Promise<C> {
   const find = convFinder(sdk);
-  return async (line, shouldPush = true) => {
+  return async (line, shouldPush = true, timing) => {
     const epoch = getAccountEpoch();
-    const client = await sdk.client();
+    const client = await timeSendPhase(timing, 'client.ready', () => sdk.client());
     const assertCurrent = (): void => {
       if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
     };
-    const conv = await find(line);
+    const conv = await timeSendPhase(timing, 'conversation.find', () => find(line));
     assertCurrent();
     if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-    const active = await activeForSend(sdk, client, conv, line);
+    const active = await timeSendPhase(timing, 'conversation.active', () => activeForSend(sdk, client, conv, line));
     assertCurrent();
-    await prepareNotifyingSend(shouldPush, () => prepare(client, active), assertCurrent);
+    await timeSendPhase(timing, 'filter.prepare', () => prepareNotifyingSend(shouldPush, () => prepare(client, active, timing), assertCurrent));
     return active;
   };
 }

@@ -291,4 +291,4 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
 
 export const convOfLine = convFinder(sdk);
 
-export const sendableConvOfLine = sendableFinder(sdk, (client, conv) => prepareSenderFilters(client, groupTopicOf(conv.id)));
+export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) => prepareSenderFilters(client, groupTopicOf(conv.id), timing));

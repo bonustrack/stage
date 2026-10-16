@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { makeSenderFilterPublisher, maintainPushPaths, prepareNotifyingSend, type SenderFilterInput } from '../lib/pushSenderFilter.core';
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
 import type { PushTopics } from '../lib/pushRegistration.core';
+import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 
 const TOPIC = '/xmtp/mls/1/g-abcdef/proto';
 const PERIOD = 700;
@@ -246,6 +247,118 @@ describe('account-wide sender publication without a push token', () => {
       f.setSync(async () => undefined);
       await f.publisher.publish({ ...f.input, signal: new AbortController().signal });
       expect(f.bodies).toHaveLength(1);
+    }
+  });
+
+  test('opt-in timing separates preference, key, group-key, signing and HTTP waits without changing cache reuse', async () => {
+    const f = fixture();
+    let now = 0;
+    const diagnostic = makeSendTimingDiagnostic(() => now);
+    const collect = f.input.collectTopics;
+    f.setSync(async () => { now += 11; });
+    f.input.collectTopics = async topic => { now += 13; return collect(topic); };
+    f.input.groupKey = async () => { now += 17; return 'b'.repeat(64); };
+    f.input.sign = async () => { now += 19; return new Uint8Array(64); };
+    f.input.post = async () => { now += 23; };
+    diagnostic.start();
+    const cold = diagnostic.begin();
+    await f.publisher.publish({ ...f.input, topic: TOPIC, timing: cold });
+    cold?.finish();
+    expect(diagnostic.read()).toEqual([[
+      { phase: 'filter.queue', durationMs: 0 }, { phase: 'filter.preferences', durationMs: 11 },
+      { phase: 'filter.keys', durationMs: 13 }, { phase: 'filter.group_key', durationMs: 17 },
+      { phase: 'filter.sign', durationMs: 19 }, { phase: 'filter.http', durationMs: 23 },
+      { phase: 'xmtp.total', durationMs: 83 },
+    ]]);
+    diagnostic.clear();
+    const warm = diagnostic.begin();
+    await f.publisher.publish({ ...f.input, topic: TOPIC, timing: warm });
+    warm?.finish();
+    expect(diagnostic.read()).toEqual([[
+      { phase: 'filter.queue', durationMs: 0 }, { phase: 'filter.preferences', durationMs: 0 },
+      { phase: 'filter.keys', durationMs: 13 }, { phase: 'filter.group_key', durationMs: 17 },
+      { phase: 'xmtp.total', durationMs: 30 },
+    ]]);
+  });
+
+  test('a fresh send records its queue wait, not the unrelated publication phases', async () => {
+    const f = fixture();
+    await f.publisher.publish(f.input);
+    f.setKey(2);
+    const entered = deferred();
+    const gate = deferred();
+    f.input.post = async () => { entered.release(); await gate.promise; };
+    const background = f.publisher.publish(f.input);
+    await entered.promise;
+    let now = 0;
+    const diagnostic = makeSendTimingDiagnostic(() => now);
+    diagnostic.start();
+    const timing = diagnostic.begin();
+    const send = f.publisher.publish({ ...f.input, topic: TOPIC, timing });
+    expect(diagnostic.read()).toEqual([]);
+    now = 77;
+    gate.release();
+    await Promise.all([background, send]);
+    timing?.finish();
+    expect(diagnostic.read()).toEqual([[
+      { phase: 'filter.queue', durationMs: 77 }, { phase: 'filter.preferences', durationMs: 0 },
+      { phase: 'filter.keys', durationMs: 0 }, { phase: 'filter.group_key', durationMs: 0 },
+      { phase: 'xmtp.total', durationMs: 77 },
+    ]]);
+  });
+
+  test('a cancelled queued preparation records only its elapsed queue wait and still fails closed', async () => {
+    const f = fixture();
+    const entered = deferred();
+    const gate = deferred();
+    f.setSync(async () => { entered.release(); await gate.promise; });
+    const background = f.publisher.publish(f.input);
+    await entered.promise;
+    let now = 0;
+    const diagnostic = makeSendTimingDiagnostic(() => now);
+    diagnostic.start();
+    const timing = diagnostic.begin();
+    const controller = new AbortController();
+    const send = f.publisher.publish({ ...f.input, timing, signal: controller.signal });
+    now = 55;
+    controller.abort();
+    await expect(send).rejects.toThrow('cancelled');
+    timing?.finish();
+    const expected = [[{ phase: 'filter.queue', durationMs: 55 }, { phase: 'xmtp.total', durationMs: 55 }]];
+    expect(diagnostic.read()).toEqual(expected);
+    gate.release();
+    await background;
+    await Promise.resolve();
+    expect(diagnostic.read()).toEqual(expected);
+  });
+
+  test('timed-out key, group-key and signing waits remain visible without pretending they completed', async () => {
+    for (const phase of ['keys', 'group_key', 'sign'] as const) {
+      const f = fixture(10);
+      const gate = deferred();
+      const entered = deferred();
+      const hold = async (): Promise<void> => { entered.release(); await gate.promise; };
+      if (phase === 'keys') f.input.collectTopics = async () => { await hold(); return { topics: [], hmacKeys: {} }; };
+      if (phase === 'group_key') f.input.groupKey = async () => { await hold(); return 'b'.repeat(64); };
+      if (phase === 'sign') f.input.sign = async () => { await hold(); return new Uint8Array(64); };
+      let now = 0;
+      const diagnostic = makeSendTimingDiagnostic(() => now);
+      diagnostic.start();
+      const timing = diagnostic.begin();
+      const send = f.publisher.publish({ ...f.input, timing });
+      await entered.promise;
+      now = 30;
+      await expect(send).rejects.toThrow('timed out');
+      timing?.finish();
+      const snapshot = diagnostic.read();
+      expect(snapshot[0]).toContainEqual({ phase: `filter.${phase}`, durationMs: 30 });
+      expect(f.bodies).toHaveLength(0);
+      now = 200;
+      gate.release();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(diagnostic.read()).toEqual(snapshot);
+      expect(f.bodies).toHaveLength(0);
     }
   });
 

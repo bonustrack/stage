@@ -11,6 +11,7 @@ import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { getAccountEpoch } from './accountEpoch';
 import { isBrowserExtension } from './extension.web';
+import type { SendTiming } from './sendTiming.core';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
@@ -103,10 +104,10 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   if (input) await runPushRegistration(input);
 }
 
-export async function prepareSenderFilters(client: PushClient, topic: string): Promise<void> {
+export async function prepareSenderFilters(client: PushClient, topic: string, timing?: SendTiming): Promise<void> {
   const input = pushInput(client);
   if (!input) throw new Error('Sender filter account is not ready');
-  await runSenderFilterPublication(input, topic);
+  await runSenderFilterPublication(input, topic, timing);
 }
 
 export async function warmSenderFilters(client: PushClient): Promise<void> {
