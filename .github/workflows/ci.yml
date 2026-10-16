@@ -1,74 +1,41 @@
 name: CI
 
 on:
-  push:
-    branches: ['**']
-  pull_request:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.0'
-      - run: bun install --frozen-lockfile
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      - name: Check source
-        run: bash scripts/check-source.sh
+concurrency:
+  group: isolated-android-recording-54
+  cancel-in-progress: false
 
-  android-compile:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/native-mic-dictation'
+jobs:
+  android-recording:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/ci/android-recording-54-20261016'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 50
     env:
-      CI: '1'
-      EXPO_NO_TELEMETRY: '1'
       BROWSER: none
       NODE_OPTIONS: --max-old-space-size=1500
+      EXPO_NO_TELEMETRY: '1'
+      GH_TOKEN: ${{ github.token }}
+      DEMO_RECIPIENT: MCowBQYDK2VuAyEAysXQMsqyYvFaDpyDsevgKKmovlsIMmH1IWyRCDWbdn4=
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.0'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
-      - run: bun install --frozen-lockfile
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      - name: Generate Android app
-        working-directory: apps/stage
-        run: bunx expo prebuild --platform android --no-install
-      - name: Verify Android toolchain
-        working-directory: apps/stage/android
-        run: java -version && ./gradlew --version
-      - name: Compile Android app
-        working-directory: apps/stage/android
+      - name: Verify existing acceleration without permission changes
+        shell: bash
         run: |
-          set -o pipefail
-          ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a \
-            --no-daemon --max-workers=2 2>&1 | tee "$RUNNER_TEMP/android-build.log"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: android-compile-log
-          path: ${{ runner.temp }}/android-build.log
-          if-no-files-found: ignore
-          retention-days: 7
+          set -euo pipefail
+          umask 077
+          export DEMO_ROOT="$RUNNER_TEMP/stage-recording-54"
+          mkdir "$DEMO_ROOT"
+          printf 'DEMO_ROOT=%s\n' "$DEMO_ROOT" >> "$GITHUB_ENV"
+          for FILE in preflight.py session.py private-evidence.mjs; do
+            gh api "repos/$GITHUB_REPOSITORY/contents/ci/android-demo/$FILE?ref=$GITHUB_SHA" --jq .content | base64 --decode > "$DEMO_ROOT/$FILE"
+          done
+          printf '%s' "$DEMO_RECIPIENT" | base64 --decode > "$DEMO_ROOT/recipient.der"
+          python3 "$DEMO_ROOT/preflight.py"
+      - name: Controlled private audio and Android test session
+        shell: bash
+        run: python3 "$DEMO_ROOT/session.py"
