@@ -24,8 +24,8 @@ describe('the View menu', () => {
   const labels = (sections: ViewMenuSection[]): string[][] => sections.map(s => s.rows.map(r => `${r.label}${r.value === undefined ? '' : `: ${r.value}`}${r.selected ? '*' : ''}`));
 
   test('the root holds only the submenu entries of its page, with no Chats or Board choice', () => {
-    expect(labels(homeViewMenu(chats))).toEqual([['Last activity: All', 'Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
-    expect(labels(homeViewMenu(board))).toEqual([['Last activity: All', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(chats))).toEqual([['Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(board))).toEqual([['Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
     expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
   });
 
@@ -50,12 +50,10 @@ describe('the View menu', () => {
     }
   });
 
-  test('Last activity shows the selected window and exactly the reference choices', () => {
+  test('Last activity keeps its exact choices outside the view root', () => {
     expect(labels(homeActivityMenu('3d'))).toEqual([['1d', '3d*', '7d', '30d', 'All']]);
     for (const view of [chats, board]) {
-      expect(homeViewMenu(view, false, '3d')[0]?.rows[0]).toMatchObject({
-        id: 'activity', label: 'Last activity', value: '3d',
-      });
+      expect(homeViewMenu(view).flatMap(section => section.rows).some(row => row.id === 'activity')).toBe(false);
     }
   });
 
@@ -68,9 +66,9 @@ describe('the View menu', () => {
 
   test('the Chats and Board pages keep independent grouping preferences', () => {
     const grouped = { ...chats, ...homeViewEdit(chats, 'group:assignee') };
-    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([['Last activity: All', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([['Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
     const columns = { ...grouped, ...homeViewEdit({ ...grouped, view: 'board' }, 'group:category') };
-    expect(labels(homeViewMenu(columns))).toEqual([['Last activity: All', 'Group by: Assignees', 'Sort by: Updated', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu(columns))).toEqual([['Group by: Assignees', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(labels(homeViewMenu({ ...columns, view: 'board' }, true))).toEqual([['Assignees', 'Project*', 'Label', 'Status']]);
   });
 

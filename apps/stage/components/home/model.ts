@@ -117,12 +117,11 @@ export function homeActivityMenu(current: LastActivity): ViewMenuSection[] {
   })) }];
 }
 
-export function homeViewMenu(current: HomeViewContent, grouping = false, activity: LastActivity = 'all'): ViewMenuSection[] {
+export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
   const board = current.view === 'board';
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
   if (!grouping) return [{ rows: [
-    { id: 'activity', label: 'Last activity', value: lastActivityLabel(activity), icon: 'IconClock', selected: false },
     { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
     { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
     { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },

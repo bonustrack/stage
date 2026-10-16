@@ -74,8 +74,8 @@ function FilterValues({ field, options, query, setQuery, onBack }: {
   </>;
 }
 
-export function SearchFilterMenu({ query, setQuery, scope, onBack }: {
-  query: string; setQuery: (query: string) => void; scope: FilterScope; onBack: () => void;
+export function SearchFilterMenu({ query, setQuery, scope, onBack, children }: {
+  query: string; setQuery: (query: string) => void; scope: FilterScope; onBack: () => void; children?: React.ReactNode;
 }): React.ReactElement {
   const options = useFilterOptions(scope);
   const [field, setField] = useState<FilterField | null>(null);
@@ -84,6 +84,7 @@ export function SearchFilterMenu({ query, setQuery, scope, onBack }: {
     <MenuRow icon="IconArrowLeft" label="View" onPress={onBack}/>
     <DropdownMenuSeparator/>
     <MenuHeading text="Filter"/>
+    {children}
     {FILTER_FIELDS.map(key => {
       const count = searchFilterValues(query, key).length;
       return <MenuRow key={key} icon={FIELD_ICONS[key]} label={FIELD_NAMES[key]} count={count > 0 ? count : undefined}

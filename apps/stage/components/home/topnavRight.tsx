@@ -7,7 +7,7 @@ import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
 import { CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
-import { isLastActivity } from './activity.model';
+import { isLastActivity, lastActivityLabel } from './activity.model';
 import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
 import { AnchoredMenu, menuPointBelow, menuPointOnLayout } from '../AnchoredMenu';
@@ -62,7 +62,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   const activity = useLastActivity(filter.scope);
   const [page, setPage] = useState('view');
   const close = (): void => { setPage('view'); onClose(); };
-  const back = (): void => { setPage('view'); };
+  const back = (): void => { setPage(page === 'activity' ? 'filter' : 'view'); };
   const open = anchor !== null;
   const { onFilterMenu } = filter;
   useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
@@ -85,12 +85,14 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   };
   const picker = page === 'sorting' || page === 'activity';
   const sections = page === 'activity' ? homeActivityMenu(activity)
-    : page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping', activity);
+    : page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping');
   return (
     <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
-      {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}/> : <>
+      {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}>
+        <MenuRow icon="IconClock" label="Last activity" value={lastActivityLabel(activity)} onPress={() => { setPage('activity'); }}/>
+      </SearchFilterMenu> : <>
         {page === 'view' ? null : <>
-          <MenuRow icon="IconArrowLeft" label="View" onPress={back}/>
+          <MenuRow icon="IconArrowLeft" label={page === 'activity' ? 'Filter' : 'View'} onPress={back}/>
           <DropdownMenuSeparator/>
         </>}
         {page === 'fields' ? <>
