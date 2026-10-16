@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
-import { groupUpdateInboxIds, humanizeGroupUpdated } from '../src/xmtp/humanize';
+import { groupUpdateInboxIds, humanizeGroupUpdated, previewOfXmtpContent } from '../src/xmtp/humanize';
 
 const blob = (labels: string[], github?: string): string => JSON.stringify({ v: 1, labels, ...(github ? { github } : {}) });
 
@@ -26,6 +26,77 @@ describe('describeAppDataChange', () => {
   test('replaces the vague app data line in group updates', () => {
     const text = humanizeGroupUpdated({ metadataFieldsChanged: [{ fieldName: 'app_data', oldValue: '', newValue: blob(['Blocked']) }] });
     expect(text).toBe('added label "Blocked"');
+  });
+});
+
+describe('description changes in appData', () => {
+  const data = (description?: unknown): string => JSON.stringify({ v: 1, ...(description === undefined ? {} : { description }) });
+  const generic = 'updated the channel settings';
+  const notice = 'updated the channel description';
+
+  test('describes setting, editing and clearing a description without including its contents', () => {
+    expect(describeAppDataChange(data(), data('Private description'))).toBe(notice);
+    expect(describeAppDataChange(data('Private description'), data('Updated private description'))).toBe(notice);
+    expect(describeAppDataChange(data('Private description'), data(''))).toBe(notice);
+    expect(describeAppDataChange(data('Private description'), data())).toBe(notice);
+    expect(describeAppDataChange('', JSON.stringify({ description: 'New description' }))).toBe(notice);
+  });
+
+  test('compares historical descriptions exactly and ignores object key order', () => {
+    const before = JSON.stringify({ v: 1, description: 'Before', custom: { keep: true }, labels: ['Stage'] });
+    const after = JSON.stringify({ labels: ['Stage'], custom: { keep: true }, description: 'After', v: 1 });
+    expect(describeAppDataChange(before, after)).toBe(notice);
+    expect(describeAppDataChange(data('Description'), data('Description '))).toBe(notice);
+    expect(describeAppDataChange(data('Unchanged'), data('Unchanged'))).toBe(generic);
+    expect(describeAppDataChange(data(), data(''))).toBe(generic);
+  });
+
+  test('does not infer description changes from missing or unreadable history', () => {
+    for (const unknown of [undefined, 'not json', '[1]', 'null', 'false', '17']) {
+      expect(describeAppDataChange(unknown, data('Description'))).toBe(generic);
+      expect(describeAppDataChange(data('Description'), unknown)).toBe(generic);
+    }
+    for (const malformed of [null, 17, false, [], {}]) {
+      expect(describeAppDataChange(data(malformed), data('Description'))).toBe(generic);
+      expect(describeAppDataChange(data('Description'), data(malformed))).toBe(generic);
+    }
+  });
+
+  test('retains generic fallback for unrelated or mixed unknown fields', () => {
+    const before = JSON.stringify({ v: 1, description: 'Before', custom: { keep: true } });
+    const unrelated = JSON.stringify({ v: 1, description: 'Before', custom: { keep: false } });
+    const mixed = JSON.stringify({ v: 1, description: 'After', custom: { keep: false } });
+    expect(describeAppDataChange(before, unrelated)).toBe(generic);
+    expect(describeAppDataChange(before, mixed)).toBe(generic);
+    expect(describeAppDataChange(data('Before'), JSON.stringify({ v: 1, description: 'After', future: true }))).toBe(generic);
+    expect(describeAppDataChange(JSON.stringify({ v: 1, description: 'Before', future: true }), data('After'))).toBe(generic);
+    const inheritedName = '{"v":1,"description":"After","__proto__":{}}';
+    expect(describeAppDataChange(data('Before'), inheritedName)).toBe(generic);
+    expect(describeAppDataChange(inheritedName, data('Before'))).toBe(generic);
+  });
+
+  test('retains known settings notices for combined updates', () => {
+    const before = JSON.stringify({ v: 1, description: 'Before', status: 'Todo', labels: ['Stage'] });
+    const after = JSON.stringify({ v: 1, description: 'After', status: 'In progress', labels: ['Bug'] });
+    expect(describeAppDataChange(before, after)).toBe('added label "Bug" • removed label "Stage" • changed status to "In progress"');
+  });
+
+  test('works with both SDK arrays, previews, and membership composition', () => {
+    const changes = [{ fieldName: 'app_data', oldValue: data('Before'), newValue: data('After') }];
+    expect(humanizeGroupUpdated({ metadataFieldsChanged: changes })).toBe(notice);
+    expect(humanizeGroupUpdated({ metadataFieldChanges: changes })).toBe(notice);
+    expect(previewOfXmtpContent({ metadataFieldsChanged: changes }, 'xmtp.org/group_updated:1.0')).toBe(notice);
+    expect(previewOfXmtpContent({ metadataFieldChanges: changes }, 'xmtp.org/groupUpdated:1.0')).toBe(notice);
+    expect(humanizeGroupUpdated({ metadataFieldsChanged: changes, membersAdded: [{ inboxId: 'member' }] }, () => 'Alice'))
+      .toBe(`${notice} • added Alice`);
+  });
+
+  test('recognizes the native protocol description key without guessing other field aliases', () => {
+    for (const fieldName of ['description', 'group_description']) {
+      expect(humanizeGroupUpdated({ metadataFieldsChanged: [{ fieldName, oldValue: 'Before', newValue: 'After' }] })).toBe(notice);
+      expect(humanizeGroupUpdated({ metadataFieldChanges: [{ fieldName, oldValue: 'Before', newValue: '' }] })).toBe(notice);
+    }
+    expect(humanizeGroupUpdated({ metadataFieldChanges: [{ fieldName: 'future_setting', newValue: 'value' }] })).toBe('changed future setting');
   });
 });
 

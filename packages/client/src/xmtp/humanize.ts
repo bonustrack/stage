@@ -25,7 +25,7 @@ export interface GroupUpdatedContent {
 function describeFieldChange(f: FieldChange): string {
   if (f.fieldName === 'group_name') return `renamed the channel to "${f.newValue}"`;
   if (f.fieldName === 'group_image_url_square') return 'updated the channel image';
-  if (f.fieldName === 'description') return 'updated the channel description';
+  if (f.fieldName === 'description' || f.fieldName === 'group_description') return 'updated the channel description';
   if (f.fieldName === 'app_data') return describeAppDataChange(f.oldValue, f.newValue);
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }

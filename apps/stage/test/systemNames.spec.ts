@@ -80,6 +80,27 @@ describe('member names in group event lines', () => {
     expect(withMemberNames(e, nameOf)).toBe(e);
   });
 
+  test('re-humanizes description history while preserving sender, event payload and membership semantics', () => {
+    const change = { fieldName: 'app_data', oldValue: '{"description":"Before"}', newValue: '{"description":"Private after"}' };
+    const e = entry({ system: true, groupUpdate: {
+      initiatedByInboxId: 'initiator', metadataFieldChanges: [change], membersAdded: [{ inboxId: 'peer' }],
+    } }, 'updated the channel settings');
+    const named = withMemberNames(e, nameOf);
+    expect(named).toEqual({ ...e, text: `updated the channel description • added @${PEER.toLowerCase()}` });
+    expect(named.payload).toBe(e.payload);
+    expect(isLeftOnlyUpdate(named)).toBe(false);
+  });
+
+  test('keeps the generic notice for unknown history and mixed custom metadata', () => {
+    for (const change of [
+      { fieldName: 'app_data', newValue: '{"description":"After"}' },
+      { fieldName: 'app_data', oldValue: '{"description":"Before"}', newValue: '{"description":"After","future":true}' },
+    ]) {
+      const e = entry({ system: true, groupUpdate: { metadataFieldsChanged: [change] } }, 'updated the channel settings');
+      expect(withMemberNames(e, nameOf)).toBe(e);
+    }
+  });
+
   test('keeps other entries untouched', () => {
     const e = entry({ contentType: 'text' }, 'hello');
     expect(withMemberNames(e, nameOf)).toBe(e);

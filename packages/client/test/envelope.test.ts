@@ -97,6 +97,20 @@ describe('envelopeFromContent ui-parity options', () => {
     expect(e.payload).toEqual({ contentType: 'group_updated', system: true, groupUpdate: update });
   });
 
+  test('description notices preserve the original sender and complete event envelope for both SDK shapes', () => {
+    const change = {
+      fieldName: 'app_data', oldValue: JSON.stringify({ description: 'Before' }), newValue: JSON.stringify({ description: 'Private after' }),
+    };
+    for (const groupUpdate of [
+      { initiatedByInboxId: 'initiator', metadataFieldsChanged: [change] },
+      { initiatedByInboxId: 'initiator', metadataFieldChanges: [change] },
+    ]) {
+      const e = envelopeFromContent(base, 'group_updated', groupUpdate, undefined, uiOptions);
+      expect(e).toEqual({ ...base, text: 'updated the channel description', payload: { contentType: 'group_updated', system: true, groupUpdate } });
+      expect(e.payload?.groupUpdate).toBe(groupUpdate);
+    }
+  });
+
   test('call invites and signals keep their parsed content for the call card', () => {
     const invite = { callId: 'call-0001', from: 'peer-aaaa', video: false };
     const signal = { kind: 'join', callId: 'call-0001', from: 'peer-bbbb' };
