@@ -1,0 +1,40 @@
+name: Isolated Android recording 54
+
+on:
+  workflow_dispatch:
+    inputs:
+      deadline:
+        type: string
+        required: true
+
+jobs:
+  android_recording:
+    runs_on: linux-medium-nested-virtualization
+    env:
+      BROWSER: none
+      NODE_OPTIONS: --max-old-space-size=1500
+      PYTHONDONTWRITEBYTECODE: '1'
+      DEMO_ROOT: /tmp/stage-recording-54
+      DEMO_DEADLINE: ${{ inputs.deadline }}
+      DEMO_RECIPIENT: MCowBQYDK2VuAyEAysXQMsqyYvFaDpyDsevgKKmovlsIMmH1IWyRCDWbdn4=
+    steps:
+      - uses: eas/checkout
+      - name: Verify existing capabilities and private evidence transport
+        run: |
+          set -euo pipefail
+          umask 077
+          ROOT="$(git rev-parse --show-toplevel)"
+          timeout --signal=TERM --kill-after=5s 2580s python3 "$ROOT/ci/android-demo/eas-session.py" capabilities
+      - id: candidate
+        uses: eas/download_build
+        with:
+          build_id: ac994393-c282-492b-a35f-aa0bafca9380
+          extensions: [aab]
+      - name: Isolated existing-candidate Android recording session
+        env:
+          DEMO_AAB: ${{ steps.candidate.outputs.artifact_path }}
+        run: |
+          set -euo pipefail
+          umask 077
+          ROOT="$(git rev-parse --show-toplevel)"
+          timeout --signal=TERM --kill-after=5s 2580s python3 "$ROOT/ci/android-demo/eas-session.py" recording
