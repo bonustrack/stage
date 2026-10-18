@@ -12,7 +12,7 @@ import { HoverTint } from '../hover';
 import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
-import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
+import { IconColumnWide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumnWide';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { useBoardHome } from './boardHome';
@@ -32,7 +32,7 @@ const WEB_TAB_BAR_HEIGHT = 60;
 
 export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
   ['index', IconBubble3],
-  ['board', IconColumns3Wide],
+  ['board', IconColumnWide],
   ['wallet', IconWallet4],
 ];
 
