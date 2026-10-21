@@ -36,6 +36,7 @@ function fixture() {
     fetchKeyPackageStatuses: () => read(new Map()),
     signWithInstallationKey: sign,
     verifySignedWithInstallationKey: async () => (await sign()).length > 0,
+    conversations: { fetchDmByIdentifier: () => read(undefined) },
     preferences: {
       sync: () => read({ numEligible: 0, numSynced: 0 }),
       inboxState: () => read(state), fetchInboxState: () => read(state),
@@ -54,6 +55,7 @@ const READS: [string, (client: AccessClient) => Promise<unknown>][] = [
   ['canMessage', client => client.canMessage([IDENTIFIER])],
   ['fetchInboxIdByIdentifier', client => client.fetchInboxIdByIdentifier(IDENTIFIER)],
   ['fetchKeyPackageStatuses', client => client.fetchKeyPackageStatuses([])],
+  ['conversations.fetchDmByIdentifier', client => client.conversations.fetchDmByIdentifier(IDENTIFIER)],
   ['preferences.sync', client => client.preferences.sync()],
   ['preferences.inboxState', client => client.preferences.inboxState()],
   ['preferences.fetchInboxState', client => client.preferences.fetchInboxState()],

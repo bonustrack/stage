@@ -4,7 +4,8 @@ type ClientReads = Pick<Client<unknown>, 'canMessage' | 'fetchInboxIdByIdentifie
 type ClientSigning = Pick<Client<unknown>, 'signWithInstallationKey' | 'verifySignedWithInstallationKey'>;
 type PreferenceReads = Pick<Client<unknown>['preferences'],
   'sync' | 'inboxState' | 'fetchInboxState' | 'getInboxStates' | 'fetchInboxStates' | 'setConsentStates' | 'getConsentState'>;
-type AccessClient = ClientReads & ClientSigning & { preferences: PreferenceReads };
+type ConversationReads = Pick<Client<unknown>['conversations'], 'fetchDmByIdentifier'>;
+type AccessClient = ClientReads & ClientSigning & { preferences: PreferenceReads; conversations: ConversationReads };
 
 type Access = <T>(run: () => Promise<T>) => Promise<T>;
 const guarded = new WeakSet<object>();
@@ -41,6 +42,10 @@ export function guardClientAccess<C extends AccessClient>(client: C): C {
     signWithInstallationKey: wrap(client, client.signWithInstallationKey, write),
     verifySignedWithInstallationKey: wrap(client, client.verifySignedWithInstallationKey, write),
   } satisfies ClientReads & ClientSigning);
+  const conversations = client.conversations;
+  Object.assign(conversations, {
+    fetchDmByIdentifier: wrap(conversations, conversations.fetchDmByIdentifier, read),
+  } satisfies ConversationReads);
   const preferences = client.preferences;
   Object.assign(preferences, {
     sync: wrap(preferences, preferences.sync, read),
