@@ -24,6 +24,7 @@ import { forgetStorageIndex } from './storageIndexStore';
 import { registerPushWithServer } from './pushRegister.web';
 import { clientFinalizer } from './xmtp.recover.core';
 import { openFinalizedClient } from './xmtp.finalize.core';
+import { guardClientAccess } from './xmtp.clientAccess.web';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -100,7 +101,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
     ? opfsHasDatabase().then((has) => (has ? savedInstallation : null))
     : null;
   perfLog('xmtp.client path', { savedAddress, savedEnv, savedInstallation, savedInbox, address, env });
-  const client = await perfTime('xmtp.client.open', () => openSavedOrOnline(rec, env, opts, savedIfPersisted));
+  const client = guardClientAccess(await perfTime('xmtp.client.open', () => openSavedOrOnline(rec, env, opts, savedIfPersisted)));
   perfLog('xmtp.client opened', { installation: client.installationId, offline: offline !== null });
   if (offline) void afterFirstPages().then(() => client.preferences.fetchInboxState()).catch(ignored(undefined, 'optional'));
   try {
