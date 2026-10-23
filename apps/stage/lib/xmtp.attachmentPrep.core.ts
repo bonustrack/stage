@@ -14,6 +14,7 @@ export async function sendPreparedAttachment<R, C>(input: {
   uploaded: () => Promise<R[]>;
   onUploaded?: (infos: R[]) => void;
   find: () => Promise<C>;
+  beforeSend?: () => Promise<void>;
   send: (conv: C, infos: R[]) => Promise<string>;
 }): Promise<string> {
   input.assertCurrent();
@@ -22,6 +23,7 @@ export async function sendPreparedAttachment<R, C>(input: {
   input.onUploaded?.(infos);
   input.assertCurrent();
   const conv = await input.find();
+  await input.beforeSend?.();
   input.assertCurrent();
   return input.send(conv, infos);
 }

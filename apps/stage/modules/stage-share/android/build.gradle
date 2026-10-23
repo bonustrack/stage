@@ -1,0 +1,15 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'box.stage.share'
+version = '0.1.0'
+
+android {
+  namespace 'box.stage.share'
+}
+
+dependencies {
+  implementation 'com.facebook.react:react-android'
+}

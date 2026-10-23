@@ -16,9 +16,9 @@ export interface SendStep {
 }
 
 interface ComposerSenders {
-  text: (line: string, text: string) => Promise<string>;
-  reply: (line: string, replyTo: string, text: string) => Promise<string>;
-  attachments: (line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded) => Promise<string>;
+  text: (line: string, text: string, beforeSend?: () => Promise<void>) => Promise<string>;
+  reply: (line: string, replyTo: string, text: string, beforeSend?: () => Promise<void>) => Promise<string>;
+  attachments: (line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>) => Promise<string>;
 }
 
 export function planSendSteps(
@@ -28,11 +28,19 @@ export function planSendSteps(
   replyTo: string | undefined,
   senders: ComposerSenders,
   mintLocalId: () => string,
+  assertCurrent?: () => void,
+  beforeSend?: () => Promise<void>,
 ): SendStep[] {
   const steps: SendStep[] = [];
   const sendText = (text: string): (() => Promise<string>) => {
     const replying = steps.length === 0 ? replyTo : undefined;
-    return () => replying ? senders.reply(xmtpLine, replying, text) : senders.text(xmtpLine, text);
+    return async () => {
+      await beforeSend?.();
+      assertCurrent?.();
+      if (beforeSend === undefined) return replying ? senders.reply(xmtpLine, replying, text) : senders.text(xmtpLine, text);
+      const validate = async (): Promise<void> => { await beforeSend(); assertCurrent?.(); };
+      return replying ? senders.reply(xmtpLine, replying, text, validate) : senders.text(xmtpLine, text, validate);
+    };
   };
   if (body) {
     steps.push({ localId: mintLocalId(), text: body, attachments: [], run: sendText(body) });
@@ -41,7 +49,11 @@ export function planSendSteps(
   if (files.length > 0) {
     steps.push({
       localId: mintLocalId(), text: '', attachments: files,
-      run: onUploaded => senders.attachments(xmtpLine, fileInputs(files), onUploaded),
+      run: onUploaded => {
+        assertCurrent?.();
+        return beforeSend === undefined ? senders.attachments(xmtpLine, fileInputs(files), onUploaded)
+          : senders.attachments(xmtpLine, fileInputs(files), onUploaded, async () => { await beforeSend(); assertCurrent?.(); });
+      },
     });
   }
   for (const location of attachments.filter(isLocation)) {

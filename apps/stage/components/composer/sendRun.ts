@@ -14,12 +14,13 @@ function planSendSteps(
   body: string,
   attachments: Attachment[],
   replyTo: string | undefined,
+  options: SendOptions,
 ): SendStep[] {
   return plan(xmtpLine, body, attachments, replyTo, {
     text: xmtpSendText,
     reply: xmtpReply,
     attachments: xmtpSendMultiRemoteAttachment,
-  }, mintLocalId);
+  }, mintLocalId, options.assertCurrent, options.beforeSend);
 }
 
 export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
@@ -32,11 +33,17 @@ type StepOutcome = { id: string } | { error: string };
 
 interface StepRun { step: SendStep; outcome: Promise<StepOutcome> }
 
+interface SendOptions {
+  assertCurrent?: () => void;
+  beforeSend?: () => Promise<void>;
+  previewUri?: (uri: string) => string;
+}
+
 export interface StartedSend { text: string; pending: Attachment[]; replyTo?: string; runs: StepRun[] }
 
-async function runStep(step: SendStep): Promise<StepOutcome> {
+async function runStep(step: SendStep, previewUri?: (uri: string) => string): Promise<StepOutcome> {
   try {
-    const previews = step.attachments.map(at => ({ uri: at.url, mime: at.mime }));
+    const previews = step.attachments.map(at => ({ uri: previewUri?.(at.url) ?? at.url, mime: at.mime }));
     const id = await step.run(uploaded => { rememberLocalAttachments(step.localId, previews, uploaded); });
     if (previews.length > 0) rememberLocalAttachments(id, previews);
     return { id };
@@ -45,19 +52,20 @@ async function runStep(step: SendStep): Promise<StepOutcome> {
   }
 }
 
-function runInOrder(steps: SendStep[]): StepRun[] {
+function runInOrder(steps: SendStep[], previewUri?: (uri: string) => string): StepRun[] {
   let previous: Promise<StepOutcome | null> = Promise.resolve(null);
   return steps.map((step) => {
-    const outcome = previous.then(before => (before !== null && 'error' in before ? before : runStep(step)));
+    const outcome = previous.then(before => (before !== null && 'error' in before ? before : runStep(step, previewUri)));
     previous = outcome;
     return { step, outcome };
   });
 }
 
-export function startSend(line: string, text: string, pending: Attachment[], replyTo?: string): StartedSend {
+export function startSend(line: string, text: string, pending: Attachment[], replyTo?: string, options: SendOptions = {}): StartedSend {
+  options.assertCurrent?.();
   uploadAttachments(fileInputs(pending));
-  const steps = planSendSteps(line, text.trim(), pending, replyTo);
-  return { text, pending, replyTo, runs: runInOrder(steps) };
+  const steps = planSendSteps(line, text.trim(), pending, replyTo, options);
+  return { text, pending, replyTo, runs: runInOrder(steps, options.previewUri) };
 }
 
 export function showSend(a: DraftArgs, started: StartedSend): void {

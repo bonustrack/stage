@@ -123,6 +123,16 @@ const config = {
     allowBackup: false,
     intentFilters: [
       {
+        action: 'SEND',
+        data: [{ mimeType: '*/*' }],
+        category: ['DEFAULT'],
+      },
+      {
+        action: 'SEND_MULTIPLE',
+        data: [{ mimeType: '*/*' }],
+        category: ['DEFAULT'],
+      },
+      {
         action: 'VIEW',
         autoVerify: true,
         data: [{ scheme: 'https', host: variant.host }],
@@ -203,6 +213,7 @@ const config = {
       },
     ],
     './plugins/withStagePill',
+    './plugins/withStageShare',
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     './plugins/withXmtpNotificationService',

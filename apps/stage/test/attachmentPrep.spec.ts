@@ -31,6 +31,32 @@ describe('attachment send account capture', () => {
     }
   });
 
+  test('destination checks run after upload and conversation preparation, before transport', async () => {
+    for (const phase of ['upload', 'find']) {
+      let accepted = true;
+      const send = mock(async () => 'id');
+      await expect(sendPreparedAttachment({
+        assertCurrent: () => { return; },
+        uploaded: async () => { if (phase === 'upload') accepted = false; return ['encrypted']; },
+        find: async () => { if (phase === 'find') accepted = false; return 'conversation'; },
+        beforeSend: async () => { if (!accepted) throw new Error('destination changed'); },
+        send,
+      })).rejects.toThrow('destination changed');
+      expect(send).not.toHaveBeenCalled();
+    }
+  });
+
+  test('rechecks the account after an asynchronous destination check', async () => {
+    let current = true;
+    const send = mock(async () => 'id');
+    await expect(sendPreparedAttachment({
+      assertCurrent: () => { if (!current) throw new Error('account changed'); },
+      uploaded: async () => ['encrypted'], find: async () => 'conversation',
+      beforeSend: async () => { current = false; }, send,
+    })).rejects.toThrow('account changed');
+    expect(send).not.toHaveBeenCalled();
+  });
+
   test('uploads first, then performs just-in-time sender preparation under the initiating session', async () => {
     const order: string[] = [];
     expect(await sendPreparedAttachment({
