@@ -265,8 +265,8 @@ describe('account-wide sender publication without a push token', () => {
     await f.publisher.publish({ ...f.input, topic: TOPIC, timing: cold });
     cold?.finish();
     expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.queue', durationMs: 0 }, { phase: 'filter.preferences', durationMs: 11 },
-      { phase: 'filter.keys', durationMs: 13 }, { phase: 'filter.group_key', durationMs: 17 },
+      { phase: 'filter.preferences', durationMs: 11 }, { phase: 'filter.keys', durationMs: 13 },
+      { phase: 'filter.group_key', durationMs: 17 }, { phase: 'filter.queue', durationMs: 0 },
       { phase: 'filter.sign', durationMs: 19 }, { phase: 'filter.http', durationMs: 23 },
       { phase: 'xmtp.total', durationMs: 83 },
     ]]);
@@ -275,8 +275,8 @@ describe('account-wide sender publication without a push token', () => {
     await f.publisher.publish({ ...f.input, topic: TOPIC, timing: warm });
     warm?.finish();
     expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.queue', durationMs: 0 }, { phase: 'filter.preferences', durationMs: 0 },
-      { phase: 'filter.keys', durationMs: 13 }, { phase: 'filter.group_key', durationMs: 17 },
+      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 13 },
+      { phase: 'filter.group_key', durationMs: 17 }, { phase: 'filter.queue', durationMs: 0 },
       { phase: 'xmtp.total', durationMs: 30 },
     ]]);
   });
@@ -295,15 +295,17 @@ describe('account-wide sender publication without a push token', () => {
     diagnostic.start();
     const timing = diagnostic.begin();
     const send = f.publisher.publish({ ...f.input, topic: TOPIC, timing });
+    await Bun.sleep(0);
     expect(diagnostic.read()).toEqual([]);
     now = 77;
     gate.release();
     await Promise.all([background, send]);
     timing?.finish();
     expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.queue', durationMs: 77 }, { phase: 'filter.preferences', durationMs: 0 },
-      { phase: 'filter.keys', durationMs: 0 }, { phase: 'filter.group_key', durationMs: 0 },
-      { phase: 'xmtp.total', durationMs: 77 },
+      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
+      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 77 },
+      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
+      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'xmtp.total', durationMs: 77 },
     ]]);
   });
 
@@ -311,7 +313,7 @@ describe('account-wide sender publication without a push token', () => {
     const f = fixture();
     const entered = deferred();
     const gate = deferred();
-    f.setSync(async () => { entered.release(); await gate.promise; });
+    f.input.post = async () => { entered.release(); await gate.promise; };
     const background = f.publisher.publish(f.input);
     await entered.promise;
     let now = 0;
@@ -320,11 +322,16 @@ describe('account-wide sender publication without a push token', () => {
     const timing = diagnostic.begin();
     const controller = new AbortController();
     const send = f.publisher.publish({ ...f.input, timing, signal: controller.signal });
+    await Bun.sleep(0);
     now = 55;
     controller.abort();
     await expect(send).rejects.toThrow('cancelled');
     timing?.finish();
-    const expected = [[{ phase: 'filter.queue', durationMs: 55 }, { phase: 'xmtp.total', durationMs: 55 }]];
+    const expected = [[
+      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
+      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 55 },
+      { phase: 'xmtp.total', durationMs: 55 },
+    ]];
     expect(diagnostic.read()).toEqual(expected);
     gate.release();
     await background;
