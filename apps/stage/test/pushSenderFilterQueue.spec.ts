@@ -348,4 +348,39 @@ describe('foreground sender-filter isolation', () => {
     expect(f.bodies).toHaveLength(2);
     expect(f.bodies[1]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
   });
+
+  test.each([false, true])('a stalled post-wait recollection frees the lane and resumes background work on cancellation=%s', async cancel => {
+    const f = fixture(1_000);
+    const posting = deferred();
+    const firstPost = deferred();
+    const recollecting = deferred();
+    const recollection = deferred();
+    const collect = f.input.collectTopics;
+    const post = f.input.post;
+    let reads = 0;
+    f.input.collectTopics = async topic => {
+      if (topic === TOPIC && ++reads === 2) { recollecting.release(); await recollection.promise; }
+      return collect(topic);
+    };
+    f.input.post = async (body, signal) => { if (f.bodies.length === 0) { posting.release(); await firstPost.promise; } await post(body, signal); };
+    const first = f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
+    await posting.promise;
+    const controller = new AbortController();
+    const stalled = f.publisher.publish({ ...f.input, topic: TOPIC, signal: controller.signal }).catch((error: unknown) => error);
+    await Bun.sleep(0);
+    firstPost.release();
+    await recollecting.promise;
+    let finished = false;
+    let backgroundFinished = false;
+    const background = f.publisher.publish(f.input).then(() => { backgroundFinished = true; });
+    const healthy = f.publisher.publish({ ...f.input, topic: OTHER_TOPIC }).then(() => { finished = true; });
+    try {
+      await Bun.sleep(0);
+      expect(finished).toBe(true);
+      expect(backgroundFinished).toBe(false);
+      if (cancel) { controller.abort(); expect(await stalled).toBeInstanceOf(Error); await background; }
+    } finally { recollection.release(); await Promise.all([first, stalled, healthy, background]); }
+    expect(f.bodies).toHaveLength(2);
+    expect(backgroundFinished).toBe(true);
+  });
 });

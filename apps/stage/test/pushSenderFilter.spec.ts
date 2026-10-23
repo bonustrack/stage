@@ -305,7 +305,8 @@ describe('account-wide sender publication without a push token', () => {
       { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
       { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 77 },
       { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
-      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'xmtp.total', durationMs: 77 },
+      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 0 },
+      { phase: 'xmtp.total', durationMs: 77 },
     ]]);
   });
 

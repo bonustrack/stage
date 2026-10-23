@@ -39,7 +39,7 @@ interface Revision {
   topics: Map<string, number>;
   group?: { key: string; version: number };
 }
-type PublicationResult = 'retry' | 'unchanged' | 'done' | 'more';
+type PublicationResult = 'retry' | 'yield' | 'unchanged' | 'done' | 'more';
 type SyncInput = Pick<SenderFilterInput, 'installationId' | 'syncPreferences'>;
 
 export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, syncFreshMs = 30_000) {
@@ -47,6 +47,7 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
   const published = new Map<string, Map<string, Published>>();
   const revisions = new Map<string, Revision>();
   const preferences = makePreferenceSync(now, syncFreshMs, revisions);
+  const foreground = makeForegroundPreparations();
   let epoch = 0;
 
   async function warm(input: SyncInput & Pick<SenderFilterInput, 'current'>): Promise<void> {
@@ -111,20 +112,30 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     if (input.signal.aborted) abort();
     else input.signal.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(() => { controller.abort(new Error('Sender filter refresh timed out')); }, timeoutMs);
+    let releaseForeground: (() => void) | undefined;
     try {
       let prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
       while (true) {
-        const result = await queuePublication(pending, input, controller.signal, async waited => {
-          if (input.topic && waited) prepared = await prepare(input, controller.signal, assertCurrent);
+        const result = await queuePublication(pending, input, controller.signal, waited => {
+          assertCurrent();
+          if (input.topic && waited) {
+            releaseForeground = foreground.hold(input.installationId);
+            return Promise.resolve('retry');
+          }
+          if (!input.topic && foreground.blocked(input.installationId)) return Promise.resolve('yield');
           return update(input, prepared, controller.signal, assertCurrent);
         });
         if (result === 'done' || result === 'unchanged') return;
-        if (result === 'retry') prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
+        if (result === 'retry') {
+          try { prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal); }
+          finally { releaseForeground?.(); releaseForeground = undefined; }
+        }
+        if (result === 'yield') await foreground.wait(input.installationId, controller.signal);
       }
-    } finally { clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
+    } finally { releaseForeground?.(); clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
   }
 
-  return { publish, warm, clear: () => { epoch += 1; published.clear(); revisions.clear(); preferences.clear(); } };
+  return { publish, warm, clear: () => { epoch += 1; published.clear(); revisions.clear(); preferences.clear(); foreground.clear(); } };
 }
 
 function makePreferenceSync(now: () => number, freshMs: number, revisions: Map<string, Revision>) {
@@ -194,6 +205,26 @@ async function queuePublication(
   void next.then(release, release);
   try { return await abortable(next, signal); }
   finally { endQueue?.(); }
+}
+
+function makeForegroundPreparations() {
+  const active = new Map<string, Set<Promise<undefined>>>();
+  function hold(installationId: string): () => void {
+    const gate = Promise.withResolvers<undefined>();
+    const known = active.get(installationId) ?? new Set<Promise<undefined>>();
+    known.add(gate.promise);
+    active.set(installationId, known);
+    return () => {
+      known.delete(gate.promise);
+      if (known.size === 0 && active.get(installationId) === known) active.delete(installationId);
+      gate.resolve(undefined);
+    };
+  }
+  async function wait(installationId: string, signal: AbortSignal): Promise<void> {
+    const known = active.get(installationId);
+    if (known) await abortable(Promise.all(known), signal);
+  }
+  return { hold, wait, blocked: (installationId: string) => active.has(installationId), clear: () => { active.clear(); } };
 }
 
 function fingerprint(groupKey: string, topic: SenderFilterTopic): string {
