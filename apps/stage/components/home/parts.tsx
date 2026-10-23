@@ -92,13 +92,14 @@ interface ChannelRowItemProps {
   pinned: boolean;
   draftText: string;
   active: boolean;
+  current: boolean;
   pinDrag: ListDrag;
   hideAvatar: boolean;
   fields: ChannelFields;
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, pinDrag, hideAvatar, fields,
+  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, current, pinDrag, hideAvatar, fields,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   const openMenu = rowMenuOpener(item, setRowMenu);
@@ -123,7 +124,7 @@ function ChannelRowItemBase({
       draftText={draftText}
       fields={<ChannelRowFields data={item} fields={fields}/>}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-      onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
+      onPress={() => { if (!current) router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
       onLongPress={(anchor) => { if (!isLifted()) openMenu(anchor); }}
     />
   );
@@ -163,6 +164,7 @@ export function useChannelRowRenderer(
       return wrapItem(item, inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, header, false), false));
     }
     const title = rowTitle(item);
+    const current = isActiveConversationPath(activePath, item.convId, item.peerAddress);
     return wrapItem(item, inBlock(sectionDrag, item.convId, inBlock(rowDrag, item.convId, (
       <MeasuredDragRow item={item} measure={dragMeasurements.measure}>
         <ChannelRowItem
@@ -176,7 +178,8 @@ export function useChannelRowRenderer(
           avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
           pinned={pinned.includes(item.convId)}
           draftText={getDraft(item.convId)}
-          active={menuConvId === item.convId || isActiveConversationPath(activePath, item.convId, item.peerAddress)}
+          active={menuConvId === item.convId || current}
+          current={current}
           pinDrag={pinDrag}
           hideAvatar={hideAvatar}
           fields={fields}

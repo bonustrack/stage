@@ -114,12 +114,6 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields] as const,
     [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
   );
-  const navRouter = useMemo(
-    () => (pane
-      ? { push: (to: Parameters<typeof router.replace>[0]) => { router.replace(to); } }
-      : router),
-    [pane, router],
-  );
   const visiblePinned = useMemo(
     () => (list.grouped ? [] : visibleRows.map(r => r.convId).filter(id => pinned.includes(id))),
     [list.grouped, visibleRows, pinned],
@@ -127,8 +121,8 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const pinDrag = usePinDrag(pinned, visiblePinned, dragMeasurements.heights);
   const sectionDrag = useSectionDrag(list.items, groupBy === 'category', dragMeasurements.heights);
   const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category', dragMeasurements.heights);
-  useRowArrows({ rows: list.rows, items: list.items, activePath, router: navRouter, listRef: st.scroll.listRef, paused: filtering });
-  const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
+  useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef, paused: filtering });
+  const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, rowDrag,
     hideAvatar, fields, dragMeasurements, items: list.items,
   });

@@ -1,3 +1,26 @@
+diff --git a/build/fork/createMemoryHistory.js b/build/fork/createMemoryHistory.js
+--- a/build/fork/createMemoryHistory.js
++++ b/build/fork/createMemoryHistory.js
+@@ -169,6 +169,7 @@ function createMemoryHistory() {
+         // Here we normalize it so that only external changes (e.g. user pressing back/forward) trigger the listener
+         listen(listener) {
+             const onPopState = () => {
++                index = history.index;
+                 if (pending.length) {
+                     // This was triggered by `history.go(n)`, we shouldn't call the listener
+                     return;
+diff --git a/build/fork/useLinking.js b/build/fork/useLinking.js
+--- a/build/fork/useLinking.js
++++ b/build/fork/useLinking.js
+@@ -161,7 +161,7 @@ function useLinking(ref, { enabled = true, prefixes, config, getStateFromPath = getS
+             // Otherwise, we'll handle it like a regular deep link
+             const record = history.get(index);
+             if (record?.path === path && record?.state) {
+-                navigation.resetRoot(record.state);
++                navigation.resetRoot({ ...record.state, key: navigation.getRootState().key });
+                 return;
+             }
+             const state = getStateFromPathRef.current(path, configRef.current);
 diff --git a/build/fork/getPathFromState-forks.js b/build/fork/getPathFromState-forks.js
 index 63e3101859c323d758639b9263ddadb2f6df7589..fca32426b13c9234e10a74bffee36eea2fc02a39 100644
 --- a/build/fork/getPathFromState-forks.js

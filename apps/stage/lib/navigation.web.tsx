@@ -7,6 +7,7 @@ import {
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
 import { Box } from '@stage-labs/kit/react-native/box';
+import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
 
 type FlowScreenOptions = Record<string, unknown>;
 
@@ -51,7 +52,7 @@ function FlowStackNavigator({
 }
 
 function FlowTabNavigator({
-  id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout, backBehavior,
+  id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout, backBehavior = WEB_TAB_BACK_BEHAVIOR,
 }: FlowProps<TabNavigationState<ParamListBase>, TabRouterOptions>): React.ReactElement {
   const { state, descriptors, NavigationContent } = useNavigationBuilder<
     TabNavigationState<ParamListBase>, TabRouterOptions, TabActionHelpers<ParamListBase>,
