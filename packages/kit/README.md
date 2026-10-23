@@ -201,6 +201,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.10
+
+- Release the current main source, including the Input and Textarea typography change excluded from beta.9. Both controls now match the same `Text` size: `xs` 16px, `sm` 17px, `md` 18px, `lg` 19px and `xl` 20px. Their height and padding settings, variants and explicit style overrides are unchanged.
+- Keep beta.9's strict TypeScript 5.9 `Title` fix. All 62 package exports and the dependency requirements are unchanged.
+
 ### 0.1.0-beta.9
 
 - `Title` sets its default font size and family only when there is no hero, fixing TS2783 for strict TypeScript 5.9 consumers. All rendered styles are unchanged.
