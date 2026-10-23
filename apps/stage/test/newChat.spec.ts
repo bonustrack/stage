@@ -136,7 +136,7 @@ describe('firstMessageChannelName', () => {
   test('uses displayed channel and people mentions rather than wire tokens', () => {
     const text = `Ask @${alice} about ${channelRefToken('roadmap-id', 'Roadmap')}`;
     expect(firstMessageChannelName(text, () => '@Alice')).toBe('Ask @Alice about #Roadmap');
-    expect(firstMessageChannelName(channelRefToken('long-id', 'a'.repeat(110)), () => '@Alice')).toBe('#' + 'a'.repeat(99));
+    expect(firstMessageChannelName(channelRefToken('long-id', 'a'.repeat(110)), () => '@Alice')).toBe('#' + 'a'.repeat(96) + '…');
   });
 
   test('does not create a hidden internal sync group from a message prefix', () => {
@@ -150,13 +150,50 @@ describe('firstMessageChannelName', () => {
     expect(firstMessageChannelName(' \n\t\u0000 ')).toBeUndefined();
   });
 
-  test('respects the existing 100 UTF-8-byte name limit without cutting a code point', () => {
-    expect(firstMessageChannelName('a'.repeat(101))).toBe('a'.repeat(100));
-    expect(firstMessageChannelName('é'.repeat(51))).toBe('é'.repeat(50));
-    expect(firstMessageChannelName('界'.repeat(34))).toBe('界'.repeat(33));
-    expect(firstMessageChannelName('🙂'.repeat(26))).toBe('🙂'.repeat(25));
-    expect(firstMessageChannelName('a'.repeat(99) + '🙂')).toBe('a'.repeat(99));
-    expect(firstMessageChannelName('a'.repeat(98) + ' ' + '🙂')).toBe('a'.repeat(98));
+  test('leaves complete names unchanged at the existing UTF-8-byte limit', () => {
+    expect(firstMessageChannelName('a'.repeat(100))).toBe('a'.repeat(100));
+    expect(firstMessageChannelName('é'.repeat(50))).toBe('é'.repeat(50));
+    expect(firstMessageChannelName('界'.repeat(33))).toBe('界'.repeat(33));
+    expect(firstMessageChannelName('🙂'.repeat(25))).toBe('🙂'.repeat(25));
+    expect(firstMessageChannelName('a'.repeat(100) + ' \n\t')).toBe('a'.repeat(100));
+  });
+
+  test('marks actual truncation with an ellipsis inside the UTF-8-byte limit', () => {
+    expect(firstMessageChannelName('a'.repeat(101))).toBe('a'.repeat(97) + '…');
+    expect(firstMessageChannelName('é'.repeat(51))).toBe('é'.repeat(48) + '…');
+    expect(firstMessageChannelName('界'.repeat(34))).toBe('界'.repeat(32) + '…');
+    expect(firstMessageChannelName('🙂'.repeat(26))).toBe('🙂'.repeat(24) + '…');
+    expect(firstMessageChannelName('a'.repeat(99) + '🙂')).toBe('a'.repeat(97) + '…');
+    expect(firstMessageChannelName('a'.repeat(98) + ' ' + '🙂')).toBe('a'.repeat(97) + '…');
+  });
+
+  test('does not split graphemes when reserving space for the truncation marker', () => {
+    const encoder = new TextEncoder();
+    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
+      const prefix = 'a'.repeat(99 - encoder.encode(grapheme).length);
+      expect(firstMessageChannelName(prefix + grapheme + 'xx')).toBe(prefix + '…');
+      expect(firstMessageChannelName(prefix + grapheme + 'x')).toBe(prefix + grapheme + 'x');
+    }
+  });
+
+  test('keeps complete graphemes that fit beside the truncation marker', () => {
+    const encoder = new TextEncoder();
+    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
+      const prefix = 'a'.repeat(97 - encoder.encode(grapheme).length);
+      expect(firstMessageChannelName(prefix + grapheme + 'abcd')).toBe(prefix + grapheme + '…');
+    }
+    expect(firstMessageChannelName('e' + '́'.repeat(100))).toBe('…');
+  });
+
+  test('trims collapsed whitespace before the truncation marker', () => {
+    expect(firstMessageChannelName('a'.repeat(96) + '\n\t🙂')).toBe('a'.repeat(96) + '…');
+    expect(firstMessageChannelName('a'.repeat(96) + ' '.repeat(20) + '🙂')).toBe('a'.repeat(96) + '…');
+  });
+
+  test('keeps truncated names visible rather than internal sync names', () => {
+    const name = firstMessageChannelName('stage.sync: ' + 'a'.repeat(100));
+    expect(name).toBe('Stage.sync: ' + 'a'.repeat(85) + '…');
+    expect(isSyncGroupName(name)).toBe(false);
   });
 });
 

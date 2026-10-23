@@ -6,19 +6,23 @@ import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
+import { splitGraphemes } from 'unicode-segmenter/grapheme';
 import { toDisplay, type LabelOf } from '../composer/mentions.model';
 
 export function firstMessageChannelName(text: string, labelOf: LabelOf = address => mentionLabel(shortAddress(address))): string | undefined {
   const plain = toDisplay(text, labelOf).replace(/[\s\p{Cc}]+/gu, ' ').trim();
   const encoder = new TextEncoder();
+  const suffix = encoder.encode(plain).length > CHANNEL_NAME_MAX ? '…' : '';
+  const maxBytes = CHANNEL_NAME_MAX - encoder.encode(suffix).length;
   let name = '';
   let bytes = 0;
-  for (const char of plain) {
-    const size = encoder.encode(char).length;
-    if (bytes + size > CHANNEL_NAME_MAX) break;
-    name += char;
+  for (const grapheme of splitGraphemes(plain)) {
+    const size = encoder.encode(grapheme).length;
+    if (bytes + size > maxBytes) break;
+    name += grapheme;
     bytes += size;
   }
+  name = name.trimEnd() + suffix;
   return (isSyncGroupName(name) ? `S${name.slice(1)}` : name).trim() || undefined;
 }
 
