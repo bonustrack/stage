@@ -15,8 +15,9 @@ export const MENU_PAGES: readonly MenuPage[] = [
   { href: INBOX_ROUTE, label: 'Inbox', icon: 'IconEmail1' },
 ];
 
-export function menuPagesFor(hasMailbox: boolean): readonly MenuPage[] {
-  return hasMailbox ? MENU_PAGES : MENU_PAGES.filter((page) => page.href !== INBOX_ROUTE);
+export function menuPagesFor(hasMailbox: boolean, developerMode: boolean): readonly MenuPage[] {
+  return MENU_PAGES.filter((page) => page.href === '/contacts'
+    || (developerMode && (hasMailbox || page.href !== INBOX_ROUTE)));
 }
 
 export function isMenuPageOpen(pathname: string, href: string): boolean {

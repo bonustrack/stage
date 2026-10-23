@@ -1,5 +1,5 @@
 import {
-  DEFAULT_HOME_VIEW, type DashboardContent, type DashboardWidget, type HomeViewContent, type HomeViewEdit, type SearchStateContent,
+  DEFAULT_HOME_VIEW, type DashboardContent, type DashboardWidget, type DeveloperModeContent, type HomeViewContent, type HomeViewEdit, type SearchStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
 function stamped<T extends { at: number }>(current: T, change: Partial<NoInfer<T>>, now: number): T {
@@ -55,4 +55,8 @@ export function editDashboard(current: DashboardContent, widgets: DashboardWidge
 
 export function receiveDashboard(current: DashboardContent, incoming: DashboardContent): DashboardContent {
   return incoming.at > current.at ? incoming : current;
+}
+
+export function editDeveloperMode(current: DeveloperModeContent, enabled: boolean, now: number): DeveloperModeContent {
+  return stamped(current, { enabled }, now);
 }

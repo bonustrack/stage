@@ -21,13 +21,15 @@ const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }>
     typeId: 'dashboardLayout', fallback: 'Stage dashboard',
     json: '{"widgets":[{"id":"w1","w":"half","h":2,"kind":"frame","source":{"conversationId":"c1","messageId":"m1"}}],"at":1759500000007}',
   },
+  developerMode: { typeId: 'developerMode', fallback: 'Stage developer mode', json: '{"enabled":false,"at":1759500000008}' },
 };
 
-const OLD_REGISTRY = [
+const REGISTRY = [
   'metro.box/poll:1.0:true', 'metro.box/signatureRequest:1.0:true', 'metro.box/signatureReference:1.0:true',
   'xmtp.org/walletSendCalls:1.0:true', 'stage.box/readState:1.0:false', 'stage.box/pinState:1.0:false',
   'stage.box/clearState:1.0:false', 'stage.box/boardState:1.0:false', 'stage.box/categoryOrderState:1.0:false',
-  'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/dashboardLayout:1.0:false', 'stage.box/callInvite:1.0:true',
+  'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/dashboardLayout:1.0:false',
+  'stage.box/developerMode:1.0:false', 'stage.box/callInvite:1.0:true',
   'stage.box/callSignal:1.0:false', 'stage.box/frame:1.0:true', 'stage.box/frameAction:1.0:true', 'stage.box/deleteRequest:1.0:false',
 ];
 
@@ -49,9 +51,9 @@ describe('device sync wire format', () => {
     });
   }
 
-  test('registers the same codecs in the same order, and other types are not sync state', () => {
+  test('registers silent developer settings alongside existing codecs, and other types are not sync state', () => {
     const ids = STAGE_JSON_CODECS.map(({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`);
-    expect(ids).toEqual(OLD_REGISTRY);
+    expect(ids).toEqual(REGISTRY);
     expect(isSyncType('stage.box/frame:1.0')).toBe(false);
     expect(isSyncType(undefined)).toBe(false);
   });

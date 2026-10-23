@@ -29,8 +29,12 @@ function closingItems(state: ChannelMenuState, edit: boolean): (MenuItem | false
   return [state.hasPeer === true && { id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true }];
 }
 
+function syncItem(state: ChannelMenuState, enabled: boolean): MenuItem | null {
+  return enabled && (state.isGroup || state.hasPeer !== true) ? { id: 'sync', label: 'Check sync', icon: 'IconDevices' } : null;
+}
+
 export function channelMenuItems(
-  state: ChannelMenuState, { search, edit = false }: { search: boolean; edit?: boolean },
+  state: ChannelMenuState, { search, edit = false, developerMode = false }: { search: boolean; edit?: boolean; developerMode?: boolean },
 ): MenuItem[] {
   const { isGroup, isUnread } = state;
   const items: (MenuItem | null | false)[] = [
@@ -39,7 +43,7 @@ export function channelMenuItems(
     { id: 'toggle-read', label: isUnread ? 'Mark as read' : 'Mark as unread', icon: isUnread ? 'IconCheckmark1' : 'IconEmail1' },
     { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'IconThumbtack' },
     infoItem(state),
-    (isGroup || state.hasPeer !== true) && { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
+    syncItem(state, developerMode),
     ...closingItems(state, edit),
   ];
   return items.filter((item): item is MenuItem => item !== null && item !== false);

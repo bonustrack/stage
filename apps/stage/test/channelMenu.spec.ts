@@ -5,7 +5,7 @@ describe('channelMenuItems', () => {
   test('a channel with search matches the legacy item list', () => {
     const items = channelMenuItems(
       { isGroup: true, hasPeer: false, isUnread: true, isPinned: false },
-      { search: true },
+      { search: true, developerMode: true },
     );
     expect(items).toEqual([
       { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
@@ -21,7 +21,7 @@ describe('channelMenuItems', () => {
   test('a channel the user can edit offers Edit channel after Channel info', () => {
     const items = channelMenuItems(
       { isGroup: true, hasPeer: false, isUnread: false, isPinned: false },
-      { search: true, edit: true },
+      { search: true, edit: true, developerMode: true },
     );
     expect(items.map(i => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'sync', 'edit', 'leave']);
     expect(items.find(i => i.id === 'edit')).toEqual({ id: 'edit', label: 'Edit channel', icon: 'IconPencil' });
@@ -43,8 +43,15 @@ describe('channelMenuItems', () => {
     expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true });
   });
 
+  test('Check sync is hidden by default without changing normal channel actions', () => {
+    expect(channelMenuItems({ isGroup: true, isUnread: true }, { search: true, edit: true }).map(i => i.id))
+      .toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'edit', 'leave']);
+    expect(channelMenuItems({ isGroup: false, isUnread: false }, { search: false, developerMode: false }).map(i => i.id))
+      .toEqual(['toggle-read', 'toggle-pin']);
+  });
+
   test('an unresolved chat still offers the sync check', () => {
-    const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false });
+    const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false, developerMode: true });
     expect(items).toEqual([
       { id: 'toggle-read', label: 'Mark as unread', icon: 'IconEmail1' },
       { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
@@ -53,7 +60,7 @@ describe('channelMenuItems', () => {
   });
 
   test('the blank pinned conversation menu exposes diagnostics without channel actions', () => {
-    const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false, isPinned: true }, { search: true });
+    const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false, isPinned: true }, { search: true, developerMode: true });
     expect(items.map(i => i.label)).toEqual(['Search', 'Mark as unread', 'Unpin', 'Check sync']);
   });
 });

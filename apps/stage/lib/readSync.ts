@@ -21,6 +21,8 @@ import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, o
 import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
 import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
 import { applyRemoteDashboard, loadDashboard, onDashboardChanged } from './dashboard';
+import { applyRemoteDeveloperMode, loadDeveloperMode, onDeveloperModeChanged } from './developerMode';
+import { createDeveloperModePublisher, replayDeveloperMode } from './developerModeSync';
 import { rowIdOfConv } from './xmtp.conv';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { createVisibilityPublisher } from './pendingVisibility';
@@ -143,8 +145,11 @@ async function ensureGroup(context: AccountClient): Promise<string> {
   return groupAccountId === context.account.id && groupId ? groupId : chooseGroup(context, await knownSyncGroups(context));
 }
 
-function replay(context: AccountClient, target: string, groups: readonly SyncGroupState[]): Promise<void> {
-  return replaySyncGroups(context, target, groups, state => applyReplay(context.account.id, state), nudgeFrom);
+async function replay(context: AccountClient, target: string, groups: readonly SyncGroupState[]): Promise<void> {
+  await replaySyncGroups(context, target, groups, state => applyReplay(context.account.id, state), nudgeFrom);
+  await replayDeveloperMode(context, groups);
+  context.assertCurrent();
+  queueDeveloperModePublish(context.account.id);
 }
 
 async function bootReplay(token: number): Promise<void> {
@@ -277,6 +282,10 @@ const LATEST_WINS: readonly LatestWins[] = [
     onLocal: (send) => { onDashboardChanged((change) => { send(change.accountId, change.state); }); },
     apply: applyRemoteDashboard, load: loadDashboard,
   }),
+  latestWins('developerMode', {
+    onLocal: () => { onDeveloperModeChanged((change) => { queueDeveloperModePublish(change.accountId); }); },
+    apply: applyRemoteDeveloperMode, load: loadDeveloperMode,
+  }),
 ];
 
 async function publishSnapshot(target: SyncTarget, accountId: string): Promise<void> {
@@ -324,6 +333,9 @@ function queuePinPublish(change: PinChange): void {
 
 const queueClearedPublish = createVisibilityPublisher((accountId) => withGroup(async (target) =>
   sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId)), accountId));
+
+const queueDeveloperModePublish = createDeveloperModePublisher((accountId, state) => withGroup(async target =>
+  sendSyncState(target, SYNC_CODECS.developerMode, state), accountId));
 
 interface Adopted { context: AccountClient; owner: SyncOwner }
 

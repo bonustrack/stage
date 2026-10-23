@@ -13,6 +13,9 @@ import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePushEnabled } from '../../lib/pushPref';
+import { retryDeveloperMode, setDeveloperMode, useDeveloperMode, useDeveloperModeLoaded, useDeveloperModeLoadFailed } from '../../lib/developerMode';
+import { RetryNotice } from '../chrome/RetryNotice';
+import { reported } from '../../lib/errorPolicy';
 import { isPushSupported } from '../../lib/pushRegister';
 import {
   setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference,
@@ -90,6 +93,9 @@ function PreferencesGroup(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
   const push = usePushEnabled();
+  const developerMode = useDeveloperMode();
+  const developerModeLoaded = useDeveloperModeLoaded();
+  const developerModeFailed = useDeveloperModeLoadFailed();
   const pushSupported = isPushSupported();
   return (
     <SettingsGroup title="Preferences">
@@ -104,6 +110,10 @@ function PreferencesGroup(): React.ReactElement {
         description={pushSupported ? undefined : 'Push notifications are unavailable in this browser.'}
         onChange={(next) => { void applyPush(next); }} />
       <SettingsNavRow label="Appearance" value={custom ? 'Custom colors' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
+      <SettingsToggleRow label="Developer mode" name="developer-mode" checked={developerMode} disabled={!developerModeLoaded}
+        description="Show Check sync, Storage, Inbox and Dashboard on all your devices."
+        onChange={(enabled) => { void setDeveloperMode(enabled).catch(reported('developerMode.save')); }} />
+      {developerModeFailed ? <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} /> : null}
     </SettingsGroup>
   );
 }
@@ -112,8 +122,9 @@ function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
   const address = useActiveAccountRecord()?.address;
   const boxes = useMailboxes().data;
-  const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0);
-  useEffect(() => { if (boxes !== undefined) prefetchInbox(boxes); }, [boxes]);
+  const developerMode = useDeveloperMode();
+  const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0, developerMode);
+  useEffect(() => { if (developerMode && boxes !== undefined) prefetchInbox(boxes); }, [boxes, developerMode]);
   const row = (id: 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
     return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;

@@ -3,8 +3,13 @@ import { INBOX_ROUTE, isMenuPageOpen, isMenuPageRoute, menuPagesFor } from '../c
 
 describe('menuPages', () => {
   test('lists Contacts, Dashboard, Storage and Inbox at the top level, Inbox only with a mailbox', () => {
-    expect(menuPagesFor(true).map((page) => page.href)).toEqual(['/contacts', '/dashboard', '/storage', INBOX_ROUTE]);
-    expect(menuPagesFor(false).map((page) => page.label)).toEqual(['Contacts', 'Dashboard', 'Storage']);
+    expect(menuPagesFor(true, true).map((page) => page.href)).toEqual(['/contacts', '/dashboard', '/storage', INBOX_ROUTE]);
+    expect(menuPagesFor(false, true).map((page) => page.label)).toEqual(['Contacts', 'Dashboard', 'Storage']);
+  });
+
+  test('keeps Contacts and hides developer pages while developer mode is off', () => {
+    expect(menuPagesFor(true, false).map((page) => page.href)).toEqual(['/contacts']);
+    expect(menuPagesFor(false, false).map((page) => page.href)).toEqual(['/contacts']);
   });
 
   test('a page stays open on its own sub pages only', () => {

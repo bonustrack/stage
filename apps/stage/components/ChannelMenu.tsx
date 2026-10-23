@@ -15,6 +15,7 @@ import { channelProfileLinkOf, profileLinkOf } from '../lib/links';
 import { openAddMembers } from '../lib/memberList';
 import { capabilities } from '../lib/capabilities';
 import { homeRoute } from './tabs/boardHome';
+import { useDeveloperMode } from '../lib/developerMode';
 
 interface ChannelMenuProps {
   convId: string;
@@ -108,7 +109,8 @@ export function ChannelMenu({
     delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
   };
 
-  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch, edit: !!onEdit });
+  const developerMode = useDeveloperMode();
+  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch, edit: !!onEdit, developerMode });
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>

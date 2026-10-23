@@ -2,6 +2,8 @@ import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
 import { frameSourceSchema } from './frame.schema';
 import type { OutputSchema } from '../validate';
+import { developerModeSchema, mergeDeveloperMode, type DeveloperModeContent } from './developerMode';
+export { DEFAULT_DEVELOPER_MODE, developerModeSchema, mergeDeveloperMode, type DeveloperModeContent } from './developerMode';
 
 const readStateSchema = z.object({
   convId: z.string().min(1),
@@ -48,7 +50,6 @@ const boardStateSchema = z.object({
 });
 
 export type BoardStateContent = z.infer<typeof boardStateSchema>;
-
 export const searchStateSchema = z.object({
   query: z.string(),
   labels: z.array(z.string().min(1)),
@@ -156,7 +157,6 @@ export const dashboardSchema = z.object({
 });
 
 export type DashboardContent = z.infer<typeof dashboardSchema>;
-
 export const EMPTY_DASHBOARD: DashboardContent = { widgets: [], at: 0 };
 
 export interface SyncContents {
@@ -168,11 +168,11 @@ export interface SyncContents {
   search: SearchStateContent;
   homeView: HomeViewContent;
   dashboard: DashboardContent;
+  developerMode: DeveloperModeContent;
 }
 
 export type SyncKind = keyof SyncContents;
-
-export type LatestKind = 'board' | 'categoryOrder' | 'search' | 'homeView' | 'dashboard';
+export type LatestKind = Exclude<SyncKind, 'read' | 'pin' | 'clear'>;
 
 interface SyncType<T> {
   contentType: XmtpContentTypeId;
@@ -193,6 +193,7 @@ export const SYNC_TYPES: { [K in SyncKind]: SyncType<SyncContents[K]> } = {
   search: syncType('searchState', searchStateSchema, 'Stage search'),
   homeView: syncType('homeView', homeViewSchema, 'Stage home view'),
   dashboard: syncType('dashboardLayout', dashboardSchema, 'Stage dashboard'),
+  developerMode: syncType('developerMode', developerModeSchema, 'Stage developer mode'),
 };
 
 export function isSyncType(contentTypeId: string | undefined, kind?: SyncKind): boolean {
@@ -359,11 +360,13 @@ function mergedHidden(messages: readonly SyncMessage[], maxAt: number): HiddenCh
   return merged;
 }
 
-function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K, maxAt: number): SyncContents[K] | null {
+function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K, maxAt: number,
+  merge = (current: SyncContents[K], incoming: SyncContents[K]): SyncContents[K] => incoming.at > current.at ? incoming : current,
+): SyncContents[K] | null {
   let latest: SyncContents[K] | null = null;
   for (const m of messages) {
     const state = inTime(stateOf(kind, m), maxAt);
-    if (state !== null && (latest === null || state.at > latest.at)) latest = state;
+    if (state !== null) latest = latest === null ? state : merge(latest, state);
   }
   return latest;
 }
@@ -389,6 +392,7 @@ export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: num
       search: latestState(fresh, 'search', maxAt),
       homeView: latestHomeView(fresh, maxAt),
       dashboard: latestState(fresh, 'dashboard', maxAt),
+      developerMode: latestState(fresh, 'developerMode', maxAt, mergeDeveloperMode),
     },
     latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
   };

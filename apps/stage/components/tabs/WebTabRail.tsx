@@ -16,7 +16,8 @@ import { IconColumnWide } from '@central-icons-react-native/round-outlined-radiu
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { useBoardHome } from './boardHome';
-import { MENU_PAGES, isMenuPageOpen, isMenuPageRoute } from './menuPages';
+import { menuPagesFor, isMenuPageOpen, isMenuPageRoute } from './menuPages';
+import { useDeveloperMode } from '../../lib/developerMode';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
   return !wide && pathname === '/';
@@ -113,9 +114,10 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
 
 function MenuPageButtons({ pathname }: { pathname: string }): React.ReactElement {
   const navigate = useRailNavigate(pathname);
+  const developerMode = useDeveloperMode();
   return (
     <>
-      {MENU_PAGES.map((page) => (
+      {menuPagesFor(true, developerMode).map((page) => (
         <RailTooltip key={page.href} label={page.label} onPress={() => { navigate(page.href); }} placement="beside" style={RAIL_BUTTON}>
           <TabIcon icon={appIcon(page.icon)} active={isMenuPageOpen(pathname, page.href)}/>
         </RailTooltip>

@@ -10,6 +10,7 @@ import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
+import { useDeveloperMode } from '../../lib/developerMode';
 import { useWebTabRail } from '../../lib/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
@@ -155,7 +156,8 @@ export function BubbleActionMenu({
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
-  const items = bubbleMenuItems(!!target?.text, { selectText: SELECT_TEXT, canDelete, frame: onAddToDashboard !== undefined });
+  const developerMode = useDeveloperMode();
+  const items = bubbleMenuItems(!!target?.text, { selectText: SELECT_TEXT, canDelete, frame: onAddToDashboard !== undefined, developerMode });
   const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
