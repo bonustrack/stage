@@ -19,10 +19,10 @@ export interface ComposerState {
   blurNonce: number; bumpBlur: () => void;
 }
 
-export function useComposerState(): ComposerState {
+export function useComposerState(initialPending: Attachment[] = []): ComposerState {
   const [text, setText] = useState('');
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
-  const [pending, setPending] = useState<Attachment[]>([]);
+  const [pending, setPending] = useState<Attachment[]>(initialPending);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);

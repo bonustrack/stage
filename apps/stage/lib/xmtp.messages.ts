@@ -8,6 +8,7 @@ import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage
 import type { FrameActionContent } from '@stage-labs/client/xmtp/frame';
 import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
+import { sendPreparedMessage } from './xmtp.messageSend.core';
 import { beginSendTiming } from './sendTiming';
 import { timeSendPhase } from './sendTiming.core';
 import {
@@ -47,19 +48,20 @@ export function xmtpDeleteMessage(messageId: string): Promise<string> {
   });
 }
 
-function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>, shouldPush = true): Promise<string> {
+function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>, shouldPush = true, beforeSend?: () => Promise<void>): Promise<string> {
   const timing = shouldPush ? beginSendTiming() : undefined;
-  if (!timing) return withReadableSendError(async () => send(await sendableConvOfLine(line, shouldPush)));
   return withReadableSendError(async () => {
     try {
-      const conv = await sendableConvOfLine(line, shouldPush, timing);
-      return await timeSendPhase(timing, 'sdk.send', () => send(conv));
+      return await sendPreparedMessage(
+        () => sendableConvOfLine(line, shouldPush, timing),
+        conv => timeSendPhase(timing, 'sdk.send', () => send(conv)), beforeSend,
+      );
     } finally { timing?.finish(); }
   });
 }
 
-export function xmtpSendText(line: string, text: string): Promise<string> {
-  return sendOn(line, conv => sdk.send.text(conv, text));
+export function xmtpSendText(line: string, text: string, beforeSend?: () => Promise<void>): Promise<string> {
+  return sendOn(line, conv => sdk.send.text(conv, text), true, beforeSend);
 }
 
 function sendReaction(line: string, reaction: ReactionPayload): Promise<string> {
@@ -102,6 +104,6 @@ export function xmtpOpenAnswer(line: string, pollMessageId: string, questionInde
   return sendReaction(line, buildOpenAnswer(pollMessageId, openVoteKey(questionIndex, trimmed), trimmed ? 'added' : 'removed'));
 }
 
-export function xmtpReply(line: string, replyTo: string, text: string): Promise<string> {
-  return sendOn(line, conv => sdk.send.reply(conv, replyTo, text));
+export function xmtpReply(line: string, replyTo: string, text: string, beforeSend?: () => Promise<void>): Promise<string> {
+  return sendOn(line, conv => sdk.send.reply(conv, replyTo, text), true, beforeSend);
 }

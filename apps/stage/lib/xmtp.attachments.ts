@@ -104,12 +104,12 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded,
+  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const session = await accountClient();
   const id = await withReadableSendError(() => sendPreparedAttachment({
-    assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded,
+    assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded, beforeSend,
     find: () => sendableConvOfLine(line),
     send: (conv, infos) => conv.send({ multiRemoteAttachment: { attachments: infos } }),
   }));
