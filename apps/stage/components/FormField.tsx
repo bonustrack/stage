@@ -129,7 +129,7 @@ export function FormField({
   const field = multiline ? (
     <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} rows={rows} inputProps={inputProps}
-      style={{ ...BARE_INPUT, ...textStyle, textAlignVertical: 'top', height: undefined, minHeight: rows * 26 }} />
+      style={{ ...BARE_INPUT, ...textStyle, flex: 1, textAlignVertical: 'top', height: undefined, minHeight: rows * 26 }} />
   ) : (
     <Input ref={inputRef} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} inputType={inputType} inputProps={inputProps} autoFocus={autoFocus} onSubmit={onSubmit}

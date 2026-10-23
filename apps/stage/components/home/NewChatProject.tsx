@@ -26,16 +26,16 @@ const PICKER_WIDTH = 300;
 const NO_SHRINK = { flexShrink: 0 } as const;
 
 function ProjectButton({ value, onPress }: { value: string | null; onPress: (point: MenuPoint) => void }): React.ReactElement {
-  const { text, sub, link, border } = usePalette();
+  const { text, sub, link } = usePalette();
   const { hovered, hoverProps } = useHover();
   const color = hovered ? link : value === null ? sub : text;
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={value === null ? TITLE : `${TITLE}: ${value}`}
       onPress={e => { onPress(menuPointAbove(e)); }} {...hoverProps}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: 'row', alignItems: 'center', gap: 4, height: BUTTON_HEIGHT, paddingHorizontal: TEXT_INSET, borderRadius: 999,
-        backgroundColor: pressed ? border : 'transparent', flexShrink: 1, minWidth: 0,
-      })}>
+        backgroundColor: 'transparent', flexShrink: 1, minWidth: 0,
+      }}>
       <Text size="md" color={color} truncate style={{ maxWidth: VALUE_MAX_WIDTH, flexShrink: 1, minWidth: 0 }}>{value ?? TITLE}</Text>
       <Box style={NO_SHRINK}><Glyph icon={IconChevronDownSmall} size={16} color={color}/></Box>
     </Pressable>
