@@ -27,6 +27,7 @@ export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
   & Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {
   replyingTo?: { id: string };
   onClearReply?: () => void;
+  onRestoreReply?: () => void;
 };
 
 type StepOutcome = { id: string } | { error: string };
@@ -63,8 +64,8 @@ function runInOrder(steps: SendStep[], previewUri?: (uri: string) => string): St
 
 export function startSend(line: string, text: string, pending: Attachment[], replyTo?: string, options: SendOptions = {}): StartedSend {
   options.assertCurrent?.();
-  uploadAttachments(fileInputs(pending));
-  const steps = planSendSteps(line, text.trim(), pending, replyTo, options);
+  const steps = planSendSteps(line, text, pending, replyTo, options);
+  uploadAttachments(fileInputs(steps.flatMap(step => step.attachments)));
   return { text, pending, replyTo, runs: runInOrder(steps, options.previewUri) };
 }
 
@@ -98,5 +99,6 @@ export async function finishSend(
     const kept = unsentDraft(started.text, started.pending, unsent);
     a.setText(kept.text);
     a.setPending(kept.pending);
+    if (started.replyTo !== undefined && unsent[0] === started.runs[0]?.step) a.onRestoreReply?.();
   }
 }

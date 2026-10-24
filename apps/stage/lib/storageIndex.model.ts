@@ -2,6 +2,7 @@ import {
   deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType, shortTypeId,
 } from '@stage-labs/client/xmtp/deleteMessage';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import { remoteAttachmentOfReply } from '@stage-labs/client/xmtp/envelope';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
@@ -68,6 +69,10 @@ function objectOf(content: unknown): Record<string, unknown> | null {
 }
 
 function partsOf(typeId: string, content: Record<string, unknown>): FilePart[] {
+  if (typeId === 'reply') {
+    const remote = remoteAttachmentOfReply(content);
+    return remote === undefined ? [] : [{ name: remote.filename, size: byteCount(remote.contentLength) }];
+  }
   if (typeId === 'attachment') return [{ name: content.filename, size: inlineSize(content) }];
   if (typeId === 'remoteStaticAttachment') return [{ name: content.filename, size: byteCount(content.contentLength) }];
   if (typeId !== 'multiRemoteStaticAttachment' && typeId !== 'multiRemoteAttachment') return [];

@@ -94,16 +94,28 @@ function safe<T>(fn: () => T): T | undefined {
   try { return fn(); } catch { return undefined; }
 }
 
+function objectOf(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined;
+}
+
+export function remoteAttachmentOfReply(decoded: unknown): Record<string, unknown> | undefined {
+  const content = objectOf(objectOf(decoded)?.content);
+  const remote = objectOf(content?.remoteAttachment) ?? content;
+  if (remote === undefined || typeof remote.url !== 'string' || typeof remote.contentDigest !== 'string') return undefined;
+  return ['secret', 'salt', 'nonce'].every(key => typeof remote[key] === 'string' || remote[key] instanceof Uint8Array) ? remote : undefined;
+}
+
 function replyEnvelope(
   base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string,
 ): HistoryEntry {
   const reference = safe(() => opts.replyReferenceOf(decoded)) ?? '';
-  const text = safe(() => opts.replyTextOf(decoded)) ?? fallback ?? '[reply]';
+  const remote = remoteAttachmentOfReply(decoded);
+  const nested = remote === undefined ? undefined : safe(() => multiRemoteEnvelope(base, typeId, { attachments: [remote] }));
   return {
     ...base,
-    text,
+    text: nested?.text ?? safe(() => opts.replyTextOf(decoded)) ?? fallback ?? '[reply]',
     replyTo: reference,
-    payload: { contentType: typeId, replyTo: reference },
+    payload: { ...nested?.payload, contentType: typeId, replyTo: reference },
   };
 }
 
@@ -124,7 +136,7 @@ function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown
   };
 }
 
-function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry & { payload: Record<string, unknown> } {
   const m = decoded as MultiRemoteAttachmentView;
   const attachments = (m.attachments ?? []).map((info, i) => {
     const name = info.filename ?? `attachment-${i + 1}`;

@@ -130,6 +130,15 @@ as `attachments/<random id>` and serves it back from
 links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
 (`download.gateway.ethswarm.org`).
 
+Composer text over **4,096 UTF-8 bytes** sends as `message.txt` through this same
+encrypted attachment pipeline, in existing and new chats. This is a readability
+cutoff, kept well below XMTP's message-size ceiling, not a transport maximum.
+The file keeps the original Unicode, whitespace and newlines without trimming
+or adding a BOM. Short messages keep their existing behavior. Picked attachments
+and locations still follow the text, and a reply reference stays on the text file.
+A failed file send restores the original draft; text that already sent is not
+restored if a later attachment fails.
+
 ## Releases
 
 - **Web:** Netlify builds `bun run build:web` from `apps/stage` on every push to `main`.

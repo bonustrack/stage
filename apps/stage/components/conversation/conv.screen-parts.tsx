@@ -145,6 +145,7 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           replyingTo={replyingTo ?? undefined}
           autoFocusNonce={autoFocusNonce}
           onClearReply={() => { setReplyingTo(null); }}
+          onRestoreReply={() => { setReplyingTo(current => current ?? replyingTo); }}
           onJumpToReply={jumpToMessage}
           onOptimistic={onOptimistic}
           onSent={onSent}

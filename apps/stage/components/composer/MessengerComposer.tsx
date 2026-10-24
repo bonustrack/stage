@@ -61,6 +61,7 @@ interface Props {
   metadata?: React.ReactNode;
   quickAttach?: boolean;
   onClearReply?: () => void;
+  onRestoreReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
   onOptimistic?: (entry: OptimisticEntry) => void;
   onSent?: (localId: string, error?: string, sentId?: string) => void;

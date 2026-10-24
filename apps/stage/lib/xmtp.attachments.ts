@@ -1,4 +1,5 @@
 import { asFileUri } from './localAttachmentCache';
+import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import {
@@ -22,6 +23,13 @@ export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
 async function materializeFileUri(src: string): Promise<string> {
   if (src.startsWith('file://')) return src;
   if (src.startsWith('/')) return `file://${src}`;
+  const textPrefix = 'data:text/plain;base64,';
+  if (src.startsWith(textPrefix)) {
+    const dest = freshCacheFile('xmtp-send', 'txt');
+    dest.create();
+    dest.write(base64ToBytes(src.slice(textPrefix.length)));
+    return asFileUri(dest.uri);
+  }
   const ext = src.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
   const dest = freshCacheFile('xmtp-send', ext.length <= 5 ? ext : 'bin');
   const blob = await (await fetch(src)).blob();
@@ -104,14 +112,19 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>,
+  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>, replyTo?: string,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const session = await accountClient();
   const id = await withReadableSendError(() => sendPreparedAttachment({
     assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded, beforeSend,
     find: () => sendableConvOfLine(line),
-    send: (conv, infos) => conv.send({ multiRemoteAttachment: { attachments: infos } }),
+    send: (conv, infos) => {
+      if (replyTo === undefined) return conv.send({ multiRemoteAttachment: { attachments: infos } });
+      const info = infos[0];
+      if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
+      return conv.send({ reply: { reference: replyTo, content: { remoteAttachment: info } } });
+    },
   }));
   prep.forget(files);
   return id;

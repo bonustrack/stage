@@ -1,5 +1,5 @@
 
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 import {
   mapDecodedToEnvelope, envelopeFromContent, type EnvelopeOptions,
 } from '../src/xmtp/envelope';
@@ -72,6 +72,41 @@ describe('envelopeFromContent ui-parity options', () => {
     expect(e.replyTo).toBe('r1');
     expect(e.text).toBe('hi');
     expect(e.payload).toEqual({ contentType: 'reply', replyTo: 'r1' });
+  });
+
+  const nativeRemote = {
+    url: 'https://store.example/encrypted', filename: 'message.txt', contentDigest: 'digest',
+    secret: 'secret', salt: 'salt', nonce: 'nonce', contentLength: '4097', scheme: 'https://',
+  };
+
+  test('legacy native single-remote replies keep both the file and reference', () => {
+    const e = envelopeFromContent(base, 'reply', { reference: 'original', content: { remoteAttachment: nativeRemote } }, 'fallback');
+    expect(e.text).toBe('[file: message.txt]');
+    expect(e.replyTo).toBe('original');
+    expect(e.payload).toEqual({ contentType: 'reply', replyTo: 'original', attachments: [{ kind: 'file', name: 'message.txt', remote: nativeRemote }] });
+  });
+
+  test('browser single-remote replies preserve typed metadata without calling the asynchronous type resolver', () => {
+    const info = { ...nativeRemote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097 };
+    const contentType = mock(async () => ({ typeId: 'remoteStaticAttachment' }));
+    const e = envelopeFromContent(base, 'reply', { referenceId: 'original', content: info, contentType }, 'fallback', uiOptions);
+    expect(e.text).toBe('[file: message.txt]');
+    expect(e.replyTo).toBe('original');
+    expect(e.payload).toEqual({ contentType: 'reply', replyTo: 'original', attachments: [{ kind: 'file', name: 'message.txt', remote: info }] });
+    expect(contentType).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    { ...nativeRemote, secret: undefined },
+    { ...nativeRemote, nonce: 42 },
+    { ...nativeRemote, filename: 42 },
+    { filename: 'message.txt', content: new Uint8Array([1]) },
+    { attachments: [nativeRemote] },
+  ])('an incomplete or undecodable file reply keeps its reference and fallback', content => {
+    const e = envelopeFromContent(base, 'reply', { referenceId: 'original', content }, 'fallback', uiOptions);
+    expect(e.replyTo).toBe('original');
+    expect(e.text).toBe('fallback');
+    expect(e.payload?.attachments).toBeUndefined();
   });
 
   test('custom reaction omits voteFor/optionIndex and detects numeric enum schema', () => {

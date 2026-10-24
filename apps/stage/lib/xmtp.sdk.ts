@@ -42,7 +42,7 @@ function asGroup(conv: Conversation): Group {
 }
 
 const NON_FILE_CONTENT_TYPES = [
-  'text', 'group_updated', 'group_membership_change', 'reaction', 'read_receipt', 'reply', 'leave_request',
+  'text', 'group_updated', 'group_membership_change', 'reaction', 'read_receipt', 'leave_request',
   'markdown', 'actions', 'intent', 'transaction_reference', 'wallet_send_calls',
 ];
 

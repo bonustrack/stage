@@ -49,6 +49,23 @@ describe('storage index model', () => {
     expect(filesOfMessage(message('t', { contentTypeId: 'text', content: 'hi' }))).toEqual([]);
   });
 
+  test('indexes single-remote text-file replies from both SDK shapes, not ordinary replies', () => {
+    const remote = {
+      url: 'https://store.example/encrypted', filename: 'message.txt', contentDigest: 'digest',
+      secret: 'secret', salt: 'salt', nonce: 'nonce', contentLength: '4097',
+    };
+    const native = message('native', { contentTypeId: 'xmtp.org/reply:1.0', content: { reference: 'original', content: { remoteAttachment: remote } } });
+    const web = message('web', { contentTypeId: 'reply', content: { referenceId: 'original', content: {
+      ...remote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097,
+    }, contentType: async () => ({ typeId: 'remoteStaticAttachment' }) } });
+    for (const entry of [native, web]) expect(filesOfMessage(entry)).toEqual([
+      { messageId: entry.id, convId: 'c1', index: 0, name: 'message.txt', size: 4097, sentMs: 1_700_000_000_000 },
+    ]);
+    expect(filesOfMessage(message('text-reply', { contentTypeId: 'reply', content: { referenceId: 'original', content: 'hello' } }))).toEqual([]);
+    expect(filesOfMessage(message('incomplete', { contentTypeId: 'reply', content: { content: { ...remote, nonce: undefined } } }))).toEqual([]);
+    expect(findingsOf([native, { ...web, senderInboxId: PEER }], ME).files.map(f => f.messageId)).toEqual(['native']);
+  });
+
   test('keeps only files I sent and collects deletions', () => {
     const findings = findingsOf([
       message('mine'),

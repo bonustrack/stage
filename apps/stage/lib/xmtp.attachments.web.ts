@@ -1,6 +1,6 @@
 
 import {
-  decryptAttachment, encryptAttachment,
+  decryptAttachment, encryptAttachment, encodeRemoteAttachment,
   type EncryptedAttachment, type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
@@ -70,14 +70,19 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>,
+  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>, replyTo?: string,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const session = await accountClient();
   const id = await withReadableSendError(() => sendPreparedAttachment({
     assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded, beforeSend,
     find: () => sendableConvOfLine(line),
-    send: (conv, infos) => conv.sendMultiRemoteAttachment({ attachments: infos }),
+    send: async (conv, infos) => {
+      if (replyTo === undefined) return conv.sendMultiRemoteAttachment({ attachments: infos });
+      const info = infos[0];
+      if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
+      return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
+    },
   }));
   prep.forget(files);
   return id;

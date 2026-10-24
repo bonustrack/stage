@@ -86,7 +86,7 @@ function asGroup(conv: Conversation): Group {
   return conv instanceof Group ? conv : notAGroup();
 }
 
-const FILE_CONTENT_TYPES = [ContentType.Attachment, ContentType.RemoteAttachment, ContentType.MultiRemoteAttachment];
+const FILE_CONTENT_TYPES = [ContentType.Attachment, ContentType.RemoteAttachment, ContentType.MultiRemoteAttachment, ContentType.Reply];
 
 function sentBeforeNs(q: MessageQuery): bigint | undefined {
   if (q.beforeNs !== undefined) return BigInt(Math.floor(q.beforeNs));
