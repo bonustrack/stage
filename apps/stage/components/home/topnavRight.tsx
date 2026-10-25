@@ -6,7 +6,7 @@ import { CHANNEL_FIELDS, visibleChannelFieldCount } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
+import { CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeLayoutMenu, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
 import { isLastActivity, lastActivityLabel } from './activity.model';
 import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
@@ -14,6 +14,7 @@ import { AnchoredMenu, menuPointBelow, menuPointOnLayout } from '../AnchoredMenu
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { getActiveAccount } from '../../lib/accounts';
 import { setHomeView, useHomeViewOf } from '../../lib/homeView';
+import { homeRouteOf } from '../tabs/splitRoutes';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
 import { memo, useEffect, useState } from 'react';
@@ -57,6 +58,7 @@ interface HomeFilterProps {
 }
 
 function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
+  const router = useRouter();
   const current = useHomeViewOf(filter.scope);
   const fields = useChannelFields(filter.scope);
   const activity = useLastActivity(filter.scope);
@@ -67,7 +69,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
   const { onFilterMenu } = filter;
   useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
   const pick = (id: string): void => {
-    if (['grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) { setPage(id); return; }
+    if (['layout', 'grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) { setPage(id); return; }
     if (id.startsWith('activity:')) {
       const window = id.slice('activity:'.length);
       if (isLastActivity(window)) setLastActivity(filter.scope, window);
@@ -77,14 +79,16 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
     if (edit === null) return;
     if (page !== 'sorting') close();
     setHomeView(edit);
+    if (edit.view !== undefined) router.navigate(homeRouteOf(edit.view));
   };
   const filterCount = searchFilterCount(filter.query);
   const counts: Record<string, number | undefined> = {
     filter: filterCount > 0 ? filterCount : undefined,
     fields: visibleChannelFieldCount(fields),
   };
-  const picker = page === 'sorting' || page === 'activity';
+  const picker = ['sorting', 'activity', 'layout'].includes(page);
   const sections = page === 'activity' ? homeActivityMenu(activity)
+    : page === 'layout' ? homeLayoutMenu(current)
     : page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping');
   return (
     <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
@@ -106,7 +110,7 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
           <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
             {section.rows.map(row => picker ? (
               <PickerRow key={row.id} label={row.label} selected={row.selected}
-                role={page === 'activity' ? 'radio' : 'checkbox'} autoFocus={page === 'activity' && row.selected}
+                role={page === 'sorting' ? 'checkbox' : 'radio'} autoFocus={page !== 'sorting' && row.selected}
                 leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link"/>}
                 onPress={() => { pick(row.id); }}/>
             ) : <MenuRow key={row.id} icon={row.icon}

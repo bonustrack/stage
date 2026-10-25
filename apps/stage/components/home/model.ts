@@ -122,6 +122,7 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
   if (!grouping) return [{ rows: [
+    { id: 'layout', label: 'View', value: board ? 'Board' : 'Chats', icon: board ? 'IconColumns3Wide' : 'IconBubble3', selected: false },
     { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
     { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
     { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
@@ -134,7 +135,18 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
   return [{ heading: board ? 'Column by' : 'Group by', rows: groups }];
 }
 
+export function homeLayoutMenu(current: HomeViewContent): ViewMenuSection[] {
+  return [{ heading: 'View', rows: homeViewSchema.shape.view.options.map(view => ({
+    id: `view:${view}`, label: view === 'board' ? 'Board' : 'Chats',
+    icon: view === 'board' ? 'IconColumns3Wide' : 'IconBubble3', selected: current.view === view,
+  })) }];
+}
+
 export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {
+  if (id.startsWith('view:')) {
+    const view = homeViewSchema.shape.view.safeParse(id.slice('view:'.length));
+    return view.success ? { view: view.data } : null;
+  }
   if (!id.startsWith(GROUP_ID_PREFIX)) return homeSortEdit(current, id);
   const value = id.slice(GROUP_ID_PREFIX.length);
   if (current.view === 'board') {

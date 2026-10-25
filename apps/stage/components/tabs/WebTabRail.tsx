@@ -4,7 +4,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter, type Href } from 'expo-router';
 import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { TAB_HREF, homeTabIndex, type TabName } from '../SwipeTabs.config';
+import { TAB_HREF, TAB_ORDER, homeTabIndex, type TabName } from '../SwipeTabs.config';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
@@ -12,11 +12,12 @@ import { HoverTint } from '../hover';
 import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
-import { IconColumnWide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumnWide';
+import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { useBoardHome } from './boardHome';
 import { menuPagesFor, isMenuPageOpen, isMenuPageRoute } from './menuPages';
+import { isTabRoute } from './splitRoutes';
 import { useDeveloperMode } from '../../lib/developerMode';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
@@ -31,13 +32,13 @@ export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } a
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
-export const TAB_ICONS: readonly (readonly [TabName, CentralIcon])[] = [
+export const TAB_ICONS: readonly (readonly [TabName | 'contacts', CentralIcon])[] = [
   ['index', IconBubble3],
-  ['board', IconColumnWide],
+  ['contacts', IconGroup1],
   ['wallet', IconWallet4],
 ];
 
-const TAB_LABELS: Record<TabName, string> = { index: 'Chats', board: 'Board', wallet: 'Wallet', settings: 'Settings' };
+const TAB_LABELS: Record<TabName | 'contacts', string> = { index: 'Chats', board: 'Board', contacts: 'Contacts', wallet: 'Wallet', settings: 'Settings' };
 
 const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
 
@@ -71,7 +72,7 @@ function TabIcon({ icon, active, badge }: {
 
 function useRailNavigate(pathname: string): (href: Href) => void {
   const router = useRouter();
-  const fromMenuPage = isMenuPageRoute(pathname);
+  const fromMenuPage = isMenuPageRoute(pathname) && !isTabRoute(pathname);
   return (href) => {
     if (fromMenuPage) router.dismissTo(href);
     else router.navigate(href);
@@ -85,11 +86,13 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
 }): React.ReactElement {
   const navigate = useRailNavigate(pathname);
   const openNewChat = useOpenNewChat();
-  const activeIndex = activeTabIndex(pathname, useBoardHome());
+  const activeName = TAB_ORDER[activeTabIndex(pathname, useBoardHome())];
   return (
     <>
-      {TAB_ICONS.map(([name, icon], i) => {
-        const icn = <TabIcon icon={icon} active={i === activeIndex} badge={name === 'index' ? unreadBadge : undefined}/>;
+      {TAB_ICONS.map(([name, icon]) => {
+        const active = name === 'contacts' ? isMenuPageOpen(pathname, '/contacts')
+          : !isMenuPageRoute(pathname) && (name === activeName || (name === 'index' && activeName === 'board'));
+        const icn = <TabIcon icon={icon} active={active} badge={name === 'index' ? unreadBadge : undefined}/>;
         const go = (): void => {
           if (name === 'index' && chatsTabOpensNewChat(pathname, vertical)) {
             openNewChat();
@@ -103,7 +106,8 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
             {icn}
           </RailTooltip>
         ) : (
-          <Pressable key={name} onPress={go} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable key={name} accessibilityRole="button" accessibilityLabel={TAB_LABELS[name]}
+            accessibilityState={{ selected: active }} onPress={go} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             {icn}
           </Pressable>
         );
@@ -117,7 +121,7 @@ function MenuPageButtons({ pathname }: { pathname: string }): React.ReactElement
   const developerMode = useDeveloperMode();
   return (
     <>
-      {menuPagesFor(true, developerMode).map((page) => (
+      {menuPagesFor(true, developerMode).filter(page => page.href !== '/contacts').map((page) => (
         <RailTooltip key={page.href} label={page.label} onPress={() => { navigate(page.href); }} placement="beside" style={RAIL_BUTTON}>
           <TabIcon icon={appIcon(page.icon)} active={isMenuPageOpen(pathname, page.href)}/>
         </RailTooltip>

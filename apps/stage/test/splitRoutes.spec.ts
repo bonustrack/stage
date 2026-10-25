@@ -61,11 +61,11 @@ describe('channelRouteConvId', () => {
 });
 
 describe('isTabRoute', () => {
-  test('only the four tab pages count, Board included and Contacts no longer', () => {
+  test('Contacts is a tab page and Board keeps its existing route', () => {
     expect(isTabRoute('/')).toBe(true);
     expect(isTabRoute('/board')).toBe(true);
     expect(isTabRoute('/wallet')).toBe(true);
-    expect(isTabRoute('/contacts')).toBe(false);
+    expect(isTabRoute('/contacts')).toBe(true);
     expect(isTabRoute('/wallet/send')).toBe(false);
     expect(isTabRoute('/settings/security')).toBe(false);
   });

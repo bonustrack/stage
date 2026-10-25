@@ -5,7 +5,7 @@ import { MENU_PAGES } from './menuPages';
 
 export const BOARD_ROUTE = '/board';
 
-const TAB_ROUTES = new Set(['/', BOARD_ROUTE, '/wallet', '/settings']);
+const TAB_ROUTES = new Set(['/', BOARD_ROUTE, '/contacts', '/wallet', '/settings']);
 
 const CHANNEL_PREFIX = '/channel/';
 

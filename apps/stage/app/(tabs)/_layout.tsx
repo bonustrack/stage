@@ -39,8 +39,9 @@ function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }):
 function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: {
   insetTop: number; tabBarHeight: number; topnavHidden: boolean; rail: boolean; pathname: string;
 }): React.ReactElement | null {
+  if (isMenuPageRoute(pathname)) return null;
   if (Platform.OS === 'web') {
-    if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return null;
+    if (pathname.startsWith('/settings')) return null;
     return (
       <Col flex={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}
@@ -129,8 +130,9 @@ export default function TabsLayout(): React.ReactElement {
             name={name}
             listeners={name === 'index' ? chatsTabListeners : undefined}
             options={{
+              tabBarAccessibilityLabel: name === 'index' ? 'Chats' : name === 'contacts' ? 'Contacts' : 'Wallet',
               tabBarIcon: ({ focused }) => (
-                <Glyph icon={icon} size={24} color={focused ? active : inactive}/>
+                <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive}/>
               ),
               ...(name === 'index'
                 ? {
@@ -158,6 +160,7 @@ export default function TabsLayout(): React.ReactElement {
           }}
           listeners={{ tabPress: (e) => { e.preventDefault(); router.navigate(SETTINGS_ROUTE); } }}
 />
+        <Tabs.Screen name="board" options={{ href: null }}/>
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
       <PagerOverlay

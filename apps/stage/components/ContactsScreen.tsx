@@ -6,8 +6,8 @@ import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { StackHeader } from './chrome/StackHeader';
 import { usePalette } from '../lib/theme';
-import { SETTINGS_ROUTE } from '../lib/routes';
-import { useWebTabRail } from '../lib/webLayout';
+import { Platform } from 'react-native';
+import { useBottomChromeHeight } from '../lib/bottomChrome';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { useAllContacts, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
@@ -18,7 +18,7 @@ export function ContactsScreen(): React.ReactElement {
   const { bg } = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const rail = useWebTabRail();
+  const bottomChrome = useBottomChromeHeight();
   const { contacts } = useAllContacts();
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
@@ -48,14 +48,14 @@ export function ContactsScreen(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Contacts" backTo={SETTINGS_ROUTE} back={!rail} />
+      <StackHeader title="Contacts" back={false} />
       <VirtualList
         data={contacts}
         keyExtractor={c => c.address}
         renderItem={renderItem}
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: insets.bottom }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: insets.bottom + (Platform.OS === 'web' ? bottomChrome : 0) }}
         ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
     </Col>

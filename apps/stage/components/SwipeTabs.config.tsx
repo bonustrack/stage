@@ -9,9 +9,10 @@ import type { SimultaneousRefs } from './SwipeTabs.types';
 export const TAB_ORDER = ['index', 'board', 'wallet', 'settings'] as const;
 export type TabName = (typeof TAB_ORDER)[number];
 
-export const TAB_HREF: Record<TabName, Href> = {
+export const TAB_HREF: Record<TabName | 'contacts', Href> = {
   index: '/',
   board: BOARD_ROUTE,
+  contacts: '/contacts',
   wallet: '/wallet',
   settings: '/settings',
 };
