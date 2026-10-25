@@ -67,13 +67,13 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, ch
     <Col
       {...SCROLLBAR_ON_HOVER}
       nativeID={nativeID}
-      surface="toolbar"
+      background={border}
       radius={BLOCK_RADIUS_DEFAULT}
       padding={{ top: COLUMN_PADDING, bottom: COLUMN_PADDING, left: COLUMN_PADDING }}
       gap={CARD_GAP}
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
-      style={{ borderWidth: 1, borderColor: over ? link : border, opacity }}
+      style={{ borderWidth: 1, borderColor: over ? link : 'transparent', opacity }}
     >
       {children}
     </Col>

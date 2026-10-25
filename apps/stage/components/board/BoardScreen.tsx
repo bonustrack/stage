@@ -90,7 +90,7 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   const router = useRouter();
   const pathname = usePathname();
   const panel = useWebTabRail();
-  const { border, link } = usePalette();
+  const { bg, link } = usePalette();
   const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
   const fields = useChannelFields('board');
@@ -102,11 +102,11 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
     <Box
       {...cardDataSet(columnKey, item.convId)}
       nativeID={source.nativeID}
-      background={border}
+      surface="surface"
       radius={BLOCK_RADIUS_DEFAULT}
       style={{
         overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1,
-        borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : border,
+        borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg,
       }}
     >
       <ChannelRow
