@@ -12,20 +12,18 @@ export function parseHash(hash: string): Route {
   return { storyId: path || null, args };
 }
 
-export type ArgValue = string | number | boolean;
-
 export function argToText(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
 }
 
-export function serializeRoute(storyId: string, args: Record<string, ArgValue>): string {
+export function serializeRoute(storyId: string, args: Record<string, string>): string {
   const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(args)) params.set(key, String(value));
+  for (const [key, value] of Object.entries(args)) params.set(key, value);
   const query = params.toString();
   return `#/${storyId}${query ? `?${query}` : ''}`;
 }
 
-export function coerceArg(raw: string, argType: { control: { type: string }; options?: readonly unknown[] } | undefined): unknown {
+function coerceArg(raw: string, argType: { control: { type: string }; options?: readonly unknown[] } | undefined): unknown {
   if (!argType) return raw;
   const { type } = argType.control;
   if (type === 'boolean') return raw === 'true';

@@ -1,5 +1,5 @@
 import { chartCategoryColor, type ChartColor } from './chart.colors';
-import { chartAreaPath, chartCurvePath, type ChartCurveType, type ChartPoint } from './chart.curves';
+import { chartAreaPath, chartCurvePath, num, type ChartCurveType, type ChartPoint } from './chart.curves';
 import { chartExtents, chartNumber, chartValueScale, type ChartExtent, type ChartYAxisConfig } from './chart.scale';
 import { FONT_SIZE } from './tokens';
 
@@ -167,10 +167,6 @@ export function chartBarColor(series: readonly ChartSeries[], colors: readonly s
   const only = series.length === 1 ? series[0] : undefined;
   if (only?.type === 'bar' && only.color === undefined) return chartCategoryColor(index);
   return colors[seriesIndex] ?? chartCategoryColor(seriesIndex);
-}
-
-function num(n: number): string {
-  return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : '0';
 }
 
 function yAxisWidth(ticks: readonly number[]): number {

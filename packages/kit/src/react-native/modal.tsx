@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { BLOCK_RADIUS_DEFAULT, kitPalette, type Color, type KitPalette } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, type Color, type KitPalette } from '../tokens';
 import { SIZES } from '../button.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Button } from './button';
@@ -10,7 +10,7 @@ import { Dialog } from './dialog';
 import { Glyph } from './glyph';
 import { Text } from './text';
 import { Tooltip } from './tooltip';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitPaletteFor, useKitScheme } from './theme-context';
 
 export const MODAL = {
   maxWidth: 480,
@@ -42,12 +42,6 @@ export interface ModalProps extends A2uiCommonProps {
   backdropColor?: Color;
   animationType?: 'slide' | 'fade' | 'none';
   gestureRoot?: boolean;
-}
-
-function usePalette(dark: boolean | undefined): KitPalette {
-  const context = useKitPalette();
-  if (dark === undefined) return context;
-  return kitPalette(dark ? 'dark' : 'light');
 }
 
 function ModalHeader({ title, onClose, pal, dark, dismissable }: {
@@ -90,7 +84,7 @@ interface PanelProps {
 
 function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   const { children, title, footer, bottomInset, side = 'center', dark, background, borderColor, dismissable = true } = props;
-  const pal = usePalette(dark);
+  const pal = useKitPaletteFor(dark);
   const scheme = useKitScheme();
   const centered = side === 'center';
   return (

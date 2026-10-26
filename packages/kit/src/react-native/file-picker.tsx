@@ -28,8 +28,7 @@ export interface FilePickerProps {
 }
 
 function toImageMediaTypes(types?: FilePickerMediaType[]): ImagePicker.ImagePickerOptions['mediaTypes'] {
-  if (types === undefined || types.length === 0) return ['images'];
-  return types;
+  return types === undefined || types.length === 0 ? ['images'] : types;
 }
 
 function assetToFile(asset: ImagePicker.ImagePickerAsset): PickedFile {
@@ -42,34 +41,31 @@ function assetToFile(asset: ImagePicker.ImagePickerAsset): PickedFile {
   };
 }
 
+function deliver(r: ImagePicker.ImagePickerResult, props: FilePickerProps): void {
+  if (r.canceled || !r.assets?.length) props.onCancel?.();
+  else props.onPick?.(r.assets.map(assetToFile));
+}
+
 async function runLibrary(props: FilePickerProps): Promise<void> {
-  const r = await ImagePicker.launchImageLibraryAsync({
+  deliver(await ImagePicker.launchImageLibraryAsync({
     mediaTypes: toImageMediaTypes(props.mediaTypes),
     quality: props.quality,
     allowsMultipleSelection: props.multiple,
     selectionLimit: props.selectionLimit,
     allowsEditing: props.allowsEditing,
     aspect: props.aspect,
-  });
-  if (r.canceled || !r.assets?.length) { props.onCancel?.(); return; }
-  props.onPick?.(r.assets.map(assetToFile));
+  }), props);
 }
 
 async function runCamera(props: FilePickerProps): Promise<void> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) { props.onCancel?.(); return; }
-  const r = await ImagePicker.launchCameraAsync({
-    mediaTypes: toImageMediaTypes(props.mediaTypes),
-    quality: props.quality,
-  });
-  if (r.canceled || !r.assets?.length) { props.onCancel?.(); return; }
-  props.onPick?.(r.assets.map(assetToFile));
+  deliver(await ImagePicker.launchCameraAsync({ mediaTypes: toImageMediaTypes(props.mediaTypes), quality: props.quality }), props);
 }
 
 async function runDocument(props: FilePickerProps): Promise<void> {
   const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-  if (r.canceled) { props.onCancel?.(); return; }
-  const asset = r.assets[0];
+  const asset = r.canceled ? undefined : r.assets[0];
   if (asset === undefined) { props.onCancel?.(); return; }
   props.onPick?.([{
     uri: asset.uri,
@@ -91,8 +87,7 @@ export function FilePicker(props: FilePickerProps): null {
   const last = useRef<number | undefined>(props.openNonce);
   const nonce = props.openNonce;
   useEffect(() => {
-    if (nonce === undefined) return;
-    if (nonce === last.current) return;
+    if (nonce === undefined || nonce === last.current) return;
     last.current = nonce;
     runPicker(propsRef.current);
   }, [nonce]);

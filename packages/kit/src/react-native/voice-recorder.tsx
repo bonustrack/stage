@@ -80,10 +80,7 @@ function CancelBtn({ onPress, fg, chipBg }: {
 }
 
 export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
-  const {
-    recording, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX, onStart, onCancel, onComplete,
-  } = props;
-
+  const { recording, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX, onStart, onCancel, onComplete } = props;
   const micPressStart = useRef(0);
   const recordingRef = useRef(false);
   const pressingRef = useRef(false);
@@ -96,8 +93,13 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
   const fireStart = (): void => { recordingRef.current = true; handlersRef.current.onStart?.(); };
   const fireCancel = (): void => { recordingRef.current = false; handlersRef.current.onCancel?.(); };
   const fireComplete = (): void => { recordingRef.current = false; handlersRef.current.onComplete?.(); };
-  const fireRef = useRef({ fireStart, fireCancel, fireComplete });
-  fireRef.current = { fireStart, fireCancel, fireComplete };
+  const release = (): number => {
+    pressingRef.current = false;
+    const dx = slideXRef.current;
+    Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
+    slideXRef.current = 0;
+    return dx;
+  };
 
   const micPanResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -107,8 +109,8 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
       micPressStart.current = Date.now();
       slideXRef.current = 0;
       slideX.setValue(0);
-      if (recordingRef.current) { fireRef.current.fireComplete(); return; }
-      fireRef.current.fireStart();
+      if (recordingRef.current) { fireComplete(); return; }
+      fireStart();
     },
     onPanResponderMove: (_, g) => {
       const dx = Math.max(-120, Math.min(0, g.dx));
@@ -116,31 +118,18 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
       slideX.setValue(dx);
     },
     onPanResponderRelease: () => {
-      pressingRef.current = false;
-      const dx = slideXRef.current;
       const held = Date.now() - micPressStart.current;
-      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
-      slideXRef.current = 0;
+      const dx = release();
       if (!recordingRef.current) return;
-      if (dx <= -slideThresholdPx) { fireRef.current.fireCancel(); return; }
-      if (held >= 350) fireRef.current.fireComplete();
+      if (dx <= -slideThresholdPx) { fireCancel(); return; }
+      if (held >= 350) fireComplete();
     },
-    onPanResponderTerminate: () => {
-      pressingRef.current = false;
-      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
-      slideXRef.current = 0;
-    },
+    onPanResponderTerminate: () => { release(); },
     onPanResponderTerminationRequest: () => false,
   }), []);
 
   return (
-    <RecorderView
-      props={props}
-      slideX={slideX}
-      panHandlers={micPanResponder.panHandlers}
-      onCancelPress={() => { fireCancel(); }}
-      onCompletePress={() => { fireComplete(); }}
-    />
+    <RecorderView props={props} slideX={slideX} panHandlers={micPanResponder.panHandlers} onCancelPress={fireCancel} onCompletePress={fireComplete} />
   );
 }
 
@@ -177,31 +166,17 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
     inputSlot, leftControls, rightAction, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX, wrapMic,
   } = props;
   const micView = <MicView recording={recording} fg={fg} hoverFg={head} slideX={slideX} panHandlers={panHandlers} />;
-  const mic = wrapMic ? wrapMic(micView) : micView;
   return (
     <Column>
-      {recording ? (
-        <RecordingBar
-          head={head} sub={sub} levels={levels} recordSecs={recordSecs}
-          slideX={slideX} slideThresholdPx={slideThresholdPx}
-        />
-      ) : (
-        inputSlot
-      )}
+      {recording ? <RecordingBar head={head} sub={sub} levels={levels} recordSecs={recordSecs} slideX={slideX} slideThresholdPx={slideThresholdPx} /> : inputSlot}
       <Row align="center" gap={4} height={40}>
-        {recording ? (
-          <CancelBtn onPress={onCancelPress} fg={fg} chipBg={chipBg} />
-        ) : (
-          leftControls
-        )}
+        {recording ? <CancelBtn onPress={onCancelPress} fg={fg} chipBg={chipBg} /> : leftControls}
         <Column weight={1} />
-        {mic}
+        {wrapMic ? wrapMic(micView) : micView}
         {recording ? (
           <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
             onPress={onCompletePress} icon={<Glyph icon={IconCheckmark1} size={20} color={bg} />} />
-        ) : (
-          rightAction
-        )}
+        ) : rightAction}
       </Row>
     </Column>
   );

@@ -1,15 +1,7 @@
 
 import { FONT_SIZE, colors, fontName, schemePalette } from './tokens';
 
-export type ButtonColor =
-  | 'primary'
-  | 'secondary'
-  | 'info'
-  | 'discovery'
-  | 'success'
-  | 'caution'
-  | 'warning'
-  | 'danger';
+export type ButtonColor = 'primary' | 'secondary' | 'info' | 'discovery' | 'success' | 'caution' | 'warning' | 'danger';
 
 export const BUTTON_COLORS: readonly ButtonColor[] = ['primary', 'secondary', 'info', 'discovery', 'success', 'caution', 'warning', 'danger'];
 
@@ -68,15 +60,12 @@ function accent(
   color: ButtonColor,
   dark: boolean,
 ): { bg: string; pressed: string; on: string } {
-  const head = schemePalette(dark).head;
-  const bg = dark ? colors['bg-dark'] : colors['bg-light'];
+  const { head, border } = schemePalette(dark);
   switch (color) {
     case 'primary':
-      return { bg: head, pressed: head, on: bg };
-    case 'secondary': {
-      const rowBg = schemePalette(dark).border;
-      return { bg: rowBg, pressed: rowBg, on: head };
-    }
+      return { bg: head, pressed: head, on: dark ? colors['bg-dark'] : colors['bg-light'] };
+    case 'secondary':
+      return { bg: border, pressed: border, on: head };
     case 'info':
       return { bg: '#2f6df6', pressed: '#285fd6', on: '#ffffff' };
     case 'discovery':
@@ -133,11 +122,12 @@ export function resolveColors(
   variant: ButtonControlVariant,
   dark: boolean,
 ): VariantColors {
+  const p = schemePalette(dark);
   const ctx: ColorCtx = {
     a: accent(color, dark),
-    border: schemePalette(dark).border,
+    border: p.border,
     ghostPressedBg: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-    neutralText: schemePalette(dark).head,
+    neutralText: p.head,
     isNeutral: color === 'primary' || color === 'secondary',
     color,
   };

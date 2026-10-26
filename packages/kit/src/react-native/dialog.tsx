@@ -3,8 +3,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { resolveColor, resolveOptionalColor, type Color, type Scheme } from '../tokens';
-import { resolveBoxRadius, type RadiusValue } from '../radius';
+import { resolveBoxRadius, resolveOptionalColor, type Color, type RadiusValue, type Scheme } from '../tokens';
 import { spacingEntries, type SpacingValue } from '../layout';
 import { useKitScheme } from './theme-context';
 
@@ -54,10 +53,8 @@ function overlayStyle(props: DialogProps): ViewStyle {
 }
 
 function panelRadiusStyle(props: DialogProps): ViewStyle {
-  const radius = props.panelRadius === undefined
-    ? undefined
-    : resolveBoxRadius(props.panelRadius);
-  if (radius === undefined) return {};
+  if (props.panelRadius === undefined) return {};
+  const radius = resolveBoxRadius(props.panelRadius);
   const style: ViewStyle = { borderTopLeftRadius: radius, borderTopRightRadius: radius };
   if (props.side !== 'bottom') {
     style.borderBottomLeftRadius = radius;
@@ -90,18 +87,7 @@ function panelStyle(props: DialogProps, scheme: Scheme, insetBottom: number): Vi
 }
 
 function Handle(props: { color: string }): ReactNode {
-  return (
-    <View
-      style={{
-        width: 36,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: props.color,
-        alignSelf: 'center',
-        marginBottom: 12,
-      }}
-    />
-  );
+  return <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: props.color, alignSelf: 'center', marginBottom: 12 }} />;
 }
 
 function PanelBody(bodyProps: { props: DialogProps; content: ReactNode }): ReactNode {
@@ -144,45 +130,23 @@ export function Dialog(props: DialogProps): ReactNode {
   const scheme = useKitScheme();
   const insets = useSafeAreaInsets();
   const { open, onClose, children } = props;
-  const dismissable = props.dismissable !== false;
-  const backdropColor = props.backdropColor !== undefined
-    ? resolveColor(props.backdropColor, scheme)
-    : 'rgba(0,0,0,0.5)';
+  const backdrop = props.backdrop !== false;
   const close = (): void => {
-    if (dismissable) onClose();
+    if (props.dismissable !== false) onClose();
   };
-  const inner = (
-    <Panel props={props} scheme={scheme} insetBottom={insets.bottom} content={children} />
-  );
-
   const overlay = (
     <KeyboardAvoidingView
       enabled={props.avoidKeyboard === true && Platform.OS === 'ios'} behavior="padding"
       pointerEvents="box-none"
-      style={[
-        overlayStyle(props),
-        props.backdrop === false ? null : { backgroundColor: backdropColor },
-      ]}
+      style={[overlayStyle(props), backdrop ? { backgroundColor: resolveOptionalColor(props.backdropColor, scheme) ?? 'rgba(0,0,0,0.5)' } : null]}
     >
-      {props.backdrop === false ? null : (
-        <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} />
-      )}
-      {inner}
+      {backdrop ? <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} /> : null}
+      <Panel props={props} scheme={scheme} insetBottom={insets.bottom} content={children} />
     </KeyboardAvoidingView>
   );
-
-  const body = props.gestureRoot
-    ? <GestureHandlerRootView style={{ flex: 1 }}>{overlay}</GestureHandlerRootView>
-    : overlay;
-
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType={props.animationType ?? 'fade'}
-      onRequestClose={close}
-    >
-      {body}
+    <Modal visible={open} transparent animationType={props.animationType ?? 'fade'} onRequestClose={close}>
+      {props.gestureRoot ? <GestureHandlerRootView style={{ flex: 1 }}>{overlay}</GestureHandlerRootView> : overlay}
     </Modal>
   );
 }

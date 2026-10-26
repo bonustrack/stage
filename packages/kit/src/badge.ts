@@ -1,13 +1,8 @@
 
+import { parseHex } from './theme-derive';
 import { FONT_SIZE, readableForeground, resolveColor, type Color, type Scheme } from './tokens';
 
-export type BadgeColor =
-  | 'secondary'
-  | 'success'
-  | 'danger'
-  | 'warning'
-  | 'info'
-  | 'discovery';
+export type BadgeColor = 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'discovery';
 
 export type BadgeColorValue = Color;
 
@@ -56,13 +51,8 @@ export interface ResolvedBadgeStyle {
 }
 
 export function withAlpha(hex: string, alpha: number): string {
-  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
-  const h = m?.[1];
-  if (h === undefined) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  const rgb = parseHex(hex);
+  return rgb === null ? hex : `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
 }
 
 function tonedStyle(

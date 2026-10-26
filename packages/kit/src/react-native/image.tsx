@@ -1,18 +1,9 @@
 import {
-  Image as RNImage,
-  StyleSheet,
-  View,
-  type DimensionValue,
-  type ImageLoadEventData,
-  type ImageProps as RNImageProps,
-  type ImageStyle,
-  type NativeSyntheticEvent,
-  type StyleProp,
-  type ViewStyle,
+  Image as RNImage, StyleSheet, View,
+  type DimensionValue, type ImageLoadEventData, type ImageProps as RNImageProps, type ImageStyle, type NativeSyntheticEvent, type StyleProp, type ViewStyle,
 } from 'react-native';
 import { flushBleed } from '../layout';
-import type { RadiusValue } from '../radius';
-import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, type RadiusValue } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 
 export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scaleDown';
@@ -152,6 +143,5 @@ export function getImageSize(url: string): Promise<{ width: number; height: numb
 }
 
 export function imageRadius(radius?: ImageRadius | number): ViewStyle {
-  const r = radiusValue(radius) ?? BLOCK_RADIUS_DEFAULT;
-  return { borderRadius: r };
+  return { borderRadius: radiusValue(radius) ?? BLOCK_RADIUS_DEFAULT };
 }

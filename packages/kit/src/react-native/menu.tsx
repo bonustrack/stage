@@ -1,11 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
-import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Glyph, type CentralIcon } from './glyph';
 import { Text, type TextProps } from './text';
-import { useKitPalette } from './theme-context';
+import { useKitPaletteFor } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { Dialog } from './dialog';
 import { MODAL } from './modal';
@@ -38,12 +37,6 @@ export function useDropdownMenuText(): Pick<TextProps, 'size' | 'style'> {
   };
 }
 
-function usePalette(dark: boolean | undefined): KitPalette {
-  const context = useKitPalette();
-  if (dark === undefined) return context;
-  return kitPalette(dark ? 'dark' : 'light');
-}
-
 export interface DropdownMenuProps {
   children: ReactNode;
   dark?: boolean;
@@ -53,7 +46,7 @@ export interface DropdownMenuProps {
 }
 
 export function DropdownMenu({ children, dark, background, maxHeight, style }: DropdownMenuProps): React.ReactElement {
-  const pal = usePalette(dark);
+  const pal = useKitPaletteFor(dark);
   const list = <View style={{ paddingVertical: DROPDOWN_MENU.padY }}>{children}</View>;
   return (
     <View
@@ -87,7 +80,7 @@ export interface DropdownMenuItemProps {
 }
 
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
-  const pal = usePalette(props.dark);
+  const pal = useKitPaletteFor(props.dark);
   const sheet = useContext(SheetMenuContext);
   const menuText = useDropdownMenuText();
   const [hovered, setHovered] = useState(false);
@@ -121,7 +114,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
 }
 
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
-  const pal = usePalette(dark);
+  const pal = useKitPaletteFor(dark);
   return <View style={{ height: DROPDOWN_MENU.separator, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
 }
 
@@ -137,7 +130,7 @@ export interface DropdownMenuSheetProps {
 }
 
 export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', dark, background, maxWidth = MODAL.maxWidth, avoidKeyboard }: DropdownMenuSheetProps): React.ReactElement {
-  const pal = usePalette(dark);
+  const pal = useKitPaletteFor(dark);
   const centered = side === 'center';
   return (
     <Dialog

@@ -37,3 +37,8 @@ export function useKitPalette(): KitPalette {
 export function useKitScheme(): 'light' | 'dark' {
   return useKitThemeValue().scheme;
 }
+
+export function useKitPaletteFor(dark: boolean | undefined): KitPalette {
+  const context = useKitPalette();
+  return dark === undefined ? context : kitPalette(dark ? 'dark' : 'light');
+}

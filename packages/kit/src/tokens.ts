@@ -46,12 +46,7 @@ export const semanticColors = {
   toolbarBgColor: { dark: colors['toolbar-bg-dark'], light: colors['toolbar-bg-light'] },
 } as const;
 
-export function semanticPalette(scheme: 'light' | 'dark'): {
-  bgColor: string; borderColor: string; textColor: string; subColor: string;
-  linkColor: string; primaryColor: string;
-  dangerColor: string; successColor: string;
-  inputBgColor: string; toolbarBgColor: string;
-} {
+export function semanticPalette(scheme: 'light' | 'dark'): Record<keyof typeof semanticColors, string> {
   return {
     bgColor: semanticColors.bgColor[scheme],
     borderColor: semanticColors.borderColor[scheme],
@@ -132,15 +127,7 @@ export function readableForeground(hex: string): string {
   return luminance > 0.6 ? '#000000' : '#ffffff';
 }
 
-export type ColorToken =
-  | 'text'
-  | 'secondary'
-  | 'muted'
-  | 'link'
-  | 'primary'
-  | 'danger'
-  | 'success'
-  | 'border';
+export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border';
 
 export const COLOR_TOKENS: readonly ColorToken[] = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border'];
 
@@ -206,17 +193,7 @@ export const BUTTON_RADIUS_DEFAULT = 999;
 export const BLOCK_RADIUS_DEFAULT = 12;
 export const CONTROL_RADIUS_DEFAULT = 8;
 
-
-export type FontSizeName =
-  | '3xs'
-  | '2xs'
-  | 'xs'
-  | 'sm'
-  | 'md'
-  | 'lg'
-  | 'xl'
-  | '2xl'
-  | '3xl';
+export type FontSizeName = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
 export const FONT_SIZE: Record<FontSizeName, number> = {
   '3xs': 13,
@@ -262,7 +239,6 @@ export const fontName = {
   mono: fontFamily.mono[0],
 } as const;
 
-
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
 
 export const RADIUS_SCALE: Record<RadiusName, number> = {
@@ -274,12 +250,30 @@ export const RADIUS_SCALE: Record<RadiusName, number> = {
 
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
-export {
-  type RadiusValue,
-  BOX_RADIUS_SCALE,
-  isRadiusValue,
-  resolveBoxRadius,
-} from './radius';
+export type RadiusValue = '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full' | '100%' | 'none';
+
+export const BOX_RADIUS_SCALE: Record<RadiusValue, number | string> = {
+  none: 0,
+  '2xs': 2,
+  xs: 4,
+  sm: 8,
+  md: 10,
+  lg: 12,
+  xl: 16,
+  '2xl': 20,
+  '3xl': 24,
+  '4xl': 32,
+  full: 999,
+  '100%': '50%',
+} as const;
+
+export function isRadiusValue(r: string): r is RadiusValue {
+  return Object.hasOwn(BOX_RADIUS_SCALE, r);
+}
+
+export function resolveBoxRadius(r: number | string): number | string {
+  return typeof r === 'string' && isRadiusValue(r) ? BOX_RADIUS_SCALE[r] : r;
+}
 
 export type Density = 'compact' | 'normal' | 'spacious';
 

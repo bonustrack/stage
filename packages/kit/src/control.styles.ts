@@ -1,6 +1,6 @@
 
 import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
-import { FONT_SIZE, fontName, schemePalette } from './tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from './tokens';
 
 export function fieldIds(name: string | undefined): {
   nativeID?: string;
@@ -56,15 +56,11 @@ export interface ControlColors {
 
 export function controlColors(variant: ControlVariant, dark: boolean): ControlColors {
   const p = schemePalette(dark);
-  const head = p.head;
-  const sub = p.sub;
-  const inputBg = dark ? '#1b1c1e' : '#f4f4f5';
-  const border = p.border;
   return {
-    bg: variant === 'soft' ? inputBg : 'transparent',
-    text: head,
-    placeholder: sub,
-    border: variant === 'outline' ? border : 'transparent',
+    bg: variant === 'soft' ? (dark ? '#1b1c1e' : '#f4f4f5') : 'transparent',
+    text: p.head,
+    placeholder: p.sub,
+    border: variant === 'outline' ? p.border : 'transparent',
   };
 }
 
@@ -98,11 +94,7 @@ export function controlTextStyle(size: ControlSize, colors: ControlColors): Text
   };
 }
 
-export type TextFieldSurface = 'outline' | 'plain';
-
 export interface TextFieldStyleInput {
-  variant?: TextFieldSurface;
-  defaultRadius: number;
   baseColors: ControlColors;
   background?: string;
   borderColor?: string;
@@ -120,34 +112,17 @@ export interface ResolvedTextFieldStyle {
   placeholder: string;
 }
 
-function fieldBorder(
-  input: TextFieldStyleInput,
-  c: ControlColors,
-): { width: number; color: string } {
-  const plain = input.variant === 'plain';
-  const width = plain && input.borderColor === undefined ? 0 : 1;
-  return { width, color: input.borderColor ?? c.border };
-}
-
-function fieldBackground(input: TextFieldStyleInput, c: ControlColors): string {
-  if (input.background !== undefined) return input.background;
-  return input.variant === 'plain' ? 'transparent' : c.bg;
-}
-
-export function textFieldStyle(
-  input: TextFieldStyleInput,
-): ResolvedTextFieldStyle {
+export function textFieldStyle(input: TextFieldStyleInput): ResolvedTextFieldStyle {
   const size = CONTROL_SIZES.md;
   const c = input.baseColors;
-  const border = fieldBorder(input, c);
   const box: ViewStyle = {
     minHeight: size.minHeight,
     paddingHorizontal: (input.paddingX ?? size.paddingHorizontal) as DimensionValue,
     paddingVertical: (input.paddingY ?? size.paddingVertical) as DimensionValue,
-    backgroundColor: fieldBackground(input, c),
-    borderRadius: input.radius ?? input.defaultRadius,
-    borderWidth: border.width,
-    borderColor: border.color,
+    backgroundColor: input.background ?? 'transparent',
+    borderRadius: input.radius ?? CONTROL_RADIUS_DEFAULT,
+    borderWidth: input.borderColor === undefined ? 0 : 1,
+    borderColor: input.borderColor ?? c.border,
     outlineWidth: 0,
     outlineStyle: 'solid',
   };

@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
-import { kitPalette, type KitPalette } from '../tokens';
 import { OVERLAY_DROP_SHADOW, OVERLAY_SHADOW } from '../overlay.styles';
 import { Text } from './text';
-import { useKitPalette } from './theme-context';
+import { useKitPaletteFor } from './theme-context';
 
 export const TOOLTIP = { padX: 14, padY: 8, radius: 4, lineHeight: 20, arrow: 8, gap: 8 } as const;
 
@@ -19,12 +18,6 @@ export interface TooltipProps {
   bubbleOffset?: number;
   onBubbleWidth?: (width: number) => void;
   style?: ViewStyle;
-}
-
-function usePalette(dark: boolean | undefined): KitPalette {
-  const context = useKitPalette();
-  if (dark === undefined) return context;
-  return kitPalette(dark ? 'dark' : 'light');
 }
 
 function arrowStyle(side: Exclude<TooltipArrow, 'none'>, color: string): ViewStyle {
@@ -46,7 +39,7 @@ const ARROW_FIRST: readonly TooltipArrow[] = ['left', 'up'];
 const SHAPE_SHADOW: ViewStyle = Platform.OS === 'web' ? { filter: OVERLAY_DROP_SHADOW } : OVERLAY_SHADOW;
 
 export function Tooltip({ label, trailing, arrow = 'down', dark, background, color, bubbleOffset = 0, onBubbleWidth, style }: TooltipProps): React.ReactElement {
-  const pal = usePalette(dark);
+  const pal = useKitPaletteFor(dark);
   const fill = background ?? pal.border;
   const arrowBox = arrow === 'none' ? null : <View style={{ width: 0, height: 0, ...arrowStyle(arrow, fill) }} />;
   const arrowFirst = ARROW_FIRST.includes(arrow);

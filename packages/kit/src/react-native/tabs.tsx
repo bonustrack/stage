@@ -30,15 +30,10 @@ interface TabsColors {
   activeText: string;
 }
 
-function schemeOf(dark: boolean | undefined, fallback: Scheme): Scheme {
-  if (dark === undefined) return fallback;
-  return dark ? 'dark' : 'light';
-}
-
 function useTabsColors(dark: boolean | undefined): TabsColors {
   const context = useKitPalette();
   const contextScheme = useKitScheme();
-  const scheme = schemeOf(dark, contextScheme);
+  const scheme: Scheme = dark === undefined ? contextScheme : dark ? 'dark' : 'light';
   const palette = scheme === contextScheme ? context : kitPalette(scheme);
   return {
     track: surfaceColor('raised', palette),

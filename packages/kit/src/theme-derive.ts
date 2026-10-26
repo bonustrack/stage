@@ -101,16 +101,8 @@ export const DEFAULT_SEED: Record<Scheme, ThemeSeed> = {
 };
 
 const BORDER_RATIO = 1;
-
-const INPUT_BG_RATIO: Record<Scheme, number> = {
-  dark: 0.5,
-  light: 0.5,
-};
-
-const SUB_RATIO: Record<Scheme, number> = {
-  dark: 0.5,
-  light: 0.5,
-};
+const INPUT_BG_RATIO = 0.5;
+const SUB_RATIO = 0.5;
 
 const LEGACY: Record<Scheme, DerivedPalette> = { dark: kitPalette('dark'), light: kitPalette('light') };
 
@@ -137,12 +129,12 @@ export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
     bg,
     border: mix(bg, gray, BORDER_RATIO),
     text,
-    sub: mix(text, gray, SUB_RATIO[scheme]),
+    sub: mix(text, gray, SUB_RATIO),
     link: accent,
     primary: accent,
     danger: DANGER_FIXED,
     success: SUCCESS_FIXED,
-    inputBg: mix(bg, gray, INPUT_BG_RATIO[scheme]),
+    inputBg: mix(bg, gray, INPUT_BG_RATIO),
     toolbarBg: bg,
   };
 }

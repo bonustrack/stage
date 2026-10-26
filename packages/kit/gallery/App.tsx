@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text } from '../src/react-native/text';
 import { KitThemeProvider, type KitPalette } from '../src/react-native/theme-context';
 import { fontFamily, kitPalette } from '../src/tokens';
 import { ControlsPanel } from './Controls';
 import { Home } from './Home';
-import { useGalleryLayout } from './layout';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
-import { argToText, coerceArgs, parseHash, serializeRoute, type ArgValue } from './route';
+import { argToText, coerceArgs, parseHash, serializeRoute } from './route';
 import { SchemeContext, type Scheme } from './scheme';
 import type { ArgType, StoryEntry } from './story';
 import { SCROLL_Y } from './styles';
@@ -18,6 +18,8 @@ import { Row } from '../src/react-native/row';
 const SIDEBAR_WIDTH = 240;
 const CONTROLS_WIDTH = 300;
 const SCHEME_KEY = 'stage-kit-gallery.scheme';
+const MENU_BELOW = 768;
+const STACK_BELOW = 1024;
 
 const PALETTES: Record<Scheme, KitPalette> = { light: kitPalette('light'), dark: kitPalette('dark') };
 
@@ -65,7 +67,9 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
     try { localStorage.setItem(SCHEME_KEY, next); } catch { }
   }, []);
   const [route, navigate] = useHashRoute();
-  const { menu, stacked } = useGalleryLayout();
+  const { width } = useWindowDimensions();
+  const menu = width < MENU_BELOW;
+  const stacked = width < STACK_BELOW;
   const [menuOpen, setMenuOpen] = useState(false);
   const story = route.storyId === null ? null : stories.find((s) => s.id === route.storyId) ?? stories[0] ?? null;
   const argTypes = useMemo(() => (story?.render.argTypes ?? {}) as Record<string, ArgType>, [story]);
@@ -77,7 +81,7 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
   const setArg = (name: string, next: unknown): void => {
     if (!story) return;
     const keep = next !== undefined && next !== defaults[name];
-    const nextArgs: Record<string, ArgValue> = {};
+    const nextArgs: Record<string, string> = {};
     for (const [key, value] of Object.entries(route.args)) if (key !== name) nextArgs[key] = value;
     if (keep) nextArgs[name] = argToText(next);
     navigate(serializeRoute(story.id, nextArgs));

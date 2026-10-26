@@ -1,24 +1,12 @@
 
-import {
-  colors,
-  resolveBoxRadius,
-  type ColorToken,
-  type RadiusValue,
-} from './tokens';
+import { colors, resolveBoxRadius, type ColorToken, type RadiusValue } from './tokens';
 
 export type { RadiusValue };
 
 export type Size = number | string;
 
 export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
-export type Justify =
-  | 'start'
-  | 'center'
-  | 'end'
-  | 'spaceBetween'
-  | 'spaceAround'
-  | 'spaceEvenly'
-  | 'stretch';
+export type Justify = 'start' | 'center' | 'end' | 'spaceBetween' | 'spaceAround' | 'spaceEvenly' | 'stretch';
 
 export interface Spacing {
   top?: number | string;
@@ -221,17 +209,9 @@ export interface SurfacePalette {
   toolbarBg: string;
 }
 
+const SURFACE_COLOR: Record<Surface, keyof SurfacePalette | undefined> = { none: undefined, surface: 'bg', raised: 'inputBg', sunken: 'bg', toolbar: 'toolbarBg' };
+
 export function surfaceColor(surface: Surface, palette: SurfacePalette): string | undefined {
-  switch (surface) {
-    case 'surface':
-      return palette.bg;
-    case 'raised':
-      return palette.inputBg;
-    case 'sunken':
-      return palette.bg;
-    case 'toolbar':
-      return palette.toolbarBg;
-    default:
-      return undefined;
-  }
+  const key = SURFACE_COLOR[surface];
+  return key === undefined ? undefined : palette[key];
 }

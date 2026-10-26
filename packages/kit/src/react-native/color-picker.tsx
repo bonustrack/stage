@@ -47,22 +47,16 @@ interface HsvPalette {
 
 const TRACK_H = 26;
 
-function Track({ colors, thumb, onFraction, p }: {
-  colors: string[]; thumb: number;
-  onFraction: (f: number) => void; p: HsvPalette;
-}): React.ReactElement {
+function Track({ colors, thumb, onFraction, p }: { colors: string[]; thumb: number; onFraction: (f: number) => void; p: HsvPalette }): React.ReactElement {
   const widthRef = useRef(1);
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
-  const gesture = useMemo(() => {
-    const pan = Gesture.Pan()
-      .minDistance(0)
-      .shouldCancelWhenOutside(false)
-      .onBegin((e) => { runOnJS(emit)(e.x); })
-      .onUpdate((e) => { runOnJS(emit)(e.x); });
-    return pan;
-  }, [onFraction]);
+  const gesture = useMemo(() => Gesture.Pan()
+    .minDistance(0)
+    .shouldCancelWhenOutside(false)
+    .onBegin((e) => { runOnJS(emit)(e.x); })
+    .onUpdate((e) => { runOnJS(emit)(e.x); }), [onFraction]);
   return (
     <GestureDetector gesture={gesture}>
       <Column height={TRACK_H} radius={TRACK_H / 2}
@@ -89,16 +83,10 @@ function hueStops(): string[] {
 }
 
 function Label({ text, p }: { text: string; p: HsvPalette }): React.ReactElement {
-  return (
-    <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
-      {text}
-    </Text>
-  );
+  return <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>{text}</Text>;
 }
 
-function HsvPicker({ value, onChange, p }: {
-  value: string; onChange: (hex: string) => void; p: HsvPalette;
-}): React.ReactElement {
+function HsvPicker({ value, onChange, p }: { value: string; onChange: (hex: string) => void; p: HsvPalette }): React.ReactElement {
   const [hsv, setHsv] = useState(() => hexToHsv(value));
   const [text, setText] = useState<string | null>(null);
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
@@ -117,12 +105,8 @@ function HsvPicker({ value, onChange, p }: {
       <Row gap={14} align="center">
         <Column width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }}/>
         <Column weight={1}>
-          <Text fontWeight="semibold" size="2xl" color={p.head}>
-            {hex}
-          </Text>
-          <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>
-            live preview
-          </Text>
+          <Text fontWeight="semibold" size="2xl" color={p.head}>{hex}</Text>
+          <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>live preview</Text>
         </Column>
       </Row>
 
@@ -170,16 +154,7 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange?.(hex)}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: hex,
-              borderWidth: 1,
-              borderColor: border,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: hex, borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center' }}
           >
             {selected ? <Glyph icon={IconCheckmark1} size={18} color={readableForeground(hex)} /> : null}
           </Pressable>

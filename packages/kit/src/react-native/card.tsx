@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
 import { Text, type TextSizeToken } from './text';
@@ -33,47 +33,14 @@ export interface CardProps extends A2uiCommonProps {
 }
 
 const PADDING: Record<CardSize, number> = { sm: 10, md: 14, lg: 18 };
-const STATUS_SIZE: Record<CardSize, TextSizeToken> = {
-  sm: '3xs',
-  md: '3xs',
-  lg: '2xs',
-};
+const STATUS_SIZE: Record<CardSize, TextSizeToken> = { sm: '3xs', md: '3xs', lg: '2xs' };
 
-function CardStatusLine(props: {
-  status: CardStatus;
-  size: CardSize;
-  collapsed: boolean;
-  sub: string;
-}): React.ReactElement {
-  const { status, size, collapsed, sub } = props;
-  return (
-    <Text
-      size={STATUS_SIZE[size]}
-      color={sub}
-      style={{ marginBottom: collapsed ? 0 : 8 }}
-      numberOfLines={1}
-    >
-      {status.favicon ? `${status.favicon}  ` : ''}
-      {status.text}
-    </Text>
-  );
-}
-
-function CardFoot(props: {
-  confirm?: CardAction;
-  cancel?: CardAction;
-  dark: boolean;
-}): React.ReactElement | null {
-  const { confirm, cancel, dark } = props;
+function CardFoot({ confirm, cancel, dark }: { confirm?: CardAction; cancel?: CardAction; dark: boolean }): React.ReactElement | null {
   if (!confirm && !cancel) return null;
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-      {cancel ? (
-        <Button color="secondary" variant="solid" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} />
-      ) : null}
-      {confirm ? (
-        <Button variant="primary" size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
-      ) : null}
+      {cancel ? <Button color="secondary" variant="solid" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} /> : null}
+      {confirm ? <Button variant="primary" size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} /> : null}
     </View>
   );
 }
@@ -82,7 +49,12 @@ function CardBody(props: CardProps & { sub: string; dark: boolean }): React.Reac
   const { children, size = 'md', status, collapsed = false, confirm, cancel, dark, sub } = props;
   return (
     <>
-      {status ? <CardStatusLine status={status} size={size} collapsed={collapsed} sub={sub} /> : null}
+      {status ? (
+        <Text size={STATUS_SIZE[size]} color={sub} style={{ marginBottom: collapsed ? 0 : 8 }} numberOfLines={1}>
+          {status.favicon ? `${status.favicon}  ` : ''}
+          {status.text}
+        </Text>
+      ) : null}
       {collapsed ? null : children}
       <CardFoot confirm={confirm} cancel={cancel} dark={dark} />
     </>
@@ -92,18 +64,14 @@ function CardBody(props: CardProps & { sub: string; dark: boolean }): React.Reac
 export function Card(props: CardProps): React.ReactElement {
   const scheme = useKitScheme();
   const { size = 'md', padding, background, onPress, dark = scheme === 'dark', style, weight, accessibility } = props;
-
   const c = schemePalette(dark);
-  const pad = padding ?? PADDING[size];
-
   const body = <CardBody {...props} dark={dark} sub={c.sub} />;
-
   const base: ViewStyle = {
     backgroundColor: background ?? c.surface,
     borderColor: c.border,
     borderWidth: 1,
     borderRadius: BLOCK_RADIUS_DEFAULT,
-    padding: pad,
+    padding: padding ?? PADDING[size],
     ...weightStyle(weight),
   };
 

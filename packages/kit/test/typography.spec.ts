@@ -86,7 +86,7 @@ describe('xs typography', () => {
             paddingHorizontal: CONTROL_SIZES[size].paddingHorizontal,
             paddingVertical: CONTROL_SIZES[size].paddingVertical,
           });
-          expect(textFieldStyle({ defaultRadius: 8, baseColors: colors }).text.fontSize).toBe(16);
+          expect(textFieldStyle({ baseColors: colors }).text.fontSize).toBe(16);
         }
       }
     }

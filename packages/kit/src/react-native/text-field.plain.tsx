@@ -1,7 +1,6 @@
 import { forwardRef, useCallback, useEffect, useRef, useState, type Ref, type RefObject } from 'react';
 import { Platform, TextInput, type DimensionValue, type TextStyle } from 'react-native';
-import { controlColors, textFieldStyle, type ResolvedTextFieldStyle } from '../control.styles';
-import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+import { controlColors, textFieldStyle } from '../control.styles';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 import type { TextFieldProps } from './text-field.types';
@@ -31,22 +30,6 @@ function overrideStyle(props: TextFieldProps): TextStyle {
     ...(props.paddingBottom === undefined ? null : { paddingBottom: props.paddingBottom as DimensionValue }),
     ...(props.lineHeight === undefined ? null : { lineHeight: props.lineHeight }),
   };
-}
-
-function resolveStyled(props: TextFieldProps, dark: boolean): ResolvedTextFieldStyle {
-  return textFieldStyle({
-    variant: 'plain',
-    defaultRadius: CONTROL_RADIUS_DEFAULT,
-    baseColors: controlColors('soft', dark),
-    background: props.background,
-    borderColor: props.borderColor,
-    radius: props.radius,
-    paddingX: props.paddingX,
-    paddingY: props.paddingY,
-    fontSize: props.fontSize,
-    fontFamily: props.fontFamily,
-    color: props.color,
-  });
 }
 
 function useWebAutoGrow(ref: RefObject<TextInput | null>, props: TextFieldProps, multiline: boolean) {
@@ -88,7 +71,7 @@ export const PlainField = forwardRef<TextInput, TextFieldProps>(function PlainFi
   useNonce(props.blurNonce, () => inner.current?.blur());
   const multiline = props.variant === 'longText';
   const grow = useWebAutoGrow(inner, props, multiline);
-  const styled = resolveStyled(props, props.dark ?? scheme === 'dark');
+  const styled = textFieldStyle({ ...props, baseColors: controlColors('soft', props.dark ?? scheme === 'dark') });
   const { onSelectionChange, onSubmit } = props;
   return (
     <TextInput

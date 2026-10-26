@@ -1,20 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
+import { Pressable, Text, type PressableProps, type TextStyle, type ViewStyle } from 'react-native';
 import {
-  Pressable,
-  Text,
-  type PressableProps,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
-import {
-  resolveButtonVariant,
-  resolveColors,
-  SIZES,
-  textLabelStyle,
-  type ButtonColor,
-  type ButtonSize,
-  type ButtonVariant,
-  type SizeSpec,
+  resolveButtonVariant, resolveColors, SIZES, textLabelStyle, type ButtonColor, type ButtonSize, type ButtonVariant, type SizeSpec,
 } from '../button.styles';
 import type { ValidationResult } from '../a2ui/protocol';
 import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
@@ -22,13 +9,7 @@ import { ContentColorProvider } from './content-color';
 import { Spinner } from './spinner';
 import { useKitScheme } from './theme-context';
 
-export type {
-  ButtonColor,
-  ButtonControlVariant,
-  ButtonHint,
-  ButtonSize,
-  ButtonVariant,
-} from '../button.styles';
+export type { ButtonColor, ButtonControlVariant, ButtonHint, ButtonSize, ButtonVariant } from '../button.styles';
 
 const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
 

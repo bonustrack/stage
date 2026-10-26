@@ -30,20 +30,13 @@ function cornerOf(props: TextFieldProps, pill: boolean): number {
   return pill ? 999 : CONTROL_RADIUS_DEFAULT;
 }
 
-function appearanceOf(props: TextFieldProps): ControlVariant {
-  return props.appearance === 'outline' ? 'outline' : 'soft';
-}
-
-function useDark(dark: boolean | undefined): boolean {
-  const scheme = useKitScheme();
-  return dark ?? scheme === 'dark';
-}
-
 function useControlStyle(props: TextFieldProps, pill: boolean): { box: ViewStyle; text: TextStyle; placeholder: string } {
-  const colors = controlColors(appearanceOf(props), useDark(props.dark));
+  const scheme = useKitScheme();
+  const appearance: ControlVariant = props.appearance === 'outline' ? 'outline' : 'soft';
+  const colors = controlColors(appearance, props.dark ?? scheme === 'dark');
   const size: ControlSize = props.size ?? 'md';
   return {
-    box: controlBoxStyle(size, appearanceOf(props), colors, cornerOf(props, pill)),
+    box: controlBoxStyle(size, appearance, colors, cornerOf(props, pill)),
     text: controlTextStyle(size, colors),
     placeholder: props.placeholderTextColor ?? props.placeholderColor ?? colors.placeholder,
   };

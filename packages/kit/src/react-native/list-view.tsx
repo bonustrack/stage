@@ -31,34 +31,16 @@ export function ListView(props: ListViewProps): React.ReactElement {
 
   const items = Children.toArray(children).filter(isValidElement);
   const shown = limit !== undefined ? items.slice(0, limit) : items;
-
   return (
     <View {...accessibilityProps(accessibility)} style={[weightStyle(weight), style]}>
       {shown.map((child, i) => (
         <View key={child.key ?? i}>
           {child}
-          {i < shown.length - 1 ? (
-            <View
-              style={{
-                height: 1,
-                backgroundColor: c.border,
-                marginHorizontal: ROW_INSET,
-              }}
-            />
-          ) : null}
+          {i < shown.length - 1 ? <View style={{ height: 1, backgroundColor: c.border, marginHorizontal: ROW_INSET }} /> : null}
         </View>
       ))}
       {status ? (
-        <RNText
-          style={{
-            color: c.sub,
-            fontSize: FONT_SIZE['3xs'],
-            fontFamily: fontName.sans,
-            paddingVertical: 10,
-            paddingHorizontal: 16,
-          }}
-          numberOfLines={1}
-        >
+        <RNText style={{ color: c.sub, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.sans, paddingVertical: 10, paddingHorizontal: 16 }} numberOfLines={1}>
           {status.text}
         </RNText>
       ) : null}
@@ -81,72 +63,25 @@ export interface ListViewItemProps extends A2uiCommonProps {
 }
 
 export function ListViewItem(props: ListViewItemProps): React.ReactElement {
-  const {
-    children,
-    onPress,
-    gap = 12,
-    align = 'center',
-    padding,
-    border,
-    pressedBackground,
-    pressedBorderColor,
-    showDivider = false,
-    style,
-    weight,
-    accessibility,
-  } = props;
+  const { children, onPress, gap = 12, align = 'center', padding, border, pressedBackground, pressedBorderColor, showDivider = false, style, weight, accessibility } = props;
   const c = usePalette(props.dark);
-
   const borderStyle = border ? (borderStyleEntries(border) as ViewStyle) : undefined;
-  const paddingStyle = (padding ?? {
-    paddingTop: 16,
-    paddingRight: ROW_INSET,
-    paddingBottom: 16,
-    paddingLeft: ROW_INSET,
-  }) as ViewStyle;
-
-  const row: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: FLEX_ALIGN[align],
-    gap,
-    ...weightStyle(weight),
-  };
-
+  const paddingStyle = (padding ?? { paddingTop: 16, paddingRight: ROW_INSET, paddingBottom: 16, paddingLeft: ROW_INSET }) as ViewStyle;
+  const row: ViewStyle = { flexDirection: 'row', alignItems: FLEX_ALIGN[align], gap, ...weightStyle(weight) };
   const content = showDivider ? (
     <>
       {children}
-      <View
-        style={{
-          position: 'absolute',
-          left: ROW_INSET,
-          right: ROW_INSET,
-          bottom: 0,
-          height: 1,
-          backgroundColor: c.border,
-        }}
-      />
+      <View style={{ position: 'absolute', left: ROW_INSET, right: ROW_INSET, bottom: 0, height: 1, backgroundColor: c.border }} />
     </>
-  ) : (
-    children
-  );
+  ) : children;
 
   if (onPress) {
-    const pressedBg = pressedBackground ?? c.pressed;
+    const pressedStyle = pressedBorderColor === undefined ? { backgroundColor: pressedBackground ?? c.pressed } : { borderColor: pressedBorderColor };
     return (
       <Pressable
         {...accessibilityProps(accessibility)}
         onPress={onPress}
-        style={({ pressed }) => [
-          row,
-          paddingStyle,
-          borderStyle,
-          pressed
-            ? pressedBorderColor !== undefined
-              ? { borderColor: pressedBorderColor }
-              : { backgroundColor: pressedBg }
-            : undefined,
-          style,
-        ]}
+        style={({ pressed }) => [row, paddingStyle, borderStyle, pressed ? pressedStyle : undefined, style]}
       >
         {content}
       </Pressable>
