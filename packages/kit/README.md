@@ -102,7 +102,7 @@ Other apps install it from npm. Releases go out under the `beta` tag, so ask for
 bun add @stage-labs/kit@beta
 ```
 
-The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`.
+The two Central Icons packages and `uqr` (the QR encoder) come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`.
 
 ### Fonts
 
@@ -213,6 +213,10 @@ Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.15
+
+- `QrCode` encodes with `uqr` (ESM only, no dependencies) instead of the CommonJS `qrcode`, so a Vite host that serves the kit sources in dev needs no `optimizeDeps` entry for it. `qrcode` and `@types/qrcode` are no longer dependencies. Codes keep error correction level M and scan the same, but their module pattern can differ from before.
 
 ### 0.1.0-beta.14
 

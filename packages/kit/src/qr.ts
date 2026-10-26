@@ -1,5 +1,4 @@
-
-import QRCode from 'qrcode';
+import { encode } from 'uqr';
 
 export interface QrMatrix {
   count: number;
@@ -9,19 +8,14 @@ export interface QrMatrix {
 
 export function buildQrMatrix(value: string, size: number): QrMatrix {
   const safe = value.length > 0 ? value : ' ';
-  const qr = QRCode.create(safe, { errorCorrectionLevel: 'M' });
-  const count = qr.modules.size;
-  const data = qr.modules.data;
+  const { data } = encode(safe, { ecc: 'M', boostEcc: false, border: 0 });
+  const count = data.length;
   const cell = size / count;
   let path = '';
-  for (let row = 0; row < count; row += 1) {
-    for (let col = 0; col < count; col += 1) {
-      const dark = data[row * count + col] === 1;
-      if (!dark) continue;
-      const x = col * cell;
-      const y = row * cell;
-      path += `M${x} ${y}h${cell}v${cell}h${-cell}z`;
-    }
-  }
+  data.forEach((row, y) => {
+    row.forEach((dark, x) => {
+      if (dark) path += `M${x * cell} ${y * cell}h${cell}v${cell}h${-cell}z`;
+    });
+  });
   return { count, cell, path };
 }
