@@ -109,7 +109,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
           onPress={() => { setScanning(false); }} />
       ) : (
         <>
-          <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
+          <Button variant="primary" dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
             label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
           <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Scan QR code"
             iconStart={<Glyph icon={IconQrCode} size={20} color={pal.primary} />}

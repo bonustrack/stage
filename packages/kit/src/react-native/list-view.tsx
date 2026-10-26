@@ -4,6 +4,8 @@ import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
 import { FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { loadKitFonts } from './fonts.load';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { useKitScheme } from './theme-context';
 
 loadKitFonts();
 
@@ -16,23 +18,28 @@ function palette(dark: boolean): { border: string; pressed: string; sub: string 
   return { border: p.border, pressed: p.pressed, sub: p.sub };
 }
 
-export interface ListViewProps {
+function useDark(dark: boolean | undefined): boolean {
+  const scheme = useKitScheme();
+  return dark ?? scheme === 'dark';
+}
+
+export interface ListViewProps extends A2uiCommonProps {
   children: ReactNode;
   limit?: number;
   status?: { text: string };
-  dark: boolean;
+  dark?: boolean;
   style?: ViewStyle;
 }
 
 export function ListView(props: ListViewProps): React.ReactElement {
-  const { children, limit, status, dark, style } = props;
-  const c = palette(dark);
+  const { children, limit, status, style, weight, accessibility } = props;
+  const c = palette(useDark(props.dark));
 
   const items = Children.toArray(children).filter(isValidElement);
   const shown = limit !== undefined ? items.slice(0, limit) : items;
 
   return (
-    <View style={style}>
+    <View {...accessibilityProps(accessibility)} style={[weightStyle(weight), style]}>
       {shown.map((child, i) => (
         <View key={child.key ?? i}>
           {child}
@@ -65,12 +72,12 @@ export function ListView(props: ListViewProps): React.ReactElement {
   );
 }
 
-export interface ListViewItemProps {
+export interface ListViewItemProps extends A2uiCommonProps {
   children: ReactNode;
   onPress?: () => void;
   gap?: number;
   align?: ListItemAlign;
-  dark: boolean;
+  dark?: boolean;
   padding?: Record<string, string | number>;
   border?: ResolvedBoxBorder;
   pressedBackground?: string;
@@ -85,15 +92,16 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     onPress,
     gap = 12,
     align = 'center',
-    dark,
     padding,
     border,
     pressedBackground,
     pressedBorderColor,
     showDivider = false,
     style,
+    weight,
+    accessibility,
   } = props;
-  const c = palette(dark);
+  const c = palette(useDark(props.dark));
 
   const borderStyle = border ? (borderStyleEntries(border) as ViewStyle) : undefined;
   const paddingStyle = (padding ?? {
@@ -107,6 +115,7 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     flexDirection: 'row',
     alignItems: FLEX_ALIGN[align],
     gap,
+    ...weightStyle(weight),
   };
 
   const content = showDivider ? (
@@ -131,6 +140,7 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     const pressedBg = pressedBackground ?? c.pressed;
     return (
       <Pressable
+        {...accessibilityProps(accessibility)}
         onPress={onPress}
         style={({ pressed }) => [
           row,
@@ -149,5 +159,5 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     );
   }
 
-  return <View style={[row, paddingStyle, borderStyle, style]}>{content}</View>;
+  return <View {...accessibilityProps(accessibility)} style={[row, paddingStyle, borderStyle, style]}>{content}</View>;
 }

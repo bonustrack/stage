@@ -1,4 +1,3 @@
-
 import { Platform } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -18,7 +17,7 @@ export function HighlightText({ text, query, fg }: {
       {segments.map((segment, index) => (
         <Text
           key={`${index}-${segment.value}`}
-          value={segment.value}
+          text={segment.value}
           color={fg}
           size="lg"
           selectable={Platform.OS === 'web'}

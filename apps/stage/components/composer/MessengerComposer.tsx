@@ -2,7 +2,6 @@ import { Platform } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useDictation } from './dictation';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
-import { Col, PAGE_GUTTER, Row } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
 import { useHandedSend } from './handoff';
@@ -23,6 +22,7 @@ import { useComposerState, type ComposerState } from './state';
 import { ComposerSheets } from './sheets';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
+import { Column, PAGE_GUTTER, Row } from '../layout';
 
 function DropOverlay({ head }: { head: string }): React.ReactElement {
   const edge = { width: 2, color: head, style: 'dashed' };
@@ -38,7 +38,7 @@ function DropOverlay({ head }: { head: string }): React.ReactElement {
       style={{ position: 'absolute', top: 6, right: 6, bottom: 6, left: 6 }}
     >
       <Glyph icon={IconPaperclip3} size={20} color={head}/>
-      <Text weight="semibold" size="xs" color={head}>Drop files to attach</Text>
+      <Text fontWeight="semibold" size="xs" color={head}>Drop files to attach</Text>
     </Row>
   );
 }
@@ -176,7 +176,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = quickAttachAction(attachActions, lastLabel, props.quickAttach !== false);
 
   return (
-    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
+    <Column nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
       <SuggestMenu suggest={mention}/>
       <SuggestMenu suggest={channels}/>
       {props.metadata}
@@ -239,6 +239,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onPick={(files) => { void actions.onPickedFile(files); }}
       />
       {drop.active ? <DropOverlay head={head}/> : null}
-    </Col>
+    </Column>
   );
 }

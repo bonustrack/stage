@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Story } from '../gallery/story';
 import { GesturePressable, type GesturePressableProps } from '../src/react-native/gesture-pressable';
-import { Box } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { number } from './_controls';
+import { Column } from '../src/react-native/column';
 
 export default { title: 'Gesture Pressable' };
 
@@ -16,7 +16,7 @@ export const Controls: Story<Pick<GesturePressableProps, 'hitSlop'>> = (args) =>
       onLongPress={() => { setLog('long press'); }}
       onSwipe={(dir) => { setLog(`swipe ${dir}`); }}
     >
-      <Box padding={32} background="#9b6bd6" radius="md"><Text size="xs" color="#fff">{log}</Text></Box>
+      <Column padding={32} background="#9b6bd6" radius="md"><Text size="xs" color="#fff">{log}</Text></Column>
     </GesturePressable>
   );
 };

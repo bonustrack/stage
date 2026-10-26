@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
 import { ChannelRow } from '../ChannelRow';
-import { Box, Col, Row } from '../layout';
 import { useConvRow } from '../../modules/messaging/queries';
 import { isGroupRow, memberAddressesOf, type ConvRow } from '../../modules/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -11,10 +10,8 @@ import { BLOCK_RADIUS_DEFAULT, schemePalette } from '@stage-labs/kit/tokens';
 import { bubbleLinkProps } from './linkProps';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { channelTitle, type ConvTitle } from '../conversation/convTitle';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { previewLinkOf } from '@stage-labs/client/embed/cardLinks';
 import { githubLinkOf } from '@stage-labs/client/api/github';
@@ -25,6 +22,8 @@ import { domainOf } from '../../lib/format';
 import { useLinkPreview, isX402, type LinkPreviewResult } from '../../lib/useLinkPreview';
 import { X402Card } from '../PaymentCard';
 import Svg, { Path } from 'react-native-svg';
+import { Column, Row } from '../layout';
+import { Text } from '@stage-labs/kit/react-native/text';
 
 const GITHUB_PATH =
   'M512 0C229.12 0 0 229.12 0 512c0 226.56 146.56 417.92 350.08 485.76 25.6 4.48 35.2-10.88 35.2-24.32 0-12.16-0.64-52.48-0.64-95.36-128.64 23.68-161.92-31.36-172.16-60.16-5.76-14.72-30.72-60.16-52.48-72.32-17.92-9.6-43.52-33.28-0.64-33.92 40.32-0.64 69.12 37.12 78.72 52.48 46.08 77.44 119.68 55.68 149.12 42.24 4.48-33.28 17.92-55.68 32.64-68.48-113.92-12.8-232.96-56.96-232.96-252.8 0-55.68 19.84-101.76 52.48-137.6-5.12-12.8-23.04-65.28 5.12-135.68 0 0 42.88-13.44 140.8 52.48 40.96-11.52 84.48-17.28 128-17.28 43.52 0 87.04 5.76 128 17.28 97.92-66.56 140.8-52.48 140.8-52.48 28.16 70.4 10.24 122.88 5.12 135.68 32.64 35.84 52.48 81.28 52.48 137.6 0 196.48-119.68 240-233.6 252.8 18.56 16 34.56 46.72 34.56 94.72 0 68.48-0.64 123.52-0.64 140.8 0 13.44 9.6 29.44 35.2 24.32A512.832 512.832 0 0 0 1024 512c0-282.88-229.12-512-512-512z';
@@ -52,17 +51,17 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
   return (
     <>
       {meta.image ? (
-        <Image src={meta.image} alt={meta.title} fit="cover" background={imageBg} style={{ width: '100%', height: 160 }} />
+        <Image url={meta.image} description={meta.title} fit="cover" background={imageBg} style={{ width: '100%', height: 160 }} />
       ) : null}
-      <Box padding={{ x: 12, y: 10 }}>
+      <Column padding={{ x: 12, y: 10 }}>
         <Row margin={{ bottom: 4 }} align="center" justify="start">
           {meta.favicon ? (
-            <Image src={meta.favicon} alt={domain} radius="xs" style={{ width: 14, height: 14, marginRight: 6 }} />
+            <Image fit="cover" url={meta.favicon} description={domain} radius="xs" style={{ width: 14, height: 14, marginRight: 6 }} />
           ) : null}
           <Text color={subColor} numberOfLines={1} size="3xs">{domain}</Text>
         </Row>
         <LinkCardText title={meta.title === '' ? undefined : meta.title} description={meta.description} subColor={subColor} />
-      </Box>
+      </Column>
     </>
   );
 }
@@ -72,9 +71,9 @@ function CardFrame({ background, padding, children }: {
 }): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Box background={background} padding={padding} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Column background={background} padding={padding} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
       {children}
-    </Box>
+    </Column>
   );
 }
 
@@ -96,7 +95,7 @@ function LinkCardText({ title, description, subColor }: {
   return (
     <>
       {title === undefined ? null : (
-        <Text weight="semibold" size="xl" numberOfLines={2}>{title}</Text>
+        <Text fontWeight="semibold" size="xl" numberOfLines={2}>{title}</Text>
       )}
       {description ? (
         <Text size="xs" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
@@ -133,10 +132,10 @@ function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | n
   return (
     <>
       {meta.additions != null ? (
-        <Text weight="semibold" color={SUCCESS} size="3xs" style={{ marginLeft: 8 }}>+{fmt(meta.additions)}</Text>
+        <Text fontWeight="semibold" color={SUCCESS} size="3xs" style={{ marginLeft: 8 }}>+{fmt(meta.additions)}</Text>
       ) : null}
       {meta.deletions != null ? (
-        <Text weight="semibold" color={DANGER} size="3xs" style={{ marginLeft: 6 }}>−{fmt(meta.deletions)}</Text>
+        <Text fontWeight="semibold" color={DANGER} size="3xs" style={{ marginLeft: 6 }}>−{fmt(meta.deletions)}</Text>
       ) : null}
     </>
   );
@@ -147,7 +146,7 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
   return (
     <Row margin={{ top: 6 }} align="center" justify="start">
       {dot ? (
-        <Box width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
+        <Column width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
       ) : null}
       {meta.state ? (
         <Text color={subColor} size="3xs" style={{ textTransform: 'capitalize' }}>{meta.state}</Text>
@@ -195,12 +194,12 @@ export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | 
   return (
     <Pressable {...bubbleLinkProps(ref.url, openInBubbleLink)} style={({ pressed }) => (pressed ? { backgroundColor: pressedBg } : undefined)}>
       <ListViewItem dark={dark}>
-        <Col radius="lg">
-          <Col gap={2} padding={{ x: 12, y: 10 }}>
-            <Text size="xs" value="Open preview build" weight="semibold" truncate />
-            <Caption value={`EAS Update · ${ref.shortGroup}`} color="secondary" maxLines={2} />
-          </Col>
-        </Col>
+        <Column radius="lg">
+          <Column gap={2} padding={{ x: 12, y: 10 }}>
+            <Text size="xs" text="Open preview build" fontWeight="semibold" truncate />
+            <Text size="md" variant="caption" text={`EAS Update · ${ref.shortGroup}`} color="secondary" maxLines={2} />
+          </Column>
+        </Column>
       </ListViewItem>
     </Pressable>
   );

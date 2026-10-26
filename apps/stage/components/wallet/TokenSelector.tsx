@@ -1,5 +1,4 @@
 import { useState } from 'react';
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -7,7 +6,6 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
-import { Box, Row, Col } from '../layout';
 import { Eyebrow } from '../Eyebrow';
 import { AppModal } from '../AppModal';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
@@ -19,6 +17,7 @@ import { tokenChangeText, tokenPriceText, type TokenChoice } from './screen/mode
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { Column, Row } from '../layout';
 
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
@@ -80,7 +79,7 @@ export function TokenSelector({ value, onChange }: {
   };
 
   return (
-    <Box gap={6}>
+    <Column gap={6}>
       <Eyebrow>TOKEN</Eyebrow>
       <Pressable
         onPress={() => { setOpen(true); }}
@@ -91,26 +90,26 @@ export function TokenSelector({ value, onChange }: {
           opacity: pressed ? 0.7 : 1,
         })}
 >
-        <Box width={28} height={28}>
-          <Image
-            src={selected?.logoUrl ?? ''}
+        <Column width={28} height={28}>
+          <Image fit="cover"
+            url={selected?.logoUrl ?? ''}
             style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
 />
-          <Box width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
+          <Column width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
             <Image
-              src={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
+              url={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
               fit="cover" style={{ width: '100%', height: '100%' }}
 />
-          </Box>
-        </Box>
-        <Col minWidth={0} flex={1}>
-          <Text weight="semibold" size="xs" color={head} numberOfLines={1}>
+          </Column>
+        </Column>
+        <Column minWidth={0} weight={1}>
+          <Text fontWeight="semibold" size="xs" color={head} numberOfLines={1}>
             {value.symbol}
           </Text>
-          <Text size="3xs" role="secondary" numberOfLines={1}>
+          <Text size="3xs" color="secondary" numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
-        </Col>
+        </Column>
         <Glyph icon={IconChevronBottom} size={18} color={fg}/>
       </Pressable>
 
@@ -123,7 +122,7 @@ export function TokenSelector({ value, onChange }: {
           <TokenChoiceList rows={rows} onPick={onPick} />
         )}
       </AppModal>
-    </Box>
+    </Column>
   );
 }
 

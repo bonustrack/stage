@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
-import { Col, VirtualList, Box, Row, PAGE_GUTTER } from '../layout';
 import { ProfileCoverBar, ProfileCoverMenu, PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
 import { ImageViewer } from '../ImageViewer';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -17,8 +16,6 @@ import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
 import { ChannelFields, ChannelLabels, useLiveChannelLabels } from './channel.labels';
 import { Badge } from '@stage-labs/kit/react-native/badge';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -30,6 +27,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Eyebrow } from '../Eyebrow';
 import { TitleText } from '../TitleText';
 import { channelTitle } from '../conversation/convTitle';
+import { Column, VirtualList, Row, PAGE_GUTTER } from '../layout';
+import { Text } from '@stage-labs/kit/react-native/text';
 
 function ChannelProfileHeader({ imageUrl, channelId, insetTop, onView, children }: {
   imageUrl: string; channelId: string; insetTop: number; onView: () => void; children: ReactNode;
@@ -41,8 +40,8 @@ function ChannelProfileHeader({ imageUrl, channelId, insetTop, onView, children 
       insetTop={insetTop}
       avatar={
         <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
-          <Image
-            src={imageUrl ? avatarRenderUrl(imageUrl) : fallbackUri}
+          <Image fit="cover"
+            url={imageUrl ? avatarRenderUrl(imageUrl) : fallbackUri}
             style={{
               width: PROFILE_AVATAR_SIZE, height: PROFILE_AVATAR_SIZE, borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
               backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
@@ -61,14 +60,14 @@ function ChannelTitle({ name, description }: { name: string | null; description:
   const about = description.trim();
   return (
     <>
-      <Box padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <TitleText title={channelTitle(name)} weight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }}/>
-      </Box>
+      <Column padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
+        <TitleText title={channelTitle(name)} fontWeight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }}/>
+      </Column>
       {about ? (
-        <Box padding={{ x: PAGE_GUTTER, bottom: 16 }}>
+        <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>
           <Eyebrow>DESCRIPTION</Eyebrow>
           <Text size="xs" color={fg} style={{ marginTop: 6 }}>{about}</Text>
-        </Box>
+        </Column>
       ) : null}
     </>
   );
@@ -81,7 +80,7 @@ function MemberBadge({ badge, border, sub, dark }: {
   return (
     <Badge
       label={badge.label}
-      weight="medium"
+      fontWeight="medium"
       color={owner ? MEMBER_OWNER_FG : sub}
       background={owner ? MEMBER_OWNER_BG : border}
       dark={dark}
@@ -99,7 +98,7 @@ function MemberRow({
   const { text: sub, border } = usePalette();
   const model = memberRowModel({ shortAddress: shortAddress(item), name, isSelf, role });
   return (
-    <Box style={{ opacity: isRemovingThis ? 0.5 : 1 }}>
+    <Column style={{ opacity: isRemovingThis ? 0.5 : 1 }}>
       <ListViewItem
         align="center"
         gap={12}
@@ -111,14 +110,14 @@ function MemberRow({
           if (!isRemovingThis) onPress();
         }}
       >
-        <Row align="center" gap={12} flex={1}>
-          <Image src={stampAvatarUrl(item, 40)} size={40} radius="full" background={border} />
-          <Col gap={2} flex={1}>
-            <Text size="xs" value={model.displayName} weight="semibold" truncate />
+        <Row align="center" gap={12} weight={1}>
+          <Image fit="cover" url={stampAvatarUrl(item, 40)} size={40} radius="full" background={border} />
+          <Column gap={2} weight={1}>
+            <Text size="xs" text={model.displayName} fontWeight="semibold" truncate />
             {model.addressLine === undefined ? null : (
-              <Caption value={model.addressLine} color="secondary" truncate />
+              <Text size="md" variant="caption" text={model.addressLine} color="secondary" truncate />
             )}
-          </Col>
+          </Column>
           {model.badge === undefined ? null : (
             <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />
           )}
@@ -140,7 +139,7 @@ function MemberRow({
           )}
         </Row>
       </ListViewItem>
-    </Box>
+    </Column>
   );
 }
 
@@ -195,7 +194,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
   }, []);
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <ProfileCoverBar
         insetTop={insets.top}
         trailing={
@@ -230,6 +229,6 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         visible={viewerOpen}
         onClose={() => { setViewerOpen(false); }}
       />
-    </Col>
+    </Column>
   );
 }

@@ -1,10 +1,7 @@
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import {
   pollQuestionBlocks, type PollOpenAnswers, type PollOptionRow, type PollOwnVotes, type PollQuestionBlock, type PollVotes,
 } from './poll.model';
-import { Box, Col, Row } from '../layout';
 import type { Poll } from './helpers';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
@@ -12,6 +9,8 @@ import { useState } from 'react';
 import { FormField } from '../FormField';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column, Row } from '../layout';
 
 function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
   qi: number; dark: boolean;
@@ -23,13 +22,13 @@ function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
   const submit = (): void => { onSubmit(draft); setDraft(''); };
   return (
-    <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
-        <Box flex={1}>
+        <Column weight={1}>
           <FormField label="Your answer" placeholder="Type your answer" value={draft} onChangeText={setDraft} onSubmit={submit}
             inputProps={{ returnKeyType: 'send' }} />
-        </Box>
-        <Button
+        </Column>
+        <Button variant="primary"
           size="md"
           dark={dark}
           disabled={draft.trim().length === 0}
@@ -38,7 +37,7 @@ function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
 />
       </Row>
       {list.map(([voter, a]) => (
-        <Box radius={BLOCK_RADIUS_DEFAULT} background={voter === mine
+        <Column radius={BLOCK_RADIUS_DEFAULT} background={voter === mine
               ? withAlpha(pal.link, dark ? 0.18 : 0.14)
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')} padding={{ x: 12, y: 7 }}
           key={`${qi}-${voter}`}
@@ -47,9 +46,9 @@ function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
           <Text size="md" color={pal.text}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
-        </Box>
+        </Column>
       ))}
-    </Box>
+    </Column>
   );
 }
 
@@ -68,26 +67,26 @@ function PollOptionView({ option, colors }: {
     color: option.selected ? colors.selectedBorderColor : colors.borderColor,
   };
   return (
-    <Box style={{ position: 'relative' }}>
-      <Box
+    <Column style={{ position: 'relative' }}>
+      <Column
         style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
         radius="lg"
         background={option.selected ? colors.selectedBackground : undefined}
         border={{ top: side, right: side, bottom: side, left: side }}
       />
-      <Box
+      <Column
         style={{ position: 'absolute', top: 0, bottom: 0, left: 0 }}
         width={`${option.fillPct}%`}
         radius="lg"
         background={colors.fillBackground}
       />
-      <Row align="center" justify="between" gap={8} padding={{ x: 12, y: 8 }}>
-        <Col flex={1}>
-          <Text size="md" value={option.label} />
-        </Col>
-        <Caption value={option.stats} color="secondary" weight="semibold" />
+      <Row align="center" justify="spaceBetween" gap={8} padding={{ x: 12, y: 8 }}>
+        <Column weight={1}>
+          <Text size="md" text={option.label} />
+        </Column>
+        <Text size="md" variant="caption" text={option.stats} color="secondary" fontWeight="semibold" />
       </Row>
-    </Box>
+    </Column>
   );
 }
 
@@ -98,12 +97,12 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   onVote: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
 }): React.ReactElement {
   return (
-    <Col gap={6}>
+    <Column gap={6}>
       {block.question === undefined ? null : (
-        <Text value={block.question} weight="semibold" size="md" />
+        <Text text={block.question} fontWeight="semibold" size="md" />
       )}
       {block.header === undefined ? null : (
-        <Caption value={block.header} color="secondary" weight="semibold" />
+        <Text size="md" variant="caption" text={block.header} color="secondary" fontWeight="semibold" />
       )}
       {block.options.map((option, oi) => (
         <GesturePressable
@@ -113,8 +112,8 @@ function PollQuestionView({ block, qi, colors, onVote }: {
           <PollOptionView option={option} colors={colors} />
         </GesturePressable>
       ))}
-      <Text value={block.totalLabel} size="xs" weight="medium" textAlign="start" color="secondary" />
-    </Col>
+      <Text text={block.totalLabel} size="xs" fontWeight="medium" textAlign="start" color="secondary" />
+    </Column>
   );
 }
 
@@ -136,12 +135,12 @@ export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onO
   };
   const blocks = pollQuestionBlocks(poll.questions, votes, ownVotes);
   return (
-    <Box margin={{ top: 8 }} gap={12} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      <Col gap={12}>
+    <Column margin={{ top: 8 }} gap={12} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+      <Column gap={12}>
         {blocks.map((block, qi) => (
           <PollQuestionView key={`q-${qi}`} block={block} qi={qi} colors={colors} onVote={onVote} />
         ))}
-      </Col>
+      </Column>
       {poll.questions.map((q, qi) => (
         q.open === true && onOpenAnswer ? (
           <OpenAnswerBlock
@@ -151,6 +150,6 @@ export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onO
           />
         ) : null
       ))}
-    </Box>
+    </Column>
   );
 }

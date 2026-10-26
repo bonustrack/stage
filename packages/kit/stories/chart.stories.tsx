@@ -1,9 +1,10 @@
 import type { Story } from '../gallery/story';
 import { CHART_COLORS, CHART_CURVE_TYPES, type ChartCurveType } from '../src/chart';
 import { Chart, type ChartDatum, type ChartSeries } from '../src/react-native/chart';
-import { Col, Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { bool, number, select, text } from './_controls';
+import { Column } from '../src/react-native/column';
+import { Row } from '../src/react-native/row';
 
 export default { title: 'Chart' };
 
@@ -57,7 +58,7 @@ function seriesOf(type: SeriesType, count: number, stacked: boolean, curveType: 
 }
 
 export const Controls: Story<ChartStoryArgs> = (args) => (
-  <Col maxWidth={560}>
+  <Column maxWidth={560}>
     <Chart
       data={MONTHS}
       series={seriesOf(args.type, args.seriesCount, args.stacked, args.curveType)}
@@ -67,7 +68,7 @@ export const Controls: Story<ChartStoryArgs> = (args) => (
       barGap={args.barGap} barCategoryGap={args.barCategoryGap > 0 ? args.barCategoryGap : undefined}
       aspectRatio={args.aspectRatio} height={args.height > 0 ? args.height : undefined}
     />
-  </Col>
+  </Column>
 );
 Controls.args = {
   type: 'bar', stacked: false, seriesCount: 2, curveType: 'natural', showYAxis: false, showLegend: true, showTooltip: true,
@@ -81,10 +82,10 @@ Controls.argTypes = {
 
 function Sample({ title, children }: { title: string; children: React.ReactNode }): React.ReactElement {
   return (
-    <Col gap={8} width={360}>
-      <Text size="xs" weight="semibold" value={title} />
+    <Column gap={8} width={360}>
+      <Text size="xs" fontWeight="semibold" text={title} />
       {children}
-    </Col>
+    </Column>
   );
 }
 
@@ -141,12 +142,12 @@ export const Axes: Story = () => (
 );
 
 export const Colors: Story = () => (
-  <Col gap={8} maxWidth={560}>
+  <Column gap={8} maxWidth={560}>
     <Chart
       data={MONTHS} xAxis="month" aspectRatio="16/9"
       series={CHART_COLORS.map((color): ChartSeries => ({ type: 'bar', dataKey: 'web', label: color, color }))}
     />
-  </Col>
+  </Column>
 );
 
 export const Curves: Story = () => (

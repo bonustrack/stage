@@ -246,28 +246,28 @@
         "core/no-restricted-syntax": [
           "error",
           {
-            "selector": "JSXElement[openingElement.name.name=/^(Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
-            "message": "Kit Title/Caption must size via the `size` prop, not a fontSize in style. Remove fontSize from the style and pass size= instead."
+            "selector": "JSXElement[openingElement.name.name=/^(Title)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
+            "message": "Kit Title must size via the `size` prop, not a fontSize in style. Remove fontSize from the style and pass size= instead."
           },
           {
-            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
-            "message": "Kit Text/Title/Caption apply Calibre internally - do not set fontFamily in style. Use the `weight` prop (normal/medium/semibold/bold) for the face, or variant=\"mono\" for monospace."
+            "selector": "JSXElement[openingElement.name.name=/^(Text|Title)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
+            "message": "Kit Text/Title apply Calibre internally - do not set fontFamily in style. Use the `fontWeight` prop (normal/medium/semibold/bold) for the face, or fontFamily=\"mono\" on Text for monospace."
           },
           {
-            "selector": "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
-            "message": "Kit Text/Title/Caption must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead."
+            "selector": "JSXElement[openingElement.name.name=/^(Text|Title)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
+            "message": "Kit Text/Title must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead."
           },
           {
-            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
           },
           {
-            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
-            "message": "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts)."
+            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
+            "message": "Row/Column: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts)."
           },
           {
-            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
-            "message": "Box/Row/Col: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style."
+            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
+            "message": "Row/Column: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style."
           }
         ],
         "no-restricted-imports": [
@@ -286,7 +286,7 @@
                 "importNames": [
                   "View"
                 ],
-                "message": "Use Box/Row/Col from '@/components/layout' instead of View for layout containers."
+                "message": "Use Row/Column from '@/components/layout' instead of View for layout containers."
               },
               {
                 "name": "react-native",
@@ -300,14 +300,14 @@
                 "importNames": [
                   "TextInput"
                 ],
-                "message": "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput."
+                "message": "Use TextField from '@stage-labs/kit/react-native/text-field' instead of react-native TextInput."
               },
               {
                 "name": "react-native",
                 "importNames": [
                   "ScrollView"
                 ],
-                "message": "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView."
+                "message": "Use List from '@stage-labs/kit/react-native/list' instead of react-native ScrollView."
               },
               {
                 "name": "react-native",
@@ -321,7 +321,7 @@
                 "importNames": [
                   "FlatList"
                 ],
-                "message": "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList."
+                "message": "Use VirtualList from '@/components/layout' instead of react-native FlatList."
               },
               {
                 "name": "react-native",
@@ -463,12 +463,12 @@
         "core/no-restricted-syntax": [
           "error",
           {
-            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
           },
           {
-            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
           }
         ]
       }
@@ -483,12 +483,12 @@
         "core/no-restricted-syntax": [
           "error",
           {
-            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
           },
           {
-            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
           },
           {
             "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
@@ -506,12 +506,12 @@
         "core/no-restricted-syntax": [
           "error",
           {
-            "selector": "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex."
+            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
           },
           {
-            "selector": "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Box/Row/Col: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
+            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
+            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
           },
           {
             "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",

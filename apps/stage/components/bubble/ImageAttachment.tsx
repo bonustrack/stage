@@ -3,10 +3,10 @@ import type { ImageLoadEventData, ImageStyle, NativeSyntheticEvent, ViewStyle } 
 import { Image } from '@stage-labs/kit/react-native/image';
 import { MediaCard } from '../MediaCard';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { ChatImageViewer } from './ChatGallery';
 import { useImageAspectRatio } from './mediaAspect';
+import { Column, Row } from '../layout';
 
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 const TILE_DECODE = { resizeMethod: 'resize', resizeMultiplier: 4 / 3 } as const;
@@ -40,17 +40,17 @@ export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; gal
   const onError = useCallback(() => { setShown(true); }, []);
   return (
     <>
-      <Box style={shown ? undefined : LOADING_CLIP}>
+      <Column style={shown ? undefined : LOADING_CLIP}>
         {shown ? null : <ImageLoading />}
-        <Box style={shown ? undefined : LOADING_TILE}>
+        <Column style={shown ? undefined : LOADING_TILE}>
           <MediaCard aspectRatio={aspectRatio} onPress={() => { setOpen(true); }}>
             {prevUri && prevUri !== uri ? (
-              <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} />
+              <Image url={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} />
             ) : null}
-            <Image src={uri} width="100%" height="100%" fit="cover" onLoad={onLoad} onError={onError} {...TILE_DECODE} />
+            <Image url={uri} width="100%" height="100%" fit="cover" onLoad={onLoad} onError={onError} {...TILE_DECODE} />
           </MediaCard>
-        </Box>
-      </Box>
+        </Column>
+      </Column>
       <ChatImageViewer uri={uri} galleryKey={galleryKey} visible={open} onClose={() => { setOpen(false); }} />
     </>
   );

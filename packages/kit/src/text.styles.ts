@@ -1,72 +1,37 @@
-import { FONT_SIZE, FONT_SIZE_DEFAULT, type FontSizeName } from './tokens';
+import { FONT_SIZE, FONT_SIZE_DEFAULT, fontName, type FontSizeName } from './tokens';
 
-export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
+export type TextVariant = 'body' | 'caption';
 
-export type TextRole =
-  | 'default'
-  | 'secondary'
-  | 'muted'
-  | 'link'
-  | 'primary'
-  | 'danger'
-  | 'success';
-
-export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
+export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold';
 
 export type TextSizeToken = FontSizeName;
 
 export type TextAlign = 'start' | 'center' | 'end';
 
+export type TextFontFamily = 'sans' | 'mono';
+
 export type ResolvedTextAlign = 'left' | 'center' | 'right';
 
-export interface TextRolePalette {
+export interface TextDefaultPalette {
   sub: string;
   link: string;
-  primary: string;
-  danger: string;
-  success: string;
 }
 
-export const TEXT_FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
+export const TEXT_FONTS: Record<TextWeight, string> = {
   normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
   semibold: 'Calibre-Semibold',
   bold: 'Calibre-Semibold',
 };
 
-export function normalizeTextWeight(w: TextWeight): keyof typeof TEXT_FONTS {
-  return w === 'regular' ? 'normal' : w;
-}
-
-export function resolveTextSize(
-  size: TextSizeToken | undefined,
-  variant: TextVariant | undefined,
-): number {
+export function resolveTextSize(size: TextSizeToken | undefined, variant: TextVariant | undefined): number {
   if (size) return FONT_SIZE[size];
   return variant === 'caption' ? FONT_SIZE['3xs'] : FONT_SIZE[FONT_SIZE_DEFAULT];
 }
 
-export function textVariantRole(variant: TextVariant | undefined): TextRole {
-  if (variant === 'secondary' || variant === 'caption') return 'secondary';
-  return 'default';
-}
-
-export function textRoleColor(role: TextRole, palette: TextRolePalette): string {
-  switch (role) {
-    case 'secondary':
-    case 'muted':
-      return palette.sub;
-    case 'link':
-      return palette.link;
-    case 'primary':
-      return palette.primary;
-    case 'danger':
-      return palette.danger;
-    case 'success':
-      return palette.success;
-    default:
-      return palette.link;
-  }
+export function textDefaultColor(variant: TextVariant | undefined, palette: TextDefaultPalette, inherited?: string): string {
+  if (variant === 'caption') return palette.sub;
+  return inherited ?? palette.link;
 }
 
 export const TEXT_ALIGN_MAP: Record<TextAlign, ResolvedTextAlign> = {
@@ -75,9 +40,6 @@ export const TEXT_ALIGN_MAP: Record<TextAlign, ResolvedTextAlign> = {
   end: 'right',
 };
 
-export function textFontFamily(
-  variant: TextVariant | undefined,
-  weight: TextWeight,
-): string {
-  return variant === 'mono' ? 'Menlo' : TEXT_FONTS[normalizeTextWeight(weight)];
+export function textFontFamily(family: TextFontFamily | undefined, weight: TextWeight): string {
+  return family === 'mono' ? fontName.mono : TEXT_FONTS[weight];
 }

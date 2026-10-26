@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../lib/safeArea';
@@ -8,7 +7,6 @@ import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme'
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from './Avatar';
-import { Box, Col, ScreenScroll, PAGE_GUTTER } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { PEER_PROFILE_MENU, profileDisplayName } from './ProfileScreen.model';
@@ -20,6 +18,7 @@ import { CommonChannels } from './CommonChannels';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { EditProfileModal } from './settings/EditProfileModal';
 import { CENTERED } from './RoundIconButton';
+import { Column, ScreenScroll, PAGE_GUTTER } from './layout';
 
 function EditProfileButton({ background }: { background: string }): React.ReactElement {
   const address = useActiveAccountRecord()?.address ?? null;
@@ -65,25 +64,25 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
           />
         }
       >
-        <Box padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
-          <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-            <Col gap={6} align="start">
-              <Text value={displayName} weight="semibold" size="2xl" textAlign="start" />
-              {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="xs" color={c.text} /> : null}
-              {about ? <Text value={about} size="xl" textAlign="start" /> : null}
-            </Col>
-          </Box>
+        <Column padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
+          <Column margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
+            <Column gap={6} align="start">
+              <Text text={displayName} fontWeight="semibold" size="2xl" textAlign="start" />
+              {handle && displayHandle(handle) !== displayName ? <Text text={displayHandle(handle)} size="xs" color={c.text} /> : null}
+              {about ? <Text text={about} size="xl" textAlign="start" /> : null}
+            </Column>
+          </Column>
           {addr ? (
-            <Box margin={{ top: 2 }}>
+            <Column margin={{ top: 2 }}>
               <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
-                <Text value={shortAddress(addr)} size="xs" color={c.text} />
+                <Text text={shortAddress(addr)} size="xs" color={c.text} />
               </GesturePressable>
-            </Box>
+            </Column>
           ) : null}
           {!isSelf && addr ? (
             <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />
           ) : null}
-        </Box>
+        </Column>
       </ProfileCover>
     </>
   );
@@ -116,7 +115,7 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
 
   return (
-    <Col flex={1} surface="surface">
+    <Column weight={1} surface="surface">
       <ProfileCoverBar insetTop={insets.top} trailing={addr ? <ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} /> : undefined} />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
@@ -133,6 +132,6 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
       </ScreenScroll>
 
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
-    </Col>
+    </Column>
   );
 }

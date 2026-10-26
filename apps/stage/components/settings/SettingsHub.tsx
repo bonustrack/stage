@@ -6,7 +6,6 @@ import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
-import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { MenuSheet } from '../MenuSheet';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { menuPointBelow } from '../AnchoredMenu';
@@ -19,7 +18,6 @@ import { reported } from '../../lib/errorPolicy';
 import { isPushSupported } from '../../lib/pushRegister';
 import {
   setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference,
-  type ThemePreference,
 } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { listXmtpInstallations } from '../../lib/xmtp.client';
@@ -34,6 +32,7 @@ import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_O
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
 import { menuPagesFor } from '../tabs/menuPages';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
   const candidate = peerName ?? label;
@@ -53,13 +52,13 @@ function IdentityHero(): React.ReactElement | null {
   const sub = [handle ? displayHandle(handle) : null, short].filter((p) => p !== null).join(' · ');
   const edit = (): void => { if (handle) setEditing(true); else capabilities.navigate(settingsSection('profile').href); };
   return (
-    <Col gap={16} padding={{ x: PAGE_GUTTER, top: 24 }}>
+    <Column gap={16} padding={{ x: PAGE_GUTTER, top: 24 }}>
       <Row align="center" gap={16}>
         <Avatar address={address} size={72} />
-        <Col flex={1} gap={2}>
-          <Text value={accountDisplayName(getPeerName(address), rec.label, short)} size="2xl" weight="semibold" color="link" truncate />
-          <Text value={sub} size="xs" color="secondary" />
-        </Col>
+        <Column weight={1} gap={2}>
+          <Text text={accountDisplayName(getPeerName(address), rec.label, short)} size="2xl" fontWeight="semibold" color="link" truncate />
+          <Text text={sub} size="xs" color="secondary" />
+        </Column>
       </Row>
       <Row gap={8}>
         <Button label="Edit profile" size="md" color="secondary" variant="solid" dark={dark} onPress={edit} />
@@ -67,7 +66,7 @@ function IdentityHero(): React.ReactElement | null {
       </Row>
       <MenuSheet visible={anchor !== null} anchor={anchor} onClose={() => { setAnchor(null); }} />
       {handle ? <EditProfileModal visible={editing} onClose={() => { setEditing(false); }} address={address} handle={handle} /> : null}
-    </Col>
+    </Column>
   );
 }
 
@@ -82,11 +81,7 @@ function useDeviceCount(): number | null {
   return data ?? null;
 }
 
-const THEME_TABS = THEME_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
-
-function isThemePreference(value: string): value is ThemePreference {
-  return THEME_OPTIONS.some((o) => o.value === value);
-}
+const THEME_TABS = THEME_OPTIONS.map((o) => ({ title: o.label }));
 
 function PreferencesGroup(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -100,11 +95,11 @@ function PreferencesGroup(): React.ReactElement {
   return (
     <SettingsGroup title="Preferences">
       <ListViewItem align="center" gap={14} dark={dark} padding={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 16, paddingRight: 14 }}>
-        <Text value="Theme" size="xs" color="link" style={{ flex: 1 }} />
-        <Box width={260}>
-          <Tabs value={custom ? 'custom' : pref} options={THEME_TABS} dark={dark}
-            onChange={(v) => { if (!isThemePreference(v)) return; setCustomTheme(false); void setThemePreference(v); }} />
-        </Box>
+        <Text text="Theme" size="xs" color="link" style={{ flex: 1 }} />
+        <Column width={260}>
+          <Tabs tabs={THEME_TABS} selectedIndex={custom ? -1 : THEME_OPTIONS.findIndex((o) => o.value === pref)} dark={dark}
+            onChange={(index) => { const v = THEME_OPTIONS[index]?.value; if (v === undefined) return; setCustomTheme(false); void setThemePreference(v); }} />
+        </Column>
       </ListViewItem>
       <SettingsToggleRow label="Push notifications" name="push" checked={push && pushSupported} disabled={!pushSupported}
         description={pushSupported ? undefined : 'Push notifications are unavailable in this browser.'}
@@ -144,11 +139,11 @@ function MoreGroup(): React.ReactElement {
 
 function SettingsHub(): React.ReactElement {
   return (
-    <Col>
+    <Column>
       <IdentityHero />
       <PreferencesGroup />
       <MoreGroup />
-    </Col>
+    </Column>
   );
 }
 

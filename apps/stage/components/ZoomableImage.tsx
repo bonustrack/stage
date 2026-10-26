@@ -187,7 +187,7 @@ export function ZoomableImage({ uri, frame, onTap, onStep }: {
       >
         <Animated.View style={[{ flex: 1 }, transform]}>
           {uri && resizeMethod ? (
-            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod} onLoad={onLoad}/>
+            <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod} onLoad={onLoad}/>
           ) : null}
         </Animated.View>
       </Animated.View>

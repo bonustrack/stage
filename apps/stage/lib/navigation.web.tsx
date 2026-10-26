@@ -6,8 +6,8 @@ import {
 } from 'expo-router/react-navigation';
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
-import { Box } from '@stage-labs/kit/react-native/box';
 import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
+import { Column } from '@stage-labs/kit/react-native/column';
 
 type FlowScreenOptions = Record<string, unknown>;
 
@@ -35,9 +35,9 @@ function stackScreens<State extends NavigationState>(
   state: State, descriptors: Record<string, FlowDescriptor<State>>,
 ): React.ReactNode {
   return state.routes.map((route, i) => (
-    <Box key={route.key} style={i === state.index ? undefined : HIDDEN}>
+    <Column key={route.key} style={i === state.index ? undefined : HIDDEN}>
       {descriptors[route.key]?.render() ?? null}
-    </Box>
+    </Column>
   ));
 }
 

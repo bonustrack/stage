@@ -1,40 +1,87 @@
 # @stage-labs/kit
 
-> Shared design-system primitives for the Stage clients: tokens, icon data, and theme contracts.
+> The Stage design system: A2UI v1.0 components for React Native and web, an A2UI renderer, the Stage Kit catalog, tokens, icons and theme contracts.
 
 ## Overview
 
-`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, the Central Icons set, station icon definitions, avatar helpers, the theme-preference contract, and one React Native component family (rendering on web via react-native-web) consumed by the universal app ([`apps/stage`](../../apps/stage)). Screens and chat message content compose the components directly in JSX.
+`@stage-labs/kit` is the single source of truth for how Stage looks. It ships one React Native component family (rendering on web via react-native-web), the colour, spacing and type tokens, Central Icons with HeroIcon name aliases, avatar helpers, the theme-preference contract, and a framework-free implementation of the [A2UI](https://a2ui.org) v1.0 protocol with a React Native renderer. The universal app ([`apps/stage`](../../apps/stage)) composes the components directly in JSX; agents send A2UI messages that the same components render.
 
 Style logic lives in framework-free core modules (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts`); components target React Native via peer dependencies and render on every platform, web included.
 
-## Design north star: OpenAI ChatKit
+## Design north star: A2UI first, ChatKit for the extras
 
-**Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/).** ChatKit is the reference for everything: component names and props, theme options, colour/typography/radius/density variables and their allowed values. Where ChatKit has a concept, Kit mirrors it under the same name and the same literal values; ChatKit is DOM/CSS, Kit is React Native, and that platform difference is the *only* thing that should differ.
+**Kit's components are the [A2UI v1.0 basic catalog](https://a2ui.org/specification/v1.0-a2ui/).** Every basic catalog component exists under its A2UI name with its A2UI props, literal unions and defaults. Where A2UI is silent, Kit adds extras that keep the names of [OpenAI ChatKit](https://openai.github.io/chatkit-js/) (`size`, `color`, `pill`, `block`, `ThemeOption`, ...). Rules:
 
-Practical rules:
+- **A2UI first.** If A2UI has the concept, use its name and values (`Column`, `CheckBox`, `justify: 'spaceBetween'`, `variant: 'caption'`). Never add a Kit component that duplicates an A2UI one.
+- **ChatKit for what A2UI lacks.** Extra props and the few extra components (`Title`, `Badge`, `ListView`, ...) mirror ChatKit's names. Don't invent names or token values; never write a raw literal where a token exists (`FONT_SIZE`, `fontName`, `semanticColors`, `RADIUS_SCALE`).
+- **Clashes resolve to A2UI.** A2UI's `weight` is flex-grow on every component, so font weight is `fontWeight`. Button `variant` accepts both A2UI's hints (`default | primary | borderless`, default `default`) and ChatKit's fills (`solid | soft | outline | ghost`) used with `color`.
+- **JSX adaptations.** A2UI child ids become React children (`child`, `children`, `trigger`, `tabs[].child`), `action` becomes `onPress`, two-way bound values become `value` + `onChange` (`onChangeText` on `TextField`), and `checks` takes already-evaluated `ValidationResult`s. Every component accepts the A2UI common props `weight` and `accessibility`.
 
-- **Don't invent components.** If something is missing, find what ChatKit calls it and match that name and prop shape. Don't add a bespoke primitive.
-- **Don't invent token values.** Reuse `FONT_SIZE`, `semanticColors`, `RADIUS_SCALE`, `DENSITY_SCALE`. A raw literal (`fontSize: 15`, `'#ffffff'`) in a component is drift, even when it currently matches the token.
-- **Keep the literal unions identical** to ChatKit's, so a ChatKit theme config maps onto Kit 1:1.
+### Components
 
-Parity of the theme surface against ChatKit's [`ThemeOption`](https://openai.github.io/chatkit-js/api/openai/chatkit/type-aliases/themeoption/). Every key name and literal union matches, so a ChatKit theme config maps onto Kit 1:1.
+| A2UI basic catalog | Kit component | Kit extras (ChatKit names) |
+| --- | --- | --- |
+| `Text` (`text`, `variant: body \| caption`) | `react-native/text` | `size`, `fontWeight`, `color`, `textAlign`, `italic`, `lineThrough`, `truncate`, `maxLines`, `fontFamily: sans \| mono`, `markdown` |
+| `Image` (`url`, `description`, `fit`, `variant`) | `react-native/image` | `radius`, `size`, `width`, `height`, `aspectRatio`, `background`, `frame`, `flush`, `headers`, Android `resizeMethod` / `resizeMultiplier` (a blank `url` renders a placeholder; `getImageSize(url)` measures one) |
+| `Icon` (`name`, `{ svgPath }`) | `react-native/icon` | Central Icons through their HeroIcon alias names and brand names on top of the 59 A2UI names, `size`, `color`, `variant: line \| solid` |
+| `Video` (`url`, `posterUrl`) | `react-native/video` | `controls`, `background`, `aspectRatio`, `fit: contain \| cover`, `onVideoSize` |
+| `AudioPlayer` (`url`, `description`) | `react-native/audio-player` | `waveform`, `bars`, `accent`, ... |
+| `Row` / `Column` (`children`, `justify`, `align`) | `react-native/row`, `react-native/column` | `gap`, `padding`, `margin`, `wrap`, `surface`, `background`, `radius`, sizes, `border`, `align: baseline` |
+| `List` (`children`, `direction`, `align`) | `react-native/list` | `gap`, `padding`, and every `ScrollView` prop and ref; both directions scroll |
+| `Card` (`child`) | `react-native/card` | `size`, `padding`, `background`, `status`, `confirm`, `cancel`, `onPress` |
+| `Tabs` (`tabs: { title, child }[]`) | `react-native/tabs` | `variant: segmented \| underline`, `selectedIndex`, `onChange` |
+| `Modal` (`trigger`, `content`) | `react-native/modal` | `open`, `defaultOpen`, `onClose`, `title`, `footer`, `side`, `dismissable`, `fullBleedPanel`, `gestureRoot`, backdrop options |
+| `Divider` (`axis`) | `react-native/divider` | `spacing`, `color`, `size`, `flush` |
+| `Button` (`child`, `variant`, `action`, `checks`) | `react-native/button` | `color`, `size`, `pill`, `block`, `uniform`, `label`, `iconStart`, `iconEnd`, `loading`, tints |
+| `TextField` (`label`, `value`, `placeholder`, `variant`, `checks`) | `react-native/text-field` | `appearance: soft \| outline \| plain`, `hint`, `trailing`, `inputType`, composer options; a `label` gives the Stage form-field look |
+| `CheckBox` (`label`, `value`, `checks`) | `react-native/check-box` | `displayStyle: checkbox \| switch` |
+| `ChoicePicker` (`options`, `value`, `variant`, `displayStyle`, `filterable`) | `react-native/choice-picker` | `direction` |
+| `Slider` (`min`, `max`, `value`, `steps`) | `react-native/slider` | `showValue`, `onChangeEnd` |
+| `DateTimeInput` (`value`, `enableDate`, `enableTime`, `min`, `max`) | `react-native/date-time-input` | `placeholder`, `appearance`, `clearable` |
 
-| ChatKit                                          | Kit                                                  |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `colorScheme: 'light' \| 'dark'`                  | `Scheme` (`tokens.ts`)                               |
-| `radius: 'pill' \| 'round' \| 'soft' \| 'sharp'`  | `RadiusName` + `RADIUS_SCALE`                        |
-| `density: 'compact' \| 'normal' \| 'spacious'`    | `Density` + `DENSITY_SCALE`                          |
-| `typography.baseSize: 14\|15\|16\|17\|18`         | `BaseSize` + `BASE_SIZE_DEFAULT`                     |
-| `typography.fontFamily` / `fontFamilyMono`        | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN)  |
-| `typography.fontSources`                          | N/A, Kit loads its own Calibre (see Fonts below)     |
-| `color.surface: { background, foreground }`       | `SurfaceColors` (`theme-derive.ts`)                  |
-| `color.accent: { primary, level: 0\|1\|2\|3 }`    | `AccentColor`                                        |
-| `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions`                                   |
+Kit extras with no A2UI equivalent, kept because Stage needs them: `Title`, `Badge` (with `fontWeight`, `textSize`, `background`, composed `children`), `ListView` / `ListViewItem`, `Spinner`, `QrCode`, `Chart` (ChatKit's Chart widget, see below), `DropdownMenu`, `Tooltip`, `VoiceRecorder`, `ColorPicker`, `FilePicker`, `Glyph` (draws one Central icon), and the platform primitives `Pressable` and `GesturePressable`.
 
-**Caveat: shapes match, generators are Kit's own.** OpenAI publishes ChatKit's theme *types* but not the colour maths behind them, so Kit implements the documented semantics itself: `tint` is saturation in 1% steps, `shade` shifts lightness by 3% per step (negative lighter, positive darker), and `level` mutes the accent toward the surface foreground in 18% steps with `3` meaning "primary unchanged". `grayscaleHex`/`accentHex`/`grayscaleFromHex` in `theme-derive.ts` are the entry points, and the defaults are lossless: `grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')` is exactly `#282a2d`, guarded by tests.
+### Theme
 
-Component coverage: Kit implements **every ChatKit widget node**, and `Frame` renders ChatKit widget JSON with them: `Badge`, `Box`, `Button`, `Caption`, `Card`, `Chart`, `Col`, `DatePicker`, `Divider`, `Form`, `Icon`, `Image`, `ListView`, `ListViewItem`, `Markdown`, `Row`, `Select`, `Spacer`, `Text`, `Title`, `Transition`. It additionally carries React Native platform primitives with no ChatKit analogue (`Scroll`, `Pressable`, `GesturePressable`, `FlatList`, `theme-context`) and app-driven extras (`AudioPlayer`, `VideoPlayer`, `VoiceRecorder`, `QrCode`, `ColorPicker`, `Table`, `Tabs`, `Dialog`, `Modal`, `DropdownMenu`, `Tooltip`, `Glyph`, ...).
+A2UI v1.0 leaves branding to the renderer, so the theme stays Kit's ChatKit-shaped `ThemeOption` surface (every key name and literal union matches ChatKit):
+
+| ChatKit | Kit |
+| --- | --- |
+| `colorScheme: 'light' \| 'dark'` | `Scheme` (`tokens.ts`) |
+| `radius: 'pill' \| 'round' \| 'soft' \| 'sharp'` | `RadiusName` + `RADIUS_SCALE` |
+| `density: 'compact' \| 'normal' \| 'spacious'` | `Density` + `DENSITY_SCALE` |
+| `typography.baseSize: 14\|15\|16\|17\|18` | `BaseSize` + `BASE_SIZE_DEFAULT` |
+| `typography.fontFamily` / `fontFamilyMono` | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN) |
+| `color.surface: { background, foreground }` | `SurfaceColors` (`theme-derive.ts`) |
+| `color.accent: { primary, level: 0\|1\|2\|3 }` | `AccentColor` |
+| `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions` |
+
+OpenAI publishes ChatKit's theme types but not its colour maths, so `theme-derive.ts` implements the documented semantics itself, and the defaults are lossless (guarded by tests). Colour tokens (`text`, `secondary`, `muted`, `link`, `primary`, `danger`, `success`, `border`) on `Text`, `Row`/`Column` backgrounds and the A2UI renderer resolve against the live palette from `KitThemeProvider`.
+
+## A2UI
+
+`src/a2ui/` is a framework-free implementation of A2UI v1.0 (candidate), with the official schemas vendored in `src/a2ui/schemas/`:
+
+- **Protocol:** every agent-to-renderer message (`createSurface` with inline components and data model, `updateComponents`, `updateDataModel`, `deleteSurface`, `callRendererFunction`, `agentFunctionResponse`) and every renderer-to-agent message (`action`, `callAgentFunction`, `rendererFunctionResponse`, `error`), JSON / JSONL / list / wrapper intake, capabilities and the `sendDataModel` transport metadata.
+- **Validation:** a JSON Schema (draft 2020-12 subset) validator with the spec's cross-catalog `$ref` rules. It passes all 154 cases of the official v1.0 conformance suite (`test/a2ui/cases`). Invalid components are dropped with `VALIDATION_FAILED`; composition rules report `UNALLOWED_PARENT` / `UNALLOWED_CHILD`; surface misuse reports `INTEGRITY_ERROR`.
+- **Evaluation:** JSON Pointer bindings with list-template scopes and relative paths, `formatString` expressions, `@index`, `@@` escapes, the basic functions (`required`, `regex`, `length`, `numeric`, `email`, `formatString`, `formatNumber`, `formatCurrency`, `formatDate`, `pluralize`, `openUrl`, `and`, `or`, `not`), `allowedCallers` and `requiresUserActivation`, and agent-side functions with pending state.
+- **Agent functions:** the Kit catalog declares `agentFunction({ name, args })`, which the renderer never implements, so it always goes to the agent as a `callAgentFunction` and the value settles from the `agentFunctionResponse`.
+- **Screens:** the Kit catalog adds two functions, `openSurface({ surfaceId })` and `closeSurface()` (user activation required), that reach the host through the client's `navigate` option, so one message can carry several surfaces shown as screens with a back button.
+- **Snapshots:** `a2uiSnapshot(messages)` (`@stage-labs/kit/a2ui/snapshot`) replays a message log in a headless client and returns one `createSurface` per surface that renders (components and data model inline) plus the diagnostics, which is how a host stores or validates a surface. `dataModelUpdates(client)` turns a live client's data model back into messages, so local edits survive a reply.
+
+```tsx
+import { createA2uiClient } from '@stage-labs/kit/a2ui/client';
+import { A2uiSurface } from '@stage-labs/kit/react-native/a2ui-surface';
+
+const client = createA2uiClient({ send: (message, metadata) => transport.send(message, metadata), openUrl });
+client.receive(jsonlFromAgent);
+
+<A2uiSurface client={client} surfaceId="payment_request" onActionError={toast} />
+```
+
+In React, `useA2uiClient(messages, options)` (`@stage-labs/kit/react-native/a2ui-session`) builds the client for a message list and keeps the latest callbacks; its `send` also gets the client. `A2uiSurface` takes `disabled` (read only: no actions, inputs and buttons disabled) and `mediaUrl`, a filter applied to every `Image`, `Video` and `AudioPlayer` URL (return `''` to block one).
+
+`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner` and `QrCode` components. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs.
 
 ## Install
 
@@ -55,7 +102,7 @@ Other apps install it from npm. Releases go out under the `beta` tag, so ask for
 bun add @stage-labs/kit@beta
 ```
 
-The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`. `expo-av` is no longer needed.
+The two Central Icons packages and `qrcode` come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`.
 
 ### Fonts
 
@@ -65,15 +112,22 @@ Kit ships Calibre Medium and Calibre Semibold (`src/fonts/`) and loads them by i
 
 ```ts
 import { colors, resolveColorToken } from '@stage-labs/kit/tokens';
-import { resolveIconName } from '@stage-labs/kit/icons';
 import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 ```
 
 ```tsx
-// React Native components (peer deps: react, react-native, react-native-svg, ...)
 import { Button } from '@stage-labs/kit/react-native/button';
+import { Column } from '@stage-labs/kit/react-native/column';
 import { Text } from '@stage-labs/kit/react-native/text';
+
+<Column gap={8}>
+  <Text text="Hello" size="xl" fontWeight="semibold" />
+  <Text variant="caption" text="Small print" />
+  <Button variant="primary" label="Continue" onPress={next} />
+</Column>
 ```
+
+Text sizes are the `FONT_SIZE` tokens: `3xs` 13px, `2xs` 14px, `xs` 16px, `sm` 17px, `md` 18px (body), `lg` 19px, `xl` 20px, `2xl` 24px, `3xl` 26px. The `caption` variant defaults to `3xs` in the secondary colour. `Title` takes `hero` (`3xl` or `4xl`) for the landing and onboarding headlines.
 
 Icons are [Central Icons](https://centralicons.com) (round, radius 1, stroke 2) from the licensed `@central-icons-react-native/*` packages, which the kit depends on rather than vendoring. Import each icon on its own, under its Central name, and draw it with `Glyph`:
 
@@ -84,48 +138,13 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 <Glyph icon={IconThumbtack} size={16} color={link} />
 ```
 
-The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` from `@stage-labs/kit/react-native/icon` still accepts the older HeroIcon names through `CENTRAL_ICON_ALIASES`, with `variant` `'line'` (default) or `'solid'`, but it bundles every aliased icon. It is the only component that does: `Tabs` options, `DropdownMenuItem` and the `Select` and `DatePicker` triggers take Central icons, like `Glyph`. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
+The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` also takes names: the HeroIcon aliases in `CENTRAL_ICON_ALIASES`, the 59 A2UI icon names (`icons.a2ui.ts` maps each one onto a Central icon) and the brand icons, with `variant` `'line'` (default) or `'solid'`; it bundles every named icon. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
 
-`AudioPlayer` and `VideoPlayer` play through the `expo-audio` and `expo-video` peers (they replaced `expo-av`). On web those modules expect the Expo runtime global: an Expo app installs it, and a plain react-native-web host must call `installExpoGlobalPolyfill()` from `expo-modules-core/src/polyfill/dangerous-internal` before importing them, as `gallery/expo-runtime.ts` does.
-
-`VideoPlayer` takes `background` (default `#000000`), `aspectRatio` (default 16/9) and `fit` (`'contain'`, the default, or `'cover'`). Fullscreen always shows the whole video. `onVideoSize` gets the video's display size (`{ width, height }`, rotation applied) once it is known, so a caller can match `aspectRatio` to the video. On web it reads the `<video>` element's metadata; on iOS and Android it measures a small first frame, because the native track size ignores rotation. `Image` takes `headers`, sent with the image request, and the same module exports `getImageSize(src)`, which resolves to `{ width, height }`. On Android, `Image` also takes `resizeMethod` and `resizeMultiplier`, passed to React Native's `Image`, to choose the size the image is decoded at. Other platforms ignore them. `Dialog` takes `header` and `footer` nodes around its scroll body, `bottomInset` to lift the panel, `panelWidth`, `panelMaxWidth`, and `panelBorderSides` (`'top'` or `'all'`) for the `panelBorderColor` border. `Badge` has `solid`, `soft` and `outline` variants and is fully rounded by default (`pill={false}` gives the 8px `sm` radius). Its text size follows `size`: 13px for `3xs`, `2xs` and `sm`, 15px for `md` and 16px for `lg`. Besides the ChatKit props it takes `background`, any colour for `color` (the text colour when `background` is set), `textSize` (a text size name used instead of the size's), `weight` (default `semibold`), `truncate`, `style` and `textStyle`, and `children` in place of its label text for composed content such as icons; keep `label` as the plain text. A function as `children` gets the badge's text props (`weight`, `color` and a `style` with the font size), so composed text uses the badge's text size.
-
-## Frame
-
-`Frame` (`@stage-labs/kit/react-native/frame`) renders OpenAI ChatKit widget JSON with kit components. It takes the same JSON ChatKit streams as a widget item: a `Card`, `ListView` or `Basic` root with the ChatKit nodes inside (`Box`, `Row`, `Col`, `Form`, `Text`, `Title`, `Caption`, `Label`, `Markdown`, `Badge`, `Icon`, `Image`, `Button`, `Spacer`, `Divider`, `Transition`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`, `Table`, `Table.Row`, `Table.Cell`, `Chart`), with ChatKit's prop names and values. `Chart` draws a Kit `Chart` (see Chart below).
-
-```tsx
-import { Frame } from '@stage-labs/kit/react-native/frame';
-
-<Frame
-  widget={{ type: 'Card', children: [
-    { type: 'Title', value: 'Weekly report' },
-    { type: 'Button', label: 'Approve', onClickAction: { type: 'report.approve', payload: { week: 39 } } },
-  ] }}
-  onAction={async (action, { label }) => { await send(action, label); }}
-  onOpenUrl={(url) => { open(url); }}
-/>
-```
-
-- The JSON is checked first by `parseFrame` (`@stage-labs/kit/frame`, no React): at most 64K characters, depth 16, 500 nodes and 200 children per node. A frame over a limit, or not an object, shows a short notice instead.
-- Unknown props are dropped. An unknown node type, or a node without a required prop (`Text.value`, `Image.src`, `Select.options`, ...), shows a small "Unsupported" box. Nothing throws, and an error boundary catches render errors.
-- `Image.src` must be `https://`. Colours are ChatKit tokens (`secondary`, `surface-secondary`, `success`, ...), hex, `rgb()`/`hsl()` or `{ light, dark }`; anything else is dropped. A `Chart` series `color` takes ChatKit's chart colours (`blue`, `purple`, ...) and primitive tokens (`blue-500`, `gray-300`, `alpha-10`) instead of the semantic tokens. A `Chart` keeps at most 200 rows and 12 series. `Markdown` has HTML and images off, and a link calls `onOpenUrl` only for `https://` URLs. On web, with `onOpenUrl`, such a link is a real link (`href`, new tab): middle-click, Ctrl or Cmd click and the browser link menu work, and a plain click still calls `onOpenUrl`.
-- Icons (`Icon.name`, `Button.iconStart`, `Button.iconEnd`) take ChatKit's 63 icon names, plus nine Stage names that ChatKit does not have: `arrow-up`, `chevron-down`, `chevron-up`, `copy`, `mic`, `send`, `share`, `thumbs-down` and `thumbs-up`. Any other name makes an `Icon` unsupported, and a `Button` drops it.
-- Text sizes are the kit's own, with no frame text scale: `size` on `Text`, `Title`, `Caption` and `Label` takes any `FONT_SIZE` name (`3xs` 13px, `2xs` 14px, `xs` 16px, `sm` 17px, `md` 18px, `lg` 19px, `xl` 20px, `2xl` 24px, `3xl` 26px), and defaults to `md` (18px). Removed or unknown names are ignored. `Markdown` text is `md` too. Editable `Text` uses the field's control size. `Icon` keeps its separate size scale unchanged: `4xs` 13px, `3xs` 14px, `2xs` 15px, `xs` through `2xl` as above, `3xl` 32px and `4xl` 40px. `Badge`, `Button` and the fields keep their control sizes.
-- Number spacing (`gap`, `padding`, `margin`, `Divider.spacing`) is in ChatKit spacing units of 4px; `"12px"` strings are pixels. Sizes (`width`, `height`, `size`) are pixels or `"50%"`.
-- Actions: `Button.onClickAction`, `ListViewItem.onClickAction`, `Card` `confirm`/`cancel`, `Form.onSubmitAction` and the controls' `onChangeAction` call `onAction({ type, payload, handler? }, { label })`. The values of the fields in the same `Form` (or `Card asForm`, or the whole frame) are added to `payload` by `name` (`todo.title` nests), and a key already in the payload wins. A submit is blocked while a `required` field is empty. ChatKit's `handler` (`'client'` or `'server'`) is passed on for the host to route the action; `loadingBehavior` is ignored. While `onAction` runs, every button is disabled. Without `onAction`, or with `disabled`, the frame is read only.
-- `dark` picks the scheme (default: the `KitThemeProvider` scheme); a root's `theme` overrides it for its subtree.
-- `fill` (`{ padding, insetBottom? }`) shows the frame as a full page: the root grows to fill its container, a `Card` root loses its border and radius, and the root `background` (or the background of its `theme`) paints the whole area. `padding` is used only when the root sets no `padding` of its own, so `padding: 0` means no spacing. `insetBottom` is added at the bottom, for a safe area. A `ListView` root, which has no padding, keeps the fill padding. Without `fill`, the frame takes only the space its content needs.
-- Layout follows CSS flex shrinking, which React Native does not do by default: `Box`, `Row`, `Col` and `Form` shrink to the width they get (`flexShrink: 1`, `minWidth: 0`), and so does text that can wrap, so a long title in a `Row` wraps on a phone instead of running off the edge. `Badge`, `Button`, `Icon`, `Image` and short single words (12 characters at most) keep their width. `frameFlex(node)` in `@stage-labs/kit/frame` gives this style.
-- Sizing follows ChatKit's `BlockProps`: `width`, `height`, `minWidth`, `maxWidth`, `minHeight`, `maxHeight` take px or a `%` string, and `minSize`/`maxSize` set both axes. A `Spacer` `minSize` applies along its parent's direction only. `Input` and `Textarea` fill the space they get, like ChatKit's `width: 100%` fields: the rest of a `Row`, the width of a `Col`. `Select` and `DatePicker` do the same only with `block`. A `soft` field (the default) inside a `Box`, `Row`, `Col` or `Form` with a `background` has no background of its own, so it blends in, as in a chat composer; use `outline` to keep a visible field. The pure helpers live in `src/frame.flow.ts`.
-- `Basic` also takes `background`, like `Card`.
-- `frameSummary(root)` gives a title and description from the first `Title` and text nodes, for previews.
-- Screens: `widget` may also be `{ screens: { <id>: <widget> or { title, widget } }, start? }`, several screens in one frame (`start` defaults to the first id that is not a number, since JSON lists number keys first). In a frame with screens, an action of type `frame.open` with `payload.screen` opens that screen and `frame.back` goes back, with no `onAction` call, even when the frame is read only (a plain widget sends them like any action). Every other action gets `screen` (the current screen id) in its payload, unless the payload has one. The 64K characters cover all the screens together, at most 50 screens, and depth and node limits apply per screen. An unknown screen shows a short notice. `parseFrameDoc` (`@stage-labs/kit/frame`) parses both shapes, and `frameNavOf`, `navigateFrame` and `withScreen` are the pure navigation steps.
-- `Frame` keeps its own back stack. A host that shows its own back button passes `navigation` from `useFrameNavigation(start)` (`{ screen, depth, navigate }`) and calls `navigate({ kind: 'back' })` from it.
+`AudioPlayer` and `Video` play through the `expo-audio` and `expo-video` peers. On web those modules expect the Expo runtime global: an Expo app installs it, and a plain react-native-web host must call `installExpoGlobalPolyfill()` from `expo-modules-core/src/polyfill/dangerous-internal` before importing them, as `gallery/expo-runtime.ts` does. `Video` fullscreen always shows the whole video, and `onVideoSize` gets the display size (rotation applied) once it is known.
 
 ## Chart
 
-`Chart` (`@stage-labs/kit/react-native/chart`) draws OpenAI ChatKit's `Chart` widget with `react-native-svg`, on web, iOS and Android. It takes the same props, with the same defaults, so the JSON of a ChatKit chart works as is. The layout maths (scales, bars, curves, colours) is in `@stage-labs/kit/chart`, with no React.
+`Chart` (`@stage-labs/kit/react-native/chart`), a Kit extra, draws OpenAI ChatKit's `Chart` widget with `react-native-svg`, on web, iOS and Android. It takes the same props, with the same defaults, so the JSON of a ChatKit chart works as is. The layout maths (scales, bars, curves, colours) is in `@stage-labs/kit/chart`, with no React.
 
 ```tsx
 import { Chart } from '@stage-labs/kit/react-native/chart';
@@ -153,26 +172,20 @@ import { Chart } from '@stage-labs/kit/react-native/chart';
 
 ```
 src/
-  tokens.ts          # colour + spacing tokens, colour helpers (Scheme, resolveColor, ...)
+  a2ui/              # A2UI v1.0 core: protocol, schemas, validator, evaluator, functions, client, Kit catalog
+  tokens.ts          # colour + spacing tokens, colour helpers (Scheme, resolveColor, resolvePaletteColor, ...)
   theme.ts           # theme-preference contract + resolution
   theme-derive.ts    # custom-palette deriver
-  icons.ts           # icon names + resolveIconName; the HeroIcon path data (heroicons.data.ts, heroicons.solid.data.ts) is still exported but no longer drawn
-  glyph.ts           # CentralIcon type and IconStyle ('line' | 'solid')
-  central-icons.ts   # HeroIcon name -> Central Icons aliases, used by `Icon`
-  heroicons.data.ts  # HeroIcon path data
-  avatar.ts          # avatar helpers
-  layout.ts          # Box layout core (spacing, borders, surfaces)
-  badge.ts           # badge style core
-  markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
-  text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
-  link.ts            # web link helpers: NEW_TAB (target _blank, rel noopener noreferrer) and isPlainClick, shared with the app's links
-  chart.ts           # Chart layout core: scales, bars, curves and colours (chart.scale.ts, chart.curves.ts, chart.colors.ts)
-  fonts/             # Calibre Medium and Semibold (KIT_FONTS in react-native/fonts.ts, loaded by react-native/fonts.load.ts on web and fonts.load.native.ts on iOS and Android)
-  react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
-  index.ts           # root barrel
-stories/             # one story file per component (controls for every prop + variant matrices)
-gallery/             # the storybook shell: Vite entry, sidebar, controls panel, hash routing (kit components only)
-vite.config.ts       # react-native-web aliasing for the gallery
+  icons.ts           # icon names; central-icons.ts maps HeroIcon names onto Central Icons
+  icons.a2ui.ts      # the 59 A2UI icon names mapped onto Central Icons
+  chart.ts           # Chart layout core: scales, bars, curves and colours
+  fonts/             # Calibre Medium and Semibold, loaded by react-native/fonts.load*.ts
+  layout.ts          # Row/Column layout core (spacing, borders, surfaces)
+  text.styles.ts / button.styles.ts / control.styles.ts / badge.ts / markdown.styles.ts  # style cores
+  react-native/      # THE component family + the A2UI renderer (a2ui-surface.tsx), renders on web via RNW
+stories/             # one story file per component (controls for every prop + variant matrices) + A2UI surfaces
+gallery/             # the storybook shell: Vite entry, sidebar, controls panel, hash routing
+vite.config.ts       # react-native-web aliasing for the gallery, publishes the Kit catalog
 ```
 
 ## Storybook
@@ -181,25 +194,39 @@ The component gallery is a small hand-rolled page in `gallery/`, served by Vite 
 
 ```sh
 bun run --cwd packages/kit storybook        # dev server on http://localhost:6006
-bun run --cwd packages/kit storybook:build  # static site in packages/kit/build (gitignored, ~2 MB)
+bun run --cwd packages/kit storybook:build  # static site in packages/kit/build (gitignored)
 ```
 
-Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls (unions as selects, booleans as switches, numbers, text and colours), and the ones with variant axes (Button, Badge, Text, Title, Icon, Image, Input, Box, Avatar) also have a matrix story showing every option at once. The `Theme` story drives the `ThemeOption` surface (accent, grayscale, surface, radius, density, base size) through `derivePalette`. Control values live in the URL hash, so a configured story is a shareable link; the sun/moon toggle in the sidebar switches the scheme, sets the document `color-scheme` so native scrollbars follow, and flows into `KitThemeProvider`. Below 768 px wide the sidebar turns into a menu that opens from a top bar, which also holds the toggle, and below 1024 px the controls sit under the preview. Only kit components appear in stories; app UI from `apps/stage` never does.
+The gallery opens on a Home page with one live example of each component (its `Controls` story with the default args); a card's title opens that component. Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls, and the ones with variant axes also have a matrix story. The `A2UI Surface` stories render the official A2UI contact form, a basic catalog tour and a Kit catalog payment request through the renderer and log every renderer-to-agent message; its `Controls` story renders any JSON you paste. The `Theme` story drives the `ThemeOption` surface through `derivePalette`.
 
 ## Scripts
 
 | Script              | Description                  |
 | ------------------- | --------------------------- |
 | `bun run typecheck` | Type-check without emitting. |
-| `bun run test`      | Run the unit + snapshot tests (`test/*.spec.ts`). |
+| `bun run test`      | Unit, snapshot and A2UI conformance tests (`test/**/*.spec.ts`). |
 | `bun run storybook` | Gallery dev server with a story per component. |
-| `bun run storybook:build` | Static gallery build into `build/`. |
+| `bun run storybook:build` | Static gallery build into `build/`, including `a2ui/v1_0/catalog.json`. |
 
-Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring: no accent border on focus and `outlineWidth: 0` with `outlineStyle: 'solid'` so the browser's own ring (which ignores width in its `auto` style) stays off on web. `Select` opens a `DropdownMenu` anchored under its trigger. `Modal` wraps `Dialog` with the Stage look (page background, no border unless `borderColor` is passed, 17px radius, optional 24px semibold title, centered with a 480px max width or a bottom sheet). Its header stays above the scrollable content and includes a labeled close button with a hover tooltip. Set `dismissable={false}` to hide the close button and prevent backdrop and Escape dismissal. `Dialog` accepts an optional `header` above its scroll body and uses a separate backdrop target, so dragging from the panel to the backdrop does not dismiss it. `DropdownMenu`/`DropdownMenuItem`/`DropdownMenuSeparator` and `Tooltip` default to the Stage app look (menu surface on the border colour, 6px radius, 4px list padding; tooltip bubble with arrow) and share `OVERLAY_SHADOW` from `overlay.styles.ts` (web tooltips use the matching `drop-shadow` so the arrow is shaded too). `DropdownMenuItem` accepts optional `children` in place of its label text for composed values or badges; keep `label` as the full accessible name, and use `useDropdownMenuText` from `react-native/menu` for the shared dropdown and sheet typography. `Tooltip` takes an optional `trailing` node, shown after the label, such as a keyboard shortcut. `DropdownMenuSheet` is the same menu surface in a `Dialog` for touch and narrow screens (a borderless bottom sheet, or centered), so its rows are the same `DropdownMenuItem`s. The segmented `Tabs` is a full pill track on the raised surface with a pill thumb on the page surface. Labels use the default text role when selected and the secondary role otherwise, in Calibre Medium at `FONT_SIZE.sm`. Without `dark` it follows the `KitThemeProvider` scheme and palette. Cards and images keep `BLOCK_RADIUS_DEFAULT` (12px). `Markdown` styles come from `markdown.styles.ts` (`@stage-labs/kit/markdown-styles`), which overrides every default of `react-native-markdown-display` so nothing bleeds through; callers can pass body size, line height, paragraph gap and link colour.
+Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (`outlineWidth: 0` with `outlineStyle: 'solid'` so the browser's own ring stays off on web). `Modal` renders the Stage look (page background, 1px border, 17px radius, optional title, centered with a 480px max width or a bottom sheet). `DropdownMenu` and `Tooltip` default to the Stage app look and share `OVERLAY_SHADOW` from `overlay.styles.ts`. Cards and images keep `BLOCK_RADIUS_DEFAULT` (12px). Markdown styles come from `markdown.styles.ts` (`@stage-labs/kit/markdown-styles`).
 
-Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
+Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.11
+
+#### Breaking changes
+
+- Components take A2UI v1.0 names and props: `Row`, `Column` (was `Box`/`Col`), `List` (was `Scroll`), `TextField` (was `Input`/`Textarea`, `variant` is now `shortText | longText | number | obscured` and the surface style is `appearance`), `CheckBox` with `displayStyle="switch"` (was `Checkbox`/`Switch`), `Video` (was `VideoPlayer`, `src` is `url`, `poster` is `posterUrl`), `Image` `url`/`description` (was `src`/`alt`, `fit` defaults to `fill`), `Text` `text`/`fontWeight` (was `value`/`weight`) and `variant="caption"` (was `Caption`), `Tabs` `tabs`/`selectedIndex`/`onChange(index)`.
+- `weight` is the A2UI flex grow on every component; font weight is `fontWeight` (Text, Badge). `justify` uses `spaceBetween | spaceAround | spaceEvenly`.
+- `Button` `variant` defaults to A2UI's `default` (secondary solid); `primary` and `borderless` are the other hints, and `solid | soft | outline | ghost` still pick a fill with `color`.
+- Removed `Frame`, `parseFrame` and the ChatKit widget JSON, `Caption`, `Markdown` (use `Text markdown`), `Label`, `Form`, `Spacer`, `Table`, `Transition`, `RadioGroup` and `Select` (use `ChoicePicker`), `DatePicker` (use `DateTimeInput`), `AvatarStack`, `AvatarView`, `FlatList`, `BrandIcon` (use `Icon`) and the `dialog` export (use `Modal`).
+
+#### New
+
+- The A2UI v1.0 core (`@stage-labs/kit/a2ui/*`), the React Native renderer (`A2uiSurface`, `useA2uiClient`) and the Stage Kit catalog with the `openSurface` and `closeSurface` screen functions.
+- `CheckBox`, `ChoicePicker`, `Slider`, `DateTimeInput` (1 minute steps), `Video` with `background`, `aspectRatio`, `fit` and `onVideoSize`, `Modal` `trigger`/`defaultOpen`, the A2UI icon names on `Icon`, and `checks` on Button and the inputs.
 
 ### 0.1.0-beta.10
 
@@ -343,3 +370,4 @@ First published version (2026-07-22).
 
 - Consumed by [`apps/stage`](../../apps/stage)
 - Shared logic lives in [`@stage-labs/client`](../client)
+- A2UI specification: [a2ui.org](https://a2ui.org/specification/v1.0-a2ui/)

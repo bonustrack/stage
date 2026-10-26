@@ -15,5 +15,5 @@ export const Controls: Story<CardProps & { statusText: string; withActions: bool
     <Text size="xs">Card content goes here. Cards group related content and actions.</Text>
   </Card>
 );
-Controls.args = { size: 'md', collapsed: false, asForm: false, statusText: 'Status line', withActions: true };
-Controls.argTypes = { size: select(['sm', 'md', 'lg']), padding: number, background: color, collapsed: bool, asForm: bool, statusText: text, withActions: bool };
+Controls.args = { size: 'md', collapsed: false, statusText: 'Status line', withActions: true };
+Controls.argTypes = { size: select(['sm', 'md', 'lg']), padding: number, background: color, collapsed: bool, statusText: text, withActions: bool, weight: number };

@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { BLOCK_RADIUS_DEFAULT, kitPalette, type KitPalette } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, kitPalette, type Color, type KitPalette } from '../tokens';
 import { SIZES } from '../button.styles';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Button } from './button';
 import { Dialog } from './dialog';
 import { Glyph } from './glyph';
@@ -22,10 +23,12 @@ export const MODAL = {
   maxHeight: '88%',
 } as const;
 
-export interface ModalProps {
-  open: boolean;
-  onClose: () => void;
+export interface ModalProps extends A2uiCommonProps {
+  trigger?: ReactNode;
   children: ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onClose?: () => void;
   title?: string;
   footer?: ReactNode;
   bottomInset?: number;
@@ -34,6 +37,11 @@ export interface ModalProps {
   background?: string;
   borderColor?: string;
   dismissable?: boolean;
+  fullBleedPanel?: boolean;
+  backdrop?: boolean;
+  backdropColor?: Color;
+  animationType?: 'slide' | 'fade' | 'none';
+  gestureRoot?: boolean;
 }
 
 function usePalette(dark: boolean | undefined): KitPalette {
@@ -52,7 +60,7 @@ function ModalHeader({ title, onClose, pal, dark, dismissable }: {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: MODAL.padding + insets.left, marginRight: MODAL.padding + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
       <View style={{ flex: 1, minWidth: 0, minHeight: SIZES.md.height, justifyContent: 'center' }}>
-        {title === undefined ? null : <Text accessibilityRole="header" value={title} size="2xl" weight="semibold" color={pal.link} />}
+        {title === undefined ? null : <Text accessibilityRole="header" text={title} size="2xl" fontWeight="semibold" color={pal.link} />}
       </View>
       {dismissable ? (
         <View>
@@ -74,17 +82,24 @@ function ModalHeader({ title, onClose, pal, dark, dismissable }: {
   );
 }
 
-export function Modal({ open, onClose, children, title, footer, bottomInset, side = 'center', dark, background, borderColor, dismissable = true }: ModalProps): React.ReactElement {
+interface PanelProps {
+  props: ModalProps;
+  open: boolean;
+  close: () => void;
+}
+
+function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
+  const { children, title, footer, bottomInset, side = 'center', dark, background, borderColor, dismissable = true } = props;
   const pal = usePalette(dark);
   const scheme = useKitScheme();
   const centered = side === 'center';
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={close}
       side={side}
       dismissable={dismissable}
-      header={<ModalHeader title={title} onClose={onClose} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} />}
+      header={<ModalHeader title={title} onClose={close} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} />}
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"
@@ -105,5 +120,44 @@ export function Modal({ open, onClose, children, title, footer, bottomInset, sid
     >
       {children}
     </Dialog>
+  );
+}
+
+function FullBleedPanel({ props, open, close }: PanelProps): React.ReactElement {
+  return (
+    <Dialog
+      open={open}
+      onClose={close}
+      animationType={props.animationType}
+      backdrop={props.backdrop}
+      backdropColor={props.backdropColor}
+      dismissable={props.dismissable}
+      gestureRoot={props.gestureRoot}
+      fullBleedPanel
+    >
+      {props.children}
+    </Dialog>
+  );
+}
+
+export function Modal(props: ModalProps): React.ReactElement {
+  const { trigger, open: controlled, defaultOpen = false, onClose, fullBleedPanel, weight, accessibility } = props;
+  const [internal, setInternal] = useState(defaultOpen);
+  const open = controlled ?? internal;
+  const close = (): void => {
+    if (controlled === undefined) setInternal(false);
+    onClose?.();
+  };
+  const panel = fullBleedPanel === true
+    ? <FullBleedPanel props={props} open={open} close={close} />
+    : <StagePanel props={props} open={open} close={close} />;
+  if (trigger === undefined) return panel;
+  return (
+    <View {...accessibilityProps(accessibility)} style={weightStyle(weight)}>
+      <Pressable accessibilityRole="none" onPress={() => { setInternal(true); }}>
+        <View pointerEvents="none">{trigger}</View>
+      </Pressable>
+      {panel}
+    </View>
   );
 }

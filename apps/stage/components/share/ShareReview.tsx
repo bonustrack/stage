@@ -1,11 +1,11 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Col, Row } from '../layout';
 import { ChannelRow } from '../ChannelRow';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import type { ComposerState } from '../composer/state';
 import type { ShareDestination } from './share.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { Column, Row } from '../layout';
 
 export function ShareReview({ destination, state, account, busy, onSubmit, onChoose }: {
   destination: ShareDestination; state: ComposerState; account: string; busy: boolean;
@@ -13,7 +13,7 @@ export function ShareReview({ destination, state, account, busy, onSubmit, onCho
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Col gap={12}>
+    <Column gap={12}>
       <Text size="xs" color="secondary">Account: {account}</Text>
       <ChannelRow title={destination.title} avatarAddress={destination.peerAddress} avatarUri={destination.avatarUri}
         square={destination.peerAddress === null} showPreview={false}/>
@@ -23,6 +23,6 @@ export function ShareReview({ destination, state, account, busy, onSubmit, onCho
       </Row>
       <MessengerComposer dark={dark} state={state} busy={busy} quickAttach={false} rounded
         placeholder="Add a message" onSubmit={onSubmit}/>
-    </Col>
+    </Column>
   );
 }

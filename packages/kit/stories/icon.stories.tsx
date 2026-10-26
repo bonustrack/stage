@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import type { Story } from '../gallery/story';
 import { CENTRAL_ICONS } from '../src/central-icons.data';
-import { BrandIcon, CENTRAL_ICON_ALIASES, Icon, type BrandIconProps, type HeroIconName } from '../src/react-native/icon';
+import { A2UI_ICON_NAMES, a2uiIconTarget } from '../src/icons.a2ui';
+import { BRAND_ICON_NAMES } from '../src/brand-icons.data';
+import { CENTRAL_ICON_ALIASES, Icon, type HeroIconName, type IconProps } from '../src/react-native/icon';
 import { Glyph, type CentralIcon, type IconStyle } from '../src/react-native/glyph';
-import { Col, Row } from '../src/react-native/box';
-import { Input, SEARCH_INPUT_PROPS } from '../src/react-native/input';
+import { Column } from '../src/react-native/column';
+import { Row } from '../src/react-native/row';
+import { SEARCH_INPUT_PROPS, TextField } from '../src/react-native/text-field';
 import { Text } from '../src/react-native/text';
 import { color, range, select, useDark } from './_controls';
 
@@ -17,7 +20,6 @@ const STYLES = ['line', 'solid'] as const;
 const NAMES = Object.keys(ICONS) as CentralName[];
 const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
 const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
-const BRAND_NAMES = ['brandX', 'brandGithub', 'pin', 'brandApple', 'brandAndroid', 'brandWindows', 'brandLinux'] as const;
 
 function aliasesByName(): Map<CentralName, string[]> {
   const out = new Map<CentralName, string[]>([['IconThumbtack', ['pin']]]);
@@ -46,11 +48,11 @@ function matches(name: CentralName, query: string): boolean {
 
 function IconCell({ icon, label, detail, dark }: { icon: CentralIcon; label: string; detail?: string; dark: boolean }): React.ReactElement {
   return (
-    <Col width={136} align="center" gap={4} padding={{ y: 8 }}>
+    <Column width={136} align="center" gap={4} padding={{ y: 8 }}>
       <Glyph icon={icon} size={24} dark={dark} />
-      <Text role="secondary" truncate size="3xs">{label}</Text>
-      {detail === undefined ? null : <Text role="muted" truncate size="3xs">{detail}</Text>}
-    </Col>
+      <Text color="secondary" truncate size="3xs">{label}</Text>
+      {detail === undefined ? null : <Text color="muted" truncate size="3xs">{detail}</Text>}
+    </Column>
   );
 }
 
@@ -60,48 +62,70 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
   const available = namesIn(style);
   const names = available.filter((name) => matches(name, query.trim().toLowerCase()));
   return (
-    <Col gap={24}>
-      <Input dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" inputProps={SEARCH_INPUT_PROPS} />
-      <Text size="xs" role="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
-      {names.length === 0 ? <Text size="xs" role="muted">{`No icons match "${query.trim()}"`}</Text> : null}
+    <Column gap={24}>
+      <TextField dark={dark} value={query} onChangeText={setQuery} placeholder="Search icons" inputProps={SEARCH_INPUT_PROPS} />
+      <Text size="xs" color="secondary">{`${names.length} of ${available.length} icons, ${style}`}</Text>
+      {names.length === 0 ? <Text size="xs" color="muted">{`No icons match "${query.trim()}"`}</Text> : null}
       <Row gap={8} wrap>
         {names.map((name) => (
           <IconCell key={name} icon={glyph(name, style)} label={name} detail={ALIASES_OF.get(name)?.join(', ')} dark={dark} />
         ))}
       </Row>
-    </Col>
+    </Column>
   );
 }
 
-interface ControlsArgs { name: CentralName; style: IconStyle; size: number; color?: string }
+interface GlyphArgs { name: CentralName; style: IconStyle; size: number; color?: string }
 
-export const Controls: Story<ControlsArgs> = ({ name, style, size, color: tint }) => (
+export const Controls: Story<IconProps> = (args) => <Icon dark={useDark()} {...args} />;
+Controls.args = { name: 'send', size: 32, variant: 'line' };
+Controls.argTypes = {
+  name: select([...ALIAS_NAMES, ...A2UI_ICON_NAMES, ...BRAND_ICON_NAMES]), size: range(12, 96, 4), color, variant: select(['line', 'solid']),
+};
+
+export const CentralGlyph: Story<GlyphArgs> = ({ name, style, size, color: tint }) => (
   <Glyph icon={glyph(name, style)} size={size} color={tint} dark={useDark()} />
 );
-Controls.args = { name: 'IconPaperPlane', style: 'line', size: 32 };
-Controls.argTypes = { name: select(NAMES), style: select(STYLES), size: range(12, 96, 4), color };
+CentralGlyph.args = { name: 'IconPaperPlane', style: 'line', size: 32 };
+CentralGlyph.argTypes = { name: select(NAMES), style: select(STYLES), size: range(12, 96, 4), color };
 
 export const All: Story<{ style: IconStyle }> = ({ style }) => <Catalogue style={style} />;
 All.args = { style: 'line' };
 All.argTypes = { style: select(STYLES) };
 
-export const Aliases: Story<{ style: IconStyle }> = ({ style }) => {
-  const dark = useDark();
+function NamedCell({ name, detail, variant }: { name: IconProps['name'] & string; detail: string; variant: IconStyle }): React.ReactElement {
   return (
-    <Row gap={8} wrap>
-      {ALIAS_NAMES.map((alias) => (
-        <Col key={alias} width={136} align="center" gap={4} padding={{ y: 8 }}>
-          <Icon name={alias} variant={style} size={24} dark={dark} />
-          <Text role="secondary" truncate size="3xs">{alias}</Text>
-          <Text role="muted" truncate size="3xs">{NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line) ?? ''}</Text>
-        </Col>
-      ))}
-    </Row>
+    <Column width={136} align="center" gap={4} padding={{ y: 8 }}>
+      <Icon name={name} variant={variant} size={24} dark={useDark()} />
+      <Text color="secondary" truncate size="3xs">{name}</Text>
+      <Text color="muted" truncate size="3xs">{detail}</Text>
+    </Column>
   );
-};
+}
+
+export const Aliases: Story<{ style: IconStyle }> = ({ style }) => (
+  <Row gap={8} wrap>
+    {ALIAS_NAMES.map((alias) => <NamedCell key={alias} name={alias} variant={style} detail={NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line) ?? ''} />)}
+  </Row>
+);
 Aliases.args = { style: 'line' };
 Aliases.argTypes = { style: select(STYLES) };
 
-export const Brand: Story<BrandIconProps> = (args) => <BrandIcon dark={useDark()} {...args} />;
-Brand.args = { name: 'brandGithub', size: 32 };
-Brand.argTypes = { name: select(BRAND_NAMES), size: range(12, 96, 4), color };
+export const A2ui: Story<{ style: IconStyle }> = ({ style }) => (
+  <Row gap={8} wrap>
+    {A2UI_ICON_NAMES.map((name) => {
+      const target = a2uiIconTarget(name);
+      return <NamedCell key={name} name={name} variant={style} detail={typeof target === 'string' ? target : target.extra} />;
+    })}
+  </Row>
+);
+A2ui.args = { style: 'line' };
+A2ui.argTypes = { style: select(STYLES) };
+
+export const Brand: Story<{ size: number; color?: string }> = ({ size, color: tint }) => (
+  <Row gap={16} wrap>
+    {BRAND_ICON_NAMES.map((name) => <Icon key={name} name={name} size={size} color={tint} dark={useDark()} />)}
+  </Row>
+);
+Brand.args = { size: 32 };
+Brand.argTypes = { size: range(12, 96, 4), color };

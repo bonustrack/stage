@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { FormField } from '../FormField';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box } from '../layout';
 import type { Question } from './helpers';
 import { usePalette } from '../../lib/theme';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { Column } from '../layout';
 
 interface QuestionState {
   selected: Set<string>;
@@ -69,7 +69,7 @@ function OptionRow({ opt, isOn, multi, dark, fg, onPress }: {
     >
       <Text size="xs" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
       {opt.description ? (
-        <Text size="3xs" role="secondary" style={{ marginTop: 2 }}>{opt.description}</Text>
+        <Text size="3xs" color="secondary" style={{ marginTop: 2 }}>{opt.description}</Text>
       ) : null}
     </Pressable>
   );
@@ -88,7 +88,7 @@ function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }):
         borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
       })}
     >
-      <Text size="xs" role="secondary">Other…</Text>
+      <Text size="xs" color="secondary">Other…</Text>
     </Pressable>
   );
 }
@@ -117,7 +117,7 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
         opacity: disabled ? 0.5 : 1,
       })}
     >
-      <Text weight="semibold" size="2xs" color={'#000'}>
+      <Text fontWeight="semibold" size="2xs" color={'#000'}>
         Submit{s.multi && s.selected.size > 0 ? ` (${s.selected.size}${s.otherText.trim() ? '+1' : ''})` : ''}
       </Text>
     </Pressable>
@@ -131,9 +131,9 @@ export function QuestionView({ question, dark, onAnswer }: {
   const fg = usePalette().text;
   const needSubmitButton = s.multi || s.otherOpen;
   return (
-    <Box margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
-        <Text weight="semibold" role="secondary" size="3xs" style={{ textTransform: 'uppercase', letterSpacing: 1.5 }}>
+        <Text fontWeight="semibold" color="secondary" size="3xs" style={{ textTransform: 'uppercase', letterSpacing: 1.5 }}>
           {question.header}{s.multi ? ' · multi-select' : ''}
         </Text>
       ) : null}
@@ -150,6 +150,6 @@ export function QuestionView({ question, dark, onAnswer }: {
         <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} />
       ) : null}
       {needSubmitButton ? <SubmitButton s={s} dark={dark} /> : null}
-    </Box>
+    </Column>
   );
 }

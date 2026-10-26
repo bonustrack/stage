@@ -7,7 +7,6 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DashboardSource } from '@stage-labs/client/xmtp/readState';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameTile } from '../frame/FramePreview';
-import { Box, Col } from '../layout';
 import { chatLabelOf } from '../storage/StorageScreen.model';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { capabilities } from '../../lib/capabilities';
@@ -17,6 +16,7 @@ import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { storageChatOf } from '../../lib/storage';
 import { useConvConsentState, useGroupAccess } from '../../modules/messaging/useConvConsent';
 import { Unavailable, WidgetHeader, type WidgetGrip } from './widgetParts';
+import { Column } from '../layout';
 
 const CHAT_STALE_MS = 5 * 60_000;
 const CHAT_RECHECK_MS = 15_000;
@@ -57,7 +57,7 @@ function FrameBody({ source, isGroup }: { source: DashboardSource; isGroup: bool
   const consent = useConvConsentState(conversationId);
   const access = useGroupAccess(conversationId, isGroup);
   if (access === 'outside') return <Unavailable title={OUTSIDE_CHANNEL_NOTICE} />;
-  if (message === undefined) return <Box flex={1} align="center" justify="center"><Spinner /></Box>;
+  if (message === undefined) return <Column weight={1} align="center" justify="center"><Spinner /></Column>;
   if (message.state === 'missing') return <Unavailable title={NOT_SYNCED} detail={NOT_SYNCED_DETAIL} />;
   if (message.state === 'deleted') return <Unavailable title={DELETED} />;
   return (
@@ -72,9 +72,9 @@ export function FrameWidget({ source, onMenu, grip }: {
 }): React.ReactElement {
   const chat = useWidgetChat(source.conversationId);
   return (
-    <Col flex={1} gap={6}>
+    <Column weight={1} gap={6}>
       {grip(<WidgetHeader title={chat.title} onOpen={chat.open} onMenu={onMenu} />)}
       <FrameBody source={source} isGroup={chat.isGroup} />
-    </Col>
+    </Column>
   );
 }

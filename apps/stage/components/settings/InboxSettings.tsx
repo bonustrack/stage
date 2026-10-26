@@ -1,21 +1,20 @@
 import { useMemo } from 'react';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
 import { channelTimestamp } from '../../lib/format';
 import { useInbox, useMailboxes, useReadMail, type InboxState, type Mailbox } from '../../lib/mail';
 import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../../lib/webLayout';
-import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { inboxRows, type InboxRow } from './Inbox.model';
 import { SettingsGroup, SettingsPage } from './SettingsPage';
 import { INBOX_ROUTE } from '../tabs/menuPages';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 12, paddingBottom: 12, paddingLeft: 14, paddingRight: 14 };
 const DOT = 8;
@@ -30,24 +29,24 @@ function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
   return (
     <ListViewItem align="center" gap={12} dark={dark} padding={ROW_PADDING}
       onPress={() => { capabilities.navigate(mailRoute(row.label, row.id)); }}>
-      <Box width={DOT} height={DOT} radius="full" background={row.unread ? primary : 'transparent'} />
-      <Col flex={1} minWidth={0} gap={2}>
+      <Column width={DOT} height={DOT} radius="full" background={row.unread ? primary : 'transparent'} />
+      <Column weight={1} minWidth={0} gap={2}>
         <Row align="center" gap={8}>
-          <Text value={row.sender} size="xs" weight={row.unread ? 'semibold' : undefined} color="link" truncate style={{ flex: 1 }} />
-          <Caption value={channelTimestamp(row.ts)} color="secondary" />
+          <Text text={row.sender} size="xs" fontWeight={row.unread ? 'semibold' : undefined} color="link" truncate style={{ flex: 1 }} />
+          <Text size="md" variant="caption" text={channelTimestamp(row.ts)} color="secondary" />
         </Row>
-        <Text value={row.subject} size="xs" color={row.unread ? 'link' : 'secondary'} truncate />
-        {row.to === null ? null : <Caption value={row.to} color="secondary" />}
-      </Col>
+        <Text text={row.subject} size="xs" color={row.unread ? 'link' : 'secondary'} truncate />
+        {row.to === null ? null : <Text size="md" variant="caption" text={row.to} color="secondary" />}
+      </Column>
     </ListViewItem>
   );
 }
 
 function CenterNote({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
-    <Col align="center" justify="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>
+    <Column align="center" justify="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>
       {children}
-    </Col>
+    </Column>
   );
 }
 
@@ -55,7 +54,7 @@ function Opening(): React.ReactElement {
   return (
     <CenterNote>
       <Spinner size={24} />
-      <Text value="Opening your mailbox…" size="xs" color="secondary" textAlign="center" />
+      <Text text="Opening your mailbox…" size="xs" color="secondary" textAlign="center" />
     </CenterNote>
   );
 }
@@ -65,8 +64,8 @@ function EmptyMailbox({ boxes }: { boxes: readonly Mailbox[] }): React.ReactElem
   return (
     <CenterNote>
       <Glyph icon={IconEmail1} size={32} color={sub} />
-      {boxes.map((box) => <Text key={box.mailAddress} value={box.mailAddress} size="xs" weight="semibold" color="link" textAlign="center" />)}
-      <Text value="No mail yet" size="xs" color="secondary" textAlign="center" />
+      {boxes.map((box) => <Text key={box.mailAddress} text={box.mailAddress} size="xs" fontWeight="semibold" color="link" textAlign="center" />)}
+      <Text text="No mail yet" size="xs" color="secondary" textAlign="center" />
     </CenterNote>
   );
 }
@@ -82,7 +81,7 @@ function MailList({ boxes, state }: { boxes: readonly Mailbox[]; state: InboxSta
   return (
     <>
       {state.failed.length === 0 ? null : (
-        <Caption value={`Could not open ${state.failed.join(', ')}. Try again later.`} color="danger"
+        <Text size="md" variant="caption" text={`Could not open ${state.failed.join(', ')}. Try again later.`} color="danger"
           style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 16 }} />
       )}
       <SettingsGroup footnote={footnoteFor(boxes)}>
@@ -99,7 +98,7 @@ function InboxBody(): React.ReactElement {
   if (mailboxes.isError) return <RetryNotice message="Could not look up your Stage names." onRetry={() => { void mailboxes.refetch(); }} />;
   if (boxes === undefined) return <Opening />;
   if (boxes.length === 0) {
-    return <CenterNote><Text value="Claim a Stage name to get mail at name@st.box." size="xs" color="secondary" textAlign="center" /></CenterNote>;
+    return <CenterNote><Text text="Claim a Stage name to get mail at name@st.box." size="xs" color="secondary" textAlign="center" /></CenterNote>;
   }
   if (inbox.isError) return <RetryNotice message="Could not open your mailbox. Check your connection and try again." onRetry={() => { void inbox.refetch(); }} />;
   if (inbox.data === undefined) return <Opening />;

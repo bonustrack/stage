@@ -1,11 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Avatar } from '../Avatar';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Row, Col, Box } from '../layout';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { ethFromWeiHex } from './helpers';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
@@ -32,6 +30,7 @@ import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-rad
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
 import { peerLabel } from '../conversation/convTitle';
+import { Column, Row } from '../layout';
 
 interface TxCardModel {
   target?: string;
@@ -82,7 +81,7 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
       }}
       action={action}
       footer={onPay && gated ? (
-        <Text size="3xs" role="secondary">Accept this conversation to enable paying.</Text>
+        <Text size="3xs" color="secondary">Accept this conversation to enable paying.</Text>
       ) : undefined}
     />
   );
@@ -180,7 +179,7 @@ function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
 }
 function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.ReactElement {
   return (
-    <Col gap={8} style={{ alignSelf: 'stretch' }}>
+    <Column gap={8} style={{ alignSelf: 'stretch' }}>
       {m.warning ? <TxWarning text={m.warning} /> : null}
       <SimulationBlock sim={m.sim} pending={m.simulating} sub={sub} chainId={m.chainNum} />
       {m.showDecodedBlock ? (
@@ -188,8 +187,8 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
       ) : null}
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
-      <Text size="3xs" role="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
-    </Col>
+      <Text size="3xs" color="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
+    </Column>
   );
 }
 function TxToRow({ address }: { address: string }): React.ReactElement {
@@ -200,9 +199,9 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
     <Pressable
       onPress={() => { router.push(profileLinkOf(address)); }}>
       <Row align="center" gap={6}>
-        <Text role="secondary" size="3xs">To</Text>
+        <Text color="secondary" size="3xs">To</Text>
         <Avatar address={address} size={16} />
-        <Text role="link" weight="semibold" size="xs" suppressHighlighting>
+        <Text color="link" fontWeight="semibold" size="xs" suppressHighlighting>
           {display}
         </Text>
       </Row>
@@ -215,7 +214,7 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
   return (
     <Row align="center" gap={6}>
       <Glyph icon={IconPaperPlane} size={14} color={pal.link}/>
-      <Text size="2xs" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
+      <Text size="2xs" fontWeight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
     </Row>
   );
 }
@@ -237,42 +236,42 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
   const detailBg = pal.border;
   const fnLabel = decodedFnLabel(decoded, selector);
   return (
-    <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Column radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconCodeBrackets} size={14} color={sub}/>
-        <Text size="3xs" role="secondary">This transaction calls</Text>
+        <Text size="3xs" color="secondary">This transaction calls</Text>
       </Row>
-      <Text variant="mono" weight="semibold" size="2xs" numberOfLines={2}>
+      <Text fontFamily="mono" fontWeight="semibold" size="2xs" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          <Text size="3xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
+          <Text size="3xs" color="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>
-          <Text variant="mono" size="3xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
+          <Text fontFamily="mono" size="3xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
-        <Text size="3xs" role="secondary">{decoded.note}</Text>
+        <Text size="3xs" color="secondary">{decoded.note}</Text>
       ) : null}
       {target ? (
-        <Text size="3xs" role="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
+        <Text size="3xs" color="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
       ) : null}
-    </Col>
+    </Column>
   );
 }
 function TxWarning({ text }: { text: string }): React.ReactElement {
   const pal = usePalette();
   return (
-    <Box radius="md" background={withAlpha(pal.danger, 0.1)} padding={8} gap={4}
+    <Column radius="md" background={withAlpha(pal.danger, 0.1)} padding={8} gap={4}
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconShieldBreak} size={14} color={pal.danger}/>
-        <Text size="3xs" weight="semibold" color={pal.danger}>Check before signing</Text>
+        <Text size="3xs" fontWeight="semibold" color={pal.danger}>Check before signing</Text>
       </Row>
       <Text size="3xs" color={pal.danger} numberOfLines={4}>{text}</Text>
-    </Box>
+    </Column>
   );
 }
 export function TxReceiptCard({ receipt, ts, dark }: {
@@ -282,7 +281,7 @@ export function TxReceiptCard({ receipt, ts, dark }: {
   const minedAt = useTxTime(receipt.networkId, receipt.reference, ts);
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>
-      <Text size="sm" role="secondary">
+      <Text size="sm" color="secondary">
         {minedAt ? `${timeAgo(minedAt, Date.now())} · ` : null}
         <Text size="sm" color={pal.link} {...bubbleLinkProps(url, openInBubbleLink)} suppressHighlighting>
           {shortAddress(receipt.reference)} · View on explorer

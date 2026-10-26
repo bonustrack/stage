@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Box, Col, Row } from '../src/react-native/box';
 import { Glyph } from '../src/react-native/glyph';
-import { Input, SEARCH_INPUT_PROPS } from '../src/react-native/input';
+import { SEARCH_INPUT_PROPS } from '../src/react-native/text-field';
 import { Pressable } from '../src/react-native/pressable';
 import { Text } from '../src/react-native/text';
 import { useKitPalette } from '../src/react-native/theme-context';
@@ -10,8 +9,12 @@ import { SCROLL_Y } from './styles';
 import { useScheme } from './scheme';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { IconHome } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconHome';
 import { IconMoon } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMoon';
 import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
+import { Column } from '../src/react-native/column';
+import { Row } from '../src/react-native/row';
+import { TextField } from '../src/react-native/text-field';
 
 const CHEVRON = 14;
 
@@ -35,9 +38,9 @@ export function SchemeToggle({ pad }: { pad: number }): React.ReactElement {
   const dark = scheme === 'dark';
   return (
     <Pressable onPress={() => { setScheme(dark ? 'light' : 'dark'); }} accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
-      <Box padding={pad} radius="sm">
+      <Column padding={pad} radius="sm">
         <Glyph icon={dark ? IconSun : IconMoon} size={20} color={pal.sub} />
-      </Box>
+      </Column>
     </Pressable>
   );
 }
@@ -48,11 +51,11 @@ function GroupRows({ group, activeId, onSelect, touch }: { group: Group; activeI
   const first = group.stories[0];
   const foldable = group.stories.length > 1;
   return (
-    <Col>
+    <Column>
       <Pressable onPress={() => { if (first) onSelect(first.id); }}>
         <Row align="center" gap={6} padding={{ x: 12, y: touch ? 13 : 6 }} radius="sm">
-          {foldable ? <Glyph icon={open ? IconChevronBottom : IconChevronRight} size={CHEVRON} color={pal.sub} /> : <Box width={CHEVRON} />}
-          <Text size="xs" weight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
+          {foldable ? <Glyph icon={open ? IconChevronBottom : IconChevronRight} size={CHEVRON} color={pal.sub} /> : <Column width={CHEVRON} />}
+          <Text size="xs" fontWeight={open ? 'semibold' : 'normal'} color={open ? pal.link : pal.text}>{group.component}</Text>
         </Row>
       </Pressable>
       {open && foldable ? group.stories.map((story) => (
@@ -62,27 +65,40 @@ function GroupRows({ group, activeId, onSelect, touch }: { group: Group; activeI
           </Row>
         </Pressable>
       )) : null}
-    </Col>
+    </Column>
   );
 }
 
-export function Sidebar({ stories, activeId, onSelect, touch = false }: { stories: StoryEntry[]; activeId: string | null; onSelect: (id: string) => void; touch?: boolean }): React.ReactElement {
+function HomeRow({ active, onSelect, touch }: { active: boolean; onSelect: (id: string | null) => void; touch: boolean }): React.ReactElement {
+  const pal = useKitPalette();
+  return (
+    <Pressable onPress={() => { onSelect(null); }}>
+      <Row align="center" gap={6} padding={{ x: 12, y: touch ? 13 : 6 }} radius="sm">
+        <Glyph icon={IconHome} size={CHEVRON} color={active ? pal.link : pal.sub} />
+        <Text size="xs" fontWeight={active ? 'semibold' : 'normal'} color={active ? pal.link : pal.text}>Home</Text>
+      </Row>
+    </Pressable>
+  );
+}
+
+export function Sidebar({ stories, activeId, onSelect, touch = false }: { stories: StoryEntry[]; activeId: string | null; onSelect: (id: string | null) => void; touch?: boolean }): React.ReactElement {
   const dark = useScheme().scheme === 'dark';
   const [filter, setFilter] = useState('');
   const groups = useMemo(() => groupStories(stories, filter), [stories, filter]);
   return (
-    <Col flex={1} gap={8}>
+    <Column weight={1} gap={8}>
       <Row padding={{ x: 12, top: 12 }} align="center" gap={8}>
-        <Box flex={1}>
-          <Input dark={dark} size={touch ? 'lg' : 'md'} placeholder="Search components" value={filter} onChangeText={setFilter} inputProps={SEARCH_INPUT_PROPS} />
-        </Box>
+        <Column weight={1}>
+          <TextField dark={dark} size={touch ? 'lg' : 'md'} placeholder="Search components" value={filter} onChangeText={setFilter} inputProps={SEARCH_INPUT_PROPS} />
+        </Column>
         {touch ? null : <SchemeToggle pad={8} />}
       </Row>
-      <Col flex={1} style={SCROLL_Y}>
-        <Col padding={{ x: 4, bottom: 12 }}>
+      <Column weight={1} style={SCROLL_Y}>
+        <Column padding={{ x: 4, bottom: 12 }}>
+          {filter.trim() === '' ? <HomeRow active={activeId === null} onSelect={onSelect} touch={touch} /> : null}
           {groups.map((group) => <GroupRows key={group.componentId} group={group} activeId={activeId} onSelect={onSelect} touch={touch} />)}
-        </Col>
-      </Col>
-    </Col>
+        </Column>
+      </Column>
+    </Column>
   );
 }

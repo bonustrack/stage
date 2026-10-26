@@ -1,11 +1,14 @@
-import type { NodeAction, NodeResult } from '@stage-labs/client/nodes/protocol';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
+import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
+import { nodeRequestOf, type FrameOut } from '../components/frame/frame.model';
 import { EMPTY_LIVE, liveProblemText, liveStateAfter, type LiveState } from '../components/dashboard/liveWidget.model';
+import type { FrameApplied } from './frameSession';
 import { makeListeners } from './storeCore';
 
 interface LiveFrameDeps {
   load: (url: string, key: string) => Promise<NodeResult>;
-  act: (url: string, key: string, action: NodeAction) => Promise<NodeResult>;
+  send: (url: string, key: string, request: NodeRequest) => Promise<NodeResult>;
+  apply: (id: string, messages: readonly FrameMessage[]) => FrameApplied;
   newKey: () => string;
   now: () => number;
   toast: (message: string) => void;
@@ -18,7 +21,11 @@ export interface LiveFrames {
   clear: () => void;
   subscribe: (listener: () => void) => () => void;
   refresh: (id: string, sent: FrameContent, url: string) => Promise<void>;
-  act: (id: string, sent: FrameContent, url: string, action: NodeAction) => Promise<void>;
+  send: (id: string, sent: FrameContent, url: string, out: FrameOut) => Promise<void>;
+}
+
+function replacesFrame(result: NodeResult): boolean {
+  return result.ok && result.reply.kind === 'frame';
 }
 
 export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
@@ -36,8 +43,9 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
     entry.calls += 1;
     const ticket = entry.calls;
     const result = await request(entry.key);
-    if (entries.get(id) !== entry || ticket !== entry.calls) return;
-    const next = liveStateAfter(entry.state, result, deps.now());
+    if (entries.get(id) !== entry) return;
+    if (ticket !== entry.calls && (!result.ok || replacesFrame(result))) return;
+    const next = liveStateAfter(entry.state, result, deps.now(), messages => deps.apply(id, messages));
     const problem = liveProblemText(next);
     if (problem !== null) {
       deps.toast(`${failed}: ${problem.toLowerCase()}`);
@@ -54,6 +62,6 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
     },
     subscribe,
     refresh: (id, sent, url) => call(id, sent, key => deps.load(url, key), 'Could not refresh'),
-    act: (id, sent, url, action) => call(id, sent, key => deps.act(url, key, action), 'Could not send'),
+    send: (id, sent, url, out) => call(id, sent, key => deps.send(url, key, nodeRequestOf(out)), 'Could not send'),
   };
 }

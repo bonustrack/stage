@@ -3,7 +3,6 @@ import { Alert } from 'react-native';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { capabilities } from '../../lib/capabilities';
@@ -11,6 +10,7 @@ import { DANGER } from '../../lib/theme';
 import type { AccountRecord } from '../../lib/accounts';
 import { transferKindFor, transferPayloadFor } from '../../lib/accountTransfer';
 import { TRANSFER_HOW_TO, transferWarning } from './ImportAccountPanel.model';
+import { Column } from '../layout';
 
 const QR_SIZE = 240;
 const UNAVAILABLE_MESSAGE = 'This account cannot be linked: it has no exportable key on this device.';
@@ -39,15 +39,15 @@ function usePayload(rec: AccountRecord | null, onClose: () => void): string | nu
 
 function QrPanel({ payload }: { payload: string | null }): React.ReactElement {
   return (
-    <Box padding={12} background="#ffffff" style={{ borderRadius: 12 }}>
+    <Column padding={12} background="#ffffff" style={{ borderRadius: 12 }}>
       {payload === null ? (
-        <Box width={QR_SIZE} height={QR_SIZE} align="center" justify="center">
+        <Column width={QR_SIZE} height={QR_SIZE} align="center" justify="center">
           <Spinner size={24} color="#000000" />
-        </Box>
+        </Column>
       ) : (
         <QrCode value={payload} size={QR_SIZE} />
       )}
-    </Box>
+    </Column>
   );
 }
 
@@ -62,16 +62,16 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
   };
   return (
     <AppModal visible={rec !== null} onClose={onClose} title="Link a device">
-      <Col gap={14} align="center">
+      <Column gap={14} align="center">
         {kind !== null ? <Text size="3xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
         <QrPanel payload={payload} />
-        <Text size="2xs" role="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
+        <Text size="2xs" color="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
         <Button
           dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Copy code"
           disabled={payload === null} onPress={copy}
         />
         <Button dark={dark} variant="ghost" color="primary" size="lg" fullWidth label="Done" onPress={onClose} />
-      </Col>
+      </Column>
     </AppModal>
   );
 }

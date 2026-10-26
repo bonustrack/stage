@@ -8,8 +8,8 @@ import { capabilities } from '../../lib/capabilities';
 import { closeAddMembers, useAddMembersConv } from '../../lib/memberList';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AppModal } from '../AppModal';
-import { Col } from '../layout';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
+import { Column } from '../layout';
 
 export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () => void }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -36,12 +36,12 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
   };
 
   return (
-    <Col gap={16}>
+    <Column gap={16}>
       <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
-      <Button size="lg" fullWidth pill dark={dark} loading={submitting} disabled={count === 0}
+      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={submitting} disabled={count === 0}
         tintBg={primary} tintFg={bg} label={count > 0 ? `Add to channel (${count})` : 'Add to channel'}
         onPress={() => { void submit(); }}/>
-    </Col>
+    </Column>
   );
 }
 

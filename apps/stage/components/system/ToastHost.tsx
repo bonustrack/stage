@@ -1,10 +1,10 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, pinnedBottom, PAGE_GUTTER } from '../layout';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
 import { useToastRequest } from '../../lib/toastHost';
 import { useFloatingBottom } from '../layout/floatingBottom';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
+import { Column, Row, pinnedBottom, PAGE_GUTTER } from '../layout';
 
 const TOAST_LAYER = 70;
 
@@ -20,7 +20,7 @@ export function ToastHost(): React.ReactElement | null {
       pointerEvents="none"
       style={[pinnedBottom(TOAST_LAYER), { bottom }]}
     >
-      <Box
+      <Column
         key={toast.id}
         background={pal.link}
         radius={DROPDOWN_MENU.radius}
@@ -30,7 +30,7 @@ export function ToastHost(): React.ReactElement | null {
         accessibilityLiveRegion="polite"
       >
         <Text size="sm" color={pal.bg}>{toast.message}</Text>
-      </Box>
+      </Column>
     </Row>
   );
 }

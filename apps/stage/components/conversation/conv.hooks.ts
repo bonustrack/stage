@@ -1,11 +1,10 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
-import type { Input } from '@stage-labs/kit/react-native/input';
 import { parseHandle } from '@stage-labs/client/routing/handles';
 import { resolveDmConvId, type DmResolveError } from '../../lib/dmResolve';
 import { getCachedRows } from '../../lib/channelsCache';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
+import { type TextField } from '@stage-labs/kit/react-native/text-field';
 
 type ResolveConvError = false | DmResolveError;
 
@@ -87,10 +86,10 @@ export function useResolvedConvId(param: string | undefined, peerRoute = true): 
   return { ...state, retry };
 }
 
-type InputRef = React.RefObject<React.ComponentRef<typeof Input> | null>;
+type InputRef = React.RefObject<React.ComponentRef<typeof TextField> | null>;
 
 export function useSearchKeyboardFocus(searchOpen: boolean): InputRef {
-  const searchInputRef = useRef<React.ComponentRef<typeof Input>>(null);
+  const searchInputRef = useRef<React.ComponentRef<typeof TextField>>(null);
   useEffect(() => {
     if (!searchOpen) return;
     let shown = false;

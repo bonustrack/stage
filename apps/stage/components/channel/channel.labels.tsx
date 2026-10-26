@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
-import { Col, Row, PAGE_GUTTER } from '../layout';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import {
@@ -29,6 +27,8 @@ import { IconCircleDashed } from '@central-icons-react-native/round-outlined-rad
 import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -138,7 +138,7 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
   const suggestions = useMemo(() => suggestLabels(input, labels).slice(0, MAX_SUGGESTIONS), [input, labels]);
   const submit = (): void => { onAdd(input); };
   return (
-    <Col gap={10}>
+    <Column gap={10}>
       <FormField label="Labels" placeholder={atCap ? `Limit reached (${MAX_LABELS})` : 'Add a label'} value={input} onChangeText={setInput}
         onSubmit={submit} disabled={disabled || atCap} inputProps={{ ...SEARCH_INPUT_PROPS, maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
         trailing={<AddButton disabled={disabled || atCap || !input.trim()} onAdd={submit} />} />
@@ -150,7 +150,7 @@ export function ChannelLabelsEditor({ labels, input, setInput, disabled, onAdd, 
           ))}
         </Row>
       ) : null}
-    </Col>
+    </Column>
   );
 }
 

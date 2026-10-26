@@ -1,21 +1,21 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col, PAGE_GUTTER } from '../layout';
 import { SettingsPage } from '../settings/SettingsPage';
 import { useDashboard, useDashboardLoaded } from '../../lib/dashboard';
 import { useWebTabRail } from '../../lib/webLayout';
 import { AddLiveWidgetButton } from './AddLiveWidget';
 import { canAddWidget } from './dashboard.model';
 import { DashboardGrid } from './DashboardGrid';
+import { Column, PAGE_GUTTER } from '../layout';
 
 function EmptyDashboard(): React.ReactElement {
   return (
-    <Col align="center" gap={6} padding={{ x: PAGE_GUTTER, top: 48 }}>
-      <Text value="No widgets yet" size="xs" weight="semibold" color="link" textAlign="center" />
+    <Column align="center" gap={6} padding={{ x: PAGE_GUTTER, top: 48 }}>
+      <Text text="No widgets yet" size="xs" fontWeight="semibold" color="link" textAlign="center" />
       <Text
-        value="Add a widget from a link, or in any chat open the three-dot menu of a frame and pick Add to dashboard."
+        text="Add a widget from a link, or in any chat open the three-dot menu of a frame and pick Add to dashboard."
         size="2xs" color="secondary" textAlign="center"
       />
-    </Col>
+    </Column>
   );
 }
 

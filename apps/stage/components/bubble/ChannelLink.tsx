@@ -38,7 +38,7 @@ export function ChannelLink({ convId, label, url, text, fg, onLinkPress, element
   if (element) return cloneElement(element, props, namedChildren(element.props.children, name));
   return (
     <Text size="lg" color={fg ?? link} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      {...props} role="link" suppressHighlighting>
+      {...props} suppressHighlighting>
       {name}
     </Text>
   );

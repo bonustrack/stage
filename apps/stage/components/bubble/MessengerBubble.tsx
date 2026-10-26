@@ -5,7 +5,6 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
-import { Col, PAGE_GUTTER } from '../layout';
 import type { MessengerBubbleProps } from './props';
 import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
@@ -17,6 +16,7 @@ import { useBubbleGestures } from './gestures';
 import { MessageSelection } from './MessageSelection';
 import { messageInteraction, type MessageInteraction } from './messageInteraction.model';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
+import { Column, PAGE_GUTTER } from '../layout';
 
 function BubbleAvatar({ address, bg, onPress }: {
   address?: string | null; bg: string; onPress?: (address: string) => void;
@@ -39,19 +39,19 @@ function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
 }): React.ReactElement {
   const { pending } = p;
   return (
-    <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
-      <Col>
+    <Column minWidth={0} weight={1} style={{ opacity: pending ? 0.5 : 1 }}>
+      <Column>
         {(interaction === 'selectableText' || interaction === 'readonlyInput') && p.onEndSelection ? (
           <MessageSelection text={p.entry.text ?? ''} fg={fg} input={interaction === 'readonlyInput'} onClose={p.onEndSelection} />
         ) : <BubbleContent {...p} fg={fg} sub={sub} />}
-      </Col>
+      </Column>
       {pending ? null : (
         <ReactionsRow
           reactions={p.reactions} pendingReactions={p.pendingReactions} pendingRemovals={p.pendingRemovals}
           ownEmojis={p.ownEmojis} pillBg={pillBg} onReact={p.onReact}
         />
       )}
-    </Col>
+    </Column>
   );
 }
 

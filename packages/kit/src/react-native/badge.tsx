@@ -4,19 +4,20 @@ import { resolveBadgeStyle, type BadgeColor, type BadgeColorValue, type BadgeSiz
 import type { ResolvedBoxBorder } from '../layout';
 import type { TextSizeToken, TextWeight } from '../text.styles';
 import { FONT_SIZE } from '../tokens';
-import { Box } from './box';
+import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
+import { Row } from './row';
 import { Text } from './text';
 import { useKitScheme } from './theme-context';
 
 export type { BadgeColor, BadgeColorValue, BadgeSize, BadgeVariant };
 
 export interface BadgeTextProps {
-  weight: TextWeight;
+  fontWeight: TextWeight;
   color: string;
   style: TextStyle;
 }
 
-export interface BadgeProps {
+export interface BadgeProps extends A2uiCommonProps {
   label: string;
   color?: BadgeColorValue;
   background?: BadgeColorValue;
@@ -25,7 +26,7 @@ export interface BadgeProps {
   pill?: boolean;
   dark?: boolean;
   textSize?: TextSizeToken;
-  weight?: TextWeight;
+  fontWeight?: TextWeight;
   truncate?: boolean;
   children?: ReactNode | ((text: BadgeTextProps) => ReactNode);
   style?: StyleProp<ViewStyle>;
@@ -47,19 +48,21 @@ function outlineBorder(color: string | undefined): ResolvedBoxBorder | undefined
 }
 
 export function Badge({
-  label, color, background, variant, size = 'sm', pill = true, dark, textSize, weight = 'semibold', truncate, children, style, textStyle,
+  label, color, background, variant, size = 'sm', pill = true, dark, textSize, fontWeight = 'semibold', truncate, children, style, textStyle,
+  weight, accessibility,
 }: BadgeProps): React.ReactElement {
   const scheme = useKitScheme();
   const styled = resolveBadgeStyle(color, background, size, dark === undefined ? scheme : (dark ? 'dark' : 'light'), variant);
   const text: BadgeTextProps = {
-    weight,
+    fontWeight,
     color: styled.foreground,
     style: { fontSize: textSize === undefined ? styled.fontSize : FONT_SIZE[textSize], ...textStyle },
   };
   return (
-    <Box
-      direction="row"
+    <Row
+      {...accessibilityProps(accessibility)}
       align="center"
+      weight={weight}
       padding={{ x: PAD_X[size], y: PAD_Y[size] }}
       radius={pill ? 'full' : 'sm'}
       background={styled.background}
@@ -67,8 +70,8 @@ export function Badge({
       style={style}
     >
       {typeof children === 'function' ? children(text) : children ?? (
-        <Text value={label} truncate={truncate} {...text} />
+        <Text text={label} truncate={truncate} {...text} />
       )}
-    </Box>
+    </Row>
   );
 }

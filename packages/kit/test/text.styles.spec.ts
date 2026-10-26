@@ -1,104 +1,40 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  TEXT_ALIGN_MAP,
-  normalizeTextWeight,
-  resolveTextSize,
-  textFontFamily,
-  textRoleColor,
-  textVariantRole,
-  type TextRole,
-  type TextRolePalette,
-} from '../src/text.styles';
-import { FONT_SIZE, FONT_SIZE_DEFAULT } from '../src/tokens';
+import { TEXT_ALIGN_MAP, resolveTextSize, textDefaultColor, textFontFamily } from '../src/text.styles';
+import { FONT_SIZE } from '../src/tokens';
 
-const PALETTE: TextRolePalette = {
-  sub: '#sub000',
-  link: '#link00',
-  primary: '#prim00',
-  danger: '#dang00',
-  success: '#succ00',
-};
+const PALETTE = { sub: '#sub000', link: '#link00' };
 
 describe('resolveTextSize', () => {
   test('explicit size wins over variant', () => {
-    expect(resolveTextSize('md', 'caption')).toBe(FONT_SIZE.md);
-    expect(resolveTextSize('2xs', undefined)).toBe(14);
+    expect(resolveTextSize('2xl', 'caption')).toBe(FONT_SIZE['2xl']);
+    expect(resolveTextSize('sm', undefined)).toBe(FONT_SIZE.sm);
   });
 
-  test('caption variant stays 13px with the smallest text token', () => {
-    expect(resolveTextSize(undefined, 'caption')).toBe(13);
+  test('caption falls back to 3xs and body to md', () => {
     expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['3xs']);
-  });
-
-  test('default is md', () => {
-    expect(FONT_SIZE_DEFAULT).toBe('md');
-    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.md);
     expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.md);
-    expect(resolveTextSize(undefined, 'mono')).toBe(FONT_SIZE.md);
+    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.md);
   });
 });
 
-describe('textVariantRole', () => {
-  test('secondary and caption map to the secondary role', () => {
-    expect(textVariantRole('secondary')).toBe('secondary');
-    expect(textVariantRole('caption')).toBe('secondary');
-  });
-
-  test('everything else maps to default', () => {
-    expect(textVariantRole('body')).toBe('default');
-    expect(textVariantRole('mono')).toBe('default');
-    expect(textVariantRole(undefined)).toBe('default');
-  });
-});
-
-describe('textRoleColor', () => {
-  const cases: [TextRole, string][] = [
-    ['secondary', PALETTE.sub],
-    ['muted', PALETTE.sub],
-    ['link', PALETTE.link],
-    ['primary', PALETTE.primary],
-    ['danger', PALETTE.danger],
-    ['success', PALETTE.success],
-    ['default', PALETTE.link],
-  ];
-
-  for (const [role, expected] of cases) {
-    test(`${role} -> ${expected}`, () => {
-      expect(textRoleColor(role, PALETTE)).toBe(expected);
-    });
-  }
-});
-
-describe('normalizeTextWeight', () => {
-  test('regular normalizes to normal', () => {
-    expect(normalizeTextWeight('regular')).toBe('normal');
-  });
-
-  test('canonical weights pass through', () => {
-    expect(normalizeTextWeight('normal')).toBe('normal');
-    expect(normalizeTextWeight('medium')).toBe('medium');
-    expect(normalizeTextWeight('semibold')).toBe('semibold');
-    expect(normalizeTextWeight('bold')).toBe('bold');
+describe('textDefaultColor', () => {
+  test('caption is secondary, body is the head colour unless inherited', () => {
+    expect(textDefaultColor('caption', PALETTE, '#inherit')).toBe(PALETTE.sub);
+    expect(textDefaultColor('body', PALETTE)).toBe(PALETTE.link);
+    expect(textDefaultColor(undefined, PALETTE, '#inherit')).toBe('#inherit');
   });
 });
 
 describe('textFontFamily', () => {
-  test('mono variant always uses Menlo', () => {
-    expect(textFontFamily('mono', 'normal')).toBe('Menlo');
-    expect(textFontFamily('mono', 'bold')).toBe('Menlo');
-  });
-
-  test('non-mono uses Calibre by weight', () => {
+  test('weights map to the Calibre faces and mono wins', () => {
     expect(textFontFamily(undefined, 'normal')).toBe('Calibre-Medium');
-    expect(textFontFamily('body', 'regular')).toBe('Calibre-Medium');
-    expect(textFontFamily('body', 'medium')).toBe('Calibre-Medium');
-    expect(textFontFamily('secondary', 'semibold')).toBe('Calibre-Semibold');
-    expect(textFontFamily('caption', 'bold')).toBe('Calibre-Semibold');
+    expect(textFontFamily('sans', 'semibold')).toBe('Calibre-Semibold');
+    expect(textFontFamily('mono', 'bold')).toBe('Menlo');
   });
 });
 
 describe('TEXT_ALIGN_MAP', () => {
-  test('logical -> physical alignment', () => {
+  test('logical alignments resolve to physical ones', () => {
     expect(TEXT_ALIGN_MAP).toEqual({ start: 'left', center: 'center', end: 'right' });
   });
 });

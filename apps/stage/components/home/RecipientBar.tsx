@@ -2,18 +2,18 @@ import { useState } from 'react';
 import type { GestureResponderEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Col, PAGE_GUTTER, Row } from '../layout';
 import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
 import { includesKey } from '../conversation/SidebarSection.model';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { peerLabel } from '../conversation/convTitle';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, PAGE_GUTTER, Row } from '../layout';
 
 const AVATAR_PX = 32;
 const AVATAR_GAP = 8;
@@ -69,8 +69,8 @@ export function RecipientBar({ shown, picked, onToggle, onAvatarPress }: {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const [open, setOpen] = useState(false);
   return (
-    <Col padding={{ bottom: 10 - PICKED_BORDER }}>
-      <Scroll horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <Column padding={{ bottom: 10 - PICKED_BORDER }}>
+      <List direction="horizontal" showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Row align="center" gap={AVATAR_GAP} padding={{ x: PAGE_GUTTER, y: PICKED_BORDER }}>
           {shown.map(address => (
             <RecipientAvatar key={address} address={address} picked={includesKey(picked, address)}
@@ -78,14 +78,14 @@ export function RecipientBar({ shown, picked, onToggle, onAvatarPress }: {
           ))}
           <AddPeopleButton onPress={(event) => { setAnchor(menuPointAbove(event)); setOpen(true); }}/>
         </Row>
-      </Scroll>
+      </List>
       {open ? (
         <AnchoredMenu visible onClose={() => { setOpen(false); }} anchor={anchor}>
-          <Col width={anchored ? PICKER_WIDTH : undefined}>
+          <Column width={anchored ? PICKER_WIDTH : undefined}>
             <MembersPicker draft={[...picked]} toggle={onToggle} entries={[]} self="" rights={PICK_RIGHTS}/>
-          </Col>
+          </Column>
         </AnchoredMenu>
       ) : null}
-    </Col>
+    </Column>
   );
 }

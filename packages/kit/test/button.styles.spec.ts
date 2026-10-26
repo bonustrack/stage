@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   SIZES,
+  resolveButtonVariant,
   resolveColors,
   type ButtonColor,
   type ButtonControlVariant,
@@ -45,5 +46,19 @@ describe('resolveColors', () => {
 describe('SIZES', () => {
   test('snapshot', () => {
     expect(SIZES).toMatchSnapshot();
+  });
+});
+
+describe('resolveButtonVariant', () => {
+  test('A2UI hints pick a fill and a default colour', () => {
+    expect(resolveButtonVariant(undefined, undefined)).toEqual({ fill: 'solid', color: 'secondary' });
+    expect(resolveButtonVariant('primary', undefined)).toEqual({ fill: 'solid', color: 'primary' });
+    expect(resolveButtonVariant('borderless', undefined)).toEqual({ fill: 'ghost', color: 'primary' });
+    expect(resolveButtonVariant('default', 'danger')).toEqual({ fill: 'solid', color: 'danger' });
+  });
+
+  test('Kit fills default to the primary colour', () => {
+    expect(resolveButtonVariant('soft', undefined)).toEqual({ fill: 'soft', color: 'primary' });
+    expect(resolveButtonVariant('ghost', 'secondary')).toEqual({ fill: 'ghost', color: 'secondary' });
   });
 });

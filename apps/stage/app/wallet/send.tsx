@@ -5,7 +5,6 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { Col, Row, ScreenScroll } from '../../components/layout';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { SendReview, TxStatus, WalletFooter } from '../../components/wallet/send.parts';
 import { FormField } from '../../components/FormField';
@@ -14,10 +13,10 @@ import { usePublicSend } from '../../components/wallet/send.public';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
-
 const RESOLVING_SPINNER = 24;
 import { sendTokenFor, type TokenChoice } from '../../components/wallet/screen/model';
 import { TokenSelector, useSelectedBalance } from '../../components/wallet/TokenSelector';
+import { Column, Row, ScreenScroll } from '../../components/layout';
 
 function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,
@@ -57,7 +56,7 @@ function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabl
     </Row>
   );
   return (
-    <FormField label="Amount" placeholder="0.0" value={value} onChangeText={onChange} inputType="number"
+    <FormField label="Amount" placeholder="0.0" value={value} onChangeText={onChange} variant="number"
       inputProps={{ keyboardType: 'decimal-pad' }} trailing={controls}
       hint={[secondaryLabel, balanceLabel].filter((s) => s !== undefined).join(' · ') || undefined} />
   );
@@ -115,11 +114,11 @@ function SendFields({ p, token, selector, balanceLabel, onPickContact }: {
   return (
     <>
       {selector}
-      <Col gap={16}>
-        <Col gap={8}>
+      <Column gap={16}>
+        <Column gap={8}>
           <RecipientField value={p.to} recipient={p.recipient} onChange={p.setTo} />
           {p.recipient.kind === 'resolved' ? <RecipientRow address={p.recipient.address} label={p.recipient.label} /> : null}
-        </Col>
+        </Column>
         <AmountField
           value={p.amount}
           unitLabel={p.mode === 'eth' ? token.symbol : 'USD'}
@@ -130,7 +129,7 @@ function SendFields({ p, token, selector, balanceLabel, onPickContact }: {
           onMax={p.onMax}
           onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
         />
-      </Col>
+      </Column>
       <ContactsButton color={fg} border={border} onPress={onPickContact} />
     </>
   );
@@ -144,10 +143,10 @@ export default function WalletSend(): React.ReactElement {
   const initialTo = typeof params.to === 'string' ? params.to : '';
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title="Send token" wallet />
       <SendForm key={`${token.chainId}:${token.symbol}`} token={token} initialTo={initialTo} onCancel={() => { router.back(); }}
         selector={<TokenSelector value={token} onChange={setToken}/>} />
-    </Col>
+    </Column>
   );
 }

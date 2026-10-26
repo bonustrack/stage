@@ -8,7 +8,6 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MenuRow } from '../MenuRows';
 import { useSearchFilterSources } from '../FilterSearch';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
@@ -16,6 +15,7 @@ import { PickerList, PickerNote, PickerSearch } from '../conversation/SidebarSec
 import { includesKey, tagSearch } from '../conversation/SidebarSection.model';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
+import { Column, PAGE_GUTTER, Row } from '../layout';
 
 const TITLE = FIELD_SECTIONS.category.title;
 const NOUN = CHANNEL_FIELD_NOUNS.category;
@@ -37,7 +37,7 @@ function ProjectButton({ value, onPress }: { value: string | null; onPress: (poi
         backgroundColor: 'transparent', flexShrink: 1, minWidth: 0,
       }}>
       <Text size="md" color={color} truncate style={{ maxWidth: VALUE_MAX_WIDTH, flexShrink: 1, minWidth: 0 }}>{value ?? TITLE}</Text>
-      <Box style={NO_SHRINK}><Glyph icon={IconChevronDownSmall} size={16} color={color}/></Box>
+      <Column style={NO_SHRINK}><Glyph icon={IconChevronDownSmall} size={16} color={color}/></Column>
     </Pressable>
   );
 }
@@ -80,7 +80,7 @@ export function NewChatProject({ value, onChange, flush }: {
       </Row>
       {anchor === null ? null : (
         <AnchoredMenu visible anchor={anchor} onClose={() => { setAnchor(null); }} avoidKeyboard>
-          <Col width={anchored ? PICKER_WIDTH : undefined}><ProjectMenu value={value} pick={pick}/></Col>
+          <Column width={anchored ? PICKER_WIDTH : undefined}><ProjectMenu value={value} pick={pick}/></Column>
         </AnchoredMenu>
       )}
     </>

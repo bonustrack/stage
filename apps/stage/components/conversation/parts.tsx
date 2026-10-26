@@ -1,9 +1,7 @@
 import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
@@ -24,6 +22,8 @@ import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
 import type { ConvTitle } from './convTitle';
+import { Modal } from '@stage-labs/kit/react-native/modal';
+import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
@@ -47,7 +47,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
   const back = useHover();
   const wide = useWebTabRail();
   return (
-    <Box style={pinnedTop(2)}>
+    <Column style={pinnedTop(2)}>
     <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }} align="stretch" style={wide ? { borderBottomWidth: 1, borderBottomColor: border } : undefined}>
       {!wide ? (
         <Pressable
@@ -63,7 +63,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
       {children}
     </Row>
     {wide ? null : <TopnavFade top={TOPNAV_HEIGHT + safeTop}/>}
-    </Box>
+    </Column>
   );
 }
 
@@ -78,7 +78,7 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
       <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
-      <TitleText title={title} weight={isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
+      <TitleText title={title} fontWeight={isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
     </Pressable>
   );
 }
@@ -123,7 +123,7 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
   const placement = anchoredMenuStyle(point, viewport);
   return (
     <AnchoredOverlay open={open} onClose={onClose}>
-      <Box
+      <Column
         width={MENU_WIDTH}
         align="start"
         pointerEvents="box-none"
@@ -134,9 +134,9 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
         }}
       >
         {strip}
-        <Box height={STRIP_GAP} pointerEvents="none"/>
+        <Column height={STRIP_GAP} pointerEvents="none"/>
         {dropdown}
-      </Box>
+      </Column>
     </AnchoredOverlay>
   );
 }
@@ -180,30 +180,30 @@ export function BubbleActionMenu({
   }
 
   return (
-    <Dialog
+    <Modal
       open={!!target}
       onClose={onClose}
       animationType="none"
       backdropColor="rgba(0,0,0,0.45)"
       fullBleedPanel
     >
-      <Box
+      <Column
         align="start" pointerEvents="box-none"
         style={dropdownAbove
           ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + STRIP_GAP }
           : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + STRIP_GAP }}
       >
         {dropdownAbove ? dropdown : null}
-      </Box>
-      <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
+      </Column>
+      <Column align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
         {strip}
         {dropdownAbove ? null : (
           <>
-            <Box height={STRIP_GAP} pointerEvents="none"/>
+            <Column height={STRIP_GAP} pointerEvents="none"/>
             {dropdown}
           </>
         )}
-      </Box>
-    </Dialog>
+      </Column>
+    </Modal>
   );
 }

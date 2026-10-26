@@ -4,7 +4,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
-import { Col } from '../layout';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
@@ -14,6 +13,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { Column } from '../layout';
 
 interface RevealedKey { id: string; pk: string }
 
@@ -41,10 +41,10 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
       <Glyph icon={IconWallet4} size={24} color={link} />
-      <Col flex={1}>
+      <Column weight={1}>
         <Text size="sm" color={text}>Tap to copy private key</Text>
         <Text size="3xs" selectable color={text} style={{ marginTop: 4 }}>{revealed}</Text>
-      </Col>
+      </Column>
       <Glyph icon={IconSquareBehindSquare1} size={20} color={link} />
     </ListViewItem>
   );

@@ -1,60 +1,67 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { DELETE_MESSAGE_TYPE_ID } from '@stage-labs/client/xmtp/deleteMessage';
-import { parseFrameDoc } from '@stage-labs/kit/frame';
-import { kitPalette } from '@stage-labs/kit/tokens';
+import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
 import {
-  frameActionContent, frameActionTarget, frameBackdrop, frameCardModel, frameInputOf, frameIsDeleted, frameIsFullWidth, frameLinkOf,
-  frameLocked, frameMoreBelow, frameNodeOf, frameOf, framePreviewCap, frameScreenTitle, frameStackOf, isFrameActionEntry, withFrameNav,
-  type FrameStacks,
+  frameActionContent, frameCardModel, frameIsDeleted, frameLinkOf, frameLocked, frameMoreBelow, frameNodeOf, frameOf,
+  frameMediaUrl, framePreviewCap, frameRenders, frameScreenTitle, frameStackOf, isFrameActionEntry, navigateFrame,
+  nodeRequestOf, withFrameNav, type FrameStacks,
 } from '../components/frame/frame.model';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
+import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf } from './frameFixtures';
 
 const base: HistoryEntry = {
   id: 'msg-frame-1', ts: '2026-10-01T04:00:00.000Z', station: 'xmtp', line: 'stage://xmtp/a/conv1',
   from: 'stage://xmtp/a/user/agent', to: 'stage://xmtp/a/conv1', messageId: 'msg-frame-1',
 };
 
-const widget = {
-  type: 'Card',
-  children: [{ type: 'Title', value: 'Weekly report' }, { type: 'Text', value: 'Sales up 12%' }],
-};
+function surface(surfaceId: string, components: Record<string, unknown>[]): FrameMessage {
+  return { version: 'v1.0', createSurface: { surfaceId, catalogId: KIT_CATALOG, components } };
+}
+
+const REPORT = surface('home', [
+  { id: 'root', component: 'Column', children: ['title', 'text'] },
+  { id: 'title', component: 'Title', text: 'Weekly report' },
+  { id: 'text', component: 'Text', text: 'Sales up 12%' },
+]);
+
+const report: FrameContent = { messages: [REPORT] };
 
 describe('frameOf', () => {
   test('reads a valid frame from the entry payload', () => {
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget } } })).toEqual({ widget });
+    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: report } })).toEqual(report);
   });
 
-  test('ignores entries without a frame or with a broken one', () => {
+  test('ignores entries without a frame, with a broken one or with a ChatKit widget', () => {
     expect(frameOf(base)).toBeNull();
     expect(frameOf(undefined)).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget: 'Card' } } })).toBeNull();
+    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { messages: 'Card' } } })).toBeNull();
+    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget: { type: 'Card' } } } })).toBeNull();
   });
 });
 
 describe('isFrameActionEntry', () => {
   test('only an entry carrying a decoded frame action is a frame tap', () => {
-    const frameAction = { frameId: 'msg-frame-1', action: { type: 'approve' }, label: 'Approve' };
+    const frameAction = { frameId: 'msg-frame-1', action: actionOf('approve'), label: 'Approve' };
     expect(isFrameActionEntry({ ...base, payload: { contentType: 'frameAction', frameAction } })).toBe(true);
     expect(isFrameActionEntry({ ...base, text: 'Frame action: approve', payload: { contentType: 'frameAction' } })).toBe(false);
-    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frame', frame: { widget } } })).toBe(false);
+    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frame', frame: report } })).toBe(false);
     expect(isFrameActionEntry(base)).toBe(false);
   });
 });
 
 describe('frameCardModel', () => {
   test('uses the explicit title and description first', () => {
-    expect(frameCardModel({ title: 'Report', description: 'Week 39', widget })).toEqual({ title: 'Report', description: 'Week 39' });
+    expect(frameCardModel({ ...report, title: 'Report', description: 'Week 39' })).toEqual({ title: 'Report', description: 'Week 39' });
   });
 
-  test('derives them from the widget when missing', () => {
-    expect(frameCardModel({ widget })).toEqual({ title: 'Weekly report', description: 'Sales up 12%' });
+  test('derives them from the start surface when missing', () => {
+    expect(frameCardModel(report)).toEqual({ title: 'Weekly report', description: 'Sales up 12%' });
   });
 
   test('falls back to Frame and drops a description equal to the title', () => {
-    expect(frameCardModel({ widget: { type: 'Card' } })).toEqual({ title: 'Frame' });
-    expect(frameCardModel({ title: 'Same', description: ' Same ', widget })).toEqual({ title: 'Same' });
-    expect(frameCardModel({ title: '  ', widget: { type: 'Iframe' } })).toEqual({ title: 'Frame' });
+    expect(frameCardModel({ messages: [surface('a', [{ id: 'root', component: 'Divider' }])] })).toEqual({ title: 'Frame' });
+    expect(frameCardModel({ ...report, title: 'Same', description: ' Same ' })).toEqual({ title: 'Same' });
   });
 });
 
@@ -64,59 +71,44 @@ describe('frame navigation and actions', () => {
     expect(isSplitRoute('/frame')).toBe(true);
   });
 
-  test('an action becomes frame action content', () => {
-    expect(frameActionContent('msg-frame-1', { type: 'approve', payload: { week: 39 } }, ' Approve '))
-      .toEqual({ frameId: 'msg-frame-1', action: { type: 'approve', payload: { week: 39 } }, label: 'Approve' });
-    expect(frameActionContent('msg-frame-1', { type: 'pick' }, undefined)).toEqual({ frameId: 'msg-frame-1', action: { type: 'pick' } });
+  test('a tap becomes frame action content with its label and the data model it asked to send', () => {
+    const tap = tapOf('approve', { week: 39 });
+    const action = actionOf('approve', { week: 39 });
+    expect(frameActionContent('msg-frame-1', { ...tap, label: ' Approve ' })).toEqual({ frameId: 'msg-frame-1', action, label: 'Approve' });
+    const metadata = { a2uiRendererDataModel: { version: 'v1.0' as const, surfaces: { main: { week: 39 } } } };
+    expect(frameActionContent('msg-frame-1', { ...tap, metadata })).toEqual({ frameId: 'msg-frame-1', action, dataModel: { main: { week: 39 } } });
+    expect(nodeRequestOf({ ...tap, metadata })).toEqual({ message: tap.message, dataModel: { main: { week: 39 } } });
   });
 
-  test('only a full size card on the start screen asks for the full width', () => {
-    const wide = { type: 'Card', size: 'full', children: [{ type: 'Text', value: 'Wide' }] };
-    expect(frameIsFullWidth({ widget: wide })).toBe(true);
-    expect(frameIsFullWidth({ widget })).toBe(false);
-    expect(frameIsFullWidth({ widget: { ...wide, size: 'lg' } })).toBe(false);
-    expect(frameIsFullWidth({ widget: { type: 'ListView', children: [] } })).toBe(false);
-    expect(frameIsFullWidth({ screens: { home: widget, s1: wide } })).toBe(false);
-    expect(frameIsFullWidth({ screens: { home: widget, s1: wide }, start: 's1' })).toBe(true);
+  test('only an action message goes to the chat', () => {
+    const call = { version: 'v1.0' as const, callAgentFunction: { surfaceId: 'main', functionCallId: 'f1', callFunction: { '@call': 'quote' } } };
+    expect(frameActionContent('msg-frame-1', { message: call })).toBeNull();
   });
 
   test('an action too large to decode is not sent', () => {
-    expect(frameActionContent('msg-frame-1', { type: 'save', payload: { note: 'x'.repeat(20_000) } }, 'Save')).toBeNull();
-  });
-
-  test('the chat message keeps only the action type and payload, not its handler', () => {
-    expect(frameActionContent('msg-frame-1', { type: 'ask', payload: { q: 1 }, handler: 'client' }, undefined))
-      .toEqual({ frameId: 'msg-frame-1', action: { type: 'ask', payload: { q: 1 } } });
+    expect(frameActionContent('msg-frame-1', { ...tapOf('save', { note: 'x'.repeat(20_000) }), label: 'Save' })).toBeNull();
   });
 });
 
 describe('frames with a node source', () => {
   test('a frame names its node only with an allowed https link', () => {
-    expect(frameNodeOf({ widget, source: { url: 'https://nodes.stage.box/abc' } })).toEqual({ url: 'https://nodes.stage.box/abc', host: 'nodes.stage.box' });
-    expect(frameNodeOf({ widget })).toBeNull();
-    expect(frameNodeOf({ widget, source: { url: 'http://btc.example.com/' } })).toBeNull();
-    expect(frameNodeOf({ widget, source: { url: 'https://localhost/' } })).toBeNull();
-    expect(frameNodeOf({ widget, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
+    expect(frameNodeOf({ ...report, source: { url: 'https://nodes.stage.box/abc' } })).toEqual({ url: 'https://nodes.stage.box/abc', host: 'nodes.stage.box' });
+    expect(frameNodeOf(report)).toBeNull();
+    expect(frameNodeOf({ ...report, source: { url: 'http://btc.example.com/' } })).toBeNull();
+    expect(frameNodeOf({ ...report, source: { url: 'https://localhost/' } })).toBeNull();
+    expect(frameNodeOf({ ...report, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
   });
 
   test('a frame with a node stays read only until the chat is known to be accepted', () => {
-    const sourced = { widget, source: { url: 'https://nodes.stage.box/abc' } };
+    const sourced = { ...report, source: { url: 'https://nodes.stage.box/abc' } };
     expect([true, false, undefined].map(allowed => frameLocked(sourced, allowed))).toEqual([false, true, true]);
-    expect([true, false, undefined].map(allowed => frameLocked({ widget }, allowed))).toEqual([false, true, false]);
-    expect(frameLocked({ widget, source: { url: 'http://btc.example.com/' } }, undefined)).toBe(false);
-  });
-
-  test('actions go to the node, a client handled action to the chat, and every action to the chat without a node', () => {
-    expect(frameActionTarget({ type: 'vote' }, true)).toBe('node');
-    expect(frameActionTarget({ type: 'vote', handler: 'server' }, true)).toBe('node');
-    expect(frameActionTarget({ type: 'ask', handler: 'client' }, true)).toBe('chat');
-    expect(frameActionTarget({ type: 'vote' }, false)).toBe('chat');
-    expect(frameActionTarget({ type: 'ask', handler: 'client' }, false)).toBe('chat');
+    expect([true, false, undefined].map(allowed => frameLocked(report, allowed))).toEqual([false, true, false]);
+    expect(frameLocked({ ...report, source: { url: 'http://btc.example.com/' } }, undefined)).toBe(false);
   });
 });
 
 describe('frames deleted after they were sent', () => {
-  const frameEntry: HistoryEntry = { ...base, payload: { contentType: 'frame', frame: { widget } } };
+  const frameEntry: HistoryEntry = { ...base, payload: { contentType: 'frame', frame: report } };
   const request = (id: string, from: string, deletes: string): HistoryEntry => ({
     ...base, id, messageId: id, from, payload: { contentType: DELETE_MESSAGE_TYPE_ID, deletes },
   });
@@ -134,57 +126,39 @@ describe('frames deleted after they were sent', () => {
   });
 });
 
-describe('frames with screens', () => {
-  const detail = { type: 'Card', children: [{ type: 'Title', value: 'Story one' }] };
-  const frame = { title: 'Hacker News', screens: { home: widget, s1: { title: 'Story', widget: detail }, s2: detail }, start: 'home' };
+describe('frames with several surfaces', () => {
+  const story = surface('s1', [{ id: 'root', component: 'Title', text: 'Story one' }]);
+  const plain = surface('s2', [{ id: 'root', component: 'Divider' }]);
+  const frame: FrameContent = { title: 'Hacker News', messages: [REPORT, story, plain] };
 
-  test('a frame with screens is read, and needs a widget or screens', () => {
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame } })).toEqual(frame);
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { title: 'x' } } })).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget, screens: { home: widget } } } })).toBeNull();
+  test('the card is summed up from the start surface', () => {
+    expect(frameCardModel({ messages: [REPORT, story] })).toEqual({ title: 'Weekly report', description: 'Sales up 12%' });
+    expect(frameCardModel({ messages: [REPORT, story], start: 's1' })).toEqual({ title: 'Story one' });
   });
 
-  test('the frame input is the widget or the screens with their start', () => {
-    expect(frameInputOf({ widget })).toBe(widget);
-    expect(frameInputOf(frame)).toEqual({ screens: frame.screens, start: 'home' });
+  test('the top nav shows the surface title, else the frame title', () => {
+    expect(frameScreenTitle(frame, 'home')).toBe('Hacker News');
+    expect(frameScreenTitle(frame, 's1')).toBe('Story one');
+    expect(frameScreenTitle(frame, 's2')).toBe('Hacker News');
+    expect(frameScreenTitle(frame, 'missing')).toBe('Hacker News');
   });
+});
 
-  test('the card is summed up from the start screen', () => {
-    expect(frameCardModel({ screens: { home: widget, s1: detail } })).toEqual({ title: 'Weekly report', description: 'Sales up 12%' });
-    expect(frameCardModel({ screens: { home: widget, s1: detail }, start: 's1' })).toEqual({ title: 'Story one' });
+describe('frame rendering and live updates', () => {
+  test('a frame renders when a surface has a valid root', () => {
+    expect(frameRenders(report)).toBe(true);
+    expect(frameRenders({ messages: REFUSED_MESSAGES })).toBe(false);
   });
+});
 
-  test('the top nav shows the screen title, else the frame title', () => {
-    const parsed = parseFrameDoc(frameInputOf(frame));
-    expect(frameScreenTitle(frame, parsed, 's1')).toBe('Story');
-    expect(frameScreenTitle(frame, parsed, 's2')).toBe('Hacker News');
-    expect(frameScreenTitle(frame, parsed, 'missing')).toBe('Hacker News');
+describe('frame media', () => {
+  test('images, videos and audio load from https only', () => {
+    expect(frameMediaUrl(' https://img.example.com/a.png ')).toBe('https://img.example.com/a.png');
+    for (const url of ['http://img.example.com/a.png', 'data:image/png;base64,AAAA', 'javascript:alert(1)', 'https:///x', '']) expect(frameMediaUrl(url)).toBe('');
   });
 });
 
 describe('the frame preview in the feed', () => {
-  const light = kitPalette('light');
-  const dark = kitPalette('dark');
-
-  test('the backdrop is the start screen root background, else the page background', () => {
-    expect(frameBackdrop({ widget }, 'light', light)).toBe(light.bg);
-    expect(frameBackdrop({ widget: { type: 'Card', background: '#1d4ed8' } }, 'dark', dark)).toBe('#1d4ed8');
-    expect(frameBackdrop({ widget: { type: 'Basic', background: { light: '#ffffff', dark: '#000000' } } }, 'dark', dark)).toBe('#000000');
-    expect(frameBackdrop({ screens: { home: { type: 'Card', background: '#123456' }, s1: widget } }, 'light', light)).toBe('#123456');
-    expect(frameBackdrop({ widget: { type: 'Iframe' } }, 'light', light)).toBe(light.bg);
-  });
-
-  test('a root with its own theme uses that theme', () => {
-    expect(frameBackdrop({ widget: { type: 'ListView', theme: 'dark', children: [] } }, 'light', light)).toBe(dark.bg);
-    expect(frameBackdrop({ widget: { type: 'Card', theme: 'light', background: { light: '#eeeeee', dark: '#111111' } } }, 'dark', dark)).toBe('#eeeeee');
-  });
-
-  test('the backdrop follows the screen shown in the feed', () => {
-    const frame = { screens: { home: { type: 'Card', background: '#123456' }, s1: { type: 'Card', background: '#654321' } } };
-    expect(frameBackdrop(frame, 'light', light, 's1')).toBe('#654321');
-    expect(frameBackdrop(frame, 'light', light, 'missing')).toBe(light.bg);
-  });
-
   test('it scrolls inside the image height less its border, and less the back bar on a later screen', () => {
     expect(framePreviewCap(0)).toBe(398);
     expect(framePreviewCap(2)).toBe(358);
@@ -201,29 +175,31 @@ describe('the frame preview in the feed', () => {
 describe('the screen stack of each frame', () => {
   const none: FrameStacks = new Map();
 
-  test('a frame starts on its start screen', () => {
+  test('a frame starts on its start surface', () => {
     expect(frameStackOf(undefined, 'home')).toEqual(['home']);
     expect(frameStackOf(['other', 's1'], 'home')).toEqual(['home']);
   });
 
   test('each frame keeps its own stack, shared by the feed and the full view', () => {
-    const one = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
-    const both = withFrameNav(one, 'msg-2', 'home', { kind: 'open', screen: 's2' });
+    const one = withFrameNav(none, 'msg-1', 'home', { kind: 'open', surfaceId: 's1' });
+    const both = withFrameNav(one, 'msg-2', 'home', { kind: 'open', surfaceId: 's2' });
     expect(frameStackOf(both.get('msg-1'), 'home')).toEqual(['home', 's1']);
     expect(frameStackOf(both.get('msg-2'), 'home')).toEqual(['home', 's2']);
     expect(none.size).toBe(0);
   });
 
-  test('going back to the start screen forgets the frame', () => {
-    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
-    const back = withFrameNav(open, 'msg-1', 'home', { kind: 'back' });
+  test('closing back to the start surface forgets the frame', () => {
+    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', surfaceId: 's1' });
+    const back = withFrameNav(open, 'msg-1', 'home', { kind: 'close' });
     expect(back.has('msg-1')).toBe(false);
     expect(frameStackOf(back.get('msg-1'), 'home')).toEqual(['home']);
   });
 
-  test('a step that changes nothing keeps the same stacks', () => {
-    expect(withFrameNav(none, 'msg-1', 'home', { kind: 'back' })).toBe(none);
-    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', screen: 's1' });
-    expect(withFrameNav(open, 'msg-1', 'home', { kind: 'open', screen: 's1' })).toBe(open);
+  test('a step that changes nothing keeps the same stacks, and the stack stops at 20 screens', () => {
+    expect(withFrameNav(none, 'msg-1', 'home', { kind: 'close' })).toBe(none);
+    const open = withFrameNav(none, 'msg-1', 'home', { kind: 'open', surfaceId: 's1' });
+    expect(withFrameNav(open, 'msg-1', 'home', { kind: 'open', surfaceId: 's1' })).toBe(open);
+    const deep = Array.from({ length: 30 }, (_, i) => `s${i}`).reduce<readonly string[]>((stack, id) => navigateFrame(stack, { kind: 'open', surfaceId: id }), ['home']);
+    expect(deep).toHaveLength(20);
   });
 });

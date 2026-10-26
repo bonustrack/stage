@@ -1,23 +1,23 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col } from '../../components/layout';
 import { ProfileScreen } from '../../components/ProfileScreen';
 import { ChannelProfile } from '../../components/channel/ChannelProfile';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useResolvedHandle } from '../../lib/resolveHandle';
 import { profileKindOf } from '../../lib/links';
+import { Column } from '../../components/layout';
 
 function UserProfile({ handle }: { handle: string }): React.ReactElement {
   const resolved = useResolvedHandle(handle);
   const dark = useEffectiveColorScheme() === 'dark';
   if (resolved.address) return <ProfileScreen address={resolved.address} />;
   return (
-    <Col surface="surface" flex={1} align="center" justify="center" padding={24}>
+    <Column surface="surface" weight={1} align="center" justify="center" padding={24}>
       {resolved.resolving
         ? <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
-        : <Text size="xs" role="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>}
-    </Col>
+        : <Text size="xs" color="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>}
+    </Column>
   );
 }
 

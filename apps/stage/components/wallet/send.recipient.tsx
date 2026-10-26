@@ -1,16 +1,15 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
-import { Row, Col } from '../layout';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { peerLabel } from '../conversation/convTitle';
+import { Column, Row } from '../layout';
 
 export function RecipientRow({ address, label, onPress }: {
   address: string;
@@ -29,16 +28,16 @@ export function RecipientRow({ address, label, onPress }: {
         size="md"
         style={{ backgroundColor: border }}
 />
-      <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="xs" color={head} numberOfLines={1}>
+      <Column minWidth={0} weight={1}>
+        <Text fontWeight="semibold" size="xs" color={head} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
-          <Text size="3xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text size="3xs" color="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
-      </Col>
+      </Column>
     </>
   );
 
@@ -73,7 +72,7 @@ export function ContactsModal({ visible, onClose, onPick }: {
   return (
     <AppModal visible={visible} onClose={onClose} title="Contacts">
       {contacts.length === 0 ? (
-        <Text size="xs" role="secondary" style={{ paddingVertical: 16 }}>
+        <Text size="xs" color="secondary" style={{ paddingVertical: 16 }}>
           No contacts yet. Start a DM to build your list.
         </Text>
       ) : (

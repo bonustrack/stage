@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Col } from '../layout';
 import { AppIcon } from '../widgets';
 import { listXmtpInstallations, revokeXmtpInstallation } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -22,6 +19,8 @@ import { SettingsButtonRow, SettingsGroup, SettingsNavRow, SettingsPage, Setting
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDevices';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column } from '../layout';
 
 function addedOn(ms: number | undefined): string {
   if (!ms) return 'Added on an unknown date';
@@ -35,12 +34,12 @@ function SessionRow({ inst, busy, onRevoke }: {
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
       <AppIcon name={IconDevices} color={inst.current ? 'link' : 'secondary'} size={24} />
-      <Col flex={1} gap={2}>
-        <Text value={inst.current ? 'This device' : `Device ${shortAddress(inst.id)}`} size="xs" weight="semibold" color="link" />
-        <Caption value={addedOn(inst.createdAt)} color="secondary" />
-      </Col>
+      <Column weight={1} gap={2}>
+        <Text text={inst.current ? 'This device' : `Device ${shortAddress(inst.id)}`} size="xs" fontWeight="semibold" color="link" />
+        <Text size="md" variant="caption" text={addedOn(inst.createdAt)} color="secondary" />
+      </Column>
       <Pressable onPress={onRevoke} disabled={busy} hitSlop={8} accessibilityRole="button">
-        {busy ? <ActivityIndicator size="small" color={DANGER} /> : <Text value="Revoke" size="2xs" color={DANGER} />}
+        {busy ? <ActivityIndicator size="small" color={DANGER} /> : <Text text="Revoke" size="2xs" color={DANGER} />}
       </Pressable>
     </ListViewItem>
   );

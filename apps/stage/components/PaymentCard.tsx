@@ -2,7 +2,6 @@ import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Row, Box } from './layout';
 import { TokenAvatar } from './wallet/screen/tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './bubble/balance';
 import { usePalette, withAlpha } from '../lib/theme';
@@ -31,6 +30,7 @@ import type { X402Accept, X402Challenge } from '../lib/useLinkPreview';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
+import { Column, Row } from './layout';
 
 interface PaymentBalanceArgs {
   show: boolean;
@@ -109,18 +109,18 @@ export function PaymentCard({
   const resolvedAction = typeof action === 'function' ? action(bal) : action;
 
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
-      <Row align="center" justify="between" gap={8}>
+    <Column radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+      <Row align="center" justify="spaceBetween" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
-          <Text weight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
+          <Text fontWeight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
             {description}
           </Text>
         </Row>
         {badge ?? null}
       </Row>
       {amountLabel ? (
-        <Text weight="semibold" size="2xl" color={pal.link}>
+        <Text fontWeight="semibold" size="2xl" color={pal.link}>
           {amountLabel}
         </Text>
       ) : null}
@@ -129,7 +129,7 @@ export function PaymentCard({
       {resolvedAction ? (
         <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />
       ) : footer ?? null}
-    </Box>
+    </Column>
   );
 }
 
@@ -150,14 +150,14 @@ function X402Detail({ accept, network, endpoint, pal }: {
     <>
       {accept.payTo ? (
         <Row align="center" gap={6}>
-          <Text role="secondary" size="3xs">To</Text>
-          <Text size="xs" weight="semibold" color={pal.text} numberOfLines={1}>
+          <Text color="secondary" size="3xs">To</Text>
+          <Text size="xs" fontWeight="semibold" color={pal.text} numberOfLines={1}>
             {shortAddress(accept.payTo)}
           </Text>
         </Row>
       ) : null}
       <Row align="center" gap={6}>
-        <Text role="secondary" size="3xs">On</Text>
+        <Text color="secondary" size="3xs">On</Text>
         <Text size="2xs" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
       <Pressable {...bubbleLinkProps(endpoint, openInBubbleLink)}>

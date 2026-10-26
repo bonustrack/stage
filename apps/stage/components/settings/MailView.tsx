@@ -8,7 +8,6 @@ import { downloadFile } from '../../lib/fileDownload';
 import { reported } from '../../lib/errorPolicy';
 import { markMailRead, useMail, useMailboxes } from '../../lib/mail';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import {
   mailBody, mailDataUri, mailDateLabel, mailReceivedAt, safeFileName, subjectLabel, visibleBlocks, type MailAttachmentRow,
@@ -18,6 +17,7 @@ import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { INBOX_ROUTE } from '../tabs/menuPages';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileDownload } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileDownload';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const META_LABEL_WIDTH = 48;
 
@@ -25,8 +25,8 @@ function MetaLine({ label, value }: { label: string; value: string }): React.Rea
   if (value === '') return null;
   return (
     <Row gap={8} align="start">
-      <Text value={label} size="xs" color="secondary" style={{ width: META_LABEL_WIDTH }} />
-      <Text value={value} size="xs" color="link" selectable style={{ flex: 1 }} />
+      <Text text={label} size="xs" color="secondary" style={{ width: META_LABEL_WIDTH }} />
+      <Text text={value} size="xs" color="link" selectable style={{ flex: 1 }} />
     </Row>
   );
 }
@@ -34,13 +34,13 @@ function MetaLine({ label, value }: { label: string; value: string }): React.Rea
 function ImagesNotice({ shown, onToggle }: { shown: boolean; onToggle: () => void }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Box padding={12} radius="sm" surface="raised">
+    <Column padding={12} radius="sm" surface="raised">
       <Row align="center" gap={12}>
-        <Text value={shown ? 'Images from the sender are shown.' : 'Images from the sender are hidden.'}
+        <Text text={shown ? 'Images from the sender are shown.' : 'Images from the sender are hidden.'}
           size="xs" color="secondary" style={{ flex: 1 }} />
         <Button label={shown ? 'Hide images' : 'Show images'} size="sm" color="secondary" variant="solid" dark={dark} onPress={onToggle} />
       </Row>
-    </Box>
+    </Column>
   );
 }
 
@@ -71,17 +71,17 @@ function MailContent({ mail, id }: { mail: ParsedMail; id: string }): React.Reac
   const received = mailReceivedAt(id);
   return (
     <>
-      <Col gap={16} padding={{ x: PAGE_GUTTER, top: 20 }}>
-        <Text value={subjectLabel(mail.subject)} size="2xl" weight="semibold" color="link" selectable />
-        <Col gap={4}>
+      <Column gap={16} padding={{ x: PAGE_GUTTER, top: 20 }}>
+        <Text text={subjectLabel(mail.subject)} size="2xl" fontWeight="semibold" color="link" selectable />
+        <Column gap={4}>
           <MetaLine label="From" value={mail.from} />
           <MetaLine label="To" value={mail.to} />
           <MetaLine label="Cc" value={mail.cc} />
           <MetaLine label="Date" value={received === null ? mail.date : mailDateLabel(received)} />
-        </Col>
+        </Column>
         {body.remoteImages ? <ImagesNotice shown={showImages} onToggle={() => { setShowImages(!showImages); }} /> : null}
         <MailBlocks blocks={blocks} />
-      </Col>
+      </Column>
       <Attachments rows={body.attachments} />
     </>
   );
@@ -100,10 +100,10 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
   if (mail.isError) return <RetryNotice message="Could not decrypt this mail. Check your connection and try again." onRetry={() => { void mail.refetch(); }} />;
   if (mail.data === undefined) {
     return (
-      <Col align="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>
+      <Column align="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>
         <Spinner size={24} />
-        <Text value="Decrypting…" size="xs" color="secondary" />
-      </Col>
+        <Text text="Decrypting…" size="xs" color="secondary" />
+      </Column>
     );
   }
   return <MailContent key={`${box?.selection}/${label}/${id}`} mail={mail.data} id={id} />;

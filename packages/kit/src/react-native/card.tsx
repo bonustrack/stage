@@ -4,6 +4,8 @@ import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
 import { Text, type TextSizeToken } from './text';
 import { BLOCK_RADIUS_DEFAULT, schemePalette } from '../tokens';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { useKitScheme } from './theme-context';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -17,18 +19,17 @@ export interface CardAction {
   onPress: () => void;
 }
 
-export interface CardProps {
+export interface CardProps extends A2uiCommonProps {
   children?: ReactNode;
   size?: CardSize;
   padding?: number;
   background?: string;
   status?: CardStatus;
   collapsed?: boolean;
-  asForm?: boolean;
   confirm?: CardAction;
   cancel?: CardAction;
   onPress?: () => void;
-  dark: boolean;
+  dark?: boolean;
   style?: ViewStyle;
 }
 
@@ -77,13 +78,13 @@ function CardFoot(props: {
         <Button color="secondary" variant="solid" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} />
       ) : null}
       {confirm ? (
-        <Button size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
+        <Button variant="primary" size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
       ) : null}
     </View>
   );
 }
 
-function CardBody(props: CardProps & { sub: string }): React.ReactElement {
+function CardBody(props: CardProps & { sub: string; dark: boolean }): React.ReactElement {
   const { children, size = 'md', status, collapsed = false, confirm, cancel, dark, sub } = props;
   return (
     <>
@@ -95,12 +96,13 @@ function CardBody(props: CardProps & { sub: string }): React.ReactElement {
 }
 
 export function Card(props: CardProps): React.ReactElement {
-  const { size = 'md', padding, background, onPress, dark, style } = props;
+  const scheme = useKitScheme();
+  const { size = 'md', padding, background, onPress, dark = scheme === 'dark', style, weight, accessibility } = props;
 
   const c = palette(dark);
   const pad = padding ?? PADDING[size];
 
-  const body = <CardBody {...props} sub={c.sub} />;
+  const body = <CardBody {...props} dark={dark} sub={c.sub} />;
 
   const base: ViewStyle = {
     backgroundColor: background ?? c.surface,
@@ -108,11 +110,13 @@ export function Card(props: CardProps): React.ReactElement {
     borderWidth: 1,
     borderRadius: BLOCK_RADIUS_DEFAULT,
     padding: pad,
+    ...weightStyle(weight),
   };
 
   if (onPress) {
     return (
       <Pressable
+        {...accessibilityProps(accessibility)}
         onPress={onPress}
         style={({ pressed }) => [base, { opacity: pressed ? 0.85 : 1 }, style]}
       >
@@ -121,5 +125,5 @@ export function Card(props: CardProps): React.ReactElement {
     );
   }
 
-  return <View style={[base, style]}>{body}</View>;
+  return <View {...accessibilityProps(accessibility)} style={[base, style]}>{body}</View>;
 }

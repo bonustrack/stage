@@ -1,19 +1,16 @@
-
 import { useQuery } from '@tanstack/react-query';
-
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col, ScreenScroll } from '../../components/layout';
 import { Eyebrow } from '../../components/Eyebrow';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { AppIcon } from '../../components/widgets';
 import { getActiveAccount } from '../../lib/accounts';
 import { usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column, ScreenScroll } from '../../components/layout';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
 const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
@@ -28,16 +25,16 @@ function AddressCard({ label, address, hint, onCopy }: {
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <Col gap={8}>
-      <Eyebrow value={label.toUpperCase()} size="3xs" color="secondary"/>
+    <Column gap={8}>
+      <Eyebrow text={label.toUpperCase()} size="3xs" color="secondary"/>
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
-        <Col flex={1}>
-          <Text value={address || '-'} size="xs" truncate />
-        </Col>
+        <Column weight={1}>
+          <Text text={address || '-'} size="xs" truncate />
+        </Column>
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       </ListViewItem>
-      <Caption value={hint} color="secondary" textAlign="center" />
-    </Col>
+      <Text size="md" variant="caption" text={hint} color="secondary" textAlign="center" />
+    </Column>
   );
 }
 
@@ -46,7 +43,7 @@ function QrPanel({ address, border }: {
 }): React.ReactElement {
   const side = { width: 1, color: border };
   return (
-    <Box
+    <Column
       background={QR_FIXED_BACKGROUND}
       radius="xl"
       padding={16}
@@ -62,9 +59,9 @@ function QrPanel({ address, border }: {
           background={QR_FIXED_BACKGROUND}
         />
       ) : (
-        <Box width={240} height={240} background={QR_PLACEHOLDER_BACKGROUND} />
+        <Column width={240} height={240} background={QR_PLACEHOLDER_BACKGROUND} />
       )}
-    </Box>
+    </Column>
   );
 }
 
@@ -83,17 +80,17 @@ export default function WalletReceive(): React.ReactElement {
   };
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title="Receive" wallet />
 
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
-        <Col width="100%">
-          <Col align="center" gap={16}>
+        <Column width="100%">
+          <Column align="center" gap={16}>
             <QrPanel address={address} border={border} />
             <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={ADDRESS_HINT} onCopy={onCopy} />
-          </Col>
-        </Col>
+          </Column>
+        </Column>
       </ScreenScroll>
-    </Col>
+    </Column>
   );
 }

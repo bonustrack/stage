@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
-import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
@@ -8,11 +7,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 import { useBoardHome } from './tabs/boardHome';
-
 import {
   FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
   homeTabIndex,
 } from './SwipeTabs.config';
+import { Column } from './layout';
 
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
@@ -92,19 +91,19 @@ export function TabsPager(): React.ReactElement {
   }));
 
   return (
-    <Box flex={1} style={{ overflow: 'hidden' }}>
+    <Column weight={1} style={{ overflow: 'hidden' }}>
       <GestureDetector gesture={pan}>
         <Animated.View style={stripStyle}>
           {TAB_ORDER.map((name) => {
             const Body = PAGES[name];
             return (
-              <Box width={width} key={name} style={{ height: '100%' }}>
+              <Column width={width} key={name} style={{ height: '100%' }}>
                 <Body panRef={panRef}/>
-              </Box>
+              </Column>
             );
           })}
         </Animated.View>
       </GestureDetector>
-    </Box>
+    </Column>
   );
 }

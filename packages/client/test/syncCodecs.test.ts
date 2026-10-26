@@ -30,7 +30,7 @@ const REGISTRY = [
   'stage.box/clearState:1.0:false', 'stage.box/boardState:1.0:false', 'stage.box/categoryOrderState:1.0:false',
   'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/dashboardLayout:1.0:false',
   'stage.box/developerMode:1.0:false', 'stage.box/callInvite:1.0:true',
-  'stage.box/callSignal:1.0:false', 'stage.box/frame:1.0:true', 'stage.box/frameAction:1.0:true', 'stage.box/deleteRequest:1.0:false',
+  'stage.box/callSignal:1.0:false', 'stage.box/frame:2.0:true', 'stage.box/frameAction:2.0:true', 'stage.box/deleteRequest:1.0:false',
 ];
 
 describe('device sync wire format', () => {
@@ -54,7 +54,7 @@ describe('device sync wire format', () => {
   test('registers silent developer settings alongside existing codecs, and other types are not sync state', () => {
     const ids = STAGE_JSON_CODECS.map(({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`);
     expect(ids).toEqual(REGISTRY);
-    expect(isSyncType('stage.box/frame:1.0')).toBe(false);
+    expect(isSyncType('stage.box/frame:2.0')).toBe(false);
     expect(isSyncType(undefined)).toBe(false);
   });
 });

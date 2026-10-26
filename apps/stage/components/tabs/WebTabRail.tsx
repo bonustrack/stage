@@ -2,7 +2,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter, type Href } from 'expo-router';
-import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { TAB_HREF, TAB_ORDER, homeTabIndex, type TabName } from '../SwipeTabs.config';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
@@ -19,6 +18,7 @@ import { useBoardHome } from './boardHome';
 import { menuPagesFor, isMenuPageOpen, isMenuPageRoute } from './menuPages';
 import { isTabRoute } from './splitRoutes';
 import { useDeveloperMode } from '../../lib/developerMode';
+import { Column, Row, pinnedEdges } from '../layout';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
   return !wide && pathname === '/';
@@ -53,18 +53,18 @@ function TabIcon({ icon, active, badge }: {
   return (
     <HoverTint>
       {(hovered) => (
-    <Box width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
+    <Column width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
       <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text}/>
       {badge !== undefined ? (
-        <Box
+        <Column
           minWidth={TAB_BADGE_SIZE} height={TAB_BADGE_SIZE} padding={{ x: 4 }} radius="full" background={pal.link}
           align="center" justify="center"
           style={TAB_BADGE_POSITION}
 >
-          <Text weight="semibold" color={pal.bg} size="3xs">{badge}</Text>
-        </Box>
+          <Text fontWeight="semibold" color={pal.bg} size="3xs">{badge}</Text>
+        </Column>
       ) : null}
-    </Box>
+    </Column>
       )}
     </HoverTint>
   );
@@ -143,9 +143,9 @@ export function WebTabBar({ pathname, unreadBadge }: {
       style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical={false}/>
-      <Box flex={1} align="center" justify="center">
+      <Column weight={1} align="center" justify="center">
         <AccountAvatarButton size={26}/>
-      </Box>
+      </Column>
     </Row>
   );
 }
@@ -157,7 +157,7 @@ export function WebTabRail({ pathname, unreadBadge }: {
   const pal = usePalette();
   const inset = useTopChromeInset();
   return (
-    <Col
+    <Column
       width={WEB_TAB_RAIL_WIDTH}
       padding={{ top: 12 }}
       gap={4}
@@ -169,10 +169,10 @@ export function WebTabRail({ pathname, unreadBadge }: {
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
       <MenuPageButtons pathname={pathname}/>
-      <Box flex={1}/>
-      <Box align="center" padding={{ bottom: 16 }}>
+      <Column weight={1}/>
+      <Column align="center" padding={{ bottom: 16 }}>
         <AccountAvatarButton size={32}/>
-      </Box>
-    </Col>
+      </Column>
+    </Column>
   );
 }

@@ -5,18 +5,20 @@ import {
   EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveConfirmOf, livePreviewOf, liveProblemText, liveRefetchInterval, liveRefreshDelay,
   liveSnapshotJson, liveSnapshotOf, liveStateAfter, liveStatusText, ownsHostedNode, publishProblemText, type LiveState,
 } from '../components/dashboard/liveWidget.model';
+import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
+import { REFUSED_MESSAGES, titleMessages } from './frameFixtures';
 
-const CARD = { type: 'Card', children: [{ type: 'Title', value: '$100' }] };
-const NEXT = { type: 'Card', children: [{ type: 'Title', value: '$101' }] };
-const frameReply = (widget: Record<string, unknown>): NodeResult => ({ ok: true, reply: { kind: 'frame', frame: { widget } } });
-const shown: LiveState = { frame: { widget: CARD }, at: 1_000, problem: null, status: null, failures: 0 };
+const CARD = titleMessages('$100');
+const NEXT = titleMessages('$101');
+const frameReply = (messages: FrameMessage[]): NodeResult => ({ ok: true, reply: { kind: 'frame', frame: { messages } } });
+const shown: LiveState = { frame: { messages: CARD }, at: 1_000, problem: null, status: null, failures: 0 };
 const timeOf = (ms: number): string => `t${ms}`;
 
 describe('live widget state', () => {
   test('a node frame replaces the shown frame and clears any problem', () => {
     expect(liveStateAfter(EMPTY_LIVE, frameReply(CARD), 1_000)).toEqual(shown);
     const failing = { ...shown, problem: 'timeout' as const, failures: 3 };
-    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({ frame: { widget: NEXT }, at: 2_000, problem: null, status: null, failures: 0 });
+    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({ frame: { messages: NEXT }, at: 2_000, problem: null, status: null, failures: 0 });
   });
 
   test('a failure keeps the last good frame and its time, and counts the failures', () => {
@@ -31,8 +33,17 @@ describe('live widget state', () => {
   });
 
   test('a frame the renderer refuses counts as an invalid reply', () => {
-    const deep = Array.from({ length: 20 }).reduce<Record<string, unknown>>(child => ({ type: 'Col', children: [child] }), { type: 'Text', value: 'x' });
-    expect(liveStateAfter(shown, frameReply({ type: 'Card', children: [deep] }), 2_000)).toEqual({ ...shown, problem: 'invalid', failures: 1 });
+    expect(liveStateAfter(shown, frameReply(REFUSED_MESSAGES), 2_000)).toEqual({ ...shown, problem: 'invalid', failures: 1 });
+  });
+
+  test('a reply of A2UI messages goes to the live client, and is a problem when nothing is shown yet', () => {
+    const update = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] } };
+    const reply = { ok: true, reply: { kind: 'messages', messages: [update] } } as const;
+    const next = { messages: titleMessages('$105') };
+    expect(liveStateAfter(shown, reply, 3_000, () => ({ kind: 'frame', frame: next }))).toEqual({ ...shown, frame: next, at: 3_000 });
+    expect(liveStateAfter({ ...shown, failures: 2 }, reply, 3_000, () => ({ kind: 'unchanged' }))).toEqual({ ...shown, at: 3_000 });
+    expect(liveStateAfter(shown, reply, 3_000)).toEqual({ ...shown, problem: 'invalid', failures: 1 });
+    expect(liveStateAfter(EMPTY_LIVE, reply, 3_000)).toEqual({ ...EMPTY_LIVE, problem: 'empty', failures: 1 });
   });
 });
 
@@ -74,19 +85,20 @@ describe('live widget status', () => {
 describe('live widget snapshot', () => {
   test('the last good frame and its time round-trip, nothing else is kept', () => {
     const json = liveSnapshotJson({ ...shown, problem: 'timeout', failures: 4 });
-    expect(json).toBe(JSON.stringify({ frame: { widget: CARD }, at: 1_000 }));
+    expect(json).toBe(JSON.stringify({ frame: { messages: CARD }, at: 1_000 }));
     expect(liveSnapshotOf(json)).toEqual(shown);
     expect(liveSnapshotJson(EMPTY_LIVE)).toBeNull();
   });
 
   test('missing or broken snapshots load as empty', () => {
-    for (const raw of [null, '{', '7', JSON.stringify({ frame: { widget: CARD } }), JSON.stringify({ frame: { title: 'x' }, at: 1 })]) {
+    for (const raw of [null, '{', '7', JSON.stringify({ frame: { messages: CARD } }), JSON.stringify({ frame: { title: 'x' }, at: 1 })]) {
       expect(liveSnapshotOf(raw)).toEqual(EMPTY_LIVE);
     }
   });
 
   test('a snapshot in an older reply format loads as empty', () => {
-    const older = [{ title: 'BTC', widget: CARD }, { screens: { a: CARD }, start: 'a' }, { widget: { type: 'Text', value: 'x' } }];
+    const card = { type: 'Card', children: [{ type: 'Title', value: '$100' }] };
+    const older = [{ widget: card }, { title: 'BTC', widget: card }, { screens: { a: card }, start: 'a' }, { messages: REFUSED_MESSAGES }];
     for (const frame of older) expect([frame, liveSnapshotOf(JSON.stringify({ frame, at: 1 }))]).toEqual([frame, EMPTY_LIVE]);
   });
 });
@@ -116,7 +128,7 @@ describe('hosted nodes', () => {
   });
 
   test('a preview needs a loaded frame', () => {
-    expect(livePreviewOf('https://n.example.com/', 'n.example.com', shown)).toEqual({ url: 'https://n.example.com/', host: 'n.example.com', frame: { widget: CARD }, state: shown });
+    expect(livePreviewOf('https://n.example.com/', 'n.example.com', shown)).toEqual({ url: 'https://n.example.com/', host: 'n.example.com', frame: { messages: CARD }, state: shown });
     expect(livePreviewOf('https://n.example.com/', 'n.example.com', { ...EMPTY_LIVE, problem: 'status', status: 502 })).toBe('Could not load it: node error 502');
   });
 });

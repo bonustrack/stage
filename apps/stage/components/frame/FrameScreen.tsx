@@ -2,30 +2,29 @@ import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Frame, type FrameActionHandler, type FrameNavigation } from '@stage-labs/kit/react-native/frame';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import { frameStartSurface, type FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
-import { Box, Col, PAGE_GUTTER, ScreenScroll } from '../layout';
 import { menuPointBelowEnd } from '../AnchoredMenu';
 import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../modules/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { useFrameMessage } from '../../lib/frameMessage';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
-import { frameInputOf, frameOf, frameScreenTitle } from './frame.model';
+import { frameOf, frameScreenTitle, type FrameNav } from './frame.model';
+import { FrameView, type FrameNavigation } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
-import { useChatFrame } from './useFrameAction';
+import { useChatFrame, type ChatFrame } from './useFrameAction';
 import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
 import { documentScroll } from '../../lib/webLayout';
-import { parseFrameDoc, type FrameNav } from '@stage-labs/kit/frame';
 import type { ScreenScrollHandle } from '../layout/ScreenScroll.types';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
+import { Column, PAGE_GUTTER, ScreenScroll } from '../layout';
 
 function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void; minHeight?: number } {
   const ref = useRef<View>(null);
@@ -46,16 +45,16 @@ interface FrameScreens {
 }
 
 function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void): FrameScreens {
-  const parsed = useMemo(() => parseFrameDoc(frame === null ? undefined : frameInputOf(frame)), [frame]);
-  const nav = useFrameStack(messageId, parsed.ok ? parsed.doc.start : '');
+  const start = useMemo(() => (frame === null ? '' : frameStartSurface(frame) ?? ''), [frame]);
+  const nav = useFrameStack(messageId, start);
   const { screen, depth, navigate: step } = nav;
   const back = useCallback((): boolean => {
     if (depth === 0) return false;
-    step({ kind: 'back' });
+    step({ kind: 'close' });
     return true;
   }, [depth, step]);
   const navigate = useCallback((next: FrameNav): void => {
-    if (next.kind === 'back' && depth === 0) leave();
+    if (next.kind === 'close' && depth === 0) leave();
     else step(next);
   }, [depth, step, leave]);
   useFocusEffect(useCallback(() => {
@@ -65,7 +64,7 @@ function useFrameScreens(frame: FrameContent | null, messageId: string, leave: (
   }, [back]));
   const scrollRef = useRef<ScreenScrollHandle>(null);
   useTopOnScreenChange(screen, () => { scrollRef.current?.scrollToOffset({ offset: 0, animated: false }); });
-  const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, parsed, screen)), [frame, parsed, screen]);
+  const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, screen)), [frame, screen]);
   return {
     title,
     navigation: { screen, depth, navigate },
@@ -85,34 +84,33 @@ function FramePageMenu({ frame, convId, messageId, consent, onRefresh }: {
     <ChatFrameMenu
       frame={frame} convId={convId} messageId={messageId} onRefresh={consent === 'allowed' ? onRefresh : undefined}
       trigger={(open) => (
-        <Box margin={{ left: 'auto' }}>
+        <Column margin={{ left: 'auto' }}>
           <HoverIconButton
             icon={IconDotGrid1x3Vertical} label="More" color={text} placement="below" role="button"
             onPress={(e) => { open(menuPointBelowEnd(e)); }}
           />
-        </Box>
+        </Column>
       )}
     />
   );
 }
 
-function FrameBody({ frame, consent, onAction, insetBottom, navigation }: {
-  frame: FrameContent; consent: XmtpConsent | null | undefined; onAction: FrameActionHandler; insetBottom: number; navigation: FrameNavigation;
+function FrameBody({ chat, frame, consent, insetBottom, navigation }: {
+  chat: ChatFrame; frame: FrameContent; consent: XmtpConsent | null | undefined; insetBottom: number; navigation: FrameNavigation;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
   const gated = consent !== 'allowed';
   const notice = consent === 'unknown' || consent === 'denied';
   const viewport = useFillViewport();
-  const widget = useMemo(() => frameInputOf(frame), [frame]);
   return (
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
-      <Frame widget={widget} dark={dark} disabled={gated} onAction={onAction} navigation={navigation}
-        fill={{ padding: PAGE_GUTTER, insetBottom: notice ? 0 : insetBottom }}
+      <FrameView frame={frame} sessionKey={chat.sessionKey} disabled={gated} onMessage={chat.onMessage}
+        answersFunctions={chat.node !== null} navigation={navigation}
+        padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: PAGE_GUTTER + (notice ? 0 : insetBottom) }}
         onOpenUrl={(url) => { openInBubbleLink(url); }} />
       {notice ? (
-        <Box padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
-          <Text size="2xs" role="secondary">Accept this conversation to use this frame.</Text>
-        </Box>
+        <Column padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
+          <Text size="2xs" color="secondary">Accept this conversation to use this frame.</Text>
+        </Column>
       ) : null}
     </View>
   );
@@ -133,24 +131,25 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
     if (canGoBack) router.back();
     else router.replace(chat);
   }, [router, canGoBack, chat]);
-  const { frame, onAction, refresh } = useChatFrame(sent, line, messageId, leave);
+  const chatFrame = useChatFrame(sent, line, messageId, leave);
+  const { frame, refresh } = chatFrame;
   const consent = useConvConsentState(convId);
   const screens = useFrameScreens(frame, messageId, leave);
   const menu = <FramePageMenu frame={sent} convId={convId} messageId={messageId} consent={consent} onRefresh={refresh} />;
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} trailing={menu} />
       <ScreenScroll ref={screens.scrollRef} contentContainerStyle={FILL_STYLE} keyboardShouldPersistTaps="handled">
         {frame !== null ? (
-          <FrameBody frame={frame} consent={consent} onAction={onAction} insetBottom={insets.bottom} navigation={screens.navigation} />
+          <FrameBody chat={chatFrame} frame={frame} consent={consent} insetBottom={insets.bottom} navigation={screens.navigation} />
         ) : (
-          <Box padding={PAGE_GUTTER}>
-            {feed.status === 'loading' || (lookup && stored === undefined) ? <Box padding={24} align="center"><Spinner /></Box> : (
+          <Column padding={PAGE_GUTTER}>
+            {feed.status === 'loading' || (lookup && stored === undefined) ? <Column padding={24} align="center"><Spinner /></Column> : (
               <EmptyState title="This frame is not available." />
             )}
-          </Box>
+          </Column>
         )}
       </ScreenScroll>
-    </Col>
+    </Column>
   );
 }

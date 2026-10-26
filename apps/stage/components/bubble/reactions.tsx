@@ -1,9 +1,9 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { reactorsLabel } from '../conversation/reactors.model';
 import { reactionPills } from './reactions.model';
 import { ReactionTooltip } from './ReactionTooltip';
+import { Column, Row } from '../layout';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
@@ -16,10 +16,10 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       radius="full"
       background={pillBg}
     >
-      <Text value={emoji} size="3xs" />
-      <Text value={String(count)} size="3xs" color="secondary" />
+      <Text text={emoji} size="3xs" />
+      <Text text={String(count)} size="3xs" color="secondary" />
       {own ? (
-        <Box
+        <Column
           pointerEvents="none"
           style={{
             position: 'absolute',
@@ -75,7 +75,7 @@ export function ReactionsRow({
           opacity: 0.45,
         }}>
           <Text size="3xs">{emoji}</Text>
-          <Text role="secondary" size="3xs">1</Text>
+          <Text color="secondary" size="3xs">1</Text>
         </Row>
       ))}
     </Row>

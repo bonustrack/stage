@@ -3,12 +3,12 @@ import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
 import { OVERLAY_SHADOW } from '../overlay.styles';
-import { Dialog } from './dialog';
 import { Glyph, type CentralIcon } from './glyph';
-import { MODAL } from './modal';
 import { Text, type TextProps } from './text';
 import { useKitPalette } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { Dialog } from './dialog';
+import { MODAL } from './modal';
 
 export const DROPDOWN_MENU = {
   radius: 6,
@@ -113,7 +113,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
     >
       {icon}
       <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        {props.children ?? <Text {...menuText} value={props.label} color={color} truncate />}
+        {props.children ?? <Text {...menuText} text={props.label} color={color} truncate />}
       </View>
       {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
     </Pressable>

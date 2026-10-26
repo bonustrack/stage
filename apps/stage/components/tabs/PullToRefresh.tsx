@@ -1,8 +1,7 @@
-
 import { useEffect, useRef } from 'react';
 import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
-import { Box } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
+import { Column } from '../layout';
 
 const THRESHOLD = 56;
 const ACTIVE_OFFSET = 44;
@@ -77,7 +76,7 @@ export function usePullToRefresh(
   });
 
   const indicator = (
-    <Box height={0} pointerEvents="none" align="center" style={{ zIndex: 10 }}>
+    <Column height={0} pointerEvents="none" align="center" style={{ zIndex: 10 }}>
       <Animated.View
         style={{
           position: 'absolute',
@@ -87,7 +86,7 @@ export function usePullToRefresh(
 >
         <Spinner size={24} color={color}/>
       </Animated.View>
-    </Box>
+    </Column>
   );
 
   return { indicator, onScroll, onScrollBeginDrag, onScrollEndDrag, scrollEventThrottle: 16 };

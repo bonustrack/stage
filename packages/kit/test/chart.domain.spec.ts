@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { chartGeometry, chartTooltipRows, type ChartDomain, type ChartGeometryInput, type ChartSeries } from '../src/chart';
 import { chartDomain, chartExtents, chartValueScale } from '../src/chart.scale';
-import { parseFrame } from '../src/frame';
 
 const DOMAIN: ChartDomain = ['dataMin', 'dataMax'];
 const SERIES: ChartSeries[] = [{ type: 'line', dataKey: 'v', label: 'USD', curveType: 'linear' }];
@@ -14,23 +13,14 @@ function scale(values: number[], domain: ChartDomain = DOMAIN): ReturnType<typeo
   return chartValueScale(chartExtents(values.map((v) => ({ v })), SERIES), SERIES, domain);
 }
 
-function parsedYAxis(yAxis: unknown): unknown {
-  const frame = parseFrame({ type: 'Card', children: [{ type: 'Chart', data: INPUT.data, series: SERIES, xAxis: 'x', yAxis }] });
-  if (!frame.ok) throw new Error(frame.error);
-  const chart = frame.root.children[0];
-  return chart?.type === 'Chart' ? chart.props.yAxis : undefined;
-}
-
 describe('Chart yAxis.domain', () => {
-  test('Frame keeps only the official finite domain tuple', () => {
+  test('keeps only the official finite domain tuple', () => {
     for (const domain of [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], [1, 1], ['dataMin', 0]]) {
-      expect(parsedYAxis({ domain, ignored: true })).toEqual({ domain });
+      expect(chartDomain(domain)).toEqual(domain);
     }
-    for (const domain of [[], [0], [0, 1, 2], [null, 1], ['0', 1], ['dataMin - 10', 'dataMax'], [NaN, 1], [0, Infinity], [0, 1e308], [2, 1]]) {
+    for (const domain of [[], [0], [0, 1, 2], [null, 1], ['0', 1], ['dataMin - 10', 'dataMax'], [NaN, 1], [0, Infinity], [0, 1e308], [2, 1], null, 'auto', {}]) {
       expect(chartDomain(domain)).toBeUndefined();
-      expect(parsedYAxis({ domain })).toBeUndefined();
     }
-    for (const axis of [null, [], 'auto', {}, { domain: {} }]) expect(parsedYAxis(axis)).toBeUndefined();
   });
 
   test('data bounds use actual prices, not a synthetic zero baseline', () => {

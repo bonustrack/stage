@@ -1,12 +1,12 @@
-
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { fontName, fontSize, readableForeground } from '../tokens';
-import { Box, Row, Col } from './box';
+import { Column } from './column';
+import { Row } from './row';
 import { Glyph } from './glyph';
-import { Input } from './input';
+import { TextField } from './text-field';
 import { Text } from './text';
 import { useKitPalette } from './theme-context';
 import { hexToHsv, hsvToHex, isHexColor } from '../color-math';
@@ -65,21 +65,21 @@ function Track({ colors, thumb, onFraction, p }: {
   }, [onFraction]);
   return (
     <GestureDetector gesture={gesture}>
-      <Box height={TRACK_H} radius={TRACK_H / 2}
+      <Column height={TRACK_H} radius={TRACK_H / 2}
         onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
         justify="center" style={{ overflow: 'hidden' }}
 >
         <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
           {colors.map((c, i) => (
-            <Col background={c} flex={1} key={i}/>
+            <Column background={c} weight={1} key={i}/>
           ))}
         </Row>
-        <Box width={22} height={22} radius="md" background={'transparent'} margin={{ left: -11 }}
+        <Column width={22} height={22} radius="md" background={'transparent'} margin={{ left: -11 }}
           pointerEvents="none"
           style={{ position: 'absolute', left: `${thumb * 100}%`, borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
 />
-        <Box radius={TRACK_H / 2} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: 1, borderColor: p.border }}/>
-      </Box>
+        <Column radius={TRACK_H / 2} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: 1, borderColor: p.border }}/>
+      </Column>
     </GestureDetector>
   );
 }
@@ -90,7 +90,7 @@ function hueStops(): string[] {
 
 function Label({ text, p }: { text: string; p: HsvPalette }): React.ReactElement {
   return (
-    <Text weight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
+    <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
       {text}
     </Text>
   );
@@ -113,17 +113,17 @@ function HsvPicker({ value, onChange, p }: {
   const valStops = Array.from({ length: 12 }, (_, i) => hsvToHex(hsv.h, hsv.s, i / 11));
 
   return (
-    <Box>
+    <Column>
       <Row gap={14} align="center">
-        <Box width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }}/>
-        <Col flex={1}>
-          <Text weight="semibold" size="2xl" color={p.head}>
+        <Column width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }}/>
+        <Column weight={1}>
+          <Text fontWeight="semibold" size="2xl" color={p.head}>
             {hex}
           </Text>
           <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>
             live preview
           </Text>
-        </Col>
+        </Column>
       </Row>
 
       <Label text="Hue" p={p}/>
@@ -137,7 +137,7 @@ function HsvPicker({ value, onChange, p }: {
         onFraction={(f) => { apply(hsv.h, hsv.s, f); }}/>
 
       <Label text="Hex" p={p}/>
-      <Input
+      <TextField
         value={text ?? hex}
         onChangeText={(t) => {
           setText(t);
@@ -154,7 +154,7 @@ function HsvPicker({ value, onChange, p }: {
           fontSize: fontSize('xs'), fontFamily: fontName.sans,
         }}
 />
-    </Box>
+    </Column>
   );
 }
 

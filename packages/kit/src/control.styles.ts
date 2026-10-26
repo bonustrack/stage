@@ -98,10 +98,10 @@ export function controlTextStyle(size: ControlSize, colors: ControlColors): Text
   };
 }
 
-export type TextFieldVariant = 'outline' | 'plain';
+export type TextFieldSurface = 'outline' | 'plain';
 
 export interface TextFieldStyleInput {
-  variant?: TextFieldVariant;
+  variant?: TextFieldSurface;
   defaultRadius: number;
   baseColors: ControlColors;
   background?: string;

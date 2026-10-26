@@ -1,102 +1,85 @@
-
+import { useMemo } from 'react';
+import { StyleSheet, Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
+import RNMarkdown from 'react-native-markdown-display';
+import { markdownStyles } from '../markdown.styles';
+import { resolvePaletteColor, type ColorToken } from '../tokens';
 import {
-  Text as RNText,
-  type TextProps as RNTextProps,
-  type TextStyle,
-} from 'react-native';
-import { resolveColorToken, type ColorToken } from '../tokens';
-import {
-  TEXT_ALIGN_MAP,
-  textFontFamily,
-  textRoleColor,
-  textVariantRole,
-  resolveTextSize,
-  type TextAlign,
-  type TextRole,
-  type TextSizeToken,
-  type TextVariant,
-  type TextWeight,
+  TEXT_ALIGN_MAP, resolveTextSize, textDefaultColor, textFontFamily,
+  type TextAlign, type TextFontFamily, type TextSizeToken, type TextVariant, type TextWeight,
 } from '../text.styles';
-import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { useContentColor } from './content-color';
+import { useKitPalette, useKitScheme } from './theme-context';
+import { loadKitFonts } from './fonts.load';
 
-export type { TextAlign, TextRole, TextSizeToken, TextVariant, TextWeight };
+loadKitFonts();
 
-export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
-  value?: string;
-  role?: TextRole;
+export type { TextAlign, TextFontFamily, TextSizeToken, TextVariant, TextWeight };
+
+export interface TextProps extends Omit<RNTextProps, 'style' | 'role'>, A2uiCommonProps {
+  text?: string;
   variant?: TextVariant;
   size?: TextSizeToken;
-  weight?: TextWeight;
+  fontWeight?: TextWeight;
   color?: ColorToken | (string & {});
   textAlign?: TextAlign;
   italic?: boolean;
   lineThrough?: boolean;
   truncate?: boolean;
   maxLines?: number;
+  fontFamily?: TextFontFamily;
+  markdown?: boolean;
   style?: TextStyle | TextStyle[];
 }
 
-function textColor(
-  color: ColorToken | (string & {}) | undefined,
-  scheme: 'light' | 'dark',
-  role: TextRole,
-  palette: KitPalette,
-): string {
-  return color != null ? resolveColorToken(color, scheme) : textRoleColor(role, palette);
+type StyleProps = Pick<TextProps, 'variant' | 'size' | 'fontWeight' | 'textAlign' | 'italic' | 'lineThrough' | 'fontFamily' | 'weight'>;
+
+function baseStyle(p: StyleProps, color: string): TextStyle {
+  const base: TextStyle = {
+    color,
+    fontSize: resolveTextSize(p.size, p.variant),
+    fontFamily: textFontFamily(p.fontFamily, p.fontWeight ?? 'normal'),
+  };
+  if (p.textAlign) base.textAlign = TEXT_ALIGN_MAP[p.textAlign];
+  if (p.italic) base.fontStyle = 'italic';
+  if (p.lineThrough) base.textDecorationLine = 'line-through';
+  return { ...base, ...weightStyle(p.weight) };
 }
 
-type StyleProps = Pick<
-  TextProps,
-  'color' | 'role' | 'variant' | 'size' | 'weight' | 'textAlign' | 'italic' | 'lineThrough'
->;
+function useTextColor(color: TextProps['color'], variant: TextVariant | undefined): string {
+  const palette = useKitPalette();
+  const inherited = useContentColor();
+  return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
+}
 
-function buildBaseStyle(
-  p: StyleProps,
-  scheme: 'light' | 'dark',
-  palette: KitPalette,
-): TextStyle {
-  const { color, role, variant, size, weight = 'normal', textAlign, italic, lineThrough } = p;
-  const effectiveRole: TextRole = role ?? textVariantRole(variant);
-  const base: TextStyle = {
-    color: textColor(color, scheme, effectiveRole, palette),
-    fontSize: resolveTextSize(size, variant),
-    fontFamily: textFontFamily(variant, weight),
-  };
-  if (textAlign) base.textAlign = TEXT_ALIGN_MAP[textAlign];
-  if (italic) base.fontStyle = 'italic';
-  if (lineThrough) base.textDecorationLine = 'line-through';
-  return base;
+interface MarkdownTextProps {
+  value: string;
+  color: string;
+  base: TextStyle;
+  style: TextProps['style'];
+}
+
+function MarkdownText({ value, color, base, style }: MarkdownTextProps): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  const styles = useMemo(() => {
+    const sheet = markdownStyles({ fg: color, dark, fontSize: base.fontSize });
+    sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style) };
+    return sheet;
+  }, [base, color, dark, style]);
+  return <RNMarkdown style={styles}>{value}</RNMarkdown>;
 }
 
 export function Text(props: TextProps): React.ReactElement {
   const {
-    value,
-    role,
-    variant,
-    size,
-    weight,
-    color,
-    textAlign,
-    italic,
-    lineThrough,
-    truncate = false,
-    maxLines,
-    style,
-    children,
-    ...rest
+    text, variant, size, fontWeight, color, textAlign, italic, lineThrough, truncate = false, maxLines,
+    fontFamily, markdown = false, weight, accessibility, style, children, ...rest
   } = props;
-
-  const palette = useKitPalette();
-  const scheme = useKitScheme();
-
-  const styleProps: StyleProps = { role, variant, size, weight, color, textAlign, italic, lineThrough };
-  const base = buildBaseStyle(styleProps, scheme, palette);
-  const clamp = truncate ? 1 : maxLines;
-  const content = children ?? value;
-
+  const resolved = useTextColor(color, variant);
+  const base = baseStyle({ variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, weight }, resolved);
+  if (markdown && text !== undefined) return <MarkdownText value={text} color={resolved} base={base} style={style} />;
   return (
-    <RNText style={style ? [base, style] : base} numberOfLines={clamp} {...rest}>
-      {content}
+    <RNText style={style ? [base, style] : base} numberOfLines={truncate ? 1 : maxLines} {...accessibilityProps(accessibility)} {...rest}>
+      {children ?? text}
     </RNText>
   );
 }

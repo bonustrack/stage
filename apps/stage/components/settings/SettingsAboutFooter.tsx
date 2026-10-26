@@ -4,7 +4,6 @@ import * as Application from 'expo-application';
 import { errorMessage } from '@stage-labs/client/errors';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col, Row, PAGE_GUTTER } from '../layout';
 import { GithubLogo } from '../bubble/linkCards';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from '../bubble/linkProps';
@@ -14,6 +13,7 @@ import { capabilities } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const STAGE_GITHUB_URL = 'https://github.com/bonustrack/stage';
 
@@ -39,7 +39,7 @@ function buildMeta(): BuildMeta {
   };
 }
 
-const FOOTER_TEXT = { role: 'secondary', variant: 'caption', size: '2xs', weight: 'medium' } as const;
+const FOOTER_TEXT = { variant: 'caption', size: '2xs', fontWeight: 'medium' } as const;
 const GITHUB_ICON_SIZE = 14;
 
 function resolveNativeBuild(): string | null {
@@ -106,7 +106,7 @@ function DevClientUpdate(): React.ReactElement | null {
   }
 
   return (
-    <Col align="center" gap={4}>
+    <Column align="center" gap={4}>
       <Pressable accessibilityRole="button" onPress={() => { capabilities.copy('Loaded runtime and update', `Runtime: ${info.runtime ?? 'unknown'}\nUpdate: ${info.updateId ?? 'local development'}`); }}>
         <Text {...FOOTER_TEXT}>{`Runtime ${info.runtime?.slice(0, 8) ?? 'unknown'} · Update ${info.updateId?.slice(0, 8) ?? 'local'}`}</Text>
       </Pressable>
@@ -118,7 +118,7 @@ function DevClientUpdate(): React.ReactElement | null {
       <Pressable accessibilityRole="link" {...bubbleLinkProps('https://bundler.stage.box/', openInBubbleLink)} pressedOpacity={0.6}>
         <Text {...FOOTER_TEXT} color="link" style={{ textDecorationLine: 'underline' }}>Dev-client downloads</Text>
       </Pressable>
-    </Col>
+    </Column>
   );
 }
 
@@ -131,7 +131,7 @@ export function SettingsAboutFooter(): React.ReactElement {
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 7);
   const name = Constants.expoConfig?.name ?? 'Stage';
   return (
-    <Col padding={{ x: PAGE_GUTTER, y: 18 }} align="center" gap={4}>
+    <Column padding={{ x: PAGE_GUTTER, y: 18 }} align="center" gap={4}>
       <Text {...FOOTER_TEXT} style={{ textAlign: 'center' }}>
         {`${name} ${versionLabel()} · ${buildProfile}`}
       </Text>
@@ -145,6 +145,6 @@ export function SettingsAboutFooter(): React.ReactElement {
         </FooterLink>
       </Row>
       <DevClientUpdate />
-    </Col>
+    </Column>
   );
 }

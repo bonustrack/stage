@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
-import type { FrameActionHandler } from '@stage-labs/kit/react-native/frame';
-import { loadNode, sendNodeAction } from '@stage-labs/client/nodes/protocol';
+import { nodeRequestOf, type FrameMessageHandler } from '../components/frame/frame.model';
+import { loadNode, sendNodeMessage } from '@stage-labs/client/nodes/protocol';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
 import {
   EMPTY_LIVE, LIVE_REFRESH_MS, liveProblemText, liveRefetchInterval, liveStateAfter, type LiveState,
@@ -12,12 +12,17 @@ import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { capabilities } from './capabilities';
 import { dashboardAccountId } from './dashboard';
 import { ignore, recover } from './errorPolicy';
+import { applyToFrameSession, RENDERER_CAPABILITIES } from './frameSession';
 import { readLiveSnapshot, saveLiveSnapshot } from './liveSnapshots';
 import { getQueryClient } from './queryClient';
 import { useStoreValue } from './storeCore';
 
 const LIVE_QUERY = 'liveWidget';
 const SNAPSHOT_QUERY = 'liveSnapshot';
+
+export function liveWidgetKey(widgetId: string): string {
+  return `live:${widgetId}`;
+}
 
 function readSnapshot(widgetId: string): Promise<LiveState> {
   const account = dashboardAccountId();
@@ -53,7 +58,7 @@ function latestState(key: readonly unknown[], widgetId: string, epoch: number): 
   return client.getQueryData<LiveState>(key) ?? client.getQueryData<LiveState>([SNAPSHOT_QUERY, widgetId, epoch]) ?? EMPTY_LIVE;
 }
 
-export function useLiveWidget(widgetId: string, source: LiveSource): { state: LiveState | undefined; act: FrameActionHandler } {
+export function useLiveWidget(widgetId: string, source: LiveSource): { state: LiveState | undefined; act: FrameMessageHandler } {
   const epoch = useAccountEpoch();
   const active = useLiveActive();
   const key = useMemo(() => liveKey(widgetId, epoch, source.url), [widgetId, epoch, source.url]);
@@ -66,7 +71,7 @@ export function useLiveWidget(widgetId: string, source: LiveSource): { state: Li
   const live = useQuery({
     queryKey: key,
     queryFn: async ({ signal }) => {
-      const result = await loadNode(source.url, source.key, signal);
+      const result = await loadNode(source.url, source.key, { capabilities: RENDERER_CAPABILITIES, signal });
       const next = liveStateAfter(latestState(key, widgetId, epoch), result, Date.now());
       if (next.problem === null) saveSnapshot(widgetId, next);
       return next;
@@ -77,10 +82,11 @@ export function useLiveWidget(widgetId: string, source: LiveSource): { state: Li
     refetchIntervalInBackground: false,
     retry: false,
   });
-  const act = useCallback<FrameActionHandler>(async (action) => {
+  const act = useCallback<FrameMessageHandler>(async (out) => {
     await getQueryClient().cancelQueries({ queryKey: key });
-    const result = await sendNodeAction(source.url, source.key, action);
-    const next = liveStateAfter(latestState(key, widgetId, epoch), result, Date.now());
+    const result = await sendNodeMessage(source.url, source.key, nodeRequestOf(out), { capabilities: RENDERER_CAPABILITIES });
+    const apply = (messages: Parameters<typeof applyToFrameSession>[1]): ReturnType<typeof applyToFrameSession> => applyToFrameSession(liveWidgetKey(widgetId), messages);
+    const next = liveStateAfter(latestState(key, widgetId, epoch), result, Date.now(), apply);
     const problem = liveProblemText(next);
     if (problem !== null) {
       capabilities.toast(`Could not send: ${problem.toLowerCase()}`);

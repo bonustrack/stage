@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { HomeMenuState } from './topnavRight';
@@ -8,7 +7,6 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
-import { Col } from '../layout';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../../lib/webLayout';
 import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
@@ -36,6 +34,7 @@ import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
+import { Column } from '../layout';
 
 const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
@@ -128,11 +127,11 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   });
 
   const placeholder = st.error ? <HomeError error={st.error} dark={dark} fg={fg}/> : (!rows ? (
-    <Col flex={1} align="center" justify="center"><Spinner size={28} color={head}/></Col>
+    <Column weight={1} align="center" justify="center"><Spinner size={28} color={head}/></Column>
   ) : null);
 
   return (
-    <Col flex={1} surface="surface">
+    <Column weight={1} surface="surface">
       <ChannelsList
         panRef={panRef} items={list.items}
         barLabels={barLabels} placeholder={placeholder}
@@ -148,6 +147,6 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
         menu={rowMenu} isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}
         onClose={() => { st.setRowMenu(null); }}
       />
-    </Col>
+    </Column>
   );
 }

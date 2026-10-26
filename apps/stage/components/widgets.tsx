@@ -4,7 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
 import { APP_ICONS, type AppIconName } from './appIcons';
-import { Col } from './layout';
+import { Column } from './layout';
 
 export type AppIconRef = AppIconName | CentralIcon;
 
@@ -38,7 +38,7 @@ export function WalletActionButton({ label, icon, bg, onPress }: {
   const dark = scheme === 'dark';
   const tintBg = resolveColorToken(bg, scheme);
   return (
-    <Col gap={6} align="center">
+    <Column gap={6} align="center">
       <Button
         uniform
         pill
@@ -51,7 +51,7 @@ export function WalletActionButton({ label, icon, bg, onPress }: {
         iconStart={<Glyph icon={icon} size={24} dark={dark} />}
         onPress={onPress}
       />
-      <Text value={label} size="2xs" weight="semibold" />
-    </Col>
+      <Text text={label} size="2xs" fontWeight="semibold" />
+    </Column>
   );
 }

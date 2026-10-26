@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useXmtpBootstrapPhase } from '../../lib/xmtp.state.core';
 import { usePalette } from '../../lib/theme';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function BannerFrame({ children }: { children: ReactNode }): React.ReactElement {
   return (
-    <Box margin={{ x: PAGE_GUTTER, top: 8, bottom: 4 }} padding={{ x: 12, y: 10 }} surface="raised" style={{ borderRadius: 12 }}>
+    <Column margin={{ x: PAGE_GUTTER, top: 8, bottom: 4 }} padding={{ x: 12, y: 10 }} surface="raised" style={{ borderRadius: 12 }}>
       <Row align="center" gap={10}>{children}</Row>
-    </Box>
+    </Column>
   );
 }
 
@@ -20,7 +20,7 @@ export function MessagingSetupBanner(): React.ReactElement | null {
   return (
     <BannerFrame>
       <Spinner size={16} color={text} />
-      <Col flex={1}><Text size="2xs">Setting up secure messaging on this device…</Text></Col>
+      <Column weight={1}><Text size="2xs">Setting up secure messaging on this device…</Text></Column>
     </BannerFrame>
   );
 }

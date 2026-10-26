@@ -1,11 +1,10 @@
-
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder } from 'react-native';
-import { Box, Row } from './box';
+import { Column } from './column';
+import { Row } from './row';
 import { Button } from './button';
 import { Glyph } from './glyph';
 import { Pressable } from './pressable';
-import { Spacer } from './spacer';
 import { Text } from './text';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
@@ -51,16 +50,16 @@ function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx 
         }),
       }}>
         <Glyph icon={IconArrowLeft} size={14} color={sub}/>
-        <Text size="3xs" role="secondary">
+        <Text size="3xs" color="secondary">
           Slide to cancel
         </Text>
       </Animated.View>
-      <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
+      <Row height={28} weight={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
         {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
-          <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
+          <Column width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>
-      <Text size="3xs" role="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
+      <Text size="3xs" color="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
         {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
       </Text>
     </Row>
@@ -180,7 +179,7 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
   const micView = <MicView recording={recording} fg={fg} hoverFg={head} slideX={slideX} panHandlers={panHandlers} />;
   const mic = wrapMic ? wrapMic(micView) : micView;
   return (
-    <Box>
+    <Column>
       {recording ? (
         <RecordingBar
           head={head} sub={sub} levels={levels} recordSecs={recordSecs}
@@ -195,15 +194,15 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
         ) : (
           leftControls
         )}
-        <Spacer/>
+        <Column weight={1} />
         {mic}
         {recording ? (
-          <Button size="md" pill dark={dark} tintBg={primary}
+          <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
             onPress={onCompletePress} icon={<Glyph icon={IconCheckmark1} size={20} color={bg} />} />
         ) : (
           rightAction
         )}
       </Row>
-    </Box>
+    </Column>
   );
 }

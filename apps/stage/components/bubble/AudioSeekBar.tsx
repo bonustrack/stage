@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { Box } from '../layout';
 import { seekFraction } from './audioCard.model';
+import { Column } from '../layout';
 
 const HIT_HEIGHT = 24;
 const TRACK_HEIGHT = 4;
@@ -36,9 +36,9 @@ export function AudioSeekBar({ progress, enabled, label, colors, onScrub, onSeek
   const left = progress * Math.max(0, width - THUMB_SIZE);
   return (
     <GestureDetector gesture={gesture}>
-      <Box
+      <Column
         testID="audio-seek"
-        flex={1}
+        weight={1}
         height={HIT_HEIGHT}
         justify="center"
         accessibilityRole="adjustable"
@@ -48,10 +48,10 @@ export function AudioSeekBar({ progress, enabled, label, colors, onScrub, onSeek
         onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; setWidth(e.nativeEvent.layout.width); }}
         style={enabled ? { cursor: 'pointer' } : undefined}
       >
-        <Box height={TRACK_HEIGHT} radius={TRACK_HEIGHT / 2} background={colors.track} pointerEvents="none">
-          <Box width={left + THUMB_SIZE / 2} height={TRACK_HEIGHT} radius={TRACK_HEIGHT / 2} background={colors.fill}/>
-        </Box>
-        <Box
+        <Column height={TRACK_HEIGHT} radius={TRACK_HEIGHT / 2} background={colors.track} pointerEvents="none">
+          <Column width={left + THUMB_SIZE / 2} height={TRACK_HEIGHT} radius={TRACK_HEIGHT / 2} background={colors.fill}/>
+        </Column>
+        <Column
           width={THUMB_SIZE}
           height={THUMB_SIZE}
           radius={THUMB_SIZE / 2}
@@ -63,7 +63,7 @@ export function AudioSeekBar({ progress, enabled, label, colors, onScrub, onSeek
             shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2,
           }}
         />
-      </Box>
+      </Column>
     </GestureDetector>
   );
 }

@@ -1,13 +1,12 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../lib/xmtp.client';
 import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
+import { Column, Row } from './layout';
 
 export function useSelfAddress(): string {
   const { data } = useQuery({
@@ -24,7 +23,7 @@ function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
   border: string; fg: string; dark: boolean; onPress: () => void;
 }): React.ReactElement {
   return (
-    <Col align="center" gap={6}>
+    <Column align="center" gap={6}>
       <Button
         color="primary"
         variant="solid"
@@ -37,8 +36,8 @@ function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
         iconStart={<Glyph icon={icon} size={24} color={fg} dark={dark} />}
         onPress={onPress}
       />
-      <Text value={label} weight="semibold" size="xs" color={fg} truncate />
-    </Col>
+      <Text text={label} fontWeight="semibold" size="xs" color={fg} truncate />
+    </Column>
   );
 }
 

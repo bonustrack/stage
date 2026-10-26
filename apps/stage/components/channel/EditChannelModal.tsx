@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { AvatarView } from '@stage-labs/kit/react-native/avatar-view';
+import { AvatarImage } from '../Avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { errorLine } from '@stage-labs/client/errors';
@@ -9,7 +9,6 @@ import type { GroupEditRights, GroupMetaPatch } from '@stage-labs/client/xmtp/gr
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { PictureEditor, type PictureChoice } from '../PictureEditor';
-import { Box, Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
@@ -22,6 +21,7 @@ import {
   channelChanges, channelDraftFrom, channelDraftProblem, type ChannelCurrent, type ChannelDraft,
 } from './EditChannelModal.model';
 import { hasListEdits, listEdits, type ListEdits } from '../conversation/SidebarSection.model';
+import { Column } from '../layout';
 
 const AVATAR_PX = 96;
 
@@ -95,19 +95,19 @@ function EditChannelSection({ convId, current, rights, picture, labels, onSaved 
   };
 
   return (
-    <Col gap={8}>
-      <Col gap={8}>
+    <Column gap={8}>
+      <Column gap={8}>
         <FormField label="Name" placeholder="Channel name" value={draft.name} onChangeText={(v) => { setDraft({ ...draft, name: v }); }} disabled={busy || !rights.name} />
         <FormField label="Description" placeholder="What is this channel about?" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy || !rights.description} />
         <ChannelLabelsEditor labels={labelDraft.draft} input={labelDraft.input} setInput={labelDraft.setInput} disabled={busy}
           onAdd={labelDraft.add} onRemove={labelDraft.remove} />
-      </Col>
-      {problem ?? status ? <Text value={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
-      <Box padding={{ top: 8 }}>
+      </Column>
+      {problem ?? status ? <Text text={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
+      <Column padding={{ top: 8 }}>
         <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
           disabled={busy || problem !== null} onPress={save} />
-      </Box>
-    </Col>
+      </Column>
+    </Column>
   );
 }
 
@@ -119,12 +119,12 @@ export function EditChannelModal({ visible, onClose, convId, name, description, 
   const [picture, setPicture] = useState<PictureChoice>({ kind: 'keep' });
   const close = (): void => { setPicture({ kind: 'keep' }); onClose(); };
   const removable = picture.kind === 'new' || (picture.kind === 'keep' && imageUrl.trim() !== '');
-  const avatar = <AvatarView src={channelAvatarSrc(convId, imageUrl, picture)} size={AVATAR_PX} square />;
+  const avatar = <AvatarImage src={channelAvatarSrc(convId, imageUrl, picture)} size={AVATAR_PX} square />;
   return (
     <AppModal visible={visible} onClose={close} title="Edit channel">
-      <Col align="center" padding={{ bottom: 16 }}>
+      <Column align="center" padding={{ bottom: 16 }}>
         <PictureEditor avatar={avatar} editable={rights.image} removable={removable} onChange={setPicture} />
-      </Col>
+      </Column>
       <EditChannelSection convId={convId} current={{ name, description }} rights={rights} picture={picture}
         labels={labels} onSaved={close} />
     </AppModal>

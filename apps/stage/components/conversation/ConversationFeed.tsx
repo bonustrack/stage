@@ -1,7 +1,5 @@
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { Box, Col, VirtualList } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
@@ -19,6 +17,7 @@ import { attempt } from '../../lib/errorPolicy';
 import { ChatGalleryProvider } from '../bubble/ChatGallery';
 import { useChatColumnFill } from './ConversationSidebar';
 import { RetryNotice } from '../chrome/RetryNotice';
+import { Column, VirtualList } from '../layout';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
@@ -135,7 +134,7 @@ function FeedOlderEdge({ loading, sub, hasMore, intro }: {
 }): React.ReactElement {
   return (
     <>
-      {loading ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
+      {loading ? <Column padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Column> : null}
       {!hasMore ? intro : null}
     </>
   );
@@ -209,10 +208,10 @@ function FeedPending({ failed, slow, color, style, onRetry }: {
   failed: boolean; slow: boolean; color: string; style: ReturnType<typeof useChatColumnFill>; onRetry: () => void;
 }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" style={style}>
+    <Column weight={1} align="center" justify="center" style={style}>
       {failed ? <RetryNotice message="Could not load messages." onRetry={onRetry} />
         : slow ? <Spinner size={28} color={color} /> : null}
-    </Col>
+    </Column>
   );
 }
 
@@ -234,7 +233,7 @@ export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   const loaderFill = useChatColumnFill(bottomInset);
 
   if (searchSlot !== undefined) {
-    return <Box flex={1} padding={{ top: topPad }}>{searchSlot}</Box>;
+    return <Column weight={1} padding={{ top: topPad }}>{searchSlot}</Column>;
   }
 
   if (empty) {

@@ -1,8 +1,5 @@
-
 import { useCallback, useState } from 'react';
-
 import { Animated as RNAnimated } from 'react-native';
-import { Col, RIGHT_PANE_PAD } from '../../components/layout';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
@@ -21,6 +18,7 @@ import {
   ChatColumnSpinner, ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
 import { PeerTopnav } from '../../components/conversation/PeerTopnav';
+import { Column, RIGHT_PANE_PAD } from '../../components/layout';
 
 function UnresolvedConversation({ resolved, peer }: {
   resolved: ReturnType<typeof useResolvedConvId>; peer?: string;
@@ -42,9 +40,9 @@ function UnresolvedConversation({ resolved, peer }: {
     <>
       <PeerTopnav peer={peer}/>
       {resolved.resolving ? <ChatColumnSpinner bottomInset={0}/> : (
-        <Col surface="surface" flex={1} align="center" justify="center" style={fill}>
+        <Column surface="surface" weight={1} align="center" justify="center" style={fill}>
           <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
-        </Col>
+        </Column>
       )}
       {memberList ? <ConversationSidebar/> : null}
     </>

@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { Box, Col } from '../layout';
 import { RailTooltip } from '../tabs/RailTooltip';
 import { pageTopPadding } from '../chrome/PageIntro.model';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -18,6 +17,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
 import { UsernameField, useUsernameInput } from '../UsernameField';
 import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
+import { Column } from '../layout';
 
 export interface OnboardingProps {
   onDone: () => void;
@@ -31,7 +31,7 @@ function UsernameStep({ dark, busy, onContinue }: {
   const router = useRouter();
   const input = useUsernameInput();
   const footer = (
-    <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
+    <Button variant="primary" dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
       label="Continue" disabled={busy || !usernameReady(input.state, input.label)}
       onPress={() => { onContinue(input.label); }} />
   );
@@ -54,7 +54,7 @@ function StepIcon({ label, icon, side, onPress, top, color, disabled }: {
   return (
     <RailTooltip label={label} placement="below" onPress={() => { if (!disabled) onPress(); }}
       style={{ position: 'absolute', top, ...edge, zIndex: 1, opacity: disabled ? 0.5 : 1 }}>
-      <Box padding={4}><Glyph icon={icon} size={24} color={color} /></Box>
+      <Column padding={4}><Glyph icon={icon} size={24} color={color} /></Column>
     </RailTooltip>
   );
 }
@@ -88,7 +88,7 @@ const KEPT_STEPS = new Set(['username', 'profile']);
 
 function KeptStep({ f, own, children }: { f: Flow; own: 'username' | 'profile'; children: React.ReactNode }): React.ReactElement | null {
   if (!KEPT_STEPS.has(f.step)) return null;
-  return <Col width="100%" align="center" style={{ display: f.step === own ? 'flex' : 'none' }}>{children}</Col>;
+  return <Column width="100%" align="center" style={{ display: f.step === own ? 'flex' : 'none' }}>{children}</Column>;
 }
 
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
@@ -99,7 +99,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const f = useOnboardingFlow(onDone);
 
   return (
-    <Col surface="surface" flex={1} align="center" justify="start" padding={{ top: pageTopPadding(height) + insets.top, bottom: 24 + insets.bottom }}>
+    <Column surface="surface" weight={1} align="center" justify="start" padding={{ top: pageTopPadding(height) + insets.top, bottom: 24 + insets.bottom }}>
       <StepChrome f={f} top={STEP_ICON_INSET + insets.top} color={pal.link} />
       <KeptStep f={f} own="username"><UsernameStep dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} /></KeptStep>
       <KeptStep f={f} own="profile"><ProfileStep dark={dark} busy={f.busy} onContinue={f.onProfileContinue} /></KeptStep>
@@ -113,7 +113,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           onRetry={f.onSetupRetry} onBack={f.onSetupBack} onEdit={f.onSetupEdit} history={f.history}
         />
       ) : null}
-    </Col>
+    </Column>
   );
 }
 

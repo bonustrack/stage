@@ -10,10 +10,10 @@ import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { makePublicClient } from '../../lib/zerodev/client';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
-import { Col, Row } from '../layout';
 import { AppIcon } from '../widgets';
 import { SettingsGroup, SettingsPage } from './SettingsPage';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { Column, Row } from '../layout';
 
 interface WalletModel {
   rec: AccountRecord;
@@ -66,10 +66,10 @@ function WalletInfoRow({ label, value }: {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
-      <Col flex={1}>
-        <Text value={label} size="xs" color="secondary" />
-      </Col>
-      <Text value={value} size="xs" color="text" />
+      <Column weight={1}>
+        <Text text={label} size="xs" color="secondary" />
+      </Column>
+      <Text text={value} size="xs" color="text" />
     </ListViewItem>
   );
 }
@@ -82,10 +82,10 @@ function WalletCopyRow({ label, value, onCopy }: {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
-      <Col flex={1} gap={4}>
-        <Text value={label} size="3xs" color="secondary" />
-        <Text value={value} size="xs" color="text" />
-      </Col>
+      <Column weight={1} gap={4}>
+        <Text text={label} size="3xs" color="secondary" />
+        <Text text={value} size="xs" color="text" />
+      </Column>
       <AppIcon name={IconSquareBehindSquare1} color="link" size={16} />
     </ListViewItem>
   );
@@ -95,13 +95,13 @@ function WalletValidatorRow(): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="start" gap={12} dark={dark}>
-      <Col flex={1} gap={3}>
+      <Column weight={1} gap={3}>
         <Row align="center" gap={8}>
-          <Text value="ECDSA owner key" size="xs" color="text" />
+          <Text text="ECDSA owner key" size="xs" color="text" />
           <Badge label="SUDO" color="success" pill={false} />
         </Row>
-        <Text value="Main key (recovery phrase)" size="3xs" color="secondary" />
-      </Col>
+        <Text text="Main key (recovery phrase)" size="3xs" color="secondary" />
+      </Column>
     </ListViewItem>
   );
 }

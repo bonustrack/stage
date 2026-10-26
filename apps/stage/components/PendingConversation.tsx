@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -10,13 +9,13 @@ import { usePalette } from '../lib/theme';
 import { capabilities } from '../lib/capabilities';
 import { getActiveAccountIdSync } from '../lib/channelsCache';
 import { lineOfDmPeer } from '@stage-labs/client/xmtp/line';
-import { Col } from './layout';
 import { MessengerBubble } from './bubble/MessengerBubble';
 import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { PeerTopnav } from './conversation/PeerTopnav';
 import { ChatColumn, ComposerDock } from './conversation/FooterDock';
 import { peerLabel } from './conversation/convTitle';
+import { Column } from './layout';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -96,10 +95,10 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
   const { editor } = usePendingComposer(onSubmit);
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <PeerTopnav peer={address}/>
       <ChatColumn>
-        <Col flex={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
+        <Column weight={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
           {queued.map(item => (
             <MessengerBubble
               key={item.id}
@@ -113,7 +112,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
           <Text size="2xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
             {pendingBanner(reason, peerName)}
           </Text>
-        </Col>
+        </Column>
       </ChatColumn>
       <ComposerDock>
         <ComposerEditor
@@ -121,6 +120,6 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
           {...editor}
         />
       </ComposerDock>
-    </Col>
+    </Column>
   );
 }

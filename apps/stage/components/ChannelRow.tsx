@@ -1,5 +1,4 @@
 import { memo } from 'react';
-
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -7,7 +6,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Avatar } from './Avatar';
-import { Row, Col, Box, PAGE_GUTTER } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -19,6 +17,7 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 import { titleTone } from './TitleText';
 import { UnreadBadge } from './UnreadBadge';
 import type { BubbleLinkProps } from './bubble/helpers';
+import { Column, Row, PAGE_GUTTER } from './layout';
 
 interface ChannelRowProps {
   title: string;
@@ -85,9 +84,9 @@ function WrappedTitle({ texts, pinned, scheme }: {
   texts: React.ReactNode; pinned: boolean; scheme: Scheme;
 }): React.ReactElement {
   return (
-    <Box flex={1} minWidth={0}>
-      <Text size="md" weight="medium" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
-        {pinned ? <Box width={PIN_ICON_SIZE + PIN_GAP} height={1} /> : null}
+    <Column weight={1} minWidth={0}>
+      <Text size="md" fontWeight="medium" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
+        {pinned ? <Column width={PIN_ICON_SIZE + PIN_GAP} height={1} /> : null}
         {texts}
       </Text>
       {pinned ? (
@@ -95,7 +94,7 @@ function WrappedTitle({ texts, pinned, scheme }: {
           <PinGlyph scheme={scheme} />
         </Row>
       ) : null}
-    </Box>
+    </Column>
   );
 }
 
@@ -108,9 +107,9 @@ function TitleLine({ params, scheme, wrap }: {
   const texts = segments.map((seg, i) => (
     <Text
       key={`${seg.text}-${i}`}
-      value={seg.text}
+      text={seg.text}
       size="md"
-      weight="medium"
+      fontWeight="medium"
       truncate={!wrap}
       {...titleTone(params.placeholderTitle)}
       style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
@@ -118,7 +117,7 @@ function TitleLine({ params, scheme, wrap }: {
   ));
   if (wrap) return <WrappedTitle texts={texts} pinned={params.pinned === true} scheme={scheme} />;
   return (
-    <Row align="center" gap={PIN_GAP} flex={1} height={TITLE_LINE_HEIGHT}>
+    <Row align="center" gap={PIN_GAP} weight={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true ? (
         <Row align="center" height={TITLE_LINE_HEIGHT} style={{ flexShrink: 0 }}>
           <PinGlyph scheme={scheme} />
@@ -137,7 +136,7 @@ function TitleRow({ params, scheme, wrap, trailing }: {
       <TitleLine params={params} scheme={scheme} wrap={wrap} />
       {params.timestamp === '' ? null : (
         <Row align="center" height={titleLineHeight(wrap)}>
-          <Text value={params.timestamp} size={params.timestampSize} color="secondary" />
+          <Text text={params.timestamp} size={params.timestampSize} color="secondary" />
         </Row>
       )}
       {trailing}
@@ -149,12 +148,12 @@ function PreviewParagraph({ params, hasPrefix, lines = 2 }: {
   params: ChannelRowParams; hasPrefix: boolean; lines?: number;
 }): React.ReactElement {
   return (
-    <Box flex={1} minWidth={0}>
-      <Text size="xs" role="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
-        {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="xs" color="danger" /> : null}
+    <Column weight={1} minWidth={0}>
+      <Text size="xs" color="secondary" maxLines={lines} style={{ lineHeight: PREVIEW_LINE_HEIGHT }}>
+        {hasPrefix ? <Text text={`${params.previewPrefix ?? ''} `} size="xs" color="danger" /> : null}
         {params.preview}
       </Text>
-    </Box>
+    </Column>
   );
 }
 
@@ -164,7 +163,7 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
   const scheme = useKitScheme();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
-    <Col gap={LINE_GAP} flex={1}>
+    <Column gap={LINE_GAP} weight={1}>
       <TitleRow params={params} scheme={scheme} wrap={wrapTitle} trailing={params.showPreview ? null : trailing} />
       {params.showPreview ? (
         <Row align="start" gap={12}>
@@ -172,7 +171,7 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
           {trailing}
         </Row>
       ) : null}
-    </Col>
+    </Column>
   );
 }
 
@@ -219,7 +218,7 @@ function ChannelRowBase({
             style={{ backgroundColor: border }}
           />
         )}
-        <Col minWidth={0} flex={1}>
+        <Column minWidth={0} weight={1}>
           <ChannelRowBody
             params={params}
             wrapTitle={wrapTitle}
@@ -229,7 +228,7 @@ function ChannelRowBase({
             )}
           />
           {fields}
-        </Col>
+        </Column>
         {accessory}
       </Row>
     </Pressable>

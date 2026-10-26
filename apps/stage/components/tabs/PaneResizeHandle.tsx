@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ViewStyle } from 'react-native';
-import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { PaneWidth } from './paneWidth';
+import { Column } from '../layout';
 
 const DOUBLE_TAP_MS = 300;
 const TAP_SLOP_PX = 3;
@@ -50,7 +50,7 @@ function isTap(drag: Drag, x: number, y: number): boolean {
 function EdgeBar({ edge, visible }: { edge: Edge; visible: boolean }): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Box
+    <Column
       pointerEvents="none"
       width={BAR_WIDTH}
       background={visible ? border : undefined}
@@ -106,7 +106,7 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
   };
 
   return (
-    <Box
+    <Column
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -117,6 +117,6 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
       style={HANDLE_STYLES[edge]}
     >
       <EdgeBar edge={edge} visible={hovered || dragging}/>
-    </Box>
+    </Column>
   );
 }

@@ -15,9 +15,9 @@ describe('Badge', () => {
     expect(renderToStaticMarkup(<Badge label="New" pill={false} />)).toContain('border-top-left-radius:8px');
   });
 
-  test('takes a custom fill, text colour, text size, weight and style', () => {
+  test('takes a custom fill, text colour, text size, font weight and style', () => {
     const html = renderToStaticMarkup(
-      <Badge label="Label" color="#111111" background="#eeeeee" textSize="xs" weight="normal" style={{ height: 26, paddingLeft: 9 }} />,
+      <Badge label="Label" color="#111111" background="#eeeeee" textSize="xs" fontWeight="normal" style={{ height: 26, paddingLeft: 9 }} />,
     );
     expect(html).toContain('background-color:rgba(238,238,238,1.00)');
     expect(html).toContain('color:rgba(17,17,17,1.00)');
@@ -36,8 +36,8 @@ describe('Badge', () => {
     expect(renderToStaticMarkup(<Badge label="New" />)).toContain(`font-size:${FONT_SIZE['3xs']}px`);
     expect(renderToStaticMarkup(<Badge label="New" size="md" />)).toContain('font-size:15px');
     const html = renderToStaticMarkup(
-      <Badge label="Label" size="lg" weight="normal" color="#111111" background="#eeeeee">
-        {(text) => <Text value="Custom" {...text} />}
+      <Badge label="Label" size="lg" fontWeight="normal" color="#111111" background="#eeeeee">
+        {(text) => <Text text="Custom" {...text} />}
       </Badge>,
     );
     expect(html).toContain('>Custom<');

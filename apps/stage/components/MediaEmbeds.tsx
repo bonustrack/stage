@@ -1,13 +1,11 @@
-
 import { useMemo } from 'react';
-
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { colors } from '@stage-labs/kit/tokens';
-import { Box, Row } from './layout';
 import { MediaCard } from './MediaCard';
 import { googleMapsUrl, osmTileGrid, type MapView } from '@stage-labs/client/embed/detect';
 import { usePalette, withAlpha } from '../lib/theme';
+import { Column, Row } from './layout';
 
 const LETTERBOX_CROP = 4 / 3;
 
@@ -17,23 +15,23 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
   const { bg } = usePalette();
   return (
     <MediaCard url={watchUrl}>
-      <Box flex={1} style={{ position: 'relative', overflow: 'hidden' }}>
+      <Column weight={1} style={{ position: 'relative', overflow: 'hidden' }}>
         <Image
-          src={thumbUrl}
+          url={thumbUrl}
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: bg, transform: [{ scale: LETTERBOX_CROP }] }}
 />
-        <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
-          <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
+        <Column background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+          <Column width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
             <Text size="2xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
-          </Box>
-        </Box>
-      </Box>
-      <Box padding={{ x: 10, y: 6 }}>
-        <Text role="secondary" size="3xs">
+          </Column>
+        </Column>
+      </Column>
+      <Column padding={{ x: 10, y: 6 }}>
+        <Text color="secondary" size="3xs">
           YouTube
         </Text>
-      </Box>
+      </Column>
     </MediaCard>
   );
 }
@@ -54,7 +52,7 @@ function MapPin({ size }: { size: number }): React.ReactElement {
   const dot = Math.round(size * 0.36);
   return (
     <>
-      <Box
+      <Column
         width={size} height={size} background={colors['head-light']}
         style={{
           position: 'absolute', left: '50%', top: '50%',
@@ -63,7 +61,7 @@ function MapPin({ size }: { size: number }): React.ReactElement {
           transform: [{ translateX: -size / 2 }, { translateY: -size / 2 - lift }, { rotate: '45deg' }],
         }}
       />
-      <Box
+      <Column
         width={dot} height={dot} radius="full" background={colors['bg-light']}
         style={{
           position: 'absolute', left: '50%', top: '50%',
@@ -76,12 +74,12 @@ function MapPin({ size }: { size: number }): React.ReactElement {
 
 function MapAttribution(): React.ReactElement {
   return (
-    <Box
+    <Column
       padding={{ x: 4 }} background={withAlpha(colors['bg-light'], 0.75)}
       style={{ position: 'absolute', right: 0, bottom: 0, borderTopLeftRadius: 4 }}
     >
       <Text color={colors['fg-light']} size="3xs">© OpenStreetMap</Text>
-    </Box>
+    </Column>
   );
 }
 
@@ -92,10 +90,10 @@ export function LocationTile({ lat, lng, size }: {
   const view = MAP_VIEWS[size];
   const tiles = useMemo(() => osmTileGrid(lat, lng, view), [lat, lng, view]);
   return (
-    <Box width="100%" aspectRatio={view.width / view.height} background={tileBg} style={{ position: 'relative', overflow: 'hidden' }}>
+    <Column width="100%" aspectRatio={view.width / view.height} background={tileBg} style={{ position: 'relative', overflow: 'hidden' }}>
       {tiles.map(tile => (
         <Image
-          key={tile.url} src={tile.url} headers={TILE_HEADERS} fit="fill"
+          key={tile.url} url={tile.url} headers={TILE_HEADERS} fit="fill"
           style={{
             position: 'absolute', left: `${tile.left}%`, top: `${tile.top}%`,
             width: `${tile.width}%`, height: `${tile.height}%`,
@@ -103,7 +101,7 @@ export function LocationTile({ lat, lng, size }: {
         />
       ))}
       <MapPin size={PIN_SIZE[size]}/>
-    </Box>
+    </Column>
   );
 }
 
@@ -112,15 +110,15 @@ export function LocationEmbed({ lat, lng, dark }: {
 }): React.ReactElement {
   return (
     <MediaCard url={googleMapsUrl(lat, lng)}>
-      <Box flex={1} justify="center" style={{ overflow: 'hidden' }}>
+      <Column weight={1} justify="center" style={{ overflow: 'hidden' }}>
         <LocationTile lat={lat} lng={lng} size="lg"/>
         <MapAttribution/>
-      </Box>
-      <Row padding={{ x: 10, y: 8 }} align="center" justify="between" gap={8}>
-        <Text weight="semibold" size="3xs" color={dark ? '#ffffff' : '#000000'}>
+      </Column>
+      <Row padding={{ x: 10, y: 8 }} align="center" justify="spaceBetween" gap={8}>
+        <Text fontWeight="semibold" size="3xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
-        <Text role="secondary" numberOfLines={1} size="3xs">
+        <Text color="secondary" numberOfLines={1} size="3xs">
           Open in Google Maps
         </Text>
       </Row>

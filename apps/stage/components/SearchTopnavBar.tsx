@@ -1,24 +1,23 @@
-
 import { Fragment, forwardRef, useRef, useState } from 'react';
 import type { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Input, SEARCH_INPUT_PROPS, type InputProps } from '@stage-labs/kit/react-native/input';
-import { Box, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { FORM_FIELD_HEIGHT, FormField } from './FormField';
 import { HoverTooltip } from './HoverTooltip';
 import { HoverIconButton } from './hover';
+import { TextField, SEARCH_INPUT_PROPS, type TextFieldProps } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 
 const BAR_GAP = 10;
 const FIELD_GAP = 4;
 export const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
-  return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
+  return <Column style={STICKY_UNDER_CHROME}>{children}</Column>;
 }
 
 function SearchMagnifier({ persistent, color, onOpen, focus }: {
@@ -54,7 +53,7 @@ function fieldActions(query: string, clear: () => void, sub: string, action: Rea
   };
 }
 
-function useSearchFocus(head: string, sub: string, inputProps: InputProps['inputProps']): { color: string; handlers: InputProps['inputProps'] } {
+function useSearchFocus(head: string, sub: string, inputProps: TextFieldProps['inputProps']): { color: string; handlers: TextFieldProps['inputProps'] } {
   const [focused, setFocused] = useState(false);
   return {
     color: focused ? head : sub,
@@ -65,7 +64,7 @@ function useSearchFocus(head: string, sub: string, inputProps: InputProps['input
   };
 }
 
-export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
+export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof TextField>, {
   query: string;
   setQuery: (v: string) => void;
   onClose: () => void;
@@ -81,12 +80,12 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   autoFocus?: boolean;
   trailing?: React.ReactNode;
   fieldAction?: React.ReactNode;
-  inputProps?: InputProps['inputProps'];
+  inputProps?: TextFieldProps['inputProps'];
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const focus = useSearchFocus(head, sub, props.inputProps);
-  const input = useRef<React.ComponentRef<typeof Input>>(null);
-  const inputRef = (node: React.ComponentRef<typeof Input> | null): void => {
+  const input = useRef<React.ComponentRef<typeof TextField>>(null);
+  const inputRef = (node: React.ComponentRef<typeof TextField> | null): void => {
     input.current = node;
     if (typeof ref === 'function') ref(node);
     else if (ref !== null) ref.current = node;
@@ -101,7 +100,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       props.onClose();
     } else props.inputProps?.onKeyPress?.(event);
   };
-  const inputProps: InputProps['inputProps'] = {
+  const inputProps: TextFieldProps['inputProps'] = {
     autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search', ...props.inputProps, ...SEARCH_INPUT_PROPS, onKeyPress,
     ...focus.handlers,
   };
@@ -109,7 +108,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
     return (
       <Frame>
         <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, bottom: FIELD_GAP }} surface="toolbar" align="center">
-          <Box flex={1}>
+          <Column weight={1}>
             <FormField
               inputRef={inputRef}
               autoFocus={props.autoFocus ?? false}
@@ -120,7 +119,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
               </HoverTooltip>}
               {...fieldActions(props.query, clear, sub, props.fieldAction)}
             />
-          </Box>
+          </Column>
         </Row>
       </Frame>
     );
@@ -133,7 +132,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       align="center" gap={BAR_GAP} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <SearchMagnifier persistent={props.persistent} color={focus.color} onOpen={props.onOpen} focus={() => { input.current?.focus(); }}/>
-      <Input
+      <TextField
         ref={inputRef}
         autoFocus={props.autoFocus ?? true}
         value={props.query}

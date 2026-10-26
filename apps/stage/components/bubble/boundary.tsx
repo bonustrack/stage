@@ -2,8 +2,8 @@ import { Component } from 'react';
 import type { ReactNode } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, PAGE_GUTTER } from '../layout';
 import { bubbleFallbackText, bubbleFallbackShape } from './boundary.model';
+import { Column, PAGE_GUTTER } from '../layout';
 
 interface ResetBoundaryProps {
   resetKey: unknown;
@@ -57,11 +57,11 @@ export function BubbleErrorBoundary({ children, sub: fallbackColor, entry }: {
         );
       }}
       fallback={() => (
-        <Box padding={{ x: PAGE_GUTTER, y: 6 }}>
+        <Column padding={{ x: PAGE_GUTTER, y: 6 }}>
           <Text size="sm" selectable color={fallbackColor} style={{ opacity: 0.85, lineHeight: 21 }}>
             {fallbackText(entry)}
           </Text>
-        </Box>
+        </Column>
       )}
     >
       {children}

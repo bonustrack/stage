@@ -8,7 +8,6 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { DashboardWidget } from '@stage-labs/client/xmtp/readState';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from '../dragLift';
-import { Box, PAGE_GUTTER } from '../layout';
 import { changeDashboard } from '../../lib/dashboard';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
@@ -17,6 +16,7 @@ import {
 } from './dashboard.model';
 import { WidgetCard, WidgetMenu } from './WidgetCard';
 import type { WidgetGrip } from './widgetParts';
+import { Column, PAGE_GUTTER } from '../layout';
 
 const SHIFT_MS = 160;
 const INSET = DASHBOARD_GAP / 2;
@@ -154,14 +154,14 @@ function DashboardCell({ widget, index, rect, rects, drag, drops, onDrop, onMenu
   const { gesture, holdNode } = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
   const styles = useCellStyles(index, drag, position, bg);
   const grip = useCallback<WidgetGrip>((handle) => (
-    <GestureDetector gesture={gesture}><Box>{handle}</Box></GestureDetector>
+    <GestureDetector gesture={gesture}><Column>{handle}</Column></GestureDetector>
   ), [gesture]);
   return (
     <Animated.View ref={holdNode} style={[{ position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT }, styles.cell]}>
-      <Box flex={1}>
+      <Column weight={1}>
         <WidgetCard widget={widget} onMenu={openMenu} grip={grip} />
         <Animated.View style={[RING, { borderColor: link }, styles.ring]} />
-      </Box>
+      </Column>
     </Animated.View>
   );
 }
@@ -183,7 +183,7 @@ export function DashboardGrid({ widgets }: { widgets: DashboardWidget[] }): Reac
   const measure = (event: LayoutChangeEvent): void => { setWidth(event.nativeEvent.layout.width); };
   const menuWidget = menu === null ? undefined : widgets.find(widget => widget.id === menu.id);
   return (
-    <Box margin={{ x: PAGE_GUTTER - INSET, top: PAGE_GUTTER - INSET }} height={layout.rows * DASHBOARD_ROW} onLayout={measure}>
+    <Column margin={{ x: PAGE_GUTTER - INSET, top: PAGE_GUTTER - INSET }} height={layout.rows * DASHBOARD_ROW} onLayout={measure}>
       {width === 0 ? null : widgets.map((widget, index) => {
         const rect = rects[index];
         return rect === undefined ? null : (
@@ -194,6 +194,6 @@ export function DashboardGrid({ widgets }: { widgets: DashboardWidget[] }): Reac
       {menu === null || menuWidget === undefined ? null : (
         <WidgetMenu widget={menuWidget} anchor={menu.anchor} onClose={() => { setMenu(null); }} />
       )}
-    </Box>
+    </Column>
   );
 }

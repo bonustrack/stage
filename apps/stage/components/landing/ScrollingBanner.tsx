@@ -5,12 +5,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../layout';
 import { BANNER, HERO_BLACK, HERO_WHITE } from './Landing.model';
+import { Column, Row } from '../layout';
 
 function BannerCopy({ onWidth }: { onWidth?: (width: number) => void }): React.ReactElement {
   return (
-    <Box
+    <Column
       padding={{ y: BANNER.padY, right: BANNER.padRight }}
       onLayout={onWidth ? (e) => { onWidth(e.nativeEvent.layout.width); } : undefined}
     >
@@ -21,7 +21,7 @@ function BannerCopy({ onWidth }: { onWidth?: (width: number) => void }): React.R
         </Text>
         {BANNER.tail}
       </Text>
-    </Box>
+    </Column>
   );
 }
 
@@ -64,7 +64,7 @@ export function ScrollingBanner(): React.ReactElement {
   const marquee = useMarquee(copyWidth);
   return (
     <Pressable onHoverIn={marquee.pause} onHoverOut={marquee.resume} accessibilityRole="none">
-      <Box background={HERO_BLACK} style={{ overflow: 'hidden' }}>
+      <Column background={HERO_BLACK} style={{ overflow: 'hidden' }}>
         <Animated.View style={[{ alignSelf: 'flex-start' }, marquee.style]}>
           <Row>
             {Array.from({ length: copies }, (_, i) => (
@@ -72,7 +72,7 @@ export function ScrollingBanner(): React.ReactElement {
             ))}
           </Row>
         </Animated.View>
-      </Box>
+      </Column>
     </Pressable>
   );
 }

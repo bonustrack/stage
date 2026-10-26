@@ -142,6 +142,8 @@ export type ColorToken =
   | 'success'
   | 'border';
 
+export const COLOR_TOKENS: readonly ColorToken[] = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border'];
+
 const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   text: 'textColor',
   secondary: 'subColor',
@@ -159,6 +161,21 @@ export function isColorToken(c: string): c is ColorToken {
 
 export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
   return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
+}
+
+const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
+  text: 'text',
+  secondary: 'sub',
+  muted: 'sub',
+  link: 'link',
+  primary: 'primary',
+  danger: 'danger',
+  success: 'success',
+  border: 'border',
+};
+
+export function resolvePaletteColor(c: string, palette: KitPalette): string {
+  return isColorToken(c) ? palette[PALETTE_TOKEN_MAP[c]] : c;
 }
 
 export interface SchemePalette {

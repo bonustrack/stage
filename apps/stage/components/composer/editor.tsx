@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Platform, type GestureResponderEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -12,7 +11,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { dictationLabel, type DictationPhase } from './dictation.model';
 import type { makeDictationPress } from './dictation.press';
-import { Box, Col, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 import { AnchoredMenu, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
@@ -25,11 +23,11 @@ import { IconMapPin } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
-
 const COMPOSER_ICON_INSET = 7;
 import { usePalette } from '../../lib/theme';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
+import { Column, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 
 interface EditorProps {
   dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
@@ -94,14 +92,14 @@ function makeWebEnterToSend(
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
-    <Box style={{ position: 'relative' }}>
+    <Column style={{ position: 'relative' }}>
       <TextField
         name="composer"
         value={p.text}
         onKeyPress={makeWebEnterToSend(p)}
         placeholder={p.placeholder ?? 'Message'}
-        variant="plain"
-        multiline
+        appearance="plain"
+        variant="longText"
         autoGrow
         fontSize={fontSize('lg')}
         fontFamily="Calibre-Medium"
@@ -123,7 +121,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         onChangeText={(text) => { p.setText(text); }}
         onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
       />
-    </Box>
+    </Column>
   );
 }
 
@@ -160,7 +158,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button size="md" uniform pill dark={dark} tintBg={primary} loading={p.busy}
+    <Button variant="primary" size="md" uniform pill dark={dark} tintBg={primary} loading={p.busy}
       disabled={p.dictation !== undefined && p.dictation.phase !== 'idle'}
       onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
   );
@@ -192,7 +190,7 @@ export function composerRadius(rounded: boolean | undefined): 'sm' | 'none' {
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Col {...SCROLLBAR_ON_HOVER} padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
+    <Column {...SCROLLBAR_ON_HOVER} padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
       {p.dictation && p.dictation.phase !== 'idle' ? (
         <Text size="3xs" color={p.sub} accessibilityLiveRegion="polite" style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
           {dictationLabel(p.dictation.phase)}
@@ -213,7 +211,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         onCancel={p.onCancelRec}
         onComplete={p.onStopRec}
       />
-    </Col>
+    </Column>
   );
 }
 

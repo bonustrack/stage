@@ -2,16 +2,12 @@ import type { ReactNode } from 'react';
 import { Platform } from 'react-native';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Card } from '@stage-labs/kit/react-native/card';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Switch } from '@stage-labs/kit/react-native/switch';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
-import { Box, Col, Row, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
@@ -19,6 +15,9 @@ import type { AppIconName } from '../appIcons';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { CheckBox } from '@stage-labs/kit/react-native/check-box';
+import { Column, Row, ScreenScroll, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 14 };
 
@@ -50,11 +49,11 @@ export function SettingsNavRow(props: {
       {props.iconStart === undefined ? null : (
         <AppIcon name={props.iconStart} color="link" size={24} />
       )}
-      <Col flex={1}>
-        <Text value={props.label} size="xs" color="link" truncate />
-      </Col>
+      <Column weight={1}>
+        <Text text={props.label} size="xs" color="link" truncate />
+      </Column>
       {props.value === undefined ? null : (
-        <Text value={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
+        <Text text={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       )}
       <AppIcon name={props.iconEnd ?? IconChevronRight} color="secondary" size={24} />
     </SettingsItem>
@@ -72,13 +71,13 @@ export function SettingsToggleRow(props: {
   const dark = useKitScheme() === 'dark';
   return (
     <SettingsItem>
-      <Col gap={2} flex={1}>
-        <Text value={props.label} size="xs" color="link" />
+      <Column gap={2} weight={1}>
+        <Text text={props.label} size="xs" color="link" />
         {props.description === undefined ? null : (
-          <Caption value={props.description} color="secondary" />
+          <Text size="md" variant="caption" text={props.description} color="secondary" />
         )}
-      </Col>
-      <Switch name={props.name} checked={props.checked} disabled={props.disabled} dark={dark} onChange={props.onChange} />
+      </Column>
+      <CheckBox displayStyle="switch" name={props.name} value={props.checked} disabled={props.disabled} dark={dark} onChange={props.onChange} />
     </SettingsItem>
   );
 }
@@ -90,10 +89,10 @@ export function SettingsValueRow(props: {
 }): React.ReactElement {
   return (
     <SettingsItem onPress={props.onPress}>
-      <Col flex={1}>
-        <Text value={props.label} size="xs" color="link" />
-      </Col>
-      <Text value={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
+      <Column weight={1}>
+        <Text text={props.label} size="xs" color="link" />
+      </Column>
+      <Text text={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       {props.onPress === undefined ? null : (
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       )}
@@ -114,12 +113,12 @@ export function SettingsButtonRow(props: {
       {props.iconStart === undefined ? null : (
         <AppIcon name={props.iconStart} color={tone} size={24} />
       )}
-      <Col gap={2} flex={1}>
-        <Text value={props.label} size="xs" color={tone} />
+      <Column gap={2} weight={1}>
+        <Text text={props.label} size="xs" color={tone} />
         {props.description === undefined ? null : (
-          <Caption value={props.description} color="secondary" />
+          <Text size="md" variant="caption" text={props.description} color="secondary" />
         )}
-      </Col>
+      </Column>
     </SettingsItem>
   );
 }
@@ -139,9 +138,9 @@ export function SettingsThemeRow(props: {
   return (
     <SettingsItem onPress={props.onPress}>
       <AppIcon name={props.iconName} color="link" size={24} />
-      <Col flex={1}>
-        <Text value={props.label} size="xs" color="link" truncate />
-      </Col>
+      <Column weight={1}>
+        <Text text={props.label} size="xs" color="link" truncate />
+      </Column>
       {props.selected ? <AppIcon name={IconCheckmark1} color="link" size={24} /> : null}
     </SettingsItem>
   );
@@ -158,9 +157,9 @@ export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, bac
   children: ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const actions = trailing === undefined ? undefined : <Row flex={1} justify="end">{trailing}</Row>;
+  const actions = trailing === undefined ? undefined : <Row weight={1} justify="end">{trailing}</Row>;
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       {root ? (Platform.OS === 'web' ? <StackHeader title={title}/> : null) : <StackHeader title={title} backTo={backTo} back={back} trailing={actions} />}
       <ScreenScroll
         simultaneousHandlers={panRef}
@@ -169,7 +168,7 @@ export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, bac
       >
         {children}
       </ScreenScroll>
-    </Col>
+    </Column>
   );
 }
 
@@ -186,11 +185,11 @@ function SettingsCard({ children }: { children: ReactNode }): React.ReactElement
   const dark = useEffectiveColorScheme() === 'dark';
   const { border } = usePalette();
   return (
-    <Box margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
+    <Column margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
       <Card dark={dark} background={border} padding={0}>
         {children}
       </Card>
-    </Box>
+    </Column>
   );
 }
 
@@ -200,14 +199,14 @@ export function SettingsGroup({ title, footnote, children }: {
   children: ReactNode;
 }): React.ReactElement {
   return (
-    <Col>
-      {title === undefined ? <Box height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
+    <Column>
+      {title === undefined ? <Column height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
       <SettingsCard>
         <SettingsList>{children}</SettingsList>
       </SettingsCard>
       {footnote === undefined ? null : (
-        <Caption value={footnote} color="secondary" style={{ paddingHorizontal: PAGE_GUTTER + 16, paddingTop: 8 }} />
+        <Text size="md" variant="caption" text={footnote} color="secondary" style={{ paddingHorizontal: PAGE_GUTTER + 16, paddingTop: 8 }} />
       )}
-    </Col>
+    </Column>
   );
 }

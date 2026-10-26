@@ -45,7 +45,7 @@ function BackButton({ onBack, backTo, backColor }: {
 
 function HeaderTitle({ title, wallet, color }: { title: string; wallet: boolean; color: string }): React.ReactElement | null {
   if (title === '') return null;
-  if (wallet) return <Text value={title} size="sm" weight="semibold" color={color} />;
+  if (wallet) return <Text text={title} size="sm" fontWeight="semibold" color={color} />;
   return <Title size="sm" color={color} style={TITLE_SHRINK}>{title}</Title>;
 }
 
@@ -66,7 +66,7 @@ export function StackHeader({ title, trailing, backTo, onBack, inline, bordered 
   return (
       <Row
         align="center"
-        justify={title === '' ? 'between' : undefined}
+        justify={title === '' ? 'spaceBetween' : undefined}
         gap={8}
         minHeight={wallet ? undefined : TOPNAV_HEIGHT + top}
         background={surface}

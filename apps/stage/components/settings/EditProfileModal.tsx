@@ -6,12 +6,12 @@ import { Avatar } from '../Avatar';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { PictureEditor, type PictureChoice } from '../PictureEditor';
-import { Box, Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerAvatar, getPeerDescription, getPeerDisplayName, invalidatePeerProfile } from '../../lib/peerProfiles';
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profile';
 import { changedFields, draftFrom, draftProblem, hasChanges, type ProfileDraft } from './ProfileSettings.edit.model';
+import { Column } from '../layout';
 
 function pictureChanges(picture: PictureChoice): Pick<ProfileChanges, 'image' | 'removeImage'> {
   if (picture.kind === 'new') return { image: picture.file };
@@ -49,17 +49,17 @@ function EditProfileSection({ address, name, picture, onSaved }: {
   };
 
   return (
-    <Col gap={8}>
-      <Col gap={8}>
+    <Column gap={8}>
+      <Column gap={8}>
         <FormField label="Display name" placeholder="How people see you" value={draft.displayName} onChangeText={(v) => { setDraft({ ...draft, displayName: v }); }} disabled={busy} />
         <FormField label="About" placeholder="A few words about you" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy} />
-      </Col>
-      {problem ?? status ? <Text value={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
-      <Box padding={{ top: 8 }}>
+      </Column>
+      {problem ?? status ? <Text text={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
+      <Column padding={{ top: 8 }}>
         <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
           disabled={busy || problem !== null} onPress={save} />
-      </Box>
-    </Col>
+      </Column>
+    </Column>
   );
 }
 
@@ -76,9 +76,9 @@ export function EditProfileModal({ visible, onClose, address, handle }: {
   const removable = picture.kind === 'new' || (picture.kind === 'keep' && getPeerAvatar(address) !== undefined);
   return (
     <AppModal visible={visible} onClose={close} title="Edit profile">
-      <Col align="center" padding={{ bottom: 16 }}>
+      <Column align="center" padding={{ bottom: 16 }}>
         <PictureEditor avatar={profileAvatar(address, picture)} editable removable={removable} onChange={setPicture} />
-      </Col>
+      </Column>
       <EditProfileSection address={address} name={handle} picture={picture}
         onSaved={() => { invalidatePeerProfile(address); close(); }} />
     </AppModal>

@@ -13,12 +13,12 @@ import { walletTotalUsd, tokenRowModel } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { Box, Col, ScreenScroll, PAGE_GUTTER, Row } from '../../layout';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { TokenAvatar } from './tokenAvatar';
 import { TokenRowBody } from '../TokenRowView';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+import { Column, ScreenScroll, PAGE_GUTTER, Row } from '../../layout';
 
 const TOKEN_AVATAR_SIZE = 44;
 const TOKEN_BADGE_SIZE = 20;
@@ -27,12 +27,12 @@ const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border
   return (
     <Row padding={{ y: 14 }} align="center" gap={12}>
       <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} size={TOKEN_AVATAR_SIZE} badgeSize={TOKEN_BADGE_SIZE} />
-      <Box flex={1}>
+      <Column weight={1}>
         <TokenRowBody
           {...tokenRowModel(r, { fmtUsd, fmtBalance })}
           showAvatar={false}
         />
-      </Box>
+      </Column>
     </Row>
   );
 });
@@ -45,14 +45,14 @@ function TokensList({
   bg: string;
 }): React.ReactElement {
   return (
-    <Col margin={{ x: PAGE_GUTTER }}>
+    <Column margin={{ x: PAGE_GUTTER }}>
       {rows.map(r => (
         <TokenRow
           key={tokenRowId(r)}
           r={r} border={border} bg={bg}
         />
       ))}
-    </Col>
+    </Column>
   );
 }
 
@@ -93,20 +93,20 @@ function WalletTokens({ rows, err, c }: {
 }): React.ReactElement {
   if (err && rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
+      <Column padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
         <Text size="xs" color={DANGER}>Couldn’t load tokens</Text>
-      </Col>
+      </Column>
     );
   }
   if (rows === null) {
     return (
-      <Col padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Spinner size={TOKENS_SPINNER} /></Col>
+      <Column padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Spinner size={TOKENS_SPINNER} /></Column>
     );
   }
   return (
-    <Box margin={{ top: 16 }}>
+    <Column margin={{ top: 16 }}>
       <TokensList rows={rows} border={c.border} bg={c.bg}/>
-    </Box>
+    </Column>
   );
 }
 
@@ -129,7 +129,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   }, [router]);
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
     <ScreenScroll
       simultaneousHandlers={panRef}
       style={{ backgroundColor: bg }}
@@ -154,6 +154,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
       <WalletTokens rows={rows} err={!!err} c={c} />
     </ScreenScroll>
-    </Col>
+    </Column>
   );
 }

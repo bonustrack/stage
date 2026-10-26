@@ -73,7 +73,7 @@ describe('routing', () => {
     expect(pre.status).toBe(204);
     expect(pre.headers.get('access-control-allow-origin')).toBe('*');
     expect(pre.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS');
-    expect(pre.headers.get('access-control-allow-headers')).toBe('content-type, stage-key, stage-timestamp, stage-signature');
+    expect(pre.headers.get('access-control-allow-headers')).toBe('content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities');
     for (const method of ['PUT', 'DELETE', 'PATCH', 'HEAD']) expect((await call(new Request(NODE_URL, { method }), { nodes })).status).toBe(405);
     expect(seen).toEqual([]);
   });

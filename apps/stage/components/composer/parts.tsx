@@ -1,13 +1,10 @@
-
 import { useMemo, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { mapCoordsOf } from '@stage-labs/client/embed/detect';
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
+import { CallAwareVideo } from '../CallAwareVideo';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
@@ -16,7 +13,6 @@ import { ImageViewer } from '../ImageViewer';
 import { HoverTooltip } from '../HoverTooltip';
 import { LocationTile } from '../MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
-import { Box, Row, Col, PAGE_GUTTER } from '../layout';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { getPeerName } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
@@ -28,6 +24,8 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const kindIcon = (kind: string): CentralIcon => (
   kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
@@ -43,12 +41,12 @@ export function ReplyBanner({
   const nameColor = dark ? '#ffffff' : '#2f6feb';
   const borderColor = usePalette().border;
   return (
-    <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+    <Column padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
           <Glyph icon={IconArrowUndoUp} size={16} color={sub}/>
           <Text size="sm" numberOfLines={1} style={{ flex: 1 }}>
-            <Text size="sm" role="secondary">Replying to </Text>
+            <Text size="sm" color="secondary">Replying to </Text>
             <Text size="sm" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
@@ -58,7 +56,7 @@ export function ReplyBanner({
           </Pressable>
         </Row>
       </Pressable>
-    </Box>
+    </Column>
   );
 }
 
@@ -69,7 +67,7 @@ export const keepInputFocus = Platform.OS === 'web'
 export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: Suggest<T> }): React.ReactElement | null {
   if (suggest.matches.length === 0) return null;
   return (
-    <Box margin={{ bottom: 8 }} style={{ position: 'absolute', bottom: '100%', left: PAGE_GUTTER, zIndex: 4 }} {...keepInputFocus}>
+    <Column margin={{ bottom: 8 }} style={{ position: 'absolute', bottom: '100%', left: PAGE_GUTTER, zIndex: 4 }} {...keepInputFocus}>
       <DropdownMenu style={{ width: MENU_WIDTH }}>
         {suggest.matches.map((c, i) => {
           const avatar = suggest.avatarOf(c);
@@ -84,7 +82,7 @@ export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: 
           );
         })}
       </DropdownMenu>
-    </Box>
+    </Column>
   );
 }
 
@@ -100,7 +98,7 @@ function TileName({ name, fg }: { name: string; fg: string }): React.ReactElemen
 
 function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void }): React.ReactElement {
   return (
-    <Box style={{ position: 'absolute', top: -4, right: -4 }}>
+    <Column style={{ position: 'absolute', top: -4, right: -4 }}>
       <HoverTooltip label={label}>
         <Pressable
           onPress={onRemove}
@@ -112,7 +110,7 @@ function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void 
           <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
         </Pressable>
       </HoverTooltip>
-    </Box>
+    </Column>
   );
 }
 
@@ -122,15 +120,15 @@ function TrayTile({
   at: Attachment; fg: string; label: string; removeLabel: string; onRemove: () => void; children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Col width={TRAY_TILE} align="center" gap={4}>
-      <Box size={TRAY_TILE} accessibilityLabel={label}>
-        <Box size={TRAY_TILE} radius={8} surface="surface" style={{ overflow: 'hidden' }}>
+    <Column width={TRAY_TILE} align="center" gap={4}>
+      <Column size={TRAY_TILE} accessibilityLabel={label}>
+        <Column size={TRAY_TILE} radius={8} surface="surface" style={{ overflow: 'hidden' }}>
           {children}
-        </Box>
+        </Column>
         <RemoveBadge label={removeLabel} onRemove={onRemove}/>
-      </Box>
+      </Column>
       <TileName name={at.name ?? at.id} fg={fg}/>
-    </Col>
+    </Column>
   );
 }
 
@@ -149,7 +147,7 @@ function PendingImage({
           accessibilityRole="button"
           accessibilityLabel="View image"
         >
-          <Image src={image.url} size={TRAY_TILE} fit="contain"/>
+          <Image url={image.url} size={TRAY_TILE} fit="contain"/>
         </Pressable>
       </TrayTile>
       <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
@@ -165,7 +163,7 @@ function PendingVideo({
   const { bg } = usePalette();
   return (
     <TrayTile at={video} fg={fg} label={`Video preview ${video.name ?? video.id}`} removeLabel="Remove video" onRemove={onRemove}>
-      <VideoPlayer src={video.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
+      <CallAwareVideo url={video.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
     </TrayTile>
   );
 }
@@ -191,9 +189,9 @@ function PendingFile({
 }): React.ReactElement {
   return (
     <TrayTile at={file} fg={fg} label={`File preview ${file.name ?? file.id}`} removeLabel="Remove file" onRemove={onRemove}>
-      <Box size={TRAY_TILE} align="center" justify="center">
+      <Column size={TRAY_TILE} align="center" justify="center">
         <Glyph icon={kindIcon(file.kind)} size={24} color={fg}/>
-      </Box>
+      </Column>
     </TrayTile>
   );
 }
@@ -219,13 +217,13 @@ export function PendingRow({
 }): React.ReactElement {
   const gesture = useMemo(() => Gesture.Native().disallowInterruption(true).shouldCancelWhenOutside(false), []);
   const tray = (
-    <Scroll horizontal style={TRAY_SCROLL} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <List direction="horizontal" style={TRAY_SCROLL} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Row padding={TRAY_PADDING} gap={8}>
         {pending.map((a, i) => (
           <PendingItem key={a.id} at={a} fg={fg} onRemove={() => { onRemove(i); }}/>
         ))}
       </Row>
-    </Scroll>
+    </List>
   );
   return Platform.OS === 'web' ? tray : <GestureDetector gesture={gesture}>{tray}</GestureDetector>;
 }

@@ -1,18 +1,22 @@
-
 import {
   Image as RNImage,
-  type ImageProps as RNImageProps,
-  type ImageStyle,
-  type ViewStyle,
+  StyleSheet,
+  View,
   type DimensionValue,
   type ImageLoadEventData,
+  type ImageProps as RNImageProps,
+  type ImageStyle,
   type NativeSyntheticEvent,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { flushBleed } from '../layout';
 import type { RadiusValue } from '../radius';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 
-export type ImageFit = 'none' | 'cover' | 'contain' | 'fill' | 'scale-down';
+export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scaleDown';
+export type ImageVariant = 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
 export type ImagePosition =
   | 'center' | 'top' | 'bottom' | 'left' | 'right'
   | 'top left' | 'top right' | 'bottom left' | 'bottom right';
@@ -31,7 +35,7 @@ const FIT: Record<ImageFit, ImageStyle['resizeMode']> = {
   cover: 'cover',
   contain: 'contain',
   fill: 'stretch',
-  'scale-down': 'contain',
+  scaleDown: 'contain',
 };
 
 const RADIUS: Record<ImageRadius, number> = {
@@ -39,16 +43,28 @@ const RADIUS: Record<ImageRadius, number> = {
   xl: 16, '2xl': 20, '3xl': 24, '4xl': 28, full: 999, '100%': 999,
 };
 
+const FULL_ROUND = 999;
+
+const VARIANT_BOX: Record<ImageVariant, ImageStyle> = {
+  icon: { width: 24, height: 24 },
+  avatar: { width: 40, height: 40, borderRadius: FULL_ROUND },
+  smallFeature: { width: 100, height: 100 },
+  mediumFeature: { width: '100%', maxWidth: 300, aspectRatio: 4 / 3 },
+  largeFeature: { width: '100%', maxHeight: 400, aspectRatio: 16 / 9 },
+  header: { width: '100%', height: 200 },
+};
+
 function radiusValue(radius?: ImageRadius | number): number | undefined {
   if (radius === undefined) return undefined;
   return typeof radius === 'number' ? radius : RADIUS[radius];
 }
 
-export interface ImageProps {
-  src: string;
+export interface ImageProps extends A2uiCommonProps {
+  url: string;
   headers?: Record<string, string>;
-  alt?: string;
+  description?: string;
   fit?: ImageFit;
+  variant?: ImageVariant;
   position?: ImagePosition;
   frame?: boolean;
   flush?: number | boolean;
@@ -63,52 +79,65 @@ export interface ImageProps {
   maxHeight?: number | string;
   background?: string;
   margin?: number;
-  style?: ImageStyle | ImageStyle[];
+  style?: StyleProp<ImageStyle>;
   resizeMethod?: ImageResizeMethod;
   resizeMultiplier?: number;
   onLoad?: (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
   onError?: () => void;
 }
 
-export function Image(props: ImageProps): React.ReactElement {
-  const {
-    src, headers, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
-    width, height, minWidth, maxWidth, minHeight, maxHeight,
-    background, margin, style, resizeMethod, resizeMultiplier, onLoad, onError,
-  } = props;
+function dimension(value: number | string | undefined): DimensionValue | undefined {
+  return value as DimensionValue | undefined;
+}
 
+function defined(style: ImageStyle): ImageStyle {
+  return Object.fromEntries(Object.entries(style).filter(([, v]) => v !== undefined));
+}
+
+function explicitBox(props: ImageProps): ImageStyle {
+  const { size, width, height, minWidth, maxWidth, minHeight, maxHeight, aspectRatio, radius, background, margin, flush, frame } = props;
   const bleed = flushBleed(flush);
-  const r = radiusValue(radius);
-
-  const base: ImageStyle = {
-    width: (size ?? width) as DimensionValue | undefined,
-    height: (size ?? height) as DimensionValue | undefined,
-    minWidth: minWidth as DimensionValue | undefined,
-    maxWidth: maxWidth as DimensionValue | undefined,
-    minHeight: minHeight as DimensionValue | undefined,
-    maxHeight: maxHeight as DimensionValue | undefined,
+  const box: ImageStyle = defined({
+    width: dimension(size ?? width),
+    height: dimension(size ?? height),
+    minWidth: dimension(minWidth),
+    maxWidth: dimension(maxWidth),
+    minHeight: dimension(minHeight),
+    maxHeight: dimension(maxHeight),
     aspectRatio,
-    borderRadius: r,
+    borderRadius: radiusValue(radius),
     backgroundColor: background,
     margin,
     marginHorizontal: bleed ? -bleed : undefined,
-  };
-
+  });
   if (frame) {
-    base.borderWidth = 1;
-    base.borderColor = '#e4e4e5';
+    box.borderWidth = 1;
+    box.borderColor = '#e4e4e5';
   }
+  return box;
+}
 
-  const flattened = style ? ([base, style].flat()) : base;
+function imageBox(props: ImageProps): ImageStyle {
+  const variant = props.variant === undefined ? {} : VARIANT_BOX[props.variant];
+  return { ...variant, ...explicitBox(props), ...(props.weight === undefined ? {} : { flex: props.weight }) };
+}
 
+export function Image(props: ImageProps): React.ReactElement {
+  const { url, headers, description, fit = 'fill', style, resizeMethod, resizeMultiplier, onLoad, onError, accessibility } = props;
+  const base = imageBox(props);
+  const flattened = style === undefined ? base : StyleSheet.flatten([base, style]);
+  if (url.trim() === '') {
+    return <View style={flattened} {...accessibilityProps(accessibility)} />;
+  }
   return (
     <RNImage
-      source={headers ? { uri: src, headers } : { uri: src }}
+      source={headers ? { uri: url, headers } : { uri: url }}
       resizeMode={FIT[fit]}
       resizeMethod={resizeMethod}
       resizeMultiplier={resizeMultiplier}
-      accessibilityLabel={alt}
-      accessible={alt !== undefined}
+      accessibilityLabel={description}
+      accessible={description !== undefined}
+      {...accessibilityProps(accessibility)}
       style={flattened}
       onLoad={onLoad}
       onError={onError}
@@ -116,9 +145,9 @@ export function Image(props: ImageProps): React.ReactElement {
   );
 }
 
-export function getImageSize(src: string): Promise<{ width: number; height: number }> {
+export function getImageSize(url: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    RNImage.getSize(src, (width, height) => { resolve({ width, height }); }, reject);
+    RNImage.getSize(url, (width, height) => { resolve({ width, height }); }, reject);
   });
 }
 

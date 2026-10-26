@@ -6,12 +6,12 @@ import {
 } from '../chart';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
-import { Row } from './box';
 import { ChartBands } from './chart.bands';
 import { ChartPlot } from './chart.plot';
 import { Text } from './text';
 import { useKitPalette, useKitScheme } from './theme-context';
 import { TOOLTIP } from './tooltip';
+import { Row } from './row';
 
 export type {
   ChartAreaSeries, ChartBarSeries, ChartColor, ChartCurveType, ChartDatum, ChartLineSeries, ChartSeries, ChartValue,
@@ -107,7 +107,7 @@ function Legend({ series, colors, palette }: { series: readonly ChartSeries[]; c
       {series.map((s, i) => (s.label === undefined || s.label === '' ? null : (
         <Row key={i} gap={KEY_GAP} align="center">
           <Swatch color={colors[i] ?? palette.link} size={LEGEND_SWATCH} />
-          <Text size="2xs" color={palette.link} value={s.label} style={{ lineHeight: LEGEND_LINE }} />
+          <Text size="2xs" color={palette.link} text={s.label} style={{ lineHeight: LEGEND_LINE }} />
         </Row>
       )))}
     </Row>
@@ -136,12 +136,12 @@ function ChartTooltip({ props, colors, palette, category, index, width, top }: T
       backgroundColor: palette.border, borderRadius: TOOLTIP.radius, paddingHorizontal: TIP_PAD_X, paddingVertical: TIP_PAD_Y,
       gap: TIP_ROW_GAP, ...OVERLAY_SHADOW,
     }}>
-      {title === '' ? null : <Text size="3xs" weight="semibold" color={palette.sub} value={title} />}
+      {title === '' ? null : <Text size="3xs" fontWeight="semibold" color={palette.sub} text={title} />}
       {rows.map((r) => (
         <Row key={r.series} gap={KEY_GAP} align="center">
           {props.series.length > 1 ? <Swatch color={colors[r.series] ?? palette.link} size={TOOLTIP_SWATCH} /> : null}
-          {r.name === undefined ? null : <Text size="3xs" color={palette.sub} value={r.name} style={{ flexShrink: 1 }} />}
-          <Text size="3xs" color={palette.link} value={r.value} style={{ ...TABULAR, marginLeft: r.name === undefined ? 0 : TIP_NAME_GAP }} />
+          {r.name === undefined ? null : <Text size="3xs" color={palette.sub} text={r.name} style={{ flexShrink: 1 }} />}
+          <Text size="3xs" color={palette.link} text={r.value} style={{ ...TABULAR, marginLeft: r.name === undefined ? 0 : TIP_NAME_GAP }} />
         </Row>
       ))}
     </View>

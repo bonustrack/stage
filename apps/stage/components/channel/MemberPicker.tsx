@@ -1,18 +1,17 @@
-
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
   RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient,
 } from '../wallet/recipient.model';
 import { capabilities } from '../../lib/capabilities';
-import { Col } from '../layout';
 import { FormField, useFocusOnOpen } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 import { pickerRows, togglePick } from './MemberPicker.model';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
+import { Column } from '../layout';
 
 export interface Member {
   address: string;
@@ -95,11 +94,11 @@ export function MemberPicker({ state, dark, exclude = [] }: {
     <Button color="secondary" variant="solid" size="sm" dark={dark} loading={adding} onPress={() => { void addMember(); }} label="Add" />
   );
   return (
-    <Col gap={12}>
+    <Column gap={12}>
       <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
         onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
         inputProps={{ ...SEARCH_INPUT_PROPS, autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
-    </Col>
+    </Column>
   );
 }

@@ -1,7 +1,6 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Box, Col, Row } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
 import type { HistoryControls } from './useSetupRunner';
@@ -16,6 +15,7 @@ import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1
 import { useEffect, useState } from 'react';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
+import { Column, Row } from '../layout';
 
 const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Devices and history.';
 
@@ -49,7 +49,7 @@ function StageIndicator({ state, failed }: { state: StageState; failed: boolean 
   if (state === 'done') return <Glyph icon={IconCheckmark1} size={ROW_ICON} color={pal.success} />;
   if (state === 'active' && failed) return <Glyph icon={IconCircleX} size={ROW_ICON} color={DANGER} />;
   if (state === 'active') return <Spinner size={ROW_ICON} color={pal.link} />;
-  return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
+  return <Column width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }
 
 function StageRow({ label, state, failed }: {
@@ -58,9 +58,9 @@ function StageRow({ label, state, failed }: {
   const pal = usePalette();
   return (
     <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }}>
-      <Box width={ROW_ICON} align="center">
+      <Column width={ROW_ICON} align="center">
         <StageIndicator state={state} failed={failed} />
-      </Box>
+      </Column>
       <Text size="lg" color={state === 'pending' ? pal.sub : pal.link}>{label}</Text>
     </Row>
   );
@@ -85,11 +85,11 @@ function SetupLink({ busy, setupErr, onBack, history }: {
   const links = setupLinks(setupErr);
   if (links.length === 0) return null;
   return (
-    <Col gap={16}>
+    <Column gap={16}>
       {links.map((kind) => (
         <SkipLink key={kind} label={SETUP_LINK_LABELS[kind]} disabled={busy} onPress={onBack} />
       ))}
-    </Col>
+    </Column>
   );
 }
 
@@ -102,12 +102,12 @@ export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, 
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
   const link = SetupLink({ busy, setupErr, onBack, history });
   return (
-    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={<Col gap={16}>{setupErr?.retry === 'create' && plan.profile === true ? <SkipLink label="Edit profile" disabled={busy} onPress={onEdit} /> : null}{link}</Col>}>
-      <Col width="100%">
+    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={<Column gap={16}>{setupErr?.retry === 'create' && plan.profile === true ? <SkipLink label="Edit profile" disabled={busy} onPress={onEdit} /> : null}{link}</Column>}>
+      <Column width="100%">
         {stages.map((s) => (
           <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null || (history.stalled && s === 'history')} />
         ))}
-      </Col>
+      </Column>
     </OnboardingCard>
   );
 }

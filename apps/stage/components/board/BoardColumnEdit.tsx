@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
-import { Col, Row, SCROLLBAR_ON_HOVER } from '../layout';
 import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
 import { CountTag } from '../CountTag';
@@ -18,6 +16,8 @@ import {
   BOARD_COLUMN_WIDTH, addColumnProblem, draftEdit, draftNote, renameEdit, renameNote, type BoardColumn, type TitleCommit,
   type TitleEdit,
 } from './BoardScreen.model';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row, SCROLLBAR_ON_HOVER } from '../layout';
 
 export const COLUMN_PADDING = 10;
 export const CARD_GAP = 8;
@@ -64,7 +64,7 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, ch
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
-    <Col
+    <Column
       {...SCROLLBAR_ON_HOVER}
       nativeID={nativeID}
       background={border}
@@ -76,7 +76,7 @@ export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, ch
       style={{ borderWidth: 1, borderColor: over ? link : 'transparent', opacity }}
     >
       {children}
-    </Col>
+    </Column>
   );
 }
 
@@ -91,7 +91,7 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
   const colors = useFieldColors();
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Input
+    <TextField
       autoFocus
       autoSelect
       dark={dark}
@@ -117,7 +117,7 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
 
 function TitleNote({ note }: { note: string | null }): React.ReactElement | null {
   if (note === null) return null;
-  return <Text value={note} size="2xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
+  return <Text text={note} size="2xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
 }
 
 export function RenameHeading({ label, columns, count, onRename, onClose }: {

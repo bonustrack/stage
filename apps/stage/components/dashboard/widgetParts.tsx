@@ -5,8 +5,8 @@ import { menuPointBelowEnd } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { OverflowButton, SMALL_OVERFLOW_ICON } from '../MenuRows';
 import { useHover } from '../hover';
-import { Box, Col, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
+import { Column, Row } from '../layout';
 
 const OUTLINE_PADDING = 12;
 const HEADER_HEIGHT = 28;
@@ -22,7 +22,7 @@ function WidgetTitle({ title, onOpen }: { title: string; onOpen?: () => void }):
       accessibilityLabel={onOpen === undefined ? title : `Open ${title}`}
       style={{ flexShrink: 1, maxWidth: '100%' }} {...name.hoverProps}
     >
-      <Text value={title} size="2xs" weight="semibold" color={name.hovered && onOpen ? link : sub} truncate />
+      <Text text={title} size="2xs" fontWeight="semibold" color={name.hovered && onOpen ? link : sub} truncate />
     </Pressable>
   );
 }
@@ -33,10 +33,10 @@ export function WidgetHeader({ title, onOpen, status, onMenu }: {
   const { sub } = usePalette();
   return (
     <Row align="center" gap={8} height={HEADER_HEIGHT}>
-      <Row flex={1} minWidth={0} align="center" gap={6}>
+      <Row weight={1} minWidth={0} align="center" gap={6}>
         {title === undefined ? null : <WidgetTitle title={title} onOpen={onOpen} />}
         {status === undefined || status === null ? null : (
-          <Box flex={1} minWidth={0}><Text value={status} size="2xs" color="secondary" truncate /></Box>
+          <Column weight={1} minWidth={0}><Text text={status} size="2xs" color="secondary" truncate /></Column>
         )}
       </Row>
       <OverflowButton
@@ -50,12 +50,12 @@ export function Unavailable({ title, detail }: { title: string; detail?: string 
   const { border } = usePalette();
   const edge = { width: 1, color: border, style: 'dashed' };
   return (
-    <Col
-      flex={1} gap={4} padding={OUTLINE_PADDING} radius={BLOCK_RADIUS_DEFAULT} border={{ top: edge, right: edge, bottom: edge, left: edge }}
+    <Column
+      weight={1} gap={4} padding={OUTLINE_PADDING} radius={BLOCK_RADIUS_DEFAULT} border={{ top: edge, right: edge, bottom: edge, left: edge }}
       align="center" justify="center"
     >
-      <Text value={title} size="xs" weight="semibold" color="link" textAlign="center" maxLines={2} />
-      {detail === undefined ? null : <Text value={detail} size="2xs" color="secondary" textAlign="center" maxLines={3} />}
-    </Col>
+      <Text text={title} size="xs" fontWeight="semibold" color="link" textAlign="center" maxLines={2} />
+      {detail === undefined ? null : <Text text={detail} size="2xs" color="secondary" textAlign="center" maxLines={3} />}
+    </Column>
   );
 }

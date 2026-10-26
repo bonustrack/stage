@@ -1,10 +1,7 @@
-
 import { memo, useCallback } from 'react';
-
 import { Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col } from '../layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
@@ -34,6 +31,7 @@ import { rowPreviewText } from './model';
 import { rowDataSet } from './rowArrows';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
 import { peerLabel, type ConvTitle } from '../conversation/convTitle';
+import { Column } from '../layout';
 
 export function rowTitle(item: RowT): ConvTitle {
   if (item.peerAddress) return { text: getPeerName(item.peerAddress) ?? item.title, placeholder: false };
@@ -208,7 +206,7 @@ export function HomeError({ error, dark, fg }: {
   error: string; dark: boolean; fg: string;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" surface="surface">
+    <Column padding={24} weight={1} align="center" justify="center" surface="surface">
       <Text size="xs" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Button label="Reload" size="lg" pill color="primary" variant="solid" dark={dark}
         style={{ alignSelf: 'center', marginBottom: 12 }} onPress={() => { reloadApp(); }} />
@@ -224,18 +222,18 @@ export function HomeError({ error, dark, fg }: {
           {RESET_TITLE}
         </Text>
       </Pressable>
-    </Col>
+    </Column>
   );
 }
 
 export function HomeSpinner({ head }: { head: string }): React.ReactElement {
   return (
-    <Col flex={1} surface="surface">
+    <Column weight={1} surface="surface">
       <MessagingSetupBanner />
-      <Col flex={1} align="center" justify="center">
+      <Column weight={1} align="center" justify="center">
         <Spinner size={28} color={head}/>
-      </Col>
-    </Col>
+      </Column>
+    </Column>
   );
 }
 

@@ -1,23 +1,33 @@
 import { useCallback } from 'react';
-import { loadNode, newNodeKey, sendNodeAction, type NodeAction } from '@stage-labs/client/nodes/protocol';
+import { loadNode, newNodeKey, sendNodeMessage } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameOut } from '../components/frame/frame.model';
 import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { capabilities } from './capabilities';
+import { applyToFrameSession, clearFrameSessions, RENDERER_CAPABILITIES } from './frameSession';
 import { makeLiveFrames } from './liveFrame.core';
 import { useStoreValue } from './storeCore';
 
 const frames = makeLiveFrames({
-  load: (url, key) => loadNode(url, key),
-  act: (url, key, action) => sendNodeAction(url, key, action),
+  load: (url, key) => loadNode(url, key, { capabilities: RENDERER_CAPABILITIES }),
+  send: (url, key, request) => sendNodeMessage(url, key, request, { capabilities: RENDERER_CAPABILITIES }),
+  apply: applyToFrameSession,
   newKey: newNodeKey,
   now: () => Date.now(),
   toast: (message) => { capabilities.toast(message); },
 });
 
-subscribeAccountEpoch(() => { frames.clear(); });
+subscribeAccountEpoch(() => {
+  frames.clear();
+  clearFrameSessions();
+});
 
 function slotOf(epoch: number, messageId: string): string {
   return `${epoch}:${messageId}`;
+}
+
+export function useChatFrameKey(messageId: string): string {
+  return slotOf(useAccountEpoch(), messageId);
 }
 
 export function useLiveFrame(messageId: string): FrameContent | null {
@@ -30,6 +40,6 @@ export function refreshLiveFrame(messageId: string, sent: FrameContent, url: str
   return frames.refresh(slotOf(getAccountEpoch(), messageId), sent, url);
 }
 
-export function actOnLiveFrame(messageId: string, sent: FrameContent, url: string, action: NodeAction): Promise<void> {
-  return frames.act(slotOf(getAccountEpoch(), messageId), sent, url, action);
+export function sendToLiveFrame(messageId: string, sent: FrameContent, url: string, out: FrameOut): Promise<void> {
+  return frames.send(slotOf(getAccountEpoch(), messageId), sent, url, out);
 }

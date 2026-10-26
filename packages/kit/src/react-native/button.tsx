@@ -8,20 +8,27 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
+  resolveButtonVariant,
   resolveColors,
   SIZES,
   textLabelStyle,
   type ButtonColor,
-  type ButtonControlVariant,
   type ButtonSize,
+  type ButtonVariant,
   type SizeSpec,
 } from '../button.styles';
+import type { ValidationResult } from '../a2ui/protocol';
+import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { ContentColorProvider } from './content-color';
 import { Spinner } from './spinner';
+import { useKitScheme } from './theme-context';
 
 export type {
   ButtonColor,
   ButtonControlVariant,
+  ButtonHint,
   ButtonSize,
+  ButtonVariant,
 } from '../button.styles';
 
 const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
@@ -35,9 +42,10 @@ export function getDefaultButtonRadius(): number {
 }
 
 export interface ButtonProps
-  extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
+  extends Omit<PressableProps, 'children' | 'style' | 'disabled'>, A2uiCommonProps {
   color?: ButtonColor;
-  variant?: ButtonControlVariant;
+  variant?: ButtonVariant;
+  checks?: readonly ValidationResult[];
   style?: ViewStyle;
   size?: ButtonSize;
   label?: string;
@@ -127,7 +135,7 @@ function renderLabel(
 
 interface TintArgs {
   color: ButtonColor | undefined;
-  variant: ButtonControlVariant | undefined;
+  variant: ButtonVariant | undefined;
   dark: boolean;
   tintBg: string | undefined;
   tintFg: string | undefined;
@@ -136,7 +144,8 @@ interface TintArgs {
 
 function useResolvedColors(t: TintArgs): ResolvedColors {
   return useMemo(() => {
-    const base = resolveColors(t.color ?? 'primary', t.variant ?? 'solid', t.dark);
+    const resolved = resolveButtonVariant(t.variant, t.color);
+    const base = resolveColors(resolved.color, resolved.fill, t.dark);
     return {
       ...base,
       bg: t.tintBg ?? base.bg,
@@ -151,15 +160,45 @@ function orFlag(a: boolean | undefined, b: boolean | undefined): boolean {
   return a === true || b === true;
 }
 
+interface ContainerInput {
+  spec: (typeof SIZES)[ButtonSize];
+  c: ResolvedColors;
+  isDisabled: boolean;
+  block: boolean | undefined;
+  fullWidth: boolean | undefined;
+  uniform: boolean | undefined;
+  pill: boolean | undefined;
+  radius: number | undefined;
+  weight: number | undefined;
+  style: ViewStyle | undefined;
+}
+
+function containerArgs(input: ContainerInput): ContainerStyleArgs {
+  const { spec, c, isDisabled, block, fullWidth, uniform, pill, radius, weight, style } = input;
+  return {
+    spec,
+    square: uniform === true,
+    stretch: orFlag(block, fullWidth),
+    radius: pill === true ? 999 : radius,
+    c,
+    isDisabled,
+    style: weight === undefined ? style : { ...weightStyle(weight), ...style },
+  };
+}
+
 export function Button(props: ButtonProps): React.ReactElement {
+  const scheme = useKitScheme();
   const {
     color,
     variant,
+    checks,
+    weight,
+    accessibility,
     block,
     fullWidth,
     pill,
     uniform,
-    dark = false,
+    dark = scheme === 'dark',
     tintBg,
     tintFg,
     tintPressedBg,
@@ -180,20 +219,17 @@ export function Button(props: ButtonProps): React.ReactElement {
 
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
-  const stretch = orFlag(block, fullWidth);
-  const square = uniform === true;
-
   const spec = SIZES[size];
   const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
-  const isDisabled = disabled || loading;
-
+  const isDisabled = disabled || loading || failingChecks(checks);
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);
-  const styleArgs: ContainerStyleArgs = { spec, square, stretch, radius: pill === true ? 999 : radius, c, isDisabled, style };
+  const styleArgs = containerArgs({ spec, c, isDisabled, block, fullWidth, uniform, pill, radius, weight, style });
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
+      {...accessibilityProps(accessibility)}
       disabled={isDisabled}
       style={({ pressed }: { pressed: boolean }) => containerStyle(styleArgs, pressed)}
       {...rest}
@@ -201,11 +237,11 @@ export function Button(props: ButtonProps): React.ReactElement {
       {loading ? (
         <Spinner size={SPINNER_SIZE[spec.spinner]} color={c.text} />
       ) : (
-        <>
+        <ContentColorProvider color={c.text}>
           {startIcon}
           {labelNode}
           {endIcon}
-        </>
+        </ContentColorProvider>
       )}
     </Pressable>
   );

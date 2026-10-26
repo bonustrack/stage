@@ -1,8 +1,5 @@
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, PAGE_GUTTER } from './layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
@@ -12,6 +9,7 @@ import { isPinned } from '../lib/pins';
 import type { Palette } from '../lib/theme';
 import { channelTimestamp } from '../lib/format';
 import { peerLabel } from './conversation/convTitle';
+import { Column, Row, PAGE_GUTTER } from './layout';
 
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;
@@ -24,11 +22,11 @@ export function CommonChannels({ peerAddress, enabled, c }: {
   if (channels.length === 0 && !loading) return null;
 
   return (
-    <Box margin={{ top: 20 }}>
+    <Column margin={{ top: 20 }}>
       <Row margin={{ x: PAGE_GUTTER, bottom: 6 }} justify="start" align="center" gap={24} 
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
-          <Text weight="semibold" size="lg" color={c.link}>
+          <Text fontWeight="semibold" size="lg" color={c.link}>
             Channels
           </Text>
         </Pressable>
@@ -60,6 +58,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           />
         );
       })}
-    </Box>
+    </Column>
   );
 }

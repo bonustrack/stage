@@ -3,12 +3,12 @@ import type { Story } from '../gallery/story';
 import { VoiceRecorder, type VoiceRecorderProps } from '../src/react-native/voice-recorder';
 import { Glyph } from '../src/react-native/glyph';
 import { Pressable } from '../src/react-native/pressable';
-import { Box, Col } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { semanticPalette } from '../src/tokens';
 import { number, useDark } from './_controls';
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { Column } from '../src/react-native/column';
 
 export default { title: 'Voice Recorder' };
 
@@ -25,22 +25,22 @@ export const Controls: Story<Pick<VoiceRecorderProps, 'slideThresholdPx'>> = (ar
     return (): void => { clearInterval(id); };
   }, [recording]);
   return (
-    <Col gap={12}>
-      <Text role="secondary" size="2xs">{log}</Text>
-      <Box surface="sunken" radius="xl" padding={8}>
+    <Column gap={12}>
+      <Text color="secondary" size="2xs">{log}</Text>
+      <Column surface="sunken" radius="xl" padding={8}>
         <VoiceRecorder
           {...args}
           recording={recording} levels={levels} recordSecs={secs} dark={dark}
           fg={p.textColor} head={p.textColor} sub={p.subColor} bg={p.bgColor} chipBg={p.inputBgColor} primary={p.primaryColor}
-          inputSlot={<Text size="xs" role="secondary">Message</Text>}
+          inputSlot={<Text size="xs" color="secondary">Message</Text>}
           leftControls={<Glyph icon={IconPlusLarge} size={22} dark={dark} />}
           rightAction={<Pressable><Glyph icon={IconMicrophone} size={22} dark={dark} /></Pressable>}
           onStart={() => { setRecording(true); setLog('recording'); }}
           onCancel={() => { setRecording(false); setLog('cancelled'); }}
           onComplete={() => { setRecording(false); setLog('completed'); }}
         />
-      </Box>
-    </Col>
+      </Column>
+    </Column>
   );
 };
 Controls.args = { slideThresholdPx: 80 };

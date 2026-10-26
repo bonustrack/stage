@@ -3,14 +3,13 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { RENDERER_CAPABILITIES } from '../../lib/frameSession';
 import { loadNode, newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
-import { frameIsFullWidth } from '../frame/frame.model';
 import { LabelChip } from '../LabelChip';
-import { Col, Row } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 import { addLiveToDashboard } from '../../lib/dashboard';
 import { report } from '../../lib/errorPolicy';
@@ -19,6 +18,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { FRAME_ADD_TOASTS } from './dashboard.model';
 import { EMPTY_LIVE, NODE_URL_HINTS, livePreviewOf, liveStateAfter, type LivePreview } from './liveWidget.model';
 import { NodeCodeForm } from './NodeCodeForm';
+import { Column, Row } from '../layout';
 
 const NOTE = 'The widget loads from this link and refreshes every minute while you look at it. '
   + 'The site sees your IP and a key made for this widget, never your account.';
@@ -61,7 +61,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
     if (!node.ok) { setHint(NODE_URL_HINTS[node.problem]); return; }
     setBusy(true);
     setPreview(null);
-    const loaded = livePreviewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadNode(node.url, key), Date.now()));
+    const loaded = livePreviewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadNode(node.url, key, { capabilities: RENDERER_CAPABILITIES }), Date.now()));
     setBusy(false);
     if (typeof loaded === 'string') setHint(loaded);
     else setPreview(loaded);
@@ -70,7 +70,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
   const add = async (picked: LivePreview): Promise<void> => {
     setBusy(true);
     try {
-      const { outcome, id } = await addLiveToDashboard({ url: picked.url, key }, frameIsFullWidth(picked.frame) ? 'full' : 'half');
+      const { outcome, id } = await addLiveToDashboard({ url: picked.url, key }, 'half');
       if (outcome === 'added') seedLiveWidget(id, picked.url, picked.state);
       capabilities.toast(FRAME_ADD_TOASTS[outcome]);
       onDone();
@@ -87,24 +87,24 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
   };
 
   return (
-    <Col gap={12}>
+    <Column gap={12}>
       <FormField
         label="Link" placeholder="https://" value={text} inputType="url" autoFocus disabled={busy} onSubmit={submit}
         onChangeText={(value) => { setText(value); setHint(null); }} inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
         hint={hint ?? undefined} hintTone="danger"
       />
       {ready ? (
-        <Col gap={6}>
-          <Text value={`From ${preview.host}`} size="xs" color="secondary" truncate />
+        <Column gap={6}>
+          <Text text={`From ${preview.host}`} size="xs" color="secondary" truncate />
           <FrameSurface frame={preview.frame} stackId={`preview:${key}`} />
-        </Col>
+        </Column>
       ) : null}
-      <Text value={NOTE} size="xs" color="secondary" />
+      <Text text={NOTE} size="xs" color="secondary" />
       <Button
         label={buttonLabel(busy, ready)} block size="lg" color="primary" variant="solid" dark={dark}
         disabled={busy || text.trim() === ''} onPress={submit}
       />
-    </Col>
+    </Column>
   );
 }
 
@@ -125,10 +125,10 @@ export function AddLiveWidgetButton({ disabled }: { disabled: boolean }): React.
       />
       <AppModal visible={open} onClose={close} title={MODES.find(item => item.value === mode)?.title}>
         {open ? (
-          <Col gap={12}>
+          <Column gap={12}>
             <ModePicker mode={mode} onChange={setMode} />
             {mode === 'link' ? <AddLiveForm onDone={close} /> : <NodeCodeForm onDone={close} />}
-          </Col>
+          </Column>
         ) : null}
       </AppModal>
     </>

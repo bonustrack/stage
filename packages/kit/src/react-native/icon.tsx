@@ -1,20 +1,33 @@
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
+import { View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
 import {
   iconStroke, HERO_ICON_DEFAULTS,
-  type CentralIcon, type HeroIconName, type HeroSolidIconName, type IconName, type IconStyle,
+  type CentralIcon, type HeroIconName, type HeroSolidIconName, type IconName as KitIconName, type IconStyle,
 } from '../icons';
-import { brandIconPath, type BrandIconName } from '../brand-icons.data';
-import { centralIcon } from '../central-icons';
+import { IconBackward } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBackward';
+import { IconBellOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBellOff';
+import { IconBrokenHeart } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBrokenHeart';
+import { IconMute } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMute';
+import { IconSkip } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSkip';
+import { IconStarLines } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStarLines';
+import { IconVolumeDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeDown';
+import { a2uiIconTarget, isA2uiIconName, type A2uiExtraIcon, type A2uiIconName } from '../icons.a2ui';
+import { brandIconPath, isBrandIconName, type BrandIconName } from '../brand-icons.data';
+import { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { useContentColor } from './content-color';
 import { Glyph } from './glyph';
 
-export type { BrandIconName, CentralIcon, HeroIconName, HeroSolidIconName, IconName };
+export type { A2uiIconName, BrandIconName, CentralIcon, HeroIconName, HeroSolidIconName };
 export { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
+
+export type IconName = KitIconName | A2uiIconName | BrandIconName;
 
 export type IconVariant = IconStyle | 'outline';
 
-export interface IconProps {
-  name: IconName;
+export interface IconProps extends A2uiCommonProps {
+  name: IconName | { svgPath: string };
   size?: number;
   color?: string;
   dark?: boolean;
@@ -22,22 +35,67 @@ export interface IconProps {
   variant?: IconVariant;
 }
 
-export function Icon({ name, size = 22, color, dark, variant = 'line' }: IconProps): React.ReactElement {
-  return <Glyph icon={centralIcon(name, variant === 'solid' ? 'solid' : 'line')} size={size} color={color} dark={dark} />;
-}
+export const ICON_SIZE_DEFAULT = 22;
 
-export interface BrandIconProps {
-  name: BrandIconName;
-  size?: number;
-  color?: string;
-  dark?: boolean;
-}
-
-export function BrandIcon({ name, size = 22, color, dark }: BrandIconProps): React.ReactElement {
-  if (name === 'pin') return <Glyph icon={IconThumbtack} size={size} color={color} dark={dark} />;
+function PathIcon({ d, size, fill }: { d: string; size: number; fill: string }): React.ReactElement {
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
-      <Path d={brandIconPath(name)} fill={iconStroke(color, dark)} stroke="none" />
+      <Path d={d} fill={fill} stroke="none" />
     </Svg>
+  );
+}
+
+const A2UI_EXTRA_ICONS: Record<A2uiExtraIcon, CentralIcon> = {
+  brokenHeart: IconBrokenHeart,
+  bellOff: IconBellOff,
+  skip: IconSkip,
+  backward: IconBackward,
+  starLines: IconStarLines,
+  volumeDown: IconVolumeDown,
+  mute: IconMute,
+};
+
+function a2uiIcon(name: A2uiIconName, style: IconStyle): CentralIcon {
+  const target = a2uiIconTarget(name);
+  return typeof target === 'string' ? centralIcon(target, style) : A2UI_EXTRA_ICONS[target.extra];
+}
+
+function isKitIconName(name: string): name is HeroIconName {
+  return Object.hasOwn(CENTRAL_ICON_ALIASES, name);
+}
+
+export function resolveIcon(name: KitIconName | A2uiIconName, style: IconStyle): CentralIcon | undefined {
+  if (typeof name !== 'string') return name;
+  if (isKitIconName(name)) return centralIcon(name, style);
+  return isA2uiIconName(name) ? a2uiIcon(name, style) : undefined;
+}
+
+interface GlyphOfProps {
+  name: IconProps['name'];
+  size: number;
+  color: string | undefined;
+  dark: boolean | undefined;
+  style: IconStyle;
+}
+
+function IconGlyph({ name, size, color, dark, style }: GlyphOfProps): React.ReactElement | null {
+  if (typeof name === 'object' && 'svgPath' in name) return <PathIcon d={name.svgPath} size={size} fill={iconStroke(color, dark)} />;
+  if (typeof name === 'string' && isBrandIconName(name)) {
+    if (name === 'pin') return <Glyph icon={IconThumbtack} size={size} color={color} dark={dark} />;
+    return <PathIcon d={brandIconPath(name)} size={size} fill={iconStroke(color, dark)} />;
+  }
+  const icon = resolveIcon(name, style);
+  return icon === undefined ? null : <Glyph icon={icon} size={size} color={color} dark={dark} />;
+}
+
+export function Icon({ name, size = ICON_SIZE_DEFAULT, color, dark, variant = 'line', weight, accessibility }: IconProps): React.ReactElement | null {
+  const inherited = useContentColor();
+  const resolved = color ?? (dark === undefined ? inherited : undefined);
+  const glyph = <IconGlyph name={name} size={size} color={resolved} dark={dark} style={variant === 'solid' ? 'solid' : 'line'} />;
+  if (weight === undefined && accessibility === undefined) return glyph;
+  return (
+    <View style={weightStyle(weight)} {...accessibilityProps(accessibility)}>
+      {glyph}
+    </View>
   );
 }

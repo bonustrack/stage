@@ -8,7 +8,6 @@ import { ChannelCard, GitHubLinkCard, LinkPreviewCard, PreviewLinkCard } from '.
 import type { CardLink } from '@stage-labs/client/embed/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
-import { Box, Col, Row } from '../layout';
 import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './helpers';
 import type { Attachment, LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
@@ -37,6 +36,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareCheck';
 import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
 import { IconPointer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPointer';
+import { Column, Row } from '../layout';
 
 const LINE_HEIGHT = 23;
 
@@ -44,12 +44,12 @@ function TaskMark({ task }: { task: TaskState }): React.ReactElement {
   const pal = usePalette();
   const done = task === 'done';
   return (
-    <Box
+    <Column
       justify="center" height={LINE_HEIGHT} margin={{ left: 2, right: 8 }}
       accessibilityRole="checkbox" accessibilityState={{ checked: done }}
     >
       <Glyph icon={done ? IconSquareCheck : IconSquarePlaceholder} size={18} color={done ? pal.text : pal.sub}/>
-    </Box>
+    </Column>
   );
 }
 
@@ -58,7 +58,7 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   usePeerProfiles([address]);
   return (
     <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      onPress={() => { router.push(profileLinkOf(address)); }} role="link"
+      onPress={() => { router.push(profileLinkOf(address)); }}
       suppressHighlighting>
       {mentionLabelOf(address)}
     </Text>
@@ -88,16 +88,16 @@ export const markdownRules: RenderRules = {
     const task = taskStateOf(node.attributes);
     if (!task) return renderRules.list_item?.(node, children, parents, styles, inheritedStyles);
     return (
-      <Box key={node.key} style={styles._VIEW_SAFE_list_item}>
+      <Column key={node.key} style={styles._VIEW_SAFE_list_item}>
         <TaskMark task={task}/>
-        <Box style={styles._VIEW_SAFE_bullet_list_content}>{children}</Box>
-      </Box>
+        <Column style={styles._VIEW_SAFE_bullet_list_content}>{children}</Column>
+      </Column>
     );
   },
   tr: (node, children, parents, styles: MarkdownViewStyles) => {
     const body = parents[0];
     const last = body?.type === 'tbody' && node.index === body.children.length - 1;
-    return <Box key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>{children}</Box>;
+    return <Column key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>{children}</Column>;
   },
 };
 
@@ -143,13 +143,13 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
-    <Col margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
-        <Box key={a.id ?? `${entryId}-att-${i}`}>
+        <Column key={a.id ?? `${entryId}-att-${i}`}>
           <BubbleAttachment att={a} index={i} entryId={entryId} fg={fg} />
-        </Box>
+        </Column>
       ))}
-    </Col>
+    </Column>
   );
 }
 
@@ -197,7 +197,7 @@ export function BubbleBody({ text, fg, highlight, markdownProps }: {
 }): React.ReactElement {
   const parts = useMemo(() => splitCodeBlocks(unescapeBody(text)), [text]);
   return (
-    <Box gap={BLOCK_GAP} style={{ alignSelf: 'stretch' }}>
+    <Column gap={BLOCK_GAP} style={{ alignSelf: 'stretch' }}>
       {parts.map((part, index) => (part.type === 'code' ? (
         <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} highlight={highlight} />
       ) : (
@@ -206,7 +206,7 @@ export function BubbleBody({ text, fg, highlight, markdownProps }: {
           highlight={highlight} markdownProps={markdownProps}
         />
       )))}
-    </Box>
+    </Column>
   );
 }
 
@@ -226,9 +226,9 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
   return (
     <>
       {cardLinks.map(card => (
-        <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+        <Column key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
           {embedNode(card, dark)}
-        </Box>
+        </Column>
       ))}
     </>
   );

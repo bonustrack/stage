@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { IconAudio } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAudio';
@@ -15,7 +12,6 @@ import { IconFileText } from '@central-icons-react-native/round-outlined-radius-
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
-import { Box, Col, Row, LIST_TOP_GAP, PAGE_GUTTER, VirtualList } from '../layout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { StackHeader } from '../chrome/StackHeader';
 import { LabelChip } from '../LabelChip';
@@ -37,6 +33,9 @@ import { FileUnavailableError, openStoredFile } from './storageOpen';
 import {
   STORAGE_FILTERS, chatLabelOf, storageRows, storageStatusLabel, type StorageFilter, type StorageKind, type StorageRow,
 } from './StorageScreen.model';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row, LIST_TOP_GAP, PAGE_GUTTER, VirtualList } from '../layout';
 
 const KIND_ICONS: Readonly<Record<StorageKind, typeof IconFileBend>> = {
   image: IconImages1, document: IconFileText, audio: IconAudio, video: IconVideo, other: IconFileBend,
@@ -74,20 +73,20 @@ function FileRow({ row, opening, unavailable, onOpen }: {
   const detail = unavailable ? UNAVAILABLE : [row.detail, chat].filter(Boolean).join(' · ');
   return (
     <ListViewItem align="center" gap={12} dark={dark} padding={ROW_PADDING} onPress={() => { onOpen(row.file); }}>
-      <Box width={44} height={44} radius="md" align="center" justify="center" surface="raised">
+      <Column width={44} height={44} radius="md" align="center" justify="center" surface="raised">
         {opening ? <Spinner size={20} color={fg} /> : <Glyph icon={KIND_ICONS[row.kind]} size={24} color={fg} />}
-      </Box>
-      <Col flex={1} minWidth={0} gap={2}>
-        <Text value={row.file.name} size="xs" weight="semibold" color="link" truncate />
-        <Text value={detail} size="2xs" color={unavailable ? 'danger' : 'secondary'} truncate />
-      </Col>
+      </Column>
+      <Column weight={1} minWidth={0} gap={2}>
+        <Text text={row.file.name} size="xs" fontWeight="semibold" color="link" truncate />
+        <Text text={detail} size="2xs" color={unavailable ? 'danger' : 'secondary'} truncate />
+      </Column>
     </ListViewItem>
   );
 }
 
 function TypeChips({ filter, onFilter }: { filter: StorageFilter; onFilter: (filter: StorageFilter) => void }): React.ReactElement {
   return (
-    <Scroll horizontal showsHorizontalScrollIndicator={false}>
+    <List direction="horizontal" showsHorizontalScrollIndicator={false}>
       <Row gap={8} padding={{ x: PAGE_GUTTER }}>
         {STORAGE_FILTERS.map(option => (
           <Pressable key={option.value} accessibilityRole="button" onPress={() => { onFilter(option.value); }}>
@@ -95,7 +94,7 @@ function TypeChips({ filter, onFilter }: { filter: StorageFilter; onFilter: (fil
           </Pressable>
         ))}
       </Row>
-    </Scroll>
+    </List>
   );
 }
 
@@ -106,7 +105,7 @@ function StatusLine({ storage, hidden }: { storage: StorageState; hidden: Readon
   return (
     <Row align="center" gap={8} padding={{ x: PAGE_GUTTER }}>
       {storage.scanning ? <Spinner size={14} color={sub} /> : null}
-      <Caption value={text} color="secondary" />
+      <Text size="md" variant="caption" text={text} color="secondary" />
     </Row>
   );
 }
@@ -117,12 +116,12 @@ function ListHeader({ query, onQuery, filter, onFilter, storage, hidden }: {
 }): React.ReactElement {
   const { link: head, sub, border } = usePalette();
   return (
-    <Col gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
+    <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
       <SearchTopnavBar field inline persistent query={query} setQuery={onQuery} onClose={() => { onQuery(''); }}
         head={head} sub={sub} border={border} placeholder="Search files" />
       <TypeChips filter={filter} onFilter={onFilter} />
       <StatusLine storage={storage} hidden={hidden} />
-    </Col>
+    </Column>
   );
 }
 
@@ -137,19 +136,19 @@ function EmptyList({ storage, filtered }: { storage: StorageState; filtered: boo
   const title = filtered ? 'No matching files' : 'No files yet';
   const note = filtered ? 'Try another name or type.' : 'Files you send in your chats show up here.';
   return (
-    <Col align="center" gap={6} padding={{ x: PAGE_GUTTER, top: 48 }}>
+    <Column align="center" gap={6} padding={{ x: PAGE_GUTTER, top: 48 }}>
       <Glyph icon={IconFolder1} size={32} color={sub} />
-      <Text value={title} size="xs" weight="semibold" color="link" textAlign="center" />
-      <Text value={note} size="2xs" color="secondary" textAlign="center" />
-    </Col>
+      <Text text={title} size="xs" fontWeight="semibold" color="link" textAlign="center" />
+      <Text text={note} size="2xs" color="secondary" textAlign="center" />
+    </Column>
   );
 }
 
 function Footnote({ show }: { show: boolean }): React.ReactElement | null {
   if (!show) return null;
   return (
-    <Caption color="secondary" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 16 }}
-      value="Found on this device in the messages you sent. Files stay encrypted, and only your chats hold their keys." />
+    <Text size="md" variant="caption" color="secondary" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 16 }}
+      text="Found on this device in the messages you sent. Files stay encrypted, and only your chats hold their keys." />
   );
 }
 
@@ -195,7 +194,7 @@ function StorageBody(): React.ReactElement {
     <FileRow row={item} opening={opening === item.key} unavailable={unavailable.has(item.key)} onOpen={open} />
   ), [opening, unavailable, open]);
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title="Storage" backTo={SETTINGS_ROUTE} back={!rail} />
       <VirtualList
         data={rows}
@@ -210,7 +209,7 @@ function StorageBody(): React.ReactElement {
         ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
         ListFooterComponent={<Footnote show={rows.length > 0} />}
       />
-    </Col>
+    </Column>
   );
 }
 

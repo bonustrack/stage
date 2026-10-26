@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { schemePalette } from '../tokens';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 
-export interface SpinnerProps {
+export interface SpinnerProps extends A2uiCommonProps {
   size?: number;
   color?: string;
 }
@@ -56,11 +57,13 @@ function SpinnerRing({ size, color, gradientId }: { size: number; color: string;
 
 export function Spinner(props: SpinnerProps): React.ReactElement {
   const head = schemePalette(useKitScheme() === 'dark').head;
-  const { size = 24, color = head } = props;
+  const { size = 24, color = head, weight, accessibility } = props;
   const [gradientId] = useState(() => `kitSpin${Math.random().toString(36).slice(2, 8)}`);
   const rotate = useNativeRotation();
   const ring = <SpinnerRing size={size} color={color} gradientId={gradientId} />;
 
-  if (IS_WEB) return <View style={[{ width: size, height: size }, webSpin.spin]}>{ring}</View>;
-  return <Animated.View style={{ width: size, height: size, transform: [{ rotate }] }}>{ring}</Animated.View>;
+  const a11y = accessibilityProps(accessibility);
+  const box = { width: size, height: size, ...weightStyle(weight) };
+  if (IS_WEB) return <View {...a11y} style={[box, webSpin.spin]}>{ring}</View>;
+  return <Animated.View {...a11y} style={{ ...box, transform: [{ rotate }] }}>{ring}</Animated.View>;
 }

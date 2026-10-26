@@ -1,4 +1,3 @@
-
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { MODAL } from '@stage-labs/kit/react-native/modal';
@@ -6,9 +5,9 @@ import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { Contact } from '../../lib/useContacts';
-import { Box, Row } from '../layout';
 import { ChannelRow } from '../ChannelRow';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { Column, Row } from '../layout';
 
 function SuggestionCheck({ selected, checkBackground, dark }: {
   selected: boolean; checkBackground: string; dark: boolean;
@@ -49,7 +48,7 @@ export function ContactSuggestions({
   const dark = useKitScheme() === 'dark';
   if (contacts.length === 0) return null;
   return (
-    <Box margin={{ x: -MODAL.padding }}>
+    <Column margin={{ x: -MODAL.padding }}>
       {contacts.map((c) => {
         const short = shortAddress(c.address);
         return (
@@ -64,6 +63,6 @@ export function ContactSuggestions({
           />
         );
       })}
-    </Box>
+    </Column>
   );
 }

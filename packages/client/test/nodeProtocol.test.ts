@@ -3,7 +3,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
 import {
-  actionReplyOf, loadNode, loadReplyOf, newNodeKey, nodeActionBody, nodeHeaders, nodeKeyId, nodeUrlOf, sendNodeAction,
+  loadNode, loadReplyOf, messageReplyOf, newNodeKey, nodeHeaders, nodeKeyId, nodeRequestBody, nodeUrlOf, sendNodeMessage,
 } from '../src/nodes/protocol';
 import { nodeSigningText } from '../src/nodes/signing';
 
@@ -11,7 +11,12 @@ const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031ca
 const RFC8032_PUBLIC = '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo';
 const URL_A = 'https://btc.example.com/';
 const NOW = 1_760_000_000_000;
-const CARD = { type: 'Card', children: [{ type: 'Title', value: '$100' }] };
+const KIT = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
+const MESSAGES = [{ version: 'v1.0', createSurface: { surfaceId: 'main', catalogId: KIT, components: [{ id: 'root', component: 'Title', text: '$100' }] } }];
+const UPDATE = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value: 101 } };
+const VOTE = { name: 'vote', surfaceId: 'main', sourceComponentId: 'yes', timestamp: '2026-10-26T00:00:00.000Z', context: { option: 'yes' } };
+const VOTE_MESSAGE = { version: 'v1.0', action: VOTE };
+const CAPABILITIES = { 'v1.0': { supportedCatalogIds: [KIT] } };
 const realFetch = globalThis.fetch;
 
 function bytesOf(base64url: string): Uint8Array {
@@ -103,7 +108,7 @@ describe('node request signing', () => {
   });
 
   test('a node verifies the signature with WebCrypto Ed25519', async () => {
-    const body = nodeActionBody(RFC8032_PUBLIC, { type: 'vote' });
+    const body = nodeRequestBody({ message: VOTE_MESSAGE });
     const headers = nodeHeaders('POST', URL_A, body, RFC8032_KEY, NOW);
     const publicKey = await crypto.subtle.importKey('raw', bytesOf(RFC8032_PUBLIC), { name: 'Ed25519' }, false, ['verify']);
     const signed = utf8ToBytes(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
@@ -111,75 +116,84 @@ describe('node request signing', () => {
   });
 });
 
-describe('node action request', () => {
-  test('mirrors the ChatKit threads.sync_custom_action request', () => {
-    expect(JSON.parse(nodeActionBody('kid', { type: 'vote' }))).toEqual({
-      type: 'threads.sync_custom_action', params: { thread_id: 'kid', item_id: 'kid', action: { type: 'vote' } },
+describe('node requests', () => {
+  test('are the A2UI renderer message, with capabilities and the data model in its metadata', () => {
+    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE }))).toEqual(VOTE_MESSAGE);
+    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE, dataModel: { main: { price: 1 } } }, CAPABILITIES)).metadata).toEqual({
+      a2uiRendererCapabilities: CAPABILITIES,
+      a2uiRendererDataModel: { version: 'v1.0', surfaces: { main: { price: 1 } } },
     });
-    expect(JSON.parse(nodeActionBody('kid', { type: 'buy', payload: { qty: 2 } })).params.action).toEqual({ type: 'buy', payload: { qty: 2 } });
   });
 });
 
 describe('node replies', () => {
-  const frame = { kind: 'frame', frame: { widget: CARD } };
+  const frame = { kind: 'frame', frame: { messages: MESSAGES } };
+  const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'main.1', value: 42 } };
+  const call = { version: 'v1.0', callRendererFunction: { functionCallId: 'f1', callFunction: { '@call': 'formatNumber', catalogId: KIT, args: { value: 1 } } } };
 
-  test('a load answers a ChatKit widget root', () => {
-    expect(loadReplyOf(CARD)).toEqual(frame);
-    const list = { type: 'ListView', children: [] };
-    expect(loadReplyOf(list)).toEqual({ kind: 'frame', frame: { widget: list } });
+  test('a load answers A2UI messages as an array, a messages object or one message', () => {
+    expect(loadReplyOf(MESSAGES)).toEqual(frame);
+    expect(loadReplyOf({ messages: MESSAGES })).toEqual(frame);
+    expect(loadReplyOf(MESSAGES[0])).toEqual(frame);
   });
 
-  test('an action answers a sync action response, and no updated item keeps the current widget', () => {
-    expect(actionReplyOf({ updated_item: { id: 'w1', thread_id: 't', type: 'widget', widget: CARD } })).toEqual(frame);
-    expect(actionReplyOf({})).toEqual({ kind: 'unchanged' });
-    expect(actionReplyOf({ updated_item: null })).toEqual({ kind: 'unchanged' });
+  test('a request answers any agent message, function calls and answers included, and no messages keep the current frame', () => {
+    expect(messageReplyOf([UPDATE])).toEqual({ kind: 'messages', messages: [UPDATE] });
+    expect(messageReplyOf([answer, call, UPDATE])).toEqual({ kind: 'messages', messages: [answer, call, UPDATE] });
+    for (const empty of [[], {}, { messages: [] }, undefined]) expect(messageReplyOf(empty)).toEqual({ kind: 'unchanged' });
   });
 
-  test('a load refuses anything but a widget root', () => {
+  test('a load refuses anything but A2UI frame messages', () => {
     const refused = [
-      null, undefined, [CARD], 'Card', {}, { price: 1 }, { type: 'widget', widget: CARD }, { title: 'BTC', widget: CARD },
-      { screens: { a: CARD }, start: 'a' }, { updated_item: { type: 'widget', widget: CARD } }, { type: 'Card', note: 'x'.repeat(70_000) },
-      { type: 'error', message: 'oops' }, { type: 'Text', value: 'not a root' },
+      null, undefined, [], 'Card', {}, { price: 1 }, { type: 'Card', children: [] }, [{ version: 'v0.9', createSurface: { surfaceId: 'a' } }],
+      [{ version: 'v1.0', createSurface: { surfaceId: 'a' }, extra: 1 }], [answer], [call],
+      [{ version: 'v1.0', updateComponents: { components: [] } }], { messages: MESSAGES, title: 'x' },
+      [{ version: 'v1.0', createSurface: { surfaceId: 'a', note: 'x'.repeat(70_000) } }],
     ];
     for (const reply of refused) expect([reply, loadReplyOf(reply)]).toEqual([reply, null]);
   });
 
-  test('an action refuses anything but a sync action response', () => {
+  test('a request refuses anything but A2UI agent messages', () => {
     const refused = [
-      null, undefined, [CARD], 'Card', CARD, { price: 1 }, { type: 'widget', widget: CARD }, { title: 'BTC', widget: CARD },
-      { updated_item: { type: 'assistant_message', content: [] } }, { updated_item: { type: 'widget', widget: { type: 'Text', value: 'x' } } },
-      { updated_item: { type: 'widget' } }, { updated_item: 'Card' },
+      null, 'Card', { price: 1 }, { updated_item: { type: 'widget' } }, [VOTE_MESSAGE],
+      [{ version: 'v1.0', agentFunctionResponse: { value: 1 } }], [{ version: 'v1.0', callRendererFunction: {} }],
     ];
-    for (const reply of refused) expect([reply, actionReplyOf(reply)]).toEqual([reply, null]);
+    for (const reply of refused) expect([reply, messageReplyOf(reply)]).toEqual([reply, null]);
   });
 });
 
 describe('node calls', () => {
   test('loads with a signed GET, without cookies or redirects', async () => {
-    const seen = stubFetch(() => Response.json(CARD));
-    expect(await loadNode('https://BTC.example.com', RFC8032_KEY)).toEqual({ ok: true, reply: { kind: 'frame', frame: { widget: CARD } } });
+    const seen = stubFetch(() => Response.json(MESSAGES));
+    expect(await loadNode('https://BTC.example.com', RFC8032_KEY, { capabilities: CAPABILITIES })).toEqual({ ok: true, reply: { kind: 'frame', frame: { messages: MESSAGES } } });
     const call = seen[0];
     expect(call?.url).toBe(URL_A);
     expect(call?.init).toMatchObject({ method: 'GET', credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer' });
     const headers = call?.init.headers as Record<string, string>;
     expect(headers['Stage-Key']).toBe(RFC8032_PUBLIC);
+    expect(JSON.parse(headers['Stage-A2UI-Capabilities'] ?? '')).toEqual(CAPABILITIES);
     const text = nodeSigningText('GET', URL_A, headers['Stage-Timestamp'] ?? '', '');
     expect(ed25519.verify(bytesOf(headers['Stage-Signature'] ?? ''), utf8ToBytes(text), bytesOf(RFC8032_PUBLIC))).toBe(true);
   });
 
-  test('posts an action as JSON and returns the updated widget', async () => {
-    const seen = stubFetch(() => Response.json({ updated_item: { type: 'widget', widget: CARD } }));
-    const result = await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote', payload: { coin: 'BTC' } });
-    expect(result).toEqual({ ok: true, reply: { kind: 'frame', frame: { widget: CARD } } });
+  test('posts an action as JSON and returns the A2UI messages it answers, JSON lines included', async () => {
+    const seen = stubFetch(() => new Response(`${JSON.stringify(UPDATE)}\n${JSON.stringify(UPDATE)}\n`));
+    const result = await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE });
+    expect(result).toEqual({ ok: true, reply: { kind: 'messages', messages: [UPDATE, UPDATE] } });
     expect(seen[0]?.init.method).toBe('POST');
     expect((seen[0]?.init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
-    expect(JSON.parse(String(seen[0]?.init.body)).params.action).toEqual({ type: 'vote', payload: { coin: 'BTC' } });
+    expect(JSON.parse(String(seen[0]?.init.body)).action).toEqual(VOTE);
+    const call = { version: 'v1.0', callAgentFunction: { surfaceId: 'main', functionCallId: 'main.1', callFunction: { '@call': 'quote', catalogId: KIT } } };
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: call })).toMatchObject({ ok: true });
+    expect(JSON.parse(String(seen[1]?.init.body))).toEqual(call);
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: { version: 'v1.0', createSurface: { surfaceId: 'x' } } })).toEqual({ ok: false, problem: 'invalid' });
+    expect(seen).toHaveLength(2);
   });
 
   test('never calls a blocked url', async () => {
-    const seen = stubFetch(() => Response.json(CARD));
+    const seen = stubFetch(() => Response.json(MESSAGES));
     expect(await loadNode('https://192.168.0.2/', RFC8032_KEY)).toEqual({ ok: false, problem: 'blocked' });
-    expect(await sendNodeAction('http://example.com/', RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'blocked' });
+    expect(await sendNodeMessage('http://example.com/', RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: false, problem: 'blocked' });
     expect(seen).toHaveLength(0);
   });
 
@@ -199,21 +213,20 @@ describe('node calls', () => {
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'unreachable' });
   });
 
-  test('a load takes only a widget root and a tap only a sync action response', async () => {
-    stubFetch(() => Response.json({}));
-    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
+  test('a load needs a surface, a tap may answer nothing', async () => {
+    stubFetch(() => Response.json([]));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => new Response(null, { status: 204 }));
-    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'invalid' });
-    stubFetch(() => Response.json({ updated_item: { type: 'widget', widget: CARD } }));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
-    stubFetch(() => Response.json(CARD));
-    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'vote' })).toEqual({ ok: false, problem: 'invalid' });
+    stubFetch(() => Response.json({ updated_item: { type: 'widget' } }));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: false, problem: 'invalid' });
   });
 
   test('refuses an action payload that is too large', async () => {
-    const seen = stubFetch(() => Response.json(CARD));
-    expect(await sendNodeAction(URL_A, RFC8032_KEY, { type: 'save', payload: { text: 'x'.repeat(17_000) } })).toEqual({ ok: false, problem: 'too-large' });
+    const seen = stubFetch(() => Response.json(MESSAGES));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: { version: 'v1.0', action: { ...VOTE, context: { text: 'x'.repeat(17_000) } } } })).toEqual({ ok: false, problem: 'too-large' });
     expect(seen).toHaveLength(0);
   });
 });

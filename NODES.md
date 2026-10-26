@@ -1,45 +1,70 @@
 # Stage nodes
 
-A node is any HTTPS URL that answers with [OpenAI ChatKit](https://openai.github.io/chatkit-js/) widget JSON, the same JSON a Stage frame shows. Stage turns it into a live widget on the Dashboard (Dashboard, Add from URL), and a frame sent in a chat can name its node too (see Frames in chats). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
+A node is any HTTPS URL that answers with [A2UI v1.0](https://a2ui.org) messages, the same messages a Stage frame carries. Stage turns it into a live widget on the Dashboard (Dashboard, Add from URL), and a frame sent in a chat can name its node too (see Frames in chats). No agent is involved: the app talks to the node directly. A node can run anywhere, and Stage can also host one for you (see Hosted nodes).
 
 ## Load
 
-`GET <url>`, signed (see Signing). Answer `200` with a ChatKit widget root as JSON: `{"type": "Card", "children": [...]}`, or a `ListView` or `Basic` root. Any other body is refused.
+`GET <url>`, signed (see Signing). Answer `200` with A2UI v1.0 server messages: a JSON array, `{"messages": [...]}`, a single message, or one message per line (JSON Lines). Only `createSurface`, `updateComponents`, `updateDataModel` and `deleteSurface` are allowed, and at least one surface must end up with a `root` component. Any other body is refused.
+
+```json
+[{"version": "v1.0", "createSurface": {
+  "surfaceId": "main",
+  "catalogId": "https://kit.stage.box/a2ui/v1_0/catalog.json",
+  "dataModel": {"price": "$64,210"},
+  "components": [
+    {"id": "root", "component": "Card", "child": "col"},
+    {"id": "col", "component": "Column", "children": ["title", "price", "refresh"]},
+    {"id": "title", "component": "Title", "text": "BTC"},
+    {"id": "price", "component": "Text", "text": {"@path": "/price"}},
+    {"id": "label", "component": "Text", "text": "Refresh"},
+    {"id": "refresh", "component": "Button", "child": "label", "action": {"event": {"name": "refresh"}}}
+  ]
+}}]
+```
+
+Use the A2UI basic catalog (`https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json`) or the Stage Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`), which is the basic catalog plus Stage's design tokens, icons and a few extra components (Title, Badge, ListView, Spinner, QrCode). Stage validates every message against its catalog and drops the ones that do not pass.
+
+A node can create several surfaces. The first one shows (or the one a chat frame names in `start`). A button whose action calls the Kit catalog function `openSurface` with another surface id opens it as a new screen with a back button, and `closeSurface` goes back:
+
+```json
+{"id": "more", "component": "Button", "child": "moreLabel", "action": {"functionCall": {"@call": "openSurface", "args": {"surfaceId": "details"}}}}
+```
 
 Stage loads it when the widget shows, then every minute while the Dashboard is open and the app is in front. After a failure it waits longer, up to 5 minutes. Offline or on an error, the widget keeps the last good version and its header says why and since when.
 
 The menu of a live widget (the three dots) has Refresh, which loads the node again at once, and Copy link. A node does not need a Refresh button of its own.
 
-## Actions
+## Renderer messages
 
-A button (`onClickAction`), a form submit (`onSubmitAction`) or a field change (`onChangeAction`) sends ChatKit's own sync action request:
+Everything the A2UI renderer sends is POSTed to the node, signed, one message per request, as is:
+
+- `action`: a component with an event action (a Button, a ListViewItem) was used.
+- `callAgentFunction`: a component evaluates a function its catalog leaves to the agent. In the Stage Kit catalog that is `agentFunction`: `{"@call": "agentFunction", "args": {"name": "quote", "args": {"coin": "BTC"}}}` works anywhere a dynamic value does (a `Text`'s `text`, a check's condition, ...) and arrives as `callFunction`. The value shows as pending until the node answers, and a component asks once per name and arguments.
+- `rendererFunctionResponse`: the answer to a `callRendererFunction` the node sent.
+- `error`: a message from the node failed validation (`VALIDATION_FAILED`, `UNALLOWED_PARENT`, `UNALLOWED_CHILD`, ...).
 
 ```http
 POST <url>
 Content-Type: application/json
 
-{"type": "threads.sync_custom_action", "params": {"thread_id": "<key id>", "item_id": "<key id>", "action": {"type": "vote", "payload": {"option": "yes"}}}}
+{"version": "v1.0", "action": {"name": "refresh", "surfaceId": "main", "sourceComponentId": "refresh", "timestamp": "2026-10-26T12:00:00.000Z", "context": {}}, "metadata": {"a2uiRendererCapabilities": {"v1.0": {"supportedCatalogIds": ["https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json", "https://kit.stage.box/a2ui/v1_0/catalog.json"]}}}}
 ```
 
-`action` is the widget's ActionConfig `type` and `payload`. Form values are merged into `payload` by field name, as in ChatKit: dotted names nest and keys already in the payload win. In a frame with screens, `payload.screen` is the screen the tap came from, unless the payload already has a `screen`. Stage has no threads, so `thread_id` and `item_id` are both the widget's key id (the `Stage-Key` header). `loadingBehavior` is ignored: the tapped button shows its own loading state until the reply. An action with ChatKit's `"handler": "client"` never goes to the node: Stage handles it and sends it to the chat (see Frames in chats).
+An action's `context` holds the event's resolved `context`, so data-bound values such as form fields arrive with it. `metadata.a2uiRendererCapabilities` lists the catalogs Stage renders, on every message; the same JSON comes in the `Stage-A2UI-Capabilities` header of every request, loads included. A surface created with `"sendDataModel": true` also sends its whole data model, the A2UI way, in `metadata.a2uiRendererDataModel`: `{"version": "v1.0", "surfaces": {"main": {...}}}`. The key id (the `Stage-Key` header) tells the node which widget is calling.
 
-Answer like a ChatKit `sync_action()` handler, with a `SyncCustomActionResponse`:
-
-```json
-{"updated_item": {"type": "widget", "widget": {"type": "Card", "children": []}}}
-```
-
-Stage shows the new widget at once. `{}` or `{"updated_item": null}` keep the current widget. Anything else is refused, an empty body included. So a ChatKit server can serve a node by passing `params.action` to its action handler and returning the serialized response.
+Answer with A2UI messages, in any of the Load formats: the surface messages, plus `agentFunctionResponse` (`{"functionCallId": "...", "value": ...}` or `"error": {"code", "message"}`) to answer a `callAgentFunction`, and `callRendererFunction` to have Stage run one of its catalog functions and answer with a `rendererFunctionResponse` (only functions whose `allowedCallers` let the agent call them run; every basic and Kit function is renderer only today, so they answer `INVALID_FUNCTION_CALL`). Stage applies them to the frame as shown, local edits and pending calls included, and shows the result at once. `[]`, `{}` or an empty body change nothing. A reply that leaves no surface to show is refused. A frame without a node answers every `callAgentFunction` with an `UNKNOWN_FUNCTION` error, so nothing waits forever.
 
 ## Signing
 
-Every request carries three headers:
+Every request carries three signing headers:
 
 | Header | Value |
 |---|---|
 | `Stage-Key` | the widget's Ed25519 public key, 32 bytes, base64url without padding |
 | `Stage-Timestamp` | Unix time in seconds |
 | `Stage-Signature` | Ed25519 signature, 64 bytes, base64url without padding |
+
+The `Stage-A2UI-Capabilities` header is informational and not signed.
 
 The signature covers these five lines joined with `\n`, in UTF-8, with no trailing newline:
 
@@ -66,10 +91,10 @@ Test vector, with the RFC 8032 test 1 key:
 
 - `https` only, and no user name or password in the URL.
 - No local names (`localhost`, `.local`, `.internal`, `.lan`, `.home.arpa`, names without a dot) and no private, loopback, link-local, shared (100.64/10) or multicast IP addresses.
-- No cookies or credentials, no referrer, no redirects, a 10 second timeout and replies up to 128 KB (reading stops there). Action requests are at most 16K characters. On phones, a host name must be plain ASCII (use the `xn--` form for international names).
-- The reply passes the same checks as a frame: at most 64K characters of widget JSON, depth 16, 500 nodes, `https` images only. No code from a node runs in Stage.
+- No cookies or credentials, no referrer, no redirects, a 10 second timeout and replies up to 128 KB (reading stops there). POST requests are at most 16K characters. On phones, a host name must be plain ASCII (use the `xn--` form for international names).
+- The reply passes the same checks as a frame: at most 200 messages, 64K characters of JSON and 500 components; messages that fail their catalog schema are dropped and a reply that leaves nothing to show is refused; `https` media only. No code from a node runs in Stage: A2UI functions are the catalog's own, run by Stage.
 - The widget header shows the node's host.
-- In browsers the node must answer CORS: `Access-Control-Allow-Origin: *` on every response, and `OPTIONS` with `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature`. Hosted nodes get this from `nodes.stage.box`.
+- In browsers the node must answer CORS: `Access-Control-Allow-Origin: *` on every response, and `OPTIONS` with `Access-Control-Allow-Methods: GET, POST, OPTIONS` and `Access-Control-Allow-Headers: Content-Type, Stage-Key, Stage-Timestamp, Stage-Signature, Stage-A2UI-Capabilities`. Hosted nodes get this from `nodes.stage.box`.
 
 ## Hosted nodes
 
@@ -80,7 +105,10 @@ The code is one ES module of at most 64 KB, with no `import`, whose default expo
 ```js
 export default {
   async fetch() {
-    return Response.json({ type: 'Card', children: [{ type: 'Text', value: new Date().toISOString() }] });
+    return Response.json([{ version: 'v1.0', createSurface: {
+      surfaceId: 'main', catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json',
+      components: [{ id: 'root', component: 'Text', text: new Date().toISOString() }],
+    } }]);
   },
 };
 ```
@@ -113,17 +141,17 @@ Errors: `400` the code was refused (the reason is in `error`), `401` a bad or st
 
 ## Frames in chats
 
-A frame message can name its node with `source`: `{"widget": {...}, "source": {"url": "https://..."}}`. A frame without `source`, or whose `source` is not a node URL Stage calls (see What Stage enforces), is a plain frame: it shows as sent and its actions go to the chat.
-
-In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Stage does not call the node before a tap, and nothing works before the chat is accepted. Images in the frame still load when it shows, as in any frame. Calls are signed and checked as on the Dashboard. The reply replaces the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
-
-A tap sends the action to the node. An action with ChatKit's `"handler": "client"` goes to the chat instead, as a frame action message, like every action of a frame without `source`. So one frame can have a button its node answers and a button for the agent that sent it:
+A frame message (content type `stage.box/frame:2.0`) carries A2UI messages, like a node reply, with an optional `title`, `description`, `start` surface and `source`:
 
 ```json
-{"type": "Button", "label": "Ask the agent", "onClickAction": {"type": "ask", "handler": "client"}}
+{"title": "BTC", "messages": [{"version": "v1.0", "createSurface": {"surfaceId": "main", "catalogId": "https://kit.stage.box/a2ui/v1_0/catalog.json", "components": [...]}}], "source": {"url": "https://..."}}
 ```
 
-Add to dashboard, in the frame's menu (the three dots) or in the message menu, first asks, naming the node's host, then adds a live widget for that URL with a new key. That widget remembers the frame, so its `"handler": "client"` actions still go to that chat once the chat is accepted. A widget added from a link has no chat and does not send them. On a plain frame, Add to dashboard adds a widget that shows that message as it was sent, and its actions go to that chat.
+A frame without `source`, or whose `source` is not a node URL Stage calls (see What Stage enforces), is a plain frame: it shows as sent and its actions go to the chat as a frame action message (`stage.box/frameAction:2.0`): `{"frameId": "<frame message id>", "action": {<the A2UI action>}, "label": "<the button text>"}`, plus `dataModel` when the surface sets `sendDataModel`. Frames in the older ChatKit format (`stage.box/frame:1.0`) are no longer read and show their fallback text.
+
+In the chat, the frame shows as it was sent, and Stage calls its node only when someone taps: a button in it, or Refresh in its menu (the three dots above it, next to the node's host). Stage does not call the node before a tap, and nothing works before the chat is accepted. Images in the frame still load when it shows, as in any frame. Calls are signed and checked as on the Dashboard, and every action of a frame with a node goes to that node. The reply updates the frame in place on that device only: no message is sent, and after the app restarts the frame shows as sent again. Each frame signs with its own key, made on the device for that app session.
+
+Add to dashboard, in the frame's menu (the three dots) or in the message menu, first asks, naming the node's host, then adds a live widget for that URL with a new key. On a plain frame, Add to dashboard adds a widget that shows that message as it was sent, and its actions go to that chat.
 
 ## Limits
 

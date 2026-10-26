@@ -7,13 +7,13 @@ import { IconPeopleCircle } from '@central-icons-react-native/round-outlined-rad
 import { IconCrossSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossSmall';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { Col, PAGE_GUTTER, Row } from '../layout';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import { FIELD_SECTIONS, LabelPicker } from '../channel/channel.labels';
 import { toggleKey } from '../conversation/SidebarSection.model';
 import { peerLabel } from '../conversation/convTitle';
 import { usePalette } from '../../lib/theme';
 import type { NewChatMetadata as Metadata } from './newChatMetadata.model';
+import { Column, PAGE_GUTTER, Row } from '../layout';
 
 const METADATA_CHIP_STYLE = { maxWidth: '100%', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } as const;
 
@@ -64,7 +64,7 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
       </Row>
       {anchor === null ? null : (
         <AnchoredMenu visible anchor={anchor} onClose={() => { setAnchor(null); }}>
-          <Col width={anchored ? 300 : undefined}><LabelPicker draft={value.labels} current={value.labels} toggle={toggle}/></Col>
+          <Column width={anchored ? 300 : undefined}><LabelPicker draft={value.labels} current={value.labels} toggle={toggle}/></Column>
         </AnchoredMenu>
       )}
     </>

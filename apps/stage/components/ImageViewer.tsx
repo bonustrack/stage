@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-
 import { Alert, Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { Col, PAGE_GUTTER, Row } from './layout';
 import { RoundOverflowMenu } from './MenuRows';
 import { RoundIconButton } from './RoundIconButton';
 import { TooltipHost } from './system/TooltipHost';
@@ -15,6 +12,8 @@ import { isCoarsePointer, lockDocumentScroll } from '../lib/webLayout';
 import { ZoomableImage } from './ZoomableImage';
 import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { Modal } from '@stage-labs/kit/react-native/modal';
+import { Column, PAGE_GUTTER, Row } from './layout';
 
 const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
@@ -47,8 +46,8 @@ export function ImageViewer({ uri, visible, onClose, onStep }: {
   };
 
   return (
-    <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
-      <Col background={'rgba(0,0,0,0.97)'} flex={1}>
+    <Modal open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
+      <Column background={'rgba(0,0,0,0.97)'} weight={1}>
         {(uri || onStep) && isCoarsePointer() ? (
           <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep}/>
         ) : (
@@ -57,7 +56,7 @@ export function ImageViewer({ uri, visible, onClose, onStep }: {
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: FRAME.x, paddingVertical: FRAME.y }}
           >
             {uri ? (
-              <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
+              <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
             ) : null}
           </Pressable>
         )}
@@ -67,7 +66,7 @@ export function ImageViewer({ uri, visible, onClose, onStep }: {
           <RoundIconButton icon={IconCrossMedium} label="Close" onPress={onClose}/>
         </Row>
         <TooltipHost/>
-      </Col>
-    </Dialog>
+      </Column>
+    </Modal>
   );
 }

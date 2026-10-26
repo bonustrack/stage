@@ -78,7 +78,7 @@ describe('reply quote', () => {
     const frame = entry('f1', { from: PEER, text: 'Frame: Deploy?', payload: { contentType: 'frame' } });
     const tap = entry('t1', {
       from: ME, text: 'Tapped "Ship it"', replyTo: 'f1',
-      payload: { contentType: 'frameAction', frameAction: { frameId: 'f1', action: { type: 'ship' }, label: 'Ship it' } },
+      payload: { contentType: 'frameAction', frameAction: { frameId: 'f1', action: { name: 'ship', surfaceId: 'main', sourceComponentId: 'ship', timestamp: '2026-10-26T00:00:00.000Z', context: {} }, label: 'Ship it' } },
     });
     expect(replyQuoteOf(tap, none, id => (id === 'f1' ? frame : undefined))).toBe('Frame: Deploy?');
     expect(replyQuoteOf(tap, none, () => undefined)).toBe('Frame');

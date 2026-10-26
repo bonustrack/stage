@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { Story } from '../gallery/story';
 import { FilePicker, type FilePickerProps, type PickedFile } from '../src/react-native/file-picker';
 import { Button } from '../src/react-native/button';
-import { Col } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { bool, number, range, select, useDark } from './_controls';
+import { Column } from '../src/react-native/column';
 
 export default { title: 'File Picker' };
 
@@ -12,11 +12,11 @@ export const Controls: Story<Omit<FilePickerProps, 'openNonce' | 'onPick' | 'onC
   const [nonce, setNonce] = useState(0);
   const [picked, setPicked] = useState<PickedFile[]>([]);
   return (
-    <Col gap={12}>
-      <Button dark={useDark()} label="Pick files" onPress={() => { setNonce((n) => n + 1); }} />
+    <Column gap={12}>
+      <Button variant="primary" dark={useDark()} label="Pick files" onPress={() => { setNonce((n) => n + 1); }} />
       <FilePicker {...args} mediaTypes={videos ? ['images', 'videos'] : ['images']} openNonce={nonce} onPick={setPicked} onCancel={() => { setPicked([]); }} />
-      {picked.map((f) => <Text key={f.uri} size="2xs" role="secondary">{f.name ?? f.uri.slice(0, 40)} · {f.mime}</Text>)}
-    </Col>
+      {picked.map((f) => <Text key={f.uri} size="2xs" color="secondary">{f.name ?? f.uri.slice(0, 40)} · {f.mime}</Text>)}
+    </Column>
   );
 };
 Controls.args = { source: 'library', videos: false, multiple: true, selectionLimit: 4, quality: 0.8, allowsEditing: false };

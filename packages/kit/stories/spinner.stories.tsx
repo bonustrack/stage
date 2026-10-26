@@ -1,9 +1,10 @@
 import type { Story } from '../gallery/story';
-import { Col, Row } from '../src/react-native/box';
 import { Spinner, type SpinnerProps } from '../src/react-native/spinner';
 import { Text } from '../src/react-native/text';
 import { useKitPalette } from '../src/react-native/theme-context';
 import { color, range } from './_controls';
+import { Column } from '../src/react-native/column';
+import { Row } from '../src/react-native/row';
 
 export default { title: 'Spinner' };
 
@@ -17,23 +18,23 @@ Controls.argTypes = { size: range(12, 96, 4), color };
 export const Matrix: Story = () => {
   const palette = useKitPalette();
   return (
-    <Col gap={16}>
+    <Column gap={16}>
       <Row gap={16} align="center" wrap>
         {SIZES.map((size) => (
-          <Col key={size} gap={6} align="center">
+          <Column key={size} gap={6} align="center">
             <Spinner size={size} />
-            <Text size="2xs" role="secondary">{size}</Text>
-          </Col>
+            <Text size="2xs" color="secondary">{size}</Text>
+          </Column>
         ))}
       </Row>
       <Row gap={16} align="center" wrap>
         {ROLES.map((role) => (
-          <Col key={role} gap={6} align="center">
+          <Column key={role} gap={6} align="center">
             <Spinner color={palette[role]} />
-            <Text size="2xs" role="secondary">{role}</Text>
-          </Col>
+            <Text size="2xs" color="secondary">{role}</Text>
+          </Column>
         ))}
       </Row>
-    </Col>
+    </Column>
   );
 };

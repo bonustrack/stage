@@ -1,10 +1,10 @@
 import type { AlertButton } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Col, Row } from '../layout';
 import { AppModal } from '../AppModal';
 import { dismissAlert, useAlertRequest, type AlertRequest } from '../../lib/alertHost';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { Column, Row } from '../layout';
 
 function buttonColor(button: AlertButton): 'danger' | 'primary' | 'secondary' {
   if (button.style === 'cancel') return 'secondary';
@@ -29,7 +29,7 @@ function AlertButtons({ request, dark }: { request: AlertRequest; dark: boolean 
   const buttons = orderedButtons(request);
   const sideBySide = buttons.length === 2;
   const items = buttons.map((button, i) => (
-    <Box key={`${button.text ?? 'button'}-${i}`} flex={sideBySide ? 1 : undefined}>
+    <Column key={`${button.text ?? 'button'}-${i}`} weight={sideBySide ? 1 : undefined}>
       <Button
         label={button.text ?? 'OK'}
         size="lg"
@@ -39,11 +39,11 @@ function AlertButtons({ request, dark }: { request: AlertRequest; dark: boolean 
         dark={dark}
         onPress={() => { press(button); }}
       />
-    </Box>
+    </Column>
   ));
   return sideBySide
     ? <Row gap={10} padding={{ top: 8 }}>{items}</Row>
-    : <Col gap={10} padding={{ top: 8 }}>{items}</Col>;
+    : <Column gap={10} padding={{ top: 8 }}>{items}</Column>;
 }
 
 export function AlertHost(): React.ReactElement | null {
@@ -57,12 +57,12 @@ export function AlertHost(): React.ReactElement | null {
   };
   return (
     <AppModal visible onClose={onClose} title={request.title}>
-      <Col gap={8}>
+      <Column gap={8}>
         {request.message !== undefined && request.message !== '' ? (
           <Text size="xl" style={{ paddingVertical: 12 }}>{request.message}</Text>
         ) : null}
         <AlertButtons request={request} dark={dark} />
-      </Col>
+      </Column>
     </AppModal>
   );
 }

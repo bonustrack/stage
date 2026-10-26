@@ -24,10 +24,9 @@ export { useDark } from '../gallery/scheme';
 
 export function svgSwatch(fill: string, label = ''): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="${fill}"/><text x="100" y="118" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif">${label}</text></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
-export const SWATCHES = ['#5b8def', '#e06c75', '#57b375', '#f2b134', '#9b6bd6', '#3fb8c9'];
 
 export function silentWav(seconds = 2): string {
   const rate = 8000;

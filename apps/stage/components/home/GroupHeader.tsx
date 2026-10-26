@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 import { useHomeView } from '../../lib/homeView';
 import { NewChatAction } from './NewChatAction';
 import { Eyebrow } from '../Eyebrow';
@@ -12,6 +11,7 @@ import { usePalette } from '../../lib/theme';
 import { groupKeysOf, listKeyOf, type ChannelGroupHeader, type HomeListItem } from './groups.model';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { Column, Row, LIST_TOP_GAP, PAGE_GUTTER } from '../layout';
 
 const CHEVRON_SIZE = 14;
 const TITLE_SIZE = '2xs';
@@ -30,12 +30,12 @@ export function useGroupHover(items: readonly HomeListItem[]): {
     const key = keys.get(listKeyOf(item));
     if (Platform.OS !== 'web' || key === undefined) return node;
     return (
-      <Box
+      <Column
         onPointerEnter={({ nativeEvent }) => { if (nativeEvent.pointerType !== 'touch') setHoveredGroup(key); }}
         onPointerLeave={() => { setHoveredGroup(current => (current === key ? null : current)); }}
       >
         {node}
-      </Box>
+      </Column>
     );
   }, [keys]);
   return { hoveredGroup, wrapItem };
@@ -46,9 +46,9 @@ function GroupArrow({ collapsed, sectionHovered, hovered, focused, color }: {
 }): React.ReactElement {
   const shown = Platform.OS !== 'web' || collapsed || sectionHovered === true || hovered || focused;
   return (
-    <Box style={{ opacity: shown ? 1 : 0 }}>
+    <Column style={{ opacity: shown ? 1 : 0 }}>
       <Glyph icon={collapsed ? IconChevronRight : IconChevronBottom} size={CHEVRON_SIZE} color={color}/>
-    </Box>
+    </Column>
   );
 }
 
@@ -77,17 +77,17 @@ export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle = nod
     >
       <Eyebrow size={TITLE_SIZE} color={tint} truncate style={TITLE_STYLE}>{header.title.toUpperCase()}</Eyebrow>
       <GroupArrow collapsed={header.collapsed} sectionHovered={sectionHovered} hovered={hovered} focused={focused} color={tint ?? sub}/>
-      <Box flex={1}/>
+      <Column weight={1}/>
       {header.collapsed && header.unread > 0 ? <UnreadBadge count={header.unread}/> : null}
     </Pressable>
   );
   return (
     <Row align="center" padding={{ right: PAGE_GUTTER }}>
-      <Box flex={1}>{wrapToggle(toggle)}</Box>
+      <Column weight={1}>{wrapToggle(toggle)}</Column>
       {groupBy !== 'none' && header.key !== 'dm' ? (
-        <Box padding={{ top: LIST_TOP_GAP, bottom: BOTTOM_GAP }}>
+        <Column padding={{ top: LIST_TOP_GAP, bottom: BOTTOM_GAP }}>
           <NewChatAction by={groupBy} groupKey={header.key} title={header.title}/>
-        </Box>
+        </Column>
       ) : null}
     </Row>
   );

@@ -1,5 +1,4 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Box, VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
@@ -21,6 +20,7 @@ import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
 import { useLastActivity } from '../../lib/lastActivity';
+import { Column, VirtualList } from '../layout';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
@@ -153,7 +153,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   return (
     <>
       {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
-      <Box flex={1}>
+      <Column weight={1}>
         {wide ? null : <TopnavFade stickyTop={pane ? undefined : UNDER_TOPNAV}/>}
         {props.placeholder ? <>
           <ChannelsListHeader p={props} search={search}/>
@@ -189,7 +189,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers}/>}
           renderItem={renderRow}
         />}
-      </Box>
+      </Column>
     </>
   );
 }

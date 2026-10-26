@@ -1,6 +1,6 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { AvatarView } from '@stage-labs/kit/react-native/avatar-view';
+import { Image } from '@stage-labs/kit/react-native/image';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
@@ -10,6 +10,19 @@ import { getPeerAvatar, usePeerProfiles } from '../lib/peerProfiles';
 const FULLSCREEN_FETCH_PX = 512;
 
 const SIZE_PX = AVATAR_SIZES;
+
+const AVATAR_PLACEHOLDER = '#282a2d';
+
+const SQUARE_RADIUS_RATIO = 0.12;
+
+export function AvatarImage({ src, size, square, style }: {
+  src: string | null | undefined; size: number; square?: boolean; style?: StyleProp<ImageStyle>;
+}): React.ReactElement {
+  return (
+    <Image url={src?.trim() ?? ''} variant="avatar" size={size} fit="cover" background={AVATAR_PLACEHOLDER}
+      radius={square === true ? Math.round(size * SQUARE_RADIUS_RATIO) : 'full'} style={style} />
+  );
+}
 
 interface Props {
   address?: string | null;
@@ -37,7 +50,7 @@ export function Avatar({
   const px = typeof size === 'number' ? size : SIZE_PX[size];
   const uri = resolveAvatarUri(address, imageUri, px);
 
-  const inner = <AvatarView src={uri} size={px} square={square} style={style} />;
+  const inner = <AvatarImage src={uri} size={px} square={square} style={style} />;
 
   if (!onPress) return inner;
 

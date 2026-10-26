@@ -3,11 +3,9 @@ import { Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
-import { Box, Row } from '../layout';
 import { HoverTooltip } from '../HoverTooltip';
 import { highlightSegments } from '../HighlightText.model';
 import { useHover } from '../hover';
@@ -17,6 +15,8 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
 import { useCopiedFlag } from '../../lib/useCopiedFlag';
 import { MONO_FONT } from './helpers';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row } from '../layout';
 
 const CODE_PAD = 12;
 const CODE_TEXT = { fontFamily: MONO_FONT, lineHeight: 20, flexShrink: 0 } as const;
@@ -53,7 +53,7 @@ function CodeText({ code, fg, highlight }: {
   const scheme = useEffectiveColorScheme();
   const query = highlight?.trim() ?? '';
   return (
-    <Text variant="mono" size="2xs" color={fg} selectable={Platform.OS === 'web'} style={CODE_TEXT}>
+    <Text fontFamily="mono" size="2xs" color={fg} selectable={Platform.OS === 'web'} style={CODE_TEXT}>
       {query === '' ? code : highlightSegments(code, query).map((segment, index) => (
         segment.match ? (
           <Text key={`${index}-${segment.value}`} size="xs" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
@@ -69,19 +69,19 @@ export function CodeBlock({ code, lang, fg, highlight }: {
   const pal = usePalette();
   const scrollGesture = useMemo(() => Gesture.Native().disallowInterruption(true), []);
   return (
-    <Box
+    <Column
       surface="raised" radius="md"
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}
     >
-      <Row align="center" justify="between" padding={{ left: CODE_PAD, right: 4, top: 2 }}>
-        <Text role="secondary" numberOfLines={1} size="3xs">{lang ?? ''}</Text>
+      <Row align="center" justify="spaceBetween" padding={{ left: CODE_PAD, right: 4, top: 2 }}>
+        <Text color="secondary" numberOfLines={1} size="3xs">{lang ?? ''}</Text>
         <CopyCodeButton code={code}/>
       </Row>
       <GestureDetector gesture={scrollGesture}>
-        <Scroll horizontal contentContainerStyle={{ paddingHorizontal: CODE_PAD, paddingBottom: 10 }}>
+        <List direction="horizontal" contentContainerStyle={{ paddingHorizontal: CODE_PAD, paddingBottom: 10 }}>
           <CodeText code={code} fg={fg} highlight={highlight}/>
-        </Scroll>
+        </List>
       </GestureDetector>
-    </Box>
+    </Column>
   );
 }

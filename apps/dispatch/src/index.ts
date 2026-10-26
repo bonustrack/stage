@@ -13,7 +13,7 @@ const CALLER_HEADERS = [
 const HEADERS: Record<string, string> = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, stage-key, stage-timestamp, stage-signature',
+  'access-control-allow-headers': 'content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities',
   'access-control-max-age': '86400',
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',

@@ -26,14 +26,13 @@ const BADGE_SEMANTIC_BG: Record<BadgeColor, string> = {
   discovery: '#7e5bef',
 };
 
-const BADGE_COLOR_NAMES = new Set<BadgeColor>([
-  'secondary',
-  'success',
-  'danger',
-  'warning',
-  'info',
-  'discovery',
-]);
+export const BADGE_COLORS: readonly BadgeColor[] = ['secondary', 'success', 'danger', 'warning', 'info', 'discovery'];
+
+export const BADGE_SIZES: readonly BadgeSize[] = ['3xs', '2xs', 'sm', 'md', 'lg'];
+
+export const BADGE_VARIANTS: readonly BadgeVariant[] = ['solid', 'soft', 'outline'];
+
+const BADGE_COLOR_NAMES = new Set<BadgeColor>(BADGE_COLORS);
 
 function isSemanticBadgeColor(
   value: BadgeColorValue | undefined,

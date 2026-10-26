@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col } from '../layout';
+import { Column } from '../layout';
 
 export interface QrScannerProps {
   onScan: (text: string) => void;
@@ -32,20 +32,20 @@ function useCameraModule(): CameraLoad {
 
 function Notice({ message }: { message: string }): React.ReactElement {
   return (
-    <Col align="center" padding={{ y: 16 }}>
-      <Text size="2xs" role="secondary" textAlign="center">{message}</Text>
-    </Col>
+    <Column align="center" padding={{ y: 16 }}>
+      <Text size="2xs" color="secondary" textAlign="center">{message}</Text>
+    </Column>
   );
 }
 
 function PermissionPrompt({ dark, onAllow }: { dark: boolean; onAllow: () => void }): React.ReactElement {
   return (
-    <Col gap={10} align="center" padding={{ y: 16 }}>
-      <Text size="2xs" role="secondary" textAlign="center">
+    <Column gap={10} align="center" padding={{ y: 16 }}>
+      <Text size="2xs" color="secondary" textAlign="center">
         Camera access is needed to scan a QR code.
       </Text>
       <Button dark={dark} variant="soft" color="primary" label="Allow camera" onPress={onAllow} />
-    </Col>
+    </Column>
   );
 }
 
@@ -63,13 +63,13 @@ function LiveScanner({ mod, onScan, dark }: QrScannerProps & { mod: CameraModule
   }, [getPermission]);
 
   if (failed) return <Notice message="Could not open the camera. Try again, or paste the code below." />;
-  if (!permission) return <Col height={SCANNER_HEIGHT} />;
+  if (!permission) return <Column height={SCANNER_HEIGHT} />;
   if (!permission.granted) {
     if (!permission.canAskAgain) return <Notice message="Camera access is blocked. Enable it in system settings, or paste the code below." />;
     return <PermissionPrompt dark={dark} onAllow={() => { void requestPermission().catch(() => { setFailed(true); }); }} />;
   }
   return (
-    <Col height={SCANNER_HEIGHT} style={{ overflow: 'hidden', borderRadius: 12 }}>
+    <Column height={SCANNER_HEIGHT} style={{ overflow: 'hidden', borderRadius: 12 }}>
       <CameraView
         style={{ flex: 1 }}
         facing="back"
@@ -81,13 +81,13 @@ function LiveScanner({ mod, onScan, dark }: QrScannerProps & { mod: CameraModule
           onScan(data);
         }}
       />
-    </Col>
+    </Column>
   );
 }
 
 export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement {
   const { mod, failed } = useCameraModule();
   if (failed) return <Notice message={UNAVAILABLE_MESSAGE} />;
-  if (mod === null) return <Col height={SCANNER_HEIGHT} />;
+  if (mod === null) return <Column height={SCANNER_HEIGHT} />;
   return <LiveScanner mod={mod} onScan={onScan} dark={dark} />;
 }

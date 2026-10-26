@@ -11,6 +11,8 @@ const BRAND_ICON_DATA = {
 
 export type BrandIconName = keyof typeof BRAND_ICON_DATA;
 
+export const BRAND_ICON_NAMES = Object.keys(BRAND_ICON_DATA) as BrandIconName[];
+
 export function brandIconPath(name: BrandIconName): string {
   return BRAND_ICON_DATA[name];
 }

@@ -1,13 +1,11 @@
-
 import { Card } from '@stage-labs/kit/react-native/card';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { CallAwareVideo as VideoPlayer } from '../CallAwareVideo';
+import { CallAwareVideo } from '../CallAwareVideo';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { AudioCard } from './AudioCard';
 import { ImageLoading, MessengerImageAttachment } from './ImageAttachment';
-import { Col } from '../layout';
 import { IconTileRow, MediaCard } from '../MediaCard';
 import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
@@ -17,13 +15,14 @@ import type { Attachment } from './helpers';
 import { useRemoteAttachment } from './attachmentUri';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { openFile } from '../../lib/fileOpen';
+import { Column } from '../layout';
 
 function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   const { bg } = usePalette();
   const { aspectRatio, onVideoSize } = useVideoAspectRatio(uri);
   return (
     <MediaCard aspectRatio={aspectRatio}>
-      <VideoPlayer src={uri} controls background={bg} aspectRatio={aspectRatio} fit="contain" onVideoSize={onVideoSize} />
+      <CallAwareVideo url={uri} controls background={bg} aspectRatio={aspectRatio} fit="contain" onVideoSize={onVideoSize} />
     </MediaCard>
   );
 }
@@ -60,10 +59,10 @@ function AttachmentRetry({ label, fg, onRetry, compact }: {
   if (compact) return <AttachmentFile label={label} subtitle="Tap to retry" fg={fg} onPress={onRetry} />;
   return (
     <MediaCard onPress={onRetry}>
-      <Col flex={1} padding={12} align="center" justify="center" gap={8}>
+      <Column weight={1} padding={12} align="center" justify="center" gap={8}>
         <Glyph icon={IconFileBend} size={32} color={fg}/>
-        <Text size="xs" weight="semibold" color={fg} numberOfLines={2} textAlign="center">{`${label}. Tap to retry`}</Text>
-      </Col>
+        <Text size="xs" fontWeight="semibold" color={fg} numberOfLines={2} textAlign="center">{`${label}. Tap to retry`}</Text>
+      </Column>
     </MediaCard>
   );
 }
@@ -72,12 +71,12 @@ function AttachmentPending({ label, fg, compact }: { label: string; fg: string; 
   if (compact) return <AttachmentFile label={label} fg={fg} pending />;
   return (
     <MediaCard>
-      <Col flex={1} padding={12} align="center" justify="center" gap={8}>
+      <Column weight={1} padding={12} align="center" justify="center" gap={8}>
         <Spinner size={20} color={fg}/>
-        <Text size="3xs" role="secondary" numberOfLines={1}>
+        <Text size="3xs" color="secondary" numberOfLines={1}>
           {label}
         </Text>
-      </Col>
+      </Column>
     </MediaCard>
   );
 }

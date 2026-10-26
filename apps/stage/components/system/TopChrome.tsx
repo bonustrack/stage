@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
-import { Box, pinnedEdges } from '../layout';
 import { isRailRoute } from '../tabs/splitRoutes';
 import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 import { usePalette } from '../../lib/theme';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
+import { Column, pinnedEdges } from '../layout';
 
 const DRAG_REGION = { dataSet: { stagedrag: '1' } };
 const CHROME_LAYER = 50;
@@ -24,14 +24,14 @@ export function TopChrome({ decorated }: { decorated: boolean }): React.ReactEle
   const edge = { width: 1, color: border };
   return (
     <>
-      <Box
+      <Column
         height={inset}
         surface={wide ? 'toolbar' : 'none'}
         style={pinnedEdges({ top: 0, left: 0, right: 0 }, CHROME_LAYER)}
         {...DRAG_REGION}
       />
       {wide ? (
-        <Box
+        <Column
           pointerEvents="none"
           border={railed ? { top: edge, left: edge } : { top: edge }}
           style={[

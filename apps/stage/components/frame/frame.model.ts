@@ -1,20 +1,32 @@
 import { nodeUrlOf } from '@stage-labs/client/nodes/protocol';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { frameStartSurface, frameSummaryOf } from '@stage-labs/client/xmtp/frame';
 import { frameActionSchema, frameContentSchema, type FrameActionContent, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
-import {
-  frameSummary, navigateFrame, parseFrameDoc, resolveFrameColor, type FrameAction, type FrameColor, type FrameDocResult,
-  type FrameFill, type FrameNav, type FrameNode,
-} from '@stage-labs/kit/frame';
-import { kitPalette, type KitPalette, type Scheme } from '@stage-labs/kit/tokens';
+import type { NodeRequest } from '@stage-labs/client/nodes/protocol';
+import type { SurfaceNav, TransportMetadata } from '@stage-labs/kit/a2ui/client';
+import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
+import { a2uiSnapshot } from '@stage-labs/kit/a2ui/snapshot';
 import { ATTACHMENT_MAX_HEIGHT } from '../bubble/imageBox.model';
 
 export const FRAME_ROUTE = '/frame';
 
 export const FRAME_PREVIEW_BORDER = 1;
 export const FRAME_PREVIEW_FADE = 48;
-export const FRAME_PREVIEW_FILL: FrameFill = { padding: 12 };
+export const FRAME_PREVIEW_PADDING = 12;
 export const FRAME_PREVIEW_BAR = 40;
+
+const MAX_FRAME_DEPTH = 20;
+
+export type FrameNav = SurfaceNav;
+
+export interface FrameOut {
+  message: RendererMessage;
+  metadata?: TransportMetadata;
+  label?: string;
+}
+
+export type FrameMessageHandler = (out: FrameOut) => Promise<void> | void;
 
 export interface FrameLink {
   pathname: typeof FRAME_ROUTE;
@@ -43,18 +55,8 @@ function filled(value: string | undefined): string | undefined {
   return trimmed === undefined || trimmed === '' ? undefined : trimmed;
 }
 
-export function frameInputOf(frame: FrameContent): unknown {
-  return frame.screens === undefined ? frame.widget : { screens: frame.screens, start: frame.start };
-}
-
-function screenRootOf(frame: FrameContent, screen?: string): FrameNode | undefined {
-  const parsed = parseFrameDoc(frameInputOf(frame));
-  return parsed.ok ? parsed.doc.screens.get(screen ?? parsed.doc.start)?.root : undefined;
-}
-
 export function frameCardModel(frame: FrameContent): FrameCardModel {
-  const root = screenRootOf(frame);
-  const derived = root === undefined ? {} : frameSummary(root);
+  const derived = frameSummaryOf(frame);
   const title = filled(frame.title) ?? filled(derived.title) ?? 'Frame';
   const description = filled(frame.description) ?? filled(derived.description);
   return description === undefined || description === title ? { title } : { title, description };
@@ -62,11 +64,6 @@ export function frameCardModel(frame: FrameContent): FrameCardModel {
 
 export function frameIsDeleted(entry: HistoryEntry, later: readonly HistoryEntry[], ownDeletes: ReadonlySet<string>): boolean {
   return deletedMessages([entry, ...later], { ownDeletes }).has(entry.id);
-}
-
-export function frameIsFullWidth(frame: FrameContent): boolean {
-  const root = screenRootOf(frame);
-  return root?.type === 'Card' && root.props.size === 'full';
 }
 
 export function frameLinkOf(convId: string, messageId: string): FrameLink {
@@ -85,30 +82,36 @@ export function frameLocked(frame: FrameContent, consentAllowed: boolean | undef
   return frameNodeOf(frame) === null ? consentAllowed === false : consentAllowed !== true;
 }
 
-export function frameActionTarget(action: FrameAction, hasNode: boolean): 'chat' | 'node' {
-  return hasNode && action.handler !== 'client' ? 'node' : 'chat';
+export function frameDataModelOf(out: FrameOut): Record<string, unknown> | undefined {
+  return out.metadata?.a2uiRendererDataModel.surfaces;
 }
 
-export function frameActionContent(frameId: string, action: FrameAction, label: string | undefined): FrameActionContent | null {
-  const name = filled(label);
-  const act = action.payload === undefined ? { type: action.type } : { type: action.type, payload: action.payload };
-  const parsed = frameActionSchema.safeParse(name === undefined ? { frameId, action: act } : { frameId, action: act, label: name });
+export function frameActionContent(frameId: string, out: FrameOut): FrameActionContent | null {
+  if (!('action' in out.message)) return null;
+  const label = filled(out.label);
+  const dataModel = frameDataModelOf(out);
+  const parsed = frameActionSchema.safeParse({
+    frameId, action: out.message.action, ...(label === undefined ? {} : { label }), ...(dataModel === undefined ? {} : { dataModel }),
+  });
   return parsed.success ? parsed.data : null;
 }
 
-export function frameScreenTitle(frame: FrameContent, parsed: FrameDocResult, screen: string): string {
-  return (parsed.ok ? parsed.doc.screens.get(screen)?.title : undefined) ?? frameCardModel(frame).title;
+export function nodeRequestOf(out: FrameOut): NodeRequest {
+  const dataModel = frameDataModelOf(out);
+  return dataModel === undefined ? { message: out.message } : { message: out.message, dataModel };
 }
 
-function rootLookOf(root: FrameNode | undefined): { theme?: Scheme; background?: FrameColor } {
-  if (root?.type === 'Card' || root?.type === 'Basic') return { theme: root.props.theme, background: root.props.background };
-  return root?.type === 'ListView' ? { theme: root.props.theme } : {};
+export function frameScreenTitle(frame: FrameContent, screen: string): string {
+  const card = frameCardModel(frame).title;
+  return screen === frameStartSurface(frame) ? card : filled(frameSummaryOf(frame, screen).title) ?? card;
 }
 
-export function frameBackdrop(frame: FrameContent, scheme: Scheme, palette: KitPalette, screen?: string): string {
-  const { theme = scheme, background } = rootLookOf(screenRootOf(frame, screen));
-  const own = theme === scheme ? palette : kitPalette(theme);
-  return resolveFrameColor(background, theme, own) ?? own.bg;
+export function frameRenders(frame: Pick<FrameContent, 'messages'>): boolean {
+  return a2uiSnapshot(frame.messages).messages.length > 0;
+}
+
+export function frameMediaUrl(url: string): string {
+  return /^https:\/\/[^/]/i.test(url.trim()) ? url.trim() : '';
 }
 
 export function framePreviewCap(depth: number): number {
@@ -123,6 +126,12 @@ export type FrameStacks = ReadonlyMap<string, readonly string[]>;
 
 export function frameStackOf(stack: readonly string[] | undefined, start: string): readonly string[] {
   return stack !== undefined && stack[0] === start ? stack : [start];
+}
+
+export function navigateFrame(stack: readonly string[], nav: FrameNav): readonly string[] {
+  if (nav.kind === 'close') return stack.length > 1 ? stack.slice(0, -1) : stack;
+  if (stack[stack.length - 1] === nav.surfaceId || stack.length >= MAX_FRAME_DEPTH) return stack;
+  return [...stack, nav.surfaceId];
 }
 
 export function withFrameNav(stacks: FrameStacks, id: string, start: string, nav: FrameNav): FrameStacks {

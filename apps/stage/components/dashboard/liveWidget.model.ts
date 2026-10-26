@@ -1,10 +1,11 @@
-import { parseFrameDoc } from '@stage-labs/kit/frame';
-import { loadReplyOf, type NodeProblem, type NodeResult, type NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
+import { type NodeProblem, type NodeResult, type NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
 import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
+import type { FrameApplied } from '../../lib/frameSession';
+import { frameContentSchema } from '@stage-labs/client/xmtp/frame.schema';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
-import { frameInputOf } from '../frame/frame.model';
+import { frameRenders } from '../frame/frame.model';
 
 export const LIVE_REFRESH_MS = 60_000;
 const LIVE_MAX_BACKOFF_MS = 5 * 60_000;
@@ -80,20 +81,26 @@ export function liveConfirmOf(host: string): { title: string; message: string; c
   return { title: 'Add a live widget?', message, confirmLabel: 'Add' };
 }
 
-function renders(frame: FrameContent): boolean {
-  return parseFrameDoc(frameInputOf(frame)).ok;
-}
-
 function failed(prev: LiveState, problem: LiveProblem, status: number | null = null): LiveState {
   return { ...prev, problem, status, failures: prev.failures + 1 };
 }
 
-export function liveStateAfter(prev: LiveState, result: NodeResult, now: number): LiveState {
+function fresh(frame: FrameContent, now: number): LiveState {
+  return { frame, at: now, problem: null, status: null, failures: 0 };
+}
+
+export type ApplyMessages = (messages: readonly FrameMessage[]) => FrameApplied;
+
+const APPLY_NOTHING: ApplyMessages = () => ({ kind: 'invalid' });
+
+export function liveStateAfter(prev: LiveState, result: NodeResult, now: number, apply: ApplyMessages = APPLY_NOTHING): LiveState {
   if (!result.ok) return failed(prev, result.problem, result.status ?? null);
   const { reply } = result;
-  if (reply.kind === 'unchanged') return prev.frame === null ? failed(prev, 'empty') : { ...prev, at: now, problem: null, status: null, failures: 0 };
-  if (!renders(reply.frame)) return failed(prev, 'invalid');
-  return { frame: reply.frame, at: now, problem: null, status: null, failures: 0 };
+  if (reply.kind === 'frame') return frameRenders(reply.frame) ? fresh(reply.frame, now) : failed(prev, 'invalid');
+  if (prev.frame === null) return failed(prev, 'empty');
+  const applied = reply.kind === 'unchanged' ? reply : apply(reply.messages);
+  if (applied.kind === 'invalid') return failed(prev, 'invalid');
+  return applied.kind === 'frame' ? fresh(applied.frame, now) : { ...prev, at: now, problem: null, status: null, failures: 0 };
 }
 
 export function liveRefreshDelay(state: LiveState | undefined): number {
@@ -125,9 +132,8 @@ function snapshotJson(raw: string): unknown {
 }
 
 function snapshotFrame(frame: unknown): FrameContent | null {
-  if (typeof frame !== 'object' || frame === null || !('widget' in frame) || Object.keys(frame).length !== 1) return null;
-  const reply = loadReplyOf(frame.widget);
-  return reply?.kind === 'frame' && renders(reply.frame) ? reply.frame : null;
+  const parsed = frameContentSchema.safeParse(frame);
+  return parsed.success && frameRenders(parsed.data) ? parsed.data : null;
 }
 
 export function liveSnapshotOf(raw: string | null): LiveState {

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ImageLoadEventData, NativeSyntheticEvent } from 'react-native';
 import { getImageSize } from '@stage-labs/kit/react-native/image';
-import type { VideoSize } from '@stage-labs/kit/react-native/video-player';
+import type { VideoSize } from '@stage-labs/kit/react-native/video';
 import { ignore } from '../../lib/errorPolicy';
 import { VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, validSize } from './imageBox.model';
 

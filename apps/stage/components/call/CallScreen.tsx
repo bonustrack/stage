@@ -14,7 +14,6 @@ import { IconVolumeFull } from '@central-icons-react-native/round-outlined-radiu
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
 import { HoverIconButton } from '../hover';
-import { Box, Col, Row, PAGE_GUTTER, viewportFill } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -30,6 +29,7 @@ import { callPerson, callTitle } from './callPeople';
 import { TitleText } from '../TitleText';
 import { callGrid, callSubtitle } from './CallScreen.model';
 import { CallControl } from './CallControl';
+import { Column, Row, PAGE_GUTTER, viewportFill } from '../layout';
 
 interface TileData {
   key: string;
@@ -66,17 +66,17 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
   const status = STATUS_TEXT[tile.status];
   const showVideo = tile.media.video && tile.stream !== null;
   return (
-    <Box style={{ width: width as `${number}%`, height: height as `${number}%` }} padding={4}>
-      <Box flex={1} radius={12} background={border} align="center" justify="center" style={{ overflow: 'hidden' }}>
+    <Column style={{ width: width as `${number}%`, height: height as `${number}%` }} padding={4}>
+      <Column weight={1} radius={12} background={border} align="center" justify="center" style={{ overflow: 'hidden' }}>
         {showVideo
           ? <CallMediaView stream={tile.stream} kind="video" mirrored={tile.self && !tile.media.screen} contain={tile.media.screen}/>
           : <Avatar address={person.address} size={72}/>}
         <Row align="center" gap={6} padding={{ x: 10, y: 6 }} style={{ position: 'absolute', left: 8, bottom: 8 }} background="#00000099" radius={8}>
           {tile.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={14} color="#ffffff"/>}
-          <Text size="2xs" color="#ffffff" value={status ? `${person.name} · ${status}` : person.name} maxLines={1}/>
+          <Text size="2xs" color="#ffffff" text={status ? `${person.name} · ${status}` : person.name} maxLines={1}/>
         </Row>
-      </Box>
-    </Box>
+      </Column>
+    </Column>
   );
 }
 
@@ -116,20 +116,20 @@ function Controls({ media, people, onPeople }: { media: CallMedia; people: boole
 function Participants({ tiles, convId, selfInboxId }: { tiles: TileData[]; convId: string; selfInboxId: string | null }): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Col width={260} gap={12} padding={16} style={{ borderLeftWidth: 1, borderLeftColor: border }}>
-      <Text size="xs" weight="semibold" value={`In this call (${tiles.length})`}/>
+    <Column width={260} gap={12} padding={16} style={{ borderLeftWidth: 1, borderLeftColor: border }}>
+      <Text size="xs" fontWeight="semibold" text={`In this call (${tiles.length})`}/>
       {tiles.map((t) => {
         const person = callPerson(convId, t.inboxId, selfInboxId);
         return (
           <Row key={t.key} align="center" gap={10}>
             <Avatar address={person.address} size={28}/>
-            <Text size="2xs" value={person.name} maxLines={1} style={{ flex: 1 }}/>
+            <Text size="2xs" text={person.name} maxLines={1} style={{ flex: 1 }}/>
             {t.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={16}/>}
             {t.media.screen ? <Glyph icon={IconShareScreen} size={16}/> : null}
           </Row>
         );
       })}
-    </Col>
+    </Column>
   );
 }
 
@@ -141,17 +141,17 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const connected = view.peers.filter((p) => p.status === 'connected').length;
   const top = useSafeAreaInsets().top;
   return (
-    <Col surface="surface" style={viewportFill(60)}>
+    <Column surface="surface" style={viewportFill(60)}>
       <CallScreenPicker/>
       <Row align="center" gap={14} padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
         <MinimizeButton/>
-        <Col flex={1}>
-          <TitleText weight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1}/>
-          <Text size="2xs" role="secondary" value={callSubtitle(connected, Date.now() - session.startedMs)}/>
-        </Col>
+        <Column weight={1}>
+          <TitleText fontWeight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1}/>
+          <Text size="2xs" color="secondary" text={callSubtitle(connected, Date.now() - session.startedMs)}/>
+        </Column>
       </Row>
-      <Row flex={1}>
-        <Row flex={1} wrap padding={{ x: 8 }}>
+      <Row weight={1}>
+        <Row weight={1} wrap padding={{ x: 8 }}>
           {tiles.map((t) => (
             <Tile key={t.key} tile={t} convId={session.convId} selfInboxId={view.selfInboxId} width={`${100 / cols}%`} height={`${100 / rows}%`}/>
           ))}
@@ -159,6 +159,6 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
         {people ? <Participants tiles={tiles} convId={session.convId} selfInboxId={view.selfInboxId}/> : null}
       </Row>
       <Controls media={view.media} people={people} onPeople={() => { setPeople(!people); }}/>
-    </Col>
+    </Column>
   );
 }

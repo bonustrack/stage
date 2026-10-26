@@ -2,21 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
 import { createValueStore } from '../../lib/persistedStore';
-import { Box, Col, Row } from '../layout';
 import {
   BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
   phrasePanelActions, phraseRowCopy, type PhraseRowMode,
 } from './SecuritySettings.model';
 import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldCheck';
 import { SettingsButtonRow } from './SettingsPage';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column, Row } from '../layout';
 
 const BACKED_UP_KEY = ['walletBackedUp'] as const;
 
@@ -40,17 +39,17 @@ function RevealedPhrase({ mode, phrase, onHide, onSaved }: PanelProps): React.Re
   const actions = phrasePanelActions(mode);
   return (
     <ListViewItem align="start" gap={12} dark={dark}>
-      <Col flex={1} gap={12}>
-        <Text value={copy.label} size="xs" weight="semibold" color="link" />
-        <Caption value={copy.revealed} color="secondary" />
-        <Box padding={12} radius="lg" surface="surface">
-          <Text value={phrase} size="xs" variant="mono" color="text" selectable style={{ lineHeight: 24 }} />
-        </Box>
+      <Column weight={1} gap={12}>
+        <Text text={copy.label} size="xs" fontWeight="semibold" color="link" />
+        <Text size="md" variant="caption" text={copy.revealed} color="secondary" />
+        <Column padding={12} radius="lg" surface="surface">
+          <Text text={phrase} size="xs" fontFamily="mono" color="text" selectable style={{ lineHeight: 24 }} />
+        </Column>
         <Row gap={8}>
           {actions.includes('hide') ? <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }} label="Hide" onPress={onHide} /> : null}
-          {actions.includes('saved') ? <Button dark={dark} size="md" fullWidth style={{ flex: 1 }} label="I saved it" onPress={onSaved} /> : null}
+          {actions.includes('saved') ? <Button variant="primary" dark={dark} size="md" fullWidth style={{ flex: 1 }} label="I saved it" onPress={onSaved} /> : null}
         </Row>
-      </Col>
+      </Column>
     </ListViewItem>
   );
 }

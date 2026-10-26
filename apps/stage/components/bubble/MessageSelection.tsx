@@ -3,8 +3,8 @@ import { BackHandler } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Col, Row } from '../layout';
 import { FormField } from '../FormField';
+import { Column, Row } from '../layout';
 
 export function MessageSelection({ text, fg, input, onClose }: {
   text: string; fg: string; input: boolean; onClose: () => void;
@@ -18,8 +18,8 @@ export function MessageSelection({ text, fg, input, onClose }: {
     return () => { listener.remove(); };
   }, [onClose]);
   return (
-    <Col gap={8}>
-      <Row align="center" justify="between" gap={8}>
+    <Column gap={8}>
+      <Row align="center" justify="spaceBetween" gap={8}>
         <Text size="sm" color="secondary" selectable={false} style={{ flex: 1 }}>Touch and hold text to select</Text>
         <Button label="Done" accessibilityLabel="Done selecting text" color="secondary" variant="ghost" dark={dark} onPress={onClose} />
       </Row>
@@ -29,6 +29,6 @@ export function MessageSelection({ text, fg, input, onClose }: {
       ) : (
         <Text size="lg" color={fg} selectable style={{ lineHeight: 23 }}>{text}</Text>
       )}
-    </Col>
+    </Column>
   );
 }

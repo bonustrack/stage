@@ -3,12 +3,12 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { AppModal } from '../AppModal';
-import { Col } from '../layout';
 import { incomingShare } from '../../lib/incomingShare';
 import type { IncomingShare } from '../../lib/incomingShare.types';
 import { parseIncomingShare, shareError } from './share.model';
 import { ShareSession } from './ShareSession';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { Column } from '../layout';
 
 function useIncomingShare() {
   const [pending, setPending] = useState<IncomingShare | null>(null);
@@ -51,12 +51,12 @@ export function ShareHost({ active }: { active: boolean }): React.ReactElement {
   if (pending?.status === 'ready') return <ShareSession key={pending.id} share={pending} active={active} onDismiss={dismiss}/>;
   return (
     <AppModal visible={active && (pending !== null || error !== null)} title="Share to Stage" onClose={close} dismissable={!closing}>
-      <Col gap={12}>
+      <Column gap={12}>
         {pending?.status === 'loading' ? <><Spinner/><Text>Copying shared files privately on this device…</Text></> : null}
         {pending?.status === 'error' ? <Text>{shareError(pending.error)}</Text> : null}
         {error === null ? null : <><Text color="danger">{error}</Text><Button dark={dark} label="Try again" variant="soft" onPress={() => { void refresh(); }}/></>}
         <Button dark={dark} label="Cancel share" variant="soft" color="secondary" loading={closing} onPress={close}/>
-      </Col>
+      </Column>
     </AppModal>
   );
 }

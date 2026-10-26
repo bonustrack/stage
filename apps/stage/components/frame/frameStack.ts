@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { FrameNav } from '@stage-labs/kit/frame';
-import type { FrameNavigation } from '@stage-labs/kit/react-native/frame';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
-import { frameStackOf, withFrameNav, type FrameStacks } from './frame.model';
+import { frameStackOf, withFrameNav, type FrameNav, type FrameStacks } from './frame.model';
+import type { FrameNavigation } from './FrameView';
 
 let stacks: FrameStacks = new Map();
 const listeners = makeListeners();

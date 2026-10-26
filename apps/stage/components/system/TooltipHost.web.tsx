@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useWindowDimensions, type ViewStyle } from 'react-native';
 import { Tooltip } from '@stage-labs/kit/react-native/tooltip';
-import { Box, viewportFill } from '../layout';
 import { Kbd } from '../Kbd';
 import { bubbleShift, useRailTooltip, type RailTooltipState } from '../../lib/railTooltip';
 import { TOOLTIP } from '../menuStyle';
+import { Column, viewportFill } from '../layout';
 
 type ArrowSide = 'left' | 'up' | 'down';
 
@@ -44,8 +44,8 @@ export function TooltipHost(): React.ReactElement | null {
   const tip = useRailTooltip();
   if (tip === null) return null;
   return (
-    <Box pointerEvents="none" style={viewportFill(TOOLTIP.layer)}>
+    <Column pointerEvents="none" style={viewportFill(TOOLTIP.layer)}>
       <Tip key={tip.label} tip={tip} />
-    </Box>
+    </Column>
   );
 }

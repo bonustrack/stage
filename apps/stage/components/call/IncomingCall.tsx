@@ -5,12 +5,12 @@ import { IconCall } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import type { CallInfo, CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
-import { Col, Row, pinnedEdges } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { declineCall, joinCall } from '../../lib/calls';
 import { ignore } from '../../lib/errorPolicy';
 import { callPerson, callTitle } from './callPeople';
+import { Column, Row, pinnedEdges } from '../layout';
 
 export function IncomingCall({ session, info, selfInboxId }: {
   session: CallSession; info: CallInfo | undefined; selfInboxId: string | null;
@@ -23,29 +23,29 @@ export function IncomingCall({ session, info, selfInboxId }: {
   const where = session.dm ? `Incoming ${kind}` : `Incoming ${kind} in ${callTitle(session.convId).text}`;
   return (
     <Row justify="center" style={pinnedEdges({ top: 12 + top, left: 12, right: 12 }, 70)}>
-      <Col
+      <Column
         surface="raised" radius={16} padding={16} gap={14} width="100%" maxWidth={420}
         style={{ borderWidth: 1, borderColor: border }} accessibilityRole="alert"
       >
         <Row align="center" gap={12}>
           <Avatar address={caller.address} size={44}/>
-          <Col flex={1}>
-            <Text size="xs" weight="semibold" value={caller.name} maxLines={1}/>
-            <Text size="2xs" role="secondary" value={where} maxLines={2}/>
-          </Col>
+          <Column weight={1}>
+            <Text size="xs" fontWeight="semibold" text={caller.name} maxLines={1}/>
+            <Text size="2xs" color="secondary" text={where} maxLines={2}/>
+          </Column>
         </Row>
         <Row gap={10}>
-          <Button
+          <Button variant="primary"
             size="lg" pill dark={dark} label="Decline" tintBg={danger} tintFg={bg} style={{ flex: 1 }}
             iconStart={<Glyph icon={IconCallCancel} size={18} color={bg}/>} onPress={declineCall}
           />
-          <Button
+          <Button variant="primary"
             size="lg" pill dark={dark} label="Accept" tintBg={success} tintFg={bg} style={{ flex: 1 }}
             iconStart={<Glyph icon={IconCall} size={18} color={bg}/>}
             onPress={() => { ignore(joinCall(session.convId, session.dm), 'ui'); }}
           />
         </Row>
-      </Col>
+      </Column>
     </Row>
   );
 }

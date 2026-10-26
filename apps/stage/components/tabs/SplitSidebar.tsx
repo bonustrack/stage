@@ -1,7 +1,5 @@
-
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
-import { Box, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useVisibleUnreadCount } from '../home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -12,6 +10,7 @@ import { channelsPaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
 import { isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 import { useBoardHome } from './boardHome';
+import { Column, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
 
 function usePaneScope(scope: string | null): void {
   useEffect(() => {
@@ -32,7 +31,7 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
   const inset = useTopChromeInset();
   const { border } = usePalette();
   return (
-    <Box
+    <Column
       {...(full ? null : SCROLLBAR_ON_HOVER)}
       surface="surface"
       width={full ? undefined : paneWidth}
@@ -43,7 +42,7 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
 >
       {children}
       {full ? null : <PaneResizeHandle pane={channelsPaneWidth} edge="right"/>}
-    </Box>
+    </Column>
   );
 }
 

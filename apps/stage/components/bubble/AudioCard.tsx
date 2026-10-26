@@ -9,7 +9,6 @@ import { IconCloudDownload } from '@central-icons-react-native/round-outlined-ra
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconPause } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlay';
-import { Col, Row } from '../layout';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { report } from '../../lib/errorPolicy';
@@ -22,6 +21,7 @@ import { IconTileRow } from '../MediaCard';
 import { audioCardModel } from './audioCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import type { Attachment } from './helpers';
+import { Column, Row } from '../layout';
 
 function useDownload(uri: string, name: string, mime?: string): () => void {
   const [saving, setSaving] = useState(false);
@@ -45,7 +45,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
 
   return (
     <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
-      <Col testID="audio-card" gap={8}>
+      <Column testID="audio-card" gap={8}>
         <IconTileRow
           title={model.title} titleColor={pal.text} subtitle={model.subtitle}
           icon={<Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>}
@@ -62,9 +62,9 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             onScrub={setScrub}
             onSeek={seek}
           />
-          <Text size="2xs" role="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
+          <Text size="2xs" color="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
         </Row>
-      </Col>
+      </Column>
     </Card>
   );
 }

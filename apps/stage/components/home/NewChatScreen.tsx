@@ -4,7 +4,6 @@ import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import { Box, Col, PAGE_GUTTER, Row } from '../layout';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { handSendTo } from '../composer/handoff';
@@ -48,6 +47,7 @@ import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegis
 import { xmtpClient } from '../../lib/xmtp.client';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { mentionLabelOf, peerLabel } from '../conversation/convTitle';
+import { Column, PAGE_GUTTER, Row } from '../layout';
 
 interface Recipients {
   shown: string[];
@@ -181,7 +181,7 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded,
   const focusNonce = useNewChatFocusNonce();
   const mentionCandidates = recipients.picked.map(address => ({ address, name: peerLabel(address) }));
   return (
-    <Box style={{ pointerEvents: creating ? 'none' : 'auto' }}>
+    <Column style={{ pointerEvents: creating ? 'none' : 'auto' }}>
       <RecipientBar shown={recipients.shown} picked={recipients.picked} onToggle={recipients.toggle}
         onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}/>
       <MessengerComposer dark={dark} state={draft} draftKey={draftKey} suggestContacts mentionCandidates={mentionCandidates}
@@ -189,7 +189,7 @@ function NewChatForm({ recipients, draft, draftKey, creating, onSubmit, rounded,
         metadata={<NewChatMetadata value={metadata} onChange={setMetadata}/>}
         autoFocusNonce={focusNonce} busy={creating} onSubmit={onSubmit}/>
       <NewChatProject value={metadata.category} onChange={setNewChatProject} flush={rounded}/>
-    </Box>
+    </Column>
   );
 }
 
@@ -198,7 +198,7 @@ function NewChatFooter(props: FormProps): React.ReactElement {
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <NewChatForm {...props}/>
-      <Box height={insets.bottom}/>
+      <Column height={insets.bottom}/>
     </KeyboardStickyView>
   );
 }
@@ -206,11 +206,11 @@ function NewChatFooter(props: FormProps): React.ReactElement {
 function CenteredNewChat(props: FormProps): React.ReactElement {
   const height = useWindowDimensions().height - useTopChromeInset();
   return (
-    <Col height={height} surface="surface" align="center" justify="center" padding={{ x: PAGE_GUTTER }}>
-      <Col width="100%" maxWidth={CENTERED_MAX_WIDTH}>
+    <Column height={height} surface="surface" align="center" justify="center" padding={{ x: PAGE_GUTTER }}>
+      <Column width="100%" maxWidth={CENTERED_MAX_WIDTH}>
         <NewChatForm {...props} rounded/>
-      </Col>
-    </Col>
+      </Column>
+    </Column>
   );
 }
 
@@ -244,10 +244,10 @@ export function NewChatScreen(): React.ReactElement {
     onSubmit: () => { void start(recipients.picked); } };
   if (centered) return <CenteredNewChat {...form}/>;
   return (
-    <Col flex={1} surface="surface">
+    <Column weight={1} surface="surface">
       <ChatColumn>{creating ? <ChatColumnSpinner bottomInset={footerH}/> : null}</ChatColumn>
       <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { capabilities.back(); }}>
-        <Box flex={1}/>
+        <Column weight={1}/>
         <Row align="center" padding={{ right: PAGE_GUTTER }}>
           <ConversationSidebarToggle/>
         </Row>
@@ -256,6 +256,6 @@ export function NewChatScreen(): React.ReactElement {
         <NewChatFooter {...form}/>
       </FooterDock>
       {memberList ? <ConversationSidebar/> : null}
-    </Col>
+    </Column>
   );
 }

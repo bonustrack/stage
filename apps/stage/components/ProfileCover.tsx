@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { Box, Row, pinnedTop, PAGE_GUTTER } from './layout';
 import { RoundIconButton } from './RoundIconButton';
 import { RoundOverflowMenu, type OverflowMenuItem } from './MenuRows';
 import { capabilities } from '../lib/capabilities';
 import { usePalette } from '../lib/theme';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
+import { Column, Row, pinnedTop, PAGE_GUTTER } from './layout';
 
 export const PROFILE_AVATAR_SIZE = 88;
 
@@ -18,7 +18,7 @@ export function ProfileCoverBar({ insetTop, trailing }: { insetTop: number; trai
   return (
       <Row
         align="center"
-        justify="between"
+        justify="spaceBetween"
         padding={{ x: PAGE_GUTTER, top: insetTop + PAGE_GUTTER }}
         style={pinnedTop(2)}
       >
@@ -34,13 +34,13 @@ export function ProfileCover({ insetTop, avatar, children, centered = false }: {
   const { border } = usePalette();
   return (
     <>
-      <Box height={COVER_HEIGHT + insetTop} background={border}/>
-      <Box surface="surface" margin={{ top: -SHEET_RADIUS }} style={SHEET}>
-        <Box padding={{ x: PAGE_GUTTER }} align={centered ? 'center' : 'start'}>
-          <Box style={AVATAR_SLOT}>{avatar}</Box>
-        </Box>
+      <Column height={COVER_HEIGHT + insetTop} background={border}/>
+      <Column surface="surface" margin={{ top: -SHEET_RADIUS }} style={SHEET}>
+        <Column padding={{ x: PAGE_GUTTER }} align={centered ? 'center' : 'start'}>
+          <Column style={AVATAR_SLOT}>{avatar}</Column>
+        </Column>
         {children}
-      </Box>
+      </Column>
     </>
   );
 }

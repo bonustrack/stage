@@ -7,13 +7,17 @@ import { Glyph } from './glyph';
 import { IconPause } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
 import { loadKitFonts } from './fonts.load';
+import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
+import { Text } from './text';
+import { useKitScheme } from './theme-context';
 
 loadKitFonts();
 
 const DEFAULT_BAR_COUNT = 34;
 
-export interface AudioPlayerProps {
-  src: string;
+export interface AudioPlayerProps extends A2uiCommonProps {
+  url: string;
+  description?: string;
   duration?: number;
   onPlay?: () => void;
   dark?: boolean;
@@ -125,9 +129,9 @@ export function useAudioPlayback(src: string, options: AudioPlaybackOptions = {}
 }
 
 function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
-  const { src, onPlay, accent = '#0a7cff', onAccent = '#ffffff' } = props;
+  const { url, onPlay, accent = '#0a7cff', onAccent = '#ffffff' } = props;
   const count = props.barCount ?? DEFAULT_BAR_COUNT;
-  const { playing, position, duration, toggle, seek } = useAudioPlayback(src, { onPlay });
+  const { playing, position, duration, toggle, seek } = useAudioPlayback(url, { onPlay });
   const [barWidth, setBarWidth] = useState(0);
   const bars = useMemo(
     () =>
@@ -203,13 +207,13 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
 }
 
 function BasicPlayer(props: {
-  src: string;
+  url: string;
   duration?: number;
   onPlay?: () => void;
   dark: boolean;
 }): React.ReactElement {
-  const { src, duration, onPlay, dark } = props;
-  const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(src, { onPlay });
+  const { url, duration, onPlay, dark } = props;
+  const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(url, { onPlay });
   const lengthMs = liveDuration > 0 ? liveDuration : (duration ?? 0) * 1000;
   const progress = lengthMs > 0 ? Math.min(position / lengthMs, 1) : 0;
 
@@ -252,8 +256,21 @@ function BasicPlayer(props: {
   );
 }
 
-export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
+function PlayerBody(props: AudioPlayerProps & { dark: boolean }): React.ReactElement {
   if (props.waveform) return <WaveformPlayer {...props} />;
-  const { src, duration, onPlay, dark = false } = props;
-  return <BasicPlayer src={src} duration={duration} onPlay={onPlay} dark={dark} />;
+  return <BasicPlayer url={props.url} duration={props.duration} onPlay={props.onPlay} dark={props.dark} />;
+}
+
+export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
+  const scheme = useKitScheme();
+  const { description, weight, accessibility, dark = scheme === 'dark' } = props;
+  const body = <PlayerBody {...props} dark={dark} />;
+  if (description === undefined && weight === undefined && accessibility === undefined) return body;
+  const label = description === undefined ? {} : { accessibilityLabel: description };
+  return (
+    <View style={{ gap: 4, ...weightStyle(weight) }} {...label} {...accessibilityProps(accessibility)}>
+      {description === undefined ? null : <Text variant="caption" text={description} truncate />}
+      {body}
+    </View>
+  );
 }

@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
-import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
 import { documentScroll, isCoarsePointer, useWebTabRail } from '../lib/webLayout';
 import { MENU_GAP } from './menuStyle';
+import { Modal } from '@stage-labs/kit/react-native/modal';
 
 const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
@@ -60,7 +60,7 @@ export function AnchoredOverlay({ open, onClose, children }: {
   children: ReactNode;
 }): React.ReactElement {
   return (
-    <Dialog open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
+    <Modal open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
       <Pressable
         onPress={onClose}
         style={StyleSheet.absoluteFill}
@@ -68,7 +68,7 @@ export function AnchoredOverlay({ open, onClose, children }: {
       >
         {children}
       </Pressable>
-    </Dialog>
+    </Modal>
   );
 }
 

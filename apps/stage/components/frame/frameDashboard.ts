@@ -5,10 +5,10 @@ import { addFrameToDashboard, addLiveToDashboard } from '../../lib/dashboard';
 import { report } from '../../lib/errorPolicy';
 import { FRAME_ADD_TOASTS, type FrameWidgetAdd } from '../dashboard/dashboard.model';
 import { liveConfirmOf } from '../dashboard/liveWidget.model';
-import { frameIsFullWidth, frameNodeOf } from './frame.model';
+import { frameNodeOf } from './frame.model';
 
 async function addedFromChat(convId: string, messageId: string, frame: FrameContent): Promise<FrameWidgetAdd | null> {
-  const width = frameIsFullWidth(frame) ? 'full' : 'half';
+  const width = 'half';
   const origin = { conversationId: convId, messageId };
   const node = frameNodeOf(frame);
   if (node === null) return addFrameToDashboard(origin, width);

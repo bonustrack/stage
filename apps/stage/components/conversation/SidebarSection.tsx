@@ -3,10 +3,7 @@ import { Platform, useWindowDimensions, type GestureResponderEvent, type LayoutC
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
-import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/input';
 import { DROPDOWN_MENU, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
-import { Box, Col, Row, PAGE_GUTTER } from '../layout';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { FormField } from '../FormField';
@@ -20,6 +17,9 @@ import {
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
+import { List } from '@stage-labs/kit/react-native/list';
+import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const PICKER_LIST_MAX_HEIGHT = 320;
 const PICKER_ROW_MIN_HEIGHT = 40;
@@ -37,8 +37,8 @@ function HeaderContent({ title, icon, count, tint, pen }: {
       <Glyph icon={icon} size={TITLE_ICON_SIZE} color={tint ?? sub}/>
       <Eyebrow size={TITLE_SIZE} color={tint}>{title.toUpperCase()}</Eyebrow>
       {count === undefined ? null : <CountTag count={count}/>}
-      <Box flex={1}/>
-      {pen === 'none' ? null : <Box style={{ opacity: pen === 'shown' ? 1 : 0 }}><Glyph icon={IconPencil} size={16} color={tint ?? sub}/></Box>}
+      <Column weight={1}/>
+      {pen === 'none' ? null : <Column style={{ opacity: pen === 'shown' ? 1 : 0 }}><Glyph icon={IconPencil} size={16} color={tint ?? sub}/></Column>}
     </>
   );
 }
@@ -75,7 +75,7 @@ function SectionHeader({ title, icon, count, editLabel, penShown, onEdit, onFocu
 }
 
 export function SectionNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="xs" color="secondary">{text}</Text></Box>;
+  return <Column padding={{ x: PAGE_GUTTER, bottom: 8 }}><Text size="xs" color="secondary">{text}</Text></Column>;
 }
 
 export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
@@ -95,11 +95,11 @@ export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
 }
 
 export function PickerList({ children }: { children: ReactNode }): React.ReactElement {
-  return <Scroll style={{ maxHeight: PICKER_LIST_MAX_HEIGHT }} keyboardShouldPersistTaps="handled">{children}</Scroll>;
+  return <List style={{ maxHeight: PICKER_LIST_MAX_HEIGHT }} keyboardShouldPersistTaps="handled">{children}</List>;
 }
 
 export function PickerNote({ text }: { text: string }): React.ReactElement {
-  return <Box padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="xs" color="secondary">{text}</Text></Box>;
+  return <Column padding={{ x: DROPDOWN_MENU.itemPadX, y: 10 }}><Text size="xs" color="secondary">{text}</Text></Column>;
 }
 
 function checkboxKeys(onPress: () => void, disabled: boolean) {
@@ -147,11 +147,11 @@ export function PickerRow({ selected, disabled = false, label, text = label, cou
       })}
 >
       {leading}
-      <Box flex={1} style={{ minWidth: 0 }}>{children ?? <Row align="center" gap={DROPDOWN_MENU.itemGap}>
-        <Box style={{ flexShrink: 1, minWidth: 0 }}><Text {...menuText} truncate>{text}</Text></Box>
+      <Column weight={1} style={{ minWidth: 0 }}>{children ?? <Row align="center" gap={DROPDOWN_MENU.itemGap}>
+        <Column style={{ flexShrink: 1, minWidth: 0 }}><Text {...menuText} truncate>{text}</Text></Column>
         {count === undefined ? null : <CountTag count={count}/>}
-      </Row>}</Box>
-      {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link}/> : <Box width={DROPDOWN_MENU.icon}/>}
+      </Row>}</Column>
+      {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link}/> : <Column width={DROPDOWN_MENU.icon}/>}
     </Pressable>
   );
 }
@@ -186,15 +186,15 @@ export function SidebarSection({ title, icon, count, editLabel, canEdit, current
   };
   const penShown = open || hovered || focused || isCoarsePointer();
   return (
-    <Box onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
+    <Column onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
       <SectionHeader title={title} icon={icon} count={count} editLabel={editLabel} penShown={penShown}
         onEdit={canEdit ? start : undefined} onFocusChange={setFocused}/>
       {children}
       {open ? (
         <AnchoredMenu visible onClose={close} anchor={anchor?.point ?? null}>
-          <Col width={pickerWidth(anchored, anchor)}>{renderPicker({ draft, toggle })}</Col>
+          <Column width={pickerWidth(anchored, anchor)}>{renderPicker({ draft, toggle })}</Column>
         </AnchoredMenu>
       ) : null}
-    </Box>
+    </Column>
   );
 }

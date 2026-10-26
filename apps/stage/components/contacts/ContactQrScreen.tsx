@@ -7,7 +7,6 @@ import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Box, Col, ScreenScroll, PAGE_GUTTER } from '../layout';
 import { StackHeader } from '../chrome/StackHeader';
 import { FormField } from '../FormField';
 import { QrScanner } from '../accounts/QrScanner';
@@ -16,24 +15,27 @@ import { getAccountSelection, useAccountSelection } from '../../lib/accountSelec
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { contactQrValue, contactScanResult } from './ContactQr.model';
+import { Column, ScreenScroll, PAGE_GUTTER } from '../layout';
 
 const MODES = [{ value: 'scan', label: 'Scan' }, { value: 'share', label: 'My QR' }];
+
+const MODE_TABS = MODES.map((m) => ({ title: m.label }));
 
 function MyQr({ address }: { address: string }): React.ReactElement {
   const value = contactQrValue(address);
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Col gap={18} align="center">
+    <Column gap={18} align="center">
       <Text size="md" textAlign="center">Let someone scan this code to open your Stage profile.</Text>
       {value === null ? null : <>
-        <Box padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
+        <Column padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
           <QrCode value={value} size={224} color="#000000" background="#ffffff" />
-        </Box>
+        </Column>
         <Text size="xs" textAlign="center" selectable style={{ alignSelf: 'stretch' }}>{address}</Text>
         <Button dark={dark} label="Copy contact link" variant="soft" color="secondary" onPress={() => { capabilities.copy('Contact link', value); }} />
       </>}
-      <Text size="xs" role="secondary" textAlign="center">This shares only your public address, not access to your account.</Text>
-    </Col>
+      <Text size="xs" color="secondary" textAlign="center">This shares only your public address, not access to your account.</Text>
+    </Column>
   );
 }
 
@@ -75,21 +77,22 @@ function ContactQr({ address, selection }: { address: string; selection: number 
   const [input, setInput] = useState('');
   const scan = useContactScan(address, selection);
   return (
-    <Col gap={24}>
-      <Tabs value={mode} options={MODES} onChange={value => { scan.stop(); setMode(value); }} />
-      {mode === 'share' ? <MyQr address={address} /> : <Col gap={18}>
+    <Column gap={24}>
+      <Tabs tabs={MODE_TABS} selectedIndex={MODES.findIndex((m) => m.value === mode)}
+        onChange={index => { scan.stop(); setMode(MODES[index]?.value ?? 'scan'); }} />
+      {mode === 'share' ? <MyQr address={address} /> : <Column gap={18}>
         <Text size="md">Scan someone’s Stage QR code to open their profile. You choose whether to start a chat.</Text>
         {scan.scanning ? <>
           <QrScanner dark={dark} onScan={scan.scanned} />
           <Button dark={dark} label="Stop camera" variant="soft" color="secondary" onPress={scan.stop} />
-        </> : <Button dark={dark} label="Start camera" onPress={scan.start} />}
+        </> : <Button variant="primary" dark={dark} label="Start camera" onPress={scan.start} />}
         <FormField label="Contact link or address" value={input} onChangeText={setInput}
           placeholder="stage://profile/0x…" onSubmit={() => { scan.open(input); }}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, autoComplete: 'off', accessibilityLabel: 'Contact link or address' }} />
         {scan.error === null ? null : <Text size="xs" color="danger" accessibilityRole="alert">{scan.error}</Text>}
         <Button dark={dark} label="Open profile" variant="soft" color="secondary" disabled={input.trim() === ''} onPress={() => { scan.open(input); }} />
-      </Col>}
-    </Col>
+      </Column>}
+    </Column>
   );
 }
 
@@ -102,16 +105,16 @@ export function ContactQrScreen(): React.ReactElement {
   });
   const valid = contactQrValue(address) !== null;
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title="Connect on Stage" backTo="/" />
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: PAGE_GUTTER }}>
         {isPending ? <Spinner /> : valid && address ? <ContactQr key={selection} address={address} selection={selection} /> : (
-          <Col gap={18}>
+          <Column gap={18}>
             <Text size="md">No active account is available. Select an account to scan or share a contact code.</Text>
             <Button dark={dark} label="Try again" variant="soft" color="secondary" onPress={() => { void refetch(); }} />
-          </Col>
+          </Column>
         )}
       </ScreenScroll>
-    </Col>
+    </Column>
   );
 }

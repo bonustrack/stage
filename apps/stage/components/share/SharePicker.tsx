@@ -4,9 +4,9 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelRow } from '../ChannelRow';
 import { FormField } from '../FormField';
-import { Col } from '../layout';
 import type { ShareDestination } from './share.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { Column } from '../layout';
 
 export function SharePicker({ rows, loading, checking, error, account, onChoose, onRetry }: {
   rows: ShareDestination[]; loading: boolean; checking: boolean; error: string | null; account: string;
@@ -16,7 +16,7 @@ export function SharePicker({ rows, loading, checking, error, account, onChoose,
   const dark = useEffectiveColorScheme() === 'dark';
   const listed = rows.filter(row => row.title.toLowerCase().includes(query.trim().toLowerCase()));
   return (
-    <Col gap={12}>
+    <Column gap={12}>
       <Text size="sm" color="secondary">Choose an existing chat or channel. Nothing is sent yet.</Text>
       <Text size="xs" color="secondary">Account: {account}</Text>
       <FormField value={query} onChangeText={setQuery} placeholder="Search channels" disabled={checking}/>
@@ -28,6 +28,6 @@ export function SharePicker({ rows, loading, checking, error, account, onChoose,
       ))}
       {!loading && !checking && listed.length === 0 ? <Text color="secondary">No accepted channels found.</Text> : null}
       <Button dark={dark} label="Refresh channels" variant="soft" color="secondary" disabled={loading || checking} onPress={onRetry}/>
-    </Col>
+    </Column>
   );
 }

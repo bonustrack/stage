@@ -3,7 +3,6 @@ import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
-import { Col, PANE_LEFT_PAD, viewportFill } from '../components/layout';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
@@ -43,6 +42,7 @@ import { SplitSidebar } from '../components/tabs/SplitSidebar';
 import { ignored, reported } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
+import { Column, PANE_LEFT_PAD, viewportFill } from '../components/layout';
 
 const queryClient = getQueryClient();
 
@@ -74,9 +74,9 @@ function isDarkBg(hex: string): boolean {
 function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
-    <Col surface="surface" flex={1} width="100%" style={PANE_LEFT_PAD}>
+    <Column surface="surface" weight={1} width="100%" style={PANE_LEFT_PAD}>
       {children}
-    </Col>
+    </Column>
   );
 }
 
@@ -149,9 +149,9 @@ function RootLayoutInner(): React.ReactElement {
       </WebContentFrame>
       <SplitSidebar visible={shell.sidebarVisible}/>
       {!gatesOpen || routing ? (
-        <Col surface="surface" align="center" justify="center" style={viewportFill()}>
+        <Column surface="surface" align="center" justify="center" style={viewportFill()}>
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
-        </Col>
+        </Column>
       ) : null}
       <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
       <ToastHost />

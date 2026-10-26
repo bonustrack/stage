@@ -1,8 +1,6 @@
-
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
-import { Col, LIST_TOP_GAP, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { StackHeader } from './chrome/StackHeader';
 import { usePalette } from '../lib/theme';
@@ -13,6 +11,7 @@ import { useAllContacts, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
+import { Column, LIST_TOP_GAP, VirtualList } from './layout';
 
 export function ContactsScreen(): React.ReactElement {
   const { bg } = usePalette();
@@ -47,7 +46,7 @@ export function ContactsScreen(): React.ReactElement {
   }, [open]);
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       <StackHeader title="Contacts" back={false} />
       <VirtualList
         data={contacts}
@@ -58,6 +57,6 @@ export function ContactsScreen(): React.ReactElement {
         contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: insets.bottom + (Platform.OS === 'web' ? bottomChrome : 0) }}
         ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
-    </Col>
+    </Column>
   );
 }

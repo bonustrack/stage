@@ -6,7 +6,6 @@ import { IconCallCancel } from '@central-icons-react-native/round-outlined-radiu
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconMicrophoneOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophoneOff';
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
-import { Col, Row, PAGE_GUTTER, pinnedBottom } from '../layout';
 import { useFloatingBottom } from '../layout/floatingBottom';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
@@ -15,6 +14,7 @@ import { setCallMinimized, type CallView } from '../../lib/calls.store';
 import { callTitle } from './callPeople';
 import { CallControl } from './CallControl';
 import { callSubtitle } from './CallScreen.model';
+import { Column, Row, PAGE_GUTTER, pinnedBottom } from '../layout';
 
 const BUBBLE_LAYER = 55;
 const SHRINK = { flexShrink: 1, minWidth: 0 } as const;
@@ -30,10 +30,10 @@ export function CallBubble({ view, session }: { view: CallView; session: CallSes
         <Pressable accessibilityRole="button" accessibilityLabel="Open call" onPress={() => { setCallMinimized(false); }} style={SHRINK}>
           <Row align="center" gap={10} style={SHRINK}>
             <Glyph icon={IconCall} size={18} color={success}/>
-            <Col style={SHRINK}>
-              <Text size="xs" weight="semibold" value={callTitle(session.convId).text} maxLines={1}/>
-              <Text size="2xs" role="success" value={callSubtitle(connected, Date.now() - session.startedMs)} maxLines={1}/>
-            </Col>
+            <Column style={SHRINK}>
+              <Text size="xs" fontWeight="semibold" text={callTitle(session.convId).text} maxLines={1}/>
+              <Text size="2xs" color="success" text={callSubtitle(connected, Date.now() - session.startedMs)} maxLines={1}/>
+            </Column>
           </Row>
         </Pressable>
         <CallControl size="sm" icon={muted ? IconMicrophoneOff : IconMicrophone} label={muted ? 'Unmute' : 'Mute'} active={muted} onPress={toggleMic}/>

@@ -1,13 +1,12 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
 import type { useConversationState } from './useConversationState';
 import { usePalette } from '../../lib/theme';
+import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
@@ -55,7 +54,7 @@ export function ConversationSearch({ line, query, c }: {
       contentContainerStyle={{ paddingTop: 12, paddingBottom: 12 }}
       ListEmptyComponent={
         showEmpty
-          ? <Box padding={{ y: 28 }} align="center"><Text size="2xs" role="secondary">No matches</Text></Box>
+          ? <Column padding={{ y: 28 }} align="center"><Text size="2xs" color="secondary">No matches</Text></Column>
           : null
       }
       ListFooterComponent={
@@ -63,11 +62,11 @@ export function ConversationSearch({ line, query, c }: {
           {scanning ? (
             <Row align="center" justify="center" gap={8} padding={{ y: 14 }}>
               <ActivityIndicator size="small" color={sub} />
-              <Text size="2xs" role="secondary">Searching…</Text>
+              <Text size="2xs" color="secondary">Searching…</Text>
             </Row>
           ) : null}
           {!scanning && result.truncated && result.hits.length > 0 ? (
-            <Box padding={{ x: PAGE_GUTTER, y: 10 }}><Text size="3xs" role="secondary">Showing first matches in recent history.</Text></Box>
+            <Column padding={{ x: PAGE_GUTTER, y: 10 }}><Text size="3xs" color="secondary">Showing first matches in recent history.</Text></Column>
           ) : null}
         </>
       }

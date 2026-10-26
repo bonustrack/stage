@@ -26,7 +26,7 @@ export function LabelChip({ label, selected = false, leading, trailing, backgrou
     <Badge
       label={label}
       size={size}
-      weight="normal"
+      fontWeight="normal"
       color={selected ? bg : fg}
       background={selected ? link : background ?? border}
       style={CHIP_BOX[size]}

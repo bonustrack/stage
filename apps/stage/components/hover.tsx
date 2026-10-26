@@ -2,10 +2,10 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { GestureResponderEvent, LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box } from './layout';
 import { HoverTooltip } from './HoverTooltip';
 import type { Shortcut } from './shortcuts.model';
 import { usePalette } from '../lib/theme';
+import { Column } from './layout';
 
 export interface HoverHandlers { onHoverIn: () => void; onHoverOut: () => void }
 
@@ -23,13 +23,13 @@ export function HoverTint({ children, style }: {
 }): React.ReactElement {
   const [hovered, setHovered] = useState(false);
   return (
-    <Box
+    <Column
       style={style}
       onPointerEnter={() => { setHovered(true); }}
       onPointerLeave={() => { setHovered(false); }}
     >
       {children(hovered)}
-    </Box>
+    </Column>
   );
 }
 

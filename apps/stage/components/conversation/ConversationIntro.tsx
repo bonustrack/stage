@@ -1,9 +1,6 @@
-
 import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
 import { convTitle } from './convTitle';
 import { TitleText } from '../TitleText';
@@ -13,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
 import type { useConversationState } from './useConversationState';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function IntroLabelChips({ labels, fg, bg }: {
   labels: string[]; fg: string; bg: string;
@@ -21,7 +19,7 @@ function IntroLabelChips({ labels, fg, bg }: {
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Badge key={label.toLowerCase()} label={label} textSize="xs" weight="normal" color={fg} background={bg}/>
+        <Badge key={label.toLowerCase()} label={label} textSize="xs" fontWeight="normal" color={fg} background={bg}/>
       ))}
     </Row>
   );
@@ -36,7 +34,7 @@ export function ConversationIntro({ c, convId }: {
   if (isGroup) {
     const desc = groupDescription.trim();
     return (
-      <Box padding={{ x: PAGE_GUTTER, y: 24 }} align="start">
+      <Column padding={{ x: PAGE_GUTTER, y: 24 }} align="start">
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
@@ -45,16 +43,16 @@ export function ConversationIntro({ c, convId }: {
           style={{ backgroundColor: border }}
 />
         <TitleText
-          title={convTitle({ isGroup, groupName, peerAddr })} weight="medium" size="2xl" color={head}
+          title={convTitle({ isGroup, groupName, peerAddr })} fontWeight="medium" size="2xl" color={head}
           style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         />
         <IntroLabelChips labels={groupLabels} fg={fg} bg={inputBg}/>
         {desc ? (
-          <Text size="xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
+          <Text size="xl" color="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
           </Text>
         ) : null}
-      </Box>
+      </Column>
     );
   }
 
@@ -66,10 +64,10 @@ export function ConversationIntro({ c, convId }: {
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <TitleText
-        title={convTitle({ isGroup, groupName, peerAddr })} weight="semibold" size="2xl" color={head}
+        title={convTitle({ isGroup, groupName, peerAddr })} fontWeight="semibold" size="2xl" color={head}
         style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}
       />
-      <Text size="3xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
+      <Text size="3xs" color="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
     </Pressable>

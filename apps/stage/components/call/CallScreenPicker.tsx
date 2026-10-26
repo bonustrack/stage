@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { findNodeHandle, NativeModules, Platform } from 'react-native';
-import { Box } from '../layout';
 import { ScreenCapturePickerView } from 'react-native-webrtc';
 import { registerScreenPicker } from '../../lib/calls.screen';
+import { Column } from '../layout';
 
 const pickerManager = NativeModules.ScreenCapturePickerViewManager as { show: (handle: number) => void } | undefined;
 
@@ -17,5 +17,5 @@ export function CallScreenPicker(): React.ReactElement | null {
     });
   }, []);
   if (Platform.OS !== 'ios') return null;
-  return <Box pointerEvents="none" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}><ScreenCapturePickerView ref={ref}/></Box>;
+  return <Column pointerEvents="none" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}><ScreenCapturePickerView ref={ref}/></Column>;
 }

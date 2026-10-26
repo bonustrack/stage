@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useWindowDimensions, type ViewStyle } from 'react-native';
 import { Tooltip, type TooltipArrow } from '@stage-labs/kit/react-native/tooltip';
-import { Box, viewportFill } from '../layout';
 import { Kbd } from '../Kbd';
 import { bubbleShift, useRailTooltip, type RailTooltipState } from '../../lib/railTooltip';
 import { TOOLTIP } from '../menuStyle';
+import { Column, viewportFill } from '../layout';
 
 interface Band { arrow: TooltipArrow; align: 'start' | 'center'; justify: 'start' | 'center' | 'end'; style: ViewStyle }
 
@@ -33,9 +33,9 @@ function Tip({ tip }: { tip: RailTooltipState }): React.ReactElement {
   const band = bandOf(tip, viewport);
   const shift = tip.placement === 'beside' || width === 0 ? 0 : bubbleShift(tip.centerX, width, viewport.width, VIEWPORT_MARGIN);
   return (
-    <Box align={band.align} justify={band.justify} style={band.style}>
+    <Column align={band.align} justify={band.justify} style={band.style}>
       <Tooltip label={tip.label} trailing={tip.shortcut === undefined ? undefined : <Kbd label={tip.shortcut} />} arrow={band.arrow} bubbleOffset={shift} onBubbleWidth={setWidth} />
-    </Box>
+    </Column>
   );
 }
 
@@ -43,8 +43,8 @@ export function TooltipHost(): React.ReactElement | null {
   const tip = useRailTooltip();
   if (tip === null) return null;
   return (
-    <Box pointerEvents="none" style={viewportFill(TOOLTIP.layer)}>
+    <Column pointerEvents="none" style={viewportFill(TOOLTIP.layer)}>
       <Tip key={tip.label} tip={tip} />
-    </Box>
+    </Column>
   );
 }

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Story } from '../gallery/story';
 import { Pressable, type KitPressableProps } from '../src/react-native/pressable';
-import { Box } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { bool, number, range } from './_controls';
+import { Column } from '../src/react-native/column';
 
 export default { title: 'Pressable' };
 
@@ -11,7 +11,7 @@ export const Controls: Story<Pick<KitPressableProps, 'pressedOpacity' | 'disable
   const [log, setLog] = useState('Press or long-press me');
   return (
     <Pressable {...args} onPress={() => { setLog(`pressed at ${new Date().toLocaleTimeString()}`); }} onLongPress={() => { setLog('long pressed'); }}>
-      <Box padding={16} background="#5b8def" radius="md"><Text size="xs" color="#fff">{log}</Text></Box>
+      <Column padding={16} background="#5b8def" radius="md"><Text size="xs" color="#fff">{log}</Text></Column>
     </Pressable>
   );
 };

@@ -1,11 +1,10 @@
 import { useEffect, useRef, type ComponentRef, type ReactNode, type Ref, type RefObject } from 'react';
 import type { TextInputProps, TextStyle } from 'react-native';
-import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { fontName, fontSize } from '@stage-labs/kit/tokens';
-import { Box, Col, Row } from './layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { TextField, type TextFieldProps } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row } from './layout';
 
 export const FORM_FIELD_RADIUS = 4;
 
@@ -28,9 +27,10 @@ export interface FormFieldProps {
   multiline?: boolean;
   rows?: number;
   disabled?: boolean;
-  inputType?: InputProps['inputType'];
+  inputType?: TextFieldProps['inputType'];
+  variant?: 'shortText' | 'number' | 'obscured';
   inputProps?: NativeInputProps;
-  inputRef?: Ref<ComponentRef<typeof Input>>;
+  inputRef?: Ref<ComponentRef<typeof TextField>>;
   autoFocus?: boolean;
   onSubmit?: (text: string) => void;
   leading?: ReactNode;
@@ -41,8 +41,8 @@ export interface FormFieldProps {
   hintTone?: 'secondary' | 'success' | 'danger';
 }
 
-export function useFocusOnOpen(): RefObject<ComponentRef<typeof Input> | null> {
-  const ref = useRef<ComponentRef<typeof Input>>(null);
+export function useFocusOnOpen(): RefObject<ComponentRef<typeof TextField> | null> {
+  const ref = useRef<ComponentRef<typeof TextField>>(null);
   useEffect(() => {
     const timer = setTimeout(() => { ref.current?.focus(); }, 0);
     return () => { clearTimeout(timer); };
@@ -61,7 +61,7 @@ function useFieldText(): { color: string; fontFamily: string; fontSize: number }
 
 function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
   if (hint === undefined) return null;
-  return <Text value={hint} size="xs" color={color} style={{ paddingHorizontal: 4 }} />;
+  return <Text text={hint} size="xs" color={color} style={{ paddingHorizontal: 4 }} />;
 }
 
 const BARE_INPUT = {
@@ -85,7 +85,7 @@ function InsetFrame({ field, leading, trailing, background, disabled }: {
   field: ReactNode; leading?: ReactNode; trailing?: ReactNode; background: string; disabled?: boolean;
 }): React.ReactElement {
   return (
-    <Box background={background} radius={FORM_FIELD_RADIUS} style={disabled === true ? { opacity: 0.6 } : undefined}>
+    <Column background={background} radius={FORM_FIELD_RADIUS} style={disabled === true ? { opacity: 0.6 } : undefined}>
       {field}
       {leading === undefined ? null : (
         <Row pointerEvents="none" align="center" justify="center" width={LEADING_SLOT} style={[SLOT, { left: FIELD_PADDING_X }]}>{leading}</Row>
@@ -93,7 +93,7 @@ function InsetFrame({ field, leading, trailing, background, disabled }: {
       {trailing === undefined ? null : (
         <Row pointerEvents="box-none" align="center" style={[SLOT, { right: FIELD_PADDING_X }]}>{trailing}</Row>
       )}
-    </Box>
+    </Column>
   );
 }
 
@@ -101,10 +101,10 @@ function StackedFrame({ field, label, labelTrailing, leading, trailing, backgrou
   field: ReactNode; label?: string; labelTrailing?: ReactNode; leading?: ReactNode; trailing?: ReactNode; background: string; disabled?: boolean;
 }): React.ReactElement {
   return (
-    <Col background={background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
+    <Column background={background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
       style={disabled === true ? { opacity: 0.6 } : undefined}>
       {label === undefined ? null : <Row align="center" gap={6}>
-        <Text value={label} size="xs" color="secondary" />
+        <Text text={label} size="xs" color="secondary" />
         {labelTrailing}
       </Row>}
       <Row align="center" gap={8} minHeight={TRAILING_SLOT}>
@@ -112,12 +112,12 @@ function StackedFrame({ field, label, labelTrailing, leading, trailing, backgrou
         {field}
         {trailing === undefined ? null : <Row align="center" height={TRAILING_SLOT} style={{ flexShrink: 0 }}>{trailing}</Row>}
       </Row>
-    </Col>
+    </Column>
   );
 }
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, trailingWidth = TRAILING_SLOT, labelTrailing, hint, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, variant, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, trailingWidth = TRAILING_SLOT, labelTrailing, hint, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -127,20 +127,20 @@ export function FormField({
   const inset = label === undefined && multiline !== true;
   const lineStyle = lineStyleOf(inset, leading, trailing, trailingWidth);
   const field = multiline ? (
-    <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
+    <TextField variant="longText" value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
       dark={dark} disabled={disabled} rows={rows} inputProps={inputProps}
       style={{ ...BARE_INPUT, ...textStyle, flex: 1, textAlignVertical: 'top', height: undefined, minHeight: rows * 26 }} />
   ) : (
-    <Input ref={inputRef} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
-      dark={dark} disabled={disabled} inputType={inputType} inputProps={inputProps} autoFocus={autoFocus} onSubmit={onSubmit}
+    <TextField ref={inputRef} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.placeholder}
+      dark={dark} disabled={disabled} variant={variant} inputType={inputType} inputProps={inputProps} autoFocus={autoFocus} onSubmit={onSubmit}
       style={{ ...BARE_INPUT, ...textStyle, ...lineStyle }} />
   );
   return (
-    <Col gap={hint === undefined ? 0 : 6}>
+    <Column gap={hint === undefined ? 0 : 6}>
       {inset
         ? <InsetFrame field={field} leading={leading} trailing={trailing} background={colors.background} disabled={disabled}/>
         : <StackedFrame field={field} label={label} labelTrailing={labelTrailing} leading={leading} trailing={trailing} background={colors.background} disabled={disabled}/>}
       <FieldHint hint={hint} color={toneColor} />
-    </Col>
+    </Column>
   );
 }

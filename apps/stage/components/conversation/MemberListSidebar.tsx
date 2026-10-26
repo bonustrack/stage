@@ -4,7 +4,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
-import { Box, Row, VirtualList, PAGE_GUTTER } from '../layout';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../ProfileScreen.parts';
@@ -27,6 +26,7 @@ import { IconCrown } from '@central-icons-react-native/round-outlined-radius-1-s
 import { IconShield } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShield';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { IconPeopleAdded } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdded';
+import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
 const ROW_HEIGHT = 44;
 const ROW_INSET = 8;
@@ -45,7 +45,7 @@ function AdminMark({ mark, color }: { mark: MemberAdminMark; color: string }): R
 function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: () => void }): React.ReactElement {
   const { link, border, sub } = usePalette();
   return (
-    <Box padding={{ x: ROW_INSET }}>
+    <Column padding={{ x: ROW_INSET }}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
@@ -57,12 +57,12 @@ function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: ()
         })}
 >
         <Avatar address={entry.address} size="md" style={{ backgroundColor: border }}/>
-        <Row align="center" gap={6} flex={1}>
-          <Text size="sm" weight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>{entry.name}</Text>
+        <Row align="center" gap={6} weight={1}>
+          <Text size="sm" fontWeight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>{entry.name}</Text>
           {entry.admin === undefined ? null : <AdminMark mark={entry.admin} color={sub}/>}
         </Row>
       </Pressable>
-    </Box>
+    </Column>
   );
 }
 

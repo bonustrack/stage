@@ -1,10 +1,8 @@
-
 import { Image } from '@stage-labs/kit/react-native/image';
-import { Spacer } from '@stage-labs/kit/react-native/spacer';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { changeColor } from '../../lib/uiColors';
-import { Col, Row } from '../layout';
+import { Column, Row } from '../layout';
 
 export interface TokenRowViewParams {
   symbol: string;
@@ -23,13 +21,13 @@ function TokenRowAvatar({ logoUri, chainBadgeUri }: {
 }): React.ReactElement {
   if (chainBadgeUri !== undefined) {
     return (
-      <Col>
-        <Image src={logoUri} size={40} radius="full" />
-        <Image src={chainBadgeUri} size={16} radius="full" />
-      </Col>
+      <Column>
+        <Image fit="cover" url={logoUri} size={40} radius="full" />
+        <Image fit="cover" url={chainBadgeUri} size={16} radius="full" />
+      </Column>
     );
   }
-  return <Image src={logoUri} size={40} radius="full" />;
+  return <Image fit="cover" url={logoUri} size={40} radius="full" />;
 }
 
 export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
@@ -37,22 +35,22 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
   const showAvatar = params.showAvatar !== false;
   const color = changeColor(params.change24h)[scheme];
   return (
-    <Row align="center" gap={12} flex={1}>
+    <Row align="center" gap={12} weight={1}>
       {showAvatar ? (
         <TokenRowAvatar logoUri={params.logoUri} chainBadgeUri={params.chainBadgeUri} />
       ) : null}
-      <Col gap={2}>
-        <Text value={params.symbol} weight="semibold" size="md" truncate />
-        <Text value={params.name} color="secondary" size="xs" />
-      </Col>
-      <Spacer />
-      <Col gap={2} align="end">
-        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" size="md" textAlign="end" />}
+      <Column gap={2}>
+        <Text text={params.symbol} fontWeight="semibold" size="md" truncate />
+        <Text text={params.name} color="secondary" size="xs" />
+      </Column>
+      <Column weight={1} />
+      <Column gap={2} align="end">
+        {params.balance === '' ? null : <Text text={params.balance} fontWeight="semibold" size="md" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
-          <Text value={params.priceUsd} color="secondary" size="xs" />
-          {params.change24h === '' ? null : <Text value={params.change24h} color={color} size="xs" />}
+          <Text text={params.priceUsd} color="secondary" size="xs" />
+          {params.change24h === '' ? null : <Text text={params.change24h} color={color} size="xs" />}
         </Row>
-      </Col>
+      </Column>
     </Row>
   );
 }

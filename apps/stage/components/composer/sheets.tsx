@@ -3,8 +3,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Switch } from '@stage-labs/kit/react-native/switch';
-import { Box, Row, Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { LabelChip } from '../LabelChip';
@@ -18,6 +16,8 @@ import {
 import { SIGNATURE_KINDS, canSendPayment, canSendPoll, canSendSignature } from './sheets.model';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { CheckBox } from '@stage-labs/kit/react-native/check-box';
+import { Column, Row } from '../layout';
 
 interface SheetProps { open: boolean; onClose: () => void; dark: boolean; hooks: PostHooks }
 
@@ -28,12 +28,12 @@ function SheetShell({ open, onClose, dark, title, onSend, submitLabel, canSend, 
   const { primary, bg } = usePalette();
   return (
     <AppModal visible={open} onClose={onClose} title={title}>
-      <Col gap={8}>
+      <Column gap={8}>
         {children}
-        <Box padding={{ top: 8 }}>
-          <Button size="lg" fullWidth dark={dark} disabled={!canSend} onPress={onSend} label={submitLabel} tintBg={primary} tintFg={bg} />
-        </Box>
-      </Col>
+        <Column padding={{ top: 8 }}>
+          <Button variant="primary" size="lg" fullWidth dark={dark} disabled={!canSend} onPress={onSend} label={submitLabel} tintBg={primary} tintFg={bg} />
+        </Column>
+      </Column>
     </AppModal>
   );
 }
@@ -66,9 +66,9 @@ function PollSheet(props: SheetProps): React.ReactElement {
       ))}
       <Button variant="ghost" size="sm" dark={props.dark} onPress={() => { setOptions([...d.options, '']); }}
         label="Add option" icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />} />
-      <Row align="center" justify="between" gap={12} padding={{ y: 4 }}>
+      <Row align="center" justify="spaceBetween" gap={12} padding={{ y: 4 }}>
         <Text size="xs" color={fg}>Allow multiple choices</Text>
-        <Switch name="Allow multiple choices" checked={d.multi} dark={props.dark} onChange={multi => { patch({ multi }); }} />
+        <CheckBox displayStyle="switch" name="Allow multiple choices" value={d.multi} dark={props.dark} onChange={multi => { patch({ multi }); }} />
       </Row>
     </SheetShell>
   );
@@ -123,7 +123,7 @@ function PaymentSheet({ initialTo, ...props }: SheetProps & { initialTo?: string
       submitLabel="Send request" canSend={canSendPayment(d)}>
       <FormField label="Recipient" placeholder="0x…" value={d.to} onChangeText={to => { patch({ to }); }}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-      <FormField label="Amount (ETH)" placeholder="0.0" value={d.amount} onChangeText={amount => { patch({ amount }); }} inputType="number"
+      <FormField label="Amount (ETH)" placeholder="0.0" value={d.amount} onChangeText={amount => { patch({ amount }); }} variant="number"
         inputProps={{ keyboardType: 'decimal-pad' }} />
       <FormField label="Note (optional)" placeholder="What is it for?" value={d.note} onChangeText={note => { patch({ note }); }} />
     </SheetShell>

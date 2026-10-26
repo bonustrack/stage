@@ -3,7 +3,6 @@ import type { Story } from '../gallery/story';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSheet, type DropdownMenuProps, type DropdownMenuSheetProps } from '../src/react-native/dropdown-menu';
 import { Button } from '../src/react-native/button';
 import { Badge } from '../src/react-native/badge';
-import { Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { DROPDOWN_MENU, useDropdownMenuText } from '../src/react-native/menu';
 import { bool, color, number, select, useDark } from './_controls';
@@ -11,6 +10,7 @@ import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radi
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconSquareBehindSquare2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare2';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
+import { Row } from '../src/react-native/row';
 
 export default { title: 'Dropdown Menu' };
 
@@ -36,7 +36,7 @@ export const CustomContent: Story = () => {
   return (
     <DropdownMenu>
       <DropdownMenuItem label="Sort by: Priority" onPress={() => undefined}>
-        <Text {...menuText}>Sort by: <Text {...menuText} role="secondary">Priority</Text></Text>
+        <Text {...menuText}>Sort by: <Text {...menuText} color="secondary">Priority</Text></Text>
       </DropdownMenuItem>
       <DropdownMenuItem label="Fields (2)" onPress={() => undefined}>
         <Row align="center" gap={DROPDOWN_MENU.itemGap}>
@@ -54,7 +54,7 @@ export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background' | '
   const close = (): void => { setOpen(false); };
   return (
     <>
-      <Button label="Open menu" dark={dark} onPress={() => { setOpen(true); }} />
+      <Button variant="primary" label="Open menu" dark={dark} onPress={() => { setOpen(true); }} />
       <DropdownMenuSheet {...args} dark={dark} open={open} onClose={close}>
         <DropdownMenuItem dark={dark} iconName={IconArrowUndoUp} label="Reply" onPress={close} />
         <DropdownMenuItem dark={dark} iconName={IconSquareBehindSquare2} label="Copy text" onPress={close} />

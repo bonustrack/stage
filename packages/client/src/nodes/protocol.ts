@@ -1,10 +1,12 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { FRAME_ACTION_MAX_CHARS, frameContentSchema, type FrameContent } from '../xmtp/frame.schema';
+import {
+  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, frameContentSchema, nodeReplyMessagesSchema, rendererMessageSchema,
+  type FrameContent, type FrameMessage,
+} from '../xmtp/frame.schema';
 import { NODE_REPLY_MAX_BYTES } from './hosting';
 import { base64url, nodeSigningText } from './signing';
 
-const ACTION_REQUEST = 'threads.sync_custom_action';
 const MAX_URL_CHARS = 2048;
 const NODE_TIMEOUT_MS = 10_000;
 const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
@@ -14,15 +16,18 @@ const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
 const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
 const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
 const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
-const WIDGET_ROOTS = new Set(['Card', 'ListView', 'Basic']);
+
+export const NODE_CAPABILITIES_HEADER = 'Stage-A2UI-Capabilities';
 
 export type NodeUrlProblem = 'invalid' | 'insecure' | 'credentials' | 'local';
 
 export type NodeUrl = { ok: true; url: string; host: string } | { ok: false; problem: NodeUrlProblem };
 
-export interface NodeAction { type: string; payload?: Record<string, unknown> }
+export interface NodeRequest { message: Record<string, unknown>; dataModel?: Record<string, unknown> }
 
-export type NodeReply = { kind: 'frame'; frame: FrameContent } | { kind: 'unchanged' };
+export interface NodeCallOptions { capabilities?: Record<string, unknown>; signal?: AbortSignal }
+
+export type NodeReply = { kind: 'frame'; frame: FrameContent } | { kind: 'messages'; messages: FrameMessage[] } | { kind: 'unchanged' };
 
 export type NodeProblem = 'blocked' | 'unreachable' | 'timeout' | 'status' | 'too-large' | 'invalid';
 
@@ -109,33 +114,57 @@ export function nodeHeaders(method: string, url: string, body: string, key: stri
   return { 'Stage-Key': nodeKeyId(key), 'Stage-Timestamp': timestamp, 'Stage-Signature': base64url(signature) };
 }
 
-export function nodeActionBody(keyId: string, action: NodeAction): string {
-  const act = action.payload === undefined ? { type: action.type } : { type: action.type, payload: action.payload };
-  return JSON.stringify({ type: ACTION_REQUEST, params: { thread_id: keyId, item_id: keyId, action: act } });
+export function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unknown>): string {
+  const metadata = {
+    ...(capabilities === undefined ? {} : { a2uiRendererCapabilities: capabilities }),
+    ...(request.dataModel === undefined ? {} : { a2uiRendererDataModel: { version: A2UI_MESSAGE_VERSION, surfaces: request.dataModel } }),
+  };
+  return JSON.stringify(Object.keys(metadata).length === 0 ? request.message : { ...request.message, metadata });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export function loadReplyOf(widget: unknown): NodeReply | null {
-  if (!isRecord(widget) || typeof widget.type !== 'string' || !WIDGET_ROOTS.has(widget.type)) return null;
-  const parsed = frameContentSchema.safeParse({ widget });
-  return parsed.success ? { kind: 'frame', frame: parsed.data } : null;
+function listOf(value: unknown): unknown[] | null {
+  return Array.isArray(value) ? value.map((item: unknown) => item) : null;
 }
 
-export function actionReplyOf(json: unknown): NodeReply | null {
-  if (!isRecord(json)) return null;
-  const item = json.updated_item;
-  if (item === null || (item === undefined && Object.keys(json).length === 0)) return UNCHANGED;
-  return isRecord(item) && item.type === 'widget' ? loadReplyOf(item.widget) : null;
+function messagesOf(json: unknown): unknown[] | null {
+  if (!isRecord(json)) return listOf(json);
+  if (Object.keys(json).length === 0) return [];
+  if (Object.keys(json).length === 1 && json.messages !== undefined) return listOf(json.messages);
+  return json.version === undefined ? null : [json];
+}
+
+export function loadReplyOf(json: unknown): NodeReply | null {
+  const messages = messagesOf(json);
+  const parsed = messages === null ? null : frameContentSchema.safeParse({ messages });
+  return parsed?.success === true ? { kind: 'frame', frame: parsed.data } : null;
+}
+
+export function messageReplyOf(json: unknown): NodeReply | null {
+  const messages = json === undefined ? [] : messagesOf(json);
+  if (messages === null) return null;
+  if (messages.length === 0) return UNCHANGED;
+  const parsed = nodeReplyMessagesSchema.safeParse(messages);
+  return parsed.success ? { kind: 'messages', messages: parsed.data } : null;
+}
+
+function parsedLines(text: string): unknown {
+  try {
+    return text.split(/\r?\n/).filter(line => line.trim() !== '').map(line => JSON.parse(line) as unknown);
+  } catch {
+    return null;
+  }
 }
 
 function parsedJson(text: string): unknown {
+  if (text.trim() === '') return undefined;
   try {
     return JSON.parse(text);
   } catch {
-    return undefined;
+    return parsedLines(text);
   }
 }
 
@@ -167,30 +196,33 @@ async function readReply(response: Response, replyOf: (json: unknown) => NodeRep
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };
 }
 
-async function callNode(method: NodeMethod, rawUrl: string, key: string, body: string, signal?: AbortSignal): Promise<NodeResult> {
+async function callNode(method: NodeMethod, rawUrl: string, key: string, body: string, options: NodeCallOptions): Promise<NodeResult> {
   const node = nodeUrlOf(rawUrl);
   if (!node.ok) return { ok: false, problem: 'blocked' };
+  const { capabilities, signal } = options;
   const timeout = AbortSignal.timeout(NODE_TIMEOUT_MS);
   const headers: Record<string, string> = { Accept: 'application/json', ...nodeHeaders(method, node.url, body, key, Date.now()) };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
+  if (capabilities !== undefined) headers[NODE_CAPABILITIES_HEADER] = JSON.stringify(capabilities);
   try {
     const response = await fetch(node.url, {
       method, headers, body: method === 'POST' ? body : undefined,
       credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
     });
-    return await readReply(response, method === 'GET' ? loadReplyOf : actionReplyOf);
+    return await readReply(response, method === 'GET' ? loadReplyOf : messageReplyOf);
   } catch {
     return { ok: false, problem: timeout.aborted ? 'timeout' : 'unreachable' };
   }
 }
 
-export function loadNode(url: string, key: string, signal?: AbortSignal): Promise<NodeResult> {
-  return callNode('GET', url, key, '', signal);
+export function loadNode(url: string, key: string, options: NodeCallOptions = {}): Promise<NodeResult> {
+  return callNode('GET', url, key, '', options);
 }
 
-export function sendNodeAction(url: string, key: string, action: NodeAction): Promise<NodeResult> {
-  const body = nodeActionBody(nodeKeyId(key), action);
+export function sendNodeMessage(url: string, key: string, request: NodeRequest, options: NodeCallOptions = {}): Promise<NodeResult> {
+  if (!rendererMessageSchema.safeParse(request.message).success) return Promise.resolve({ ok: false, problem: 'invalid' });
+  const body = nodeRequestBody(request, options.capabilities);
   if (body.length > FRAME_ACTION_MAX_CHARS) return Promise.resolve({ ok: false, problem: 'too-large' });
-  return callNode('POST', url, key, body);
+  return callNode('POST', url, key, body, options);
 }

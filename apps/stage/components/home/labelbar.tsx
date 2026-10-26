@@ -1,18 +1,15 @@
-
 import { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { channelsLabelChips, selectChannelsFilter } from './model';
-import { Box, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
 import { LabelChip } from '../LabelChip';
 import {
   clearSearchFilters, setSearchQuery, toggleSearchLabel, toggleSearchUnread, useSearchState,
 } from '../../lib/searchState';
-
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
 
 export function useHomeFilters(): {
   enabledLabels: Set<string>;
@@ -55,7 +52,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   );
 
   const scroll = (
-    <Scroll horizontal showsHorizontalScrollIndicator={false}>
+    <List direction="horizontal" showsHorizontalScrollIndicator={false}>
       <Row gap={8} padding={CHIPS_PADDING}>
         {chips.map((chip) => (
           <ChipPress key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
@@ -63,16 +60,16 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
           </ChipPress>
         ))}
       </Row>
-    </Scroll>
+    </List>
   );
 
   return WEB ? (
     <GestureDetector gesture={gesture}>
-      <Box style={STRETCH}>{scroll}</Box>
+      <Column style={STRETCH}>{scroll}</Column>
     </GestureDetector>
   ) : (
-    <Box style={STRETCH}>
+    <Column style={STRETCH}>
       <GestureDetector gesture={gesture}>{scroll}</GestureDetector>
-    </Box>
+    </Column>
   );
 }

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { AppModal } from '../AppModal';
-import { Col } from '../layout';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { fileInputs } from '../composer/send.model';
 import { prepareAttachments, forgetAttachments } from '../../lib/xmtp.attachments';
@@ -19,6 +18,7 @@ import { ShareReview } from './ShareReview';
 import { useShareRows } from './useShareRows';
 import { useShareSender, type ShareSelection } from './useShareSender';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { Column } from '../layout';
 
 function sessionTitle(sent: boolean, selected: boolean): string {
   if (sent) return 'Share sent';
@@ -43,14 +43,14 @@ function ShareSessionBody({ send, selection, state, accountLabel, picker, onChoo
   const dark = useEffectiveColorScheme() === 'dark';
   const waiting = send.sent || send.busy || send.closed;
   return (
-    <Col gap={12}>
+    <Column gap={12}>
       {send.error === null ? null : <Text color="danger">{send.error}</Text>}
       {waiting ? <Text>{send.sent ? 'Your share was sent.' : send.closed ? 'Closing this share…' : 'Finishing the share you confirmed…'}</Text> : selection === null ? picker : (
         <ShareReview destination={selection.destination} state={state} account={accountLabel} busy={send.busy}
           onChoose={onChoose} onSubmit={() => { void send.sender.send(); }}/>
       )}
       <Button dark={dark} label={send.sent ? 'Close' : 'Cancel share'} variant="soft" color="secondary" disabled={send.busy} onPress={send.close}/>
-    </Col>
+    </Column>
   );
 }
 

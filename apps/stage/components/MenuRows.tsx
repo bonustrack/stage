@@ -3,7 +3,6 @@ import type { GestureResponderEvent, LayoutChangeEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { AppIcon, type AppIconRef } from './widgets';
-import { Box, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CountTag } from './CountTag';
 import { Eyebrow } from './Eyebrow';
@@ -15,6 +14,7 @@ import { usePalette } from '../lib/theme';
 import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { useHover } from './hover';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
+import { Column, Row } from './layout';
 
 function MenuRowContent({ label, value, count, role }: {
   label: string; value?: string; count?: number; role: 'danger' | 'link';
@@ -22,11 +22,11 @@ function MenuRowContent({ label, value, count, role }: {
   const menuText = useDropdownMenuText();
   return (
     <Row align="center" gap={DROPDOWN_MENU.itemGap}>
-      <Box style={{ flexShrink: 1, minWidth: 0 }}>
-        <Text {...menuText} role={role} truncate>
-          {label}{value === undefined ? null : <>: <Text {...menuText} role="secondary">{value}</Text></>}
+      <Column style={{ flexShrink: 1, minWidth: 0 }}>
+        <Text {...menuText} color={role} truncate>
+          {label}{value === undefined ? null : <>: <Text {...menuText} color="secondary">{value}</Text></>}
         </Text>
-      </Box>
+      </Column>
       {count === undefined ? null : <CountTag count={count}/>}
     </Row>
   );
@@ -53,9 +53,9 @@ export function MenuRow({ icon, label, value, count, onPress, danger, divider = 
 
 export function MenuHeading({ text }: { text: string }): React.ReactElement {
   return (
-    <Box padding={{ x: DROPDOWN_MENU.itemPadX, top: DROPDOWN_MENU.itemPadY + 2, bottom: 2 }}>
+    <Column padding={{ x: DROPDOWN_MENU.itemPadX, top: DROPDOWN_MENU.itemPadY + 2, bottom: 2 }}>
       <Eyebrow>{text.toUpperCase()}</Eyebrow>
-    </Box>
+    </Column>
   );
 }
 

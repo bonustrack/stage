@@ -1,6 +1,4 @@
 import { FONT_SIZE } from '@stage-labs/kit/tokens';
-
-import { Box, Col } from '../../components/layout';
 import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation';
@@ -25,6 +23,7 @@ import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
+import { Column } from '../../components/layout';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
 
@@ -32,7 +31,7 @@ function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }):
   const slot = useTopnavSlot();
   if (slot?.override) return <>{slot.override}</>;
   const title = rail ? WIDE_TAB_TITLES[pathname] : undefined;
-  const left = title === undefined ? undefined : <Text value={title} size="xl" weight="semibold" />;
+  const left = title === undefined ? undefined : <Text text={title} size="xl" fontWeight="semibold" />;
   return <Topnav left={left} right={slot?.right} />;
 }
 
@@ -43,22 +42,22 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
   if (Platform.OS === 'web') {
     if (pathname.startsWith('/settings')) return null;
     return (
-      <Col flex={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
+      <Column weight={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}
         <TabsPager/>
-      </Col>
+      </Column>
     );
   }
   return (
-    <Col
+    <Column
       pointerEvents="box-none"
       style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}
 >
       <HoistedTopnav rail={rail} pathname={pathname}/>
-      <Box flex={1}>
+      <Column weight={1}>
         <TabsPager/>
-      </Box>
-    </Col>
+      </Column>
+    </Column>
   );
 }
 
@@ -106,9 +105,9 @@ export default function TabsLayout(): React.ReactElement {
   if (gate.ready && !gate.hasAccount) return <Landing />;
 
   return (
-    <Col surface="surface" flex={1}>
+    <Column surface="surface" weight={1}>
       {web ? null : (
-        <Box height={insets.top} surface="toolbar"
+        <Column height={insets.top} surface="toolbar"
           pointerEvents="none"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />
@@ -155,7 +154,7 @@ export default function TabsLayout(): React.ReactElement {
         <Tabs.Screen
           name="account"
           options={{
-            tabBarIcon: () => <Box margin={{ top: -1 }}><AccountAvatar size={26}/></Box>,
+            tabBarIcon: () => <Column margin={{ top: -1 }}><AccountAvatar size={26}/></Column>,
             tabBarAccessibilityLabel: 'Account',
           }}
           listeners={{ tabPress: (e) => { e.preventDefault(); router.navigate(SETTINGS_ROUTE); } }}
@@ -174,6 +173,6 @@ export default function TabsLayout(): React.ReactElement {
         ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
         : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>
       ) : null}
-    </Col>
+    </Column>
   );
 }

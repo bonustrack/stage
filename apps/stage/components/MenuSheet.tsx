@@ -6,7 +6,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DROPDOWN_MENU, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
-import { Col } from './layout';
 import { Avatar } from './Avatar';
 import { AnchoredMenu } from './AnchoredMenu';
 import { MenuRow } from './MenuRows';
@@ -22,6 +21,7 @@ import { report, reported } from '../lib/errorPolicy';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPeopleAdd } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdd';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
+import { Column } from './layout';
 
 function AccountSwitchRow({ account, active, onSwitch }: {
   account: AccountRecord; active: boolean; onSwitch: (id: string) => void;
@@ -41,14 +41,14 @@ function AccountSwitchRow({ account, active, onSwitch }: {
       })}
     >
       <Avatar address={account.address} size={26} style={{ backgroundColor: border }}/>
-      <Col minWidth={0} flex={1}>
-        <Text {...menuText} weight="semibold" numberOfLines={1} color={head}>
+      <Column minWidth={0} weight={1}>
+        <Text {...menuText} fontWeight="semibold" numberOfLines={1} color={head}>
           {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
         </Text>
         <Text size="3xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
           {shortAddress(account.address)}
         </Text>
-      </Col>
+      </Column>
       {active ? <Glyph icon={IconCheckmark1} size={16} color={head} /> : null}
     </Pressable>
   );

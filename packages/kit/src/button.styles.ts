@@ -12,7 +12,27 @@ export type ButtonColor =
   | 'warning'
   | 'danger';
 
+export const BUTTON_COLORS: readonly ButtonColor[] = ['primary', 'secondary', 'info', 'discovery', 'success', 'caution', 'warning', 'danger'];
+
 export type ButtonControlVariant = 'solid' | 'soft' | 'outline' | 'ghost';
+
+export const BUTTON_FILLS: readonly ButtonControlVariant[] = ['solid', 'soft', 'outline', 'ghost'];
+
+export type ButtonHint = 'default' | 'primary' | 'borderless';
+
+export type ButtonVariant = ButtonHint | ButtonControlVariant;
+
+const HINTS: Record<ButtonHint, { fill: ButtonControlVariant; color: ButtonColor }> = {
+  default: { fill: 'solid', color: 'secondary' },
+  primary: { fill: 'solid', color: 'primary' },
+  borderless: { fill: 'ghost', color: 'primary' },
+};
+
+export function resolveButtonVariant(variant: ButtonVariant | undefined, color: ButtonColor | undefined): { fill: ButtonControlVariant; color: ButtonColor } {
+  const v = variant ?? 'default';
+  if (v === 'default' || v === 'primary' || v === 'borderless') return { fill: HINTS[v].fill, color: color ?? HINTS[v].color };
+  return { fill: v, color: color ?? 'primary' };
+}
 
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 

@@ -25,7 +25,7 @@ function FieldLabels({ labels }: { labels: string[] }): React.ReactElement {
     <Row wrap align="center" gap={3} minWidth={0} style={{ flexShrink: 1 }}>
       {labels.map((label, i) => (
         <Badge
-          key={`${label}-${i}`} label={label} textSize="2xs" weight="normal" truncate
+          key={`${label}-${i}`} label={label} textSize="2xs" fontWeight="normal" truncate
           color={text} background={inputBg} style={CHIP_STYLE} textStyle={CHIP_TEXT_STYLE}
         />
       ))}

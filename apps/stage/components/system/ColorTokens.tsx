@@ -1,8 +1,5 @@
-
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Input } from '@stage-labs/kit/react-native/input';
-import { Box, Row, Col } from '../layout';
 import { Eyebrow } from '../Eyebrow';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -12,7 +9,6 @@ import {
   setAccentLevel, setGrayscaleTint, setGrayscaleShade,
   type SeedColorKey,
 } from '../../lib/theme';
-
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
 import { isHex } from '../../lib/theme';
@@ -20,6 +16,8 @@ import type { AccentLevel, GrayscaleShade, GrayscaleTint } from '@stage-labs/kit
 import {
   fontSize, type Density, type RadiusName, type BaseSize,
 } from '@stage-labs/kit/tokens';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row } from '../layout';
 
 const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['surface-background', 'background'],
@@ -55,9 +53,9 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           borderWidth: 1, borderColor: p.border,
         }}
 />
-      <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="xs" color={p.head}>{name}</Text>
-        <Input
+      <Column minWidth={0} weight={1}>
+        <Text fontWeight="semibold" size="xs" color={p.head}>{name}</Text>
+        <TextField
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setSeedColor(scheme, seedKey, t); }}
           dark={p.dark}
@@ -69,7 +67,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
             color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('3xs'), fontFamily: 'Calibre-Medium',
           }}
 />
-      </Col>
+      </Column>
       <AppModal visible={picking} onClose={closePicker} title={`Pick ${name} color`}>
         <ColorPicker
           value={pending ?? value}
@@ -83,7 +81,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
         />
         <Row margin={{ top: 20 }} gap={12} align="center">
           <Button color="secondary" variant="solid" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
-          <Button
+          <Button variant="primary"
             dark={p.dark}
             onPress={() => {
               if (pending != null && isHex(pending)) setSeedColor(scheme, seedKey, pending);
@@ -101,8 +99,8 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
   name: string; options: readonly T[]; value: T; onSelect: (v: T) => void; p: GalleryPalette;
 }): React.ReactElement {
   return (
-    <Box margin={{ top: 16 }}>
-      <Text weight="semibold" size="xs" color={p.head}>{name}</Text>
+    <Column margin={{ top: 16 }}>
+      <Text fontWeight="semibold" size="xs" color={p.head}>{name}</Text>
       <Row margin={{ top: 6 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
         {options.map((opt) => (
           <Button
@@ -115,7 +113,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
 />
         ))}
       </Row>
-    </Box>
+    </Column>
   );
 }
 
@@ -134,9 +132,9 @@ export function ColorTokens(): React.ReactElement {
   const seeds = useThemeSeeds();
   const seed = seeds[scheme];
   return (
-    <Box>
-      <Row margin={{ top: 16 }} align="center" justify="between">
-        <Text color={p.sub} variant="caption" weight="medium">
+    <Column>
+      <Row margin={{ top: 16 }} align="center" justify="spaceBetween">
+        <Text color={p.sub} variant="caption" fontWeight="medium">
           {`seed theme - derives the palette - ${scheme}`}
         </Text>
         <Button
@@ -145,14 +143,14 @@ export function ColorTokens(): React.ReactElement {
           label="Reset" accessibilityLabel="Reset theme seed to defaults"
 />
       </Row>
-      <Box margin={{ top: 2 }}>
+      <Column margin={{ top: 2 }}>
         {SEED_ROWS.map(([label, key]) => (
           <SeedSwatch
             key={label} name={label} seedKey={key}
             value={seedColorHex(seeds, scheme, key)} scheme={scheme} p={p}
           />
         ))}
-      </Box>
+      </Column>
 
       <SeedChoice
         name="accent-level" options={ACCENT_LEVEL_OPTS} value={seed.accent.level}
@@ -167,24 +165,24 @@ export function ColorTokens(): React.ReactElement {
         onSelect={(v) => { setGrayscaleShade(scheme, v); }} p={p}
       />
 
-      <Box margin={{ top: 20 }}>
+      <Column margin={{ top: 20 }}>
         <Eyebrow color={p.sub}>DERIVED</Eyebrow>
         <Row margin={{ top: 8 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
           {([
             ['bg', palette.bg], ['border', palette.border], ['text', palette.text],
             ['sub', palette.sub], ['link', palette.link], ['inputBg', palette.inputBg],
           ] as readonly (readonly [string, string])[]).map(([k, c]) => (
-            <Col key={k} align="center" gap={2}>
-              <Box width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }}/>
+            <Column key={k} align="center" gap={2}>
+              <Column width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }}/>
               <Text color={p.sub} size="3xs">{k}</Text>
-            </Col>
+            </Column>
           ))}
         </Row>
-      </Box>
+      </Column>
 
       <SeedChoice name="density" options={DENSITY_OPTS} value={seeds.density} onSelect={setSeedDensity} p={p}/>
       <SeedChoice name="radius" options={RADIUS_OPTS} value={seeds.radius} onSelect={setSeedRadius} p={p}/>
       <SeedChoice name="text-size" options={BASE_SIZE_OPTS} value={seeds.baseSize} onSelect={setSeedBaseSize} p={p}/>
-    </Box>
+    </Column>
   );
 }

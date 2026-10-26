@@ -13,8 +13,8 @@ const BOX_SURFACE_HINT = {
   rowBg: 'surface="raised"',
   toolbarBg: 'surface="toolbar"',
 };
-const TEXT_TAGS = new Set(['Text', 'Title', 'Caption']);
-const BOX_TAGS = new Set(['Box', 'Row', 'Col']);
+const TEXT_TAGS = new Set(['Text', 'Title']);
+const BOX_TAGS = new Set(['Row', 'Column']);
 const stageThemeNative = {
   rules: {
     'prefer-role-variant': {

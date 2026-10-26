@@ -6,7 +6,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { IconCall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCall';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
-import { Box } from '../layout';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { joinCall } from '../../lib/calls';
@@ -16,6 +15,7 @@ import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconTileRow } from '../MediaCard';
+import { Column } from '../layout';
 
 const TICK_MS = 1_000;
 
@@ -59,9 +59,9 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
           icon={<Glyph icon={record.video ? IconVideo : IconCall} size={24} color={toneColor(model, pal)}/>}
         >
           {pressable && model.action === 'join' ? (
-            <Box pointerEvents="none" aria-hidden>
-              <Button size="sm" pill label="Join" tintBg={pal.success} tintFg={pal.bg} focusable={false}/>
-            </Box>
+            <Column pointerEvents="none" aria-hidden>
+              <Button variant="primary" size="sm" pill label="Join" tintBg={pal.success} tintFg={pal.bg} focusable={false}/>
+            </Column>
           ) : null}
         </IconTileRow>
       </Card>

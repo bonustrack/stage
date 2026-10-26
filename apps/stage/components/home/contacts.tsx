@@ -1,9 +1,6 @@
-
 import { useEffect, useMemo, useState } from 'react';
-
 import { isAddress } from 'viem';
 import { Eyebrow } from '../Eyebrow';
-import { Box, PAGE_GUTTER } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../ChannelRow';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -12,6 +9,7 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { peopleLookup } from './contacts.model';
 import { homeRows } from './state';
 import { uniqueBy } from '@stage-labs/client/collections';
+import { Column, PAGE_GUTTER } from '../layout';
 
 function getExistingPeers(): { address: string; convId: string }[] {
   const peers = (homeRows() ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
@@ -74,10 +72,10 @@ function openPeer(address: string, convId?: string): void {
 
 function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): React.ReactElement {
   return (
-    <Box>
-      <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
-        <Eyebrow value={label} color="secondary" weight="semibold"/>
-      </Box>
+    <Column>
+      <Column padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
+        <Eyebrow text={label} color="secondary" fontWeight="semibold"/>
+      </Column>
       {rows.map((r) => (
         <ChannelRow
           key={`${r.address}-${r.convId ?? ''}`}
@@ -88,7 +86,7 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
           onPress={() => { openPeer(r.address, r.convId); }}
         />
       ))}
-    </Box>
+    </Column>
   );
 }
 

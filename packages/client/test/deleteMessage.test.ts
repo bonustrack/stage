@@ -74,7 +74,7 @@ describe('which messages XMTP itself can delete', () => {
 
   test('Stage and metro content types are unknown to XMTP, so they need the Stage delete', () => {
     for (const id of [
-      'stage.box/frameAction:1.0', 'stage.box/frame:1.0', 'metro.box/poll:1.0', 'metro.box/signatureRequest:1.0',
+      'stage.box/frameAction:2.0', 'stage.box/frame:2.0', 'metro.box/poll:1.0', 'metro.box/signatureRequest:1.0',
       'frameAction', 'frame', 'poll', '', undefined,
     ]) expect(isXmtpDeletableType(id)).toBe(false);
   });

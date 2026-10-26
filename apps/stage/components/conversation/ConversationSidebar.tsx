@@ -1,7 +1,6 @@
 import { MemberListSidebar } from './MemberListSidebar';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { Box, Col, PANE_LEFT_PAD, RIGHT_PANE_PAD, pinnedEdges, viewportFill, PAGE_GUTTER } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../tabs/paneWidth';
 import { PaneResizeHandle } from '../tabs/PaneResizeHandle';
@@ -16,6 +15,7 @@ import { PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
 import { profileDisplayName } from '../ProfileScreen.model';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
+import { Column, PANE_LEFT_PAD, RIGHT_PANE_PAD, pinnedEdges, viewportFill, PAGE_GUTTER } from '../layout';
 
 const sidebarWidth = createPaneWidth({
   key: 'web.memberListWidth',
@@ -41,9 +41,9 @@ export function useChatColumnFill(bottomInset: number): StyleProp<ViewStyle> {
 export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
-    <Col surface="surface" flex={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
+    <Column surface="surface" weight={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
       <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
-    </Col>
+    </Column>
   );
 }
 
@@ -66,12 +66,12 @@ function PeerProfileSidebar({ address }: { address: string }): React.ReactElemen
         />
       }
     >
-      <Box padding={{ x: PAGE_GUTTER, bottom: PAGE_GUTTER }}>
-        <Col gap={6} margin={{ top: 14 }}>
-          <Text value={name} weight="semibold" size="2xl" textAlign="center" numberOfLines={2}/>
-          {identity !== name ? <Text value={identity} size="xs" color={text} textAlign="center" numberOfLines={1}/> : null}
-        </Col>
-      </Box>
+      <Column padding={{ x: PAGE_GUTTER, bottom: PAGE_GUTTER }}>
+        <Column gap={6} margin={{ top: 14 }}>
+          <Text text={name} fontWeight="semibold" size="2xl" textAlign="center" numberOfLines={2}/>
+          {identity !== name ? <Text text={identity} size="xs" color={text} textAlign="center" numberOfLines={1}/> : null}
+        </Column>
+      </Column>
     </ProfileCover>
   );
 }
@@ -83,13 +83,13 @@ export function ConversationSidebar({ convId, isGroup = false, peerAddress = nul
   const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
   const width = sidebarWidth.use();
   return (
-    <Box
+    <Column
       surface="surface"
       width={width}
       style={[pinnedEdges({ top, bottom: 0, right: 0 }, 2), { borderLeftWidth: 1, borderLeftColor: border }]}
 >
       {isGroup && convId ? <MemberListSidebar convId={convId}/> : peerAddress ? <PeerProfileSidebar key={peerAddress} address={peerAddress}/> : null}
       <PaneResizeHandle pane={sidebarWidth} edge="left"/>
-    </Box>
+    </Column>
   );
 }

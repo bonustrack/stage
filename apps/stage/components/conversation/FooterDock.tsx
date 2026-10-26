@@ -1,9 +1,9 @@
 import { Platform, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { Box, RIGHT_PANE_INSET, pinnedBottom } from '../layout';
 import { useReportBottomChrome } from '../../lib/bottomChrome';
 import { useSafeAreaInsets } from '../../lib/safeArea';
+import { Column, RIGHT_PANE_INSET, pinnedBottom } from '../layout';
 
 export function ChatColumn({ style, children }: {
   style?: StyleProp<ViewStyle>; children?: React.ReactNode;
@@ -18,10 +18,10 @@ export function ComposerDock({ children }: { children: React.ReactNode }): React
   const insets = useSafeAreaInsets();
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
-      <Box>
+      <Column>
         {children}
-        <Box height={insets.bottom} surface="raised"/>
-      </Box>
+        <Column height={insets.bottom} surface="raised"/>
+      </Column>
     </KeyboardStickyView>
   );
 }
@@ -32,8 +32,8 @@ export function FooterDock({ children, height, onHeight, memberList }: {
   useReportBottomChrome(height);
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
-    <Box style={[pinnedBottom(2), memberList ? RIGHT_PANE_INSET : null]} onLayout={(e) => { onHeight(e.nativeEvent.layout.height); }}>
+    <Column style={[pinnedBottom(2), memberList ? RIGHT_PANE_INSET : null]} onLayout={(e) => { onHeight(e.nativeEvent.layout.height); }}>
       {children}
-    </Box>
+    </Column>
   );
 }

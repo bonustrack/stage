@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
-
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { messageCardLinks } from './markdown.model';
 import { isAttachmentSummary } from './fileCard.model';
-import { Box, Row } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
 import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
@@ -26,6 +24,7 @@ import { bubbleTimestamp } from '../../lib/format';
 import {
   BubbleAttachments, BubbleBody, BubbleEmbeds, FrameActionLine, ReplyPreview, markdownRules, type MarkdownProps,
 } from './content.parts';
+import { Column, Row } from '../layout';
 
 function descriptorsOf(entry: HistoryEntry): {
   atts: ReturnType<typeof attachmentsOf>; question: ReturnType<typeof questionOf>;
@@ -56,7 +55,7 @@ function BubbleMain({ d, entry, fg, call, highlight, markdownProps }: {
   }
   if (d.poll) {
     return d.poll.question ? (
-      <Box style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Box>
+      <Column style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Column>
     ) : null;
   }
   if (d.txReq || d.txReceipt || d.frame || call) return null;
@@ -106,7 +105,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text role="secondary" size="3xs">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
+        <Text color="secondary" size="3xs">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />

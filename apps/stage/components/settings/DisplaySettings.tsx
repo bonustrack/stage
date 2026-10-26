@@ -1,4 +1,3 @@
-import { Box, PAGE_GUTTER } from '../layout';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useThemePreference,
@@ -8,6 +7,7 @@ import {
   SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS,
 } from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
+import { Column, PAGE_GUTTER } from '../layout';
 
 export function DisplaySettings(): React.ReactElement {
   const pref = useThemePreference();
@@ -39,9 +39,9 @@ export function DisplaySettings(): React.ReactElement {
       {custom ? (
         <>
           <SettingsSectionLabel>Custom colors</SettingsSectionLabel>
-          <Box padding={{ x: PAGE_GUTTER }}>
+          <Column padding={{ x: PAGE_GUTTER }}>
             <ColorTokens/>
-          </Box>
+          </Column>
         </>
       ) : null}
     </SettingsPage>

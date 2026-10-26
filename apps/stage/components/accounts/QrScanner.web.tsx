@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col } from '../layout';
 import { View } from 'react-native';
 import { ignored, recover } from '../../lib/errorPolicy';
+import { Column } from '../layout';
 
 export interface QrScannerProps {
   onScan: (text: string) => void;
@@ -142,12 +142,12 @@ export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement 
   const { error, retry } = useCameraScan(host, onScan);
   if (error !== null) {
     return (
-      <Col gap={10} align="center" padding={{ y: 16 }}>
-        <Text size="2xs" role="secondary" textAlign="center">{error}</Text>
+      <Column gap={10} align="center" padding={{ y: 16 }}>
+        <Text size="2xs" color="secondary" textAlign="center">{error}</Text>
         {error === LOAD_ERROR ? (
           <Button dark={dark} variant="soft" color="primary" label="Try again" onPress={retry} style={{ alignSelf: 'center' }} />
         ) : null}
-      </Col>
+      </Column>
     );
   }
   return (

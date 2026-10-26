@@ -2,12 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
-import {
-  Box, Col, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth,
-} from '../layout';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { FilterSearch, memberNamesOf } from '../FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../searchFilter.model';
@@ -59,6 +55,8 @@ import { addBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } fro
 import {
   AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
 } from './BoardColumnEdit';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
 const DRAGGING_OPACITY = 0.4;
 type BoardRouter = ReturnType<typeof useRouter>;
@@ -99,7 +97,7 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   const openMenu = rowMenuOpener(item, setMenu);
   const title = rowTitle(item);
   return (
-    <Box
+    <Column
       {...cardDataSet(columnKey, item.convId)}
       nativeID={source.nativeID}
       surface="surface"
@@ -140,13 +138,13 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
         onContextMenu={openMenu}
       />
       <RowChannelMenu menu={menu} isPinned={pinned} onClose={() => { setMenu(null); }}/>
-    </Box>
+    </Column>
   );
 }
 
 function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }): React.ReactElement {
-  const title = <LabelText label={label} size={TITLE_SIZE} weight="semibold" truncate/>;
-  if (onPress === undefined) return <Box style={{ flexShrink: 1 }}>{title}</Box>;
+  const title = <LabelText label={label} size={TITLE_SIZE} fontWeight="semibold" truncate/>;
+  if (onPress === undefined) return <Column style={{ flexShrink: 1 }}>{title}</Column>;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Rename column" style={{ flexShrink: 1 }}>
       {title}
@@ -159,7 +157,7 @@ function ColumnCards({ column, pinned, editable, onOpen }: {
 }): React.ReactElement | null {
   if (column.rows.length === 0) return null;
   return (
-    <Scroll
+    <List
       {...GUTTER_SCROLLBAR}
       gap={CARD_GAP}
       nestedScrollEnabled
@@ -172,7 +170,7 @@ function ColumnCards({ column, pinned, editable, onOpen }: {
           onOpen={() => { onOpen(column.key); }}
         />
       ))}
-    </Scroll>
+    </List>
   );
 }
 
@@ -201,10 +199,10 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
         />
       ) : (
         <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
-          <Row nativeID={handle.nativeID} flex={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
+          <Row nativeID={handle.nativeID} weight={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
             <ColumnTitle label={label} onPress={editable ? () => { setEditing(true); } : undefined}/>
             <CountTag count={column.rows.length}/>
-            <Box flex={1}/>
+            <Column weight={1}/>
           </Row>
           {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
           <NewChatAction by={columnBy} groupKey={column.key} title={label}/>
@@ -243,7 +241,7 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState({ width: 0, height: 0 });
-  const scroll = useRef<React.ComponentRef<typeof Scroll>>(null);
+  const scroll = useRef<React.ComponentRef<typeof List>>(null);
   const scrollX = useRef(0);
   const reveal = useRef(false);
   const padding = { paddingHorizontal: PAGE_GUTTER, paddingTop: LIST_TOP_GAP, paddingBottom: LIST_TOP_GAP + bottom };
@@ -267,9 +265,9 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
     scroll.current?.scrollToEnd({ animated: true });
   };
   return (
-    <Scroll
+    <List
       ref={scroll}
-      horizontal
+      direction="horizontal"
       {...SELF_SCROLLBAR}
       gap={BOARD_GAP}
       keyboardShouldPersistTaps="handled"
@@ -289,7 +287,7 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
         />
       ))}
       {actions.editable ? <AddColumn columns={columns} onAdd={actions.create} onReveal={() => { reveal.current = true; }}/> : null}
-    </Scroll>
+    </List>
   );
 }
 function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
@@ -352,7 +350,7 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
   if (wide) return <>{topnav}{children}</>;
   return <>
     {topnav}
-    <Box flex={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
+    <Column weight={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
       <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`}/>
       <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
         <FilterSearch
@@ -360,9 +358,9 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
           query={query} setQuery={setQuery} onClose={search.close} onOpen={openSearch}
           head={link} sub={text} border={border}
         />
-        <Col height={laneHeight}>{children}</Col>
+        <Column height={laneHeight}>{children}</Column>
       </ScreenScroll>
-    </Box>
+    </Column>
   </>;
 }
 function useBoardHeight(): number | undefined {
@@ -377,10 +375,10 @@ export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState
   const height = useBoardHeight();
   const windowHeight = !pane && height !== undefined;
   return (
-    <Col flex={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
+    <Column weight={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
       <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering} menu={menu}>
         <BoardBody query={query} filtering={filtering}/>
       </BoardFrame>
-    </Col>
+    </Column>
   );
 }

@@ -9,7 +9,7 @@ export function UnreadBadge({ count }: { count: number }): React.ReactElement {
   const { link, bg } = usePalette();
   return (
     <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={link}>
-      <Text weight="semibold" color={bg} size="3xs">{unreadBadgeLabel(count)}</Text>
+      <Text fontWeight="semibold" color={bg} size="3xs">{unreadBadgeLabel(count)}</Text>
     </Row>
   );
 }

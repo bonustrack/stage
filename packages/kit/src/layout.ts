@@ -15,9 +15,10 @@ export type Justify =
   | 'start'
   | 'center'
   | 'end'
-  | 'between'
-  | 'around'
-  | 'evenly';
+  | 'spaceBetween'
+  | 'spaceAround'
+  | 'spaceEvenly'
+  | 'stretch';
 
 export interface Spacing {
   top?: number | string;
@@ -50,7 +51,7 @@ export interface BoxBaseProps {
   margin?: number | string | Spacing;
   align?: Align;
   justify?: Justify;
-  flex?: number;
+  weight?: number;
   wrap?: boolean;
   background?: ColorToken | (string & {});
   radius?: RadiusValue | number | (string & {});
@@ -81,9 +82,10 @@ const JUSTIFY: Record<Justify, string> = {
   start: 'flex-start',
   center: 'center',
   end: 'flex-end',
-  between: 'space-between',
-  around: 'space-around',
-  evenly: 'space-evenly',
+  spaceBetween: 'space-between',
+  spaceAround: 'space-around',
+  spaceEvenly: 'space-evenly',
+  stretch: 'flex-start',
 };
 
 export function resolveBg(bg: string): string {
@@ -134,7 +136,7 @@ function applyFlex(s: BoxStyleEntries, props: BoxBaseProps): void {
   setIf(s, 'gap', props.gap);
   if (props.align !== undefined) s.alignItems = ALIGN[props.align];
   if (props.justify !== undefined) s.justifyContent = JUSTIFY[props.justify];
-  setIf(s, 'flex', props.flex);
+  setIf(s, 'flex', props.weight);
   if (props.wrap !== undefined) s.flexWrap = props.wrap ? 'wrap' : 'nowrap';
   if (props.background !== undefined) s.backgroundColor = resolveBg(props.background);
   if (props.radius !== undefined) s.borderRadius = resolveBoxRadius(props.radius);

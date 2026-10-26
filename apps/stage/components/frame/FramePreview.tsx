@@ -1,31 +1,30 @@
 import { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleProp, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Frame, type FrameActionHandler } from '@stage-labs/kit/react-native/frame';
-import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { parseFrameDoc } from '@stage-labs/kit/frame';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import { frameStartSurface, type FrameContent } from '@stage-labs/client/xmtp/frame';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
 import { WidgetHeader } from '../dashboard/widgetParts';
-import { Box, Row } from '../layout';
 import { GradientFade } from '../GradientFade';
 import { HoverIconButton } from '../hover';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { isCoarsePointer } from '../../lib/webLayout';
 import { ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
 import {
-  FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_FILL, frameBackdrop, frameInputOf,
-  frameLinkOf, frameLocked, frameMoreBelow, framePreviewCap, frameScreenTitle,
+  FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_PADDING, frameLinkOf, frameLocked,
+  frameMoreBelow, framePreviewCap, frameScreenTitle, type FrameMessageHandler,
 } from './frame.model';
+import { FrameView } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { useChatFrame } from './useFrameAction';
+import { List } from '@stage-labs/kit/react-native/list';
+import { Column, Row } from '../layout';
 
 const FADE_OVERLAY: ViewStyle = { position: 'absolute', left: 0, right: 0, bottom: 0 };
 const BUTTON_INSET = 6;
@@ -70,7 +69,7 @@ function FrameBar({ title, onBack }: { title: string; onBack: () => void }): Rea
       border={{ bottom: { width: FRAME_PREVIEW_BORDER, color: pal.border } }}
     >
       <HoverIconButton icon={IconArrowLeft} label="Back" color={pal.link} size={18} role="button" onPress={onBack}/>
-      <Text value={title} size="sm" weight="semibold" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}/>
+      <Text text={title} size="sm" fontWeight="semibold" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}/>
     </Row>
   );
 }
@@ -78,22 +77,21 @@ function FrameBar({ title, onBack }: { title: string; onBack: () => void }): Rea
 function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElement {
   const pal = usePalette();
   return (
-    <Box surface="raised" radius="full" padding={6} style={FULL_SCREEN_SPOT}>
+    <Column surface="raised" radius="full" padding={6} style={FULL_SCREEN_SPOT}>
       <HoverIconButton icon={IconFullScreen} label="Full screen" color={pal.text} size={16} role="button" onPress={onPress}/>
-    </Box>
+    </Column>
   );
 }
 
-export function FrameSurface({ frame, stackId, onAction, disabled, fill = false, onFullScreen }: {
-  frame: FrameContent; stackId: string; onAction?: FrameActionHandler; disabled?: boolean; fill?: boolean; onFullScreen?: () => void;
+export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, answersFunctions, disabled, fill = false, onFullScreen }: {
+  frame: FrameContent; stackId: string; sessionKey?: string; onMessage?: FrameMessageHandler; answersFunctions?: boolean;
+  disabled?: boolean; fill?: boolean; onFullScreen?: () => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const scheme = useEffectiveColorScheme();
-  const widget = useMemo(() => frameInputOf(frame), [frame]);
-  const parsed = useMemo(() => parseFrameDoc(widget), [widget]);
-  const navigation = useFrameStack(stackId, parsed.ok ? parsed.doc.start : '');
+  const start = useMemo(() => frameStartSurface(frame) ?? '', [frame]);
+  const navigation = useFrameStack(stackId, start);
   const { screen, depth, navigate } = navigation;
-  const backdrop = useMemo(() => frameBackdrop(frame, scheme, pal, screen), [frame, scheme, pal, screen]);
+  const backdrop = pal.bg;
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
   const layout = tileLayout(fill, depth);
@@ -106,25 +104,25 @@ export function FrameSurface({ frame, stackId, onAction, disabled, fill = false,
     ...layout.tile,
   };
   return (
-    <Box style={tile} onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
-      {depth > 0 ? <FrameBar title={frameScreenTitle(frame, parsed, screen)} onBack={() => { navigate({ kind: 'back' }); }}/> : null}
-      <Scroll
+    <Column style={tile} onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
+      {depth > 0 ? <FrameBar title={frameScreenTitle(frame, screen)} onBack={() => { navigate({ kind: 'close' }); }}/> : null}
+      <List
         ref={fade.ref} showsVerticalScrollIndicator={false} style={layout.scroll}
         onLayout={fade.onLayout} onContentSizeChange={fade.onContentSizeChange} onScroll={fade.onScroll}
         scrollEventThrottle={32} keyboardShouldPersistTaps="handled" nestedScrollEnabled={fill}
       >
-        <Frame
-          widget={widget} dark={scheme === 'dark'} disabled={disabled} onAction={onAction} navigation={navigation}
-          fill={FRAME_PREVIEW_FILL} onOpenUrl={(url) => { openInBubbleLink(url); }}
+        <FrameView
+          frame={frame} sessionKey={sessionKey} disabled={disabled} onMessage={onMessage} answersFunctions={answersFunctions} navigation={navigation}
+          padding={FRAME_PREVIEW_PADDING} onOpenUrl={(url) => { openInBubbleLink(url); }}
         />
-      </Scroll>
+      </List>
       {fade.more ? (
-        <Box pointerEvents="none" style={FADE_OVERLAY}>
+        <Column pointerEvents="none" style={FADE_OVERLAY}>
           <GradientFade color={backdrop} height={FRAME_PREVIEW_FADE} solid="bottom"/>
-        </Box>
+        </Column>
       ) : null}
       {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen}/> : null}
-    </Box>
+    </Column>
   );
 }
 
@@ -143,7 +141,8 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, menu
         />
       ) : null}
       <FrameSurface
-        frame={chat.frame ?? frame} stackId={messageId} onAction={chat.onAction} disabled={disabled} fill={fill}
+        frame={chat.frame ?? frame} stackId={messageId} sessionKey={chat.sessionKey} onMessage={chat.onMessage}
+        answersFunctions={chat.node !== null} disabled={disabled} fill={fill}
         onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
       />
     </>
@@ -154,8 +153,8 @@ export function FramePreview({ frame, line, messageId, consentAllowed }: {
   frame: FrameContent; line: string; messageId: string; consentAllowed?: boolean;
 }): React.ReactElement {
   return (
-    <Box margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       <FrameTile frame={frame} line={line} messageId={messageId} disabled={frameLocked(frame, consentAllowed)} menu />
-    </Box>
+    </Column>
   );
 }

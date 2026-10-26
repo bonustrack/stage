@@ -134,10 +134,10 @@ function previewFrame(decoded: unknown): string {
 }
 
 function previewFrameAction(decoded: unknown): string {
-  const a = decoded as { label?: unknown; action?: { type?: unknown } } | null;
+  const a = decoded as { label?: unknown; action?: { name?: unknown } } | null;
   const label = typeof a?.label === 'string' ? a.label : '';
-  const type = typeof a?.action?.type === 'string' ? a.action.type : '';
-  return label === '' && type === '' ? '[frame action]' : frameActionText({ label, action: { type } });
+  const name = typeof a?.action?.name === 'string' ? a.action.name : '';
+  return label === '' && name === '' ? '[frame action]' : frameActionText({ label, action: { name } });
 }
 
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {

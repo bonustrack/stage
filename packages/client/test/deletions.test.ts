@@ -113,7 +113,7 @@ describe('deletedRowBy', () => {
   });
 
   test('a Stage delete request hides a frame action, from its sender or a super admin only', () => {
-    const tap = row('m1', 'alice', 'stage.box/frameAction:1.0', { frameId: 'f1', action: { type: 'subscribe' } });
+    const tap = row('m1', 'alice', 'stage.box/frameAction:2.0', { frameId: 'f1', action: { name: 'subscribe' } });
     const stageDelete = (sender: string): StreamedMessage =>
       row('d1', sender, 'stage.box/deleteRequest:1.0', { messageId: 'm1' });
     expect(deletedRowBy(tap, [stageDelete('alice'), tap])).toBe('sender');

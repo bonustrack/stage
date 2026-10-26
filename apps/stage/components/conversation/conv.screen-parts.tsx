@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Row, pinnedTop, PAGE_GUTTER, Col } from '../layout';
-import type { Input } from '@stage-labs/kit/react-native/input';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
@@ -43,6 +41,8 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 import { homeRoute } from '../tabs/boardHome';
+import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
+import { type TextField } from '@stage-labs/kit/react-native/text-field';
 
 async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
   if (!await capabilities.confirm(deleteConfirmOf(asAdmin))) return;
@@ -68,13 +68,13 @@ function frameAdder(convId: string, entry: HistoryEntry | null, close: () => voi
 function ChannelAccessNotice({ outside }: { outside: boolean }): React.ReactElement {
   const { border, text: fg } = usePalette();
   return (
-    <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Col width={'100%'} padding={{ x: PAGE_GUTTER, top: 14, bottom: 14 }} align="stretch" style={{ alignSelf: 'stretch' }}>
+    <Column surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Column width={'100%'} padding={{ x: PAGE_GUTTER, top: 14, bottom: 14 }} align="stretch" style={{ alignSelf: 'stretch' }}>
         <Text size="md" color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           {outside ? OUTSIDE_CHANNEL_NOTICE : CHANNEL_WAITING_NOTICE}
         </Text>
-      </Col>
-    </Box>
+      </Column>
+    </Column>
   );
 }
 
@@ -156,13 +156,13 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
 }
 
 export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onClose }: {
-  searchInputRef: React.RefObject<React.ComponentRef<typeof Input> | null>;
+  searchInputRef: React.RefObject<React.ComponentRef<typeof TextField> | null>;
   query: string; setQuery: (s: string) => void; onClose: () => void;
 }): React.ReactElement {
   const { text: sub, link: head, border } = usePalette();
   const topInset = useSafeAreaInsets().top;
   return (
-    <Box style={pinnedTop(2)}>
+    <Column style={pinnedTop(2)}>
       <SearchTopnavBar
         ref={searchInputRef}
         border={border}
@@ -174,7 +174,7 @@ export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onCl
         placeholder="Search this conversation"
         topInset={topInset}
 />
-    </Box>
+    </Column>
   );
 }
 
