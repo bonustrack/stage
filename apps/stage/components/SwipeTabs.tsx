@@ -7,11 +7,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 import { useBoardHome } from './tabs/boardHome';
-import {
-  FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
-  homeTabIndex,
-} from './SwipeTabs.config';
+import { PAGES, TAB_HREF, TAB_ORDER, homeTabIndex } from './SwipeTabs.config';
 import { Column } from './layout';
+
+const SWITCH_FRACTION = 0.2;
+const FLING_VELOCITY = 450;
 
 export function TabsPager(): React.ReactElement {
   const router = useRouter();

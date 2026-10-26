@@ -52,60 +52,49 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
   onMessage: () => void; onSend: () => void;
 }): React.ReactElement {
   return (
-    <>
-      <ProfileCover
-        insetTop={insetTop}
-        avatar={
-          <Avatar
-            address={addr || null}
-            size={PROFILE_AVATAR_SIZE}
-            style={{ backgroundColor: c.border, borderWidth: 3, borderColor: c.bg }}
-            onPress={onAvatar}
-          />
-        }
-      >
-        <Column padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
-          <Column margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-            <Column gap={6} align="start">
-              <Text text={displayName} fontWeight="semibold" size="2xl" textAlign="start" />
-              {handle && displayHandle(handle) !== displayName ? <Text text={displayHandle(handle)} size="xs" color={c.text} /> : null}
-              {about ? <Text text={about} size="xl" textAlign="start" /> : null}
-            </Column>
+    <ProfileCover
+      insetTop={insetTop}
+      avatar={
+        <Avatar
+          address={addr}
+          size={PROFILE_AVATAR_SIZE}
+          style={{ backgroundColor: c.border, borderWidth: 3, borderColor: c.bg }}
+          onPress={onAvatar}
+        />
+      }
+    >
+      <Column padding={{ x: PAGE_GUTTER, bottom: 8 }} align="start">
+        <Column margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
+          <Column gap={6} align="start">
+            <Text text={displayName} fontWeight="semibold" size="2xl" textAlign="start" />
+            {handle && displayHandle(handle) !== displayName ? <Text text={displayHandle(handle)} size="xs" color={c.text} /> : null}
+            {about ? <Text text={about} size="xl" textAlign="start" /> : null}
           </Column>
-          {addr ? (
-            <Column margin={{ top: 2 }}>
-              <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
-                <Text text={shortAddress(addr)} size="xs" color={c.text} />
-              </GesturePressable>
-            </Column>
-          ) : null}
-          {!isSelf && addr ? (
-            <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />
-          ) : null}
         </Column>
-      </ProfileCover>
-    </>
+        <Column margin={{ top: 2 }}>
+          <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
+            <Text text={shortAddress(addr)} size="xs" color={c.text} />
+          </GesturePressable>
+        </Column>
+        {isSelf ? null : <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />}
+      </Column>
+    </ProfileCover>
   );
 }
 
-export function ProfileScreen({ address }: { address: string }): React.ReactElement {
+export function ProfileScreen({ address: addr }: { address: string }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const c = usePalette();
 
-  const addr = address ?? '';
-  const self = useSelfAddress();
-  const isSelf = !!addr && !!self && addr.toLowerCase() === self.toLowerCase();
+  const isSelf = addr.toLowerCase() === useSelfAddress().toLowerCase();
 
   usePeerProfiles([addr]);
 
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
-  const onMessage = (): void => {
-    if (!addr) return;
-    router.replace({ pathname: '/[convId]', params: { convId: addr } });
-  };
+  const onMessage = (): void => { router.replace({ pathname: '/[convId]', params: { convId: addr } }); };
 
   const onSend = (): void => { router.push({ pathname: '/wallet/send', params: { to: addr } }); };
   const menuActions: Record<string, () => void> = {
@@ -116,7 +105,7 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
 
   return (
     <Column weight={1} surface="surface">
-      <ProfileCoverBar insetTop={insets.top} trailing={addr ? <ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} /> : undefined} />
+      <ProfileCoverBar insetTop={insets.top} trailing={<ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} />} />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
@@ -128,7 +117,7 @@ export function ProfileScreen({ address }: { address: string }): React.ReactElem
           onSend={onSend}
         />
 
-        {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
+        {isSelf ? null : <CommonChannels peerAddress={addr} c={c} />}
       </ScreenScroll>
 
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>

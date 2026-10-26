@@ -68,10 +68,6 @@ function TrailingBadge({ unreadCount, markedUnread }: {
   );
 }
 
-function titleLineHeight(wrap: boolean): number {
-  return wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT;
-}
-
 function rowMinHeight(showPreview: boolean): number | undefined {
   return showPreview ? CHANNEL_ROW_HEIGHT : undefined;
 }
@@ -135,7 +131,7 @@ function TitleRow({ params, scheme, wrap, trailing }: {
     <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
       <TitleLine params={params} scheme={scheme} wrap={wrap} />
       {params.timestamp === '' ? null : (
-        <Row align="center" height={titleLineHeight(wrap)}>
+        <Row align="center" height={wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT}>
           <Text text={params.timestamp} size={params.timestampSize} color="secondary" />
         </Row>
       )}

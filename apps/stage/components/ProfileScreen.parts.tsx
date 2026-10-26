@@ -44,24 +44,13 @@ function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
 export function ProfileActions({ dark, onMessage, onSend, c }: {
   dark: boolean; onMessage: () => void; onSend: () => void; c: Palette;
 }): React.ReactElement {
+  const actions = [
+    { icon: IconBubbleAnnotation3, label: 'Message', onPress: onMessage },
+    { icon: IconPaperPlane, label: 'Send', onPress: onSend },
+  ];
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
-      <ProfileRoundAction
-        icon={IconBubbleAnnotation3}
-        label="Message"
-        border={c.border}
-        fg={c.link}
-        dark={dark}
-        onPress={onMessage}
-      />
-      <ProfileRoundAction
-        icon={IconPaperPlane}
-        label="Send"
-        border={c.border}
-        fg={c.link}
-        dark={dark}
-        onPress={onSend}
-      />
+      {actions.map(action => <ProfileRoundAction key={action.label} {...action} border={c.border} fg={c.link} dark={dark} />)}
     </Row>
   );
 }

@@ -1,4 +1,3 @@
-
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { convMembers, type ConvMembers } from '../../lib/xmtp.identity';
 import { getCachedRows, getLastReadNs, getMarkedUnread } from '../../lib/channelsCache';
@@ -155,7 +154,7 @@ function createdTsOf(conv: Conversation, convId: string): Promise<number | null>
 const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();
 
 export async function summarizeConversation(
-  conv: Conversation, selfInboxId: string, alreadySynced = false, knownDmIds = NO_KNOWN_DMS,
+  conv: Conversation, selfInboxId: string, alreadySynced: boolean, knownDmIds = NO_KNOWN_DMS,
 ): Promise<ConversationView> {
   if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
   const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));

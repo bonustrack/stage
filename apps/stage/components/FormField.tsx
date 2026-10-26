@@ -19,7 +19,7 @@ export const FORM_FIELD_HEIGHT = FIELD_PADDING_TOP + TRAILING_SLOT + FIELD_PADDI
 
 type NativeInputProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'>;
 
-export interface FormFieldProps {
+interface FormFieldProps {
   label?: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -53,10 +53,6 @@ export function useFocusOnOpen(): RefObject<ComponentRef<typeof TextField> | nul
 export function useFieldColors(): { background: string; text: string; placeholder: string } {
   const { border, link, sub } = usePalette();
   return { background: border, text: link, placeholder: sub };
-}
-
-function useFieldText(): { color: string; fontFamily: string; fontSize: number } {
-  return { color: useFieldColors().text, fontFamily: fontName.sans, fontSize: fontSize('md') };
 }
 
 function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
@@ -123,7 +119,7 @@ export function FormField({
   const pal = usePalette();
   const colors = useFieldColors();
   const toneColor = { secondary: 'secondary', success: pal.success, danger: pal.danger }[hintTone];
-  const textStyle = useFieldText();
+  const textStyle = { color: colors.text, fontFamily: fontName.sans, fontSize: fontSize('md') };
   const inset = label === undefined && multiline !== true;
   const lineStyle = lineStyleOf(inset, leading, trailing, trailingWidth);
   const field = multiline ? (

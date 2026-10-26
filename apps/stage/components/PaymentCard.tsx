@@ -44,7 +44,7 @@ interface PaymentAction {
   label: string;
   onPress?: () => void;
   url?: string;
-  icon?: React.ReactElement;
+  icon: React.ReactElement;
   loading?: boolean;
   disabled?: boolean;
 }
@@ -76,7 +76,7 @@ function PaymentActionButton({ action, dark, pal }: {
       loading={action.loading} disabled={action.disabled}
       {...(action.url === undefined ? { onPress: action.onPress } : bubbleLinkProps(action.url, openInBubbleLink))}
       label={action.label}
-      iconStart={action.icon ?? <Glyph icon={IconWallet4} size={18} color={pal.bg}/>}
+      iconStart={action.icon}
       tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
     />
   );
@@ -117,7 +117,7 @@ export function PaymentCard({
             {description}
           </Text>
         </Row>
-        {badge ?? null}
+        {badge}
       </Row>
       {amountLabel ? (
         <Text fontWeight="semibold" size="2xl" color={pal.link}>
@@ -128,7 +128,7 @@ export function PaymentCard({
       <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
       {resolvedAction ? (
         <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />
-      ) : footer ?? null}
+      ) : footer}
     </Column>
   );
 }
@@ -186,16 +186,14 @@ export function X402Card({ challenge, dark }: {
   const pal = usePalette();
   const accept = challenge.accepts[0];
   const [phase, setPhase] = useState<PayPhase>('idle');
+  if (!accept) return null;
 
   const endpoint = challenge.endpoint || '';
-  const amountLabel = accept ? x402AmountLabel(accept) : undefined;
-  const network = accept ? x402NetworkLabel(accept.network) : '';
-  const chainNum = accept ? x402ChainNumber(accept.network) : 1;
-
-  const canPay = !!accept && x402CanPayInApp(accept);
-  const asset = accept ? x402KnownAsset(accept) : undefined;
-
-  if (!accept) return null;
+  const amountLabel = x402AmountLabel(accept);
+  const network = x402NetworkLabel(accept.network);
+  const chainNum = x402ChainNumber(accept.network);
+  const canPay = x402CanPayInApp(accept);
+  const asset = x402KnownAsset(accept);
 
   const runPay = (): void => {
     setPhase('paying');
@@ -222,16 +220,14 @@ export function X402Card({ challenge, dark }: {
   };
 
   const buildAction = (bal: { insufficient: boolean } | null): PaymentAction => {
-    const insufficient = canPay && bal?.insufficient === true;
-    if (canPay) {
-      return {
-        label: payButtonLabel(phase, insufficient, asset, amountLabel),
-        onPress: confirmPay,
-        disabled: phase === 'paying' || phase === 'paid' || insufficient,
-        icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg}/>,
-      };
-    }
-    return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
+    if (!canPay) return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
+    const insufficient = bal?.insufficient === true;
+    return {
+      label: payButtonLabel(phase, insufficient, asset, amountLabel),
+      onPress: confirmPay,
+      disabled: phase === 'paying' || phase === 'paid' || insufficient,
+      icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg}/>,
+    };
   };
 
   const badge = <Badge label="x402" color={pal.primary} background={withAlpha(pal.primary, 0.16)} style={X402_BADGE_STYLE} />;

@@ -1,4 +1,4 @@
-export interface LabelPart {
+interface LabelPart {
   text: string;
   emoji: boolean;
 }

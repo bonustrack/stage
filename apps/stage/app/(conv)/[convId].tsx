@@ -68,7 +68,6 @@ export default function XmtpConversation(): React.ReactElement {
   const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/'));
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
-  const { activeLine } = c;
   const memberList = useConversationSidebarShown();
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -95,7 +94,7 @@ export default function XmtpConversation(): React.ReactElement {
         convId={convId}
         bottomInset={composerH}
         searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
-          <ConversationSearch line={activeLine} query={searchQuery} c={c}/>
+          <ConversationSearch line={c.activeLine} query={searchQuery} c={c}/>
         ) : undefined}
 />
       </ChatColumn>

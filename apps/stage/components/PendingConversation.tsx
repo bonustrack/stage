@@ -34,9 +34,9 @@ function entryOf(item: OutboxItem, myAddress: string | null, myName: string | nu
   };
 }
 
-function usePendingComposer(onSubmit: (text: string) => void): {
-  editor: Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'chipBg'>;
-} {
+function usePendingComposer(
+  onSubmit: (text: string) => void,
+): Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'chipBg'> {
   const [text, setText] = useState('');
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const unavailable = useCallback(() => {
@@ -49,15 +49,13 @@ function usePendingComposer(onSubmit: (text: string) => void): {
     onSubmit(trimmed);
   }, [text, onSubmit]);
   return {
-    editor: {
-      recording: false, levels: [], recordSecs: 0, slideThresholdPx: 80,
-      text, setText, selection, setSelection,
-      focusNonce: 0, blurNonce: 0,
-      attachMenuOpen: false, setAttachMenuOpen: unavailable,
-      hasContent: text.trim().length > 0,
-      onStartRec: unavailable, onCancelRec: unavailable, onStopRec: unavailable,
-      onSend,
-    },
+    recording: false, levels: [], recordSecs: 0,
+    text, setText, selection, setSelection,
+    focusNonce: 0, blurNonce: 0,
+    attachMenuOpen: false, setAttachMenuOpen: unavailable,
+    hasContent: text.trim().length > 0,
+    onStartRec: unavailable, onCancelRec: unavailable, onStopRec: unavailable,
+    onSend,
   };
 }
 
@@ -92,7 +90,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
     );
   }, [address, onDelivered]);
 
-  const { editor } = usePendingComposer(onSubmit);
+  const editor = usePendingComposer(onSubmit);
 
   return (
     <Column surface="surface" weight={1}>

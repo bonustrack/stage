@@ -49,34 +49,31 @@ function HeaderTitle({ title, wallet, color }: { title: string; wallet: boolean;
   return <Title size="sm" color={color} style={TITLE_SHRINK}>{title}</Title>;
 }
 
-export function StackHeader({ title, trailing, backTo, onBack, inline, bordered = true, wallet = false, back }: {
+export function StackHeader({ title, trailing, backTo, onBack, wallet = false, back }: {
   title: string;
   trailing?: ReactNode;
   backTo?: string;
   onBack?: () => void;
-  inline?: boolean;
-  bordered?: boolean;
   wallet?: boolean;
   back?: boolean;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, link: head, border, toolbarBg: surface } = usePalette();
-  const safeTop = useSafeAreaInsets().top;
-  const top = inline === true ? 0 : safeTop;
+  const top = useSafeAreaInsets().top;
   return (
-      <Row
-        align="center"
-        justify={title === '' ? 'spaceBetween' : undefined}
-        gap={8}
-        minHeight={wallet ? undefined : TOPNAV_HEIGHT + top}
-        background={surface}
-        border={bordered ? { bottom: { width: 1, color: resolveColorToken(border, scheme) } } : undefined}
-        style={STICKY_TOP}
-        padding={{ x: PAGE_GUTTER, top: (wallet ? 8 : 0) + top, bottom: wallet ? 10 : 0 }}
-      >
-        {back === false ? null : <BackButton onBack={onBack} backTo={backTo} backColor={fg} />}
-        <HeaderTitle title={title} wallet={wallet} color={head} />
-        {trailing}
-      </Row>
+    <Row
+      align="center"
+      justify={title === '' ? 'spaceBetween' : undefined}
+      gap={8}
+      minHeight={wallet ? undefined : TOPNAV_HEIGHT + top}
+      background={surface}
+      border={{ bottom: { width: 1, color: resolveColorToken(border, scheme) } }}
+      style={STICKY_TOP}
+      padding={{ x: PAGE_GUTTER, top: (wallet ? 8 : 0) + top, bottom: wallet ? 10 : 0 }}
+    >
+      {back === false ? null : <BackButton onBack={onBack} backTo={backTo} backColor={fg} />}
+      <HeaderTitle title={title} wallet={wallet} color={head} />
+      {trailing}
+    </Row>
   );
 }

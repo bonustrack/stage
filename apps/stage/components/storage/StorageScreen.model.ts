@@ -31,7 +31,7 @@ export interface StorageRow {
   detail: string;
 }
 
-export interface StorageView {
+interface StorageView {
   query: string;
   filter: StorageFilter;
   hidden: ReadonlySet<string>;
@@ -85,7 +85,7 @@ export function scanProgressLabel(done: number, total: number): string {
   return total > 0 ? `Finding your files… ${Math.min(done, total)} of ${total} chats` : 'Finding your files…';
 }
 
-export interface StorageStatus {
+interface StorageStatus {
   files: readonly StoredFile[];
   scanning: boolean;
   firstScan: boolean;

@@ -1,4 +1,3 @@
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import type { ImageStyle, StyleProp } from 'react-native';
@@ -8,8 +7,6 @@ import { avatarCacheKey } from '@stage-labs/client/identity/onchainProfile';
 import { getPeerAvatar, usePeerProfiles } from '../lib/peerProfiles';
 
 const FULLSCREEN_FETCH_PX = 512;
-
-const SIZE_PX = AVATAR_SIZES;
 
 const AVATAR_PLACEHOLDER = '#282a2d';
 
@@ -47,7 +44,7 @@ export function Avatar({
   address, imageUri, size = 'md', square, style, onPress,
 }: Props): React.ReactElement {
   usePeerProfiles([imageUri?.trim() ? null : address]);
-  const px = typeof size === 'number' ? size : SIZE_PX[size];
+  const px = typeof size === 'number' ? size : AVATAR_SIZES[size];
   const uri = resolveAvatarUri(address, imageUri, px);
 
   const inner = <AvatarImage src={uri} size={px} square={square} style={style} />;
@@ -62,4 +59,3 @@ export function Avatar({
     </Pressable>
   );
 }
-

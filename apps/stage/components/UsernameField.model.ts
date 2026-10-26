@@ -1,6 +1,6 @@
 import { claimStatusText, type ClaimState } from './settings/ProfileSettings.claim.model';
 
-export type UsernameStatus =
+type UsernameStatus =
   | { kind: 'checking' }
   | { kind: 'ok'; tip: string }
   | { kind: 'error'; tip: string }
@@ -8,7 +8,7 @@ export type UsernameStatus =
 
 export const USERNAME_COPY = { title: 'Pick a username', about: 'Pick a username so people can find you on Stage.' } as const;
 
-export const USERNAME_TIPS = { available: 'Available', taken: 'Already taken', trailingHyphen: 'Cannot end with a hyphen' } as const;
+const USERNAME_TIPS = { available: 'Available', taken: 'Already taken', trailingHyphen: 'Cannot end with a hyphen' } as const;
 
 const HINTED_PHASES = new Set<ClaimState['phase']>(['failed', 'claimed']);
 

@@ -17,9 +17,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { contactQrValue, contactScanResult } from './ContactQr.model';
 import { Column, ScreenScroll, PAGE_GUTTER } from '../layout';
 
-const MODES = [{ value: 'scan', label: 'Scan' }, { value: 'share', label: 'My QR' }];
-
-const MODE_TABS = MODES.map((m) => ({ title: m.label }));
+const MODE_TABS = [{ title: 'Scan' }, { title: 'My QR' }];
 
 function MyQr({ address }: { address: string }): React.ReactElement {
   const value = contactQrValue(address);
@@ -73,14 +71,13 @@ function useContactScan(address: string, selection: number) {
 
 function ContactQr({ address, selection }: { address: string; selection: number }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const [mode, setMode] = useState('scan');
+  const [sharing, setSharing] = useState(false);
   const [input, setInput] = useState('');
   const scan = useContactScan(address, selection);
   return (
     <Column gap={24}>
-      <Tabs tabs={MODE_TABS} selectedIndex={MODES.findIndex((m) => m.value === mode)}
-        onChange={index => { scan.stop(); setMode(MODES[index]?.value ?? 'scan'); }} />
-      {mode === 'share' ? <MyQr address={address} /> : <Column gap={18}>
+      <Tabs tabs={MODE_TABS} selectedIndex={sharing ? 1 : 0} onChange={index => { scan.stop(); setSharing(index === 1); }} />
+      {sharing ? <MyQr address={address} /> : <Column gap={18}>
         <Text size="md">Scan someone’s Stage QR code to open their profile. You choose whether to start a chat.</Text>
         {scan.scanning ? <>
           <QrScanner dark={dark} onScan={scan.scanned} />

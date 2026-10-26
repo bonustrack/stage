@@ -4,12 +4,12 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column } from '../layout';
 
-export interface QrScannerProps {
+interface QrScannerProps {
   onScan: (text: string) => void;
   dark: boolean;
 }
 
-export const SCANNER_HEIGHT = 260;
+const SCANNER_HEIGHT = 260;
 
 type CameraModule = typeof import('expo-camera');
 

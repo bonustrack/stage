@@ -1,4 +1,3 @@
-
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { isControlBody } from '../../lib/xmtp.types';

@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  HAS_OPTIONS, ME_OPTION, memberTokenValue, parseSearchFilter, pickSearchFilter,
-  searchFilterMenu, searchFilterSources, searchFilterToken, searchFilterValues, searchRowMatcher,
-  type FilterMenu, type FilterOptions, type FilterRow,
+  parseSearchFilter, searchFilterSources, searchFilterToken, searchRowMatcher, type FilterRow,
 } from '../components/searchFilter.model';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
 import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
@@ -112,66 +110,6 @@ describe('filter values on the board', () => {
       labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'], categories: [], statuses: [],
     });
   });
-
-  test('a member token uses the username when there is one, else the address', () => {
-    expect(memberTokenValue(ALICE, 'alice123.stage.base.eth')).toBe('alice123');
-    expect(memberTokenValue(BOB, 'bob.base.eth')).toBe('bob.base.eth');
-    expect(memberTokenValue('0xABC', undefined)).toBe('0xabc');
-  });
-});
-
-describe('the filter menu', () => {
-  const options: FilterOptions = {
-    has: HAS_OPTIONS,
-    category: [], status: [], priority: [],
-    label: [
-      { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
-      { key: 'Todo', label: 'Todo', value: 'Todo' },
-    ],
-    member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }],
-  };
-  const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
-
-  test('an empty search or a new word lists the fields, a typed prefix narrows them', () => {
-    expect(menu('')).toEqual({ kind: 'fields', word: { start: 0, end: 0 }, negated: false, fields: ['member', 'category', 'status', 'priority', 'label', 'has'] });
-    expect(menu('bug ')).toEqual({ kind: 'fields', word: { start: 4, end: 4 }, negated: false, fields: ['member', 'category', 'status', 'priority', 'label', 'has'] });
-    expect(menu('ME')).toMatchObject({ kind: 'fields', fields: ['member'] });
-    expect(menu('bug')).toBeNull();
-  });
-
-  test('a field lists its values, narrowed by what follows the colon', () => {
-    expect(menu('label:')).toMatchObject({ kind: 'values', field: 'label', options: options.label });
-    expect(menu('label:"🚧 in')).toMatchObject({ kind: 'values', options: [options.label[0]] });
-    expect(menu('member:@ali')).toMatchObject({ kind: 'values', field: 'member', options: [options.member[1]] });
-    expect(menu('label:nope')).toBeNull();
-  });
-
-  test('the menu follows the word under the caret', () => {
-    expect(menu('label: bug', 6)).toMatchObject({ kind: 'values', word: { start: 0, end: 6 } });
-  });
-
-  test('picking a field starts its token, picking a value completes it', () => {
-    const fields = menu('bug me');
-    const values = menu('label:"🚧 in');
-    if (fields === null || values === null) throw new Error('menu expected');
-    expect(pickSearchFilter('bug me', fields, 0)).toEqual({ query: 'bug member:', caret: 11 });
-    expect(pickSearchFilter('label:"🚧 in', values, 0)).toEqual({ query: 'label:"🚧 In progress" ', caret: 23 });
-    expect(pickSearchFilter('label:"🚧 in', values, 5)).toBeNull();
-  });
-
-  test('@me comes first among the members and narrows like the others', () => {
-    expect(menu('member:')).toMatchObject({ kind: 'values', options: options.member });
-    expect(menu('member:@m')).toMatchObject({ kind: 'values', options: [ME_OPTION] });
-    const values = menu('ship member:@');
-    if (values === null) throw new Error('menu expected');
-    expect(pickSearchFilter('ship member:@', values, 0)).toEqual({ query: 'ship member:@me ', caret: 16 });
-  });
-
-  test('picking inside the search keeps the words after it', () => {
-    const values = menu('label:to  bug', 8);
-    if (values === null) throw new Error('menu expected');
-    expect(pickSearchFilter('label:to  bug', values, 0)).toEqual({ query: 'label:Todo bug', caret: 11 });
-  });
 });
 
 describe('the search filter on the chats page', () => {
@@ -219,65 +157,5 @@ describe('values grouped per field', () => {
     expect(token).toBe('label:"🚧 In progress","🔍 In review","a,b",Todo');
     expect(parseSearchFilter(`${token} ship`)).toEqual({ ...NONE, labels, exclude: NONE, text: 'ship' });
     expect(searchFilterToken('member', ['@me', 'chen123'])).toBe('member:@me,chen123');
-  });
-});
-
-describe('picked values in the menu', () => {
-  const options: FilterOptions = {
-    has: HAS_OPTIONS,
-    category: [], status: [], priority: [],
-    label: [
-      { key: '🚧 In progress', label: '🚧 In progress', value: '🚧 In progress' },
-      { key: '🔍 In review', label: '🔍 In review', value: '🔍 In review' },
-      { key: 'Todo', label: 'Todo', value: 'Todo' },
-    ],
-    member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }, { key: BOB, label: '@chen123', value: 'chen123' }],
-  };
-  const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
-  const shown = (query: string): string[] => {
-    const found = menu(query);
-    return found?.kind === 'values' ? found.options.map(option => option.value) : [];
-  };
-  const pick = (query: string, value: string, caret = query.length): { query: string; caret: number } | null => {
-    const found = menu(query, caret);
-    if (found?.kind !== 'values') throw new Error('values expected');
-    const first = found.excludeRow ? 1 : 0;
-    return pickSearchFilter(query, found, first + found.options.findIndex(option => option.value === value));
-  };
-
-  test('values already in the search are hidden, in any case, form or with an @', () => {
-    expect(shown('label:todo label:')).toEqual(['🚧 In progress', '🔍 In review']);
-    expect(shown('member:@ME member:')).toEqual(['alice123', 'chen123']);
-    expect(shown('member:@alice123,')).toEqual(['@me', 'chen123']);
-    expect(shown('label:"🚧 in progress",Todo,')).toEqual(['🔍 In review']);
-    expect(menu('label:Todo,"🚧 In progress","🔍 In review",')).toBeNull();
-  });
-
-  test('the value being typed is not hidden by itself', () => {
-    expect(shown('label:Todo')).toEqual(['Todo']);
-  });
-
-  test('typing after a comma narrows the values of that field', () => {
-    expect(shown('member:@me,ch')).toEqual(['chen123']);
-    expect(shown('label:"🚧 In progress","🔍 in')).toEqual(['🔍 In review']);
-  });
-
-  test('picking after a comma completes the group', () => {
-    expect(pick('member:@me,ch', 'chen123')).toEqual({ query: 'member:@me,chen123 ', caret: 19 });
-    expect(pick('label:"🚧 In progress",', '🔍 In review')).toEqual({
-      query: 'label:"🚧 In progress","🔍 In review" ', caret: 38,
-    });
-  });
-
-  test('picking a value for a field already in the search appends it to that token', () => {
-    expect(pick('member:@me ship member:', 'chen123')).toEqual({ query: 'member:@me,chen123 ship ', caret: 24 });
-    expect(pick('label:Todo member:c', 'chen123')).toEqual({ query: 'label:Todo member:chen123 ', caret: 26 });
-    expect(pick('member: ship member:@me', 'chen123', 7)).toEqual({ query: 'ship member:@me,chen123', caret: 0 });
-  });
-
-  test('a picked search parses back to the same values', () => {
-    const picked = pick('ship label:"🚧 In progress" label:', '🔍 In review');
-    expect(picked?.query).toBe('ship label:"🚧 In progress","🔍 In review" ');
-    expect(searchFilterValues(picked?.query ?? '', 'label')).toEqual(['🚧 In progress', '🔍 In review']);
   });
 });

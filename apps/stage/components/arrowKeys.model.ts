@@ -2,7 +2,7 @@ import { isEditableTarget } from './bubble/imageGallery.model';
 
 export type Arrow = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
 
-export type VerticalArrow = 'ArrowUp' | 'ArrowDown';
+type VerticalArrow = 'ArrowUp' | 'ArrowDown';
 
 export interface ArrowKeyEvent {
   key: string;

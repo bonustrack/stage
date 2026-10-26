@@ -1,6 +1,6 @@
 import { decodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
 
-export type ImportParse =
+type ImportParse =
   | { ok: true; transfer: AccountTransfer }
   | { ok: false; error: string };
 

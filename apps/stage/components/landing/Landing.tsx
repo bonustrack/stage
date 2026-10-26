@@ -21,9 +21,7 @@ const CELL = 100;
 const CELLS: readonly (readonly [number, number])[] = [[200, 100], [100, 200], [300, 200], [200, 300]];
 const CROPPED_VIEW_BOX = '100 100 300 300';
 
-const STAGE_LOGO_SIZE = 64;
-
-function StageLogo({ size = STAGE_LOGO_SIZE, color }: { size?: number; color: string }): React.ReactElement {
+function StageLogo({ size, color }: { size: number; color: string }): React.ReactElement {
   return (
     <Pressable onPress={() => { router.navigate('/'); }} hitSlop={8} accessibilityLabel="Stage home">
       <Column width={size} height={size}>

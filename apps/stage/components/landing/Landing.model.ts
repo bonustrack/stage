@@ -79,9 +79,7 @@ export function heroBoxes(count: number, frameWidth: number, frameHeight: number
 
 export const ASCII = {
   chars: [' ', '⋅', '.', '^', ' '] as const,
-  size: 14,
   lineHeight: 8,
-  letterSpacing: -1,
   cellWidth: 7.6,
   maxWidth: 1500,
   tickMs: 100,
@@ -96,7 +94,7 @@ export const ASCII_GLYPH = {
   dot: { left: 3.34, right: 5.07, top: 5.91, bottom: 3.82 },
 } as const;
 
-export interface GlyphRect { x: number; y: number; width: number; height: number }
+interface GlyphRect { x: number; y: number; width: number; height: number }
 
 export function asciiOrigin(width: number, height: number, cols: number, rows: number): { x: number; y: number } {
   return { x: (width - cols * ASCII_GLYPH.pitch) / 2, y: (height - rows * ASCII.lineHeight) / 2 };

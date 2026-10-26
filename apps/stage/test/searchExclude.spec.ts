@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  HAS_OPTIONS, ME_OPTION, filterMenuSize, parseSearchFilter, pickSearchFilter, searchFilterMenu,
-  searchFilterToken, searchFilterValues, searchRowMatcher,
-  type FilterMenu, type FilterOptions,
-} from '../components/searchFilter.model';
+import { parseSearchFilter, searchFilterToken, searchFilterValues, searchRowMatcher } from '../components/searchFilter.model';
 import { ALICE, BOB, NAMES, group } from './searchFixtures';
 
 const rows = [
@@ -20,26 +16,6 @@ const matching = (query: string): string[] => (
   rows.filter(searchRowMatcher(parseSearchFilter(query), address => NAMES[address] ?? [], id => drafts[id] ?? ''))
     .map(row => row.convId)
 );
-
-const options: FilterOptions = {
-  has: HAS_OPTIONS,
-  category: [], status: [], priority: [],
-  label: ['Bug', 'Todo', '🚧 In progress'].map(label => ({ key: label, label, value: label })),
-  member: [ME_OPTION, { key: ALICE, label: '@alice123', value: 'alice123' }, { key: BOB, label: '@chen123', value: 'chen123' }],
-};
-
-const menu = (query: string, caret = query.length): FilterMenu | null => searchFilterMenu(query, caret, options);
-
-const shown = (query: string): string[] => {
-  const found = menu(query);
-  return found?.kind === 'values' ? found.options.map(option => option.value) : [];
-};
-
-function pick(query: string, value: string): ReturnType<typeof pickSearchFilter> {
-  const found = menu(query);
-  if (found?.kind !== 'values') throw new Error('values expected');
-  return pickSearchFilter(query, found, (found.excludeRow ? 1 : 0) + found.options.findIndex(option => option.value === value));
-}
 
 const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
 
@@ -89,54 +65,5 @@ describe('matching exclude filters', () => {
   test('has works the same way', () => {
     expect(matching('-has:label')).toEqual(['loose']);
     expect(matching('label:Todo,Bug -has:draft')).toEqual(['ship', 'left']);
-  });
-});
-
-describe('exclude in the filter menu', () => {
-  test('an empty label or member value offers the exclude row first', () => {
-    expect(menu('label:')).toMatchObject({ kind: 'values', negated: false, excludeRow: true, options: options.label });
-    expect(filterMenuSize(menu('label:'))).toBe(4);
-    expect(menu('ship member:')).toMatchObject({ field: 'member', excludeRow: true });
-  });
-
-  test('no exclude row once a value is typed, after a comma, on has or on an excluded field', () => {
-    for (const query of ['label:t', 'member:@', 'label:Bug,', 'has:', '-label:']) {
-      expect(menu(query)).toMatchObject({ kind: 'values', excludeRow: false });
-    }
-  });
-
-  test('the exclude row turns the field into an excluded one that lists the same values', () => {
-    const values = menu('ship label:');
-    if (values === null) throw new Error('menu expected');
-    expect(pickSearchFilter('ship label:', values, 0)).toEqual({ query: 'ship -label:', caret: 12 });
-    expect(menu('ship -label:')).toMatchObject({ kind: 'values', field: 'label', negated: true, options: options.label });
-  });
-
-  test('a minus lists the fields to exclude', () => {
-    expect(menu('ship -')).toEqual({
-      kind: 'fields', word: { start: 5, end: 6 }, negated: true, fields: ['member', 'category', 'status', 'priority', 'label'],
-    });
-    expect(menu('-M')).toMatchObject({ negated: true, fields: ['member'] });
-    expect(menu('-h')).toBeNull();
-    const fields = menu('-m');
-    if (fields === null) throw new Error('menu expected');
-    expect(pickSearchFilter('-m', fields, 0)).toEqual({ query: '-member:', caret: 8 });
-  });
-
-  test('values already included or excluded are not offered again', () => {
-    expect(shown('label:Todo -label:')).toEqual(['Bug', '🚧 In progress']);
-    expect(shown('-label:Bug label:')).toEqual(['Todo', '🚧 In progress']);
-    expect(shown('-label:Bug,')).toEqual(['Todo', '🚧 In progress']);
-    expect(shown('member:@me -member:')).toEqual(['alice123', 'chen123']);
-    expect(shown('-member:@ALICE123 member:')).toEqual(['@me', 'chen123']);
-    expect(menu('label:Bug,Todo -label:"🚧 In progress" label:')).toBeNull();
-  });
-
-  test('picking an excluded value completes or joins the excluded token, never the included one', () => {
-    expect(pick('-label:', 'Todo')).toEqual({ query: '-label:Todo ', caret: 12 });
-    expect(pick('-label:Bug ship -label:', 'Todo')).toEqual({ query: '-label:Bug,Todo ship ', caret: 21 });
-    expect(pick('label:Bug -label:', 'Todo')).toEqual({ query: 'label:Bug -label:Todo ', caret: 22 });
-    expect(pick('-member:@me ship member:', 'chen123')).toEqual({ query: '-member:@me ship member:chen123 ', caret: 32 });
-    expect(pick('-member:@me,ch', 'chen123')).toEqual({ query: '-member:@me,chen123 ', caret: 20 });
   });
 });

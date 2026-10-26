@@ -7,7 +7,7 @@ import type { Shortcut } from './shortcuts.model';
 import { usePalette } from '../lib/theme';
 import { Column } from './layout';
 
-export interface HoverHandlers { onHoverIn: () => void; onHoverOut: () => void }
+interface HoverHandlers { onHoverIn: () => void; onHoverOut: () => void }
 
 export function useHover(): { hovered: boolean; hoverProps: HoverHandlers } {
   const [hovered, setHovered] = useState(false);

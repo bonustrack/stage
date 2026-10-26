@@ -14,7 +14,7 @@ import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from './layout';
 
 const BAR_GAP = 10;
 const FIELD_GAP = 4;
-export const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
+const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
 
 function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Column style={STICKY_UNDER_CHROME}>{children}</Column>;

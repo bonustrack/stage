@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GestureResponderEvent, LayoutChangeEvent } from 'react-native';
+import type { GestureResponderEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { AppIcon, type AppIconRef } from './widgets';
@@ -7,7 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { CountTag } from './CountTag';
 import { Eyebrow } from './Eyebrow';
 import type { MenuItem } from './appIcons';
-import { AnchoredMenu, menuPointBelow, menuPointBelowEnd, menuPointOnLayout } from './AnchoredMenu';
+import { AnchoredMenu, menuPointBelow, menuPointBelowEnd } from './AnchoredMenu';
 import { RoundIconButton } from './RoundIconButton';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { usePalette } from '../lib/theme';
@@ -81,31 +81,25 @@ const OVERFLOW_TRIGGER_HIT = 40;
 
 export const SMALL_OVERFLOW_ICON = 16;
 
-export function OverflowButton({ color, label, size, onPress, onLayout }: {
+export function OverflowButton({ color, label, size, onPress }: {
   color: string; label?: string; size: number; onPress: (event: GestureResponderEvent) => void;
-  onLayout?: (event: LayoutChangeEvent) => void;
 }): React.ReactElement {
   const { link } = usePalette();
   const trigger = useHover();
   return (
-    <Pressable onLayout={onLayout} onPress={onPress} hitSlop={(OVERFLOW_TRIGGER_HIT - size) / 2} accessibilityLabel={label} {...trigger.hoverProps}>
+    <Pressable onPress={onPress} hitSlop={(OVERFLOW_TRIGGER_HIT - size) / 2} accessibilityLabel={label} {...trigger.hoverProps}>
       <Glyph icon={IconDotGrid1x3Vertical} size={size} color={trigger.hovered ? link : color} />
     </Pressable>
   );
 }
 
-export function OverflowMenu({ color, items, onSelect, label, size = 24, onAnchorLayout }: {
+export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
   color: string; items: OverflowMenuItem[]; onSelect: OverflowSelect; label?: string; size?: number;
-  onAnchorLayout?: (anchor: MenuPoint) => void;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const measure = (event: LayoutChangeEvent): void => {
-    const point = menuPointOnLayout(event);
-    if (point !== null) onAnchorLayout?.(point);
-  };
   return (
     <>
-      <OverflowButton color={color} label={label} size={size} onLayout={measure} onPress={(e) => { setAnchor(menuPointBelow(e)); }} />
+      <OverflowButton color={color} label={label} size={size} onPress={(e) => { setAnchor(menuPointBelow(e)); }} />
       <OverflowMenuItems anchor={anchor} onClose={() => { setAnchor(null); }} items={items} onSelect={onSelect} />
     </>
   );

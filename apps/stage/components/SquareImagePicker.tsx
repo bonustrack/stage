@@ -1,4 +1,3 @@
-
 import { FilePicker, type PickedFile } from '@stage-labs/kit/react-native/file-picker';
 
 export function SquareImagePicker({ openNonce, onPick }: {

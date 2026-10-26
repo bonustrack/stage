@@ -13,10 +13,11 @@ import { usePublicSend } from '../../components/wallet/send.public';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
-const RESOLVING_SPINNER = 24;
 import { sendTokenFor, type TokenChoice } from '../../components/wallet/screen/model';
 import { TokenSelector, useSelectedBalance } from '../../components/wallet/TokenSelector';
 import { Column, Row, ScreenScroll } from '../../components/layout';
+
+const RESOLVING_SPINNER = 24;
 
 function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,

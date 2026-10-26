@@ -36,6 +36,3 @@ export function homeTabIndex(pathname: string, boardHome: boolean): number {
   const index = indexOfPathname(pathname);
   return index === 0 && boardHome ? TAB_ORDER.indexOf('board') : index;
 }
-
-export const SWITCH_FRACTION = 0.2;
-export const FLING_VELOCITY = 450;

@@ -4,7 +4,6 @@ import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius
 import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
-import { IconBell } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBell';
 import { IconBento } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBento';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
@@ -31,12 +30,10 @@ import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconPeopleAdded } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdded';
 import { IconPeopleCircle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleCircle';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
-import { IconQuestionmarkCircle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQuestionmarkCircle';
 import { IconSettingsGear2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsGear2';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
-import { IconTeam } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTeam';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
@@ -48,7 +45,6 @@ export const APP_ICONS = {
   IconClock,
   IconArrowLeft,
   IconArrowUndoUp,
-  IconBell,
   IconBento,
   IconBubble3,
   IconBubbleAnnotation3,
@@ -75,12 +71,10 @@ export const APP_ICONS = {
   IconPeopleAdded,
   IconPeopleCircle,
   IconPlusLarge,
-  IconQuestionmarkCircle,
   IconSettingsGear2,
   IconSquareBehindSquare1,
   IconSun,
   IconTag,
-  IconTeam,
   IconThumbtack,
   IconTrashCan,
   IconWallet4,

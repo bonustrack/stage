@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
 import {
-  HAS_OPTIONS, parseSearchFilter, pickSearchFilter, searchFilterMenu, searchFilterValues, searchRowMatcher,
-  type FilterOptions, type FilterRow,
+  HAS_OPTIONS, parseSearchFilter, searchFilterValues, searchRowMatcher, type FilterRow,
 } from '../components/searchFilter.model';
 
 const row = (convId: string, labels?: string[]): FilterRow => ({
@@ -19,15 +18,7 @@ const namesOf = (): string[] => [];
 const matching = (query: string): string[] => (
   rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map(item => item.convId)
 );
-const options: FilterOptions = { has: HAS_OPTIONS, label: [], member: [], category: [], status: [], priority: [] };
 const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
-const menu = (query: string, caret = query.length): ReturnType<typeof searchFilterMenu> => searchFilterMenu(query, caret, options);
-
-function pick(query: string, value: string): ReturnType<typeof pickSearchFilter> {
-  const found = menu(query);
-  if (found?.kind !== 'values') throw new Error('values expected');
-  return pickSearchFilter(query, found, found.options.findIndex(option => option.value === value));
-}
 
 describe('has channel filters', () => {
   test('parses has alongside the existing fields and free text', () => {
@@ -94,34 +85,7 @@ describe('has channel filters', () => {
 });
 
 describe('has suggestions', () => {
-  test('offers Has from a prefix and then Label and Draft', () => {
-    const field = menu('h');
-    expect(field).toMatchObject({ kind: 'fields', fields: ['has'] });
-    if (field === null) throw new Error('field expected');
-    expect(pickSearchFilter('h', field, 0)).toEqual({ query: 'has:', caret: 4 });
-    expect(menu('has:')).toMatchObject({ kind: 'values', field: 'has', options: HAS_OPTIONS });
+  test('offers Label and Draft', () => {
     expect(HAS_OPTIONS.map(option => [option.value, option.label])).toEqual([['label', 'Label'], ['draft', 'Draft']]);
-    expect(menu('has:D')).toMatchObject({ kind: 'values', options: [HAS_OPTIONS[1]] });
-    expect(menu('has:nope')).toBeNull();
-  });
-
-  test('completes either value and appends to the existing token', () => {
-    expect(pick('has:', 'label')).toEqual({ query: 'has:label ', caret: 10 });
-    expect(pick('has:d', 'draft')).toEqual({ query: 'has:draft ', caret: 10 });
-    expect(pick('has:label,dr', 'draft')).toEqual({ query: 'has:label,draft ', caret: 16 });
-    expect(pick('has:label ship has:', 'draft')).toEqual({ query: 'has:label,draft ship ', caret: 21 });
-  });
-
-  test('omits selected values case insensitively without treating @ as special', () => {
-    expect(menu('has:LABEL has:')).toMatchObject({ kind: 'values', options: [HAS_OPTIONS[1]] });
-    expect(menu('has:label,DRAFT,')).toBeNull();
-    expect(menu('has:@label has:')).toMatchObject({ kind: 'values', options: HAS_OPTIONS });
-    expect(menu('has:draft')).toMatchObject({ kind: 'values', options: [HAS_OPTIONS[1]] });
-  });
-
-  test('editing a token in the middle preserves following search text', () => {
-    const found = menu('has:dr ship', 6);
-    if (found === null) throw new Error('value expected');
-    expect(pickSearchFilter('has:dr ship', found, 0)).toEqual({ query: 'has:draft ship', caret: 10 });
   });
 });

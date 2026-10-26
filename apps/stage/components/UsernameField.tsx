@@ -43,7 +43,7 @@ const STATUS_ICON = 24;
 const SHUFFLE_ICON = 16;
 const NOOP = (): void => undefined;
 
-export interface UsernameInput {
+interface UsernameInput {
   raw: string;
   setRaw: (raw: string) => void;
   label: string;

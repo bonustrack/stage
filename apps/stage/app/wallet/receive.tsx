@@ -19,21 +19,18 @@ const QR_FIXED_FOREGROUND = '#000000';
 const QR_FIXED_BACKGROUND = '#ffffff';
 const QR_PLACEHOLDER_BACKGROUND = '#f4f4f5';
 
-function AddressCard({ label, address, hint, onCopy }: {
-  label: string; address: string; hint: string;
-  onCopy: () => void;
-}): React.ReactElement {
+function AddressCard({ address, onCopy }: { address: string; onCopy: () => void }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <Column gap={8}>
-      <Eyebrow text={label.toUpperCase()} size="3xs" color="secondary"/>
+      <Eyebrow text={ADDRESS_LABEL.toUpperCase()} size="3xs" color="secondary"/>
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Column weight={1}>
           <Text text={address || '-'} size="xs" truncate />
         </Column>
         <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
       </ListViewItem>
-      <Text size="md" variant="caption" text={hint} color="secondary" textAlign="center" />
+      <Text size="md" variant="caption" text={ADDRESS_HINT} color="secondary" textAlign="center" />
     </Column>
   );
 }
@@ -84,11 +81,9 @@ export default function WalletReceive(): React.ReactElement {
       <StackHeader title="Receive" wallet />
 
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
-        <Column width="100%">
-          <Column align="center" gap={16}>
-            <QrPanel address={address} border={border} />
-            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={ADDRESS_HINT} onCopy={onCopy} />
-          </Column>
+        <Column width="100%" align="center" gap={16}>
+          <QrPanel address={address} border={border} />
+          <AddressCard address={address} onCopy={onCopy} />
         </Column>
       </ScreenScroll>
     </Column>

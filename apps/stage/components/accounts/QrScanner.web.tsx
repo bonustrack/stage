@@ -5,12 +5,12 @@ import { View } from 'react-native';
 import { ignored, recover } from '../../lib/errorPolicy';
 import { Column } from '../layout';
 
-export interface QrScannerProps {
+interface QrScannerProps {
   onScan: (text: string) => void;
   dark: boolean;
 }
 
-export const SCANNER_HEIGHT = 260;
+const SCANNER_HEIGHT = 260;
 
 const SCAN_INTERVAL_MS = 250;
 const CAMERA_ERROR = 'Could not open the camera. Allow camera access for this site, or paste the code below.';
