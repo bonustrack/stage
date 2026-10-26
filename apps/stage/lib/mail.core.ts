@@ -4,6 +4,7 @@ import { deriveMailKey, isMailboxLabel, mailAddressOf, openMailIndex, openMailPa
 import { parseMail, type ParsedMail } from '@stage-labs/client/mail/mime';
 import type { InboxEntry } from '../components/settings/Inbox.model';
 import { report, reported } from './errorPolicy';
+import { memoized } from './storeCore';
 
 export interface Mailbox {
   accountId: string;
@@ -32,15 +33,6 @@ export function mailboxKey(box: Mailbox): string {
   return `${box.accountId}/${box.address.toLowerCase()}/${box.label}`;
 }
 
-function cached<T>(cache: Map<string, Promise<T>>, key: string, make: () => Promise<T>): Promise<T> {
-  const hit = cache.get(key);
-  if (hit !== undefined) return hit;
-  const pending = make();
-  cache.set(key, pending);
-  pending.catch(() => { if (cache.get(key) === pending) cache.delete(key); });
-  return pending;
-}
-
 function openIndex(keys: MailKeyPair, box: Mailbox, item: MailListItem): MailIndex | null {
   try {
     return openMailIndex(keys.secretKey, box.label, item.id, item.index);
@@ -65,7 +57,7 @@ function mailCredentials(deps: MailDeps) {
     return value;
   }
   const forBox = <T>(box: Mailbox, cache: Map<string, Promise<T>>, make: () => Promise<T>): Promise<T> =>
-    current(box.selection, () => cached(cache, mailboxKey(box), make));
+    current(box.selection, () => memoized(cache, mailboxKey(box), make));
   const signerFor = (box: Mailbox): Promise<SignMessage> => forBox(box, signers, async () => {
     const rec = await current(box.selection, deps.activeAccount);
     if (rec?.id !== box.accountId || rec.address.toLowerCase() !== box.address.toLowerCase()) {

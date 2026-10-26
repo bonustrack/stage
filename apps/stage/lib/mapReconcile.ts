@@ -1,4 +1,3 @@
-
 import { useRef } from 'react';
 
 function isRecord(v: unknown): v is Record<string, unknown> {

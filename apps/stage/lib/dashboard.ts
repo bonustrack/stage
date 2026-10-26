@@ -8,18 +8,11 @@ import {
 } from '../components/dashboard/dashboard.model';
 import { forgetLiveSnapshots } from './liveSnapshots';
 import { createValueStore } from './persistedStore';
-import { makeListeners, useStoreValue } from './storeCore';
+import { jsonWith, makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
 
-function parseDashboard(raw: string): DashboardContent | undefined {
-  try {
-    const parsed = dashboardSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : undefined;
-  } catch { return undefined; }
-}
-
 const prefs = createValueStore<DashboardContent>({
-  key: 'dashboard.v1.', default: EMPTY_DASHBOARD, deserialize: parseDashboard, serialize: JSON.stringify, perAccount: true,
+  key: 'dashboard.v1.', default: EMPTY_DASHBOARD, deserialize: jsonWith(dashboardSchema), serialize: JSON.stringify, perAccount: true,
 });
 
 export const useDashboard = prefs.use;
@@ -67,8 +60,7 @@ async function addWidget(
 }
 
 export async function addFrameToDashboard(source: DashboardSource, width: DashboardWidth): Promise<FrameWidgetAdd> {
-  const added = await addWidget(widgets => frameWidgetAdd(widgets, source), (widgets, id) => addFrameWidget(widgets, id, source, width));
-  return added.outcome;
+  return (await addWidget(widgets => frameWidgetAdd(widgets, source), (widgets, id) => addFrameWidget(widgets, id, source, width))).outcome;
 }
 
 export function addLiveToDashboard(source: LiveSource, width: DashboardWidth): Promise<WidgetAdded> {

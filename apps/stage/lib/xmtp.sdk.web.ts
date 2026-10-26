@@ -20,7 +20,7 @@ import { webConsentState, webListOptions } from './consentWeb.model';
 import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
-  type GroupMeta, type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
+  type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, ignore, ignored } from './errorPolicy';
 import { prepareSenderFilters } from './pushRegister.web';
@@ -37,17 +37,9 @@ const ARCHIVE_OPTIONS: ArchiveOptions = {
   excludeDisappearingMessages: false,
 };
 
-function isRemovedAction(action: Reaction['action']): boolean {
-  return action === ReactionAction.Removed || (action as unknown) === 'removed';
-}
-
-function isCustomSchema(schema: Reaction['schema']): boolean {
-  return schema === ReactionSchema.Custom || (schema as unknown) === 'custom';
-}
-
 const webEnvelopeOptions: EnvelopeOptions = {
-  reactionRemoved: (action) => isRemovedAction(action as Reaction['action']),
-  reactionCustom: (schema) => isCustomSchema(schema as Reaction['schema']),
+  reactionRemoved: (action) => action === ReactionAction.Removed || action === 'removed',
+  reactionCustom: (schema) => schema === ReactionSchema.Custom || schema === 'custom',
   reactionCustomPayloadExtras: false,
   replyReferenceOf: (decoded) => (decoded as { referenceId: string }).referenceId,
   replyTextOf: (decoded) => {
@@ -109,10 +101,6 @@ async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
   const permissions = await conv.permissions().catch(recover('xmtp.groupMetaPolicy', null));
   return permissions ? webGroupMetaPolicy(permissions.policySet) : UNKNOWN_GROUP_POLICY;
-}
-
-function groupOptions(meta: GroupMeta): { groupName?: string; groupImageUrlSquare?: string; appData?: string } {
-  return { groupName: meta.name, groupImageUrlSquare: meta.imageUrl, appData: meta.appData };
 }
 
 function asEncoded(content: { content: Uint8Array }): EncodedContentArg {
@@ -236,8 +224,9 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   keyPackageErrors: async (client, installationIds) =>
     [...(await client.fetchKeyPackageStatuses(installationIds)).values()].map(s => s.validationError),
   ethAddressesOf,
-  newGroup: (client, addresses, meta) =>
-    client.conversations.createGroupWithIdentifiers(identifiersOf(addresses), groupOptions(meta)),
+  newGroup: (client, addresses, meta) => client.conversations.createGroupWithIdentifiers(
+    identifiersOf(addresses), { groupName: meta.name, groupImageUrlSquare: meta.imageUrl, appData: meta.appData },
+  ),
   streamAllMessages,
   streamConversations: (client, onConv) =>
     endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),

@@ -5,15 +5,9 @@ const WEB_TOP_BAND = 12;
 
 export const WEB_TAB_RAIL_WIDTH = 72;
 
-interface DesktopBridge { titleBarInset?: unknown }
-
-function desktopBridge(): DesktopBridge | undefined {
-  return (globalThis as { stageDesktop?: DesktopBridge }).stageDesktop;
-}
-
 export function desktopTitleBarInset(): number {
   if (Platform.OS !== 'web') return 0;
-  const inset = desktopBridge()?.titleBarInset;
+  const inset = (globalThis as { stageDesktop?: { titleBarInset?: unknown } }).stageDesktop?.titleBarInset;
   return typeof inset === 'number' && Number.isFinite(inset) && inset > 0 ? inset : 0;
 }
 

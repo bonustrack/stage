@@ -8,6 +8,7 @@ import {
   writeLabels, type ChannelField, type Group,
 } from '@stage-labs/client/xmtp/labels';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
+import { uniqueBy } from '@stage-labs/client/collections';
 import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup } from './xmtp.sdk.core';
@@ -178,16 +179,12 @@ async function groupOfLine(line: string): Promise<Group> {
   return group;
 }
 
-async function writeGroupLabels(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
-  return writeLabels(await groupOfLine(line), fn);
-}
-
 async function writeRowLabels(line: string, next: (labels: string[]) => string[]): Promise<string[]> {
   const convId = convIdOfLine(line);
   const writes = startLabelWrite(convId);
   patchRowLabels(convId, next);
   try {
-    const written = await writeGroupLabels(line, next);
+    const written = await writeLabels(await groupOfLine(line), next);
     if (writes) writes.base = written;
     return written;
   } catch (err) {
@@ -227,30 +224,16 @@ export function setGroupCategory(line: string, category: string | null): Promise
   return setGroupField(line, 'category', category);
 }
 
-function knownTags(tagsOf: (row: CachedRow) => string[]): string[] {
-  const rows = getCachedRows();
-  if (!rows) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const row of rows) {
-    for (const tag of tagsOf(row)) {
-      const key = tag.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(tag);
-    }
-  }
-  return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+function knownLabels(): string[] {
+  const labels = uniqueBy((getCachedRows() ?? []).flatMap(row => stringList(row.labels)), label => label.toLowerCase());
+  return labels.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();
-  return knownTags(row => stringList(row.labels)).filter((label) => {
+  return knownLabels().filter((label) => {
     const key = label.toLowerCase();
-    if (appliedKeys.has(key)) return false;
-    if (!q) return true;
-    if (key === q) return false;
-    return key.includes(q);
+    return !appliedKeys.has(key) && (!q || (key !== q && key.includes(q)));
   });
 }

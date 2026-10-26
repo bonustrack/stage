@@ -1,5 +1,3 @@
-
-
 import { File, Paths } from 'expo-file-system';
 import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';

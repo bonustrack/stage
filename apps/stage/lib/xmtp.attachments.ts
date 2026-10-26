@@ -135,15 +135,9 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
 }> {
   const client = await xmtpClient();
   const dest = freshCacheFile('xmtp-att', 'bin');
-  const metadata: RemoteAttachmentMetadata = {
-    secret: info.secret, salt: info.salt, nonce: info.nonce,
-    contentDigest: info.contentDigest, contentLength: info.contentLength,
-    filename: info.filename,
-  };
-  const encrypted: EncryptedLocalAttachment = {
-    encryptedLocalFileUri: asFileUri(dest.uri),
-    metadata,
-  };
+  const { secret, salt, nonce, contentDigest, contentLength, filename } = info;
+  const metadata: RemoteAttachmentMetadata = { secret, salt, nonce, contentDigest, contentLength, filename };
+  const encrypted: EncryptedLocalAttachment = { encryptedLocalFileUri: asFileUri(dest.uri), metadata };
   await File.downloadFileAsync(attachmentDownloadUrl(info.url), dest, { idempotent: true });
   const decrypted = await client.decryptAttachment(encrypted);
   return { fileUri: decrypted.fileUri, mimeType: decrypted.mimeType, filename: decrypted.filename };

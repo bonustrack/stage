@@ -1,5 +1,5 @@
 import './cryptoShim';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import { sdk } from './xmtp.sdk';
@@ -18,29 +18,19 @@ const REQUEST_MS = 30_000;
 const SYNC_GROUPS_MS = 20_000;
 const IMPORT_MS = 60_000;
 
-let phase: HistorySyncPhase = 'idle';
+const phase = makeValue<HistorySyncPhase>('idle');
 let problem: string | null = null;
 let deadlineAt: number | null = null;
-const { notify, subscribe } = makeListeners();
-
-function setPhase(next: HistorySyncPhase): void {
-  phase = next;
-  notify();
-}
-
-function getPhase(): HistorySyncPhase { return phase; }
 
 export function historySyncDeadline(): number | null {
-  return historySyncIsActive(phase) ? deadlineAt : null;
+  return historySyncIsActive(phase.get()) ? deadlineAt : null;
 }
 
 export function historySyncProblem(): string | null {
-  return phase === 'error' ? problem : null;
+  return phase.get() === 'error' ? problem : null;
 }
 
-export function useHistorySyncPhase(): HistorySyncPhase {
-  return useStoreValue(subscribe, getPhase);
-}
+export const useHistorySyncPhase = phase.use;
 
 async function requestHistorySync(): Promise<void> {
   const client = await sdk.client();
@@ -102,31 +92,31 @@ async function syncOnce(run: number, deadline: number): Promise<HistorySyncPhase
     problem = historyProblemMessage(err, HISTORY_COPY.failed);
     return 'error';
   }
-  if (run === currentRun) setPhase('waiting');
+  if (run === currentRun) phase.set('waiting');
   const outcome = await waitForArchive(run, deadline);
   if (outcome === 'done') bumpAccountEpoch();
   return outcome;
 }
 
 export async function runHistorySync(): Promise<HistorySyncPhase> {
-  if (historySyncIsActive(phase)) return phase;
+  if (historySyncIsActive(phase.get())) return phase.get();
   currentRun += 1;
   const run = currentRun;
   const deadline = Date.now() + TIMEOUT_MS;
   deadlineAt = deadline;
   problem = null;
-  setPhase('requesting');
+  phase.set('requesting');
   const outcome = await settleBy(syncOnce(run, deadline), deadline, 'timeout');
   const settled = outcome === 'timeout' && problem !== null ? 'error' : outcome;
-  if (run === currentRun) setPhase(settled);
+  if (run === currentRun) phase.set(settled);
   return settled;
 }
 
 function whenHistorySettled(): Promise<void> {
   return new Promise((resolve) => {
-    const unsubscribe = subscribe(check);
+    const unsubscribe = phase.subscribe(check);
     function check(): void {
-      if (historySyncIsActive(phase)) return;
+      if (historySyncIsActive(phase.get())) return;
       unsubscribe();
       resolve();
     }
@@ -138,5 +128,5 @@ export async function syncHistoryToEnd(): Promise<HistorySyncPhase> {
   const started = await runHistorySync();
   if (!historySyncIsActive(started)) return started;
   await whenHistorySettled();
-  return phase;
+  return phase.get();
 }

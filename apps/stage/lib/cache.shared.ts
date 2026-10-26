@@ -16,15 +16,10 @@ const backend: PersistenceBackend = persistenceBackend;
 const dirtyStores = new Set<{ flushNow: () => void }>();
 let flushSignalWired = false;
 
-function flushDirtyStores(): void {
-  for (const s of dirtyStores) attempt(() => { s.flushNow(); }, 'cache');
-}
-
 export class PersistentStore<T> {
   private value: T | null = null;
   private readonly hydration = hydrateOnce<T | null>(() => this.readBacking());
   private readonly pubsub = makeListeners<T | null>();
-  private notify(v: T | null): void { this.pubsub.notify(v); }
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private dirty = false;
 
@@ -35,7 +30,7 @@ export class PersistentStore<T> {
   ) {
     if (!flushSignalWired) {
       flushSignalWired = true;
-      backend.onFlushSignal(flushDirtyStores);
+      backend.onFlushSignal(() => { for (const s of dirtyStores) attempt(() => { s.flushNow(); }, 'cache'); });
     }
   }
 
@@ -56,7 +51,7 @@ export class PersistentStore<T> {
       const restored = this.restore ? await this.restore(stored) : stored;
       if (this.hydration.done()) return this.value;
       this.value = restored;
-      this.notify(this.value);
+      this.pubsub.notify(this.value);
     }
     return this.value;
   }
@@ -71,7 +66,7 @@ export class PersistentStore<T> {
   set(next: T | null): void {
     this.value = next;
     this.hydration.markDone();
-    this.notify(this.value);
+    this.pubsub.notify(this.value);
     this.dirty = true;
     dirtyStores.add(this);
     if (this.flushTimer) clearTimeout(this.flushTimer);
@@ -88,7 +83,7 @@ export class PersistentStore<T> {
     this.value = null;
     this.hydration.reset();
     backend.write(this.fileName, null);
-    this.notify(null);
+    this.pubsub.notify(null);
   }
 
   subscribe(l: (v: T | null) => void): () => void {

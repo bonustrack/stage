@@ -26,17 +26,12 @@ import { clientFinalizer } from './xmtp.recover.core';
 import { openFinalizedClient } from './xmtp.finalize.core';
 import { guardClientAccess } from './xmtp.clientAccess.web';
 
-const ADDRESS_PREFIX = 'xmtp.address.';
-const ENV_PREFIX = 'xmtp.env.';
-const INSTALLATION_PREFIX = 'xmtp.installation.';
-const INBOX_PREFIX = 'xmtp.inbox.';
-
 type WebXmtpClient = Client<unknown>;
 
-function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
-function envKeyFor(id: string): string { return ENV_PREFIX + id; }
-function installationKeyFor(id: string): string { return INSTALLATION_PREFIX + id; }
-function inboxKeyFor(id: string): string { return INBOX_PREFIX + id; }
+function addressKeyFor(id: string): string { return `xmtp.address.${id}`; }
+function envKeyFor(id: string): string { return `xmtp.env.${id}`; }
+function installationKeyFor(id: string): string { return `xmtp.installation.${id}`; }
+function inboxKeyFor(id: string): string { return `xmtp.inbox.${id}`; }
 
 const OPFS_POOL_DIR = '.opfs-libxmtp-metadata';
 const OPFS_EMPTY_SLOT_BYTES = 4096;
@@ -125,10 +120,9 @@ function disposeCachedClient(): void {
 async function forgetSavedClient(id: string): Promise<void> {
   await forgetFeeds(id);
   await forgetStorageIndex(id).catch(ignored(undefined, 'cleanup'));
-  await secureStorage.delete(addressKeyFor(id)).catch(ignored(undefined, 'cleanup'));
-  await secureStorage.delete(envKeyFor(id)).catch(ignored(undefined, 'cleanup'));
-  await secureStorage.delete(installationKeyFor(id)).catch(ignored(undefined, 'cleanup'));
-  await secureStorage.delete(inboxKeyFor(id)).catch(ignored(undefined, 'cleanup'));
+  for (const key of [addressKeyFor(id), envKeyFor(id), installationKeyFor(id), inboxKeyFor(id)]) {
+    await secureStorage.delete(key).catch(ignored(undefined, 'cleanup'));
+  }
 }
 
 async function revokeInstallation(client: WebXmtpClient, account: AccountRecord, installationId: string): Promise<void> {

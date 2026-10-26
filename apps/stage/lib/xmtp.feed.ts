@@ -79,7 +79,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const reachedStart = isAtFeedStart(events[events.length - 1]?.id, firstId);
 
   const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
-  const error = query.error ? (query.error).message : null;
+  const error = query.error?.message ?? null;
   const { refetch } = query;
   const retry = useCallback(() => { void refetch(); }, [refetch]);
 
@@ -98,8 +98,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     } catch (err) {
       report('feed.loadOlder', err);
       olderFailedRef.current = true;
-    }
-    finally {
+    } finally {
       loadingOlderRef.current = false;
       setLoadingOlder(false);
     }

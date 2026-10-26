@@ -1,4 +1,3 @@
-
 import { bytesToHex } from 'viem';
 import { createValueStore } from './persistedStore';
 import { resolveDmConvId } from './dmResolve';
@@ -19,9 +18,7 @@ const store = createValueStore<OutboxItem[]>({
 });
 
 function newId(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return bytesToHex(bytes).slice(2);
+  return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
 }
 
 export function subscribeDmOutbox(cb: () => void): () => void {

@@ -1,4 +1,3 @@
-
 import { createValueStore } from './persistedStore';
 
 const STORAGE_KEY = 'push.enabled';

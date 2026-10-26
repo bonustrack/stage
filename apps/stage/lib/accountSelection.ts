@@ -1,17 +1,13 @@
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
-let version = 0;
-const { notify, subscribe } = makeListeners();
+const version = makeValue(0);
 
 export function accountSelectionChanged(): void {
-  version += 1;
-  notify();
+  version.set(version.get() + 1);
 }
 
-export function getAccountSelection(): number { return version; }
+export const getAccountSelection = version.get;
 
-export const subscribeAccountSelection = subscribe;
+export const subscribeAccountSelection = version.subscribe;
 
-export function useAccountSelection(): number {
-  return useStoreValue(subscribe, getAccountSelection);
-}
+export const useAccountSelection = version.use;

@@ -1,27 +1,25 @@
-
-
 import './cryptoShim';
 import { secureStorage } from '../platform/storage';
 import type { PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
-const setActiveAccountForCache = async (id: string | null): Promise<void> => {
-  const { setActiveAccountForCache: fn } = await import('./channelsCache');
-  fn(id);
-};
 import { getViemAccount, adoptLegacyKey, deleteKey, deletePhrase, importPrivateKey, primaryPhraseId } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 import { nextHdIndex } from '@stage-labs/client/accounts/hdIndex';
 import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
-
-export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
-export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
-
-export type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
 import { accountSelectionChanged } from './accountSelection';
 import { reloadApp } from './reloadApp';
+
+export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
+export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
+export type { AccountRecord } from '@stage-labs/client/accounts/types';
+
+const setActiveAccountForCache = async (id: string | null): Promise<void> => {
+  const { setActiveAccountForCache: fn } = await import('./channelsCache');
+  fn(id);
+};
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -133,17 +131,10 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
   const id = rec.id.toLowerCase();
   const list = await loadAccountsForWrite();
   const existing = list.find(a => a.id === id);
-  if (existing) {
-    const updated = { ...existing, ...rec, id };
-    await persist(list.map(a => (a.id === id ? updated : a)));
-    await setActiveAccountId(id);
-    return updated;
-  }
-  const created = { ...rec, id };
-  const next = [...list, created];
-  await persist(next);
+  const record = { ...existing, ...rec, id };
+  await persist(existing ? list.map(a => (a.id === id ? record : a)) : [...list, record]);
   await setActiveAccountId(id);
-  return created;
+  return record;
 }
 
 export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {

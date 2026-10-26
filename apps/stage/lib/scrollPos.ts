@@ -1,4 +1,3 @@
-
 import { appStorage } from '../platform/storage';
 import { ignore, ignored } from './errorPolicy';
 
@@ -29,8 +28,7 @@ function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (ke
     },
     save(key: string, value: T): void {
       values.set(key, value);
-      const existing = timers.get(key);
-      if (existing) clearTimeout(existing);
+      clearTimeout(timers.get(key));
       timers.set(key, setTimeout(() => { timers.delete(key); persist(key); }, WRITE_DEBOUNCE_MS));
     },
     flush(key: string, override?: T): void {
@@ -55,11 +53,8 @@ function parseOffset(raw: string | null): number | undefined {
 function parseAnchor(raw: string | null): FeedAnchor | null {
   if (raw === null) return null;
   try {
-    const v: unknown = JSON.parse(raw);
-    if (typeof v === 'object' && v !== null && typeof (v as FeedAnchor).key === 'string' && typeof (v as FeedAnchor).offset === 'number') {
-      return { key: (v as FeedAnchor).key, offset: (v as FeedAnchor).offset };
-    }
-    return null;
+    const v = JSON.parse(raw) as Partial<FeedAnchor> | null;
+    return typeof v?.key === 'string' && typeof v.offset === 'number' ? { key: v.key, offset: v.offset } : null;
   } catch {
     return null;
   }
@@ -101,12 +96,10 @@ export function planFeedRestore(args: {
   pinUntil: number; setPinUntil: (t: number) => void;
 }): 'skip' | 'bottom' | { offset: number; done: true } {
   const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
-  if (!loaded) return 'skip';
-  if (contentHeight <= 0 || itemCount === 0) return 'skip';
+  if (!loaded || contentHeight <= 0 || itemCount === 0) return 'skip';
   if (savedOffset == null || savedOffset <= 0) {
     if (pinUntil === 0) { setPinUntil(now + 1200); return 'bottom'; }
-    if (now > pinUntil) return 'skip';
-    return 'bottom';
+    return now > pinUntil ? 'skip' : 'bottom';
   }
   return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
 }

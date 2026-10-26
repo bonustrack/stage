@@ -1,20 +1,13 @@
 import { boardOrderSchema } from '@stage-labs/client/xmtp/readState';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { jsonWith, makeListeners } from './storeCore';
 
 type BoardOrder = readonly string[];
 
 const EMPTY: BoardOrder = [];
 
-function parseOrder(raw: string): BoardOrder | undefined {
-  try {
-    const parsed = boardOrderSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : undefined;
-  } catch { return undefined; }
-}
-
 const prefs = createValueStore<BoardOrder>({
-  key: 'board.columnOrder.', default: EMPTY, deserialize: parseOrder, serialize: JSON.stringify, perAccount: true,
+  key: 'board.columnOrder.', default: EMPTY, deserialize: jsonWith(boardOrderSchema), serialize: JSON.stringify, perAccount: true,
 });
 
 export const useBoardOrder = prefs.use;

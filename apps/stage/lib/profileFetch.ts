@@ -16,3 +16,10 @@ export async function profileRequest<T>(
     if (timer !== undefined) clearTimeout(timer);
   }
 }
+
+export function readPicture(uri: string): Promise<Blob> {
+  return profileRequest(uri, {}, async (response) => {
+    if (!response.ok) throw new Error('The selected picture could not be read. Choose it again.');
+    return response.blob();
+  });
+}

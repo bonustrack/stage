@@ -160,7 +160,7 @@ function scanEnded(err: unknown): void {
   setState({ scanning: false, firstScan: false, failed: !stopped, loaded: state.loaded || !stopped });
 }
 
-function refreshStorage(): void {
+export function retryStorage(): void {
   const epoch = getAccountEpoch();
   if (scanRun !== null && scanRun.epoch === epoch) { scanAgain = true; return; }
   scanAgain = false;
@@ -172,12 +172,8 @@ function refreshStorage(): void {
     scanRun = null;
     if (!scanAgain) return;
     scanAgain = false;
-    refreshStorage();
+    retryStorage();
   });
-}
-
-export function retryStorage(): void {
-  refreshStorage();
 }
 
 function onStreamMessage({ convId, msg }: StreamMsg): void {
@@ -189,7 +185,7 @@ function onStreamMessage({ convId, msg }: StreamMsg): void {
 
 function openStorage(): () => void {
   let open = true;
-  void showCached().then(() => { if (open) refreshStorage(); }).catch(reported('storage.open'));
+  void showCached().then(() => { if (open) retryStorage(); }).catch(reported('storage.open'));
   const stop = subscribeAllMessages(onStreamMessage, { includeHidden: true });
   return () => {
     open = false;

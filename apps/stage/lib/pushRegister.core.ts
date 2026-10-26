@@ -10,6 +10,7 @@ import { subscribeAccountSelection } from './accountSelection';
 import { makePushRetry } from './pushRetry.core';
 import { makeSenderFilterPublisher, maintainPushPaths } from './pushSenderFilter.core';
 import { timeSendPhase, type SendTiming } from './sendTiming.core';
+import { memoized } from './storeCore';
 
 export type { PushTopics } from './pushRegistration.core';
 import { onReadStateChanged } from './channelsCache';
@@ -81,12 +82,7 @@ async function postJson(url: string, body: unknown, accepted?: number, signal?: 
 const groupKeys = new Map<string, Promise<string>>();
 
 async function pushGroupKey(rec: AccountRecord): Promise<string> {
-  const known = groupKeys.get(rec.address);
-  if (known) return known;
-  const pending = signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage));
-  groupKeys.set(rec.address, pending);
-  pending.catch(() => { groupKeys.delete(rec.address); });
-  return pending;
+  return memoized(groupKeys, rec.address, () => signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage)));
 }
 
 async function joinDeviceGroup(input: PushRegistrationInput, account: AccountRecord): Promise<void> {
@@ -233,8 +229,7 @@ export function makePushClear(input: PushClearInput): () => void {
     onReadStateChanged(({ convId, markedUnread }) => {
       if (markedUnread) return;
       void input.dismissLocal(convId).catch(ignored(undefined, 'ui'));
-      const timer = pending.get(convId);
-      if (timer !== undefined) clearTimeout(timer);
+      clearTimeout(pending.get(convId));
       pending.set(convId, setTimeout(() => {
         pending.delete(convId);
         void requestPushClear(input, convId).catch(reported('push.clear'));

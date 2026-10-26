@@ -1,4 +1,3 @@
-
 import { useCallback, useRef } from 'react';
 
 export function useStableCallback<A extends unknown[], R>(fn: (...args: A) => R): (...args: A) => R {

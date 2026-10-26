@@ -1,14 +1,9 @@
-
 import { Opfs } from '@xmtp/browser-sdk';
 import { report } from './errorPolicy';
 
 export const XMTP_APP_GROUP: string | null = null;
 
-export function deleteDbFiles(dbDirName: string): Promise<void> {
-  return deleteOpfsDbFiles(dbDirName);
-}
-
-async function deleteOpfsDbFiles(prefix: string): Promise<void> {
+export async function deleteDbFiles(prefix: string): Promise<void> {
   try {
     const opfs = await Opfs.create();
     try {

@@ -1,5 +1,3 @@
-
-
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId, type AccountRecord } from '../accounts';

@@ -6,12 +6,16 @@ import { capabilities } from './capabilities';
 import { ignored } from './errorPolicy';
 import { imageFileName } from './imageDownload.model';
 
+function cacheDir(name: string): Directory {
+  const dir = new Directory(Paths.cache, name);
+  if (!dir.exists) dir.create({ intermediates: true });
+  return dir;
+}
+
 async function readBytes(uri: string): Promise<Uint8Array> {
   if (uri.startsWith('data:')) return base64ToBytes(uri.slice(uri.indexOf(',') + 1));
   if (uri.startsWith('file://')) return new File(uri).bytes();
-  const cache = new Directory(Paths.cache, 'downloads');
-  if (!cache.exists) cache.create({ intermediates: true });
-  const downloaded = await File.downloadFileAsync(uri, new File(cache, String(Date.now())));
+  const downloaded = await File.downloadFileAsync(uri, new File(cacheDir('downloads'), String(Date.now())));
   const bytes = await downloaded.bytes();
   downloaded.delete();
   return bytes;
@@ -25,23 +29,16 @@ export async function downloadFile(uri: string, name: string, mime?: string): Pr
   capabilities.toast(`Saved ${name}`);
 }
 
-function tempDir(): Directory {
-  const dir = new Directory(Paths.cache, 'image-viewer');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return dir;
-}
-
 async function toLocalUri(uri: string): Promise<string> {
   if (uri.startsWith('file://')) return uri;
-  const file = new File(tempDir(), imageFileName(uri, undefined, Date.now()));
+  const file = new File(cacheDir('image-viewer'), imageFileName(uri, undefined, Date.now()));
   if (uri.startsWith('data:')) {
     if (file.exists) file.delete();
     file.create();
     file.write(base64ToBytes(uri.slice(uri.indexOf(',') + 1)));
     return file.uri;
   }
-  const downloaded = await File.downloadFileAsync(uri, file);
-  return downloaded.uri;
+  return (await File.downloadFileAsync(uri, file)).uri;
 }
 
 export async function downloadImage(uri: string): Promise<void> {

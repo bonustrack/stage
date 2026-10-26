@@ -3,7 +3,6 @@ import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/c
 import {
   collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, type BoardStateContent, type LatestKind,
   type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncOwner, type SyncReplay,
-  type SyncTrust,
 } from '@stage-labs/client/xmtp/readState';
 import { replaySyncGroups } from './readSyncReplay';
 import { syncTarget, sendSyncState, type SyncTarget } from './syncTarget';
@@ -37,6 +36,7 @@ import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg } from './xmtp.types';
 import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { report, reported } from './errorPolicy';
+
 const CATCH_UP_GAP_MS = 10_000;
 const PUBLISH_DEBOUNCE_MS = 800;
 const SEARCH_DEBOUNCE_MS = 1000;
@@ -55,10 +55,6 @@ function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
 
-function trustFor(owner: SyncOwner): SyncTrust {
-  return { inboxId: owner.inboxId, nowMs: Date.now() };
-}
-
 function trustGroup(id: string): void {
   ownGroups.add(id);
   registerHiddenConv(id);
@@ -73,10 +69,6 @@ function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateCont
   return next ?? rows;
 }
 
-async function readStateForRows(state: ReadStateContent): Promise<ReadStateContent> {
-  return { ...state, convId: await rowIdOfConv(state.convId) };
-}
-
 async function pinStateForRows(state: PinStateContent): Promise<PinStateContent> {
   const convId = await rowIdOfConv(state.convId);
   if (state.order === undefined) return { ...state, convId };
@@ -85,7 +77,7 @@ async function pinStateForRows(state: PinStateContent): Promise<PinStateContent>
 }
 
 async function applyReadStates(remote: readonly ReadStateContent[]): Promise<void> {
-  const reads = await Promise.all(remote.map(readStateForRows));
+  const reads = await Promise.all(remote.map(async state => ({ ...state, convId: await rowIdOfConv(state.convId) })));
   const applied: ReadStateContent[] = [];
   for (const state of reads) {
     if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
@@ -114,10 +106,6 @@ async function applyReplay(accountId: string, replay: SyncReplay): Promise<void>
   await applyPinStates(replay.pins);
   await applyRemoteChatVisibility(accountId, replay);
   for (const setting of LATEST_WINS) await setting.apply(accountId, replay);
-}
-
-function isStateMessage(m: RowMessage): boolean {
-  return isSyncType(m.contentTypeId);
 }
 
 async function knownSyncGroups(context: AccountClient): Promise<SyncGroupState[]> {
@@ -308,8 +296,7 @@ function nudgeFrom(sourceId: string): void {
 }
 
 function debounce(key: string, fn: () => void, delayMs = PUBLISH_DEBOUNCE_MS): void {
-  const pending = pendingPublish.get(key);
-  if (pending !== undefined) clearTimeout(pending);
+  clearTimeout(pendingPublish.get(key));
   pendingPublish.set(key, setTimeout(() => {
     pendingPublish.delete(key);
     fn();
@@ -351,13 +338,13 @@ async function adoptSyncGroup(convId: string): Promise<Adopted | null> {
 async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
   const adopted = await adoptSyncGroup(convId);
   if (adopted === null) return;
-  await applyReplay(adopted.context.account.id, collectSyncReplay([m], 0, trustFor(adopted.owner)));
+  await applyReplay(adopted.context.account.id, collectSyncReplay([m], 0, { inboxId: adopted.owner.inboxId, nowMs: Date.now() }));
   adopted.context.assertCurrent();
   if (groupId !== null && convId !== groupId) nudgeFrom(convId);
 }
 
 function onStreamMessage(m: StreamMsg): void {
-  if (m.convId === null || !isStateMessage(m.msg)) return;
+  if (m.convId === null || !isSyncType(m.msg.contentTypeId)) return;
   void onStateMessage(m.convId, m.msg).catch(reported('readSync.stream'));
 }
 

@@ -1,9 +1,5 @@
-import { ACTIVE_TAB, type TabRole } from './tabLock.core';
+import { ACTIVE_TAB } from './tabLock.core';
 
-export function useTabRole(): TabRole {
-  return ACTIVE_TAB.role();
-}
+export const useTabRole = ACTIVE_TAB.role;
 
-export function takeOverTab(): void {
-  ACTIVE_TAB.takeOver();
-}
+export const takeOverTab = ACTIVE_TAB.takeOver;

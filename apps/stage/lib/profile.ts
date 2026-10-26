@@ -16,7 +16,7 @@ import { invalidatePeerProfile } from './peerProfiles';
 import { kernelClientForRecord } from './zerodev/client';
 import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
-import { profileRequest } from './profileFetch';
+import { profileRequest, readPicture } from './profileFetch';
 import { ProfileNameTakenError, runProfileSetup } from './profileSetup.core';
 
 interface ProfileAccount { record: AccountRecord; assertCurrent: () => void }
@@ -36,10 +36,7 @@ async function profileAccount(address?: string): Promise<ProfileAccount> {
 
 async function filePart(uri: string, mime: string, name: string): Promise<Blob | { uri: string; name: string; type: string }> {
   if (Platform.OS !== 'web') return { uri, name, type: mime };
-  const blob = await profileRequest(uri, {}, async (response) => {
-    if (!response.ok) throw new Error('The selected picture could not be read. Choose it again.');
-    return response.blob();
-  });
+  const blob = await readPicture(uri);
   if (blob.size === 0 || !(mime || blob.type).startsWith('image/')) throw new Error('Choose a valid image for your profile picture.');
   return new File([blob], name, { type: mime || blob.type });
 }
@@ -101,7 +98,7 @@ async function recordsFor(changes: ProfileChanges): Promise<Record<string, strin
   const records: Record<string, string> = {};
   if (changes.displayName !== undefined) records[PROFILE_TEXT_KEYS.displayName] = changes.displayName;
   if (changes.description !== undefined) records[PROFILE_TEXT_KEYS.description] = changes.description;
-  if (changes.image) records[PROFILE_TEXT_KEYS.avatar] = await uploadAvatar(changes.image.uri, changes.image.mime, changes.image.name ?? 'avatar');
+  if (changes.image) records[PROFILE_TEXT_KEYS.avatar] = await uploadAvatar(changes.image.uri, changes.image.mime, changes.image.name);
   else if (changes.removeImage === true) records[PROFILE_TEXT_KEYS.avatar] = '';
   return records;
 }
@@ -194,7 +191,7 @@ export async function applyProfileSetup(
   const account = await profileAccount(address);
   await runProfileSetup({
     assertCurrent: account.assertCurrent,
-    upload: (image) => uploadAvatar(image.uri, image.mime, image.name ?? 'avatar'),
+    upload: (image) => uploadAvatar(image.uri, image.mime, image.name),
     inspect: (label, records) => inspectNameSetup(baseProfileClient(), address, stageNameOf(label), records),
     claim: (label) => claimForAccount(account, label),
     send: async (label, records) => {

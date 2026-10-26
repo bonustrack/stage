@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync } from './channelsCache';
 import { convOfLine } from './xmtp.sdk';
@@ -20,26 +19,23 @@ async function fetchMembers(convId: string): Promise<string[]> {
   return (await convMembers(conv)).otherAddresses;
 }
 
-function avatarSeedOf(row: CommonChannelRow): string {
-  return channelStampSeed(row.convId);
-}
-
 async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
   await hydrateCachedRows().catch(reported('commonChannels.hydrate'));
   const rows = (getCachedRows() ?? []) as CommonChannelRow[];
   const memberSetOf = memberSetCache.resolver(getAccountEpoch(), fetchMembers);
-  return resolveCommonChannels(peerAddress, rows, memberSetOf, avatarSeedOf);
+  return resolveCommonChannels(peerAddress, rows, memberSetOf, row => channelStampSeed(row.convId));
 }
 
-export function useCommonChannels(peerAddress: string | null, enabled: boolean): {
+export function useCommonChannels(peerAddress: string | null): {
   channels: CommonChannel[];
   loading: boolean;
 } {
+  const active = !!peerAddress;
   const { data, isLoading } = useQuery({
     queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
     queryFn: () => resolveChannels(peerAddress ?? ''),
-    enabled: enabled && !!peerAddress,
+    enabled: active,
     staleTime: 5 * 60_000,
   });
-  return { channels: data ?? [], loading: (enabled && !!peerAddress) ? isLoading : false };
+  return { channels: data ?? [], loading: active && isLoading };
 }

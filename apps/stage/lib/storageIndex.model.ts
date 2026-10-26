@@ -6,8 +6,8 @@ import { remoteAttachmentOfReply } from '@stage-labs/client/xmtp/envelope';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
-export const CURSOR_MARGIN_NS = 60_000_000_000;
-export const PAGE_OVERLAP_NS = 1_000;
+const CURSOR_MARGIN_NS = 60_000_000_000;
+const PAGE_OVERLAP_NS = 1_000;
 
 export interface StoredFile {
   messageId: string;
@@ -28,7 +28,7 @@ export interface StorageIndex {
 
 export interface ScannedMessage extends StreamedMessage { convId: string }
 
-export interface ForeignDelete { convId: string; target: string; by: string }
+interface ForeignDelete { convId: string; target: string; by: string }
 
 export interface ScanFindings {
   files: StoredFile[];

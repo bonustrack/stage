@@ -1,4 +1,3 @@
-
 import {
   decryptAttachment, encryptAttachment, encodeRemoteAttachment,
   type EncryptedAttachment, type RemoteAttachment,
@@ -42,10 +41,6 @@ export async function encryptSanitizedAttachment(
   }));
 }
 
-async function uploadEncrypted(payload: Uint8Array, filename: string): Promise<string> {
-  return await uploadEncryptedAttachment(new Blob([payload.slice().buffer], { type: 'application/octet-stream' }), filename);
-}
-
 async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
   const mimeType = attachmentMimeType(f.mimeType, f.filename);
   const clean = sanitizeAttachmentBytes(await fetchBytes(f.fileUri), mimeType, f.filename);
@@ -54,7 +49,7 @@ async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttach
 
 async function storedRemoteAttachment(encrypted: EncryptedAttachment, f: LocalAttachmentInput): Promise<RemoteAttachment> {
   return {
-    url: await uploadEncrypted(encrypted.payload, f.filename),
+    url: await uploadEncryptedAttachment(new Blob([encrypted.payload.slice().buffer], { type: 'application/octet-stream' }), f.filename),
     contentDigest: encrypted.contentDigest,
     secret: encrypted.secret,
     salt: encrypted.salt,

@@ -42,13 +42,11 @@ export const useThemePreference = (): ThemePreference => preference.use();
 export function useEffectiveColorScheme(): 'light' | 'dark' {
   const pref = useThemePreference();
   const sys = useColorScheme();
-  if (pref === 'light') return 'light';
-  if (pref === 'dark') return 'dark';
+  if (pref !== 'system') return pref;
   return sys === 'dark' ? 'dark' : 'light';
 }
 
 export type Palette = KitPalette;
-
 
 export function withAlpha(color: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
@@ -103,37 +101,33 @@ function patchSeeds(patch: Partial<ThemeSeeds>): void {
   seeds.set({ ...seeds.get(), ...patch });
 }
 
-function commit(scheme: Scheme, seed: ThemeSeed): void {
+function editSeed(scheme: Scheme, edit: (seed: ThemeSeed) => void): void {
+  const seed = cloneSeed(seeds.get()[scheme]);
+  edit(seed);
   seeds.set({ ...seeds.get(), [scheme]: seed });
 }
 
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
   const v = hex.trim().toLowerCase();
   if (!/^#([0-9a-f]{6})$/.test(v)) return;
-  const seed = cloneSeed(seeds.get()[scheme]);
-  if (key === 'background') seed.surface.background = v;
-  else if (key === 'foreground') seed.surface.foreground = v;
-  else if (key === 'accent') seed.accent.primary = v;
-  else seed.grayscale = grayscaleFromHex(v, scheme);
-  commit(scheme, seed);
+  editSeed(scheme, (seed) => {
+    if (key === 'background') seed.surface.background = v;
+    else if (key === 'foreground') seed.surface.foreground = v;
+    else if (key === 'accent') seed.accent.primary = v;
+    else seed.grayscale = grayscaleFromHex(v, scheme);
+  });
 }
 
 export function setAccentLevel(scheme: Scheme, level: AccentLevel): void {
-  const seed = cloneSeed(seeds.get()[scheme]);
-  seed.accent.level = level;
-  commit(scheme, seed);
+  editSeed(scheme, (seed) => { seed.accent.level = level; });
 }
 
 export function setGrayscaleTint(scheme: Scheme, tint: GrayscaleTint): void {
-  const seed = cloneSeed(seeds.get()[scheme]);
-  seed.grayscale.tint = tint;
-  commit(scheme, seed);
+  editSeed(scheme, (seed) => { seed.grayscale.tint = tint; });
 }
 
 export function setGrayscaleShade(scheme: Scheme, shade: GrayscaleShade): void {
-  const seed = cloneSeed(seeds.get()[scheme]);
-  seed.grayscale.shade = shade;
-  commit(scheme, seed);
+  editSeed(scheme, (seed) => { seed.grayscale.shade = shade; });
 }
 
 export function setSeedDensity(density: Density): void { patchSeeds({ density }); }

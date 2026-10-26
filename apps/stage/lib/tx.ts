@@ -1,4 +1,3 @@
-
 import {
   isAddress, createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient,
 } from 'viem';
@@ -39,9 +38,6 @@ export async function sendCall(call: RawCall): Promise<Hex> {
   const { to, data, chainId = 1 } = call;
   if (!isAddress(to)) throw new Error('Invalid recipient address');
   const value = BigInt(call.value ?? '0x0');
-
   const { client, chain } = await walletClientFor(chainId);
-  return client.sendTransaction({
-    chain, to: to, value, ...(data ? { data: data as Hex } : {}),
-  });
+  return client.sendTransaction({ chain, to, value, ...(data ? { data: data as Hex } : {}) });
 }

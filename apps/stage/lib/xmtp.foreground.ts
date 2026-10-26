@@ -43,17 +43,7 @@ let lastForcedPushSyncAt = 0;
 async function resyncAfterPush(status: StreamStatus, now: number): Promise<void> {
   const streamDead = !status.live() || (now - status.lastCloseAt()) < STREAM_DEAD_GRACE_MS;
   const streamFresh = (now - status.lastMessageAt()) < STREAM_FRESH_MS;
-  if (streamDead) {
-    lastForcedPushSyncAt = now;
-    await syncInboxOnce(0);
-    await resyncActiveFeeds();
-    return;
-  }
-  if (streamFresh) {
-    await resyncActiveFeeds();
-    return;
-  }
-  if (now - lastForcedPushSyncAt >= MIN_FORCED_SYNC_SPACING_MS) {
+  if (streamDead || (!streamFresh && now - lastForcedPushSyncAt >= MIN_FORCED_SYNC_SPACING_MS)) {
     lastForcedPushSyncAt = now;
     await syncInboxOnce(0);
   }

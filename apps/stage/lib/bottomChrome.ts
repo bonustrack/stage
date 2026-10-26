@@ -7,8 +7,7 @@ const reports = new Map<symbol, number>();
 
 function publish(): void {
   const next = Math.max(0, ...reports.values());
-  if (next === height.get()) return;
-  height.set(next);
+  if (next !== height.get()) height.set(next);
 }
 
 export function useReportBottomChrome(value: number): void {

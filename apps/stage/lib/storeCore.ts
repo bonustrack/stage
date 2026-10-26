@@ -1,6 +1,16 @@
-
 import { useCallback, useSyncExternalStore } from 'react';
 import { report } from './errorPolicy';
+
+interface StoredSchema<T> { safeParse: (value: unknown) => { success: true; data: T } | { success: false } }
+
+export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undefined {
+  return (raw) => {
+    try {
+      const parsed = schema.safeParse(JSON.parse(raw));
+      return parsed.success ? parsed.data : undefined;
+    } catch { return undefined; }
+  };
+}
 
 export function useStoreValue<T>(
   subscribe: (cb: () => void) => () => void,
@@ -12,6 +22,15 @@ export function useStoreValue<T>(
     return subscribe(cb);
   }, [subscribe, prime]);
   return useSyncExternalStore(subscribeAndPrime, get, get);
+}
+
+export function memoized<T>(cache: Map<string, Promise<T>>, key: string, make: () => Promise<T>): Promise<T> {
+  const known = cache.get(key);
+  if (known !== undefined) return known;
+  const pending = make();
+  cache.set(key, pending);
+  pending.catch(() => { if (cache.get(key) === pending) cache.delete(key); });
+  return pending;
 }
 
 export function makeListeners<T = void>(): {

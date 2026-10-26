@@ -48,11 +48,7 @@ function writeNow(accountId: string): Promise<void> {
   });
 }
 
-function flushAll(): void {
-  for (const accountId of [...pendingWrites.keys()]) void writeNow(accountId);
-}
-
-if (sealedCache) persistenceBackend.onFlushSignal(flushAll);
+if (sealedCache) persistenceBackend.onFlushSignal(() => { for (const accountId of [...pendingWrites.keys()]) void writeNow(accountId); });
 
 function update(accountId: string, change: (snapshot: FeedSnapshot) => FeedSnapshot): void {
   snapshots.set(accountId, loadSnapshot(accountId).then(change));
@@ -97,8 +93,7 @@ export function rememberSelfInboxId(inboxId: string): void {
 
 export async function forgetFeeds(accountId: string): Promise<void> {
   if (!sealedCache) return;
-  const timer = pendingWrites.get(accountId);
-  if (timer !== undefined) clearTimeout(timer);
+  clearTimeout(pendingWrites.get(accountId));
   pendingWrites.delete(accountId);
   snapshots.set(accountId, Promise.resolve(EMPTY_SNAPSHOT));
   const store = sealedCache;

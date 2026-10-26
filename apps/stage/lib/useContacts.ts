@@ -29,18 +29,12 @@ function toSortedContacts(addresses: string[]): Contact[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function seedAddresses(): string[] {
-  return peerAddressesOf(getCachedRows());
-}
-
 async function collectAddresses(): Promise<string[]> {
   const client = await sdk.client();
   await afterFirstPages();
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
   const convs = await sdk.listConvs(client, ['allowed']);
-
   await primeConversationMembers(client, convs);
-
   const set = new Set<string>();
   await Promise.all(convs.map(async (c) => {
     const { peerAddress, otherAddresses } = await convMembers(c);
@@ -58,11 +52,9 @@ export function useContactList(enabled: boolean): Contact[] {
     queryKey: ['allContacts', getActiveAccountIdSync()],
     queryFn: collectAddresses,
     enabled,
-    placeholderData: seedAddresses,
+    placeholderData: () => peerAddressesOf(getCachedRows()),
   });
-
   const version = usePeerProfiles(addresses);
-
   return useMemo(() => toSortedContacts(addresses), [addresses, version]);
 }
 

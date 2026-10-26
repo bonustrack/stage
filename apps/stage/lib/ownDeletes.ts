@@ -19,7 +19,7 @@ const listeners = makeListeners();
 let snapshotOf: readonly string[] = NO_IDS;
 let snapshot: ReadonlySet<string> = new Set();
 
-export function getOwnDeletes(): ReadonlySet<string> {
+function getOwnDeletes(): ReadonlySet<string> {
   const ids = stored.get();
   if (ids !== snapshotOf) {
     snapshotOf = ids;

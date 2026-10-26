@@ -3,7 +3,7 @@ import { loadAccountsForWrite } from './accounts';
 import { readPendingSetup, subscribePendingSetup } from './onboardingPending';
 import { report } from './errorPolicy';
 import { useAccountEpoch } from './accountEpoch';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeValue } from './storeCore';
 
 export interface AccountGate {
   ready: boolean;
@@ -39,15 +39,10 @@ export function useAccountGate(): AccountGate {
   return { ready, hasAccount };
 }
 
-let held = false;
-const holdListeners = makeListeners();
-
-function getHeld(): boolean { return held; }
+const held = makeValue(false);
 
 export function holdOnboarding(next: boolean): void {
-  if (held === next) return;
-  held = next;
-  holdListeners.notify();
+  if (held.get() !== next) held.set(next);
 }
 
 export interface ShellGates {
@@ -56,7 +51,7 @@ export interface ShellGates {
 }
 
 export function useShellGates(gatesOpen: boolean, hasAccount: boolean): ShellGates {
-  const holding = useStoreValue(holdListeners.subscribe, getHeld);
+  const holding = held.use();
   const showOnboarding = !hasAccount || holding;
   return { showOnboarding, sidebarVisible: gatesOpen && hasAccount && !showOnboarding };
 }

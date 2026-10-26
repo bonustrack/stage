@@ -1,5 +1,3 @@
-
-
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -11,32 +9,21 @@ import { ignore, ignored } from './errorPolicy';
 const STORAGE_KEY = 'stage:lastRoute:v1';
 
 let restoreState: 'idle' | 'restoring' | 'done' = 'idle';
-
 let processSavedRoute: string | null = null;
-
 let restoredTarget: string | null = null;
-
 let persistResumed = false;
-
 let reachedTarget = false;
 
+const UNRESTORABLE = new Set(['', '/', '/accounts', '/wallet', '/settings']);
+
 function isRestorable(path: string): boolean {
-  if (!path || path === '/') return false;
-  if (path === '/accounts') return false;
-  if (path.startsWith('/(tabs)')) return false;
-  const TAB_ROOTS = ['/wallet', '/settings'];
-  if (TAB_ROOTS.includes(path)) return false;
-  return true;
+  return !UNRESTORABLE.has(path) && !path.startsWith('/(tabs)');
 }
 
 async function readSavedRoute(): Promise<string | null> {
   const saved = await appStorage.get(STORAGE_KEY);
   ignore(appStorage.delete(STORAGE_KEY), 'cleanup');
   return saved;
-}
-
-function persist(path: string): void {
-  ignore(appStorage.set(STORAGE_KEY, path), 'cache');
 }
 
 function hasColdStartDeepLink(url: string | null): boolean {
@@ -119,7 +106,7 @@ export function useRestoreGate(): RestoreGate {
       if (!reachedTarget) return;
       persistResumed = true;
     }
-    persist(pathname);
+    ignore(appStorage.set(STORAGE_KEY, pathname), 'cache');
   }, [ready, pathname]);
 
   return { ready };

@@ -28,8 +28,7 @@ export function isPushSupported(): boolean {
 }
 
 export function getPushPermission(): Promise<PushPermission> {
-  if (!isPushSupported()) return Promise.resolve('denied');
-  return Promise.resolve(toPermission(Notification.permission));
+  return Promise.resolve(isPushSupported() ? toPermission(Notification.permission) : 'denied');
 }
 
 export async function requestPushPermission(): Promise<PushPermission> {

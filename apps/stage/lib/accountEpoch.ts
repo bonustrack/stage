@@ -1,18 +1,13 @@
+import { makeValue } from './storeCore';
 
-import { makeListeners, useStoreValue } from './storeCore';
-
-let epoch = 0;
-const { notify, subscribe } = makeListeners();
+const epoch = makeValue(0);
 
 export function bumpAccountEpoch(): void {
-  epoch += 1;
-  notify();
+  epoch.set(epoch.get() + 1);
 }
 
-export function getAccountEpoch(): number { return epoch; }
+export const getAccountEpoch = epoch.get;
 
-export const subscribeAccountEpoch = subscribe;
+export const subscribeAccountEpoch = epoch.subscribe;
 
-export function useAccountEpoch(): number {
-  return useStoreValue(subscribe, getAccountEpoch);
-}
+export const useAccountEpoch = epoch.use;

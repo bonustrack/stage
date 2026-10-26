@@ -20,11 +20,6 @@ export function isStoreCorruption(err: unknown): boolean {
 }
 
 const CREATE_TIMEOUT_MS = 60_000;
-function createWithTimeout(
-  signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
-): Promise<Client> {
-  return withCreateTimeout(() => Client.create(signer, opts), CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE);
-}
 
 async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promise<boolean> {
   try {
@@ -48,34 +43,25 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
   }
 }
 
-export const finalizeClient = clientFinalizer<Client>({
-  discard: () => undefined,
-});
+export const finalizeClient = clientFinalizer<Client>({ discard: () => undefined });
 
 export async function createClientForAccount(
-  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts,
-  recovered = false, slotFreed = false,
+  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, recovered = false, slotFreed = false,
 ): Promise<Client> {
   const signer = await signerForRecord(rec);
   let created: Client;
   try {
-    created = await createWithTimeout(signer, opts);
+    created = await withCreateTimeout(() => Client.create(signer, opts), CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE);
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeXmtpStore(rec.id, rec.dbDir);
       const dbDirectory = await ensureDbDir(rec.dbDir);
       const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
-      return createClientForAccount(
-        rec, env, { ...opts, dbDirectory, dbEncryptionKey }, true, slotFreed,
-      );
+      return createClientForAccount(rec, env, { ...opts, dbDirectory, dbEncryptionKey }, true, slotFreed);
     }
-    if (!slotFreed && isInstallationLimit(e)) {
-      const freed = await tryFreeInstallationSlot(rec, env);
-      if (freed) return createClientForAccount(rec, env, opts, recovered, true);
-      throw new XmtpInstallationLimitError();
-    }
-    if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
-    throw e;
+    if (!isInstallationLimit(e)) throw e;
+    if (!slotFreed && await tryFreeInstallationSlot(rec, env)) return createClientForAccount(rec, env, opts, recovered, true);
+    throw new XmtpInstallationLimitError();
   }
   return finalizeClient(created, rec, env, { markRegistered: true });
 }

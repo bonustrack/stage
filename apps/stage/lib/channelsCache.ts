@@ -34,8 +34,7 @@ function notifyActive(): void {
   notifyScheduled = true;
   queueMicrotask(() => {
     notifyScheduled = false;
-    const v = activeStore().get();
-    activeListeners.notify(v);
+    activeListeners.notify(activeStore().get());
   });
 }
 
@@ -70,9 +69,8 @@ export function setActiveAccountForCache(id: string | null): void {
   if (next === activeId) return;
   activeId = next;
   bindActiveStore();
-  const s = activeStore();
   notifyActive();
-  void s.hydrate();
+  void activeStore().hydrate();
 }
 
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
@@ -80,7 +78,6 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
   const v = await activeStore().hydrate();
   return Array.isArray(v) ? v : null;
 }
-
 
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next?.map(normalizeChannelRowTitle) ?? null); }
@@ -110,35 +107,23 @@ async function clearMarkedUnread(convId: string): Promise<void> {
   await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(ignored(undefined, 'cleanup'));
 }
 
-async function markConvReadSynced(convId: string): Promise<void> {
-  await setLastReadNs(convId, Date.now() * 1_000_000);
-  await clearMarkedUnread(convId);
-}
-
-async function markConvUnreadSynced(convId: string): Promise<void> {
-  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
-}
-
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
-  await markConvReadSynced(convId);
+  await setLastReadNs(convId, Date.now() * 1_000_000);
+  await clearMarkedUnread(convId);
   readChanges.notify({ convId, lastReadNs: nowNs, markedUnread: false });
   const rows = getCachedRows();
-  if (!rows) return;
-  const next = applyRead(rows, convId, nowNs);
-  if (next === null) return;
-  setCachedRows(next);
+  const next = rows ? applyRead(rows, convId, nowNs) : null;
+  if (next !== null) setCachedRows(next);
 }
 
 export async function markConvUnread(convId: string): Promise<void> {
-  await markConvUnreadSynced(convId);
+  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
   const rows = getCachedRows();
   const current = rows?.find((r) => r.convId === convId);
   readChanges.notify({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
-  if (!rows) return;
-  const next = applyUnread(rows, convId);
-  if (next === null) return;
-  setCachedRows(next);
+  const next = rows ? applyUnread(rows, convId) : null;
+  if (next !== null) setCachedRows(next);
 }
 
 export function patchRowSent(convId: string, preview: string): void {
@@ -146,8 +131,7 @@ export function patchRowSent(convId: string, preview: string): void {
   if (!rows) return;
   if (rows.some((r) => r.convId === convId && r.markedUnread)) void markConvRead(convId);
   const next = applySentPatch(rows, convId, preview, Date.now());
-  if (next === null) return;
-  setCachedRows(next);
+  if (next !== null) setCachedRows(next);
 }
 
 export function patchRowConsent(convId: string, consent: XmtpConsent): void {

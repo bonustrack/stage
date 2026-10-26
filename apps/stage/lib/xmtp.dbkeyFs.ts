@@ -1,4 +1,3 @@
-
 import { Directory, File, Paths } from 'expo-file-system';
 import type { XmtpEnv } from './xmtp.types';
 import { report, attempt } from './errorPolicy';

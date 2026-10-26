@@ -4,9 +4,7 @@ import { attempt, reported } from './errorPolicy';
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'metro', 'stage']);
 
 function schemeOf(url: string): string | null {
-  const m = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(url.trim());
-  const scheme = m?.[1];
-  return scheme !== undefined ? scheme.toLowerCase() : null;
+  return /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(url.trim())?.[1]?.toLowerCase() ?? null;
 }
 
 export function isAllowedLinkScheme(url: string): boolean {

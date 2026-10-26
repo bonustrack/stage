@@ -1,11 +1,8 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-labs/client/x402';
 import { linkProxyBase } from './linkProxy';
 
 export type { X402Accept, X402Challenge };
-
-export const LINK_PREVIEW_BASE = linkProxyBase();
 
 interface LinkPreview {
   url: string;
@@ -51,7 +48,7 @@ function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewRe
 
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
-    const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
+    const res = await fetch(`${linkProxyBase()}/preview?url=${encodeURIComponent(url)}`, {
       headers: { Accept: 'application/json', 'x-stage-client': '1' },
     });
     if (!res.ok) return null;

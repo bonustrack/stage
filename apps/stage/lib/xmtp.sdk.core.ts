@@ -123,9 +123,7 @@ export function convFinder<Cl, C extends ConvLike, M>(
   return async (line) => {
     const convId = convIdOfLine(line);
     if (!convId) return null;
-    const client = await sdk.client();
-    const conv = await sdk.findConv(client, convId).catch(recover('xmtp.findConv', null));
-    return conv ?? null;
+    return (await sdk.findConv(await sdk.client(), convId).catch(recover('xmtp.findConv', null))) ?? null;
   };
 }
 

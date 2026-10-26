@@ -1,4 +1,3 @@
-
 import type { SanitizedFileUri, encryptSanitizedAttachment, sanitizeFileUri } from './xmtp.attachments';
 
 type AssertAssignable<B, A extends B> = A;
@@ -11,14 +10,8 @@ type BoundaryFileUri = Parameters<typeof encryptSanitizedAttachment>[1]['fileUri
 
 type _RawStringRejected = AssertFalse<IsAssignable<string, BoundaryFileUri>>;
 
-type _ProducerAccepted = AssertAssignable<
-  BoundaryFileUri,
-  Awaited<ReturnType<typeof sanitizeFileUri>>
->;
+type _ProducerAccepted = AssertAssignable<BoundaryFileUri, Awaited<ReturnType<typeof sanitizeFileUri>>>;
 
-type _SameBrand = AssertAssignable<
-  Awaited<ReturnType<typeof sanitizeFileUri>>,
-  SanitizedFileUri
->  ;
+type _SameBrand = AssertAssignable<Awaited<ReturnType<typeof sanitizeFileUri>>, SanitizedFileUri>;
 
 export type StripGuards = [_RawStringRejected, _ProducerAccepted, _SameBrand];

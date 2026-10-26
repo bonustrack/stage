@@ -42,9 +42,8 @@ export async function openClientForAccount(
   recovered = false,
 ): Promise<OpenedClient<WebXmtpClient>> {
   const signer = await signerForRecord(rec);
-  let opened: OpenedClient<WebXmtpClient>;
   try {
-    opened = await openPersistedClient<WebXmtpClient>({
+    return await openPersistedClient<WebXmtpClient>({
       open: () => withCreateTimeout(
         () => Client.create(signer, { ...opts, disableAutoRegister: true }),
         CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE,
@@ -66,5 +65,4 @@ export async function openClientForAccount(
     if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
     throw e;
   }
-  return opened;
 }

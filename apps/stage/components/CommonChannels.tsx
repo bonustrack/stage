@@ -11,19 +11,18 @@ import { channelTimestamp } from '../lib/format';
 import { peerLabel } from './conversation/convTitle';
 import { Column, Row, PAGE_GUTTER } from './layout';
 
-export function CommonChannels({ peerAddress, enabled, c }: {
-  peerAddress: string | null;
-  enabled: boolean;
+export function CommonChannels({ peerAddress, c }: {
+  peerAddress: string;
   c: Palette;
 }): React.ReactElement | null {
   const router = useRouter();
-  const { channels, loading } = useCommonChannels(peerAddress, enabled);
+  const { channels, loading } = useCommonChannels(peerAddress);
 
   if (channels.length === 0 && !loading) return null;
 
   return (
     <Column margin={{ top: 20 }}>
-      <Row margin={{ x: PAGE_GUTTER, bottom: 6 }} justify="start" align="center" gap={24} 
+      <Row margin={{ x: PAGE_GUTTER, bottom: 6 }} justify="start" align="center" gap={24}
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
           <Text fontWeight="semibold" size="lg" color={c.link}>
@@ -34,8 +33,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
       </Row>
 
       {channels.map(ch => {
-        const hasMsg = ch.lastPreview.length> 0;
-        const preview = hasMsg
+        const preview = ch.lastPreview.length > 0
           ? `${ch.lastSenderAddress ? `${peerLabel(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
           : null;
         const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;

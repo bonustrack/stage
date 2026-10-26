@@ -33,9 +33,7 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
     } catch (e) {
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);
-        const dir = await ensureDbDir(rec.dbDir);
-        const key = await loadOrCreateDbKey(rec.id);
-        opts = { env, dbDirectory: dir, dbEncryptionKey: key, codecs: XMTP_CODECS };
+        opts = { ...opts, dbDirectory: await ensureDbDir(rec.dbDir), dbEncryptionKey: await loadOrCreateDbKey(rec.id) };
       }
     }
     if (built) return finalizeClient(built, rec, env, { markRegistered: false });

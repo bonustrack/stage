@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeListeners, makeValue } from './storeCore';
 import { resetFeedLines } from './feedLines';
 import { attempt } from './errorPolicy';
 
@@ -61,25 +61,15 @@ export function isActiveConv(convId: string | null | undefined): boolean {
   return convId.toLowerCase() === activeConvId;
 }
 
-export type XmtpBootstrapPhase = 'idle' | 'registering';
+const bootstrap = makeValue<'idle' | 'registering'>('idle');
 
-let bootstrapPhase: XmtpBootstrapPhase = 'idle';
-const bootstrap = makeListeners();
+export const getXmtpBootstrapPhase = bootstrap.get;
 
-function setXmtpBootstrapPhase(next: XmtpBootstrapPhase): void {
-  bootstrapPhase = next;
-  bootstrap.notify();
-}
-
-export function getXmtpBootstrapPhase(): XmtpBootstrapPhase { return bootstrapPhase; }
-
-export function useXmtpBootstrapPhase(): XmtpBootstrapPhase {
-  return useStoreValue(bootstrap.subscribe, getXmtpBootstrapPhase);
-}
+export const useXmtpBootstrapPhase = bootstrap.use;
 
 export async function whileRegistering<T>(work: () => Promise<T>): Promise<T> {
-  setXmtpBootstrapPhase('registering');
-  try { return await work(); } finally { setXmtpBootstrapPhase('idle'); }
+  bootstrap.set('registering');
+  try { return await work(); } finally { bootstrap.set('idle'); }
 }
 
 let globalStreamTeardown: (() => void) | null = null;

@@ -3,14 +3,9 @@ import * as Notifications from 'expo-notifications';
 import { notificationIdsForConv } from './pushNotify.model';
 
 Notifications.setNotificationHandler({
-  handleNotification: () => {
-    return Promise.resolve({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    });
-  },
+  handleNotification: () => Promise.resolve({
+    shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true,
+  }),
 });
 
 async function ensureChannel(): Promise<void> {
@@ -30,19 +25,17 @@ async function ensurePermission(): Promise<boolean> {
   return req.granted;
 }
 
-export async function getDeviceFcmToken(): Promise<string | null> {
+async function ensureNotificationReady(): Promise<boolean> {
   await ensureChannel();
-  const granted = await ensurePermission();
-  if (!granted) return null;
+  return ensurePermission();
+}
+
+export async function getDeviceFcmToken(): Promise<string | null> {
+  if (!(await ensureNotificationReady())) return null;
   try {
     const resp = await Notifications.getDevicePushTokenAsync();
     return typeof resp.data === 'string' ? resp.data : null;
   } catch { return null; }
-}
-
-async function ensureNotificationReady(): Promise<boolean> {
-  await ensureChannel();
-  return ensurePermission();
 }
 
 const bgDeliveredMsgIds = new Set<string>();
@@ -58,8 +51,7 @@ export function markBackgroundDelivered(messageId: string | null | undefined): v
 }
 
 function consumeBackgroundDelivered(messageId: string | undefined): boolean {
-  if (!messageId) return false;
-  return bgDeliveredMsgIds.delete(messageId);
+  return messageId !== undefined && messageId !== '' && bgDeliveredMsgIds.delete(messageId);
 }
 
 export async function presentInboundNotification(args: {
@@ -69,9 +61,7 @@ export async function presentInboundNotification(args: {
   messageId?: string;
 }): Promise<void> {
   try {
-    if (consumeBackgroundDelivered(args.messageId)) return;
-    const ready = await ensureNotificationReady();
-    if (!ready) return;
+    if (consumeBackgroundDelivered(args.messageId) || !(await ensureNotificationReady())) return;
     await Notifications.scheduleNotificationAsync({
       content: {
         title: args.title,

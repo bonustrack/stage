@@ -1,4 +1,3 @@
-
 import {
   DEFAULT_SEED, grayscaleHex,
   type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint,

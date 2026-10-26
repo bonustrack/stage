@@ -1,19 +1,12 @@
 import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { jsonWith, makeListeners } from './storeCore';
 import {
   EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel, type FilterEdit,
 } from './syncedSettings.model';
 
-function parseSearch(raw: string): SearchStateContent | undefined {
-  try {
-    const parsed = searchStateSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : undefined;
-  } catch { return undefined; }
-}
-
 const prefs = createValueStore<SearchStateContent>({
-  key: 'channels.search.', default: EMPTY_SEARCH, deserialize: parseSearch, serialize: JSON.stringify,
+  key: 'channels.search.', default: EMPTY_SEARCH, deserialize: jsonWith(searchStateSchema), serialize: JSON.stringify,
   perAccount: true, restore: restoreSearch,
 });
 

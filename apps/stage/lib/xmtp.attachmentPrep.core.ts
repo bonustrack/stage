@@ -1,4 +1,5 @@
 import type { LocalAttachmentInput } from './xmtp.types';
+import { memoized } from './storeCore';
 
 type Files = readonly LocalAttachmentInput[];
 
@@ -52,15 +53,6 @@ function keyOf(file: LocalAttachmentInput): string {
   return `${file.fileUri}\n${file.mimeType}\n${file.filename}`;
 }
 
-function once<T>(jobs: Map<string, Promise<T>>, key: string, run: () => Promise<T>): Promise<T> {
-  const running = jobs.get(key);
-  if (running) return running;
-  const job = run();
-  jobs.set(key, job);
-  job.catch(() => { if (jobs.get(key) === job) jobs.delete(key); });
-  return job;
-}
-
 export function makeAttachmentPrep<E, R>(
   encrypt: (file: LocalAttachmentInput) => Promise<E>,
   store: (encrypted: E, file: LocalAttachmentInput) => Promise<R>,
@@ -70,8 +62,8 @@ export function makeAttachmentPrep<E, R>(
   const encryptSlot = limitConcurrency(ENCRYPTS_AT_ONCE);
   const uploadSlot = limitConcurrency(UPLOADS_AT_ONCE);
   const encryptedOf = (file: LocalAttachmentInput): Promise<E> =>
-    once(encrypted, keyOf(file), () => encryptSlot(() => encrypt(file)));
-  const storedOf = (file: LocalAttachmentInput): Promise<R> => once(stored, keyOf(file), async () => {
+    memoized(encrypted, keyOf(file), () => encryptSlot(() => encrypt(file)));
+  const storedOf = (file: LocalAttachmentInput): Promise<R> => memoized(stored, keyOf(file), async () => {
     const ready = await encryptedOf(file);
     try {
       return await uploadSlot(() => store(ready, file));

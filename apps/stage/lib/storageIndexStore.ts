@@ -47,8 +47,7 @@ export async function readStorageIndex(accountId: string): Promise<StorageIndex 
 }
 
 function writeSealed(accountId: string): void {
-  const timer = pendingWrites.get(accountId);
-  if (timer !== undefined) clearTimeout(timer);
+  clearTimeout(pendingWrites.get(accountId));
   pendingWrites.delete(accountId);
   const index = latest.get(accountId);
   const store = sealedCache;
@@ -65,11 +64,7 @@ function writeFile(accountId: string, index: StorageIndex): void {
   store.flushNow();
 }
 
-function flushSealed(): void {
-  for (const accountId of [...pendingWrites.keys()]) writeSealed(accountId);
-}
-
-if (sealedCache) persistenceBackend.onFlushSignal(flushSealed);
+if (sealedCache) persistenceBackend.onFlushSignal(() => { for (const accountId of [...pendingWrites.keys()]) writeSealed(accountId); });
 
 export function writeStorageIndex(accountId: string, index: StorageIndex): void {
   latest.set(accountId, index);
@@ -79,8 +74,7 @@ export function writeStorageIndex(accountId: string, index: StorageIndex): void 
 }
 
 export async function forgetStorageIndex(accountId: string): Promise<void> {
-  const timer = pendingWrites.get(accountId);
-  if (timer !== undefined) clearTimeout(timer);
+  clearTimeout(pendingWrites.get(accountId));
   pendingWrites.delete(accountId);
   latest.delete(accountId);
   forgotten.notify(accountId);
