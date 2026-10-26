@@ -81,7 +81,7 @@ client.receive(jsonlFromAgent);
 
 In React, `useA2uiClient(messages, options)` (`@stage-labs/kit/react-native/a2ui-session`) builds the client for a message list and keeps the latest callbacks; its `send` also gets the client. `A2uiSurface` takes `disabled` (read only: no actions, inputs and buttons disabled) and `mediaUrl`, a filter applied to every `Image`, `Video` and `AudioPlayer` URL (return `''` to block one).
 
-`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner`, `Chart` and `QrCode` components. Every Kit style prop also takes a data binding or a function call (a status colour, a bar width), and `Row`/`Column` take `width`, `height`, their min and max, `aspectRatio` (pixels or a percentage such as `"40%"`), per-side `padding` and a `border`. The renderer keeps only Kit tokens and hex colours, pixel or percentage sizes and known padding sides from the data, and drops anything else. As the spec says, inputs only write to the data model: a Button action whose context references the input paths (or `sendDataModel`) sends their values. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs.
+`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner`, `Chart` and `QrCode` components. Every Kit style prop also takes a data binding or a function call (a status colour, a bar width), and `Row`/`Column` take `width`, `height`, their min and max, `aspectRatio` (pixels or a percentage such as `"40%"`), per-side `padding` and a `border`. The renderer keeps only Kit tokens and hex colours, pixel or percentage sizes and known padding sides from the data, and drops anything else. As the spec says, inputs only write to the data model: a Button action whose context references the input paths (or `sendDataModel`) sends their values. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs. `Video` and `AudioPlayer` need Expo (`expo-video`, `expo-audio`), so they are not in the default set: hosts that run Expo pass `MEDIA_RENDERERS` from `react-native/a2ui-media`. `a2ui/*` imports no React, React Native or Expo module, so servers can use the client and the catalog.
 
 ## Install
 
@@ -213,6 +213,27 @@ Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.13
+
+#### Breaking changes
+
+- `A2uiSurface` no longer renders `Video` and `AudioPlayer` by default: their renderers load `expo-video` and `expo-audio`, which a react-native-web app without the Expo runtime cannot load. Hosts that run Expo pass them: `<A2uiSurface renderers={MEDIA_RENDERERS} />` from `@stage-labs/kit/react-native/a2ui-media`. Without them those components render nothing.
+
+#### Fixes
+
+- A plain Vite + react-native-web app that renders `A2uiSurface` builds and runs.
+- `@types/qrcode` is a dependency, so apps that typecheck the kit sources get the `qrcode` types.
+- `a2ui/*` and the style cores it uses import no React, React Native or Expo module, types included, so a server can import `createA2uiClient` or `KIT_CATALOG` without React Native's global types. A lint rule keeps it so.
+
+#### New
+
+- `TextField` `hideLabel`: keeps the compact field; the label is read by screen readers only.
+- `Card` `surface` (`surface` is the page background), like `Row` and `Column`.
+- `Title` `maxLines`.
+- `Chart` `series` can be bound as a whole, and each series' `dataKey`, `label`, `color` and `stack` take bindings.
+- A `Row`, `Column` or `List` whose list template has no items renders nothing, so it takes no gap in its parent.
+- A `Row` or `Column` with a percentage `width` shrinks to fit, so percentage parts plus a `gap` share the space left after the gaps.
 
 ### 0.1.0-beta.12
 

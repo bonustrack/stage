@@ -160,15 +160,15 @@
     },
     "packages/kit": {
       "name": "@stage-labs/kit",
-      "version": "0.1.0-beta.6",
+      "version": "0.1.0-beta.12",
       "dependencies": {
         "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",
         "@central-icons-react-native/round-outlined-radius-1-stroke-2": "1.2.1",
+        "@types/qrcode": "^1.5.5",
         "qrcode": "^1.5.4",
       },
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
-        "@types/qrcode": "^1.5.5",
         "@types/react": "~19.2.0",
         "@types/react-dom": "~19.2.0",
         "expo-modules-core": "~57.0.19",

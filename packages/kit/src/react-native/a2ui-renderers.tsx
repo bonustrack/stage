@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
 import { BUTTON_COLORS, BUTTON_FILLS, SIZES, type ButtonSize, type ButtonVariant } from '../button.styles';
-import type { Surface } from '../layout';
+import { isChildTemplate } from '../a2ui/protocol';
+import { surfaceColor, type Surface } from '../layout';
 import { DENSITY_SCALE, FONT_SIZE, type FontSizeName, type RadiusValue } from '../tokens';
-import { AudioPlayer } from './audio-player';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Card } from './card';
@@ -20,7 +20,6 @@ import { Spinner } from './spinner';
 import { Tabs } from './tabs';
 import { Text, type TextWeight } from './text';
 import { Title } from './title';
-import { Video } from './video';
 import {
   asBoolean, asEnum, asNumber, asOptionalString, asString, borderOf,
   colorOf, colorValueOf, commonProps, hasMarkdown, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
@@ -56,8 +55,11 @@ function iconNode(value: unknown): ReactNode {
   return name === undefined ? undefined : <Icon name={name} size={ICON_IN_BUTTON} />;
 }
 
+const SHRINK_TO_FIT = { flexShrink: 1 };
+
 function flexProps(ctx: RenderContext) {
   const p = ctx.props;
+  const width = lengthOf(p.width);
   return {
     ...commonProps(ctx),
     justify: asEnum(p.justify, JUSTIFY),
@@ -69,14 +71,20 @@ function flexProps(ctx: RenderContext) {
     background: colorOf(ctx, p.background),
     radius: asEnum(p.radius, RADII),
     border: borderOf(ctx, p.border),
-    width: lengthOf(p.width),
+    width,
     height: lengthOf(p.height),
     minWidth: lengthOf(p.minWidth),
     minHeight: lengthOf(p.minHeight),
     maxWidth: lengthOf(p.maxWidth),
     maxHeight: lengthOf(p.maxHeight),
     aspectRatio: asNumber(p.aspectRatio),
+    style: typeof width === 'string' ? SHRINK_TO_FIT : undefined,
   };
+}
+
+function withChildren(ctx: RenderContext, render: (children: ReactNode[]) => ReactNode): ReactNode {
+  const children = ctx.children(ctx.props.children);
+  return isChildTemplate(ctx.props.children) && children.length === 0 ? null : render(children);
 }
 
 function textRenderer(ctx: RenderContext): ReactNode {
@@ -99,12 +107,6 @@ function textRenderer(ctx: RenderContext): ReactNode {
       fontFamily={asEnum(p.fontFamily, ['sans', 'mono'])}
     />
   );
-}
-
-function videoRenderer(ctx: RenderContext): ReactNode {
-  const url = ctx.mediaUrl(ctx.props.url);
-  const poster = ctx.props.posterUrl === undefined ? '' : ctx.mediaUrl(ctx.props.posterUrl);
-  return url === '' ? null : <Video {...commonProps(ctx)} url={url} posterUrl={poster === '' ? undefined : poster} />;
 }
 
 function imageRenderer(ctx: RenderContext): ReactNode {
@@ -166,6 +168,7 @@ function titleRenderer(ctx: RenderContext): ReactNode {
       level={level === 1 || level === 2 || level === 3 ? level : undefined}
       size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])}
       color={colorOf(ctx, ctx.props.color)}
+      numberOfLines={asNumber(ctx.props.maxLines)}
     />
   );
 }
@@ -194,18 +197,22 @@ function tabsRenderer(ctx: RenderContext): ReactNode {
 }
 
 export const KIT_RENDERERS: A2uiRenderers = {
-  Row: (ctx) => <Row {...flexProps(ctx)}>{ctx.children(ctx.props.children)}</Row>,
-  Column: (ctx) => <Column {...flexProps(ctx)}>{ctx.children(ctx.props.children)}</Column>,
-  List: (ctx) => (
+  Row: (ctx) => withChildren(ctx, (children) => <Row {...flexProps(ctx)}>{children}</Row>),
+  Column: (ctx) => withChildren(ctx, (children) => <Column {...flexProps(ctx)}>{children}</Column>),
+  List: (ctx) => withChildren(ctx, (children) => (
     <List {...commonProps(ctx)} direction={asEnum(ctx.props.direction, ['vertical', 'horizontal'])} align={asEnum(ctx.props.align, ALIGN)} gap={asNumber(ctx.props.gap) ?? GAP}>
-      {ctx.children(ctx.props.children)}
+      {children}
     </List>
-  ),
-  Card: (ctx) => (
-    <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)} background={colorOf(ctx, ctx.props.background)}>
-      {ctx.child(ctx.props.child)}
-    </Card>
-  ),
+  )),
+  Card: (ctx) => {
+    const surface = asEnum(ctx.props.surface, SURFACES);
+    const background = colorOf(ctx, ctx.props.background) ?? (surface === undefined ? undefined : surfaceColor(surface, ctx.palette));
+    return (
+      <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)} background={background}>
+        {ctx.child(ctx.props.child)}
+      </Card>
+    );
+  },
   Tabs: tabsRenderer,
   Modal: (ctx) => (
     <Modal {...commonProps(ctx)} trigger={ctx.child(ctx.props.trigger)} title={asOptionalString(ctx.props.title)}>
@@ -218,11 +225,6 @@ export const KIT_RENDERERS: A2uiRenderers = {
   Text: textRenderer,
   Image: imageRenderer,
   Icon: iconRenderer,
-  Video: videoRenderer,
-  AudioPlayer: (ctx) => {
-    const url = ctx.mediaUrl(ctx.props.url);
-    return url === '' ? null : <AudioPlayer {...commonProps(ctx)} url={url} description={asOptionalString(ctx.props.description)} />;
-  },
   Button: buttonRenderer,
   ...INPUT_RENDERERS,
   Title: titleRenderer,

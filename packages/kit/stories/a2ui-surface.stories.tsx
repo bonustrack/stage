@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Story } from '../gallery/story';
 import { createA2uiClient } from '../src/a2ui/client';
 import type { JsonObject, JsonValue, RendererMessage } from '../src/a2ui/protocol';
+import { MEDIA_RENDERERS } from '../src/react-native/a2ui-media';
 import { A2uiSurface } from '../src/react-native/a2ui-surface';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
@@ -31,7 +32,7 @@ function Playground({ messages, surfaceId }: { messages: string | JsonValue[]; s
   const { client, log } = useSurface(messages);
   return (
     <Column gap={16} maxWidth={520}>
-      <A2uiSurface client={client} surfaceId={surfaceId} />
+      <A2uiSurface client={client} surfaceId={surfaceId} renderers={MEDIA_RENDERERS} />
       <Column gap={4}>
         <Text size="sm" color="secondary">Renderer to agent</Text>
         {log.length === 0 ? <Text size="xs" color="muted">Interact with the surface to see messages.</Text> : null}

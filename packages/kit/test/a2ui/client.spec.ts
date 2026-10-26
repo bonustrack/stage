@@ -153,4 +153,15 @@ describe('Kit catalog', () => {
     expect(valid({ ...chart, data: [{ week: 'W1', sales: 3 }] })).toEqual([]);
     expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
   });
+
+  test('Kit catalog takes card surfaces, hidden labels, title line clamps and bound chart series', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 'k', component: 'Card', child: 'r', surface: 'surface' })).toEqual([]);
+    expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, value: { '@path': '/q' } })).toEqual([]);
+    expect(valid({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 })).toEqual([]);
+    const chart = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week' };
+    expect(valid({ ...chart, series: { '@path': '/series' } })).toEqual([]);
+    expect(valid({ ...chart, series: [{ type: 'line', dataKey: { '@path': '/metric/key' }, label: { '@path': '/metric/label' } }] })).toEqual([]);
+  });
 });

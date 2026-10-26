@@ -1,6 +1,7 @@
 import { Component, useEffect, useRef, type ReactNode } from 'react';
 import type { A2uiClient } from '@stage-labs/kit/a2ui/client';
 import type { ActionEvent, RendererMessage } from '@stage-labs/kit/a2ui/protocol';
+import { MEDIA_RENDERERS } from '@stage-labs/kit/react-native/a2ui-media';
 import { A2uiSurface } from '@stage-labs/kit/react-native/a2ui-surface';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { SpacingValue } from '@stage-labs/kit/layout';
@@ -103,7 +104,7 @@ export function FrameView(props: FrameViewProps): React.ReactElement {
       <FrameBoundary resetKey={client}>
         {client.surface(navigation.screen) === undefined
           ? <FrameNotice text="This screen is not in the frame." />
-          : <A2uiSurface client={client} surfaceId={navigation.screen} disabled={disabled} mediaUrl={frameMediaUrl}
+          : <A2uiSurface client={client} surfaceId={navigation.screen} renderers={MEDIA_RENDERERS} disabled={disabled} mediaUrl={frameMediaUrl}
               fallback={<FrameNotice text="This frame could not be shown." />} />}
       </FrameBoundary>
     </Column>

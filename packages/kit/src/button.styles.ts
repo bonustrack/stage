@@ -1,5 +1,4 @@
 
-import type { TextStyle } from 'react-native';
 import { FONT_SIZE, colors, fontName, schemePalette } from './tokens';
 
 export type ButtonColor =
@@ -154,7 +153,15 @@ export function resolveColors(
   }
 }
 
-export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
+export interface ButtonLabelStyle {
+  color: string;
+  fontSize: number;
+  lineHeight?: number;
+  fontFamily: string;
+  textAlign: 'center';
+}
+
+export function textLabelStyle(spec: SizeSpec, color: string): ButtonLabelStyle {
   return {
     color,
     fontSize: spec.fontSize,

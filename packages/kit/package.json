@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.12",
+  "version": "0.1.0-beta.13",
   "description": "Stage design system for React Native and web: A2UI v1.0 components and renderer, the Stage Kit A2UI catalog, tokens, Central Icons (licensed, installed from npm) with HeroIcon name aliases, and theme contracts.",
   "license": "MIT",
   "repository": {
@@ -44,6 +44,7 @@
     "./overlay.styles": "./src/overlay.styles.ts",
     "./react-native/a2ui-context": "./src/react-native/a2ui-context.ts",
     "./react-native/a2ui-props": "./src/react-native/a2ui-props.ts",
+    "./react-native/a2ui-media": "./src/react-native/a2ui-media.tsx",
     "./react-native/a2ui-renderers": "./src/react-native/a2ui-renderers.tsx",
     "./react-native/a2ui-session": "./src/react-native/a2ui-session.ts",
     "./react-native/a2ui-surface": "./src/react-native/a2ui-surface.tsx",
@@ -90,6 +91,7 @@
   "dependencies": {
     "@central-icons-react-native/round-filled-radius-1-stroke-2": "1.2.1",
     "@central-icons-react-native/round-outlined-radius-1-stroke-2": "1.2.1",
+    "@types/qrcode": "^1.5.5",
     "qrcode": "^1.5.4"
   },
   "peerDependencies": {
@@ -114,7 +116,6 @@
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
-    "@types/qrcode": "^1.5.5",
     "@types/react": "~19.2.0",
     "@types/react-dom": "~19.2.0",
     "expo-modules-core": "~57.0.19",

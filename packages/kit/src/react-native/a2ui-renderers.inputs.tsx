@@ -30,9 +30,12 @@ function optionsOf(value: unknown): ChoiceOption[] {
 function textFieldRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;
   const binding = ctx.binding<string>('value');
+  const field = fieldProps(ctx);
+  const hidden = asBoolean(p.hideLabel) === true ? { label: undefined, accessibility: { ...field.accessibility, label: field.accessibility?.label ?? field.label } } : {};
   return (
     <TextField
-      {...fieldProps(ctx)}
+      {...field}
+      {...hidden}
       value={asString(binding.value)}
       placeholder={asOptionalString(p.placeholder)}
       variant={asEnum(p.variant, ['shortText', 'longText', 'number', 'obscured'])}

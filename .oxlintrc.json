@@ -526,6 +526,45 @@
     },
     {
       "files": [
+        "packages/kit/src/a2ui/**",
+        "packages/kit/src/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react/*",
+                  "react-dom",
+                  "react-dom/*",
+                  "react-native",
+                  "react-native/*",
+                  "react-native-*",
+                  "expo",
+                  "expo-*",
+                  "@expo/*"
+                ],
+                "message": "The A2UI core and the shared style cores stay framework free: no React, React Native or Expo imports, not even types, so servers can import them."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/kit/src/control.styles.ts",
+        "packages/kit/src/glyph.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
         "**/*.{js,jsx,cjs,mjs}"
       ],
       "rules": {

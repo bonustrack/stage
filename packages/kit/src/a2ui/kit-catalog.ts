@@ -43,7 +43,9 @@ const BORDER = dynamic('A border: a width in pixels, or { size, color, style }.'
     },
   ],
 });
+const MAX_LINES = dynamic('Clamp to this many lines.', { type: 'integer', minimum: 1 });
 const ASPECT_RATIO = dynamic('Width divided by height.', { type: 'number', exclusiveMinimum: 0 });
+const SURFACE = token(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background: surface is the page background.');
 const RADIUS: JsonObject = token(Object.keys(BOX_RADIUS_SCALE), 'A Kit corner radius token.');
 const FONT_SIZES = token(Object.keys(FONT_SIZE), 'A Kit font size token.');
 const ICON_NAME: JsonObject = {
@@ -75,7 +77,7 @@ const LAYOUT_EXTRAS: JsonObject = {
   gap: SPACING,
   padding: PADDING,
   wrap: BOOLEAN,
-  surface: token(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background.'),
+  surface: SURFACE,
   background: COLOR,
   radius: RADIUS,
   border: BORDER,
@@ -134,10 +136,10 @@ const CHART_SERIES: JsonObject = {
   type: 'object',
   properties: {
     type: { type: 'string', enum: ['bar', 'line', 'area'] },
-    dataKey: { type: 'string' },
-    label: { type: 'string' },
-    color: { type: 'string', description: `A chart colour (${CHART_COLORS.join(', ')}), a shade such as blue-500, a Kit colour token or a #rrggbb hex colour.` },
-    stack: { type: 'string' },
+    dataKey: common('DynamicString'),
+    label: common('DynamicString'),
+    color: { ...common('DynamicString'), description: `A chart colour (${CHART_COLORS.join(', ')}), a shade such as blue-500, a Kit colour token or a #rrggbb hex colour.` },
+    stack: common('DynamicString'),
     curveType: { type: 'string', enum: [...CHART_CURVE_TYPES] },
   },
   required: ['type', 'dataKey'],
@@ -150,7 +152,7 @@ const CHART: JsonObject = component('Chart', {
     maxItems: CHART_LIMITS.rows,
     items: { type: 'object', additionalProperties: { type: ['string', 'number'] } },
   }),
-  series: { type: 'array', minItems: 1, maxItems: CHART_LIMITS.series, items: CHART_SERIES },
+  series: dynamic('The series to draw, or a binding to them.', { type: 'array', minItems: 1, maxItems: CHART_LIMITS.series, items: CHART_SERIES }),
   xAxis: {
     description: 'The data key of the categories, or { dataKey, hide, labels }.',
     anyOf: [
@@ -187,7 +189,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     italic: BOOLEAN,
     lineThrough: BOOLEAN,
     truncate: BOOLEAN,
-    maxLines: dynamic('Clamp to this many lines.', { type: 'integer', minimum: 1 }),
+    maxLines: MAX_LINES,
     fontFamily: token(['sans', 'mono'], 'The Kit font family.'),
   }),
   Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR }),
@@ -197,12 +199,16 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   Row: inherit('Row', LAYOUT_EXTRAS),
   Column: inherit('Column', LAYOUT_EXTRAS),
   List: inherit('List', { gap: SPACING }),
-  Card: inherit('Card', { size: token(['sm', 'md', 'lg'], 'Card padding size.'), padding: SPACING, background: COLOR }),
+  Card: inherit('Card', { size: token(['sm', 'md', 'lg'], 'Card padding size.'), padding: SPACING, surface: SURFACE, background: COLOR }),
   Tabs: inherit('Tabs', { variant: token(['segmented', 'underline'], 'The tab bar style.') }),
   Modal: inherit('Modal', { title: common('DynamicString') }),
   Divider: inherit('Divider', { spacing: SPACING, color: COLOR }),
   Button: BUTTON,
-  TextField: inherit('TextField', { appearance: token(['soft', 'outline', 'plain'], 'The input surface style.'), hint: common('DynamicString') }),
+  TextField: inherit('TextField', {
+    appearance: token(['soft', 'outline', 'plain'], 'The input surface style.'),
+    hint: common('DynamicString'),
+    hideLabel: { ...BOOLEAN, description: 'Keep the compact field: the label is read by screen readers only.' },
+  }),
   CheckBox: inherit('CheckBox', { displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
   ChoicePicker: inherit('ChoicePicker'),
   Slider: inherit('Slider'),
@@ -210,6 +216,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   Title: component('Title', {
     text: common('DynamicString'),
     level: dynamic('Heading level, 1 is largest.', { type: 'integer', enum: [1, 2, 3] }),
+    maxLines: MAX_LINES,
     size: token(['sm', 'md', 'lg'], 'Heading size.'),
     color: COLOR,
   }, ['text'], 'A heading in the Kit head font.'),
