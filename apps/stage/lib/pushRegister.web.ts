@@ -11,7 +11,7 @@ import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { getAccountEpoch } from './accountEpoch';
 import { isBrowserExtension } from './extension.web';
-import type { SendTiming } from './sendTiming.core';
+import { type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;

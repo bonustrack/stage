@@ -2,9 +2,9 @@ import { sha256 } from 'viem';
 import {
   PUSH_RPC, isWelcomeTopic, registerInstallationBody, subscribeWithMetadataBody, deleteInstallationBody,
   type HmacKeysByTopic, type PushPlatform, type PushRpc, type PushSubscriptionJson,
-} from '@stage-labs/client/xmtp/pushServer';
+} from './pushServer';
 
-import { abortable } from './abortable.core';
+import { abortable } from '../abortable';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 

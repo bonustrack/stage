@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
-import { makeSendTimingDiagnostic, timeSendPhase } from '../lib/sendTiming.core';
+import { timeSendPhase } from '@stage-labs/client/xmtp/sendTiming';
+import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 
 function fixture() {
   let now = 0;

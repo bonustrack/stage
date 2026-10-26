@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { ProfileProgress, ProfileSetup } from '@stage-labs/client/profile/setup';
-import { runProfileSetup, type ProfileSetupDeps } from '../lib/profileSetup.core';
+import { type ProfileProgress, type ProfileSetup, runProfileSetup, type ProfileSetupDeps } from '../src/profile/setup';
 
 const HASH = `0x${'1'.repeat(64)}` as const;
 const profile: ProfileSetup = { label: 'synthetic123', displayName: 'Synthetic', image: { uri: 'data:image/png;base64,c3ludGhldGlj', mime: 'image/png' } };

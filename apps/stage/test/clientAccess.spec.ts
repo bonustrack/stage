@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { guardClientAccess } from '../lib/xmtp.clientAccess.web';
-import { makeSenderFilterPublisher, prepareNotifyingSend } from '../lib/pushSenderFilter.core';
+import { makeSenderFilterPublisher, prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
 
 type AccessClient = Parameters<typeof guardClientAccess>[0];
 const IDENTIFIER = { identifier: '0x0000000000000000000000000000000000000001', identifierKind: 0 };

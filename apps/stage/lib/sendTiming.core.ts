@@ -1,28 +1,11 @@
+import { SEND_PHASES, type SendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 import { attempt } from './errorPolicy';
 
-const PHASES = [
-  'xmtp.total', 'client.ready', 'conversation.find', 'conversation.active', 'filter.prepare',
-  'filter.account', 'filter.queue', 'filter.preferences', 'filter.keys', 'filter.group_key',
-  'filter.sign', 'filter.http', 'sdk.send',
-] as const;
-const ALLOWED_PHASES = new Set<string>(PHASES);
+const ALLOWED_PHASES = new Set<string>(SEND_PHASES);
 const MAX_SENDS = 10;
 const MAX_PHASES = 64;
 
-type SendPhase = typeof PHASES[number];
 interface Sample { phase: SendPhase; durationMs: number }
-
-export interface SendTiming {
-  phase: (name: SendPhase) => () => void;
-  finish: () => void;
-}
-
-export function timeSendPhase<T>(timing: SendTiming | undefined, phase: SendPhase, work: () => Promise<T>): Promise<T> {
-  if (!timing) return work();
-  const end = timing.phase(phase);
-  try { return work().finally(end); }
-  catch (err) { end(); throw err; }
-}
 
 export function makeSendTimingDiagnostic(now = () => performance.now()) {
   let enabled = false;

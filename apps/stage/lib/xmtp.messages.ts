@@ -10,7 +10,7 @@ import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
 import { withReadableSendError } from './xmtp.sdk.core';
 import { sendPreparedMessage } from './xmtp.messageSend.core';
 import { beginSendTiming } from './sendTiming';
-import { timeSendPhase } from './sendTiming.core';
+import { timeSendPhase } from '@stage-labs/client/xmtp/sendTiming';
 import {
   DELETE_REQUEST_CODEC, POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, FRAME_ACTION_CODEC, type JsonCodec,

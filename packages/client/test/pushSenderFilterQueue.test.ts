@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { makeSenderFilterPublisher, type SenderFilterInput } from '../lib/pushSenderFilter.core';
+import { makeSenderFilterPublisher, type SenderFilterInput } from '../src/xmtp/pushSenderFilter';
 
 const TOPIC = '/xmtp/mls/1/g-abcdef/proto';
 const OTHER_TOPIC = '/xmtp/mls/1/g-123456/proto';

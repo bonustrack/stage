@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { validateStageLabel } from '@stage-labs/client/identity/stageNames';
-import { randomUsername, usernameFromWords } from '../lib/randomUsername';
+import { randomUsername, usernameFromWords, validateStageLabel } from '../src/identity/stageNames';
 
 describe('usernameFromWords', () => {
   test('joins the words in lowercase without separators', () => {

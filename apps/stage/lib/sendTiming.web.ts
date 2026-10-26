@@ -1,6 +1,7 @@
 import { subscribeAccountEpoch } from './accountEpoch';
 import { subscribeAccountSelection } from './accountSelection';
-import { makeSendTimingDiagnostic, type SendTiming } from './sendTiming.core';
+import { type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
+import { makeSendTimingDiagnostic } from './sendTiming.core';
 
 const diagnostic = makeSendTimingDiagnostic();
 subscribeAccountEpoch(diagnostic.stop);

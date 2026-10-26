@@ -1,5 +1,5 @@
 import { AccountChangedError, NoAccountError } from './xmtp.client.core';
-import { abortable } from './abortable.core';
+import { abortable } from '@stage-labs/client/abortable';
 
 interface StreamDeps<C> {
   prepare: (assertCurrent: () => void) => Promise<C>;

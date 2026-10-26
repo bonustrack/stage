@@ -10,8 +10,8 @@ import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
 import { getAccountEpoch } from './accountEpoch';
 import { AccountChangedError } from './xmtp.client.core';
-import { prepareNotifyingSend } from './pushSenderFilter.core';
-import { timeSendPhase, type SendTiming } from './sendTiming.core';
+import { prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
+import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
 export interface GroupMeta { name?: string; imageUrl?: string; appData?: string }
 

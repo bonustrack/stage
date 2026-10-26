@@ -1,9 +1,8 @@
 import { Platform } from 'react-native';
-import { parseNameCheck, parseNameClaim, type NameCheck } from '@stage-labs/client/profile/setup';
+import { parseNameCheck, parseNameClaim, type NameCheck, type ProfileImage, type ProfileProgress, type ProfileSetup, ProfileNameTakenError, runProfileSetup } from '@stage-labs/client/profile/setup';
 import { base } from 'viem/chains';
 import { createWalletClient, namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
-import type { ProfileImage, ProfileProgress, ProfileSetup } from '@stage-labs/client/profile/setup';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
 import { BASENAME_REGISTRY, REGISTRY_ABI, PROFILE_TEXT_KEYS, baseProfileClient, inspectNameSetup } from '@stage-labs/client/identity/onchainProfile';
@@ -17,7 +16,6 @@ import { kernelClientForRecord } from './zerodev/client';
 import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
 import { profileRequest, readPicture } from './profileFetch';
-import { ProfileNameTakenError, runProfileSetup } from './profileSetup.core';
 
 interface ProfileAccount { record: AccountRecord; assertCurrent: () => void }
 

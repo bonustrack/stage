@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { ownReactionsByMessage, reactionsByMessage } from '../components/conversation/feed-helpers';
+import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
 import {
   reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer,
 } from '../components/conversation/reactors.model';

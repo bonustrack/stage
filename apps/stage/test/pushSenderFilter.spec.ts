@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { makeSenderFilterPublisher, maintainPushPaths, prepareNotifyingSend, type SenderFilterInput } from '../lib/pushSenderFilter.core';
+import { makeSenderFilterPublisher, maintainPushPaths, prepareNotifyingSend, type SenderFilterInput } from '@stage-labs/client/xmtp/pushSenderFilter';
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
-import type { PushTopics } from '../lib/pushRegistration.core';
+import type { PushTopics } from '@stage-labs/client/xmtp/pushRegistration';
 import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 
 const TOPIC = '/xmtp/mls/1/g-abcdef/proto';

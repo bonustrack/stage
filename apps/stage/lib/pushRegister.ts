@@ -16,7 +16,7 @@ import {
 import { getCachedXmtpClient } from './xmtp.state';
 import { getAccountEpoch } from './accountEpoch';
 import { attempt, recover, reported } from './errorPolicy';
-import type { SendTiming } from './sendTiming.core';
+import { type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
 type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity' | 'inboxId' | 'signWithInstallationKey'>;
 

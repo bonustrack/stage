@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { createHmac } from 'node:crypto';
 import {
   makePushRegistrar, type PushRegistrationInput,
-} from '../lib/pushRegistration.core';
-import type { PushSubscriptionJson } from '@stage-labs/client/xmtp/pushServer';
+} from '../src/xmtp/pushRegistration';
+import type { PushSubscriptionJson } from '../src/xmtp/pushServer';
 
 const GROUP = '/xmtp/mls/1/g-abcdef/proto';
 const DM = '/xmtp/mls/1/g-012345/proto';

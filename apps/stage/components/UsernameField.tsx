@@ -4,7 +4,7 @@ import { FormField } from './FormField';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RailTooltip } from './tabs/RailTooltip';
 import { usePalette } from '../lib/theme';
-import { randomUsername } from '../lib/randomUsername';
+import { randomUsername } from '@stage-labs/client/identity/stageNames';
 import {
   claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput, type ClaimState,
 } from './settings/ProfileSettings.claim.model';
