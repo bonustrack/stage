@@ -208,6 +208,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     appearance: token(['soft', 'outline', 'plain'], 'The input surface style.'),
     hint: common('DynamicString'),
     hideLabel: { ...BOOLEAN, description: 'Keep the compact field: the label is read by screen readers only.' },
+    pill: { ...BOOLEAN, description: 'Fully rounded corners.' },
   }),
   CheckBox: inherit('CheckBox', { displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
   ChoicePicker: inherit('ChoicePicker'),

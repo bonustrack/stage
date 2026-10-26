@@ -214,6 +214,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.14
+
+- Kit catalog: `TextField` takes `pill` (fully rounded), for the compact search look with `hideLabel`.
+- `qrcode` is imported as a default import, so Vite dev serves the kit without pre-bundling `qrcode` by hand.
+
 ### 0.1.0-beta.13
 
 #### Breaking changes

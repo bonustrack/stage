@@ -158,7 +158,7 @@ describe('Kit catalog', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
     expect(valid({ id: 'k', component: 'Card', child: 'r', surface: 'surface' })).toEqual([]);
-    expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, value: { '@path': '/q' } })).toEqual([]);
+    expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, pill: true, value: { '@path': '/q' } })).toEqual([]);
     expect(valid({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 })).toEqual([]);
     const chart = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week' };
     expect(valid({ ...chart, series: { '@path': '/series' } })).toEqual([]);

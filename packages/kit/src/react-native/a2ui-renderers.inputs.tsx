@@ -40,6 +40,7 @@ function textFieldRenderer(ctx: RenderContext): ReactNode {
       placeholder={asOptionalString(p.placeholder)}
       variant={asEnum(p.variant, ['shortText', 'longText', 'number', 'obscured'])}
       appearance={asEnum(p.appearance, ['soft', 'outline', 'plain'])}
+      pill={asBoolean(p.pill)}
       hint={asOptionalString(p.hint)}
       onChangeText={binding.set}
     />

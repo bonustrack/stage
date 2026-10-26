@@ -1,5 +1,5 @@
 
-import { create } from 'qrcode';
+import QRCode from 'qrcode';
 
 export interface QrMatrix {
   count: number;
@@ -9,7 +9,7 @@ export interface QrMatrix {
 
 export function buildQrMatrix(value: string, size: number): QrMatrix {
   const safe = value.length > 0 ? value : ' ';
-  const qr = create(safe, { errorCorrectionLevel: 'M' });
+  const qr = QRCode.create(safe, { errorCorrectionLevel: 'M' });
   const count = qr.modules.size;
   const data = qr.modules.data;
   const cell = size / count;

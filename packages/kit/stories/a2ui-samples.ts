@@ -103,7 +103,7 @@ export const DASHBOARD_BLOCK: JsonObject[] = [
       },
       components: [
         { id: 'root', component: 'Column', gap: 16, children: ['header', 'search', 'metric', 'chart', 'notes', 'split', 'units', 'toolbar'] },
-        { id: 'search', component: 'TextField', label: 'Search projects', hideLabel: true, placeholder: 'Search', value: { '@path': '/filter/query' } },
+        { id: 'search', component: 'TextField', label: 'Search projects', hideLabel: true, pill: true, placeholder: 'Search', value: { '@path': '/filter/query' } },
         { id: 'metric', component: 'ChoicePicker', label: 'Metric', displayStyle: 'chips', options: [{ label: 'Sales', value: 'sales' }, { label: 'Returns', value: 'returns' }], value: { '@path': '/metric' } },
         { id: 'notes', component: 'Column', gap: 8, children: { componentId: 'note', path: '/notes' } },
         { id: 'note', component: 'Text', text: { '@path': 'text' } },
