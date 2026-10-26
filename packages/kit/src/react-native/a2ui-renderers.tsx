@@ -22,9 +22,10 @@ import { Text, type TextWeight } from './text';
 import { Title } from './title';
 import { Video } from './video';
 import {
-  asBoolean, asEnum, asNumber, asOptionalString, asString,
-  colorOf, commonProps, hasMarkdown, type A2uiRenderers, type RenderContext,
+  asBoolean, asEnum, asNumber, asOptionalString, asString, borderOf,
+  colorOf, colorValueOf, commonProps, hasMarkdown, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
 } from './a2ui-context';
+import { chartRenderer } from './a2ui-renderers.chart';
 import { INPUT_RENDERERS } from './a2ui-renderers.inputs';
 
 const GAP = DENSITY_SCALE.normal.gap;
@@ -62,11 +63,19 @@ function flexProps(ctx: RenderContext) {
     justify: asEnum(p.justify, JUSTIFY),
     align: asEnum(p.align, ALIGN),
     gap: asNumber(p.gap) ?? GAP,
-    padding: asNumber(p.padding),
+    padding: spacingOf(p.padding),
     wrap: asBoolean(p.wrap),
     surface: asEnum(p.surface, SURFACES),
     background: colorOf(ctx, p.background),
     radius: asEnum(p.radius, RADII),
+    border: borderOf(ctx, p.border),
+    width: lengthOf(p.width),
+    height: lengthOf(p.height),
+    minWidth: lengthOf(p.minWidth),
+    minHeight: lengthOf(p.minHeight),
+    maxWidth: lengthOf(p.maxWidth),
+    maxHeight: lengthOf(p.maxHeight),
+    aspectRatio: asNumber(p.aspectRatio),
   };
 }
 
@@ -81,7 +90,7 @@ function textRenderer(ctx: RenderContext): ReactNode {
       variant={asEnum(p.variant, ['body', 'caption'])}
       size={asEnum(p.size, FONT_SIZES)}
       fontWeight={asEnum(p.fontWeight, WEIGHTS)}
-      color={asOptionalString(p.color)}
+      color={colorValueOf(p.color)}
       textAlign={asEnum(p.textAlign, ['start', 'center', 'end'])}
       italic={asBoolean(p.italic)}
       lineThrough={asBoolean(p.lineThrough)}
@@ -193,7 +202,7 @@ export const KIT_RENDERERS: A2uiRenderers = {
     </List>
   ),
   Card: (ctx) => (
-    <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)}>
+    <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)} background={colorOf(ctx, ctx.props.background)}>
       {ctx.child(ctx.props.child)}
     </Card>
   ),
@@ -237,5 +246,6 @@ export const KIT_RENDERERS: A2uiRenderers = {
   },
   ListViewItem: listViewItemRenderer,
   Spinner: (ctx) => <Spinner {...commonProps(ctx)} size={asNumber(ctx.props.size)} color={colorOf(ctx, ctx.props.color) ?? ctx.palette.sub} />,
+  Chart: chartRenderer,
   QrCode: (ctx) => <QrCode {...commonProps(ctx)} value={asString(ctx.props.value)} size={asNumber(ctx.props.size)} color={ctx.palette.link} background={ctx.palette.bg} />,
 };

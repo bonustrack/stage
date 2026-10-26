@@ -6,6 +6,7 @@ import { setAt } from '../../src/a2ui/pointer';
 import type { JsonObject } from '../../src/a2ui/protocol';
 import { RENDER_LIMITS, fitsRenderLimits } from '../../src/a2ui/structure';
 import { isColorToken } from '../../src/tokens';
+import { colorValueOf, lengthOf, spacingOf } from '../../src/react-native/a2ui-context';
 
 function surfaceOf(components: JsonObject[], dataModel: JsonObject = {}) {
   const client = createA2uiClient();
@@ -87,3 +88,17 @@ describe('colour tokens', () => {
   });
 });
 
+
+describe('bound style values', () => {
+  test('colours from data are Kit tokens or hex only', () => {
+    expect(['danger', '#ff0000', '#f00', '#ff000080'].map(colorValueOf)).toEqual(['danger', '#ff0000', '#f00', '#ff000080']);
+    expect(['red; background: url(x)', 'url(x)', 'constructor', 'rgb(0,0,0)', 7].map(colorValueOf)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+  });
+
+  test('lengths are pixels or a percentage, padding keeps only known sides', () => {
+    expect([40, 0, '40%', '100%', '12.5%'].map(lengthOf)).toEqual([40, 0, '40%', '100%', '12.5%']);
+    expect(['40px', '101%', -1, 'calc(1px)', Number.NaN].map(lengthOf)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+    expect(spacingOf({ x: 8, top: 4, bogus: 3, left: -1 })).toEqual({ x: 8, top: 4 });
+    expect([spacingOf(12), spacingOf(-1), spacingOf({ bogus: 1 })]).toEqual([12, undefined, undefined]);
+  });
+});

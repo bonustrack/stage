@@ -81,3 +81,41 @@ export const BASIC_GALLERY: JsonObject[] = [
     },
   },
 ];
+
+export const DASHBOARD_BLOCK: JsonObject[] = [
+  {
+    version: v,
+    createSurface: {
+      surfaceId: 'dashboard_block',
+      catalogId: KIT_CATALOG_ID,
+      dataModel: {
+        filter: { owner: ['all'] },
+        trend: [{ week: 'W1', sales: 12, returns: 2 }, { week: 'W2', sales: 18, returns: 3 }, { week: 'W3', sales: 9, returns: 1 }, { week: 'W4', sales: 22, returns: 4 }],
+        units: [
+          { name: 'Pillar A', status: 'On track', tone: 'success', share: '72%' },
+          { name: 'Pillar B', status: 'At risk', tone: '#e25507', share: '41%' },
+          { name: 'Pillar C', status: 'Overdue', tone: 'danger', share: '18%' },
+        ],
+      },
+      components: [
+        { id: 'root', component: 'Column', gap: 16, children: ['header', 'chart', 'units', 'toolbar'] },
+        { id: 'header', component: 'Row', padding: { x: 4, bottom: 4 }, justify: 'spaceBetween', align: 'center', children: ['title', 'delta'] },
+        { id: 'title', component: 'Title', level: 3, text: 'Weekly activity' },
+        { id: 'delta', component: 'Text', size: 'sm', fontWeight: 'semibold', color: { '@path': '/units/0/tone' }, text: '+18%' },
+        { id: 'chart', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week', height: 160, series: [{ type: 'bar', dataKey: 'sales', label: 'Sales', color: 'blue' }, { type: 'line', dataKey: 'returns', label: 'Returns', color: 'orange' }] },
+        { id: 'units', component: 'Column', gap: 10, children: { componentId: 'unit', path: '/units' } },
+        { id: 'unit', component: 'Column', gap: 6, padding: 12, radius: 'md', border: { size: 1, color: 'border' }, children: ['unit_head', 'unit_track'] },
+        { id: 'unit_head', component: 'Row', gap: 8, align: 'center', children: ['unit_dot', 'unit_name', 'unit_status'] },
+        { id: 'unit_dot', component: 'Column', width: 8, height: 8, radius: 'full', background: { '@path': 'tone' }, children: [] },
+        { id: 'unit_name', component: 'Text', weight: 1, truncate: true, text: { '@path': 'name' } },
+        { id: 'unit_status', component: 'Text', size: 'sm', color: { '@path': 'tone' }, text: { '@path': 'status' } },
+        { id: 'unit_track', component: 'Row', height: 6, radius: 'full', background: 'border', children: ['unit_fill'] },
+        { id: 'unit_fill', component: 'Column', width: { '@path': 'share' }, radius: 'full', background: { '@path': 'tone' }, children: [] },
+        { id: 'toolbar', component: 'Row', gap: 8, align: 'end', children: ['owner', 'apply'] },
+        { id: 'owner', component: 'ChoicePicker', weight: 1, label: 'Owner', displayStyle: 'chips', options: [{ label: 'All', value: 'all' }, { label: 'Ana', value: 'ana' }, { label: 'Ben', value: 'ben' }], value: { '@path': '/filter/owner' } },
+        { id: 'apply_label', component: 'Text', text: 'Apply' },
+        { id: 'apply', component: 'Button', variant: 'primary', child: 'apply_label', action: { event: { name: 'filter', context: { owner: { '@path': '/filter/owner' } } } } },
+      ],
+    },
+  },
+];

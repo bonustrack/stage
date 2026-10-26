@@ -1,6 +1,7 @@
 import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
 import { BRAND_ICON_NAMES } from '../brand-icons.data';
 import { BUTTON_COLORS, BUTTON_FILLS, SIZES } from '../button.styles';
+import { CHART_COLORS, CHART_CURVE_TYPES, CHART_LIMITS } from '../chart';
 import { HERO_ICON_DATA as HERO_ICON_PATHS } from '../heroicons.data';
 import { A2UI_ICON_NAMES } from '../icons.a2ui';
 import { BOX_RADIUS_SCALE, COLOR_TOKENS, FONT_SIZE } from '../tokens';
@@ -13,13 +14,38 @@ const common = (name: string): JsonObject => ({ $ref: `common_types.json#/$defs/
 const basic = (pointer: string): JsonObject => ({ $ref: `${BASIC_CATALOG_ID}#${pointer}` });
 const strings = (values: readonly string[], description: string): JsonObject => ({ type: 'string', enum: [...values], description });
 
-const COLOR: JsonObject = {
-  description: `A Kit colour token (${COLOR_TOKENS.join(', ')}) or a #rrggbb hex colour.`,
-  anyOf: [{ type: 'string', enum: [...COLOR_TOKENS] }, { type: 'string', pattern: '^#[0-9a-fA-F]{6}$' }],
-};
-const SPACING: JsonObject = { type: 'number', minimum: 0, description: 'Spacing in density-independent pixels.' };
-const RADIUS: JsonObject = strings(Object.keys(BOX_RADIUS_SCALE), 'A Kit corner radius token.');
-const FONT_SIZES = strings(Object.keys(FONT_SIZE), 'A Kit font size token.');
+const dynamic = (description: string, literal: JsonObject): JsonObject => ({
+  description,
+  anyOf: [literal, common('DataBinding'), common('FunctionCall')],
+});
+const token = (values: readonly string[], description: string): JsonObject => dynamic(description, { type: 'string', enum: [...values] });
+const NON_NEGATIVE: JsonObject = { type: 'number', minimum: 0 };
+const HEX: JsonObject = { type: 'string', pattern: '^#[0-9a-fA-F]{6}$' };
+const COLOR_LITERAL: JsonObject = { anyOf: [{ type: 'string', enum: [...COLOR_TOKENS] }, HEX] };
+const COLOR = dynamic(`A Kit colour token (${COLOR_TOKENS.join(', ')}) or a #rrggbb hex colour.`, COLOR_LITERAL);
+const BOOLEAN = common('DynamicBoolean');
+const SPACING = dynamic('Spacing in density-independent pixels.', NON_NEGATIVE);
+const LENGTH = dynamic('A size in density-independent pixels, or a percentage of the parent such as "40%".', {
+  anyOf: [NON_NEGATIVE, { type: 'string', pattern: '^(100|[0-9]{1,2})(\\.[0-9]+)?%$' }],
+});
+const SIDES = ['top', 'right', 'bottom', 'left', 'x', 'y'];
+const PADDING = dynamic('Padding in pixels: one number, or per side with top, right, bottom, left, x and y.', {
+  anyOf: [NON_NEGATIVE, { type: 'object', properties: Object.fromEntries(SIDES.map((side) => [side, NON_NEGATIVE])), additionalProperties: false }],
+});
+const BORDER = dynamic('A border: a width in pixels, or { size, color, style }.', {
+  anyOf: [
+    NON_NEGATIVE,
+    {
+      type: 'object',
+      properties: { size: NON_NEGATIVE, color: COLOR_LITERAL, style: { type: 'string', enum: ['solid', 'dashed', 'dotted'] } },
+      required: ['size'],
+      additionalProperties: false,
+    },
+  ],
+});
+const ASPECT_RATIO = dynamic('Width divided by height.', { type: 'number', exclusiveMinimum: 0 });
+const RADIUS: JsonObject = token(Object.keys(BOX_RADIUS_SCALE), 'A Kit corner radius token.');
+const FONT_SIZES = token(Object.keys(FONT_SIZE), 'A Kit font size token.');
 const ICON_NAME: JsonObject = {
   description: 'An icon: a basic catalog name, a Kit HeroIcon name or a brand icon name.',
   oneOf: [
@@ -47,11 +73,19 @@ function component(name: string, properties: JsonObject, required: readonly stri
 
 const LAYOUT_EXTRAS: JsonObject = {
   gap: SPACING,
-  padding: SPACING,
-  wrap: { type: 'boolean', description: 'Wrap children onto new lines.' },
-  surface: strings(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background.'),
+  padding: PADDING,
+  wrap: BOOLEAN,
+  surface: token(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background.'),
   background: COLOR,
   radius: RADIUS,
+  border: BORDER,
+  width: LENGTH,
+  height: LENGTH,
+  minWidth: LENGTH,
+  minHeight: LENGTH,
+  maxWidth: LENGTH,
+  maxHeight: LENGTH,
+  aspectRatio: ASPECT_RATIO,
 };
 
 const BUTTON: JsonObject = {
@@ -66,14 +100,14 @@ const BUTTON: JsonObject = {
         action: basic('/components/Button/allOf/1/properties/action'),
         weight: basic('/components/Button/allOf/1/properties/weight'),
         variant: {
-          ...strings(['default', 'primary', 'borderless', ...BUTTON_FILLS], 'default, primary and borderless are the basic catalog hints; solid, soft, outline and ghost pick a Kit fill used with color.'),
+          ...token(['default', 'primary', 'borderless', ...BUTTON_FILLS], 'default, primary and borderless are the basic catalog hints; solid, soft, outline and ghost pick a Kit fill used with color.'),
           default: 'default',
         },
-        color: strings(BUTTON_COLORS, 'The Kit button colour.'),
-        size: strings(Object.keys(SIZES), 'The Kit button size.'),
-        pill: { type: 'boolean' },
-        block: { type: 'boolean', description: 'Stretch to the full width.' },
-        uniform: { type: 'boolean', description: 'Square button sized for a single icon.' },
+        color: token(BUTTON_COLORS, 'The Kit button colour.'),
+        size: token(Object.keys(SIZES), 'The Kit button size.'),
+        pill: BOOLEAN,
+        block: BOOLEAN,
+        uniform: BOOLEAN,
         iconStart: ICON_NAME,
         iconEnd: ICON_NAME,
         disabled: common('DynamicBoolean'),
@@ -88,68 +122,117 @@ const ICON: JsonObject = {
   properties: {
     component: { const: 'Icon' },
     name: ICON_NAME,
-    size: { type: 'number', minimum: 1, description: 'Icon size in pixels. Defaults to 24.' },
+    size: dynamic('Icon size in pixels. Defaults to 24.', { type: 'number', minimum: 1 }),
     color: COLOR,
-    variant: strings(['outline', 'solid'], 'Outline (default) or solid HeroIcon.'),
+    variant: token(['outline', 'solid'], 'Outline (default) or solid HeroIcon.'),
     weight: basic('/components/Icon/properties/weight'),
   },
   required: ['component', 'name'],
 };
 
+const CHART_SERIES: JsonObject = {
+  type: 'object',
+  properties: {
+    type: { type: 'string', enum: ['bar', 'line', 'area'] },
+    dataKey: { type: 'string' },
+    label: { type: 'string' },
+    color: { type: 'string', description: `A chart colour (${CHART_COLORS.join(', ')}), a shade such as blue-500, a Kit colour token or a #rrggbb hex colour.` },
+    stack: { type: 'string' },
+    curveType: { type: 'string', enum: [...CHART_CURVE_TYPES] },
+  },
+  required: ['type', 'dataKey'],
+  additionalProperties: false,
+};
+
+const CHART: JsonObject = component('Chart', {
+  data: dynamic('The rows to plot, usually bound to an array of objects in the data model.', {
+    type: 'array',
+    maxItems: CHART_LIMITS.rows,
+    items: { type: 'object', additionalProperties: { type: ['string', 'number'] } },
+  }),
+  series: { type: 'array', minItems: 1, maxItems: CHART_LIMITS.series, items: CHART_SERIES },
+  xAxis: {
+    description: 'The data key of the categories, or { dataKey, hide, labels }.',
+    anyOf: [
+      { type: 'string' },
+      {
+        type: 'object',
+        properties: { dataKey: { type: 'string' }, hide: { type: 'boolean' }, labels: { type: 'object', additionalProperties: { type: 'string' } } },
+        required: ['dataKey'],
+        additionalProperties: false,
+      },
+    ],
+  },
+  yAxis: {
+    type: 'object',
+    properties: { domain: { type: 'array', minItems: 2, maxItems: 2, items: { anyOf: [{ type: 'number' }, { type: 'string', enum: ['auto', 'dataMin', 'dataMax'] }] } } },
+    additionalProperties: false,
+  },
+  showYAxis: BOOLEAN,
+  showLegend: BOOLEAN,
+  showTooltip: BOOLEAN,
+  barGap: NON_NEGATIVE,
+  barCategoryGap: NON_NEGATIVE,
+  width: LENGTH,
+  height: LENGTH,
+  aspectRatio: ASPECT_RATIO,
+}, ['data', 'series', 'xAxis'], 'A bar, line or area chart with the ChatKit Chart props.');
+
 const KIT_COMPONENTS: Record<string, JsonObject> = {
   Text: inherit('Text', {
     size: FONT_SIZES,
-    fontWeight: strings(['normal', 'medium', 'semibold', 'bold'], 'The font weight.'),
+    fontWeight: token(['normal', 'medium', 'semibold', 'bold'], 'The font weight.'),
     color: COLOR,
-    textAlign: strings(['start', 'center', 'end'], 'Horizontal alignment.'),
-    italic: { type: 'boolean' },
-    lineThrough: { type: 'boolean' },
-    truncate: { type: 'boolean', description: 'Clamp to one line.' },
-    maxLines: { type: 'integer', minimum: 1 },
-    fontFamily: strings(['sans', 'mono'], 'The Kit font family.'),
+    textAlign: token(['start', 'center', 'end'], 'Horizontal alignment.'),
+    italic: BOOLEAN,
+    lineThrough: BOOLEAN,
+    truncate: BOOLEAN,
+    maxLines: dynamic('Clamp to this many lines.', { type: 'integer', minimum: 1 }),
+    fontFamily: token(['sans', 'mono'], 'The Kit font family.'),
   }),
-  Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: { type: 'number', minimum: 0 }, background: COLOR }),
+  Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR }),
   Icon: ICON,
   Video: inherit('Video'),
   AudioPlayer: inherit('AudioPlayer'),
   Row: inherit('Row', LAYOUT_EXTRAS),
   Column: inherit('Column', LAYOUT_EXTRAS),
   List: inherit('List', { gap: SPACING }),
-  Card: inherit('Card', { size: strings(['sm', 'md', 'lg'], 'Card padding size.'), padding: SPACING }),
-  Tabs: inherit('Tabs', { variant: strings(['segmented', 'underline'], 'The tab bar style.') }),
+  Card: inherit('Card', { size: token(['sm', 'md', 'lg'], 'Card padding size.'), padding: SPACING, background: COLOR }),
+  Tabs: inherit('Tabs', { variant: token(['segmented', 'underline'], 'The tab bar style.') }),
   Modal: inherit('Modal', { title: common('DynamicString') }),
   Divider: inherit('Divider', { spacing: SPACING, color: COLOR }),
   Button: BUTTON,
-  TextField: inherit('TextField', { appearance: strings(['soft', 'outline', 'plain'], 'The input surface style.'), hint: common('DynamicString') }),
-  CheckBox: inherit('CheckBox', { displayStyle: strings(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
+  TextField: inherit('TextField', { appearance: token(['soft', 'outline', 'plain'], 'The input surface style.'), hint: common('DynamicString') }),
+  CheckBox: inherit('CheckBox', { displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
   ChoicePicker: inherit('ChoicePicker'),
   Slider: inherit('Slider'),
   DateTimeInput: inherit('DateTimeInput', { placeholder: common('DynamicString') }),
   Title: component('Title', {
     text: common('DynamicString'),
-    level: { type: 'integer', enum: [1, 2, 3], description: 'Heading level, 1 is largest.' },
-    size: strings(['sm', 'md', 'lg'], 'Heading size.'),
+    level: dynamic('Heading level, 1 is largest.', { type: 'integer', enum: [1, 2, 3] }),
+    size: token(['sm', 'md', 'lg'], 'Heading size.'),
     color: COLOR,
   }, ['text'], 'A heading in the Kit head font.'),
   Badge: component('Badge', {
     label: common('DynamicString'),
-    color: strings(BADGE_COLORS, 'The badge colour.'),
-    variant: strings(BADGE_VARIANTS, 'The badge fill.'),
-    size: strings(BADGE_SIZES, 'The badge size.'),
-    pill: { type: 'boolean' },
+    color: token(BADGE_COLORS, 'The badge colour.'),
+    variant: token(BADGE_VARIANTS, 'The badge fill.'),
+    size: token(BADGE_SIZES, 'The badge size.'),
+    pill: BOOLEAN,
   }, ['label'], 'A small status label.'),
   ListView: component('ListView', {
     children: common('ChildList'),
-    limit: { type: 'integer', minimum: 1, description: 'Show at most this many items.' },
+    limit: dynamic('Show at most this many items.', { type: 'integer', minimum: 1 }),
     status: common('DynamicString'),
   }, ['children'], 'A list of ListViewItem rows separated by inset dividers.'),
   ListViewItem: component('ListViewItem', {
     children: common('ChildList'),
     action: common('Action'),
     gap: SPACING,
-    align: strings(['start', 'center', 'end'], 'Cross-axis alignment of the row.'),
+    align: token(['start', 'center', 'end'], 'Cross-axis alignment of the row.'),
   }, ['children'], 'A pressable row inside a ListView.'),
   Spinner: component('Spinner', { size: SPACING, color: COLOR }, [], 'An indeterminate progress indicator.'),
+  Chart: CHART,
   QrCode: component('QrCode', { value: common('DynamicString'), size: SPACING }, ['value'], 'A QR code for a string such as a payment link.'),
 };
 
@@ -202,7 +285,15 @@ const INSTRUCTIONS = [
   '',
   '## Layout',
   '',
-  'Use Row and Column to organise components. Kit adds `gap` and `padding` in pixels, `wrap`, `surface` (surface, raised, sunken, toolbar), `background` and `radius`. Prefer `gap` on the container over spacing on the children.',
+  'Use Row and Column to organise components. Kit adds `gap`, `padding` (one number or per side), `wrap`, `surface` (surface, raised, sunken, toolbar), `background`, `radius`, `border`, and `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` in pixels or as a percentage such as "40%". Prefer `gap` on the container over spacing on the children. A proportional bar is a Row whose filled Column has a `width` bound to a percentage.',
+  '',
+  '## Data binding',
+  '',
+  'Every Kit style prop (colours, sizes, variants, widths, flags) also takes a data binding or a function call, so a status colour or a bar width can come from the data model. Values that are not a Kit token, a #rrggbb colour or a valid size are ignored.',
+  '',
+  '## Charts',
+  '',
+  'Chart takes the ChatKit Chart props: `data` (an array of objects, usually bound to the data model), `series` (bar, line or area, each with a `dataKey`), `xAxis` and the optional `yAxis`, `showYAxis`, `showLegend`, `showTooltip`, `barGap`, `barCategoryGap`, `width`, `height` and `aspectRatio`.',
   '',
   '## Text',
   '',
@@ -223,6 +314,10 @@ const INSTRUCTIONS = [
   '## Functions',
   '',
   'Every basic catalog function is available. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate and pluralize with callRendererFunction.',
+  '',
+  '## Inputs',
+  '',
+  'As in the basic catalog, inputs only write to the data model. To act on them, add a Button whose action context references the input paths (or set `sendDataModel` on the surface): for example an Apply button for filters or a Search button for a search field.',
 ].join('\n');
 
 export const KIT_CATALOG: JsonObject = {

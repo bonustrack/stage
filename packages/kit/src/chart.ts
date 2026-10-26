@@ -46,6 +46,8 @@ export interface ChartXAxisConfig {
 
 export type ChartXAxis = string | ChartXAxisConfig;
 
+export const CHART_LIMITS = { rows: 500, series: 12 } as const;
+
 export const CHART_DEFAULTS = {
   showYAxis: false,
   showLegend: true,

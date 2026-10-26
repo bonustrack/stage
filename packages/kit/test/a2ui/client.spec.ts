@@ -136,4 +136,21 @@ describe('Kit catalog', () => {
     expect(registry.functionMeta(KIT_CATALOG_ID, 'openUrl')).toEqual({ returnType: 'void', allowedCallers: 'rendererOnly', requiresUserActivation: true });
     expect(Object.keys(registry.component(KIT_CATALOG_ID, 'Text')?.properties ?? {}).sort()).toContain('fontWeight');
   });
+
+  test('Kit style props take bindings, sizes take percentages, and Chart is a Kit component', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 't', component: 'Text', text: 'Late', color: { '@path': 'tone' }, fontWeight: { '@path': '/weight' } })).toEqual([]);
+    expect(valid({ id: 'b', component: 'Button', child: 't', color: { '@path': 'tone' }, action: { event: { name: 'x' } } })).toEqual([]);
+    const bar = { id: 'r', component: 'Row', children: ['t'], width: { '@path': 'share' }, minWidth: 0, padding: { x: 12, top: 4 }, border: { size: 1, color: 'border' } };
+    expect(valid(bar)).toEqual([]);
+    expect(valid({ ...bar, width: '40%', height: 8 })).toEqual([]);
+    expect(valid({ ...bar, width: '40px' }).length).toBeGreaterThan(0);
+    expect(valid({ ...bar, padding: { inside: 4 } }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'k', component: 'Card', child: 'r', background: '#f7f7f8' })).toEqual([]);
+    const chart = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, series: [{ type: 'bar', dataKey: 'sales', color: 'blue' }], xAxis: 'week', height: 160 };
+    expect(valid(chart)).toEqual([]);
+    expect(valid({ ...chart, data: [{ week: 'W1', sales: 3 }] })).toEqual([]);
+    expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
+  });
 });

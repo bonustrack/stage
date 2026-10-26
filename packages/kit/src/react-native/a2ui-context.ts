@@ -2,7 +2,8 @@ import { createContext, type ReactNode } from 'react';
 import type { A2uiClient, DispatchResult } from '../a2ui/client';
 import type { Scope } from '../a2ui/evaluate';
 import type { ComponentInstance, JsonValue, ValidationResult } from '../a2ui/protocol';
-import { resolvePaletteColor, type KitPalette } from '../tokens';
+import type { ResolvedBoxBorder, Size, Spacing } from '../layout';
+import { isColorToken, resolvePaletteColor, type KitPalette } from '../tokens';
 import type { A2uiAccessibility } from './a2ui-props';
 
 export interface Binding<T> {
@@ -79,9 +80,40 @@ export function commonProps(ctx: RenderContext): { weight?: number; accessibilit
   return { weight: ctx.weight, accessibility: ctx.accessibility };
 }
 
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const PERCENT = /^(?:100|\d{1,2})(?:\.\d+)?%$/;
+const BORDER_STYLES = ['solid', 'dashed', 'dotted'] as const;
+
+export function colorValueOf(value: unknown): string | undefined {
+  return typeof value === 'string' && (isColorToken(value) || HEX_COLOR.test(value)) ? value : undefined;
+}
+
 export function colorOf(ctx: RenderContext, value: unknown): string | undefined {
-  const raw = asOptionalString(value);
+  const raw = colorValueOf(value);
   return raw === undefined ? undefined : resolvePaletteColor(raw, ctx.palette);
+}
+
+function sizeOf(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+export function lengthOf(value: unknown): Size | undefined {
+  return typeof value === 'string' && PERCENT.test(value) ? value : sizeOf(value);
+}
+
+export function spacingOf(value: unknown): number | Spacing | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return sizeOf(value);
+  const sides = Object.entries(value).filter(([side]) => ['top', 'right', 'bottom', 'left', 'x', 'y'].includes(side));
+  const spacing = Object.fromEntries(sides.flatMap(([side, size]) => (sizeOf(size) === undefined ? [] : [[side, size]])));
+  return Object.keys(spacing).length === 0 ? undefined : spacing;
+}
+
+export function borderOf(ctx: RenderContext, value: unknown): ResolvedBoxBorder | undefined {
+  const spec = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : { size: value };
+  const width = sizeOf(spec.size);
+  if (width === undefined) return undefined;
+  const side = { width, color: colorOf(ctx, spec.color) ?? ctx.palette.border, style: asEnum(spec.style, BORDER_STYLES) };
+  return { top: side, right: side, bottom: side, left: side };
 }
 
 const MARKDOWN = /[*_`#>[\]|~]|^\s*([-+]|\d+\.)\s/m;

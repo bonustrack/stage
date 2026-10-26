@@ -81,7 +81,7 @@ client.receive(jsonlFromAgent);
 
 In React, `useA2uiClient(messages, options)` (`@stage-labs/kit/react-native/a2ui-session`) builds the client for a message list and keeps the latest callbacks; its `send` also gets the client. `A2uiSurface` takes `disabled` (read only: no actions, inputs and buttons disabled) and `mediaUrl`, a filter applied to every `Image`, `Video` and `AudioPlayer` URL (return `''` to block one).
 
-`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner` and `QrCode` components. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs.
+`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner`, `Chart` and `QrCode` components. Every Kit style prop also takes a data binding or a function call (a status colour, a bar width), and `Row`/`Column` take `width`, `height`, their min and max, `aspectRatio` (pixels or a percentage such as `"40%"`), per-side `padding` and a `border`. The renderer keeps only Kit tokens and hex colours, pixel or percentage sizes and known padding sides from the data, and drops anything else. As the spec says, inputs only write to the data model: a Button action whose context references the input paths (or `sendDataModel`) sends their values. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs.
 
 ## Install
 
@@ -197,7 +197,7 @@ bun run --cwd packages/kit storybook        # dev server on http://localhost:600
 bun run --cwd packages/kit storybook:build  # static site in packages/kit/build (gitignored)
 ```
 
-The gallery opens on a Home page with one live example of each component (its `Controls` story with the default args); a card's title opens that component. Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls, and the ones with variant axes also have a matrix story. The `A2UI Surface` stories render the official A2UI contact form, a basic catalog tour and a Kit catalog payment request through the renderer and log every renderer-to-agent message; its `Controls` story renders any JSON you paste. The `Theme` story drives the `ThemeOption` surface through `derivePalette`.
+The gallery opens on a Home page with one live example of each component (its `Controls` story with the default args); a card's title opens that component. Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls, and the ones with variant axes also have a matrix story. The `A2UI Surface` stories render the official A2UI contact form, a basic catalog tour a Kit catalog payment request and a dashboard block (bound colours, proportional bars, a bound Chart and an Apply button) through the renderer and log every renderer-to-agent message; its `Controls` story renders any JSON you paste. The `Theme` story drives the `ThemeOption` surface through `derivePalette`.
 
 ## Scripts
 
@@ -213,6 +213,13 @@ Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.12
+
+- Kit catalog: every Kit style prop (colours, sizes, variants, flags, widths) takes a data binding or a function call besides its literal value.
+- Kit catalog: `Row` and `Column` take `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` (pixels or a percentage), `aspectRatio`, per-side `padding` (`top`, `right`, `bottom`, `left`, `x`, `y`) and `border` (a width or `{ size, color, style }`); `Card` takes `background`.
+- Kit catalog: `Chart` with the ChatKit Chart props, its `data` usually bound to the data model (500 rows and 12 series at most).
+- Renderer: bound colours must be Kit tokens or hex, sizes pixels or percentages; other values are dropped.
 
 ### 0.1.0-beta.11
 
