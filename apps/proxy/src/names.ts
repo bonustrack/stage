@@ -5,7 +5,7 @@ import {
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailPublicKey, isMailboxLabel } from '@stage-labs/client/mail/mailbox';
 import { mailboxStub, saveMailKey } from './mailBox.ts';
-import { makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
+import { NAME_TAKEN, makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
@@ -75,8 +75,6 @@ function parseClaim(raw: unknown): ClaimBody | null {
   const fields = raw as Record<string, unknown>;
   return withMailKey(claimFields(fields), fields.mailKey);
 }
-
-const NAME_TAKEN = 'name already taken';
 
 async function rejectClaim(claim: ClaimBody, deps: NamesDeps): Promise<Response | null> {
   const now = (deps.now ?? Date.now)();

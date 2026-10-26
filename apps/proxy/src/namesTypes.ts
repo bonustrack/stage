@@ -2,7 +2,6 @@ import type { Hex } from 'viem';
 import type { ArchiveStub } from './historyStore.ts';
 
 export interface NamesChain {
-  operator: Hex;
   verifyClaim(address: Hex, message: string, signature: Hex): Promise<boolean>;
   subnameOwner(label: string): Promise<Hex | null>;
   issue(label: string, owner: Hex, onSubmitted?: (hash: Hex) => Promise<void>): Promise<Hex>;

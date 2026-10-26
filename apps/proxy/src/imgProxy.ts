@@ -1,4 +1,3 @@
-
 import type { PreviewMeta } from './parse.ts';
 
 const IMAGE_WIDTH = 600;

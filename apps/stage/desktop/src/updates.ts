@@ -1,4 +1,4 @@
-import { app, dialog, shell } from 'electron';
+import { app, dialog, shell, type MessageBoxOptions } from 'electron';
 import { autoUpdater, type UpdateInfo } from 'electron-updater';
 import { installsInPlace, releasePageUrl, UPDATE_CHECK_INTERVAL_MS } from './updateModel';
 
@@ -9,51 +9,36 @@ function check(): void {
   void autoUpdater.checkForUpdates().catch(() => undefined);
 }
 
+function ask(message: string, detail: string, accept: string, onAccept: () => void): void {
+  void dialog.showMessageBox({ type: 'info', message, detail, buttons: [accept, 'Later'], defaultId: 0, cancelId: 1 })
+    .then(({ response }) => { if (response === 0) onAccept(); });
+}
+
 function offerDownload(info: UpdateInfo): void {
   if (!manualCheck && offeredVersion === info.version) return;
   offeredVersion = info.version;
   manualCheck = false;
-  void dialog.showMessageBox({
-    type: 'info',
-    message: `Stage ${info.version} is available`,
-    detail: 'Download the new version from the releases page and replace the app to update.',
-    buttons: ['Download', 'Later'],
-    defaultId: 0,
-    cancelId: 1,
-  }).then(({ response }) => {
-    if (response === 0) void shell.openExternal(releasePageUrl(info.version));
-  });
+  ask(`Stage ${info.version} is available`, 'Download the new version from the releases page and replace the app to update.', 'Download',
+    () => { void shell.openExternal(releasePageUrl(info.version)); });
 }
 
 function offerRestart(info: UpdateInfo): void {
   manualCheck = false;
-  void dialog.showMessageBox({
-    type: 'info',
-    message: `Stage ${info.version} is ready to install`,
-    detail: 'Restart Stage to finish updating.',
-    buttons: ['Restart now', 'Later'],
-    defaultId: 0,
-    cancelId: 1,
-  }).then(({ response }) => {
-    if (response === 0) autoUpdater.quitAndInstall();
-  });
+  ask(`Stage ${info.version} is ready to install`, 'Restart Stage to finish updating.', 'Restart now', () => { autoUpdater.quitAndInstall(); });
+}
+
+function tellManualCheck(options: MessageBoxOptions): void {
+  if (!manualCheck) return;
+  manualCheck = false;
+  void dialog.showMessageBox(options);
 }
 
 function reportUpToDate(): void {
-  if (!manualCheck) return;
-  manualCheck = false;
-  void dialog.showMessageBox({ type: 'info', message: `Stage ${app.getVersion()} is up to date`, buttons: ['OK'] });
+  tellManualCheck({ type: 'info', message: `Stage ${app.getVersion()} is up to date`, buttons: ['OK'] });
 }
 
 function reportError(error: Error): void {
-  if (!manualCheck) return;
-  manualCheck = false;
-  void dialog.showMessageBox({
-    type: 'error',
-    message: 'Could not check for updates',
-    detail: error.message,
-    buttons: ['OK'],
-  });
+  tellManualCheck({ type: 'error', message: 'Could not check for updates', detail: error.message, buttons: ['OK'] });
 }
 
 export function startUpdates(): void {

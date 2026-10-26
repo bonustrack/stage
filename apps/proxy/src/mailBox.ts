@@ -3,7 +3,7 @@ import { isMailId } from '@stage-labs/client/mail/mailbox';
 import { putChunks, readChunks, storedChunkKeys, type ArchiveNamespace, type ArchiveStub } from './historyStore.ts';
 
 const MAILBOX_URL = 'https://mailbox/';
-export const MAILBOX_MAX_BYTES = 512 * 1024 * 1024;
+const MAILBOX_MAX_BYTES = 512 * 1024 * 1024;
 export const NONCE_TTL_MS = 5 * 60 * 1000;
 export const SESSION_TTL_MS = 15 * 60 * 1000;
 const MAX_OPEN = 20;
@@ -181,7 +181,7 @@ const close: Op = async (storage) => {
 };
 
 const OPS: Record<string, Op> = {
-  register, key: readKey, challenge, consume, session: openSession, auth: authorize, list, read, delete: remove, close,
+  register, key: readKey, challenge, consume, session: openSession, auth: authorize, delete: remove, close,
   signedList: signedIn(list), signedRead: signedIn(read),
 };
 
@@ -219,7 +219,7 @@ export function mailboxCall(stub: ArchiveStub, op: string, body: Fields = {}): P
   return stub.fetch(`${MAILBOX_URL}${op}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 }
 
-export interface SealedMail {
+interface SealedMail {
   owner: string;
   publicKey: string;
   id: string;

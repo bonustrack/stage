@@ -1,4 +1,3 @@
-
 import { fetchPublic, readCappedText, UA } from './ssrf.ts';
 import type { X402Challenge } from '@stage-labs/client/x402';
 import { challengeFrom402 } from './x402.ts';

@@ -20,7 +20,6 @@ function fakeChain(opts: { valid?: boolean; taken?: string[]; fail?: boolean; fa
   const issued: string[] = [];
   return {
     issued,
-    operator: '0x00000000000000000000000000000000000000EE',
     confirm: (hash) => Promise.resolve(hash),
     verifyClaim: async (_a, message, signature) => (opts.valid ?? true) && signature === '0x5169' && message.startsWith('Claim '),
     subnameOwner: async (label) => (opts.taken ?? []).includes(label) ? '0x00000000000000000000000000000000000000B2' : null,

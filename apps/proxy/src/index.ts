@@ -1,5 +1,4 @@
-
-import { clientRateKey } from '@stage-labs/client/nodes/hosting';
+import { NODE_PUBLISH_PATH, clientRateKey } from '@stage-labs/client/nodes/hosting';
 import { BUNDLER_HOST, handleBundler } from './bundler.ts';
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
@@ -14,16 +13,11 @@ import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from
 import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
-import { NODES_PATH, cloudflareApi, handleNodes } from './nodes.ts';
+import { cloudflareApi, handleNodes } from './nodes.ts';
 import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
-
-const CLIENT_HEADER = 'x-stage-client';
-function hasClientHeader(request: Request): boolean {
-  return request.headers.get(CLIENT_HEADER) === '1';
-}
 
 const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
@@ -58,14 +52,6 @@ function json(body: unknown, status = 200, extra: HeaderMap = {}): Response {
   return jsonResponse(body, status, { ...BASE_HEADERS, ...extra });
 }
 
-async function cacheHit(cacheKey: Request): Promise<Response | null> {
-  const hit = await caches.default.match(cacheKey);
-  if (!hit) return null;
-  const h = new Headers(hit.headers);
-  h.set('x-cache', 'HIT');
-  return new Response(hit.body, { status: hit.status, headers: h });
-}
-
 function errorResponse(e: unknown, fallback: string): Response {
   if (e instanceof SsrfError) return json({ error: e.message }, 400);
   return json({ error: e instanceof Error ? e.message : fallback }, 502);
@@ -77,49 +63,45 @@ function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>
   return proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
 }
 
-async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
-  if (rateLimited(request, 'preview')) return json({ error: 'rate limited' }, 429);
-
-  const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
-  if (!url) return json({ error: 'url query param required' }, 400);
-
-  const cacheKey = new Request(`https://proxy.stage.box/preview?url=${encodeURIComponent(url)}`);
-  const cached = await cacheHit(cacheKey);
-  if (cached) return cached;
-
+async function cached(cacheUrl: string, ctx: ExecutionContext, fresh: () => Promise<Response>): Promise<Response> {
+  const cacheKey = new Request(cacheUrl);
+  const hit = await caches.default.match(cacheKey);
+  if (hit) {
+    const headers = new Headers(hit.headers);
+    headers.set('x-cache', 'HIT');
+    return new Response(hit.body, { status: hit.status, headers });
+  }
   try {
-    const page = await fetchPage(url);
-    if (!page) return json({ error: 'no previewable content' }, 422);
-    const res = json(previewPayload(page, request), 200, {
-      'x-cache': 'MISS',
-      'cache-control': `public, max-age=${CACHE_TTL}`,
-    });
-    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
+    const res = await fresh();
+    if (res.status === 200) ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
     return res;
   } catch (e) {
     return errorResponse(e, 'fetch failed');
   }
 }
 
+async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
+  if (request.headers.get('x-stage-client') !== '1') return json({ error: 'forbidden' }, 403);
+  if (rateLimited(request, 'preview')) return json({ error: 'rate limited' }, 429);
+  const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
+  if (!url) return json({ error: 'url query param required' }, 400);
+  return cached(`https://proxy.stage.box/preview?url=${encodeURIComponent(url)}`, ctx, async () => {
+    const page = await fetchPage(url);
+    if (!page) return json({ error: 'no previewable content' }, 422);
+    return json(previewPayload(page, request), 200, { 'x-cache': 'MISS', 'cache-control': `public, max-age=${CACHE_TTL}` });
+  });
+}
+
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (rateLimited(request, 'img')) return json({ error: 'rate limited' }, 429);
-
   const params = new URL(request.url).searchParams;
   const url = params.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
   const width = parseWidth(params.get('w'));
-
-  const cacheKey = new Request(
-    `https://proxy.stage.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`,
-  );
-  const cached = await cacheHit(cacheKey);
-  if (cached) return cached;
-
-  try {
+  return cached(`https://proxy.stage.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`, ctx, async () => {
     const img = await fetchImage(url, width);
     if (!img) return json({ error: 'not a fetchable image' }, 422);
-    const res = new Response(img.body, {
+    return new Response(img.body, {
       status: 200,
       headers: {
         'content-type': img.contentType,
@@ -129,11 +111,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
         ...BASE_HEADERS,
       },
     });
-    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
-    return res;
-  } catch (e) {
-    return errorResponse(e, 'fetch failed');
-  }
+  });
 }
 
 async function handleSettle(request: Request): Promise<Response> {
@@ -221,7 +199,7 @@ function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
 
 function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promise<Response> | Response | null {
   if (isAttachmentPath(pathname)) return routeAttachments(request, env);
-  if (pathname === NODES_PATH) return routeNodes(request, env);
+  if (pathname === NODE_PUBLISH_PATH) return routeNodes(request, env);
   if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
   if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
   if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);

@@ -1,4 +1,3 @@
-
 import { fetchPublic, readCappedText, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 8000;

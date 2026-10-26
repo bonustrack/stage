@@ -39,7 +39,6 @@ function mailbox(label: string): { fetch(input: string, init?: RequestInit): Pro
 }
 
 const chain: NamesChain = {
-  operator: '0x00000000000000000000000000000000000000EE',
   confirm: (hash) => Promise.resolve(hash),
   verifyClaim: (address, message, signature) => verifyMessage({ address, message, signature }),
   subnameOwner: (label) => Promise.resolve(owners.get(label) ?? null),

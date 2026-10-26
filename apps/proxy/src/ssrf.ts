@@ -1,3 +1,5 @@
+import { concatBytes } from 'viem';
+
 export const UA = 'Mozilla/5.0 (compatible; StageLinkPreview/1.0; +https://stage.box)';
 
 const BLOCKED_HOST_SUFFIXES = [
@@ -87,10 +89,7 @@ async function drain(
     total += value.length;
     if (!reject && total >= maxBytes) { void reader.cancel(); break; }
   }
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const c of chunks) { out.set(c, off); off += c.length; }
-  return out;
+  return concatBytes(chunks);
 }
 
 export async function readCappedBytes(
@@ -134,14 +133,14 @@ export function assertPublicUrl(raw: string): URL {
   return u;
 }
 
-export interface PublicFetchOptions {
+interface PublicFetchOptions {
   maxRedirects: number;
   timeoutMs: number;
   headers: (url: string) => HeadersInit;
   cf?: RequestInit['cf'];
 }
 
-export interface PublicFetchResult {
+interface PublicFetchResult {
   res: Response;
   finalUrl: string;
 }

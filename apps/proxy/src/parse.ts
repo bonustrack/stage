@@ -1,4 +1,3 @@
-
 export interface PreviewMeta {
   url: string;
   title?: string;
@@ -75,14 +74,6 @@ function resolveUrl(href: string | undefined, base: string): string | undefined 
   }
 }
 
-function orFallback(v: string | undefined, fallback: string): string {
-  return v !== undefined && v.length > 0 ? v : fallback;
-}
-
-function orUndefined(v: string | undefined): string | undefined {
-  return v !== undefined && v.length > 0 ? v : undefined;
-}
-
 function hostOf(finalUrl: string): string {
   try {
     return new URL(finalUrl).hostname.replace(/^www\./, '');
@@ -121,10 +112,10 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
 
   return {
     url: canonical,
-    title: orFallback(title, host),
-    description: orUndefined(description),
+    title: title !== undefined && title.length > 0 ? title : host,
+    description,
     image: resolveUrl(rawImage, finalUrl),
-    siteName: orFallback(siteName, host),
+    siteName: siteName ?? host,
     favicon: resolveUrl(faviconLink(head) ?? '/favicon.ico', finalUrl),
   };
 }

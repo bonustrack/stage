@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { installsInPlace, releasePageUrl, releaseTag, UPDATE_CHECK_INTERVAL_MS } from '../src/updateModel';
+import { installsInPlace, releasePageUrl, UPDATE_CHECK_INTERVAL_MS } from '../src/updateModel';
 
 describe('installsInPlace', () => {
   test('windows and linux install downloaded updates themselves', () => {
@@ -14,7 +14,6 @@ describe('installsInPlace', () => {
 
 describe('release links', () => {
   test('point at the shared v<version> GitHub release', () => {
-    expect(releaseTag('0.1.3')).toBe('v0.1.3');
     expect(releasePageUrl('0.1.3')).toBe('https://github.com/bonustrack/stage/releases/tag/v0.1.3');
   });
 

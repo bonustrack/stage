@@ -3,37 +3,16 @@ const base = {
   ignoreExportsUsedInFile: true,
 };
 
-const library = ({ entry = ['src/**/*.ts'], project = ['src/**'], ...rest } = {}) => ({
+const preset = (defaultEntry, defaultProject) => ({ entry = [...defaultEntry], project = [...defaultProject], ...rest } = {}) => ({
   entry,
   project,
   ...rest,
 });
 
-const rnApp = ({
-  entry = ['app/**/*.{ts,tsx}'],
-  project = ['app/**', 'components/**', 'lib/**', 'modules/**'],
-  ...rest
-} = {}) => ({
-  entry,
-  project,
-  ...rest,
-});
-
-const cloudflareWorker = ({ entry = ['src/index.ts'], project = ['src/**'], ...rest } = {}) => ({
-  entry,
-  project,
-  ...rest,
-});
-
-const scriptsWorkspace = ({
-  entry = ['scripts/**/*.{mjs,js,sh}'],
-  project = ['scripts/**/*.{mjs,js}'],
-  ...rest
-} = {}) => ({
-  entry,
-  project,
-  ...rest,
-});
+const library = preset(['src/**/*.ts'], ['src/**']);
+const rnApp = preset(['app/**/*.{ts,tsx}'], ['app/**', 'components/**', 'lib/**', 'modules/**']);
+const cloudflareWorker = preset(['src/index.ts'], ['src/**']);
+const scriptsWorkspace = preset(['scripts/**/*.{mjs,js,sh}'], ['scripts/**/*.{mjs,js}']);
 
 const workspaces = (map) => ({ ...base, workspaces: map });
 

@@ -11,7 +11,7 @@ export function serialized(run: (request: Request) => Promise<Response>): (reque
   };
 }
 
-export interface ClaimsStorage {
+interface ClaimsStorage {
   get(key: string): Promise<unknown>;
   put(key: string, value: string): Promise<void>;
 }

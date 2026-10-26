@@ -1,8 +1,7 @@
-import { NODE_CODE_MAX_BYTES, NODE_PUBLISH_PATH, hostedNodeUrl, nodeIdOf, nodeScriptName } from '@stage-labs/client/nodes/hosting';
+import { NODE_CODE_MAX_BYTES, hostedNodeUrl, nodeIdOf, nodeScriptName } from '@stage-labs/client/nodes/hosting';
 import { base64urlBytes, isStrongNodeKey, nodeSigningText } from '@stage-labs/client/nodes/signing';
-import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
+import { corsHeaders, corsResponse, declaredLength, jsonResponse } from './respond.ts';
 
-export const NODES_PATH = NODE_PUBLISH_PATH;
 export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
 const MAIN_MODULE = 'node.js';
@@ -19,11 +18,11 @@ const TIMESTAMP = /^\d{1,12}$/;
 const LONG_HEX = /[0-9a-f]{32,}/gi;
 const CORS = corsHeaders('PUT, DELETE, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature');
 
-export interface ApiReply { status: number; result: unknown; message: string | null }
+interface ApiReply { status: number; result: unknown; message: string | null }
 
 export type NodesApi = (method: 'GET' | 'PUT' | 'DELETE', path: string, body?: FormData) => Promise<ApiReply>;
 
-export interface NodesDeps {
+interface NodesDeps {
   api: NodesApi | null;
   limited: () => Promise<boolean>;
   now?: () => number;
@@ -59,12 +58,6 @@ export function cloudflareApi(token: string | undefined, accountId: string | und
       return { status: 0, result: null, message: null };
     }
   };
-}
-
-function declaredLength(request: Request): number | null {
-  const raw = request.headers.get('content-length');
-  const size = raw === null ? Number.NaN : Number(raw);
-  return Number.isSafeInteger(size) && size >= 0 ? size : null;
 }
 
 async function readCode(request: Request): Promise<Uint8Array | Response> {

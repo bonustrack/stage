@@ -55,10 +55,6 @@ function allowScreenShare(): void {
   }, { useSystemPicker: true });
 }
 
-function webRoot(): string {
-  return app.isPackaged ? path.join(process.resourcesPath, 'web') : path.join(app.getAppPath(), 'web');
-}
-
 function start(): void {
   registerAppScheme();
   if (app.isPackaged) app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
@@ -79,7 +75,7 @@ function start(): void {
     if (process.platform !== 'darwin') app.quit();
   });
   void app.whenReady().then(() => {
-    if (remoteUi === undefined || remoteUi === '') serveWebApp(webRoot());
+    if (remoteUi === undefined || remoteUi === '') serveWebApp(path.join(app.isPackaged ? process.resourcesPath : app.getAppPath(), 'web'));
     restrictPermissions();
     allowScreenShare();
     installMenu();

@@ -1,9 +1,10 @@
+import { concatBytes } from 'viem';
 import { corsHeaders, corsResponse } from './respond.ts';
 
 export const HISTORY_PREFIX = '/xmtp-history/';
 
-export const HISTORY_ENVS: ReadonlySet<string> = new Set(['production', 'dev']);
-export const MAX_UPLOAD_BYTES = 100_000_000;
+const HISTORY_ENVS: ReadonlySet<string> = new Set(['production', 'dev']);
+const MAX_UPLOAD_BYTES = 100_000_000;
 export const MAX_ARCHIVE_BYTES = 1_000_000_000;
 const CHUNK_BYTES = 1_000_000;
 export const ARCHIVE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
@@ -15,7 +16,7 @@ const OBJECT_URL = 'https://history-archive/';
 
 const HISTORY_CORS_HEADERS = corsHeaders('GET, POST, OPTIONS');
 
-export type HistoryRoute =
+type HistoryRoute =
   | { kind: 'upload'; env: string }
   | { kind: 'part'; env: string; id: string }
   | { kind: 'file'; env: string; id: string };
@@ -116,13 +117,7 @@ function joined(chunks: Map<string, unknown>, keys: string[]): Uint8Array | null
     if (!(part instanceof ArrayBuffer)) return null;
     parts.push(new Uint8Array(part));
   }
-  const out = new Uint8Array(parts.reduce((total, part) => total + part.byteLength, 0));
-  let offset = 0;
-  for (const part of parts) {
-    out.set(part, offset);
-    offset += part.byteLength;
-  }
-  return out;
+  return concatBytes(parts);
 }
 
 async function chunkCount(storage: Pick<ArchiveStorage, 'get'>, prefix: string): Promise<number> {

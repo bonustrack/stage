@@ -1,4 +1,4 @@
-import { corsHeaders, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
+import { corsHeaders, corsResponse, declaredLength, jsonResponse, type HeaderMap } from './respond.ts';
 
 export const ATTACHMENTS_PATH = '/attachments';
 export const MAX_ATTACHMENT_BYTES = 100_000_000;
@@ -9,9 +9,9 @@ const IMMUTABLE = 'public, max-age=31536000, immutable';
 const ATTACHMENT_CORS = corsHeaders('GET, HEAD, POST, OPTIONS');
 const KEY_PREFIX = 'attachments/';
 
-export type AttachmentRoute = { kind: 'upload' } | { kind: 'file'; id: string };
+type AttachmentRoute = { kind: 'upload' } | { kind: 'file'; id: string };
 
-export interface StoredAttachment {
+interface StoredAttachment {
   body: ReadableStream;
   size: number;
   etag: string;
@@ -62,13 +62,6 @@ export function newAttachmentId(): string {
 
 function text(body: string | null, status: number): Response {
   return corsResponse(ATTACHMENT_CORS, body, status, body === null ? null : 'text/plain');
-}
-
-function declaredLength(request: Request): number | null {
-  const raw = request.headers.get('content-length');
-  if (raw === null) return null;
-  const size = Number(raw);
-  return Number.isSafeInteger(size) && size >= 0 ? size : null;
 }
 
 async function upload(request: Request, store: AttachmentStore): Promise<Response> {

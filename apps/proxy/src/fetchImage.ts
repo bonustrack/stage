@@ -1,4 +1,3 @@
-
 import { fetchPublic, readCappedBytes, SsrfError, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
@@ -27,9 +26,7 @@ const REQ_HEADERS = {
 };
 
 function fetchFollowing(startUrl: string, cf?: RequestInit['cf']): Promise<{ res: Response }> {
-  return fetchPublic(startUrl, {
-    maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: () => REQ_HEADERS, ...(cf ? { cf } : {}),
-  });
+  return fetchPublic(startUrl, { maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: () => REQ_HEADERS, cf });
 }
 
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
@@ -44,32 +41,22 @@ function imageContentType(res: Response): string | null {
   return ct.startsWith('image/') ? ct : null;
 }
 
-export async function fetchImage(rawUrl: string, width?: number): Promise<ImageResult | null> {
-  const w = width ?? DEFAULT_WIDTH;
+async function imageFrom(res: Response, resized: boolean): Promise<ImageResult | null> {
+  const contentType = res.ok ? imageContentType(res) : null;
+  const body = contentType === null ? null : await readImageCapped(res);
+  return contentType === null || body === null ? null : { body, contentType, resized };
+}
 
+export async function fetchImage(rawUrl: string, width = DEFAULT_WIDTH): Promise<ImageResult | null> {
   try {
     const { res } = await fetchFollowing(rawUrl, {
-      image: { width: w, fit: 'scale-down', quality: QUALITY, format: 'webp', anim: false },
+      image: { width, fit: 'scale-down', quality: QUALITY, format: 'webp', anim: false },
     });
-    if (res.ok) {
-      const ct = imageContentType(res);
-      if (ct) {
-        const body = await readImageCapped(res);
-        if (body) {
-          const resized = res.headers.has('cf-resized');
-          return { body, contentType: ct, resized };
-        }
-      }
-    }
+    const image = await imageFrom(res, res.headers.has('cf-resized'));
+    if (image) return image;
   } catch (e) {
     if (e instanceof SsrfError) throw e;
   }
-
   const { res } = await fetchFollowing(rawUrl);
-  if (!res.ok) return null;
-  const ct = imageContentType(res);
-  if (!ct) return null;
-  const body = await readImageCapped(res);
-  if (!body) return null;
-  return { body, contentType: ct, resized: false };
+  return imageFrom(res, false);
 }

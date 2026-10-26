@@ -13,7 +13,7 @@ const HEADER_MAX_CHARS = 512;
 export const REJECT_UNKNOWN = 'No such mailbox';
 export const REJECT_INACTIVE = 'Mailbox not activated';
 export const REJECT_TOO_LARGE = 'Message too large';
-export const REJECT_FULL = 'Mailbox full';
+const REJECT_FULL = 'Mailbox full';
 
 export interface IncomingMail {
   readonly from: string;
@@ -24,7 +24,7 @@ export interface IncomingMail {
   setReject(reason: string): void;
 }
 
-export interface ReceiveDeps {
+interface ReceiveDeps {
   mailbox: (label: string) => ArchiveStub;
   chain: MailChain;
   now?: () => number;

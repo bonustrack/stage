@@ -5,7 +5,7 @@ import { BASENAME_REGISTRY, REGISTRY_ABI as BASENAME_REGISTRY_ABI } from '@stage
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import type { NamesChain } from './namesTypes.ts';
 
-const NAME_TAKEN = 'name already taken';
+export const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
 
 export class NameTransactionRevertedError extends Error {
@@ -39,7 +39,6 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
   };
 
   return {
-    operator: account.address,
     verifyClaim: (address, message, signature) => publicClient.verifyMessage({ address, message, signature }),
     subnameOwner: async (label) => {
       const owner = await publicClient.readContract({ ...registry, functionName: 'owner', args: [namehash(stageNameOf(label))] });

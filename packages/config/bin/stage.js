@@ -8,10 +8,6 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const requireFromCwd = createRequire(join(process.cwd(), 'noop.js'));
 
-function resolvePkg(specifier) {
-  return pathToFileURL(requireFromCwd.resolve(specifier)).href;
-}
-
 const SUBS = ['lint', 'knip', 'madge', 'typecheck'];
 
 function usage(message) {
@@ -57,24 +53,6 @@ function run(bin, args) {
   return res.status ?? 1;
 }
 
-function firstExisting(names) {
-  for (const name of names) {
-    if (existsSync(resolve(cwd, name))) return name;
-  }
-  return null;
-}
-
-function writeTemp(prefix, contents) {
-  const dir = mkdtempSync(join(tmpdir(), prefix));
-  const file = join(dir, 'config.mjs');
-  writeFileSync(file, contents);
-  return file;
-}
-
-function configUrl() {
-  return pathToFileURL(stageConfigPath()).href;
-}
-
 const LINT_VALUE_FLAGS = new Set([
   '-c', '--config', '--ext', '--global', '--parser', '--parser-options', '--plugin', '--rule', '--fix-type',
   '--ignore-pattern', '--stdin-filename', '--max-warnings', '-o', '--output-file', '-f', '--format',
@@ -86,19 +64,15 @@ const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue)$/;
 
 function parseLintArgs(argv) {
   const paths = [];
-  const flags = [];
+  let changed = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (!arg.startsWith('-')) {
-      paths.push(arg);
-      continue;
-    }
     const name = arg.split('=')[0];
-    const takesValue = !arg.includes('=') && LINT_VALUE_FLAGS.has(name) && i + 1 < argv.length;
-    const raw = takesValue ? [arg, argv[(i += 1)]] : [arg];
-    flags.push({ name, raw, value: takesValue ? raw[1] : arg.slice(name.length + 1) });
+    if (!arg.startsWith('-')) paths.push(arg);
+    else if (name === '--changed') changed = true;
+    else if (!arg.includes('=') && LINT_VALUE_FLAGS.has(name) && i + 1 < argv.length) i += 1;
   }
-  return { paths, flags };
+  return { paths, changed };
 }
 
 function git(args) {
@@ -128,8 +102,7 @@ function oxlintTargets(paths, files) {
 }
 
 async function cmdLint(argv) {
-  const { paths, flags } = parseLintArgs(argv);
-  const changed = flags.some((flag) => flag.name === '--changed');
+  const { paths, changed } = parseLintArgs(argv);
   const rest = argv.filter((arg) => arg !== '--changed');
   const files = changed ? changedFiles() : null;
   if (changed && !files) return 2;
@@ -145,46 +118,39 @@ async function cmdLint(argv) {
 }
 
 function cmdKnip(argv) {
-  const native = firstExisting(['knip.config.js', 'knip.config.ts', 'knip.config.json', 'knip.json']);
+  const native = ['knip.config.js', 'knip.config.ts', 'knip.config.json', 'knip.json'].find((name) => existsSync(resolve(cwd, name)));
   if (native) {
     process.stderr.write(`stage knip: deferring to native ${native}\n`);
     return run(localBin('knip'), [...argv]);
   }
-  const temp = writeTemp('stage-knip-', [
-    `import { buildKnipConfig } from ${JSON.stringify(resolvePkg('@stage-labs/config/knip'))};`,
-    `import cfg from ${JSON.stringify(configUrl())};`,
+  const config = [
+    `import { buildKnipConfig } from ${JSON.stringify(pathToFileURL(requireFromCwd.resolve('@stage-labs/config/knip')).href)};`,
+    `import cfg from ${JSON.stringify(pathToFileURL(stageConfigPath()).href)};`,
     'export default buildKnipConfig(cfg);',
     '',
-  ].join('\n'));
+  ].join('\n');
+  const temp = join(mkdtempSync(join(tmpdir(), 'stage-knip-')), 'config.mjs');
+  writeFileSync(temp, config);
   return run(localBin('knip'), ['--config', temp, ...argv]);
 }
 
 function globToDir(glob) {
-  const idx = glob.indexOf('*');
-  let base = idx === -1 ? glob : glob.slice(0, idx);
-  base = base.replace(/\/+$/, '');
-  return base || '.';
+  return glob.split('*')[0].replace(/\/+$/, '') || '.';
+}
+
+function madgeRoots(stageConfig, argv) {
+  if (argv.length > 0) return argv;
+  const configured = stageConfig.madge?.roots;
+  if (Array.isArray(configured) && configured.length > 0) return configured;
+  return Object.entries(stageConfig.workspaces).flatMap(([path, workspace]) => (Array.isArray(workspace.src) && workspace.src.length > 0
+    ? workspace.src.map((g) => prefixed(path, globToDir(g)))
+    : [path === '.' ? 'src' : `${path}/src`]));
 }
 
 async function cmdMadge(stageConfig, argv) {
   const { madgeConfig } = await import('@stage-labs/config/madge');
   const { default: madge } = await import('madge');
-  let roots;
-  if (argv.length > 0) {
-    roots = argv;
-  } else if (Array.isArray(stageConfig.madge?.roots) && stageConfig.madge.roots.length > 0) {
-    roots = stageConfig.madge.roots;
-  } else {
-    roots = [];
-    for (const [path, workspace] of Object.entries(stageConfig.workspaces)) {
-      if (Array.isArray(workspace.src) && workspace.src.length > 0) {
-        for (const g of workspace.src) roots.push(prefixed(path, globToDir(g)));
-      } else {
-        roots.push(path === '.' ? 'src' : `${path}/src`);
-      }
-    }
-  }
-  roots = roots.filter((r) => existsSync(resolve(cwd, r)));
+  const roots = madgeRoots(stageConfig, argv).filter((r) => existsSync(resolve(cwd, r)));
   const res = await madge(roots, madgeConfig);
   const circular = res.circular();
   if (circular.length === 0) {
@@ -217,21 +183,17 @@ function spawnCaptured(bin, args) {
   });
 }
 
-function typecheckCompiler(useTsc) {
-  return !useTsc && findLocalBin('tsgo') ? 'tsgo' : 'tsc';
-}
-
 async function cmdTypecheck(stageConfig, argv) {
-  const useTsc = argv.includes('--tsc');
+  const compiler = !argv.includes('--tsc') && findLocalBin('tsgo') ? 'tsgo' : 'tsc';
   const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv.filter((arg) => arg !== '--tsc')];
   const queue = Object.entries(stageConfig.workspaces)
-    .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`, compiler: typecheckCompiler(useTsc) }))
+    .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json` }))
     .filter(({ project }) => existsSync(resolve(cwd, project)));
   const failures = [];
   const lane = async () => {
     for (let job = queue.shift(); job; job = queue.shift()) {
-      const { status, output } = await spawnCaptured(localBin(job.compiler), ['--noEmit', '-p', job.project, ...flags]);
-      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${job.compiler})\n${output}`, done));
+      const { status, output } = await spawnCaptured(localBin(compiler), ['--noEmit', '-p', job.project, ...flags]);
+      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${compiler})\n${output}`, done));
       if (status !== 0) failures.push(job.path);
     }
   };
