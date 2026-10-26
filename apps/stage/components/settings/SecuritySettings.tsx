@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -8,7 +8,7 @@ import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../li
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
-import { securityRows, type SecurityRowKey } from './SecuritySettings.model';
+import { securityRows } from './SecuritySettings.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
@@ -50,44 +50,32 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
   );
 }
 
-function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | null {
-  if (!key) return null;
-  return key.id === rec.id ? key.pk : null;
-}
-
 function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [key, setRevealed] = useState<RevealedKey | null>(null);
   const backedUp = useWalletBackedUp();
-  const revealed = revealedKeyFor(key, rec);
+  const revealed = key?.id === rec.id ? key.pk : null;
   const keys = securityRows({
     isSmart: rec.type === 'smart', backedUp,
     canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null,
   });
-  const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
-    backupPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="backup" />,
-    showPhrase: () => <RecoveryPhraseRow key={rec.id} rec={rec} mode="show" />,
-    exportKey: () => <SettingsNavRow label="Export private key" iconStart={IconWallet4} iconEnd={IconChevronBottom} onPress={() => { confirmExport(rec, setRevealed); }} />,
-  };
   return (
     <SettingsGroup title="Keys" footnote={SECURITY_FOOTNOTE}>
       {revealed && canExportPrivateKey(rec) ? <RevealedKeyRow dark={dark} revealed={revealed} /> : null}
-      {keys.map((k) => <Fragment key={k}>{rows[k]()}</Fragment>)}
+      {keys.map((k) => (k === 'exportKey'
+        ? <SettingsNavRow key={k} label="Export private key" iconStart={IconWallet4} iconEnd={IconChevronBottom} onPress={() => { confirmExport(rec, setRevealed); }} />
+        : <RecoveryPhraseRow key={`${k}:${rec.id}`} rec={rec} mode={k === 'backupPhrase' ? 'backup' : 'show'} />))}
     </SettingsGroup>
   );
 }
 
 const SECURITY_FOOTNOTE = 'Your recovery phrase or private key controls your account. Keep it somewhere safe.';
 
-function SecuritySection(): React.ReactElement | null {
-  const rec = useActiveAccountRecord();
-  return rec ? <KeyRows rec={rec} /> : null;
-}
-
 export function SecuritySettings(): React.ReactElement {
+  const rec = useActiveAccountRecord();
   return (
     <SettingsPage title="Security">
-      <SecuritySection/>
+      {rec ? <KeyRows rec={rec} /> : null}
     </SettingsPage>
   );
 }

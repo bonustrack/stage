@@ -51,12 +51,10 @@ export function usePullToRefresh(
   const onScrollEndDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const pulled = -Math.min(minY.current, e.nativeEvent.contentOffset.y);
     minY.current = 0;
-    if (!refreshing && !armed.current && pulled >= THRESHOLD) {
-      armed.current = true;
-      onRefresh();
-    } else if (!refreshing && !armed.current) {
-      Animated.timing(pull, { toValue: 0, duration: 160, useNativeDriver: true }).start();
-    }
+    if (refreshing || armed.current) return;
+    if (pulled < THRESHOLD) { Animated.timing(pull, { toValue: 0, duration: 160, useNativeDriver: true }).start(); return; }
+    armed.current = true;
+    onRefresh();
   };
 
   const opacity = pull.interpolate({

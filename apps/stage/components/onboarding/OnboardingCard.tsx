@@ -7,15 +7,6 @@ import { Column } from '../layout';
 
 const CENTER = { textAlign: 'center' } as const;
 
-function PageIntro({ title, about }: { title: string; about?: string }): React.ReactElement {
-  return (
-    <Column gap={PAGE_INTRO_TYPE.gap}>
-      <Title hero="3xl" style={CENTER}>{title}</Title>
-      {about === undefined ? null : <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>{about}</Text>}
-    </Column>
-  );
-}
-
 const ACTIONS_GAP = 20;
 
 export function OnboardingCard({ title, about, footer, after, children }: {
@@ -23,7 +14,10 @@ export function OnboardingCard({ title, about, footer, after, children }: {
 }): React.ReactElement {
   return (
     <Column width="100%" maxWidth={PAGE_INTRO_MAX_WIDTH} padding={{ x: PAGE_INTRO_TYPE.padX }} gap={PAGE_INTRO_TYPE.sectionGap}>
-      <PageIntro title={title} about={about} />
+      <Column gap={PAGE_INTRO_TYPE.gap}>
+        <Title hero="3xl" style={CENTER}>{title}</Title>
+        {about === undefined ? null : <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>{about}</Text>}
+      </Column>
       {children === undefined || children === null ? null : <Column gap={16}>{children}</Column>}
       <Column gap={ACTIONS_GAP}>
         {footer === undefined || footer === null ? null : <Column gap={10}>{footer}</Column>}
@@ -33,8 +27,8 @@ export function OnboardingCard({ title, about, footer, after, children }: {
   );
 }
 
-export function SkipLink({ label = 'Skip for now', disabled, onPress }: {
-  label?: string; disabled?: boolean; onPress: () => void;
+export function SkipLink({ label, disabled, onPress }: {
+  label: string; disabled?: boolean; onPress: () => void;
 }): React.ReactElement {
   return (
     <Pressable onPress={onPress} disabled={disabled} hitSlop={8} style={{ alignSelf: 'center', opacity: disabled === true ? 0.5 : 1 }}>

@@ -11,9 +11,8 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { RecipientRow } from './send.recipient';
 import { networkName, recipientSummary, type RecipientState } from './recipient.model';
+import type { SendTxState } from './send.public';
 import { Column, Row, PAGE_GUTTER } from '../layout';
-
-type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
 export function WalletFooter({
   border, dark, onCancel, cancelLabel = 'Cancel', submitLabel, onSubmit, submitDisabled, submitLoading,
@@ -37,7 +36,7 @@ export function WalletFooter({
 }
 
 export function TxStatus(props: {
-  txState: TxState; txHash: Hex | null; txChainId: number; txErr: string | null;
+  txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null;
 }): React.ReactElement {
   const { txState, txHash, txChainId, txErr } = props;
   return (

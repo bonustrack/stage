@@ -11,22 +11,12 @@ function buttonColor(button: AlertButton): 'danger' | 'primary' | 'secondary' {
   return button.style === 'destructive' ? 'danger' : 'primary';
 }
 
-function buttonVariant(button: AlertButton): 'soft' | 'solid' {
-  return button.style === 'cancel' ? 'soft' : 'solid';
-}
-
-function orderedButtons(request: AlertRequest): AlertButton[] {
-  const cancel = request.buttons.filter((b) => b.style === 'cancel');
-  const rest = request.buttons.filter((b) => b.style !== 'cancel');
-  return [...cancel, ...rest];
-}
-
 function AlertButtons({ request, dark }: { request: AlertRequest; dark: boolean }): React.ReactElement {
   const press = (button: AlertButton): void => {
     dismissAlert();
     button.onPress?.();
   };
-  const buttons = orderedButtons(request);
+  const buttons = [...request.buttons.filter((b) => b.style === 'cancel'), ...request.buttons.filter((b) => b.style !== 'cancel')];
   const sideBySide = buttons.length === 2;
   const items = buttons.map((button, i) => (
     <Column key={`${button.text ?? 'button'}-${i}`} weight={sideBySide ? 1 : undefined}>
@@ -35,7 +25,7 @@ function AlertButtons({ request, dark }: { request: AlertRequest; dark: boolean 
         size="lg"
         fullWidth
         color={buttonColor(button)}
-        variant={buttonVariant(button)}
+        variant={button.style === 'cancel' ? 'soft' : 'solid'}
         dark={dark}
         onPress={() => { press(button); }}
       />

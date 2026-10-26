@@ -20,7 +20,6 @@ export function walletTotalUsd(rows: readonly WalletTotalRow[] | null): number |
 }
 
 export interface TokenRowAsset {
-  chainId: number;
   symbol: string;
   name: string;
   balance: string;
@@ -35,7 +34,6 @@ export interface TokenRowFormat {
 }
 
 export interface TokenRowModelParams {
-  tokenId: string;
   symbol: string;
   name: string;
   priceUsd: string;
@@ -57,7 +55,6 @@ export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowMode
   const priceText = tokenPriceText(r, f.fmtUsd);
   const changeText = tokenChangeText(r.change24h);
   return {
-    tokenId: `${r.chainId}:${r.symbol}`,
     symbol: r.name,
     name: priceText,
     priceUsd: `${f.fmtBalance(r.balance)} ${r.symbol}`,

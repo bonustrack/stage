@@ -18,7 +18,7 @@ import {
 
 const RESOLVE_DEBOUNCE_MS = 300;
 
-type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
+export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
 interface SendAsset { address: Hex | null; decimals: number; }
 type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
@@ -75,7 +75,6 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     () => ASSETS.find(a => a.symbol === token.symbol && a.chainId === token.chainId),
     [token.symbol, token.chainId],
   );
-  const ethBalance = balance;
 
   useEffect(() => {
     let cancelled = false;
@@ -116,9 +115,9 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
   const onMax = (): void => {
-    if (!ethBalance) return;
-    if (mode === 'eth') setAmount(ethBalance);
-    else if (tokenPriceUsd) setAmount((Number(ethBalance) * tokenPriceUsd).toFixed(2));
+    if (!balance) return;
+    if (mode === 'eth') setAmount(balance);
+    else if (tokenPriceUsd) setAmount((Number(balance) * tokenPriceUsd).toFixed(2));
   };
 
   const onSubmit = (): void => {
@@ -126,15 +125,14 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     void (async (): Promise<void> => {
       setTxErr(null); setTxHash(null); setTxState('submitting');
       try {
-        const tokStr = tokenAmountText;
         const active = await getActiveAccount();
         if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
 
         const isSmart = active.type === 'smart';
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart
-          ? await sendSmart(active, asset, resolved, tokStr, token.chainId)
-          : await sendNativeOrToken({ to: resolved, amount: tokStr, asset, chainId: token.chainId });
+          ? await sendSmart(active, asset, resolved, tokenAmountText, token.chainId)
+          : await sendNativeOrToken({ to: resolved, amount: tokenAmountText, asset, chainId: token.chainId });
         setTxHash(hash); setTxChainId(receiptChainId); setTxState('pending');
         const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
         await pub.waitForTransactionReceipt({ hash });
@@ -147,7 +145,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
 
   return {
     to, setTo, amount, setAmount, mode, setMode, recipient, resolved, tokenAmountText,
-    ethBalance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txChainId, txErr,
+    ethBalance: balance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txChainId, txErr,
     onMax, onSubmit,
   };
 }

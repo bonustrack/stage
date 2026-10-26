@@ -127,13 +127,6 @@ function useRecipients(drafting: boolean, draftKey: string | null, assigned: rea
   return { shown, picked, toggle, reset };
 }
 
-function useWarmSendPath(draft: ComposerState): void {
-  const drafting = draft.text.trim() !== '' || draft.pending.length > 0;
-  useEffect(() => {
-    if (drafting) void xmtpClient().then(warmSenderFilters).catch(ignored(undefined, 'optional'));
-  }, [drafting, draft.text, draft.pending.length]);
-}
-
 function useStartChat(draft: ComposerState, draftKey: string | null, metadata: Metadata, onOpened: (convId: string) => void): {
   creating: boolean; start: (addresses: readonly string[]) => Promise<void>;
 } {
@@ -228,7 +221,9 @@ export function NewChatScreen(): React.ReactElement {
   const metadata = { ...newChatMetadata(useGlobalSearchParams()), ...defaults };
   const setMetadata = (next: Metadata): void => { router.setParams(newChatParams(next)); };
   const drafting = draft.text.trim() !== '' || draft.pending.length > 0;
-  useWarmSendPath(draft);
+  useEffect(() => {
+    if (drafting) void xmtpClient().then(warmSenderFilters).catch(ignored(undefined, 'optional'));
+  }, [drafting, draft.text, draft.pending.length]);
   const recipients = useRecipients(drafting, draftKey, metadata.assigned, account?.address ?? null);
   const selectedMetadata = memberChatMetadata(metadata, recipients.picked, account?.address ?? null);
   const { creating, start } = useStartChat(draft, draftKey, selectedMetadata, (convId) => {

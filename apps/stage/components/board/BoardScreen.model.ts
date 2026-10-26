@@ -20,7 +20,7 @@ export interface BoardColumn<T> {
 
 export const labelColumnKey = (label: string): string => `${LABEL_PREFIX}${label}`;
 
-export const columnKeyOf = (by: GroupKey, value: string): string => (by === 'label' ? labelColumnKey(value) : `${by}:${value}`);
+const columnKeyOf = (by: GroupKey, value: string): string => (by === 'label' ? labelColumnKey(value) : `${by}:${value}`);
 
 export type EditableColumnBy = Exclude<GroupKey, 'assignee'>;
 

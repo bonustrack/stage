@@ -22,14 +22,12 @@ function EmptyDashboard(): React.ReactElement {
 export function DashboardScreen(): React.ReactElement {
   const loaded = useDashboardLoaded();
   const { widgets } = useDashboard();
-  const empty = widgets.length === 0;
   const rail = useWebTabRail();
   return (
     <SettingsPage
       title="Dashboard" back={!rail} keyboardShouldPersistTaps="handled" trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
     >
-      {loaded && empty ? <EmptyDashboard /> : null}
-      {loaded && !empty ? <DashboardGrid widgets={widgets} /> : null}
+      {!loaded ? null : widgets.length === 0 ? <EmptyDashboard /> : <DashboardGrid widgets={widgets} />}
     </SettingsPage>
   );
 }

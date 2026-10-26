@@ -31,11 +31,12 @@ function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoi
   return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
 }
 
-async function writeChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice): Promise<void> {
+async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {
   const full = { ...patch };
   if (picture.kind === 'new') full.imageUrl = await uploadAvatar(picture.file.uri, picture.file.mime, picture.file.name ?? 'channel-avatar');
   if (picture.kind === 'remove') full.imageUrl = '';
   if (Object.keys(full).length > 0) await updateGroupMeta(convId, full);
+  await writeLabels(lineOfConv(convId), edits);
 }
 
 function useLabelDraft(labels: string[]): {
@@ -53,11 +54,6 @@ function useLabelDraft(labels: string[]): {
   const remove = (label: string): void => { setDraft((d) => removeLabel(d, label)); };
   const final = (): string[] => (input.trim() ? addLabel(draft, input) : draft);
   return { draft, input, setInput, add, remove, final };
-}
-
-async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {
-  await writeChannel(convId, patch, picture);
-  await writeLabels(lineOfConv(convId), edits);
 }
 
 function EditChannelSection({ convId, current, rights, picture, labels, onSaved }: {

@@ -1,7 +1,6 @@
 import { useCallback, memo } from 'react';
 import { useActiveAccountRecord } from '../../../modules/messaging/account';
 import { useWalletPortfolio } from './data';
-import type { BalancePrices } from './balance.model';
 import { WalletBalanceCard } from './BalanceCard';
 import { useBalanceCurrency } from './currency';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
@@ -28,68 +27,16 @@ const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border
     <Row padding={{ y: 14 }} align="center" gap={12}>
       <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} size={TOKEN_AVATAR_SIZE} badgeSize={TOKEN_BADGE_SIZE} />
       <Column weight={1}>
-        <TokenRowBody
-          {...tokenRowModel(r, { fmtUsd, fmtBalance })}
-          showAvatar={false}
-        />
+        <TokenRowBody {...tokenRowModel(r, { fmtUsd, fmtBalance })} />
       </Column>
     </Row>
   );
 });
 
-function TokensList({
-  rows, border, bg,
-}: {
-  rows: AssetRow[];
-  border: string;
-  bg: string;
-}): React.ReactElement {
-  return (
-    <Column margin={{ x: PAGE_GUTTER }}>
-      {rows.map(r => (
-        <TokenRow
-          key={tokenRowId(r)}
-          r={r} border={border} bg={bg}
-        />
-      ))}
-    </Column>
-  );
-}
-
 const TOKENS_SPINNER = 28;
 
-interface WalletBalances {
-  address: string;
-  rows: AssetRow[] | null;
-  prices: BalancePrices | undefined;
-  err: string;
-  refreshing: boolean;
-  onRefresh: () => void;
-}
-
-export function useWalletBalances(focused: boolean): WalletBalances {
-  const address = useActiveAccountRecord()?.address ?? '';
-  const rows = useWalletPortfolio(address, focused);
-  const refetch = rows.refetch;
-
-  const onRefresh = useCallback((): void => {
-    if (!address) return;
-    void refetch();
-  }, [address, refetch]);
-
-  return {
-    address,
-    rows: rows.data?.rows ?? null,
-    prices: rows.data?.prices,
-    err: rows.error ? rows.error.message : '',
-    refreshing: rows.isRefetching,
-    onRefresh,
-  };
-}
-
-function WalletTokens({ rows, err, c }: {
-  rows: WalletBalances['rows']; err: boolean;
-  c: { border: string; bg: string };
+function WalletTokens({ rows, err, border, bg }: {
+  rows: AssetRow[] | null; err: boolean; border: string; bg: string;
 }): React.ReactElement {
   if (err && rows === null) {
     return (
@@ -104,8 +51,8 @@ function WalletTokens({ rows, err, c }: {
     );
   }
   return (
-    <Column margin={{ top: 16 }}>
-      <TokensList rows={rows} border={c.border} bg={c.bg}/>
+    <Column margin={{ top: 16, x: PAGE_GUTTER }}>
+      {rows.map(r => <TokenRow key={tokenRowId(r)} r={r} border={border} bg={bg} />)}
     </Column>
   );
 }
@@ -115,18 +62,19 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { link: head, bg, border } = usePalette();
   const focused = useWalletFocused();
 
-  const { address, rows, prices, err, refreshing, onRefresh } = useWalletBalances(focused);
+  const address = useActiveAccountRecord()?.address ?? '';
+  const portfolio = useWalletPortfolio(address, focused);
+  const { refetch } = portfolio;
+  const onRefresh = useCallback((): void => {
+    if (!address) return;
+    void refetch();
+  }, [address, refetch]);
+  const rows = portfolio.data?.rows ?? null;
+  const err = !!portfolio.error?.message;
+  const refreshing = portfolio.isRefetching;
   const currency = useBalanceCurrency();
   usePeerProfiles([address]);
   const pull = usePullToRefresh(refreshing, onRefresh, head);
-
-  const totalUsd = walletTotalUsd(rows);
-  const c = { border, bg };
-
-  const onWalletAction = useCallback((action: string): void => {
-    if (action === 'send') router.push('/wallet/send');
-    else if (action === 'receive') router.push('/wallet/receive');
-  }, [router]);
 
   return (
     <Column surface="surface" weight={1}>
@@ -145,14 +93,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 >
       <WalletBalanceCard
         balance={{
-          totalUsd, currency, prices,
-          loading: rows === null, error: !!err, refreshing,
+          totalUsd: walletTotalUsd(rows), currency, prices: portfolio.data?.prices,
+          loading: rows === null, error: err, refreshing,
           pricesLoading: refreshing,
         }}
-        border={border} onAction={onWalletAction}
+        border={border} onAction={(href) => { router.push(href); }}
       />
 
-      <WalletTokens rows={rows} err={!!err} c={c} />
+      <WalletTokens rows={rows} err={err} border={border} bg={bg} />
     </ScreenScroll>
     </Column>
   );

@@ -21,14 +21,13 @@ import { homeRows, type RowMenu } from '../home/state';
 import { useChannelsSync } from '../home/sync';
 import type { Row as ChannelRowData } from '../home/model';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useStoreValue } from '../../lib/storeCore';
 import { usePinnedOrder } from '../../lib/pins';
 import { useClearedChats } from '../../lib/clearedChats';
-import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
@@ -55,6 +54,7 @@ import { addBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } fro
 import {
   AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
 } from './BoardColumnEdit';
+import { peerLabel } from '../conversation/convTitle';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
@@ -69,7 +69,6 @@ function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'repla
   if (press === 'push') router.push(link);
   else router.replace(link);
 }
-const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 interface ColumnActions {
   editable: boolean;
   drop: (drag: BoardDrag, key: string) => void;
@@ -110,7 +109,7 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
       <ChannelRow
         title={title.text}
         placeholderTitle={title.placeholder}
-        avatarUri={item.avatarUri} avatarAddress={rowAvatarAddress(item, !item.peerAddress)} square={!item.peerAddress}
+        avatarUri={item.avatarUri} avatarAddress={rowAvatarAddress(item)} square={!item.peerAddress}
         hideAvatar={!fields.avatar} wrapTitle
         lastPreview={rowPreview(item)}
         showPreview={fields.lastMessage}
@@ -312,7 +311,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, assigneeName, r => isRowCleared(cleared, r), sort, boardOrder), order),
+    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, r => isRowCleared(cleared, r), sort, boardOrder), order),
     [rows, cleared, pinned, order, columnBy, profiles, sort, boardOrder],
   );
   const activityCutoff = useLastActivityCutoff('board');

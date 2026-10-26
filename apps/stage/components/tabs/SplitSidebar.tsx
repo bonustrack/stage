@@ -14,8 +14,7 @@ import { Column, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
 
 function usePaneScope(scope: string | null): void {
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    if (scope === null) return;
+    if (typeof document === 'undefined' || scope === null) return;
     document.documentElement.dataset.stagepane = scope;
     return () => { delete document.documentElement.dataset.stagepane; };
   }, [scope]);

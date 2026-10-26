@@ -22,7 +22,7 @@ export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
 }
 
-export const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
+const FRAME_WIDGET_HEIGHT: DashboardHeight = 3;
 
 export type FrameWidgetAdd = 'added' | 'exists' | 'full';
 

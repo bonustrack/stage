@@ -22,8 +22,6 @@ import { memberNamesOf } from '../FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useHomeViewOf } from '../../lib/homeView';
-import { getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { BoardScreen } from '../board/BoardScreen';
 import { deriveSortedRows } from './model';
 import { homeSortOf } from './sort.model';
@@ -34,9 +32,8 @@ import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
+import { peerLabel } from '../conversation/convTitle';
 import { Column } from '../layout';
-
-const assigneeName = (address: string): string => getPeerName(address) ?? shortAddress(address);
 
 export function HomeScreen({ panRef, pane, board = false }: {
   panRef?: SimultaneousRefs; pane?: boolean; board?: boolean;
@@ -95,7 +92,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
     [sortedRows, matches, cleared],
   );
-  const list = useGroupedRows(visibleRows, search.text, groupBy, assigneeName, channelProfilesVersion);
+  const list = useGroupedRows(visibleRows, search.text, groupBy, peerLabel, channelProfilesVersion);
   const accountEpoch = useAccountEpoch();
   const fields = useChannelFields('chats');
   const hideAvatar = !fields.avatar;

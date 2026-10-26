@@ -47,19 +47,8 @@ function isTap(drag: Drag, x: number, y: number): boolean {
   return Math.abs(x - drag.x) < TAP_SLOP_PX && Math.abs(y - drag.y) < TAP_SLOP_PX;
 }
 
-function EdgeBar({ edge, visible }: { edge: Edge; visible: boolean }): React.ReactElement {
-  const { border } = usePalette();
-  return (
-    <Column
-      pointerEvents="none"
-      width={BAR_WIDTH}
-      background={visible ? border : undefined}
-      style={BAR_STYLES[edge]}
-/>
-  );
-}
-
 export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }): React.ReactElement {
+  const { border } = usePalette();
   const drag = useRef<Drag | null>(null);
   const lastTapAt = useRef(0);
   const [hovered, setHovered] = useState(false);
@@ -116,7 +105,7 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
       width={HANDLE_WIDTH}
       style={HANDLE_STYLES[edge]}
     >
-      <EdgeBar edge={edge} visible={hovered || dragging}/>
+      <Column pointerEvents="none" width={BAR_WIDTH} background={hovered || dragging ? border : undefined} style={BAR_STYLES[edge]}/>
     </Column>
   );
 }

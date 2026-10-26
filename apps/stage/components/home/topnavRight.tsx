@@ -153,33 +153,23 @@ function HomeViewOptions({ color, menu, ...filter }: HomeFilterProps & {
   );
 }
 
-function HomeOverflowMenu({ color, onProfile, onSettings }: {
-  color: string; onProfile: () => void; onSettings: () => void;
-}): React.ReactElement {
-  const handlers: Record<string, (() => void) | undefined> = {
-    'copy-address': copyActiveAddress,
-    profile: onProfile,
-    settings: onSettings,
-  };
-  return <OverflowMenu color={color} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id) => { handlers[id]?.(); }}/>;
-}
-
 export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: string; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
+  const handlers: Record<string, (() => void) | undefined> = {
+    'copy-address': copyActiveAddress,
+    profile: () => {
+      void getActiveAccount().then(acct => {
+        if (acct?.address) router.push(profileLinkOf(acct.address));
+      });
+    },
+    settings: () => { router.push('/settings'); },
+  };
   return (
     <>
       <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
       <HomeViewOptions {...filter} color={head}/>
-      <HomeOverflowMenu
-        color={head}
-        onProfile={() => {
-          void getActiveAccount().then(acct => {
-            if (acct?.address) router.push(profileLinkOf(acct.address));
-          });
-        }}
-        onSettings={() => { router.push('/settings'); }}
-      />
+      <OverflowMenu color={head} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id) => { handlers[id]?.(); }}/>
     </>
   );
 }

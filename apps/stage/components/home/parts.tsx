@@ -48,10 +48,9 @@ export function rowPreview(item: RowT): string {
   });
 }
 
-export function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
+export function rowAvatarAddress(item: RowT): string | null {
   if (item.avatarUri || !item.avatarAddress) return null;
-  if (isGroup || isPeerResolved(item.avatarAddress)) return item.avatarAddress;
-  return null;
+  return !item.peerAddress || isPeerResolved(item.avatarAddress) ? item.avatarAddress : null;
 }
 
 export function rowMenuOpener(item: RowT, setRowMenu: (m: RowMenu) => void): (anchor?: MenuPoint) => void {
@@ -173,7 +172,7 @@ export function useChannelRowRenderer(
           title={title.text}
           placeholderTitle={title.placeholder}
           preview={rowPreview(item)}
-          avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
+          avatarAddress={rowAvatarAddress(item)}
           pinned={pinned.includes(item.convId)}
           draftText={getDraft(item.convId)}
           active={menuConvId === item.convId || current}

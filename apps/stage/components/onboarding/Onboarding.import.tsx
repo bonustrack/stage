@@ -60,7 +60,6 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const pal = usePalette();
   const [typing, setTyping] = useState<PhraseTyping>({ text: '', pending: '' });
   const text = typing.text;
-  const setText = (value: string): void => { setTyping({ text: value, pending: '' }); };
   const [err, setErr] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
@@ -70,7 +69,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const suggestions = looksLikePhrase(text) ? visibleSuggestions(span.word) : [];
   const pickSuggestion = (word: string): void => {
     const next = replaceWordAt(text, span, word);
-    setText(next.text);
+    setTyping({ text: next.text, pending: '' });
     setCursor(next.cursor);
     setPlaceCursor(next.cursor);
   };
@@ -83,8 +82,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   };
   const onScan = (code: string): void => {
     setScanning(false);
-    const parsed = parseImportInput(code);
-    setScanned(parsed.ok);
+    setScanned(parseImportInput(code).ok);
     submit(code);
   };
   const phraseField = (

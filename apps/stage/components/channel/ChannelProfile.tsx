@@ -143,38 +143,6 @@ function MemberRow({
   );
 }
 
-function ChannelMembersList({
-  members, memberNames, memberRoles, selfAddress, removing, dark, footer,
-  onOpenMember, onRemoveMember,
-}: {
-  members: string[];
-  memberNames: Record<string, string | null | undefined>;
-  memberRoles: Record<string, 'owner' | 'admin' | 'member' | undefined>;
-  selfAddress: string; removing: string | null; dark: boolean;
-  footer?: React.ReactElement; onOpenMember: (addr: string) => void; onRemoveMember: (addr: string) => void;
-}): React.ReactElement {
-  return (
-    <VirtualList
-      data={members}
-      extraData={memberNames}
-      keyExtractor={addr => addr.toLowerCase()}
-      ListFooterComponent={footer}
-      renderItem={({ item }) => (
-        <MemberRow
-          item={item}
-          isSelf={item.toLowerCase() === selfAddress}
-          isRemovingThis={removing === item.toLowerCase()}
-          role={memberRoles[item]}
-          name={memberNames[item]}
-          dark={dark}
-          onPress={() => { onOpenMember(item); }}
-          onRemove={() => { onRemoveMember(item); }}
-/>
-      )}
-/>
-  );
-}
-
 export function ChannelProfile({ convId }: { convId: string }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -199,7 +167,7 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         insetTop={insets.top}
         trailing={
           <ProfileCoverMenu
-            items={channelProfileMenuItems(canEditGroup(g.rights))} loading={g.busy.leave === true}
+            items={channelProfileMenuItems(canEditGroup(g.rights))} loading={g.leaving}
             onSelect={(id) => { if (id === 'edit') setEditOpen(true); else void g.leaveChannel(); }}
           />
         }
@@ -211,12 +179,23 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         <ChannelTitle name={g.name} description={g.description} />
       </ChannelProfileHeader>
       <ChannelMembersSection convId={convId} count={g.members.length}/>
-      <ChannelMembersList
-        members={g.members} memberNames={g.memberNames} memberRoles={g.memberRoles}
-        selfAddress={selfAddress} removing={g.removing} dark={dark}
-        footer={<><ChannelAssignees convId={convId}/><ChannelFields convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
-        onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
-        onRemoveMember={(item) => { void g.removeMember(item); }}
+      <VirtualList
+        data={g.members}
+        extraData={g.memberNames}
+        keyExtractor={addr => addr.toLowerCase()}
+        ListFooterComponent={<><ChannelAssignees convId={convId}/><ChannelFields convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
+        renderItem={({ item }) => (
+          <MemberRow
+            item={item}
+            isSelf={item.toLowerCase() === selfAddress}
+            isRemovingThis={g.removing === item.toLowerCase()}
+            role={g.memberRoles[item]}
+            name={g.memberNames[item]}
+            dark={dark}
+            onPress={() => { router.push(profileLinkOf(item)); }}
+            onRemove={() => { void g.removeMember(item); }}
+          />
+        )}
       />
       <EditChannelModal
         visible={editOpen}

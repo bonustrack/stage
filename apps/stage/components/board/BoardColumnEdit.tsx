@@ -137,17 +137,11 @@ export function RenameHeading({ label, columns, count, onRename, onClose }: {
   );
 }
 
-function CancelButton({ onCancel }: { onCancel: () => void }): React.ReactElement {
-  const { text } = usePalette();
-  return (
-    <HoverIconButton icon={IconCrossMedium} label="Cancel" color={text} size={20} placement="below" onPointerDown={onCancel} onPress={onCancel} />
-  );
-}
-
 function DraftColumn({ columns, onAdd, onAdded, onClose }: {
   columns: Columns; onAdd: (name: string) => void; onAdded: () => void; onClose: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+  const { text } = usePalette();
   const edit = useTitleEdit('', (name, via) => draftEdit(columns, name, via), (name) => {
     onAdd(name);
     onAdded();
@@ -164,7 +158,7 @@ function DraftColumn({ columns, onAdd, onAdded, onClose }: {
           disabled={addColumnProblem(columns, edit.name) !== null}
           onPress={() => { edit.finish('enter'); }}
         />
-        <CancelButton onCancel={edit.close}/>
+        <HoverIconButton icon={IconCrossMedium} label="Cancel" color={text} size={20} placement="below" onPointerDown={edit.close} onPress={edit.close} />
       </Row>
     </ColumnFrame>
   );

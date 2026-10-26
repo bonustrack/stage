@@ -106,10 +106,7 @@ function WalletValidatorRow(): React.ReactElement {
   );
 }
 
-function SmartAccountSections({ model, onCopy }: {
-  model: WalletModel;
-  onCopy: (label: string, value: string) => void;
-}): React.ReactElement {
+function SmartAccountSections({ model }: { model: WalletModel }): React.ReactElement {
   const owner = model.ownerAddress;
   return (
     <>
@@ -118,8 +115,8 @@ function SmartAccountSections({ model, onCopy }: {
       </SettingsGroup>
 
       <SettingsGroup title="Identity">
-        <WalletCopyRow label="XMTP identity" value={model.address} onCopy={() => { onCopy('XMTP identity', model.address); }} />
-        {owner ? <WalletCopyRow label="Owner key" value={owner} onCopy={() => { onCopy('Owner key', owner); }} /> : null}
+        <WalletCopyRow label="XMTP identity" value={model.address} onCopy={() => { capabilities.copy('XMTP identity', model.address); }} />
+        {owner ? <WalletCopyRow label="Owner key" value={owner} onCopy={() => { capabilities.copy('Owner key', owner); }} /> : null}
       </SettingsGroup>
 
       <SettingsGroup title="Network">
@@ -156,12 +153,7 @@ export function WalletSettings(): React.ReactElement {
             {model.isSmart ? <WalletInfoRow label="Status" value={walletDeployLabel(deploy)} /> : null}
           </SettingsGroup>
 
-          {model.isSmart ? (
-            <SmartAccountSections
-              model={model}
-              onCopy={(label, value) => { capabilities.copy(label, value); }}
-            />
-          ) : null}
+          {model.isSmart ? <SmartAccountSections model={model} /> : null}
         </>
       )}
     </SettingsPage>

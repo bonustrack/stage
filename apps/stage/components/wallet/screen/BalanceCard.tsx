@@ -15,9 +15,11 @@ import { Column, Row, PAGE_GUTTER } from '../../layout';
 
 const BALANCE_SPINNER = 28;
 
-const HERO_ACTIONS: readonly (readonly [string, CentralIcon, string])[] = [
-  ['Send', IconPaperPlane, 'send'],
-  ['Receive', IconArrowDown, 'receive'],
+type WalletAction = '/wallet/send' | '/wallet/receive';
+
+const HERO_ACTIONS: readonly (readonly [string, CentralIcon, WalletAction])[] = [
+  ['Send', IconPaperPlane, '/wallet/send'],
+  ['Receive', IconArrowDown, '/wallet/receive'],
 ];
 
 function useBalancePulse(active: boolean): ReturnType<typeof useAnimatedStyle> {
@@ -33,7 +35,7 @@ function useBalancePulse(active: boolean): ReturnType<typeof useAnimatedStyle> {
 
 export function WalletBalanceCard({ balance, border, onAction }: {
   balance: BalanceDisplayInput; border: string;
-  onAction: (action: string) => void;
+  onAction: (action: WalletAction) => void;
 }): React.ReactElement {
   const hero = walletBalanceDisplay(balance);
   const { hovered, hoverProps } = useHover();

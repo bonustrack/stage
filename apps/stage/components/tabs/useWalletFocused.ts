@@ -1,18 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'expo-router';
 
 export function useTabFocused(base: string): boolean {
   const pathname = usePathname();
   const [everFocused, setEverFocused] = useState(false);
-  const latched = useRef(false);
 
   useEffect(() => {
-    if (latched.current) return;
-    if (pathname === base || pathname.startsWith(`${base}/`)) {
-      latched.current = true;
-      setEverFocused(true);
-    }
-  }, [pathname, base]);
+    if (!everFocused && (pathname === base || pathname.startsWith(`${base}/`))) setEverFocused(true);
+  }, [pathname, base, everFocused]);
 
   return everFocused;
 }

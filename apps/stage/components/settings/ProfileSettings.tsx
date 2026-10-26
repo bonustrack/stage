@@ -42,14 +42,6 @@ function ProfileHeader({ address, name, handle, children }: {
   );
 }
 
-function ClaimPane({ address }: { address: string }): React.ReactElement {
-  return (
-    <Column align="center" padding={{ top: 24, bottom: 16 }}>
-      <ClaimStageName address={address} onClaimed={() => { invalidatePeerProfile(address); }} />
-    </Column>
-  );
-}
-
 function EditPane({ address, handle, view }: {
   address: string | null; handle: string | undefined; view: ProfileView;
 }): React.ReactElement {
@@ -78,7 +70,6 @@ function EditPane({ address, handle, view }: {
 }
 
 export function ProfileSettings(): React.ReactElement {
-
   const address = useActiveAccountRecord()?.address ?? null;
   usePeerProfiles([address]);
   const handle = getPeerHandle(address);
@@ -87,7 +78,11 @@ export function ProfileSettings(): React.ReactElement {
 
   return (
     <SettingsPage title="Profile">
-      {address && view.claimVisible ? <ClaimPane address={address} /> : (
+      {address && view.claimVisible ? (
+        <Column align="center" padding={{ top: 24, bottom: 16 }}>
+          <ClaimStageName address={address} onClaimed={() => { invalidatePeerProfile(address); }} />
+        </Column>
+      ) : (
         <EditPane address={address} handle={handle} view={view} />
       )}
     </SettingsPage>

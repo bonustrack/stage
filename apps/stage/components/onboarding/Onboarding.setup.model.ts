@@ -18,7 +18,6 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 const RESTORE_WALLET_LABEL = 'Restoring your wallet';
 
-
 const SETUP_TITLE = { create: 'Creating your account', restore: 'Restoring your account' } as const;
 const SETUP_HINT = 'This only takes a moment while your wallet, messaging and profile are set up.';
 

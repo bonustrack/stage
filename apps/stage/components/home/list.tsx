@@ -171,7 +171,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
             if (want == null || want <= 0) { didRestoreRef.current = true; return; }
             if (h <= 0) return;
             didRestoreRef.current = true;
-            const offset = Math.min(want, Math.max(0, h));
+            const offset = Math.min(want, h);
             requestAnimationFrame(() => {
               attempt(() => { listRef.current?.scrollToOffset({ offset, animated: false }); }, 'ui');
             });

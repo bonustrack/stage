@@ -21,11 +21,6 @@ import { Column, Row, ScreenScroll, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 14 };
 
-function SettingsList({ children }: { children: ReactNode }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  return <ListView dark={dark}>{children}</ListView>;
-}
-
 function SettingsItem({ align = 'center', onPress, children }: {
   align?: 'center' | 'start'; onPress?: () => void; children: ReactNode;
 }): React.ReactElement {
@@ -181,29 +176,22 @@ export function SettingsSectionLabel({ children }: { children: string }): React.
   );
 }
 
-function SettingsCard({ children }: { children: ReactNode }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { border } = usePalette();
-  return (
-    <Column margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
-      <Card dark={dark} background={border} padding={0}>
-        {children}
-      </Card>
-    </Column>
-  );
-}
-
 export function SettingsGroup({ title, footnote, children }: {
   title?: string;
   footnote?: string;
   children: ReactNode;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  const listDark = useKitScheme() === 'dark';
+  const { border } = usePalette();
   return (
     <Column>
       {title === undefined ? <Column height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
-      <SettingsCard>
-        <SettingsList>{children}</SettingsList>
-      </SettingsCard>
+      <Column margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
+        <Card dark={dark} background={border} padding={0}>
+          <ListView dark={listDark}>{children}</ListView>
+        </Card>
+      </Column>
       {footnote === undefined ? null : (
         <Text size="md" variant="caption" text={footnote} color="secondary" style={{ paddingHorizontal: PAGE_GUTTER + 16, paddingTop: 8 }} />
       )}

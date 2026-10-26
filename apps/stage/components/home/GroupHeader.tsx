@@ -52,9 +52,9 @@ function GroupArrow({ collapsed, sectionHovered, hovered, focused, color }: {
   );
 }
 
-export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle = node => node }: {
+export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle }: {
   header: ChannelGroupHeader; onToggle: (key: string) => void; sectionHovered?: boolean;
-  wrapToggle?: (node: React.ReactElement) => React.ReactElement;
+  wrapToggle: (node: React.ReactElement) => React.ReactElement;
 }): React.ReactElement {
   const { sub, link } = usePalette();
   const { groupBy } = useHomeView();

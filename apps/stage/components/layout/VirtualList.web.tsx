@@ -205,14 +205,16 @@ function visibleAnchor<T>(props: VirtualListProps<T>, refs: ListRefs, virtualize
   return null;
 }
 
+function keyIndexOf<T>(props: VirtualListProps<T>, virtualizer: ListVirtualizer, key: string): number {
+  const count = props.data?.length ?? 0;
+  for (let i = 0; i < count; i++) if (String(virtualizer.options.getItemKey(i)) === key) return i;
+  return -1;
+}
+
 function scrollToAnchor<T>(
   props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, virtualizer: ListVirtualizer, anchor: ListAnchor,
 ): boolean {
-  const count = props.data?.length ?? 0;
-  let index = -1;
-  for (let i = 0; i < count && index === -1; i++) {
-    if (String(virtualizer.options.getItemKey(i)) === anchor.key) index = i;
-  }
+  const index = keyIndexOf(props, virtualizer, anchor.key);
   if (index === -1) return false;
   virtualizer.scrollToIndex(index, { align: 'start' });
   const settle = (framesLeft: number, stableFrames: number): void => {
@@ -227,16 +229,6 @@ function scrollToAnchor<T>(
   return true;
 }
 
-function firstKeyOf<T>(props: VirtualListProps<T>, virtualizer: ListVirtualizer): string | null {
-  return (props.data?.length ?? 0) > 0 ? String(virtualizer.options.getItemKey(0)) : null;
-}
-
-function keyIndexOf<T>(props: VirtualListProps<T>, virtualizer: ListVirtualizer, key: string): number {
-  const count = props.data?.length ?? 0;
-  for (let i = 0; i < count; i++) if (String(virtualizer.options.getItemKey(i)) === key) return i;
-  return -1;
-}
-
 function usePrependAnchor<T>(
   props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, virtualizer: ListVirtualizer,
 ): () => void {
@@ -247,7 +239,7 @@ function usePrependAnchor<T>(
   }, [props, refs, virtualizer]);
   useLayoutEffect(() => {
     const previous = firstKey.current;
-    firstKey.current = firstKeyOf(props, virtualizer);
+    firstKey.current = (props.data?.length ?? 0) > 0 ? String(virtualizer.options.getItemKey(0)) : null;
     const anchor = lastAnchor.current;
     if (previous === null || anchor === null || props.stickToEnd?.() === true || previous === firstKey.current) return;
     if (keyIndexOf(props, virtualizer, previous) > 0) scrollToAnchor(props, refs, host, virtualizer, anchor);

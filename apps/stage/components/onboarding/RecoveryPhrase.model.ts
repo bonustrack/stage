@@ -1,6 +1,6 @@
 import { english } from 'viem/accounts';
 
-export const SUGGESTION_LIMIT = 6;
+const SUGGESTION_LIMIT = 6;
 
 export interface PhraseToken {
   word: string;
@@ -58,7 +58,7 @@ export function applyCompletion(text: string, word: string): string {
   return `${trimmed}${word} `;
 }
 
-export function hasWordWithPrefix(prefix: string, wordlist: readonly string[] = english): boolean {
+function hasWordWithPrefix(prefix: string, wordlist: readonly string[] = english): boolean {
   return wordlist.some((word) => word.startsWith(prefix));
 }
 
@@ -79,7 +79,7 @@ function acceptTypedLetter(previous: string, next: string, wordlist: readonly st
 }
 
 export function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
-  if (next.length !== previous.length + 1 || !next.startsWith(previous)) return next;
+  if (!isSingleTypedChar(previous, next)) return next;
   if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
   return acceptTypedLetter(previous, next, wordlist);
@@ -96,7 +96,7 @@ function uniqueWord(prefix: string, wordlist: readonly string[]): string | null 
 }
 
 function absorbsPending(state: PhraseTyping, next: string): boolean {
-  if (state.pending === '' || next.length !== state.text.length + 1 || !next.startsWith(state.text)) return false;
+  if (state.pending === '' || !isSingleTypedChar(state.text, next)) return false;
   return next.slice(-1).toLowerCase() === state.pending[0];
 }
 

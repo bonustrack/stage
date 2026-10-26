@@ -137,20 +137,14 @@ function MoreGroup(): React.ReactElement {
   );
 }
 
-function SettingsHub(): React.ReactElement {
-  return (
-    <Column>
-      <IdentityHero />
-      <PreferencesGroup />
-      <MoreGroup />
-    </Column>
-  );
-}
-
 export function SettingsMenu({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   return (
     <SettingsPage title="Settings" root panRef={panRef}>
-      <SettingsHub />
+      <Column>
+        <IdentityHero />
+        <PreferencesGroup />
+        <MoreGroup />
+      </Column>
       <SettingsAboutFooter />
     </SettingsPage>
   );

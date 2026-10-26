@@ -55,7 +55,6 @@ function TokenChoiceList({ rows, onPick }: {
               change24h={change}
               logoUri={r.logoUrl}
               chainBadgeUri={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
-              showAvatar
             />
           </ListViewItem>
         );

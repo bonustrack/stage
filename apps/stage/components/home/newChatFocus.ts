@@ -29,15 +29,11 @@ export function useOpenNewChat(metadata: NewChatMetadata = NO_NEW_CHAT_METADATA)
   };
 }
 
-function useFocusOnOpen(): void {
+export function useNewChatFocusNonce(): number {
   const pathname = usePathname();
   useEffect(() => {
     if (Platform.OS === 'web' && NEW_CHAT_PATHS.has(pathname)) requestNewChatFocus();
   }, [pathname]);
-}
-
-export function useNewChatFocusNonce(): number {
-  useFocusOnOpen();
   const nonce = useStoreValue(listeners.subscribe, () => requested);
   const [handledBefore] = useState(() => handled);
   useEffect(() => { handled = Math.max(handled, nonce); }, [nonce]);

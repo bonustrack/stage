@@ -9,7 +9,6 @@ const fmt: TokenRowFormat = {
 describe('tokenRowModel', () => {
   test('priced token maps value, price and change text', () => {
     const p = tokenRowModel({
-      chainId: 1,
       symbol: 'ETH',
       name: 'Ethereum',
       balance: '2',
@@ -18,7 +17,6 @@ describe('tokenRowModel', () => {
       logoUrl: 'logo.png',
     }, fmt);
     expect(p).toEqual({
-      tokenId: '1:ETH',
       symbol: 'Ethereum',
       name: '$2000.00',
       priceUsd: '~2 ETH',
@@ -30,7 +28,7 @@ describe('tokenRowModel', () => {
 
   test('sub-dollar price uses four fraction digits', () => {
     const p = tokenRowModel({
-      chainId: 1, symbol: 'X', name: 'X', balance: '1',
+      symbol: 'X', name: 'X', balance: '1',
       priceUsd: 0.1234, change24h: -2.345, logoUrl: 'l',
     }, fmt);
     expect(p.name).toBe('$0.1234');
@@ -39,18 +37,17 @@ describe('tokenRowModel', () => {
 
   test('an unpriced token falls back to its symbol and shows no value or change', () => {
     const p = tokenRowModel({
-      chainId: 11155111, symbol: 'TEST', name: 'Test', balance: '5',
+      symbol: 'TEST', name: 'Test', balance: '5',
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
     expect(p.name).toBe('TEST');
     expect(p.balance).toBe('');
     expect(p.change24h).toBe('');
-    expect(p.tokenId).toBe('11155111:TEST');
   });
 
   test('an unpriced zero balance shows a zero value', () => {
     const p = tokenRowModel({
-      chainId: 8453, symbol: 'ETH', name: 'Ethereum', balance: '0',
+      symbol: 'ETH', name: 'Ethereum', balance: '0',
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
     expect(p.balance).toBe(fmt.fmtUsd(0));

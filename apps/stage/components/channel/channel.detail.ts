@@ -21,8 +21,6 @@ function convIdOf(line: string): string {
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
-type BusyKey = 'leave';
-type Task = () => Promise<void>;
 
 const NO_ROLES: Roles = {};
 const NO_MAP: Record<string, string> = {};
@@ -63,23 +61,13 @@ function useMemberDirectory(convId: string | undefined, row: ReturnType<typeof u
   return { members, memberNames, memberRoles };
 }
 
-function useTaskRunner(): {
-  busy: Partial<Record<BusyKey, boolean>>;
-  run: (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task) => Promise<boolean>;
-} {
-  const [busy, setBusy] = useState<Partial<Record<BusyKey, boolean>>>({});
-  const run = async (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task): Promise<boolean> => {
-    const mark = typeof track === 'function' ? track : (on: boolean): void => { setBusy(b => ({ ...b, [track]: on })); };
-    mark(true);
-    try {
-      await task();
-      return true;
-    } catch (e) {
-      Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
-      return false;
-    } finally { mark(false); }
-  };
-  return { busy, run };
+async function runTask(mark: (on: boolean) => void, failTitle: string, task: () => Promise<void>): Promise<void> {
+  mark(true);
+  try {
+    await task();
+  } catch (e) {
+    Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
+  } finally { mark(false); }
 }
 
 export function useChannelEditRights(convId: string | undefined, enabled = true): GroupEditRights {
@@ -107,22 +95,21 @@ export function useChannelDetail(convId: string | undefined) {
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
   const directory = useMemberDirectory(convId, row);
-  const { busy, run } = useTaskRunner();
+  const [leaving, setLeaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const rights = useChannelEditRights(convId);
 
   const removeMember = async (addr: string): Promise<void> => {
     if (!await confirmMemberRemoval([shortAddress(addr)])) return;
-    await run((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => {
+    await runTask((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => {
       await removeGroupMembers(convIdOf(line), [addr]);
       refreshConv(convIdOf(line));
     });
   };
 
   const leaveChannel = async (): Promise<void> => {
-    const ok = await capabilities.confirm(LEAVE_CHANNEL_CONFIRM);
-    if (!ok) return;
-    await run('leave', 'Couldn’t leave', async () => {
+    if (!await capabilities.confirm(LEAVE_CHANNEL_CONFIRM)) return;
+    await runTask(setLeaving, 'Couldn’t leave', async () => {
       const result = await leaveGroupConv(line);
       capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
       router.replace(homeRoute());
@@ -130,9 +117,7 @@ export function useChannelDetail(convId: string | undefined) {
   };
 
   return {
-    line, ...directory, busy, removing,
-    name: row?.groupName ?? null, description, imageUrl: row?.avatarUri ?? '', rights,
-    removeMember,
-    leaveChannel,
+    ...directory, leaving, removing,
+    name: row?.groupName ?? null, description, imageUrl: row?.avatarUri ?? '', rights, removeMember, leaveChannel,
   };
 }

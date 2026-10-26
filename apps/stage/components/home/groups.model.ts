@@ -42,7 +42,7 @@ export function rowsOf(items: readonly HomeListItem[]): Row[] {
 
 export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : item.listKey ?? item.convId);
 
-export const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
+const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
 export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string, string> {
   const keys = new Map<string, string>();

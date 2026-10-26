@@ -193,7 +193,7 @@ export function LabelPicker({ draft, toggle, current }: SectionDraft & { current
   return <TagPicker draft={draft} options={options} noun="label" pick={pick}/>;
 }
 
-export function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
+function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
   const sources = useSearchFilterSources('chats');
   if (field === 'priority') return (
     <PickerList>

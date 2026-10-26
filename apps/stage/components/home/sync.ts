@@ -95,11 +95,9 @@ function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId) || isChannelHidden(streamConvId)) return;
     if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
-    const decoded = msg.content;
-    const preview = rowPreviewOf(msg);
-    if (typeof decoded === 'string' && isControlBody(decoded)) return;
+    if (typeof msg.content === 'string' && isControlBody(msg.content)) return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
-    const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
+    const lastPreview = rowPreviewOf(msg).slice(0, ROW_PREVIEW_MAX_CHARS);
 
     const result = applyToRows(streamConvId, msg, lastTs, lastPreview);
     if (result.needsRefresh) onMiss(streamConvId);
@@ -147,16 +145,11 @@ function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: 
   return { title: getPeerName(n.senderAddr) ?? n.title, body: preview };
 }
 
-function shouldSkipNotify(n: NotifyCtx | null, convId: string | null, msgId: string | undefined): n is null {
-  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return true;
-  if (msgId && alreadyNotified(msgId)) return true;
-  return false;
-}
-
 function maybeNotify(
   n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
 ): void {
-  if (shouldSkipNotify(n, convId, msgId) || !n || !convId) return;
+  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
+  if (msgId && alreadyNotified(msgId)) return;
   const { title, body } = notifyTitleBody(n, preview);
   void presentInboundNotification({ title, body, convId, messageId: msgId });
 }
