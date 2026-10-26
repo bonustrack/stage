@@ -12,8 +12,8 @@ describe('date time input model', () => {
 
   test('parses dates, times and date times as written', () => {
     expect(parseWallClock('2026-02-02')?.date?.getDate()).toBe(2);
-    expect(parseWallClock('15:17')).toMatchObject({ date: null, hour: 15, minute: 17, hasTime: true });
-    expect(parseWallClock('2026-02-02T15:17:00Z')).toMatchObject({ hour: 15, minute: 17, hasTime: true });
+    expect(parseWallClock('15:17')).toMatchObject({ date: null, hour: 15, minute: 17 });
+    expect(parseWallClock('2026-02-02T15:17:00Z')).toMatchObject({ hour: 15, minute: 17 });
     expect(parseWallClock('2026-02-30')).toBeNull();
     expect(parseWallClock('nope')).toBeNull();
   });

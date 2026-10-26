@@ -1,4 +1,4 @@
-export const DEFAULT_LOCALE = 'en-US';
+const DEFAULT_LOCALE = 'en-US';
 
 export function resolveLocale(locale: string | undefined): string {
   if (locale === undefined || locale === '') return DEFAULT_LOCALE;
@@ -16,13 +16,9 @@ export function coerceToString(value: unknown): string {
   return JSON.stringify(value) ?? '';
 }
 
-export function formatNumber(value: number, decimals: number | undefined, grouping: boolean | undefined, locale: string): string {
+export function formatNumber(value: number, decimals: number | undefined, grouping: boolean, locale: string): string {
   if (Number.isNaN(value)) return '';
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-    useGrouping: grouping ?? true,
-  }).format(value);
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping }).format(value);
 }
 
 function codeLayout(value: number, currency: string, decimals: number, grouping: boolean, locale: string): string {
@@ -34,16 +30,15 @@ function codeLayout(value: number, currency: string, decimals: number, grouping:
   return formatter.formatToParts(value).map((part) => (part.type === 'currency' ? currency : part.value)).join('');
 }
 
-export function formatCurrency(value: number, currencyInput: unknown, decimals: number, grouping: boolean | undefined, locale: string): string {
+export function formatCurrency(value: number, currencyInput: unknown, decimals: number, grouping: boolean, locale: string): string {
   if (Number.isNaN(value)) return '';
   const currency = coerceToString(currencyInput).toUpperCase();
-  const useGrouping = grouping ?? true;
   try {
     return new Intl.NumberFormat(locale, {
-      style: 'currency', currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping,
+      style: 'currency', currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping,
     }).format(value);
   } catch {
-    return codeLayout(value, currency, decimals, useGrouping, locale);
+    return codeLayout(value, currency, decimals, grouping, locale);
   }
 }
 
@@ -78,11 +73,6 @@ function dateNames(locale: string): DateNames {
 const ISO_OFFSET = /(?:Z|[+-]\d{2}:?\d{2})$/i;
 const WRITTEN = /^([+-]?\d{4,6})-(\d{2})-(\d{2})(?:[T ](\d{2})(?::(\d{2})(?::(\d{2}))?)?)?/;
 
-interface ParsedTimestamp {
-  shifted: Date;
-  instant: Date;
-}
-
 function offsetMinutes(value: string): number {
   const m = /([+-])(\d{2}):?(\d{2})$/.exec(value);
   if (m === null) return 0;
@@ -101,7 +91,7 @@ function roundTrips(value: string, shifted: Date): boolean {
     && (field(6) ?? shifted.getUTCSeconds()) === shifted.getUTCSeconds();
 }
 
-export function parseTimestamp(value: string): ParsedTimestamp | null {
+function parseTimestamp(value: string): { shifted: Date; instant: Date } | null {
   const instant = new Date(ISO_OFFSET.test(value) ? value : `${value}Z`);
   if (Number.isNaN(instant.getTime())) return null;
   const shifted = new Date(instant.getTime() + offsetMinutes(value) * 60_000);

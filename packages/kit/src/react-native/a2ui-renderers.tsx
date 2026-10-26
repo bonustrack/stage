@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { DENSITY_SCALE, FONT_SIZE, type RadiusValue } from '../tokens';
-import { SIZES, type ButtonColor, type ButtonSize, type ButtonVariant } from '../button.styles';
+import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
+import { BUTTON_COLORS, BUTTON_FILLS, SIZES, type ButtonSize, type ButtonVariant } from '../button.styles';
 import type { Surface } from '../layout';
-import type { FontSizeName } from '../tokens';
+import { DENSITY_SCALE, FONT_SIZE, type FontSizeName, type RadiusValue } from '../tokens';
 import { AudioPlayer } from './audio-player';
+import { Badge } from './badge';
 import { Button } from './button';
 import { Card } from './card';
 import { Column } from './column';
@@ -11,17 +12,20 @@ import { Divider } from './divider';
 import { Icon, type IconName, type IconProps } from './icon';
 import { Image, type ImageFit, type ImageVariant } from './image';
 import { List } from './list';
+import { ListView, ListViewItem } from './list-view';
 import { Modal } from './modal';
+import { QrCode } from './qr-code';
 import { Row } from './row';
+import { Spinner } from './spinner';
 import { Tabs } from './tabs';
 import { Text, type TextWeight } from './text';
+import { Title } from './title';
 import { Video } from './video';
 import {
   asBoolean, asEnum, asNumber, asOptionalString, asString,
   colorOf, commonProps, hasMarkdown, type A2uiRenderers, type RenderContext,
 } from './a2ui-context';
 import { INPUT_RENDERERS } from './a2ui-renderers.inputs';
-import { KIT_EXTRA_RENDERERS } from './a2ui-renderers.kit';
 
 const GAP = DENSITY_SCALE.normal.gap;
 const A2UI_ICON_SIZE = 24;
@@ -32,13 +36,12 @@ const SURFACES = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const sat
 const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const satisfies readonly RadiusValue[];
 const FONT_SIZES = Object.keys(FONT_SIZE) as FontSizeName[];
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const satisfies readonly TextWeight[];
-const BUTTON_VARIANTS = ['default', 'primary', 'borderless', 'solid', 'soft', 'outline', 'ghost'] as const satisfies readonly ButtonVariant[];
-const BUTTON_COLORS = ['primary', 'secondary', 'info', 'discovery', 'success', 'caution', 'warning', 'danger'] as const satisfies readonly ButtonColor[];
+const BUTTON_VARIANTS: readonly ButtonVariant[] = ['default', 'primary', 'borderless', ...BUTTON_FILLS];
 const BUTTON_SIZES = Object.keys(SIZES) as ButtonSize[];
 const FITS = ['contain', 'cover', 'fill', 'none', 'scaleDown'] as const satisfies readonly ImageFit[];
 const IMAGE_VARIANTS = ['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'] as const satisfies readonly ImageVariant[];
 
-export function iconNameOf(value: unknown): IconProps['name'] | undefined {
+function iconNameOf(value: unknown): IconProps['name'] | undefined {
   if (typeof value === 'string') return value as IconName;
   if (typeof value === 'object' && value !== null && 'svgPath' in value) {
     const { svgPath } = value;
@@ -127,7 +130,6 @@ function buttonRenderer(ctx: RenderContext): ReactNode {
   return (
     <Button
       {...commonProps(ctx)}
-      dark={ctx.dark}
       variant={asEnum(p.variant, BUTTON_VARIANTS)}
       color={asEnum(p.color, BUTTON_COLORS)}
       size={asEnum(p.size, BUTTON_SIZES)}
@@ -146,6 +148,33 @@ function buttonRenderer(ctx: RenderContext): ReactNode {
   );
 }
 
+function titleRenderer(ctx: RenderContext): ReactNode {
+  const level = asNumber(ctx.props.level);
+  return (
+    <Title
+      {...commonProps(ctx)}
+      text={asString(ctx.props.text)}
+      level={level === 1 || level === 2 || level === 3 ? level : undefined}
+      size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])}
+      color={colorOf(ctx, ctx.props.color)}
+    />
+  );
+}
+
+function listViewItemRenderer(ctx: RenderContext): ReactNode {
+  const pressable = ctx.instance.action !== undefined && !ctx.disabled;
+  return (
+    <ListViewItem
+      {...commonProps(ctx)}
+      gap={asNumber(ctx.props.gap)}
+      align={asEnum(ctx.props.align, ['start', 'center', 'end'])}
+      onPress={pressable ? () => { ctx.action(); } : undefined}
+    >
+      {ctx.children(ctx.props.children)}
+    </ListViewItem>
+  );
+}
+
 function tabsRenderer(ctx: RenderContext): ReactNode {
   const tabs = Array.isArray(ctx.props.tabs) ? ctx.props.tabs : [];
   const items = tabs.map((tab: unknown) => {
@@ -155,7 +184,7 @@ function tabsRenderer(ctx: RenderContext): ReactNode {
   return <Tabs {...commonProps(ctx)} tabs={items} variant={asEnum(ctx.props.variant, ['segmented', 'underline'])} />;
 }
 
-const LAYOUT_RENDERERS: A2uiRenderers = {
+export const KIT_RENDERERS: A2uiRenderers = {
   Row: (ctx) => <Row {...flexProps(ctx)}>{ctx.children(ctx.props.children)}</Row>,
   Column: (ctx) => <Column {...flexProps(ctx)}>{ctx.children(ctx.props.children)}</Column>,
   List: (ctx) => (
@@ -164,7 +193,7 @@ const LAYOUT_RENDERERS: A2uiRenderers = {
     </List>
   ),
   Card: (ctx) => (
-    <Card {...commonProps(ctx)} dark={ctx.dark} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)}>
+    <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)}>
       {ctx.child(ctx.props.child)}
     </Card>
   ),
@@ -177,23 +206,36 @@ const LAYOUT_RENDERERS: A2uiRenderers = {
   Divider: (ctx) => (
     <Divider {...commonProps(ctx)} axis={asEnum(ctx.props.axis, ['horizontal', 'vertical'])} spacing={asNumber(ctx.props.spacing)} color={colorOf(ctx, ctx.props.color)} />
   ),
-};
-
-const DISPLAY_RENDERERS: A2uiRenderers = {
   Text: textRenderer,
   Image: imageRenderer,
   Icon: iconRenderer,
   Video: videoRenderer,
   AudioPlayer: (ctx) => {
     const url = ctx.mediaUrl(ctx.props.url);
-    return url === '' ? null : <AudioPlayer {...commonProps(ctx)} url={url} description={asOptionalString(ctx.props.description)} dark={ctx.dark} />;
+    return url === '' ? null : <AudioPlayer {...commonProps(ctx)} url={url} description={asOptionalString(ctx.props.description)} />;
   },
   Button: buttonRenderer,
-};
-
-export const KIT_RENDERERS: A2uiRenderers = {
-  ...LAYOUT_RENDERERS,
-  ...DISPLAY_RENDERERS,
   ...INPUT_RENDERERS,
-  ...KIT_EXTRA_RENDERERS,
+  Title: titleRenderer,
+  Badge: (ctx) => (
+    <Badge
+      {...commonProps(ctx)}
+      label={asString(ctx.props.label)}
+      color={asEnum(ctx.props.color, BADGE_COLORS)}
+      variant={asEnum(ctx.props.variant, BADGE_VARIANTS)}
+      size={asEnum(ctx.props.size, BADGE_SIZES)}
+      pill={asBoolean(ctx.props.pill)}
+    />
+  ),
+  ListView: (ctx) => {
+    const status = asOptionalString(ctx.props.status);
+    return (
+      <ListView {...commonProps(ctx)} limit={asNumber(ctx.props.limit)} status={status === undefined ? undefined : { text: status }}>
+        {ctx.children(ctx.props.children)}
+      </ListView>
+    );
+  },
+  ListViewItem: listViewItemRenderer,
+  Spinner: (ctx) => <Spinner {...commonProps(ctx)} size={asNumber(ctx.props.size)} color={colorOf(ctx, ctx.props.color) ?? ctx.palette.sub} />,
+  QrCode: (ctx) => <QrCode {...commonProps(ctx)} value={asString(ctx.props.value)} size={asNumber(ctx.props.size)} color={ctx.palette.link} background={ctx.palette.bg} />,
 };

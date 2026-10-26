@@ -143,39 +143,23 @@ function componentEnvelope(name: string): JsonObject {
   };
 }
 
-function componentNameOf(instance: JsonValue): string | undefined {
-  return isJsonObject(instance) && typeof instance.component === 'string' ? instance.component : undefined;
-}
-
-function indexCatalogs(catalogs: readonly JsonObject[]): Map<string, JsonObject> {
-  const byId = new Map<string, JsonObject>();
-  for (const catalog of catalogs) {
-    if (typeof catalog.catalogId === 'string') byId.set(catalog.catalogId, catalog);
-  }
-  return byId;
-}
-
 function issueAt(path: readonly string[], message: string): SchemaIssue[] {
   return [{ path: `/${path.join('/')}`, message }];
 }
 
-function componentLookup(byId: Map<string, JsonObject>, schemas: SchemaRegistry): (id: string, name: string) => ComponentInfo | undefined {
-  const cache = new Map<string, ComponentInfo | undefined>();
-  return (id, name) => {
-    const key = `${id}\n${name}`;
-    if (!cache.has(key)) {
-      const catalog = byId.get(id);
-      cache.set(key, catalog === undefined ? undefined : componentInfo(id, catalog, name, schemas));
-    }
-    return cache.get(key);
-  };
-}
-
 export function createCatalogRegistry(catalogs: readonly JsonObject[]): CatalogRegistry {
-  const byId = indexCatalogs(catalogs);
+  const byId = new Map(catalogs.flatMap((catalog): [string, JsonObject][] => (typeof catalog.catalogId === 'string' ? [[catalog.catalogId, catalog]] : [])));
   const schemas = createSchemaRegistry([...PROTOCOL_DOCUMENTS, ...catalogs]);
   const envelopeSchemas = createSchemaRegistry([...PROTOCOL_DOCUMENTS, ...catalogs, ENVELOPE_CATALOG]);
-  const component = componentLookup(byId, schemas);
+  const components = new Map<string, ComponentInfo | undefined>();
+  const component = (id: string, name: string): ComponentInfo | undefined => {
+    const key = `${id}\n${name}`;
+    if (!components.has(key)) {
+      const catalog = byId.get(id);
+      components.set(key, catalog === undefined ? undefined : componentInfo(id, catalog, name, schemas));
+    }
+    return components.get(key);
+  };
   const validateIn = (catalog: JsonObject, schema: JsonObject, value: JsonValue, path: string[]): SchemaIssue[] =>
     validateJson(schema, value, { registry: schemas, document: catalog, catalog, path });
   const validateEnvelope = (document: JsonObject, message: JsonValue): SchemaIssue[] =>
@@ -192,8 +176,8 @@ export function createCatalogRegistry(catalogs: readonly JsonObject[]): CatalogR
     },
     validateComponent(id, instance, path) {
       const catalog = byId.get(id);
-      const name = componentNameOf(instance);
       if (catalog === undefined) return issueAt(path, `Unknown catalog '${id}'.`);
+      const name = isJsonObject(instance) && typeof instance.component === 'string' ? instance.component : undefined;
       if (name === undefined || component(id, name) === undefined) {
         return issueAt([...path, 'component'], `Component '${String(name)}' is not defined in catalog '${id}'.`);
       }

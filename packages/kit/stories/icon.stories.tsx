@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Story } from '../gallery/story';
 import { CENTRAL_ICONS } from '../src/central-icons.data';
-import { A2UI_ICON_NAMES, a2uiIconTarget } from '../src/icons.a2ui';
+import { A2UI_ICONS, A2UI_ICON_NAMES } from '../src/icons.a2ui';
 import { BRAND_ICON_NAMES } from '../src/brand-icons.data';
 import { CENTRAL_ICON_ALIASES, Icon, type HeroIconName, type IconProps } from '../src/react-native/icon';
 import { Glyph, type CentralIcon, type IconStyle } from '../src/react-native/glyph';
@@ -46,10 +46,10 @@ function matches(name: CentralName, query: string): boolean {
   return (ALIASES_OF.get(name) ?? []).some((alias) => alias.toLowerCase().includes(query));
 }
 
-function IconCell({ icon, label, detail, dark }: { icon: CentralIcon; label: string; detail?: string; dark: boolean }): React.ReactElement {
+function Cell({ label, detail, children }: { label: string; detail?: string; children: ReactNode }): React.ReactElement {
   return (
     <Column width={136} align="center" gap={4} padding={{ y: 8 }}>
-      <Glyph icon={icon} size={24} dark={dark} />
+      {children}
       <Text color="secondary" truncate size="3xs">{label}</Text>
       {detail === undefined ? null : <Text color="muted" truncate size="3xs">{detail}</Text>}
     </Column>
@@ -68,7 +68,7 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
       {names.length === 0 ? <Text size="xs" color="muted">{`No icons match "${query.trim()}"`}</Text> : null}
       <Row gap={8} wrap>
         {names.map((name) => (
-          <IconCell key={name} icon={glyph(name, style)} label={name} detail={ALIASES_OF.get(name)?.join(', ')} dark={dark} />
+          <Cell key={name} label={name} detail={ALIASES_OF.get(name)?.join(', ')}><Glyph icon={glyph(name, style)} size={24} dark={dark} /></Cell>
         ))}
       </Row>
     </Column>
@@ -94,13 +94,7 @@ All.args = { style: 'line' };
 All.argTypes = { style: select(STYLES) };
 
 function NamedCell({ name, detail, variant }: { name: IconProps['name'] & string; detail: string; variant: IconStyle }): React.ReactElement {
-  return (
-    <Column width={136} align="center" gap={4} padding={{ y: 8 }}>
-      <Icon name={name} variant={variant} size={24} dark={useDark()} />
-      <Text color="secondary" truncate size="3xs">{name}</Text>
-      <Text color="muted" truncate size="3xs">{detail}</Text>
-    </Column>
-  );
+  return <Cell label={name} detail={detail}><Icon name={name} variant={variant} size={24} dark={useDark()} /></Cell>;
 }
 
 export const Aliases: Story<{ style: IconStyle }> = ({ style }) => (
@@ -114,7 +108,7 @@ Aliases.argTypes = { style: select(STYLES) };
 export const A2ui: Story<{ style: IconStyle }> = ({ style }) => (
   <Row gap={8} wrap>
     {A2UI_ICON_NAMES.map((name) => {
-      const target = a2uiIconTarget(name);
+      const target = A2UI_ICONS[name];
       return <NamedCell key={name} name={name} variant={style} detail={typeof target === 'string' ? target : target.extra} />;
     })}
   </Row>

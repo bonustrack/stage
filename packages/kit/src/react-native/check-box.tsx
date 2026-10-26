@@ -55,31 +55,11 @@ export function CheckboxBox({ size, checked, colors }: { size: number; checked: 
   return <View style={box}>{checked ? <Icon name="check" size={size - 4} color={colors.bg} /> : null}</View>;
 }
 
-function track(checked: boolean, dark: boolean): ViewStyle {
-  return {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: checked ? (dark ? '#ffffff' : '#000000') : (dark ? '#3a3c40' : '#d8d8da'),
-    padding: 3,
-    justifyContent: 'center',
-  };
-}
-
-function knob(checked: boolean, dark: boolean): ViewStyle {
-  return {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: checked && dark ? '#000000' : '#ffffff',
-    alignSelf: checked ? 'flex-end' : 'flex-start',
-  };
-}
-
 function SwitchTrack({ checked, dark }: { checked: boolean; dark: boolean }): React.ReactElement {
+  const track = checked ? (dark ? '#ffffff' : '#000000') : (dark ? '#3a3c40' : '#d8d8da');
   return (
-    <View style={track(checked, dark)}>
-      <View style={knob(checked, dark)} />
+    <View style={{ width: 44, height: 26, borderRadius: 13, backgroundColor: track, padding: 3, justifyContent: 'center' }}>
+      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: checked && dark ? '#000000' : '#ffffff', alignSelf: checked ? 'flex-end' : 'flex-start' }} />
     </View>
   );
 }

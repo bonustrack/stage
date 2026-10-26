@@ -18,38 +18,27 @@ export function resolveScopedPath(path: string, scope: string): string {
   return `${base}/${path}`;
 }
 
+const ARRAY_INDEX = /^(0|[1-9][0-9]*)$/;
+
 function childOf(container: JsonValue | undefined, token: string): JsonValue | undefined {
-  if (Array.isArray(container)) {
-    if (!/^(0|[1-9][0-9]*)$/.test(token)) return undefined;
-    return container[Number(token)];
-  }
+  if (Array.isArray(container)) return ARRAY_INDEX.test(token) ? container[Number(token)] : undefined;
   if (isJsonObject(container)) return Object.prototype.hasOwnProperty.call(container, token) ? container[token] : undefined;
   return undefined;
 }
 
 export function getAt(root: JsonValue | undefined, pointer: string): JsonValue | undefined {
-  let current: JsonValue | undefined = root;
-  for (const token of parsePointer(pointer)) {
-    current = childOf(current, token);
-    if (current === undefined) return undefined;
-  }
-  return current;
+  return parsePointer(pointer).reduce<JsonValue | undefined>(childOf, root);
 }
 
-function emptyContainerFor(nextToken: string | undefined): JsonValue {
-  return nextToken !== undefined && /^(0|[1-9][0-9]*)$/.test(nextToken) ? [] : {};
-}
-
-function cloneContainer(value: JsonValue | undefined, nextToken: string | undefined): JsonObject | JsonValue[] {
+function cloneContainer(value: JsonValue | undefined, token: string): JsonObject | JsonValue[] {
   if (Array.isArray(value)) return [...value];
   if (isJsonObject(value)) return { ...value };
-  const fresh = emptyContainerFor(nextToken);
-  return Array.isArray(fresh) ? fresh : {};
+  return ARRAY_INDEX.test(token) ? [] : {};
 }
 
 function writeArray(container: JsonValue[], token: string, value: JsonValue | undefined): JsonValue[] {
-  const index = token === '-' ? container.length : Number(token);
-  if (!Number.isInteger(index) || index < 0) return container;
+  const index = token === '-' ? container.length : ARRAY_INDEX.test(token) ? Number(token) : -1;
+  if (index < 0 || index > container.length) return container;
   if (value === undefined) container.splice(index, 1);
   else container[index] = value;
   return container;
@@ -65,13 +54,10 @@ function writeChild(container: JsonObject | JsonValue[], token: string, value: J
 function setTokens(node: JsonValue | undefined, tokens: readonly string[], value: JsonValue | undefined): JsonValue | undefined {
   const [head, ...rest] = tokens;
   if (head === undefined) return value;
-  const nextChild = rest.length === 0 ? value : setTokens(childOf(node, head), rest, value);
-  return writeChild(cloneContainer(node, head), head, nextChild);
+  return writeChild(cloneContainer(node, head), head, setTokens(childOf(node, head), rest, value));
 }
 
 export function setAt(root: JsonObject, pointer: string, value: JsonValue | undefined): JsonObject {
-  const tokens = parsePointer(pointer);
-  if (tokens.length === 0) return isJsonObject(value) ? value : {};
-  const next = setTokens(root, tokens, value);
+  const next = setTokens(root, parsePointer(pointer), value);
   return isJsonObject(next) ? next : {};
 }

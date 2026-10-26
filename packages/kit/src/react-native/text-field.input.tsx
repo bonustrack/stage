@@ -49,6 +49,21 @@ function useControlStyle(props: TextFieldProps, pill: boolean): { box: ViewStyle
   };
 }
 
+function sharedInputProps(props: TextFieldProps, placeholderTextColor: string): TextInputProps {
+  return {
+    ...fieldIds(props.name),
+    ...accessibilityProps(props.accessibility),
+    value: props.value,
+    defaultValue: props.defaultValue,
+    placeholder: props.placeholder,
+    placeholderTextColor,
+    editable: !props.disabled,
+    autoFocus: props.autoFocus,
+    selectTextOnFocus: props.autoSelect,
+    onChangeText: props.onChangeText,
+  };
+}
+
 export const InputField = forwardRef<TextInput, TextFieldProps>(function InputField(props, ref) {
   const { inputProps, disabled, style, onSubmit } = props;
   const styled = useControlStyle(props, props.pill === true);
@@ -56,18 +71,9 @@ export const InputField = forwardRef<TextInput, TextFieldProps>(function InputFi
     <TextInput
       {...inputProps}
       ref={ref}
-      {...fieldIds(props.name)}
-      {...accessibilityProps(props.accessibility)}
-      value={props.value}
-      defaultValue={props.defaultValue}
-      placeholder={props.placeholder}
-      placeholderTextColor={styled.placeholder}
-      editable={!disabled}
-      autoFocus={props.autoFocus}
-      selectTextOnFocus={props.autoSelect}
+      {...sharedInputProps(props, styled.placeholder)}
       keyboardType={keyboardFor(props)}
       secureTextEntry={props.variant === 'obscured'}
-      onChangeText={props.onChangeText}
       onSubmitEditing={(e) => {
         onSubmit?.(e.nativeEvent.text);
         inputProps?.onSubmitEditing?.(e);
@@ -99,16 +105,7 @@ export const AreaField = forwardRef<TextInput, TextFieldProps>(function AreaFiel
       {...inputProps}
       ref={ref}
       multiline
-      {...fieldIds(props.name)}
-      {...accessibilityProps(props.accessibility)}
-      value={props.value}
-      defaultValue={props.defaultValue}
-      placeholder={props.placeholder}
-      placeholderTextColor={styled.placeholder}
-      editable={!disabled}
-      autoFocus={props.autoFocus}
-      selectTextOnFocus={props.autoSelect}
-      onChangeText={props.onChangeText}
+      {...sharedInputProps(props, styled.placeholder)}
       onContentSizeChange={onContentSize}
       textAlignVertical="top"
       style={[styled.box, styled.text, { height }, weightStyle(props.weight), disabled && { opacity: 0.5 }, style]}

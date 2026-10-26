@@ -5,7 +5,6 @@ import { buildCells, MONTHS, toISODate, wrapClock, type DateTimeMode } from './d
 import { Icon } from './icon';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const MINUTE_STEP = 1;
 
 export interface SheetColors {
   head: string;
@@ -96,17 +95,17 @@ function Calendar(props: { view: Date; selDate: Date | null; colors: SheetColors
   );
 }
 
-function Stepper(props: { value: number; size: number; step: number; label: string; colors: SheetColors; onChange: (value: number) => void }): React.ReactElement {
-  const { value, size, step, label, colors, onChange } = props;
+function Stepper(props: { value: number; size: number; label: string; colors: SheetColors; onChange: (value: number) => void }): React.ReactElement {
+  const { value, size, label, colors, onChange } = props;
   return (
     <View style={{ alignItems: 'center', gap: 4 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Increase ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, step, size)); }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Increase ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, 1, size)); }}>
         <Icon name="chevronUp" size={20} color={colors.head} />
       </Pressable>
       <RNText accessibilityLabel={label} style={{ color: colors.head, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head, minWidth: 44, textAlign: 'center' }}>
         {String(value).padStart(2, '0')}
       </RNText>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Decrease ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, -step, size)); }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Decrease ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, -1, size)); }}>
         <Icon name="chevronDown" size={20} color={colors.head} />
       </Pressable>
     </View>
@@ -122,9 +121,9 @@ function TimeRow(props: { draft: TimeDraft; colors: SheetColors; onChange: (draf
   const { draft, colors, onChange, onDone } = props;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 12 }}>
-      <Stepper value={draft.hour} size={24} step={1} label="Hour" colors={colors} onChange={(hour) => { onChange({ ...draft, hour }); }} />
+      <Stepper value={draft.hour} size={24} label="Hour" colors={colors} onChange={(hour) => { onChange({ ...draft, hour }); }} />
       <RNText style={{ color: colors.head, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head }}>:</RNText>
-      <Stepper value={draft.minute} size={60} step={MINUTE_STEP} label="Minute" colors={colors} onChange={(minute) => { onChange({ ...draft, minute }); }} />
+      <Stepper value={draft.minute} size={60} label="Minute" colors={colors} onChange={(minute) => { onChange({ ...draft, minute }); }} />
       <Pressable accessibilityRole="button" onPress={onDone} hitSlop={8} style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.accent }}>
         <RNText style={{ color: '#ffffff', fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>Done</RNText>
       </Pressable>

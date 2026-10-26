@@ -174,22 +174,20 @@ function checkConditional(schema: JsonObject, value: JsonValue, path: string[], 
   }
 }
 
-function checkProperties(schema: JsonObject, value: JsonObject, path: string[], scope: Scope, out: Outcome): void {
+function propertySchemas(schema: JsonObject, key: string): JsonValue[] {
   const props = isJsonObject(schema.properties) ? schema.properties : {};
+  const subs: JsonValue[] = Object.prototype.hasOwnProperty.call(props, key) ? [props[key] ?? true] : [];
   const patterns = isJsonObject(schema.patternProperties) ? entriesOf(schema.patternProperties) : [];
+  for (const [pattern, sub] of patterns) if (patternMatches(pattern, key)) subs.push(sub);
+  if (subs.length === 0 && schema.additionalProperties !== undefined) subs.push(schema.additionalProperties);
+  return subs;
+}
+
+function checkProperties(schema: JsonObject, value: JsonObject, path: string[], scope: Scope, out: Outcome): void {
   for (const [key, child] of entriesOf(value)) {
-    let matched = false;
-    if (Object.prototype.hasOwnProperty.call(props, key)) {
-      matched = true;
-      merge(out, { issues: check(props[key] ?? true, child, [...path, key], scope).issues, evaluated: new Set([key]) });
-    }
-    for (const [pattern, sub] of patterns) {
-      if (!patternMatches(pattern, key)) continue;
-      matched = true;
-      merge(out, { issues: check(sub, child, [...path, key], scope).issues, evaluated: new Set([key]) });
-    }
-    if (matched || schema.additionalProperties === undefined) continue;
-    merge(out, { issues: check(schema.additionalProperties, child, [...path, key], scope).issues, evaluated: new Set([key]) });
+    const subs = propertySchemas(schema, key);
+    for (const sub of subs) out.issues.push(...check(sub, child, [...path, key], scope).issues);
+    if (subs.length > 0) out.evaluated.add(key);
   }
 }
 
@@ -219,6 +217,13 @@ function checkUnevaluated(schema: JsonObject, value: JsonValue, path: string[], 
   }
 }
 
+function checkItems(schema: JsonObject, value: readonly JsonValue[], path: string[], scope: Scope, out: Outcome): void {
+  const { items, contains } = schema;
+  const at = (sub: JsonValue, item: JsonValue, index: number): Outcome => check(sub, item, [...path, String(index)], scope);
+  if (items !== undefined) value.forEach((item, index) => out.issues.push(...at(items, item, index).issues));
+  if (contains !== undefined && !value.some((item, index) => passed(at(contains, item, index)))) out.issues.push(issue(path, 'Expected at least one matching item.'));
+}
+
 function checkValueKeywords(schema: JsonObject, value: JsonValue, path: string[], scope: Scope, out: Outcome): void {
   const typeIssue = checkType(schema.type, value);
   if (typeIssue !== undefined) out.issues.push(issue(path, typeIssue));
@@ -226,11 +231,8 @@ function checkValueKeywords(schema: JsonObject, value: JsonValue, path: string[]
   if (Array.isArray(schema.enum) && !schema.enum.some((option) => jsonEqual(option, value))) {
     out.issues.push(issue(path, `Expected one of ${schema.enum.map((v) => JSON.stringify(v)).join(', ')}.`));
   }
-  for (const message of [...checkString(schema, value), ...checkNumber(schema, value)]) out.issues.push(issue(path, message));
-  if (Array.isArray(value)) {
-    const run = (sub: JsonValue, item: JsonValue, index: number): SchemaIssue[] => check(sub, item, [...path, String(index)], scope).issues;
-    out.issues.push(...checkArray(schema, value, run, (message) => issue(path, message)));
-  }
+  for (const message of [...checkString(schema, value), ...checkNumber(schema, value), ...checkArray(schema, value)]) out.issues.push(issue(path, message));
+  if (Array.isArray(value)) checkItems(schema, value, path, scope, out);
   if (isJsonObject(value)) {
     checkObjectShape(schema, value, path, scope, out);
     checkProperties(schema, value, path, scope, out);

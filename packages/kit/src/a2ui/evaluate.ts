@@ -1,6 +1,6 @@
 import type { CatalogRegistry } from './catalog';
 import { A2uiExpressionError } from './expression';
-import type { FunctionContext, FunctionImpl } from './functions';
+import { isTruthyOrValid, type FunctionContext, type FunctionImpl } from './functions';
 import { getAt, resolveScopedPath } from './pointer';
 import {
   ERROR_CODES, entriesOf, isDataBinding, isFunctionCall, isJsonObject, isValidationResult,
@@ -63,12 +63,8 @@ function indexCall(call: FunctionCall, scope: Scope, run: (v: DynamicValue) => u
 
 function guardCaller(env: EvalEnv, catalogId: string, name: string, activation: boolean): void {
   const meta = env.registry.functionMeta(catalogId, name);
-  if (meta?.allowedCallers === 'agentOnly') {
-    throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' may only be called by the agent.`);
-  }
-  if (meta?.requiresUserActivation === true && !activation) {
-    throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' requires a user gesture.`);
-  }
+  if (meta?.allowedCallers === 'agentOnly') throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' may only be called by the agent.`);
+  if (meta?.requiresUserActivation === true && !activation) throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' requires a user gesture.`);
 }
 
 function runLocal(impl: FunctionImpl, args: Record<string, unknown>, context: FunctionContext): unknown {
@@ -76,8 +72,8 @@ function runLocal(impl: FunctionImpl, args: Record<string, unknown>, context: Fu
     return impl(args, context);
   } catch (error) {
     if (error instanceof A2uiEvaluationError) throw error;
-    const message = error instanceof Error ? error.message : String(error);
-    throw new A2uiEvaluationError(error instanceof A2uiExpressionError ? ERROR_CODES.expression : ERROR_CODES.execution, message);
+    const { code, message } = toDiagnostic(error);
+    throw new A2uiEvaluationError(code, message);
   }
 }
 
@@ -114,12 +110,7 @@ export interface Diagnostic {
   message: string;
 }
 
-export function safeResolve(
-  value: DynamicValue | undefined,
-  env: EvalEnv,
-  scope: Scope,
-  report: (diagnostic: Diagnostic) => void,
-): unknown {
+export function safeResolve(value: DynamicValue | undefined, env: EvalEnv, scope: Scope, report: (diagnostic: Diagnostic) => void): unknown {
   try {
     return resolveDynamic(value, env, scope);
   } catch (error) {
@@ -134,27 +125,14 @@ export function toDiagnostic(error: unknown): Diagnostic {
   return { code: ERROR_CODES.execution, message: error instanceof Error ? error.message : String(error) };
 }
 
-export function toBoolean(value: unknown): boolean {
-  return isValidationResult(value) ? value.valid : Boolean(value);
-}
-
-const DEFAULT_CHECK_MESSAGE = 'Validation failed';
+export const toBoolean = isTruthyOrValid;
 
 function coerceCheck(value: unknown, rule: CheckRule): ValidationResult {
-  const fallback = rule.message ?? DEFAULT_CHECK_MESSAGE;
-  if (isValidationResult(value)) {
-    if (value.valid) return value;
-    return { ...value, message: value.message ?? fallback, severity: value.severity ?? 'error' };
-  }
-  if (toBoolean(value)) return { valid: true };
-  return { valid: false, message: fallback, severity: 'error' };
+  const result: ValidationResult = isValidationResult(value) ? value : { valid: Boolean(value) };
+  return result.valid ? result : { ...result, message: result.message ?? rule.message ?? 'Validation failed', severity: result.severity ?? 'error' };
 }
 
-export function evaluateChecks(
-  checks: readonly CheckRule[] | undefined,
-  env: EvalEnv,
-  scope: Scope,
-): ValidationResult[] {
+export function evaluateChecks(checks: readonly CheckRule[] | undefined, env: EvalEnv, scope: Scope): ValidationResult[] {
   if (checks === undefined) return [];
   return checks.map((rule) => {
     try {

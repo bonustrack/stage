@@ -49,17 +49,12 @@ function resolveStyled(props: TextFieldProps, dark: boolean): ResolvedTextFieldS
   });
 }
 
-interface WebGrowNode {
-  style: { height: string };
-  scrollHeight: number;
-}
-
 function useWebAutoGrow(ref: RefObject<TextInput | null>, props: TextFieldProps, multiline: boolean) {
   const { value, minHeight, maxHeight, onChangeText } = props;
   const enabled = Platform.OS === 'web' && multiline && props.autoGrow === true;
   const [height, setHeight] = useState<number | undefined>(undefined);
   const measure = useCallback((): void => {
-    const node = ref.current as unknown as WebGrowNode | null;
+    const node = ref.current as unknown as { style: { height: string }; scrollHeight: number } | null;
     if (!enabled || node === null) return;
     const min = typeof minHeight === 'number' ? minHeight : 44;
     const max = typeof maxHeight === 'number' ? maxHeight : Number.POSITIVE_INFINITY;

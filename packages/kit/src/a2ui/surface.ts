@@ -1,5 +1,5 @@
 import type { AgentCallResult } from './evaluate';
-import type { ComponentInstance, JsonObject, JsonValue } from './protocol';
+import type { ComponentInstance, JsonObject } from './protocol';
 
 export interface AgentCall extends AgentCallResult {
   functionCallId: string;
@@ -15,20 +15,6 @@ export interface SurfaceState {
   version: number;
   agentCalls: Map<string, AgentCall>;
   reported: Set<string>;
-}
-
-export function createSurfaceState(id: string, catalogId: string | undefined, sendDataModel: boolean, metadata: JsonObject | undefined): SurfaceState {
-  return {
-    id,
-    catalogId,
-    sendDataModel,
-    metadata,
-    components: new Map(),
-    data: {},
-    version: 0,
-    agentCalls: new Map(),
-    reported: new Set(),
-  };
 }
 
 export type Listener = () => void;
@@ -59,12 +45,4 @@ export function createSurfaceEvents(): SurfaceEvents {
       };
     },
   };
-}
-
-export function stableKey(value: JsonValue | Record<string, unknown>): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
-  if (Array.isArray(value)) return `[${value.map((v) => stableKey(v)).join(',')}]`;
-  const keys = Object.keys(value).sort();
-  const record: Record<string, unknown> = value;
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableKey((record[k] ?? null) as JsonValue)}`).join(',')}}`;
 }

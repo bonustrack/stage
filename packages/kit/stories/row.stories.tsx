@@ -2,40 +2,28 @@ import type { Story } from '../gallery/story';
 import { Row, type FlexProps } from '../src/react-native/row';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
-import { bool, color, number, select, text } from './_controls';
+import { Cell, color, FLEX_ARG_TYPES, JUSTIFY, number } from './_controls';
 
 export default { title: 'Row' };
 
-const ALIGN = ['start', 'center', 'end', 'stretch'] as const;
-const JUSTIFY = ['start', 'center', 'end', 'spaceBetween', 'spaceAround', 'spaceEvenly', 'stretch'] as const;
-const SURFACE = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const;
-const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const;
-
-function Cell({ label }: { label: string }): React.ReactElement {
-  return <Column padding={8} background="#5b8def" radius="sm"><Text color="#ffffff">{label}</Text></Column>;
-}
+const BLUE = '#5b8def';
 
 export const Controls: Story<FlexProps & { borderWidth: number; borderColor: string }> = ({ borderWidth, borderColor, ...args }) => {
   const side = { width: borderWidth, color: borderColor };
   return (
     <Row {...args} border={borderWidth > 0 ? { top: side, right: side, bottom: side, left: side } : undefined}>
-      <Cell label="one" /><Cell label="two" /><Cell label="three" />
+      <Cell label="one" background={BLUE} /><Cell label="two" background={BLUE} /><Cell label="three" background={BLUE} />
     </Row>
   );
 };
 Controls.args = { gap: 8, padding: 16, align: 'center', justify: 'start', wrap: false, surface: 'sunken', radius: 'md', width: '100%', height: 160, borderWidth: 0, borderColor: '#888888' };
-Controls.argTypes = {
-  gap: number, padding: number, margin: number, align: select(ALIGN), justify: select(JUSTIFY),
-  weight: number, wrap: bool, surface: select(SURFACE), background: color, radius: select(RADII),
-  width: text, height: text, minWidth: text, minHeight: text, maxWidth: text, maxHeight: text, aspectRatio: number,
-  borderWidth: number, borderColor: color,
-};
+Controls.argTypes = { ...FLEX_ARG_TYPES, borderWidth: number, borderColor: color };
 
 export const Justify: Story = () => (
   <Column gap={12}>
     {JUSTIFY.map((justify) => (
       <Row key={justify} justify={justify} surface="sunken" padding={8} radius="md" gap={8}>
-        <Cell label={justify} /><Cell label="b" /><Cell label="c" />
+        <Cell label={justify} background={BLUE} /><Cell label="b" background={BLUE} /><Cell label="c" background={BLUE} />
       </Row>
     ))}
   </Column>

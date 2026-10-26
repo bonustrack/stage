@@ -1,4 +1,3 @@
-
 import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
@@ -133,14 +132,7 @@ function renderLabel(
   );
 }
 
-interface TintArgs {
-  color: ButtonColor | undefined;
-  variant: ButtonVariant | undefined;
-  dark: boolean;
-  tintBg: string | undefined;
-  tintFg: string | undefined;
-  tintPressedBg: string | undefined;
-}
+type TintArgs = Pick<ButtonProps, 'color' | 'variant' | 'tintBg' | 'tintFg' | 'tintPressedBg'> & { dark: boolean };
 
 function useResolvedColors(t: TintArgs): ResolvedColors {
   return useMemo(() => {
@@ -156,29 +148,14 @@ function useResolvedColors(t: TintArgs): ResolvedColors {
   }, [t.color, t.variant, t.dark, t.tintBg, t.tintFg, t.tintPressedBg]);
 }
 
-function orFlag(a: boolean | undefined, b: boolean | undefined): boolean {
-  return a === true || b === true;
-}
-
-interface ContainerInput {
-  spec: (typeof SIZES)[ButtonSize];
-  c: ResolvedColors;
-  isDisabled: boolean;
-  block: boolean | undefined;
-  fullWidth: boolean | undefined;
-  uniform: boolean | undefined;
-  pill: boolean | undefined;
-  radius: number | undefined;
-  weight: number | undefined;
-  style: ViewStyle | undefined;
-}
+type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'> & Pick<ButtonProps, 'block' | 'fullWidth' | 'uniform' | 'pill' | 'radius' | 'weight' | 'style'>;
 
 function containerArgs(input: ContainerInput): ContainerStyleArgs {
   const { spec, c, isDisabled, block, fullWidth, uniform, pill, radius, weight, style } = input;
   return {
     spec,
     square: uniform === true,
-    stretch: orFlag(block, fullWidth),
+    stretch: block === true || fullWidth === true,
     radius: pill === true ? 999 : radius,
     c,
     isDisabled,

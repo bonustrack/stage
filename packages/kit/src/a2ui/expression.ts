@@ -11,7 +11,13 @@ export class A2uiExpressionError extends Error {
 export type TemplatePart = string | DataBinding | FunctionCall | JsonValue;
 
 const NUMBER_LITERAL = /^[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/;
-const ID_CONTINUE = /^\p{XID_Continue}$/u;
+const NUMBER_START = /[+-]?\.?[0-9]/y;
+const NUMBER_TEXT = /[+-]?[0-9.]*(?:[eE][+-]?[0-9]*)?/y;
+const KEYWORD = /(?:true|false|null)(?!\p{XID_Continue})/uy;
+const KEYWORDS: Record<string, DynamicValue> = { true: true, false: false, null: '' };
+const NAME = /\p{XID_Continue}*/uy;
+const PATH = /[\p{XID_Continue}/.@-]*/uy;
+const SPACE = /\s*/y;
 
 class Scanner {
   pos = 0;
@@ -21,8 +27,8 @@ class Scanner {
     return this.pos >= this.input.length;
   }
 
-  peek(offset = 0): string {
-    const code = this.input.codePointAt(this.pos + offset);
+  peek(): string {
+    const code = this.input.codePointAt(this.pos);
     return code === undefined ? '\0' : String.fromCodePoint(code);
   }
 
@@ -37,27 +43,16 @@ class Scanner {
     return this.input.startsWith(text, this.pos);
   }
 
-  escapedOpen(): boolean {
-    return this.peek() === '\\' && this.peek(1) === '$' && this.peek(2) === '{';
+  take(pattern: RegExp): string {
+    pattern.lastIndex = this.pos;
+    const text = pattern.exec(this.input)?.[0] ?? '';
+    this.pos += text.length;
+    return text;
   }
 
   skipSpace(): void {
-    while (!this.atEnd() && /\s/.test(this.peek())) this.advance();
+    this.take(SPACE);
   }
-
-  keyword(word: string): boolean {
-    if (!this.startsWith(word) || isIdContinue(this.peek(word.length))) return false;
-    this.advance(word.length);
-    return true;
-  }
-}
-
-function isIdContinue(char: string): boolean {
-  return Array.from(char).length === 1 && ID_CONTINUE.test(char);
-}
-
-function isDigit(char: string): boolean {
-  return char >= '0' && char <= '9';
 }
 
 function skipQuoted(scanner: Scanner, quote: string): void {
@@ -98,39 +93,12 @@ function stringLiteral(scanner: Scanner): string {
   return out;
 }
 
-function numberStart(scanner: Scanner): boolean {
-  const offset = scanner.peek() === '-' || scanner.peek() === '+' ? 1 : 0;
-  if (isDigit(scanner.peek(offset))) return true;
-  return scanner.peek(offset) === '.' && isDigit(scanner.peek(offset + 1));
-}
-
-function signAndDigits(scanner: Scanner): void {
-  if (scanner.peek() === '-' || scanner.peek() === '+') scanner.advance();
-  while (!scanner.atEnd() && (isDigit(scanner.peek()) || scanner.peek() === '.')) scanner.advance();
-}
-
-function exponent(scanner: Scanner): void {
-  if (scanner.peek() !== 'e' && scanner.peek() !== 'E') return;
-  scanner.advance();
-  if (scanner.peek() === '+' || scanner.peek() === '-') scanner.advance();
-  while (!scanner.atEnd() && isDigit(scanner.peek())) scanner.advance();
-}
-
 function numberLiteral(scanner: Scanner): number {
-  const start = scanner.pos;
-  signAndDigits(scanner);
-  exponent(scanner);
-  const text = scanner.input.slice(start, scanner.pos);
+  const text = scanner.take(NUMBER_TEXT);
   if (!NUMBER_LITERAL.test(text)) throw new A2uiExpressionError(`Invalid number literal: '${text}'`);
   const value = Number(text);
   if (!Number.isFinite(value)) throw new A2uiExpressionError(`Number literal is out of range: '${text}'`);
   return value === 0 ? 0 : value;
-}
-
-function scanWhile(scanner: Scanner, accept: (c: string) => boolean): string {
-  const start = scanner.pos;
-  while (!scanner.atEnd() && accept(scanner.peek())) scanner.advance();
-  return scanner.input.slice(start, scanner.pos);
 }
 
 function functionCall(name: string, scanner: Scanner, depth: number): FunctionCall {
@@ -138,7 +106,7 @@ function functionCall(name: string, scanner: Scanner, depth: number): FunctionCa
   scanner.skipSpace();
   const args: JsonObject = {};
   while (!scanner.atEnd() && scanner.peek() !== ')') {
-    const argName = scanWhile(scanner, isIdContinue);
+    const argName = scanner.take(NAME);
     scanner.skipSpace();
     if (scanner.peek() !== ':') throw new A2uiExpressionError(`Expected ':' after argument name '${argName}' in function '${name}'`);
     scanner.advance();
@@ -157,11 +125,9 @@ function functionCall(name: string, scanner: Scanner, depth: number): FunctionCa
 
 function literalAt(scanner: Scanner): DynamicValue | undefined {
   if (scanner.peek() === "'" || scanner.peek() === '"') return stringLiteral(scanner);
-  if (numberStart(scanner)) return numberLiteral(scanner);
-  if (scanner.keyword('true')) return true;
-  if (scanner.keyword('false')) return false;
-  if (scanner.keyword('null')) return '';
-  return undefined;
+  NUMBER_START.lastIndex = scanner.pos;
+  if (NUMBER_START.test(scanner.input)) return numberLiteral(scanner);
+  return KEYWORDS[scanner.take(KEYWORD)];
 }
 
 function expressionAt(scanner: Scanner, depth: number): DynamicValue {
@@ -174,7 +140,7 @@ function expressionAt(scanner: Scanner, depth: number): DynamicValue {
   }
   const literal = literalAt(scanner);
   if (literal !== undefined) return literal;
-  const token = scanWhile(scanner, (c) => isIdContinue(c) || c === '/' || c === '.' || c === '-' || c === '@');
+  const token = scanner.take(PATH);
   scanner.skipSpace();
   if (scanner.peek() === '(') return functionCall(token, scanner, depth);
   return token === '' ? '' : { '@path': token };
@@ -191,15 +157,13 @@ export function parseExpression(expression: string, depth = 0): DynamicValue {
 
 function literalRun(scanner: Scanner): string {
   const start = scanner.pos;
-  while (!scanner.atEnd() && !scanner.startsWith('${') && !scanner.escapedOpen()) scanner.advance();
+  while (!scanner.atEnd() && !scanner.startsWith('${') && !scanner.startsWith('\\${')) scanner.advance();
   return scanner.input.slice(start, scanner.pos);
 }
 
 export function parseTemplate(input: string, depth = 0): DynamicValue[] {
   if (depth > MAX_EXPRESSION_DEPTH) throw new A2uiExpressionError('Max recursion depth reached in parse');
   if (input.length > MAX_TEMPLATE_LENGTH) throw new A2uiExpressionError(`Expression template length (${input.length}) exceeds maximum limit (${MAX_TEMPLATE_LENGTH})`);
-  if (input === '') return [];
-  if (!input.includes('${')) return [input];
   const parts: DynamicValue[] = [];
   const scanner = new Scanner(input);
   while (!scanner.atEnd()) {
@@ -207,7 +171,7 @@ export function parseTemplate(input: string, depth = 0): DynamicValue[] {
     if (scanner.startsWith('${')) {
       scanner.advance(2);
       parts.push(parseExpression(interpolationBody(scanner), depth + 1));
-    } else if (scanner.escapedOpen()) {
+    } else if (scanner.startsWith('\\${')) {
       scanner.advance(3);
       parts.push('${');
     } else {

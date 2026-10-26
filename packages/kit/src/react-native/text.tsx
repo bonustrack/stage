@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import RNMarkdown from 'react-native-markdown-display';
+import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
 import { markdownStyles } from '../markdown.styles';
 import { resolvePaletteColor, type ColorToken } from '../tokens';
 import {
@@ -52,21 +52,16 @@ function useTextColor(color: TextProps['color'], variant: TextVariant | undefine
   return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
 }
 
-interface MarkdownTextProps {
-  value: string;
-  color: string;
-  base: TextStyle;
-  style: TextProps['style'];
-}
+const A2UI_MARKDOWN = MarkdownIt({ html: false, linkify: false, typographer: false }).disable(['image', 'link', 'autolink']);
 
-function MarkdownText({ value, color, base, style }: MarkdownTextProps): React.ReactElement {
+function MarkdownText({ value, color, base, style }: { value: string; color: string; base: TextStyle; style: TextProps['style'] }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const styles = useMemo(() => {
     const sheet = markdownStyles({ fg: color, dark, fontSize: base.fontSize });
     sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style) };
     return sheet;
   }, [base, color, dark, style]);
-  return <RNMarkdown style={styles}>{value}</RNMarkdown>;
+  return <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>{value}</RNMarkdown>;
 }
 
 export function Text(props: TextProps): React.ReactElement {

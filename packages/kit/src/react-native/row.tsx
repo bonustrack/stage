@@ -1,6 +1,6 @@
 import { View, type ViewProps, type ViewStyle } from 'react-native';
 import { boxStyleEntries, surfaceColor, type Align, type BoxBaseProps, type Justify, type Surface } from '../layout';
-import { isColorToken, resolvePaletteColor } from '../tokens';
+import { resolvePaletteColor } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { useKitPalette } from './theme-context';
 
@@ -16,7 +16,7 @@ export function Flex({ direction, surface = 'none', background, accessibility, s
     gap, padding, margin, align, justify, weight, wrap, radius, width, height, size,
     minWidth, minHeight, maxWidth, maxHeight, aspectRatio, border, ...view
   } = rest;
-  const override = background !== undefined && isColorToken(background) ? resolvePaletteColor(background, palette) : background;
+  const override = background === undefined ? undefined : resolvePaletteColor(background, palette);
   const computed = boxStyleEntries({
     direction, gap, padding, margin, align, justify, weight, wrap, radius, width, height, size,
     minWidth, minHeight, maxWidth, maxHeight, aspectRatio, border,

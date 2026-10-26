@@ -6,8 +6,6 @@ import { A2UI_ICON_NAMES } from '../icons.a2ui';
 import { BOX_RADIUS_SCALE, COLOR_TOKENS, FONT_SIZE } from '../tokens';
 import { A2UI_PROTOCOL_VERSION, BASIC_CATALOG_ID, entriesOf, isJsonObject, type JsonObject, type JsonValue } from './protocol';
 import { BASIC_CATALOG } from './schemas';
-import { KIT_CATALOG_INSTRUCTIONS } from './kit-catalog.instructions';
-import { KIT_EXTRA_FUNCTIONS } from './functions.kit';
 
 export const KIT_CATALOG_ID = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
 
@@ -170,28 +168,75 @@ function inheritedFunction(name: string, definition: JsonValue): JsonObject {
   };
 }
 
-function kitFunctions(): Record<string, JsonObject> {
-  const source = isJsonObject(BASIC_CATALOG.functions) ? BASIC_CATALOG.functions : {};
-  return { ...Object.fromEntries(entriesOf(source).map(([name, def]) => [name, inheritedFunction(name, def)])), ...KIT_EXTRA_FUNCTIONS };
-}
-
-function buildKitCatalog(): JsonObject {
-  const functions = kitFunctions();
-  return {
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
-    $id: KIT_CATALOG_ID,
-    protocolVersion: A2UI_PROTOCOL_VERSION,
-    title: 'Stage Kit Catalog',
-    description: 'The A2UI basic catalog extended with the Stage Kit design system: extra props, tokens, icons and components.',
-    catalogId: KIT_CATALOG_ID,
-    instructions: KIT_CATALOG_INSTRUCTIONS,
-    components: KIT_COMPONENTS,
-    functions,
-    $defs: {
-      anyComponent: { oneOf: Object.keys(KIT_COMPONENTS).map((name) => ({ $ref: `#/components/${name}` })), discriminator: { propertyName: 'component' } },
-      anyFunction: { oneOf: Object.keys(functions).map((name) => ({ $ref: `#/functions/${name}` })) },
+const BASIC_FUNCTIONS = isJsonObject(BASIC_CATALOG.functions) ? BASIC_CATALOG.functions : {};
+const KIT_FUNCTIONS: Record<string, JsonObject> = {
+  ...Object.fromEntries(entriesOf(BASIC_FUNCTIONS).map(([name, def]) => [name, inheritedFunction(name, def)])),
+  openSurface: {
+    type: 'object',
+    description: 'Shows another surface of the same message as a new screen with a back button (requires user activation). This function has no return value.',
+    returnType: 'void',
+    requiresUserActivation: true,
+    properties: {
+      '@call': { const: 'openSurface' },
+      args: {
+        type: 'object',
+        properties: { surfaceId: { description: 'The id of the surface to show.', oneOf: [{ type: 'string' }, common('DataBinding'), common('FunctionCall')] } },
+        required: ['surfaceId'],
+        unevaluatedProperties: false,
+      },
     },
-  };
-}
+    required: ['@call', 'args'],
+  },
+  closeSurface: {
+    type: 'object',
+    description: 'Goes back to the screen shown before the last openSurface (requires user activation). This function has no return value.',
+    returnType: 'void',
+    requiresUserActivation: true,
+    properties: { '@call': { const: 'closeSurface' } },
+    required: ['@call'],
+  },
+};
 
-export const KIT_CATALOG: JsonObject = buildKitCatalog();
+const INSTRUCTIONS = [
+  'This catalog is the A2UI basic catalog rendered with the Stage Kit design system. Every basic catalog component is available with the same props, plus optional Kit props.',
+  '',
+  '## Layout',
+  '',
+  'Use Row and Column to organise components. Kit adds `gap` and `padding` in pixels, `wrap`, `surface` (surface, raised, sunken, toolbar), `background` and `radius`. Prefer `gap` on the container over spacing on the children.',
+  '',
+  '## Text',
+  '',
+  'Text takes the Kit `size` tokens (3xs to 3xl, md is the body size), `fontWeight` (normal, medium, semibold, bold) and `color` tokens: text, secondary, muted, link, primary, danger, success, border. Use `variant: caption` for secondary small print and Title for headings.',
+  '',
+  '## Buttons',
+  '',
+  'Button `variant` accepts the basic hints (default, primary, borderless) or a Kit fill (solid, soft, outline, ghost) combined with `color` (primary, secondary, info, discovery, success, caution, warning, danger). Use exactly one primary button per surface.',
+  '',
+  '## Icons',
+  '',
+  'Icon `name` accepts the basic catalog names and the Kit HeroIcon names such as wallet, qrcode, sparkles or chatAlt.',
+  '',
+  '## Screens',
+  '',
+  'A message can create several surfaces. The first one shows; a button whose action calls `openSurface` with another surface id shows that surface as a new screen with a back button, and `closeSurface` goes back.',
+  '',
+  '## Functions',
+  '',
+  'Every basic catalog function is available. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate and pluralize with callRendererFunction.',
+].join('\n');
+
+export const KIT_CATALOG: JsonObject = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $id: KIT_CATALOG_ID,
+  protocolVersion: A2UI_PROTOCOL_VERSION,
+  title: 'Stage Kit Catalog',
+  description: 'The A2UI basic catalog extended with the Stage Kit design system: extra props, tokens, icons and components.',
+  catalogId: KIT_CATALOG_ID,
+  instructions: INSTRUCTIONS,
+  components: KIT_COMPONENTS,
+  functions: KIT_FUNCTIONS,
+  $defs: {
+    anyComponent: { oneOf: Object.keys(KIT_COMPONENTS).map((name) => ({ $ref: `#/components/${name}` })), discriminator: { propertyName: 'component' } },
+    anyFunction: { oneOf: Object.keys(KIT_FUNCTIONS).map((name) => ({ $ref: `#/functions/${name}` })) },
+  },
+};

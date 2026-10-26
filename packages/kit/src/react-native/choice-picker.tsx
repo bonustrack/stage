@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
-import { FONT_SIZE, colors as tokenColors, fontName } from '../tokens';
+import { FONT_SIZE, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { CheckboxBox, checkboxColors } from './check-box';
 import { WithChecks } from './control-trigger';
@@ -40,22 +40,13 @@ export interface ChoicePickerProps extends A2uiCommonProps {
 
 const SIZE = 20;
 
-interface Palette {
-  head: string;
-  border: string;
-  bg: string;
-}
-
-function paletteOf(dark: boolean): Palette {
-  return { head: dark ? '#ffffff' : '#000000', border: dark ? '#282a2d' : '#e4e4e5', bg: dark ? tokenColors['bg-dark'] : tokenColors['bg-light'] };
-}
+type Palette = ReturnType<typeof checkboxColors>;
 
 interface OptionViewProps {
   option: ChoiceOption;
   selected: boolean;
   disabled: boolean;
   palette: Palette;
-  dark: boolean;
   onPick: (value: string) => void;
 }
 
@@ -71,7 +62,7 @@ function RadioMark({ selected, palette }: { selected: boolean; palette: Palette 
   );
 }
 
-function OptionRow({ option, selected, disabled, palette, dark, onPick, multiple }: OptionViewProps & { multiple: boolean }): React.ReactElement {
+function OptionRow({ option, selected, disabled, palette, onPick, multiple }: OptionViewProps & { multiple: boolean }): React.ReactElement {
   return (
     <Pressable
       accessibilityRole={multiple ? 'checkbox' : 'radio'}
@@ -81,7 +72,7 @@ function OptionRow({ option, selected, disabled, palette, dark, onPick, multiple
       onPress={() => { onPick(option.value); }}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: disabled ? 0.5 : 1 }}
     >
-      {multiple ? <CheckboxBox size={SIZE} checked={selected} colors={checkboxColors(dark)} /> : <RadioMark selected={selected} palette={palette} />}
+      {multiple ? <CheckboxBox size={SIZE} checked={selected} colors={palette} /> : <RadioMark selected={selected} palette={palette} />}
       <RNText style={{ color: palette.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>{option.label}</RNText>
     </Pressable>
   );
@@ -107,12 +98,12 @@ function Chip({ option, selected, disabled, palette, onPick }: OptionViewProps):
   );
 }
 
-export function nextSelection(current: readonly string[], value: string, multiple: boolean): string[] {
+function nextSelection(current: readonly string[], value: string, multiple: boolean): string[] {
   if (!multiple) return [value];
   return current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
 }
 
-export function filterOptions(options: readonly ChoiceOption[], query: string): readonly ChoiceOption[] {
+function filterOptions(options: readonly ChoiceOption[], query: string): readonly ChoiceOption[] {
   const needle = query.trim().toLowerCase();
   return needle === '' ? options : options.filter((o) => o.label.toLowerCase().includes(needle));
 }
@@ -120,9 +111,8 @@ export function filterOptions(options: readonly ChoiceOption[], query: string): 
 function useSelection(props: ChoicePickerProps): [readonly string[], (value: string) => void] {
   const [internal, setInternal] = useState<readonly string[]>(props.defaultValue ?? []);
   const selected = props.value ?? internal;
-  const multiple = props.variant === 'multipleSelection';
   return [selected, (value) => {
-    const next = nextSelection(selected, value, multiple);
+    const next = nextSelection(selected, value, props.variant === 'multipleSelection');
     if (props.value === undefined) setInternal(next);
     props.onChange?.(next);
   }];
@@ -137,7 +127,7 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
   const { options, label, displayStyle = 'checkbox', filterable, checks, disabled = false, direction = 'col', style, weight, accessibility } = props;
   const scheme = useKitScheme();
   const dark = props.dark ?? scheme === 'dark';
-  const palette = paletteOf(dark);
+  const palette = checkboxColors(dark);
   const [query, setQuery] = useState('');
   const [selected, pick] = useSelection(props);
   const chips = displayStyle === 'chips';
@@ -151,7 +141,7 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
           {filterable === true ? <TextField value={query} onChangeText={setQuery} placeholder="Filter options" dark={dark} disabled={disabled} /> : null}
           <View style={containerStyle(chips, direction)}>
             {shown.map((option) => {
-              const view: OptionViewProps = { option, selected: selected.includes(option.value), disabled: disabled || option.disabled === true, palette, dark, onPick: pick };
+              const view: OptionViewProps = { option, selected: selected.includes(option.value), disabled: disabled || option.disabled === true, palette, onPick: pick };
               return chips ? <Chip key={option.value} {...view} /> : <OptionRow key={option.value} {...view} multiple={multiple} />;
             })}
           </View>

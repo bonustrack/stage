@@ -8,25 +8,17 @@ import type { ValidationResult } from '../a2ui/protocol';
 import { firstCheckMessage, weightStyle } from './a2ui-props';
 import { Text } from './text';
 
-export const CHECK_MESSAGE_GAP = 4;
-
-export function CheckMessage({ message }: { message: string }): React.ReactElement {
-  return <Text text={message} size="2xs" color="danger" style={{ marginTop: CHECK_MESSAGE_GAP }} />;
-}
-
-export interface WithChecksProps {
+export function WithChecks({ checks, weight, children }: {
   checks?: readonly ValidationResult[];
   weight?: number;
   children: (rootStyle: ViewStyle | undefined) => ReactNode;
-}
-
-export function WithChecks({ checks, weight, children }: WithChecksProps): React.ReactElement {
+}): React.ReactElement {
   const message = firstCheckMessage(checks);
   if (message === undefined) return <>{children(weightStyle(weight))}</>;
   return (
     <View style={weightStyle(weight)}>
       {children(undefined)}
-      <CheckMessage message={message} />
+      <Text text={message} size="2xs" color="danger" style={{ marginTop: 4 }} />
     </View>
   );
 }

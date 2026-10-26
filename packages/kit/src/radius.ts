@@ -29,7 +29,7 @@ export const BOX_RADIUS_SCALE: Record<RadiusValue, number | string> = {
 } as const;
 
 export function isRadiusValue(r: string): r is RadiusValue {
-  return r in BOX_RADIUS_SCALE;
+  return Object.hasOwn(BOX_RADIUS_SCALE, r);
 }
 
 export function resolveBoxRadius(r: number | string): number | string {

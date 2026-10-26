@@ -1,4 +1,4 @@
-import { Fragment, useContext, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { A2uiClient } from '../a2ui/client';
 import { ROOT_SCOPE, isCheckRuleList, toBoolean, type Scope } from '../a2ui/evaluate';
 import { getAt, resolveScopedPath } from '../a2ui/pointer';
@@ -7,15 +7,14 @@ import {
   type ComponentInstance, type JsonValue,
 } from '../a2ui/protocol';
 import type { ComponentInfo } from '../a2ui/catalog';
-import { childRefKinds } from '../a2ui/structure';
+import { childRefKinds, fitsRenderLimits } from '../a2ui/structure';
 import type { A2uiAccessibility } from './a2ui-props';
 import {
-  SurfaceContext, asEnum, asNumber, asOptionalString, asString,
-  type A2uiRenderers, type Binding, type RenderContext, type SurfaceContextValue,
+  SurfaceContext, asEnum, asNumber, asOptionalString, asString, hasMarkdown,
+  type A2uiRenderer, type A2uiRenderers, type Binding, type RenderContext, type SurfaceContextValue,
 } from './a2ui-context';
 import { KIT_RENDERERS } from './a2ui-renderers';
 import { useContentColor } from './content-color';
-import { hasMarkdown } from './a2ui-context';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 const RESERVED = new Set(['id', 'component', 'catalogId', 'metadata', 'action', 'checks', 'accessibility', 'weight']);
@@ -27,21 +26,21 @@ export interface A2uiSurfaceProps {
   renderers?: A2uiRenderers;
   disabled?: boolean;
   mediaUrl?: (url: string) => string;
+  fallback?: ReactNode;
   onActionError?: (message: string) => void;
 }
 
 function useSurfaceVersion(client: A2uiClient, surfaceId: string): number {
-  return useSyncExternalStore(
-    (listener) => client.subscribe(surfaceId, listener),
-    () => client.surface(surfaceId)?.version ?? -1,
-    () => client.surface(surfaceId)?.version ?? -1,
-  );
+  const version = (): number => client.surface(surfaceId)?.version ?? -1;
+  return useSyncExternalStore((listener) => client.subscribe(surfaceId, listener), version, version);
 }
 
-export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, onActionError }: A2uiSurfaceProps): React.ReactElement | null {
+export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, fallback = null, onActionError }: A2uiSurfaceProps): React.ReactElement | null {
   const version = useSurfaceVersion(client, surfaceId);
   const surface = client.surface(surfaceId);
+  const renderable = useMemo(() => surface !== undefined && fitsRenderLimits(surface, client.registry), [surface, client, version]);
   if (surface?.components.has(ROOT_ID) !== true) return null;
+  if (!renderable) return <>{fallback}</>;
   const value: SurfaceContextValue = { client, surfaceId, renderers: { ...KIT_RENDERERS, ...renderers }, disabled, mediaUrl, onActionError };
   return (
     <SurfaceContext.Provider value={value}>
@@ -53,15 +52,12 @@ export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, 
 function resolveAccessibility(ctx: SurfaceContextValue, raw: JsonValue | undefined, scope: Scope): A2uiAccessibility | undefined {
   if (!isJsonObject(raw)) return undefined;
   const resolve = (v: JsonValue | undefined): unknown => ctx.client.resolve(ctx.surfaceId, v, scope);
-  const out: A2uiAccessibility = {};
-  const label = asOptionalString(resolve(raw.label));
-  const description = asOptionalString(resolve(raw.description));
-  const live = asEnum(raw.live, LIVE);
-  if (label !== undefined) out.label = label;
-  if (description !== undefined) out.description = description;
-  if (live !== undefined) out.live = live;
-  if (raw.hidden !== undefined && toBoolean(resolve(raw.hidden))) out.hidden = true;
-  return out;
+  return {
+    label: asOptionalString(resolve(raw.label)),
+    description: asOptionalString(resolve(raw.description)),
+    live: asEnum(raw.live, LIVE),
+    hidden: raw.hidden !== undefined && toBoolean(resolve(raw.hidden)),
+  };
 }
 
 function componentInfoOf(ctx: SurfaceContextValue, instance: ComponentInstance): ComponentInfo | undefined {
@@ -103,7 +99,7 @@ function useBindings(ctx: SurfaceContextValue, instance: ComponentInstance, scop
   const [touched, setTouched] = useState(false);
   const binding = <T extends JsonValue>(prop: string): Binding<T> => {
     const raw = instance[prop];
-    const value = (Object.prototype.hasOwnProperty.call(local, prop) && !isDataBinding(raw) ? local[prop] : resolved[prop]) as T | undefined;
+    const value = (Object.hasOwn(local, prop) && !isDataBinding(raw) ? local[prop] : resolved[prop]) as T | undefined;
     return {
       value,
       set: (next: T) => {
@@ -119,18 +115,17 @@ function useBindings(ctx: SurfaceContextValue, instance: ComponentInstance, scop
 function A2uiNode({ id, scope }: { id: string; scope: Scope }): React.ReactElement | null {
   const ctx = useContext(SurfaceContext);
   const instance = ctx?.client.surface(ctx.surfaceId)?.components.get(id);
-  if (ctx === null || instance === undefined || ctx.renderers[instance.component] === undefined) return null;
-  return <ResolvedNode ctx={ctx} instance={instance} scope={scope} />;
+  const render = instance === undefined ? undefined : ctx?.renderers[instance.component];
+  if (ctx === null || instance === undefined || render === undefined) return null;
+  return <ResolvedNode ctx={ctx} instance={instance} scope={scope} render={render} />;
 }
 
-function ResolvedNode({ ctx, instance, scope }: { ctx: SurfaceContextValue; instance: ComponentInstance; scope: Scope }): React.ReactElement | null {
+function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextValue; instance: ComponentInstance; scope: Scope; render: A2uiRenderer }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const palette = useKitPalette();
   const contentColor = useContentColor();
   const resolved = resolveProps(ctx, instance, scope);
   const bindings = useBindings(ctx, instance, scope, resolved);
-  const render = ctx.renderers[instance.component];
-  if (render === undefined) return null;
   const renderContext: RenderContext = {
     id: instance.id,
     instance,
@@ -151,7 +146,7 @@ function ResolvedNode({ ctx, instance, scope }: { ctx: SurfaceContextValue; inst
     action: () => dispatchAction(ctx, instance, scope),
     binding: bindings.binding,
   };
-  return <Fragment>{render(renderContext)}</Fragment>;
+  return <>{render(renderContext)}</>;
 }
 
 const PLAIN_TEXT_PROPS = new Set(['id', 'component', 'text', 'catalogId']);

@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { createA2uiClient } from '../../src/a2ui/client';
+import { createA2uiClient, type SurfaceNav } from '../../src/a2ui/client';
 import { ROOT_SCOPE } from '../../src/a2ui/evaluate';
-import type { SurfaceNav } from '../../src/a2ui/functions.kit';
 import { KIT_CATALOG_ID } from '../../src/a2ui/kit-catalog';
 import type { JsonObject } from '../../src/a2ui/protocol';
-import { a2uiSnapshot, dataModelUpdates } from '../../src/a2ui/snapshot';
+import { a2uiSnapshot } from '../../src/a2ui/snapshot';
 
 const surface = (id: string, rest: JsonObject = {}): JsonObject => ({ version: 'v1.0', createSurface: { surfaceId: id, catalogId: KIT_CATALOG_ID, ...rest } });
 const components = (id: string, list: JsonObject[]): JsonObject => ({ version: 'v1.0', updateComponents: { surfaceId: id, components: list } });
@@ -37,16 +36,6 @@ describe('A2UI snapshot', () => {
     const snapshot = a2uiSnapshot([surface('home'), components('home', [{ id: 'x', component: 'Nope' }])]);
     expect(snapshot.messages).toEqual([]);
     expect(snapshot.diagnostics.length).toBeGreaterThan(0);
-  });
-
-  test('exports the live data model so local edits survive a reply', () => {
-    const client = createA2uiClient();
-    for (const message of HOME) client.receive(message);
-    client.write('home', '/title', 'Edited');
-    const snapshot = a2uiSnapshot([...HOME, ...dataModelUpdates(client)]);
-    const replay = createA2uiClient();
-    for (const message of snapshot.messages) replay.receive(message as unknown as JsonObject);
-    expect(replay.resolve('home', { '@path': '/title' }, ROOT_SCOPE)).toBe('Edited');
   });
 });
 

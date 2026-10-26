@@ -1,12 +1,5 @@
 import { isJsonObject, type JsonObject, type JsonValue } from './protocol';
 
-interface ArrayIssue {
-  path: string;
-  message: string;
-}
-
-type ItemRunner = (schema: JsonValue, item: JsonValue, index: number) => ArrayIssue[];
-
 export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): boolean {
   if (a === b) return true;
   if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => jsonEqual(v, b[i]));
@@ -25,9 +18,7 @@ function typeOf(value: JsonValue): string {
 }
 
 function matchesType(expected: string, value: JsonValue): boolean {
-  const actual = typeOf(value);
-  if (expected === 'integer') return typeof value === 'number' && Number.isInteger(value);
-  return expected === actual;
+  return expected === 'integer' ? typeof value === 'number' && Number.isInteger(value) : expected === typeOf(value);
 }
 
 export function checkType(type: JsonValue | undefined, value: JsonValue): string | undefined {
@@ -93,9 +84,8 @@ function checkLength(schema: JsonObject, value: string): string[] {
 
 export function checkString(schema: JsonObject, value: JsonValue): string[] {
   if (typeof value !== 'string') return [];
-  const out: string[] = [];
-  if (typeof schema.pattern === 'string' && !patternMatches(schema.pattern, value)) out.push(`Expected a value matching ${schema.pattern}.`);
-  return [...out, ...checkFormat(schema, value), ...checkLength(schema, value)];
+  const pattern = typeof schema.pattern === 'string' && !patternMatches(schema.pattern, value) ? [`Expected a value matching ${schema.pattern}.`] : [];
+  return [...pattern, ...checkFormat(schema, value), ...checkLength(schema, value)];
 }
 
 export function checkNumber(schema: JsonObject, value: JsonValue): string[] {
@@ -112,21 +102,11 @@ function hasDuplicates(items: readonly JsonValue[]): boolean {
   return items.some((item, i) => items.slice(i + 1).some((other) => jsonEqual(item, other)));
 }
 
-export function checkArray(
-  schema: JsonObject,
-  value: JsonValue[],
-  run: ItemRunner,
-  here: (message: string) => ArrayIssue,
-): ArrayIssue[] {
-  const out: ArrayIssue[] = [];
-  if (typeof schema.minItems === 'number' && value.length < schema.minItems) out.push(here(`Expected at least ${schema.minItems} items.`));
-  if (typeof schema.maxItems === 'number' && value.length > schema.maxItems) out.push(here(`Expected at most ${schema.maxItems} items.`));
-  if (schema.uniqueItems === true && hasDuplicates(value)) out.push(here('Expected unique items.'));
-  const items = schema.items;
-  if (items !== undefined) value.forEach((item, index) => out.push(...run(items, item, index)));
-  const contains = schema.contains;
-  if (contains !== undefined && !value.some((item, index) => run(contains, item, index).length === 0)) {
-    out.push(here('Expected at least one matching item.'));
-  }
+export function checkArray(schema: JsonObject, value: JsonValue): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  if (typeof schema.minItems === 'number' && value.length < schema.minItems) out.push(`Expected at least ${schema.minItems} items.`);
+  if (typeof schema.maxItems === 'number' && value.length > schema.maxItems) out.push(`Expected at most ${schema.maxItems} items.`);
+  if (schema.uniqueItems === true && hasDuplicates(value)) out.push('Expected unique items.');
   return out;
 }

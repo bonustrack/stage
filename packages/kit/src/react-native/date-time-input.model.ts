@@ -4,8 +4,6 @@ export interface WallClock {
   date: Date | null;
   hour: number;
   minute: number;
-  second: number;
-  hasTime: boolean;
 }
 
 export const MONTHS = [
@@ -28,11 +26,10 @@ function validDate(year: number, month: number, day: number): Date | null {
   return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day ? d : null;
 }
 
-function clockParts(h: string | undefined, m: string | undefined, s: string | undefined): { hour: number; minute: number; second: number } | null {
+function clockParts(h: string | undefined, m: string | undefined, s: string | undefined): { hour: number; minute: number } | null {
   const hour = Number(h ?? 0);
   const minute = Number(m ?? 0);
-  const second = Number(s ?? 0);
-  return hour <= 23 && minute <= 59 && second <= 59 ? { hour, minute, second } : null;
+  return hour <= 23 && minute <= 59 && Number(s ?? 0) <= 59 ? { hour, minute } : null;
 }
 
 export function parseWallClock(value: string | undefined): WallClock | null {
@@ -40,14 +37,13 @@ export function parseWallClock(value: string | undefined): WallClock | null {
   const time = TIME_ONLY.exec(value);
   if (time !== null) {
     const clock = clockParts(time[1], time[2], time[3]);
-    return clock === null ? null : { date: null, ...clock, hasTime: true };
+    return clock === null ? null : { date: null, ...clock };
   }
   const full = DATE_TIME.exec(value);
   if (full === null) return null;
   const date = validDate(Number(full[1]), Number(full[2]), Number(full[3]));
   const clock = clockParts(full[4], full[5], full[6]);
-  if (date === null || clock === null) return null;
-  return { date, ...clock, hasTime: full[4] !== undefined };
+  return date === null || clock === null ? null : { date, ...clock };
 }
 
 function pad(n: number): string {
@@ -65,7 +61,7 @@ export function formatWallClock(mode: DateTimeMode, date: Date | null, hour: num
   return mode === 'date' ? day : `${day}T${time}`;
 }
 
-export function dateLabel(d: Date): string {
+function dateLabel(d: Date): string {
   return `${MONTHS[d.getMonth()] ?? ''} ${d.getDate()}, ${d.getFullYear()}`;
 }
 

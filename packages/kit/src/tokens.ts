@@ -156,7 +156,7 @@ const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
 };
 
 export function isColorToken(c: string): c is ColorToken {
-  return c in COLOR_TOKEN_MAP;
+  return Object.hasOwn(COLOR_TOKEN_MAP, c);
 }
 
 export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {

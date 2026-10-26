@@ -29,7 +29,7 @@ const THUMB = 20;
 const TRACK = 4;
 const TOUCH_HEIGHT = 28;
 
-export function sliderValue(fraction: number, min: number, max: number, steps: number | undefined): number {
+function sliderValue(fraction: number, min: number, max: number, steps: number | undefined): number {
   const clamped = Math.min(1, Math.max(0, fraction));
   const raw = min + clamped * (max - min);
   if (steps === undefined || steps <= 0) return raw;
@@ -37,18 +37,9 @@ export function sliderValue(fraction: number, min: number, max: number, steps: n
   return min + Math.round((raw - min) / step) * step;
 }
 
-export function sliderFraction(value: number, min: number, max: number): number {
+function sliderFraction(value: number, min: number, max: number): number {
   if (max <= min) return 0;
   return Math.min(1, Math.max(0, (value - min) / (max - min)));
-}
-
-export function formatSliderValue(value: number): string {
-  return String(Number(value.toFixed(2)));
-}
-
-interface Drag {
-  width: number;
-  startX: number;
 }
 
 function useSliderState(props: SliderProps): [number, (next: number) => void] {
@@ -61,7 +52,7 @@ function useSliderState(props: SliderProps): [number, (next: number) => void] {
 }
 
 function useDrag(props: SliderProps, update: (next: number) => void, latest: { current: number }) {
-  const drag = useRef<Drag>({ width: 0, startX: 0 });
+  const drag = useRef({ width: 0, startX: 0 });
   const min = props.min ?? 0;
   const at = (x: number): number => sliderValue(drag.current.width === 0 ? 0 : x / drag.current.width, min, props.max, props.steps);
   const handlers = useRef({ at, update, end: props.onChangeEnd });
@@ -121,7 +112,7 @@ export function Slider(props: SliderProps): React.ReactElement {
               </View>
               <View pointerEvents="none" style={{ position: 'absolute', left: pct, marginLeft: -THUMB / 2, width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: p.head }} />
             </View>
-            {showValue ? <RNText style={{ minWidth: 36, textAlign: 'right', color: p.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{formatSliderValue(value)}</RNText> : null}
+            {showValue ? <RNText style={{ minWidth: 36, textAlign: 'right', color: p.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{String(Number(value.toFixed(2)))}</RNText> : null}
           </View>
         </View>
       )}

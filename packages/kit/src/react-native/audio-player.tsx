@@ -256,15 +256,12 @@ function BasicPlayer(props: {
   );
 }
 
-function PlayerBody(props: AudioPlayerProps & { dark: boolean }): React.ReactElement {
-  if (props.waveform) return <WaveformPlayer {...props} />;
-  return <BasicPlayer url={props.url} duration={props.duration} onPlay={props.onPlay} dark={props.dark} />;
-}
-
 export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
   const scheme = useKitScheme();
   const { description, weight, accessibility, dark = scheme === 'dark' } = props;
-  const body = <PlayerBody {...props} dark={dark} />;
+  const body = props.waveform
+    ? <WaveformPlayer {...props} />
+    : <BasicPlayer url={props.url} duration={props.duration} onPlay={props.onPlay} dark={dark} />;
   if (description === undefined && weight === undefined && accessibility === undefined) return body;
   const label = description === undefined ? {} : { accessibilityLabel: description };
   return (

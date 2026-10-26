@@ -1,8 +1,7 @@
-
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
-import { FONT_SIZE, fontName, schemePalette } from '../tokens';
+import { FONT_SIZE, fontName, schemePalette, type SchemePalette } from '../tokens';
 import { loadKitFonts } from './fonts.load';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
@@ -13,14 +12,9 @@ export type ListItemAlign = 'start' | 'center' | 'end';
 
 const ROW_INSET = 16;
 
-function palette(dark: boolean): { border: string; pressed: string; sub: string } {
-  const p = schemePalette(dark);
-  return { border: p.border, pressed: p.pressed, sub: p.sub };
-}
-
-function useDark(dark: boolean | undefined): boolean {
+function usePalette(dark: boolean | undefined): SchemePalette {
   const scheme = useKitScheme();
-  return dark ?? scheme === 'dark';
+  return schemePalette(dark ?? scheme === 'dark');
 }
 
 export interface ListViewProps extends A2uiCommonProps {
@@ -33,7 +27,7 @@ export interface ListViewProps extends A2uiCommonProps {
 
 export function ListView(props: ListViewProps): React.ReactElement {
   const { children, limit, status, style, weight, accessibility } = props;
-  const c = palette(useDark(props.dark));
+  const c = usePalette(props.dark);
 
   const items = Children.toArray(children).filter(isValidElement);
   const shown = limit !== undefined ? items.slice(0, limit) : items;
@@ -101,7 +95,7 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const c = palette(useDark(props.dark));
+  const c = usePalette(props.dark);
 
   const borderStyle = border ? (borderStyleEntries(border) as ViewStyle) : undefined;
   const paddingStyle = (padding ?? {

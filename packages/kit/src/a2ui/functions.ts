@@ -1,7 +1,5 @@
 import { A2uiExpressionError, parseTemplate } from './expression';
-import {
-  coerceToString, formatCurrency, formatDate, formatNumber, pluralize, resolveLocale,
-} from './functions.format';
+import { coerceToString, formatCurrency, formatDate, formatNumber, pluralize, resolveLocale } from './functions.format';
 import { isValidationResult, type DynamicValue, type JsonValue, type ValidationResult } from './protocol';
 
 export interface FunctionContext {
@@ -16,7 +14,6 @@ export type FunctionArgs = Record<string, unknown>;
 export type FunctionImpl = (args: FunctionArgs, context: FunctionContext) => unknown;
 
 const EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const NESTED_QUANTIFIER = /\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*[+*{]/;
 const MAX_REGEX_LENGTH = 1_000;
 const ALLOWED_URL_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
@@ -25,12 +22,38 @@ function failure(message: string): ValidationResult {
 }
 
 export function isTruthyOrValid(value: unknown): boolean {
-  if (isValidationResult(value)) return value.valid;
-  return Boolean(value);
+  return isValidationResult(value) ? value.valid : Boolean(value);
+}
+
+const REPEAT = new Set(['*', '+', '{']);
+const BACKREFERENCE = /\\(?:[1-9]|k<)/;
+const ESCAPE_OR_CLASS = /\\[\s\S]?|\[(?:\\[\s\S]?|[^\\\]])*\]?/g;
+
+function closesRepeatedRiskyGroup(groups: boolean[], next: string): boolean {
+  if (groups.pop() !== true) return false;
+  if (REPEAT.has(next)) return true;
+  if (groups.length > 0) groups[groups.length - 1] = true;
+  return false;
+}
+
+function marksGroup(char: string, previous: string | undefined): boolean {
+  return REPEAT.has(char) || char === '|' || (char === '?' && previous !== '(');
+}
+
+function hasRepeatedRiskyGroup(pattern: string): boolean {
+  const shape = pattern.replace(ESCAPE_OR_CLASS, 'x');
+  const groups: boolean[] = [];
+  for (let i = 0; i < shape.length; i += 1) {
+    const char = shape[i] ?? '';
+    if (char === '(') groups.push(false);
+    else if (char === ')' && closesRepeatedRiskyGroup(groups, shape[i + 1] ?? '')) return true;
+    else if (groups.length > 0 && marksGroup(char, shape[i - 1])) groups[groups.length - 1] = true;
+  }
+  return false;
 }
 
 export function isSafeRegex(pattern: string): boolean {
-  return pattern.length <= MAX_REGEX_LENGTH && !NESTED_QUANTIFIER.test(pattern);
+  return pattern.length <= MAX_REGEX_LENGTH && !BACKREFERENCE.test(pattern) && !hasRepeatedRiskyGroup(pattern);
 }
 
 function required(args: FunctionArgs): ValidationResult {
@@ -55,24 +78,23 @@ function optionalNumber(value: unknown): number | undefined {
   return typeof value === 'number' && !Number.isNaN(value) ? value : undefined;
 }
 
-function length(args: FunctionArgs): ValidationResult {
-  const v = args.value;
-  const size = typeof v === 'string' || Array.isArray(v) ? v.length : 0;
+function withinBounds(size: number, args: FunctionArgs, measure: string): ValidationResult {
   const min = optionalNumber(args.min);
   const max = optionalNumber(args.max);
-  if (min !== undefined && size < min) return failure(`Minimum length is ${min}.`);
-  if (max !== undefined && size > max) return failure(`Maximum length is ${max}.`);
+  if (min !== undefined && size < min) return failure(`Minimum ${measure} is ${min}.`);
+  if (max !== undefined && size > max) return failure(`Maximum ${measure} is ${max}.`);
   return { valid: true };
+}
+
+function length(args: FunctionArgs): ValidationResult {
+  const v = args.value;
+  return withinBounds(typeof v === 'string' || Array.isArray(v) ? v.length : 0, args, 'length');
 }
 
 function numeric(args: FunctionArgs): ValidationResult {
   const n = Number(args.value);
   if (args.value === null || args.value === undefined || args.value === '' || Number.isNaN(n)) return failure('Value must be a valid number.');
-  const min = optionalNumber(args.min);
-  const max = optionalNumber(args.max);
-  if (min !== undefined && n < min) return failure(`Minimum value is ${min}.`);
-  if (max !== undefined && n > max) return failure(`Maximum value is ${max}.`);
-  return { valid: true };
+  return withinBounds(n, args, 'value');
 }
 
 function email(args: FunctionArgs): ValidationResult {
@@ -86,8 +108,7 @@ function booleanList(args: FunctionArgs, name: string): unknown[] {
 }
 
 function formatStringImpl(args: FunctionArgs, context: FunctionContext): string {
-  const template = typeof args.value === 'string' ? args.value : coerceToString(args.value);
-  return parseTemplate(template).map((part) => coerceToString(typeof part === 'object' && part !== null ? context.resolve(part) : part)).join('');
+  return parseTemplate(coerceToString(args.value)).map((part) => coerceToString(typeof part === 'object' && part !== null ? context.resolve(part) : part)).join('');
 }
 
 export function checkedUrl(input: unknown, base?: string): string {
@@ -102,10 +123,6 @@ export function checkedUrl(input: unknown, base?: string): string {
   return url.href;
 }
 
-function numberArg(value: unknown): number {
-  return typeof value === 'number' ? value : Number(value);
-}
-
 export function createBasicFunctions(localeInput?: string): Record<string, FunctionImpl> {
   const locale = resolveLocale(localeInput);
   return {
@@ -115,10 +132,10 @@ export function createBasicFunctions(localeInput?: string): Record<string, Funct
     numeric,
     email,
     formatString: formatStringImpl,
-    formatNumber: (args) => formatNumber(numberArg(args.value), optionalNumber(args.decimals), typeof args.grouping === 'boolean' ? args.grouping : undefined, locale),
-    formatCurrency: (args) => formatCurrency(numberArg(args.value), args.currency, optionalNumber(args.decimals) ?? 2, typeof args.grouping === 'boolean' ? args.grouping : undefined, locale),
+    formatNumber: (args) => formatNumber(Number(args.value), optionalNumber(args.decimals), args.grouping !== false, locale),
+    formatCurrency: (args) => formatCurrency(Number(args.value), args.currency, optionalNumber(args.decimals) ?? 2, args.grouping !== false, locale),
     formatDate: (args) => formatDate(args.value, args.format, locale),
-    pluralize: (args) => pluralize(numberArg(args.value), args, locale),
+    pluralize: (args) => pluralize(Number(args.value), args, locale),
     openUrl: (args, context) => {
       context.openUrl(checkedUrl(args.url));
       return null;

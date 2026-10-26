@@ -1,4 +1,6 @@
 import type { ArgType } from '../gallery/story';
+import { Column } from '../src/react-native/column';
+import { Text } from '../src/react-native/text';
 import { FONT_SIZE, type FontSizeName } from '../src/tokens';
 
 export function select<const T extends string | number>(options: readonly T[]): ArgType<T> {
@@ -17,8 +19,21 @@ export const color: ArgType<string> = { control: { type: 'color' } };
 export const FONT_SIZES = Object.keys(FONT_SIZE) as FontSizeName[];
 export const CONTROL_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CONTROL_VARIANTS = ['soft', 'outline'] as const;
-export const COLOR_TOKENS = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border'] as const;
+export { COLOR_TOKENS } from '../src/tokens';
 export const ALIGNS = ['start', 'center', 'end'] as const;
+export const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const;
+export const JUSTIFY = ['start', 'center', 'end', 'spaceBetween', 'spaceAround', 'spaceEvenly', 'stretch'] as const;
+export const SURFACES = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const;
+
+export const FLEX_ARG_TYPES = {
+  gap: number, padding: number, margin: number, align: select(['start', 'center', 'end', 'stretch']), justify: select(JUSTIFY),
+  weight: number, wrap: bool, surface: select(SURFACES), background: color, radius: select(RADII),
+  width: text, height: text, minWidth: text, minHeight: text, maxWidth: text, maxHeight: text, aspectRatio: number,
+};
+
+export function Cell({ label, background }: { label: string; background: string }): React.ReactElement {
+  return <Column padding={8} background={background} radius="sm"><Text color="#ffffff">{label}</Text></Column>;
+}
 
 export { useDark } from '../gallery/scheme';
 
@@ -26,7 +41,6 @@ export function svgSwatch(fill: string, label = ''): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="${fill}"/><text x="100" y="118" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif">${label}</text></svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
-
 
 export function silentWav(seconds = 2): string {
   const rate = 8000;

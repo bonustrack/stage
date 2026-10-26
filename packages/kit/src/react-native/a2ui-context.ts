@@ -46,10 +46,9 @@ export interface SurfaceContextValue {
 
 export const SurfaceContext = createContext<SurfaceContextValue | null>(null);
 
-export function asString(value: unknown, fallback = ''): string {
+export function asString(value: unknown): string {
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  return fallback;
+  return typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
 }
 
 export function asOptionalString(value: unknown): string | undefined {

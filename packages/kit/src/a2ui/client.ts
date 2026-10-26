@@ -1,28 +1,23 @@
 import { createCatalogRegistry, type CatalogRegistry } from './catalog';
-import {
-  onAgentFunctionResponse, onCallRendererFunction, onCreateSurface, onDeleteSurface,
-  onUpdateComponents, onUpdateDataModel, type Runtime,
-} from './client.messages';
-import { createAgentCalls, type ClientContext } from './client.agent';
+import { bump, createAgentCalls, receiveMessage, type Runtime } from './client.messages';
 import {
   evaluateChecks, resolveDynamic, safeResolve, toDiagnostic,
   type Diagnostic, type EvalEnv, type Scope,
 } from './evaluate';
 import { checkedUrl, createBasicFunctions, type FunctionImpl } from './functions';
-import { createKitFunctions, type SurfaceNav } from './functions.kit';
-
-export type { SurfaceNav } from './functions.kit';
 import { coerceToString, resolveLocale } from './functions.format';
 import { KIT_CATALOG, KIT_CATALOG_ID } from './kit-catalog';
 import { setAt } from './pointer';
 import {
   A2UI_VERSION, BASIC_CATALOG_ID, ERROR_CODES, isEventAction, isFunctionAction, isJsonObject,
-  type Action, type AgentMessage, type CheckRule, type DynamicValue, type EventAction, type JsonObject,
+  type Action, type CheckRule, type DynamicValue, type EventAction, type JsonObject,
   type JsonValue, type RendererCapabilities, type RendererDataModel, type RendererMessage, type ValidationResult,
 } from './protocol';
 import { BASIC_CATALOG } from './schemas';
 import { parseMessages } from './stream';
 import { createSurfaceEvents, type Listener, type SurfaceState } from './surface';
+
+export type SurfaceNav = { kind: 'open'; surfaceId: string } | { kind: 'close' };
 
 export interface TransportMetadata {
   a2uiRendererDataModel: RendererDataModel;
@@ -62,55 +57,25 @@ export interface A2uiClient {
   dataModel: (surfaceId: string) => JsonObject | undefined;
 }
 
-function functionTable(options: A2uiClientOptions): (catalogId: string) => Record<string, FunctionImpl> | undefined {
+function functionTable(options: A2uiClientOptions): Runtime['functions'] {
   const basic = createBasicFunctions(options.locale);
-  const kit = { ...basic, ...createKitFunctions(options.navigate) };
+  const { navigate } = options;
+  const kit: Record<string, FunctionImpl> = {
+    ...basic,
+    openSurface: (args) => {
+      if (typeof args.surfaceId !== 'string' || args.surfaceId === '') throw new Error('openSurface needs a surfaceId.');
+      navigate?.({ kind: 'open', surfaceId: args.surfaceId });
+    },
+    closeSurface: () => {
+      navigate?.({ kind: 'close' });
+    },
+  };
   const table: Record<string, Record<string, FunctionImpl>> = { [BASIC_CATALOG_ID]: basic, [KIT_CATALOG_ID]: kit };
   for (const [catalogId, fns] of Object.entries(options.functions ?? {})) table[catalogId] = { ...(table[catalogId] ?? {}), ...fns };
   return (catalogId) => table[catalogId];
 }
 
-function dispatchMessage(rt: Runtime, message: AgentMessage): void {
-  if ('createSurface' in message) onCreateSurface(rt, message.createSurface);
-  else if ('updateComponents' in message) onUpdateComponents(rt, message.updateComponents);
-  else if ('updateDataModel' in message) onUpdateDataModel(rt, message.updateDataModel);
-  else if ('deleteSurface' in message) onDeleteSurface(rt, message.deleteSurface.surfaceId);
-  else if ('callRendererFunction' in message) onCallRendererFunction(rt, message.callRendererFunction);
-  else onAgentFunctionResponse(rt, message.agentFunctionResponse);
-}
-
-function envelopeSurfaceId(message: JsonValue): string | undefined {
-  if (!isJsonObject(message)) return undefined;
-  for (const body of Object.values(message)) {
-    if (isJsonObject(body) && typeof body.surfaceId === 'string') return body.surfaceId;
-  }
-  return undefined;
-}
-
-function createContext(options: A2uiClientOptions): ClientContext {
-  const catalogs = options.catalogs ?? [BASIC_CATALOG, KIT_CATALOG];
-  const surfaces = new Map<string, SurfaceState>();
-  const metadataFor = (surfaceId: string | undefined): TransportMetadata | undefined => {
-    const surface = surfaceId === undefined ? undefined : surfaces.get(surfaceId);
-    if (surface?.sendDataModel !== true) return undefined;
-    return { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: { [surface.id]: surface.data } } };
-  };
-  return {
-    catalogs,
-    registry: createCatalogRegistry(catalogs),
-    events: createSurfaceEvents(),
-    surfaces,
-    functions: functionTable(options),
-    send: (message, surfaceId) => {
-      options.send?.(message, metadataFor(surfaceId));
-    },
-    diagnose: (diagnostic, surfaceId) => {
-      options.onDiagnostic?.({ ...diagnostic, surfaceId });
-    },
-  };
-}
-
-function sendEvent(ctx: ClientContext, env: EvalEnv, action: EventAction, ids: { surfaceId: string; sourceComponentId: string }, scope: Scope): void {
+function sendEvent(rt: Runtime, env: EvalEnv, action: EventAction, ids: { surfaceId: string; sourceComponentId: string }, scope: Scope): void {
   const { name, userMessage, context } = action.event;
   const resolved = resolveDynamic(context ?? {}, env, scope, true);
   const message = userMessage === undefined ? undefined : coerceToString(resolveDynamic(userMessage, env, scope, true));
@@ -118,93 +83,86 @@ function sendEvent(ctx: ClientContext, env: EvalEnv, action: EventAction, ids: {
     name,
     ...ids,
     timestamp: new Date().toISOString(),
-    context: (isJsonObject(resolved) ? resolved : {}),
+    context: isJsonObject(resolved) ? resolved : {},
     ...(message === undefined ? {} : { userMessage: message }),
   };
-  ctx.send({ version: A2UI_VERSION, action: event }, ids.surfaceId);
+  rt.send({ version: A2UI_VERSION, action: event }, ids.surfaceId);
 }
 
-function makeDispatch(ctx: ClientContext, envFor: (surface: SurfaceState | undefined) => EvalEnv): A2uiClient['dispatch'] {
-  return (surfaceId, sourceComponentId, action, scope) => {
-    const surface = ctx.surfaces.get(surfaceId);
-    if (surface === undefined) return { ok: false, error: `Surface '${surfaceId}' does not exist.` };
-    const env = envFor(surface);
-    try {
-      if (isEventAction(action)) sendEvent(ctx, env, action, { surfaceId, sourceComponentId }, scope);
-      else if (isFunctionAction(action)) resolveDynamic(action.functionCall, env, scope, true);
-      return { ok: true };
-    } catch (error) {
-      const diagnostic = toDiagnostic(error);
-      ctx.diagnose(diagnostic, surfaceId);
-      return { ok: false, error: diagnostic.message };
-    }
-  };
-}
-
-function makeReceiver(ctx: ClientContext, rt: Runtime): (message: JsonValue) => void {
-  return (message) => {
-    const [issue] = rt.validate ? ctx.registry.validateAgentEnvelope(message) : [];
-    if (issue === undefined) {
-      dispatchMessage(rt, message as AgentMessage);
-      return;
-    }
-    const surfaceId = envelopeSurfaceId(message);
-    if (surfaceId === undefined) ctx.diagnose({ code: ERROR_CODES.validation, message: `${issue.path}: ${issue.message}` });
-    else ctx.send({ version: A2UI_VERSION, error: { code: ERROR_CODES.validation, surfaceId, path: issue.path, message: issue.message } }, surfaceId);
-  };
+function dispatch(rt: Runtime, surfaceId: string, sourceComponentId: string, action: Action, scope: Scope): DispatchResult {
+  const surface = rt.surfaces.get(surfaceId);
+  if (surface === undefined) return { ok: false, error: `Surface '${surfaceId}' does not exist.` };
+  const env = rt.envFor(surface);
+  try {
+    if (isEventAction(action)) sendEvent(rt, env, action, { surfaceId, sourceComponentId }, scope);
+    else if (isFunctionAction(action)) resolveDynamic(action.functionCall, env, scope, true);
+    return { ok: true };
+  } catch (error) {
+    const diagnostic = toDiagnostic(error);
+    rt.diagnose(diagnostic, surfaceId);
+    return { ok: false, error: diagnostic.message };
+  }
 }
 
 export function createA2uiClient(options: A2uiClientOptions = {}): A2uiClient {
-  const ctx = createContext(options);
-  const agent = createAgentCalls(ctx);
+  const catalogs = options.catalogs ?? [BASIC_CATALOG, KIT_CATALOG];
+  const registry = createCatalogRegistry(catalogs);
+  const surfaces = new Map<string, SurfaceState>();
+  const events = createSurfaceEvents();
+  const functions = functionTable(options);
+  const send = (message: RendererMessage, surfaceId?: string): void => {
+    const surface = surfaceId === undefined ? undefined : surfaces.get(surfaceId);
+    const metadata: TransportMetadata | undefined = surface?.sendDataModel === true ? { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: { [surface.id]: surface.data } } } : undefined;
+    options.send?.(message, metadata);
+  };
+  const agent = createAgentCalls({ surfaces, send, emit: events.emit });
   const locale = resolveLocale(options.locale);
   const openUrl = options.openUrl ?? ((): void => undefined);
-  const envFor = (surface: SurfaceState | undefined): EvalEnv => ({
-    catalogId: surface?.catalogId,
-    data: surface?.data ?? {},
-    registry: ctx.registry,
-    functions: ctx.functions,
-    locale,
-    openUrl: (url) => {
-      openUrl(checkedUrl(url));
-    },
-    callAgent: agent.callAgent(surface),
-  });
   const rt: Runtime = {
-    registry: ctx.registry,
-    surfaces: ctx.surfaces,
+    registry,
+    surfaces,
     validate: options.validate !== false,
-    functions: ctx.functions,
-    envFor,
-    emit: ctx.events.emit,
-    send: ctx.send,
-    diagnose: ctx.diagnose,
+    functions,
+    envFor: (surface) => ({
+      catalogId: surface?.catalogId,
+      data: surface?.data ?? {},
+      registry,
+      functions,
+      locale,
+      openUrl: (url) => {
+        openUrl(checkedUrl(url));
+      },
+      callAgent: agent.callAgent(surface),
+    }),
+    emit: events.emit,
+    send,
+    diagnose: (diagnostic, surfaceId) => {
+      options.onDiagnostic?.({ ...diagnostic, surfaceId });
+    },
     resolveAgentCall: agent.resolveAgentCall,
   };
-  const receiveOne = makeReceiver(ctx, rt);
   return {
-    registry: ctx.registry,
+    registry,
     receive: (input) => {
-      for (const message of parseMessages(input, (text) => { ctx.diagnose({ code: ERROR_CODES.validation, message: text }); })) receiveOne(message);
+      for (const message of parseMessages(input, (text) => { rt.diagnose({ code: ERROR_CODES.validation, message: text }); })) receiveMessage(rt, message);
     },
     capabilities: (opts) => ({
-      'v1.0': { supportedCatalogIds: ctx.registry.catalogIds(), ...(opts?.inline === true ? { inlineCatalogs: [...ctx.catalogs] } : {}) },
+      'v1.0': { supportedCatalogIds: registry.catalogIds(), ...(opts?.inline === true ? { inlineCatalogs: [...catalogs] } : {}) },
     }),
-    surfaceIds: () => [...ctx.surfaces.keys()],
-    surface: (id) => ctx.surfaces.get(id),
-    subscribe: ctx.events.subscribe,
-    resolve: (surfaceId, value, scope) => safeResolve(value, envFor(ctx.surfaces.get(surfaceId)), scope, (d) => {
-      ctx.diagnose(d, surfaceId);
+    surfaceIds: () => [...surfaces.keys()],
+    surface: (id) => surfaces.get(id),
+    subscribe: events.subscribe,
+    resolve: (surfaceId, value, scope) => safeResolve(value, rt.envFor(surfaces.get(surfaceId)), scope, (d) => {
+      rt.diagnose(d, surfaceId);
     }),
-    checks: (surfaceId, checks, scope) => evaluateChecks(checks, envFor(ctx.surfaces.get(surfaceId)), scope),
+    checks: (surfaceId, checks, scope) => evaluateChecks(checks, rt.envFor(surfaces.get(surfaceId)), scope),
     write: (surfaceId, path, value) => {
-      const surface = ctx.surfaces.get(surfaceId);
+      const surface = surfaces.get(surfaceId);
       if (surface === undefined) return;
       surface.data = setAt(surface.data, path, value);
-      surface.version += 1;
-      ctx.events.emit(surfaceId);
+      bump(rt, surface);
     },
-    dispatch: makeDispatch(ctx, envFor),
-    dataModel: (surfaceId) => ctx.surfaces.get(surfaceId)?.data,
+    dispatch: (...args) => dispatch(rt, ...args),
+    dataModel: (surfaceId) => surfaces.get(surfaceId)?.data,
   };
 }

@@ -1,4 +1,3 @@
-
 import { type ReactNode } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
@@ -39,11 +38,6 @@ const STATUS_SIZE: Record<CardSize, TextSizeToken> = {
   md: '3xs',
   lg: '2xs',
 };
-
-function palette(dark: boolean): { surface: string; border: string; sub: string } {
-  const p = schemePalette(dark);
-  return { surface: p.surface, border: p.border, sub: p.sub };
-}
 
 function CardStatusLine(props: {
   status: CardStatus;
@@ -99,7 +93,7 @@ export function Card(props: CardProps): React.ReactElement {
   const scheme = useKitScheme();
   const { size = 'md', padding, background, onPress, dark = scheme === 'dark', style, weight, accessibility } = props;
 
-  const c = palette(dark);
+  const c = schemePalette(dark);
   const pad = padding ?? PADDING[size];
 
   const body = <CardBody {...props} dark={dark} sub={c.sub} />;

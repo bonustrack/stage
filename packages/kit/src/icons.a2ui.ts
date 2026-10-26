@@ -73,7 +73,3 @@ export const A2UI_ICON_NAMES = Object.keys(A2UI_ICONS) as A2uiIconName[];
 export function isA2uiIconName(name: string): name is A2uiIconName {
   return Object.hasOwn(A2UI_ICONS, name);
 }
-
-export function a2uiIconTarget(name: A2uiIconName): KitIconName | { extra: A2uiExtraIcon } {
-  return A2UI_ICONS[name];
-}

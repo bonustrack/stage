@@ -1,4 +1,5 @@
 import type { Story } from '../gallery/story';
+import { BADGE_COLORS as COLORS, BADGE_SIZES as SIZES, BADGE_VARIANTS as VARIANTS } from '../src/badge';
 import { Badge, type BadgeProps } from '../src/react-native/badge';
 import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
@@ -6,10 +7,6 @@ import { Text } from '../src/react-native/text';
 import { bool, select, text, useDark } from './_controls';
 
 export default { title: 'Badge' };
-
-const COLORS = ['secondary', 'success', 'danger', 'warning', 'info', 'discovery'] as const;
-const VARIANTS = ['solid', 'soft', 'outline'] as const;
-const SIZES = ['3xs', '2xs', 'sm', 'md', 'lg'] as const;
 
 export const Controls: Story<BadgeProps> = (args) => <Badge dark={useDark()} {...args} />;
 Controls.args = { label: 'Badge', color: 'secondary', variant: 'solid', size: 'md', pill: false };

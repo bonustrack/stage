@@ -12,7 +12,7 @@ import { IconMute } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconSkip } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSkip';
 import { IconStarLines } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStarLines';
 import { IconVolumeDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeDown';
-import { a2uiIconTarget, isA2uiIconName, type A2uiExtraIcon, type A2uiIconName } from '../icons.a2ui';
+import { A2UI_ICONS, isA2uiIconName, type A2uiExtraIcon, type A2uiIconName } from '../icons.a2ui';
 import { brandIconPath, isBrandIconName, type BrandIconName } from '../brand-icons.data';
 import { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
@@ -35,8 +35,6 @@ export interface IconProps extends A2uiCommonProps {
   variant?: IconVariant;
 }
 
-export const ICON_SIZE_DEFAULT = 22;
-
 function PathIcon({ d, size, fill }: { d: string; size: number; fill: string }): React.ReactElement {
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
@@ -56,7 +54,7 @@ const A2UI_EXTRA_ICONS: Record<A2uiExtraIcon, CentralIcon> = {
 };
 
 function a2uiIcon(name: A2uiIconName, style: IconStyle): CentralIcon {
-  const target = a2uiIconTarget(name);
+  const target = A2UI_ICONS[name];
   return typeof target === 'string' ? centralIcon(target, style) : A2UI_EXTRA_ICONS[target.extra];
 }
 
@@ -64,7 +62,7 @@ function isKitIconName(name: string): name is HeroIconName {
   return Object.hasOwn(CENTRAL_ICON_ALIASES, name);
 }
 
-export function resolveIcon(name: KitIconName | A2uiIconName, style: IconStyle): CentralIcon | undefined {
+function resolveIcon(name: KitIconName | A2uiIconName, style: IconStyle): CentralIcon | undefined {
   if (typeof name !== 'string') return name;
   if (isKitIconName(name)) return centralIcon(name, style);
   return isA2uiIconName(name) ? a2uiIcon(name, style) : undefined;
@@ -88,7 +86,7 @@ function IconGlyph({ name, size, color, dark, style }: GlyphOfProps): React.Reac
   return icon === undefined ? null : <Glyph icon={icon} size={size} color={color} dark={dark} />;
 }
 
-export function Icon({ name, size = ICON_SIZE_DEFAULT, color, dark, variant = 'line', weight, accessibility }: IconProps): React.ReactElement | null {
+export function Icon({ name, size = 22, color, dark, variant = 'line', weight, accessibility }: IconProps): React.ReactElement | null {
   const inherited = useContentColor();
   const resolved = color ?? (dark === undefined ? inherited : undefined);
   const glyph = <IconGlyph name={name} size={size} color={resolved} dark={dark} style={variant === 'solid' ? 'solid' : 'line'} />;
