@@ -8,12 +8,11 @@ import { liveConfirmOf } from '../dashboard/liveWidget.model';
 import { frameNodeOf } from './frame.model';
 
 async function addedFromChat(convId: string, messageId: string, frame: FrameContent): Promise<FrameWidgetAdd | null> {
-  const width = 'half';
   const origin = { conversationId: convId, messageId };
   const node = frameNodeOf(frame);
-  if (node === null) return addFrameToDashboard(origin, width);
+  if (node === null) return addFrameToDashboard(origin, 'half');
   if (!await capabilities.confirm(liveConfirmOf(node.host))) return null;
-  return (await addLiveToDashboard({ url: node.url, key: newNodeKey(), origin }, width)).outcome;
+  return (await addLiveToDashboard({ url: node.url, key: newNodeKey(), origin }, 'half')).outcome;
 }
 
 export async function addChatFrameToDashboard(convId: string, messageId: string, frame: FrameContent): Promise<void> {

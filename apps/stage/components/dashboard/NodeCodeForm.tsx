@@ -7,13 +7,11 @@ import { deleteNode, publishNode } from '@stage-labs/client/nodes/publish';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { capabilities } from '../../lib/capabilities';
-import { addLiveToDashboard } from '../../lib/dashboard';
-import { ignore, report } from '../../lib/errorPolicy';
+import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
-import { seedLiveWidget } from '../../lib/liveWidget';
+import { addLivePreview } from '../../lib/liveWidget';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { FRAME_ADD_TOASTS } from './dashboard.model';
-import { EMPTY_LIVE, livePreviewOf, liveStateAfter, publishProblemText, type LivePreview } from './liveWidget.model';
+import { livePreviewOf, publishProblemText, type LivePreview } from './liveWidget.model';
 import { Column, Row } from '../layout';
 
 const NOTE = 'Stage runs this code at nodes.stage.box in its own sandbox: no secrets, only public https calls, '
@@ -48,7 +46,7 @@ async function publishAndLoad(key: string, code: string): Promise<Published | st
   if (!published.ok) return publishProblemText(published.problem, published.detail);
   const node = nodeUrlOf(published.url);
   if (!node.ok) return publishProblemText('failed');
-  const preview = livePreviewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadFresh(node.url, key), Date.now()));
+  const preview = livePreviewOf(node, await loadFresh(node.url, key), Date.now());
   return typeof preview === 'string' ? `Published, but ${preview.charAt(0).toLowerCase()}${preview.slice(1)}` : { ...preview, code };
 }
 
@@ -101,19 +99,8 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
 
   const add = async (node: Published): Promise<void> => {
     setBusy(true);
-    try {
-      const { outcome, id } = await addLiveToDashboard({ url: node.url, key }, 'half');
-      if (outcome === 'added') {
-        cleanup.keep();
-        seedLiveWidget(id, node.url, node.state);
-      }
-      capabilities.toast(FRAME_ADD_TOASTS[outcome]);
-      onDone();
-    } catch (err) {
-      report('dashboard.addNode', err);
-      capabilities.toast('Could not add it to your dashboard');
-      setBusy(false);
-    }
+    if (await addLivePreview(node, key, 'dashboard.addNode', cleanup.keep)) onDone();
+    else setBusy(false);
   };
 
   const submit = (): void => {

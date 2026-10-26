@@ -1,15 +1,18 @@
 import { Component, useEffect, useRef, type ReactNode } from 'react';
-import type { A2uiClient, TransportMetadata } from '@stage-labs/kit/a2ui/client';
+import type { A2uiClient } from '@stage-labs/kit/a2ui/client';
 import type { ActionEvent, RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { A2uiSurface } from '@stage-labs/kit/react-native/a2ui-surface';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { SpacingValue } from '@stage-labs/kit/layout';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { report } from '../../lib/errorPolicy';
-import { frameSession, rejectAgentCall, setFrameSessionHost, type FrameSessionHost } from '../../lib/frameSession';
+import {
+  activateFrameSessionHost, frameSession, rejectAgentCall, releaseFrameSession, setFrameSessionHost, type FrameSessionHost,
+} from '../../lib/frameSession';
+import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { usePalette } from '../../lib/theme';
 import { Column } from '../layout';
-import { frameMediaUrl, type FrameMessageHandler, type FrameNav, type FrameOut } from './frame.model';
+import { frameMediaUrl, type FrameMessageHandler, type FrameNav } from './frame.model';
 
 export interface FrameNavigation {
   screen: string;
@@ -17,19 +20,12 @@ export interface FrameNavigation {
   navigate: (nav: FrameNav) => void;
 }
 
-type NoticeReason = 'render' | 'no-screen';
-
-const NOTICE: Record<NoticeReason, string> = {
-  render: 'This frame could not be shown.',
-  'no-screen': 'This screen is not in the frame.',
-};
-
-function FrameNotice({ reason }: { reason: NoticeReason }): React.ReactElement {
+function FrameNotice({ text }: { text: string }): React.ReactElement {
   const { border } = usePalette();
   const side = { width: 1, color: border };
   return (
     <Column padding={12} radius="lg" border={{ top: side, right: side, bottom: side, left: side }}>
-      <Text variant="caption" size="md" text={NOTICE[reason]} />
+      <Text variant="caption" size="md" text={text} />
     </Column>
   );
 }
@@ -46,7 +42,7 @@ class FrameBoundary extends Component<{ resetKey: unknown; children: ReactNode }
   }
 
   override render(): ReactNode {
-    return this.state.failed ? <FrameNotice reason="render" /> : this.props.children;
+    return this.state.failed ? <FrameNotice text="This frame could not be shown." /> : this.props.children;
   }
 }
 
@@ -58,51 +54,57 @@ function tapLabel(client: A2uiClient, event: ActionEvent): string | undefined {
   return typeof text === 'string' ? text : undefined;
 }
 
-function outOf(message: RendererMessage, client: A2uiClient, metadata: TransportMetadata | undefined): FrameOut {
-  const label = 'action' in message ? tapLabel(client, message.action) : undefined;
-  return { message, ...(metadata === undefined ? {} : { metadata }), ...(label === undefined ? {} : { label }) };
-}
-
 interface FrameViewProps {
   frame: FrameContent;
   sessionKey: string;
   navigation: FrameNavigation;
   onMessage?: FrameMessageHandler;
-  answersFunctions?: boolean;
+  untilTap?: boolean;
   disabled?: boolean;
   padding?: SpacingValue;
-  onOpenUrl?: (url: string) => void;
 }
 
-function useSessionHost(sessionKey: string, props: FrameViewProps): void {
+function accepts({ disabled = false, untilTap = false }: FrameViewProps, message: RendererMessage, engaged: boolean): boolean {
+  if (!untilTap && 'callAgentFunction' in message) return true;
+  return !disabled && (!untilTap || engaged || 'action' in message);
+}
+
+function useSessionHost(sessionKey: string, props: FrameViewProps): () => void {
   const latest = useRef(props);
+  const host = useRef<FrameSessionHost | null>(null);
   useEffect(() => { latest.current = props; });
   useEffect(() => {
-    const host: FrameSessionHost = {
+    host.current = {
+      accepts: (message, engaged) => accepts(latest.current, message, engaged),
       send: (message, client, metadata) => {
-        const { onMessage, answersFunctions = false } = latest.current;
-        if ('callAgentFunction' in message && (!answersFunctions || onMessage === undefined)) {
-          rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
+        const { onMessage } = latest.current;
+        if (onMessage === undefined) {
+          if ('callAgentFunction' in message) rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
           return;
         }
-        void Promise.resolve(onMessage?.(outOf(message, client, metadata))).catch((err: unknown) => { report('frame.message', err); });
+        const label = 'action' in message ? tapLabel(client, message.action) : undefined;
+        void Promise.resolve(onMessage({ message, metadata, label })).catch((err: unknown) => { report('frame.message', err); });
       },
       navigate: (nav) => { latest.current.navigation.navigate(nav); },
-      openUrl: (url) => { latest.current.onOpenUrl?.(url); },
+      openUrl: (url) => { openInBubbleLink(url); },
     };
-    return setFrameSessionHost(sessionKey, host);
+    return setFrameSessionHost(sessionKey, host.current);
   }, [sessionKey]);
+  useEffect(() => { releaseFrameSession(sessionKey); }, [sessionKey, props.disabled]);
+  return () => { if (host.current !== null) activateFrameSessionHost(sessionKey, host.current); };
 }
 
 export function FrameView(props: FrameViewProps): React.ReactElement {
   const { frame, sessionKey, navigation, disabled, padding } = props;
   const client = frameSession(sessionKey, frame);
-  useSessionHost(sessionKey, props);
-  const shown = client.surface(navigation.screen) !== undefined;
+  const activate = useSessionHost(sessionKey, props);
   return (
-    <Column padding={padding}>
+    <Column padding={padding} onStartShouldSetResponderCapture={() => { activate(); return false; }}>
       <FrameBoundary resetKey={client}>
-        {shown ? <A2uiSurface client={client} surfaceId={navigation.screen} disabled={disabled} mediaUrl={frameMediaUrl} /> : <FrameNotice reason="no-screen" />}
+        {client.surface(navigation.screen) === undefined
+          ? <FrameNotice text="This screen is not in the frame." />
+          : <A2uiSurface client={client} surfaceId={navigation.screen} disabled={disabled} mediaUrl={frameMediaUrl}
+              fallback={<FrameNotice text="This frame could not be shown." />} />}
       </FrameBoundary>
     </Column>
   );

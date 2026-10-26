@@ -1,10 +1,9 @@
 import { ed25519 } from '@noble/curves/ed25519';
-import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import {
-  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, frameContentSchema, frameMessageSchema, nodeReplyMessageSchema, nodeReplyMessagesSchema,
-  rendererMessageSchema, type FrameContent, type FrameMessage,
+  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, FRAME_MAX_COMPONENTS, FRAME_MAX_MESSAGES, frameContentSchema, frameMessageSchema,
+  messageComponentCount, nodeReplyMessageSchema, nodeReplyMessagesSchema, rendererMessageSchema, type FrameContent, type FrameMessage,
 } from '../xmtp/frame.schema';
-import { createMessageGate, isStreamedReply, streamLines, type MessageGate, type StreamEnd } from './stream';
 import { NODE_REPLY_MAX_BYTES } from './hosting';
 import { base64url, nodeSigningText } from './signing';
 
@@ -17,8 +16,8 @@ const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
 const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
 const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
 const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
-
-export const NODE_CAPABILITIES_HEADER = 'Stage-A2UI-Capabilities';
+const STREAM_TYPES = /\b(?:jsonl|ndjson|x-ndjson|jsonlines)\b/i;
+const CAPABILITIES_HEADER = 'Stage-A2UI-Capabilities';
 
 export type NodeUrlProblem = 'invalid' | 'insecure' | 'credentials' | 'local';
 
@@ -26,7 +25,7 @@ export type NodeUrl = { ok: true; url: string; host: string } | { ok: false; pro
 
 export interface NodeRequest { message: Record<string, unknown>; dataModel?: Record<string, unknown> }
 
-export interface NodeCallOptions {
+interface NodeCallOptions {
   capabilities?: Record<string, unknown>;
   signal?: AbortSignal;
   onMessage?: (message: FrameMessage) => void;
@@ -35,16 +34,16 @@ export interface NodeCallOptions {
 export type NodeReply =
   | { kind: 'frame'; frame: FrameContent }
   | { kind: 'messages'; messages: FrameMessage[] }
-  | { kind: 'streamed'; count: number; load: boolean }
+  | { kind: 'streamed'; load: boolean }
   | { kind: 'unchanged' };
 
 export type NodeProblem = 'blocked' | 'unreachable' | 'timeout' | 'status' | 'too-large' | 'invalid';
 
 export type NodeResult = { ok: true; reply: NodeReply } | { ok: false; problem: NodeProblem; status?: number };
 
-type NodeMethod = 'GET' | 'POST';
+type ReadEnd = 'done' | 'too-large' | 'invalid';
 
-const UNCHANGED: NodeReply = { kind: 'unchanged' };
+type Push = (value: unknown) => boolean;
 
 function v4Octets(host: string): number[] | null {
   const parts = host.split('.');
@@ -155,91 +154,129 @@ export function loadReplyOf(json: unknown): NodeReply | null {
 export function messageReplyOf(json: unknown): NodeReply | null {
   const messages = json === undefined ? [] : messagesOf(json);
   if (messages === null) return null;
-  if (messages.length === 0) return UNCHANGED;
+  if (messages.length === 0) return { kind: 'unchanged' };
   const parsed = nodeReplyMessagesSchema.safeParse(messages);
   return parsed.success ? { kind: 'messages', messages: parsed.data } : null;
 }
 
-function parsedLines(text: string): unknown {
+function jsonValue(line: string): { value: unknown } | null {
   try {
-    return text.split(/\r?\n/).filter(line => line.trim() !== '').map(line => JSON.parse(line) as unknown);
+    return { value: JSON.parse(line) as unknown };
   } catch {
     return null;
   }
 }
 
-function parsedJson(text: string): unknown {
-  if (text.trim() === '') return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return parsedLines(text);
+function pushLines(text: string, push: Push): boolean {
+  for (const line of text.split(/\r?\n/)) {
+    if (line.trim() === '') continue;
+    const parsed = jsonValue(line);
+    if (parsed === null || !push(parsed.value)) return false;
   }
+  return true;
 }
 
-async function cappedText(response: Response): Promise<string | null> {
-  const reader = response.body?.getReader();
-  if (reader === undefined) {
-    const text = await response.text();
-    return text.length > NODE_REPLY_MAX_BYTES ? null : text;
-  }
-  const chunks: Uint8Array[] = [];
+function parsedJson(text: string): unknown {
+  if (text.trim() === '') return undefined;
+  const whole = jsonValue(text);
+  if (whole !== null) return whole.value;
+  const lines: unknown[] = [];
+  return pushLines(text, (value) => { lines.push(value); return true; }) ? lines : null;
+}
+
+function gateOf(schema: typeof frameMessageSchema, onMessage: (message: FrameMessage) => void): Push {
+  let messages = 0;
+  let components = 0;
+  return (value) => {
+    const parsed = schema.safeParse(value);
+    if (!parsed.success) return false;
+    messages += 1;
+    components += messageComponentCount(parsed.data);
+    if (messages > FRAME_MAX_MESSAGES || components > FRAME_MAX_COMPONENTS) return false;
+    onMessage(parsed.data);
+    return true;
+  };
+}
+
+function chunkEnd(accepted: boolean): ReadEnd {
+  return accepted ? 'done' : 'invalid';
+}
+
+async function eachChunk(body: ReadableStream<Uint8Array>, onText: (text: string) => boolean): Promise<ReadEnd> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
   let size = 0;
   for (let part = await reader.read(); !part.done; part = await reader.read()) {
     size += part.value.byteLength;
-    if (size > NODE_REPLY_MAX_BYTES) {
+    const end = size > NODE_REPLY_MAX_BYTES ? 'too-large' : chunkEnd(onText(decoder.decode(part.value, { stream: true })));
+    if (end !== 'done') {
       void reader.cancel().catch(() => undefined);
-      return null;
+      return end;
     }
-    chunks.push(part.value);
   }
-  return new TextDecoder().decode(concatBytes(...chunks));
+  return chunkEnd(onText(decoder.decode()));
 }
 
-async function readReply(response: Response, replyOf: (json: unknown) => NodeReply | null): Promise<NodeResult> {
+async function streamLines(body: ReadableStream<Uint8Array>, push: Push): Promise<ReadEnd> {
+  let pending = '';
+  const end = await eachChunk(body, (chunk) => {
+    pending += chunk;
+    const cut = pending.lastIndexOf('\n');
+    if (cut < 0) return true;
+    const complete = pending.slice(0, cut);
+    pending = pending.slice(cut + 1);
+    return pushLines(complete, push);
+  });
+  return end === 'done' ? chunkEnd(pushLines(pending, push)) : end;
+}
+
+function replyMessages(reply: NodeReply): FrameMessage[] {
+  if (reply.kind === 'frame') return reply.frame.messages;
+  return reply.kind === 'messages' ? reply.messages : [];
+}
+
+async function pushWhole(response: Response, load: boolean, push: Push): Promise<ReadEnd> {
+  let text = '';
+  const read = response.body === null ? 'done' : await eachChunk(response.body, (chunk) => { text += chunk; return true; });
+  if (read !== 'done') return read;
+  const reply = load ? loadReplyOf(parsedJson(text)) : messageReplyOf(parsedJson(text));
+  return chunkEnd(reply !== null && replyMessages(reply).every(push));
+}
+
+async function readMessages(response: Response, load: boolean, onMessage: (message: FrameMessage) => void): Promise<NodeResult> {
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
   if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
-  const text = await cappedText(response);
-  if (text === null) return { ok: false, problem: 'too-large' };
-  const reply = replyOf(parsedJson(text));
+  const push = gateOf(load ? frameMessageSchema : nodeReplyMessageSchema, onMessage);
+  const end = response.body !== null && STREAM_TYPES.test(response.headers.get('content-type') ?? '')
+    ? await streamLines(response.body, push)
+    : await pushWhole(response, load, push);
+  return end === 'done' ? { ok: true, reply: { kind: 'streamed', load } } : { ok: false, problem: end };
+}
+
+async function collectedReply(response: Response, load: boolean): Promise<NodeResult> {
+  const collected: FrameMessage[] = [];
+  const result = await readMessages(response, load, (message) => { collected.push(message); });
+  if (!result.ok) return result;
+  const reply = load ? loadReplyOf(collected) : messageReplyOf(collected);
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };
 }
 
-async function deliverReply(response: Response, method: NodeMethod, onMessage: (message: FrameMessage) => void): Promise<NodeResult> {
-  if (!response.ok) return { ok: false, problem: 'status', status: response.status };
-  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
-  const load = method === 'GET';
-  const gate = createMessageGate(load ? frameMessageSchema : nodeReplyMessageSchema, onMessage);
-  const end = response.body !== null && isStreamedReply(response.headers.get('content-type'))
-    ? await streamLines(response.body, gate)
-    : await pushWhole(response, gate);
-  return end === 'done' ? { ok: true, reply: { kind: 'streamed', count: gate.count(), load } } : { ok: false, problem: end };
-}
-
-async function pushWhole(response: Response, gate: MessageGate): Promise<StreamEnd> {
-  const text = await cappedText(response);
-  if (text === null) return 'too-large';
-  const json = parsedJson(text);
-  const messages = json === undefined ? [] : messagesOf(json);
-  return messages !== null && messages.every(gate.push) ? 'done' : 'invalid';
-}
-
-async function callNode(method: NodeMethod, rawUrl: string, key: string, body: string, options: NodeCallOptions): Promise<NodeResult> {
+async function callNode(method: 'GET' | 'POST', rawUrl: string, key: string, body: string, options: NodeCallOptions): Promise<NodeResult> {
   const node = nodeUrlOf(rawUrl);
   if (!node.ok) return { ok: false, problem: 'blocked' };
-  const { capabilities, signal } = options;
+  const { capabilities, signal, onMessage } = options;
   const timeout = AbortSignal.timeout(NODE_TIMEOUT_MS);
   const headers: Record<string, string> = { Accept: 'application/json', ...nodeHeaders(method, node.url, body, key, Date.now()) };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
-  if (capabilities !== undefined) headers[NODE_CAPABILITIES_HEADER] = JSON.stringify(capabilities);
+  if (capabilities !== undefined) headers[CAPABILITIES_HEADER] = JSON.stringify(capabilities);
   try {
     const response = await fetch(node.url, {
       method, headers, body: method === 'POST' ? body : undefined,
       credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
     });
-    if (options.onMessage !== undefined) return await deliverReply(response, method, options.onMessage);
-    return await readReply(response, method === 'GET' ? loadReplyOf : messageReplyOf);
+    const load = method === 'GET';
+    return onMessage === undefined ? await collectedReply(response, load) : await readMessages(response, load, onMessage);
   } catch {
     return { ok: false, problem: timeout.aborted ? 'timeout' : 'unreachable' };
   }

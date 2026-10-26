@@ -40,8 +40,8 @@ describe('live widget state', () => {
     const update = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] } };
     const reply = { ok: true, reply: { kind: 'messages', messages: [update] } } as const;
     const next = { messages: titleMessages('$105') };
-    expect(liveStateAfter(shown, reply, 3_000, () => ({ kind: 'frame', frame: next }))).toEqual({ ...shown, frame: next, at: 3_000 });
-    expect(liveStateAfter({ ...shown, failures: 2 }, reply, 3_000, () => ({ kind: 'unchanged' }))).toEqual({ ...shown, at: 3_000 });
+    expect(liveStateAfter(shown, reply, 3_000, { kind: 'frame', frame: next })).toEqual({ ...shown, frame: next, at: 3_000 });
+    expect(liveStateAfter({ ...shown, failures: 2 }, reply, 3_000, { kind: 'unchanged' })).toEqual({ ...shown, at: 3_000 });
     expect(liveStateAfter(shown, reply, 3_000)).toEqual({ ...shown, problem: 'invalid', failures: 1 });
     expect(liveStateAfter(EMPTY_LIVE, reply, 3_000)).toEqual({ ...EMPTY_LIVE, problem: 'empty', failures: 1 });
   });
@@ -128,7 +128,9 @@ describe('hosted nodes', () => {
   });
 
   test('a preview needs a loaded frame', () => {
-    expect(livePreviewOf('https://n.example.com/', 'n.example.com', shown)).toEqual({ url: 'https://n.example.com/', host: 'n.example.com', frame: { messages: CARD }, state: shown });
-    expect(livePreviewOf('https://n.example.com/', 'n.example.com', { ...EMPTY_LIVE, problem: 'status', status: 502 })).toBe('Could not load it: node error 502');
+    const node = { url: 'https://n.example.com/', host: 'n.example.com' };
+    expect(livePreviewOf(node, frameReply(CARD), 1_000)).toEqual({ ...node, frame: { messages: CARD }, state: shown });
+    expect(livePreviewOf(node, { ok: false, problem: 'status', status: 502 }, 1_000)).toBe('Could not load it: node error 502');
+    expect(livePreviewOf(node, { ok: true, reply: { kind: 'unchanged' } }, 1_000)).toBe('Could not load it: no widget yet');
   });
 });

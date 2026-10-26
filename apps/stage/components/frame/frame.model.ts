@@ -38,11 +38,17 @@ export interface FrameCardModel {
   description?: string;
 }
 
+const parsedFrames = new WeakMap<object, FrameContent | null>();
+
 export function frameOf(entry: HistoryEntry | undefined): FrameContent | null {
   const frame = (entry?.payload as { frame?: unknown } | undefined)?.frame;
-  if (frame === undefined) return null;
+  if (typeof frame !== 'object' || frame === null) return null;
+  const known = parsedFrames.get(frame);
+  if (known !== undefined) return known;
   const parsed = frameContentSchema.safeParse(frame);
-  return parsed.success ? parsed.data : null;
+  const result = parsed.success ? parsed.data : null;
+  parsedFrames.set(frame, result);
+  return result;
 }
 
 export function isFrameActionEntry(entry: HistoryEntry): boolean {
@@ -82,7 +88,7 @@ export function frameLocked(frame: FrameContent, consentAllowed: boolean | undef
   return frameNodeOf(frame) === null ? consentAllowed === false : consentAllowed !== true;
 }
 
-export function frameDataModelOf(out: FrameOut): Record<string, unknown> | undefined {
+function frameDataModelOf(out: FrameOut): Record<string, unknown> | undefined {
   return out.metadata?.a2uiRendererDataModel.surfaces;
 }
 
@@ -97,8 +103,7 @@ export function frameActionContent(frameId: string, out: FrameOut): FrameActionC
 }
 
 export function nodeRequestOf(out: FrameOut): NodeRequest {
-  const dataModel = frameDataModelOf(out);
-  return dataModel === undefined ? { message: out.message } : { message: out.message, dataModel };
+  return { message: out.message, dataModel: frameDataModelOf(out) };
 }
 
 export function frameScreenTitle(frame: FrameContent, screen: string): string {
@@ -107,7 +112,8 @@ export function frameScreenTitle(frame: FrameContent, screen: string): string {
 }
 
 export function frameRenders(frame: Pick<FrameContent, 'messages'>): boolean {
-  return a2uiSnapshot(frame.messages).messages.length > 0;
+  const snapshot = a2uiSnapshot(frame.messages);
+  return snapshot.messages.length > 0 && snapshot.fits;
 }
 
 export function frameMediaUrl(url: string): string {

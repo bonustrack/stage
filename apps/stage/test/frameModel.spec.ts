@@ -32,6 +32,11 @@ describe('frameOf', () => {
     expect(frameOf({ ...base, payload: { contentType: 'frame', frame: report } })).toEqual(report);
   });
 
+  test('parses each payload once and returns the same frame', () => {
+    const entry = { ...base, payload: { contentType: 'frame', frame: { messages: [REPORT] } } };
+    expect(frameOf(entry)).toBe(frameOf(entry));
+  });
+
   test('ignores entries without a frame, with a broken one or with a ChatKit widget', () => {
     expect(frameOf(base)).toBeNull();
     expect(frameOf(undefined)).toBeNull();
@@ -148,6 +153,8 @@ describe('frame rendering and live updates', () => {
   test('a frame renders when a surface has a valid root', () => {
     expect(frameRenders(report)).toBe(true);
     expect(frameRenders({ messages: REFUSED_MESSAGES })).toBe(false);
+    const cycle = { version: 'v1.0', createSurface: { surfaceId: 's', catalogId: KIT_CATALOG, components: [{ id: 'root', component: 'Column', children: ['root'] }] } };
+    expect(frameRenders({ messages: [cycle] })).toBe(false);
   });
 });
 

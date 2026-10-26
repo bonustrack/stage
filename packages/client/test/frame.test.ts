@@ -138,5 +138,7 @@ describe('frame chat-list previews', () => {
     expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'pick' } }, 'stage.box/frameAction:2.0')).toBe('Tapped pick');
     expect(previewOfXmtpContent({ frameId: 'f', label: '', action: {} }, 'stage.box/frameAction:2.0')).toBe('[frame action]');
     expect(previewOfXmtpContent(null, 'stage.box/frameAction:2.0')).toBe('[frame action]');
+    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: { name: '', userMessage: ' ' } }, 'stage.box/frameAction:2.0')).toBe('[frame action]');
+    expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'book', userMessage: 'Book table' } }, 'stage.box/frameAction:2.0')).toBe('Tapped "Book table"');
   });
 });

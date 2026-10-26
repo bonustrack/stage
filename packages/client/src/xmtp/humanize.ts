@@ -133,11 +133,22 @@ function previewFrame(decoded: unknown): string {
   return typeof title === 'string' && title.trim() !== '' ? `Frame: ${title.trim()}` : 'Frame';
 }
 
+function stringOf(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function recordOf(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+}
+
 function previewFrameAction(decoded: unknown): string {
-  const a = decoded as { label?: unknown; action?: { name?: unknown } } | null;
-  const label = typeof a?.label === 'string' ? a.label : '';
-  const name = typeof a?.action?.name === 'string' ? a.action.name : '';
-  return label === '' && name === '' ? '[frame action]' : frameActionText({ label, action: { name } });
+  const content = recordOf(decoded);
+  const action = recordOf(content.action);
+  const label = stringOf(content.label) ?? '';
+  const name = stringOf(action.name) ?? '';
+  const userMessage = stringOf(action.userMessage);
+  if (`${label}${name}${userMessage ?? ''}`.trim() === '') return '[frame action]';
+  return frameActionText({ label, action: { name, userMessage } });
 }
 
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {

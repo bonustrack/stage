@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { frameStartSurface, type FrameContent } from '@stage-labs/client/xmtp/frame';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { frameStackOf, withFrameNav, type FrameNav, type FrameStacks } from './frame.model';
 import type { FrameNavigation } from './FrameView';
@@ -6,7 +7,8 @@ import type { FrameNavigation } from './FrameView';
 let stacks: FrameStacks = new Map();
 const listeners = makeListeners();
 
-export function useFrameStack(id: string, start: string): FrameNavigation {
+export function useFrameStack(id: string, frame: FrameContent | null): FrameNavigation {
+  const start = useMemo(() => (frame === null ? '' : frameStartSurface(frame) ?? ''), [frame]);
   const read = useCallback(() => stacks.get(id), [id]);
   const stack = frameStackOf(useStoreValue(listeners.subscribe, read), start);
   const navigate = useCallback((nav: FrameNav): void => {

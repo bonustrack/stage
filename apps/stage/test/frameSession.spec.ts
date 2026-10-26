@@ -1,25 +1,20 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { ROOT_SCOPE } from '@stage-labs/kit/a2ui/evaluate';
-import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
 import {
-  RENDERER_CAPABILITIES, applyToFrameSession, clearFrameSessions, endFrameLoad, frameSession, rejectAgentCall, setFrameSessionHost, startFrameLoad,
+  RENDERER_CAPABILITIES, activateFrameSessionHost, applyToFrameSession, clearFrameSessions, engageFrameSession, frameSession, rejectAgentCall, setFrameSessionHost, streamInto,
   type FrameSessionHost,
 } from '../lib/frameSession';
 import { KIT_CATALOG, titleMessages } from './frameFixtures';
 
 const QUOTE = { '@call': 'quote', catalogId: KIT_CATALOG, args: { coin: 'BTC' } };
 
-const FRAME: FrameContent = {
-  messages: [{
-    version: 'v1.0',
-    createSurface: { surfaceId: 'main', catalogId: KIT_CATALOG, components: [{ id: 'root', component: 'Title', text: 'Price' }] },
-  }],
-};
+const FRAME: FrameContent = { messages: titleMessages('Price') };
 
 function recorder(): { host: FrameSessionHost; sent: RendererMessage[] } {
   const sent: RendererMessage[] = [];
-  return { sent, host: { send: (message) => { sent.push(message); }, navigate: () => undefined, openUrl: () => undefined } };
+  return { sent, host: { accepts: () => true, send: (message) => { sent.push(message); }, navigate: () => undefined, openUrl: () => undefined } };
 }
 
 function callIdOf(message: RendererMessage | undefined): string {
@@ -84,27 +79,67 @@ describe('frame sessions', () => {
     });
   });
 
-  test('a load keeps showing the old client until the new one renders, then takes over', () => {
+  test('a load keeps showing the old client until the new one renders, then takes over', async () => {
     const shown = frameSession('m1', FRAME);
-    const token = startFrameLoad('m1');
+    const frames: unknown[] = [];
     const surface = { version: 'v1.0', createSurface: { surfaceId: 'main', catalogId: KIT_CATALOG } };
-    expect(applyToFrameSession('m1', [surface], token)).toEqual({ kind: 'unchanged' });
-    expect(frameSession('m1', FRAME)).toBe(shown);
     const root = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: 'Loaded' }] } };
-    const loaded = applyToFrameSession('m1', [root], token);
-    expect(loaded).toEqual({ kind: 'frame', frame: { messages: titleMessages('Loaded') } });
-    const next = frameSession('m1', { messages: titleMessages('Loaded') });
-    expect(next).not.toBe(shown);
-    const after = applyToFrameSession('m1', [{ version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/x', value: 1 } }], token);
-    expect(after.kind === 'frame' ? frameSession('m1', after.frame) : null).toBe(next);
+    const { applied } = await streamInto('m1', true, (frame) => { frames.push(frame); }, (onMessage) => {
+      onMessage(surface);
+      expect(frameSession('m1', FRAME)).toBe(shown);
+      onMessage(root);
+      return Promise.resolve({ ok: true, reply: { kind: 'streamed', load: true } });
+    });
+    expect(applied).toEqual({ kind: 'frame', frame: { messages: titleMessages('Loaded') } });
+    expect(frames).toEqual([{ messages: titleMessages('Loaded') }]);
+    expect(frameSession('m1', { messages: titleMessages('Loaded') })).not.toBe(shown);
   });
 
-  test('an abandoned load is dropped and leaves the shown frame alone', () => {
+  test('a load that renders nothing is dropped and leaves the shown frame alone', async () => {
     const shown = frameSession('m1', FRAME);
-    const token = startFrameLoad('m1');
-    endFrameLoad('m1', token);
-    expect(applyToFrameSession('m1', [...titleMessages('Late')], token)).toEqual({ kind: 'unchanged' });
+    const late: { push?: (message: FrameMessage) => void } = {};
+    const { applied } = await streamInto('m1', true, () => undefined, (onMessage) => {
+      late.push = onMessage;
+      return Promise.resolve({ ok: true, reply: { kind: 'streamed', load: true } });
+    });
+    late.push?.(titleMessages('Late')[0] ?? {});
+    expect(applied).toEqual({ kind: 'unchanged' });
     expect(frameSession('m1', FRAME)).toBe(shown);
+  });
+
+  test('a gated host gets only taps until the frame is engaged, then the held messages', () => {
+    const client = frameSession('m1', FRAME);
+    const { host, sent } = recorder();
+    setFrameSessionHost('m1', { ...host, accepts: (message, engaged) => engaged || 'action' in message });
+    client.resolve('main', QUOTE, ROOT_SCOPE);
+    expect(sent).toEqual([]);
+    engageFrameSession('m1');
+    expect(sent).toHaveLength(1);
+  });
+
+  test('the newest host gets messages, and the one below takes over when it leaves', () => {
+    const client = frameSession('m1', FRAME);
+    const bubble = recorder();
+    const page = recorder();
+    setFrameSessionHost('m1', bubble.host);
+    const leave = setFrameSessionHost('m1', page.host);
+    client.resolve('main', QUOTE, ROOT_SCOPE);
+    leave();
+    client.resolve('main', { ...QUOTE, args: { coin: 'ETH' } }, ROOT_SCOPE);
+    expect([bubble.sent.length, page.sent.length]).toEqual([1, 1]);
+  });
+  test('a host stays registered when its session is rebuilt, and the touched view takes over', () => {
+    const { host, sent } = recorder();
+    frameSession('m1', FRAME);
+    setFrameSessionHost('m1', host);
+    const rebuilt = frameSession('m1', { messages: titleMessages('Other') });
+    rebuilt.resolve('main', QUOTE, ROOT_SCOPE);
+    expect(sent).toHaveLength(1);
+    const other = recorder();
+    setFrameSessionHost('m1', other.host);
+    activateFrameSessionHost('m1', host);
+    rebuilt.resolve('main', { ...QUOTE, args: { coin: 'SOL' } }, ROOT_SCOPE);
+    expect([sent.length, other.sent.length]).toEqual([2, 0]);
   });
 });
 

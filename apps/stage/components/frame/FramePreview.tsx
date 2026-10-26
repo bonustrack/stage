@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleProp, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { frameStartSurface, type FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
@@ -12,7 +12,6 @@ import { WidgetHeader } from '../dashboard/widgetParts';
 import { GradientFade } from '../GradientFade';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { isCoarsePointer } from '../../lib/webLayout';
 import { ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
 import {
@@ -83,15 +82,13 @@ function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElem
   );
 }
 
-export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, answersFunctions, disabled, fill = false, onFullScreen }: {
-  frame: FrameContent; stackId: string; sessionKey?: string; onMessage?: FrameMessageHandler; answersFunctions?: boolean;
+export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, untilTap, disabled, fill = false, onFullScreen }: {
+  frame: FrameContent; stackId: string; sessionKey?: string; onMessage?: FrameMessageHandler; untilTap?: boolean;
   disabled?: boolean; fill?: boolean; onFullScreen?: () => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const start = useMemo(() => frameStartSurface(frame) ?? '', [frame]);
-  const navigation = useFrameStack(stackId, start);
+  const navigation = useFrameStack(stackId, frame);
   const { screen, depth, navigate } = navigation;
-  const backdrop = pal.bg;
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
   const layout = tileLayout(fill, depth);
@@ -100,7 +97,7 @@ export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, 
     borderRadius: BLOCK_RADIUS_DEFAULT,
     borderWidth: FRAME_PREVIEW_BORDER,
     borderColor: pal.border,
-    backgroundColor: backdrop,
+    backgroundColor: pal.bg,
     ...layout.tile,
   };
   return (
@@ -111,14 +108,12 @@ export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, 
         onLayout={fade.onLayout} onContentSizeChange={fade.onContentSizeChange} onScroll={fade.onScroll}
         scrollEventThrottle={32} keyboardShouldPersistTaps="handled" nestedScrollEnabled={fill}
       >
-        <FrameView
-          frame={frame} sessionKey={sessionKey} disabled={disabled} onMessage={onMessage} answersFunctions={answersFunctions} navigation={navigation}
-          padding={FRAME_PREVIEW_PADDING} onOpenUrl={(url) => { openInBubbleLink(url); }}
-        />
+        <FrameView frame={frame} sessionKey={sessionKey} disabled={disabled} onMessage={onMessage} untilTap={untilTap}
+          navigation={navigation} padding={FRAME_PREVIEW_PADDING} />
       </List>
       {fade.more ? (
         <Column pointerEvents="none" style={FADE_OVERLAY}>
-          <GradientFade color={backdrop} height={FRAME_PREVIEW_FADE} solid="bottom"/>
+          <GradientFade color={pal.bg} height={FRAME_PREVIEW_FADE} solid="bottom"/>
         </Column>
       ) : null}
       {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen}/> : null}
@@ -142,7 +137,7 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, menu
       ) : null}
       <FrameSurface
         frame={chat.frame ?? frame} stackId={messageId} sessionKey={chat.sessionKey} onMessage={chat.onMessage}
-        answersFunctions={chat.node !== null} disabled={disabled} fill={fill}
+        untilTap={chat.node !== null} disabled={disabled} fill={fill}
         onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
       />
     </>

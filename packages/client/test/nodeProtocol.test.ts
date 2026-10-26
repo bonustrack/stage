@@ -251,14 +251,14 @@ describe('streamed node replies', () => {
     const pending = sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, {
       onMessage: (message) => { seen.push(message); if (seen.length === 1) second.resolve(undefined); },
     });
-    expect(await pending).toEqual({ ok: true, reply: { kind: 'streamed', count: 2, load: false } });
+    expect(await pending).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(1), PRICE(2)]);
   });
 
   test('a load streams frame messages only, and stops at the first bad line', async () => {
     const seen: unknown[] = [];
     stubFetch(() => new Response(jsonl([...MESSAGES, PRICE(3)]), { headers: { 'content-type': 'application/x-ndjson' } }));
-    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: true, reply: { kind: 'streamed', count: 2, load: true } });
+    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: true, reply: { kind: 'streamed', load: true } });
     stubFetch(() => new Response(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`, { headers: { 'content-type': 'application/jsonl' } }));
     expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: false, problem: 'invalid' });
     const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'f', value: 1 } };
@@ -271,11 +271,18 @@ describe('streamed node replies', () => {
     const seen: unknown[] = [];
     stubFetch(() => Response.json([PRICE(5)]));
     expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
-      .toEqual({ ok: true, reply: { kind: 'streamed', count: 1, load: false } });
+      .toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     stubFetch(() => new Response(null, { status: 204 }));
     expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
-      .toEqual({ ok: true, reply: { kind: 'streamed', count: 0, load: false } });
+      .toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(5)]);
+  });
+
+  test('a plain JSON reply is checked whole first, so a bad message applies nothing', async () => {
+    const seen: unknown[] = [];
+    stubFetch(() => Response.json([PRICE(6), { version: 'v1.0', updateDataModel: {} }]));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: false, problem: 'invalid' });
+    expect(seen).toEqual([]);
   });
 
   test('a stream past the size or message limits stops', async () => {

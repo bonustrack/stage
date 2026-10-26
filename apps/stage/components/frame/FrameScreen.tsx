@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { frameStartSurface, type FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { StackHeader } from '../chrome/StackHeader';
 import { EmptyState } from '../chrome/EmptyState';
 import { menuPointBelowEnd } from '../AnchoredMenu';
@@ -14,7 +14,6 @@ import { useFrameMessage } from '../../lib/frameMessage';
 import { usePalette } from '../../lib/theme';
 import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { frameOf, frameScreenTitle, type FrameNav } from './frame.model';
 import { FrameView, type FrameNavigation } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
@@ -45,9 +44,7 @@ interface FrameScreens {
 }
 
 function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void): FrameScreens {
-  const start = useMemo(() => (frame === null ? '' : frameStartSurface(frame) ?? ''), [frame]);
-  const nav = useFrameStack(messageId, start);
-  const { screen, depth, navigate: step } = nav;
+  const { screen, depth, navigate: step } = useFrameStack(messageId, frame);
   const back = useCallback((): boolean => {
     if (depth === 0) return false;
     step({ kind: 'close' });
@@ -104,9 +101,8 @@ function FrameBody({ chat, frame, consent, insetBottom, navigation }: {
   return (
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <FrameView frame={frame} sessionKey={chat.sessionKey} disabled={gated} onMessage={chat.onMessage}
-        answersFunctions={chat.node !== null} navigation={navigation}
-        padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: PAGE_GUTTER + (notice ? 0 : insetBottom) }}
-        onOpenUrl={(url) => { openInBubbleLink(url); }} />
+        untilTap={chat.node !== null} navigation={navigation}
+        padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: PAGE_GUTTER + (notice ? 0 : insetBottom) }} />
       {notice ? (
         <Column padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
           <Text size="2xs" color="secondary">Accept this conversation to use this frame.</Text>

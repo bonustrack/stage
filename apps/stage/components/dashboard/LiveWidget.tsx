@@ -21,7 +21,7 @@ function LiveBody({ widgetId, state, act }: { widgetId: string; state: LiveState
     if (problem === null) return <Column weight={1} align="center" justify="center"><Spinner /></Column>;
     return <Unavailable title={NOT_LOADED} detail={problem} />;
   }
-  return <FrameSurface frame={state.frame} stackId={liveWidgetKey(widgetId)} onMessage={act} answersFunctions fill />;
+  return <FrameSurface frame={state.frame} stackId={liveWidgetKey(widgetId)} onMessage={act} fill />;
 }
 
 function NodeWidget({ widgetId, source, host, onMenu, grip }: WidgetChrome & {

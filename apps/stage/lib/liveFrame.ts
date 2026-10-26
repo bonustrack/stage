@@ -4,14 +4,13 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import type { FrameOut } from '../components/frame/frame.model';
 import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { capabilities } from './capabilities';
-import { clearFrameSessions, endFrameLoad, frameSink, RENDERER_CAPABILITIES, startFrameLoad } from './frameSession';
+import { clearFrameSessions, RENDERER_CAPABILITIES } from './frameSession';
 import { makeLiveFrames } from './liveFrame.core';
 import { useStoreValue } from './storeCore';
 
 const frames = makeLiveFrames({
   load: (url, key, onMessage) => loadNode(url, key, { capabilities: RENDERER_CAPABILITIES, onMessage }),
   send: (url, key, request, onMessage) => sendNodeMessage(url, key, request, { capabilities: RENDERER_CAPABILITIES, onMessage }),
-  sessions: { start: startFrameLoad, end: endFrameLoad, sink: frameSink },
   newKey: newNodeKey,
   now: () => Date.now(),
   toast: (message) => { capabilities.toast(message); },

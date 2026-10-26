@@ -1,9 +1,11 @@
 import { createA2uiClient, type A2uiClient, type SurfaceNav, type TransportMetadata } from '@stage-labs/kit/a2ui/client';
 import { A2UI_VERSION, ERROR_CODES, isJsonObject, type RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { snapshotOfClient } from '@stage-labs/kit/a2ui/snapshot';
+import type { NodeResult } from '@stage-labs/client/nodes/protocol';
 import { frameContentSchema, isSurfaceMessage, type FrameContent, type FrameMessage } from '@stage-labs/client/xmtp/frame.schema';
 
 export interface FrameSessionHost {
+  accepts: (message: RendererMessage, engaged: boolean) => boolean;
   send: (message: RendererMessage, client: A2uiClient, metadata?: TransportMetadata) => void;
   navigate: (nav: SurfaceNav) => void;
   openUrl: (url: string) => void;
@@ -11,13 +13,12 @@ export interface FrameSessionHost {
 
 export type FrameApplied = { kind: 'frame'; frame: FrameContent } | { kind: 'unchanged' } | { kind: 'invalid' };
 
-interface QueuedMessage { message: RendererMessage; metadata?: TransportMetadata }
+interface QueuedMessage { message: RendererMessage; client: A2uiClient; metadata?: TransportMetadata }
 
 interface FrameSession {
   frame: FrameContent | null;
   json: string;
   client: A2uiClient;
-  host: FrameSessionHost | null;
   queued: QueuedMessage[];
   loading: { client: A2uiClient; token: number } | null;
   loadedBy: number | null;
@@ -26,24 +27,35 @@ interface FrameSession {
 const MAX_QUEUED = 50;
 const MAX_SESSIONS = 100;
 const sessions = new Map<string, FrameSession>();
+const hostsByKey = new Map<string, FrameSessionHost[]>();
+const engagedKeys = new Set<string>();
 let loads = 0;
 
 export const RENDERER_CAPABILITIES: Record<string, unknown> = { ...createA2uiClient().capabilities() };
 
-function deliver(session: FrameSession | undefined, client: A2uiClient, queued: QueuedMessage): void {
-  if (session === undefined) return;
-  if (session.host !== null) {
-    session.host.send(queued.message, client, queued.metadata);
-    return;
-  }
-  if (session.queued.length < MAX_QUEUED) session.queued.push(queued);
+function hostOf(key: string): FrameSessionHost | undefined {
+  return hostsByKey.get(key)?.at(-1);
 }
 
-function buildClient(sessionOf: () => FrameSession | undefined): A2uiClient {
+function deliver(key: string, item: QueuedMessage): void {
+  const host = hostOf(key);
+  if (host !== undefined && host.accepts(item.message, engagedKeys.has(key))) {
+    host.send(item.message, item.client, item.metadata);
+    return;
+  }
+  const session = sessions.get(key);
+  if (session !== undefined && session.queued.length < MAX_QUEUED) session.queued.push(item);
+}
+
+export function releaseFrameSession(key: string): void {
+  for (const item of sessions.get(key)?.queued.splice(0) ?? []) deliver(key, item);
+}
+
+function buildClient(key: string): A2uiClient {
   const client: A2uiClient = createA2uiClient({
-    send: (message, metadata) => { deliver(sessionOf(), client, metadata === undefined ? { message } : { message, metadata }); },
-    navigate: (nav) => { sessionOf()?.host?.navigate(nav); },
-    openUrl: (url) => { sessionOf()?.host?.openUrl(url); },
+    send: (message, metadata) => { deliver(key, { message, client, metadata }); },
+    navigate: (nav) => { hostOf(key)?.navigate(nav); },
+    openUrl: (url) => { hostOf(key)?.openUrl(url); },
   });
   return client;
 }
@@ -61,10 +73,9 @@ function receiveAll(client: A2uiClient, messages: readonly unknown[]): void {
   for (const message of messages) if (isJsonObject(message)) client.receive(message);
 }
 
-function createSession(key: string, frame: FrameContent | null, host: FrameSessionHost | null): FrameSession {
-  const sessionOf = (): FrameSession | undefined => sessions.get(key);
+function createSession(key: string, frame: FrameContent | null): FrameSession {
   const json = frame === null ? '' : JSON.stringify(frame);
-  const session: FrameSession = { frame, json, client: buildClient(sessionOf), host, queued: [], loading: null, loadedBy: null };
+  const session: FrameSession = { frame, json, client: buildClient(key), queued: [], loading: null, loadedBy: null };
   remember(key, session);
   if (frame !== null) receiveAll(session.client, frame.messages);
   return session;
@@ -74,44 +85,47 @@ export function frameSession(key: string, frame: FrameContent): A2uiClient {
   const known = sessions.get(key);
   if (known !== undefined && (known.frame === frame || known.json === JSON.stringify(frame))) {
     known.frame = frame;
+    remember(key, known);
     return known.client;
   }
-  return createSession(key, frame, known?.host ?? null).client;
+  return createSession(key, frame).client;
+}
+
+function withoutHost(key: string, host: FrameSessionHost): FrameSessionHost[] {
+  const hosts = (hostsByKey.get(key) ?? []).filter((known) => known !== host);
+  if (hosts.length === 0) hostsByKey.delete(key);
+  else hostsByKey.set(key, hosts);
+  return hosts;
 }
 
 export function setFrameSessionHost(key: string, host: FrameSessionHost): () => void {
-  const session = sessions.get(key);
-  if (session === undefined) return () => undefined;
-  session.host = host;
-  const queued = session.queued.splice(0);
-  for (const item of queued) host.send(item.message, session.client, item.metadata);
-  return () => { if (session.host === host) session.host = null; };
+  hostsByKey.set(key, [...withoutHost(key, host), host]);
+  releaseFrameSession(key);
+  return () => { withoutHost(key, host); };
+}
+
+export function activateFrameSessionHost(key: string, host: FrameSessionHost): void {
+  if (hostOf(key) !== host && hostsByKey.get(key)?.includes(host) === true) hostsByKey.set(key, [...withoutHost(key, host), host]);
+}
+
+export function engageFrameSession(key: string): void {
+  if (engagedKeys.has(key)) return;
+  engagedKeys.add(key);
+  releaseFrameSession(key);
 }
 
 function snapshotFrame(client: A2uiClient, base: FrameContent | null): FrameContent | null {
   const messages = snapshotOfClient(client);
-  if (messages.length === 0) return null;
-  const ids = messages.map((m) => ('createSurface' in m ? m.createSurface.surfaceId : ''));
-  const kept = base === null ? {} : {
-    ...(base.title === undefined ? {} : { title: base.title }),
-    ...(base.description === undefined ? {} : { description: base.description }),
-    ...(base.source === undefined ? {} : { source: base.source }),
-    ...(base.start !== undefined && ids.includes(base.start) ? { start: base.start } : {}),
-  };
-  const parsed = frameContentSchema.safeParse({ ...kept, messages });
+  const kept = messages.some((m) => 'createSurface' in m && m.createSurface.surfaceId === base?.start);
+  const parsed = frameContentSchema.safeParse({ ...base, messages, start: kept ? base?.start : undefined });
   return parsed.success ? parsed.data : null;
 }
 
-export function startFrameLoad(key: string): number {
-  const session = sessions.get(key) ?? createSession(key, null, null);
+function startFrameLoad(key: string): number {
+  const session = sessions.get(key) ?? createSession(key, null);
   loads += 1;
-  session.loading = { client: buildClient(() => sessions.get(key)), token: loads };
+  session.loading = { client: buildClient(key), token: loads };
   return loads;
-}
-
-export function endFrameLoad(key: string, token: number): void {
-  const session = sessions.get(key);
-  if (session?.loading?.token === token) session.loading = null;
 }
 
 function targetOf(session: FrameSession, token: number | undefined): A2uiClient | null {
@@ -139,22 +153,23 @@ export function applyToFrameSession(key: string, messages: readonly Record<strin
   return { kind: 'frame', frame };
 }
 
-export interface FrameSink {
-  onMessage: (message: FrameMessage) => void;
-  applied: () => FrameApplied;
-}
-
-export function frameSink(key: string, onFrame: (frame: FrameContent) => void, token?: number): FrameSink {
+export async function streamInto(
+  key: string, load: boolean, onFrame: (frame: FrameContent) => void, run: (onMessage: (message: FrameMessage) => void) => Promise<NodeResult>,
+): Promise<{ result: NodeResult; applied: FrameApplied }> {
+  const token = load ? startFrameLoad(key) : undefined;
   let applied: FrameApplied = { kind: 'unchanged' };
-  return {
-    onMessage: (message) => {
-      const result = applyToFrameSession(key, [message], token);
-      if (result.kind === 'unchanged') return;
-      applied = result;
-      if (result.kind === 'frame') onFrame(result.frame);
-    },
-    applied: () => applied,
-  };
+  try {
+    const result = await run((message) => {
+      const step = applyToFrameSession(key, [message], token);
+      if (step.kind === 'unchanged') return;
+      applied = step;
+      if (step.kind === 'frame') onFrame(step.frame);
+    });
+    return { result, applied };
+  } finally {
+    const session = sessions.get(key);
+    if (token !== undefined && session?.loading?.token === token) session.loading = null;
+  }
 }
 
 export function rejectAgentCall(key: string, functionCallId: string): void {
@@ -164,4 +179,5 @@ export function rejectAgentCall(key: string, functionCallId: string): void {
 
 export function clearFrameSessions(): void {
   sessions.clear();
+  engagedKeys.clear();
 }

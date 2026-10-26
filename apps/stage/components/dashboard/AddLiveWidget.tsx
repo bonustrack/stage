@@ -10,13 +10,9 @@ import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { LabelChip } from '../LabelChip';
-import { capabilities } from '../../lib/capabilities';
-import { addLiveToDashboard } from '../../lib/dashboard';
-import { report } from '../../lib/errorPolicy';
-import { seedLiveWidget } from '../../lib/liveWidget';
+import { addLivePreview } from '../../lib/liveWidget';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { FRAME_ADD_TOASTS } from './dashboard.model';
-import { EMPTY_LIVE, NODE_URL_HINTS, livePreviewOf, liveStateAfter, type LivePreview } from './liveWidget.model';
+import { NODE_URL_HINTS, livePreviewOf, type LivePreview } from './liveWidget.model';
 import { NodeCodeForm } from './NodeCodeForm';
 import { Column, Row } from '../layout';
 
@@ -61,7 +57,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
     if (!node.ok) { setHint(NODE_URL_HINTS[node.problem]); return; }
     setBusy(true);
     setPreview(null);
-    const loaded = livePreviewOf(node.url, node.host, liveStateAfter(EMPTY_LIVE, await loadNode(node.url, key, { capabilities: RENDERER_CAPABILITIES }), Date.now()));
+    const loaded = livePreviewOf(node, await loadNode(node.url, key, { capabilities: RENDERER_CAPABILITIES }), Date.now());
     setBusy(false);
     if (typeof loaded === 'string') setHint(loaded);
     else setPreview(loaded);
@@ -69,16 +65,8 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
 
   const add = async (picked: LivePreview): Promise<void> => {
     setBusy(true);
-    try {
-      const { outcome, id } = await addLiveToDashboard({ url: picked.url, key }, 'half');
-      if (outcome === 'added') seedLiveWidget(id, picked.url, picked.state);
-      capabilities.toast(FRAME_ADD_TOASTS[outcome]);
-      onDone();
-    } catch (err) {
-      report('dashboard.addLive', err);
-      capabilities.toast('Could not add it to your dashboard');
-      setBusy(false);
-    }
+    if (await addLivePreview(picked, key, 'dashboard.addLive')) onDone();
+    else setBusy(false);
   };
 
   const submit = (): void => {

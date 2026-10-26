@@ -38,10 +38,10 @@ The menu of a live widget (the three dots) has Refresh, which loads the node aga
 
 ## Renderer messages
 
-Everything the A2UI renderer sends is POSTed to the node, signed, one message per request, as is:
+Everything the A2UI renderer sends is POSTed to the node, signed, one message per request, as is. On the Dashboard that starts when the widget loads. In a chat, a frame stays silent until someone taps it or picks Refresh: the other messages (function calls, error reports) wait until then, and a frame whose chat is not accepted sends nothing.
 
 - `action`: a component with an event action (a Button, a ListViewItem) was used.
-- `callAgentFunction`: a component evaluates a function its catalog declares but Stage does not implement, which A2UI routes to the agent under its own name. The basic and Kit catalogs declare none today, so this comes into play once a catalog Stage renders declares agent functions. The value shows as pending until the node answers, and a component asks once per name and arguments.
+- `callAgentFunction`: a component evaluates a function Stage does not implement, which A2UI routes to the agent under its own name. Component properties only validate with functions their catalog declares, and the basic and Kit catalogs declare none for agents today, so in practice this comes from function calls inside `formatString` templates. The value shows as pending until the node answers, and a component asks once per name and arguments.
 - `rendererFunctionResponse`: the answer to a `callRendererFunction` the node sent.
 - `error`: a message from the node failed validation (`VALIDATION_FAILED`, `UNALLOWED_PARENT`, `UNALLOWED_CHILD`, ...).
 

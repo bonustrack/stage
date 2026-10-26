@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { clearFrameSessions, endFrameLoad, frameSession, frameSink, startFrameLoad } from '../lib/frameSession';
+import { clearFrameSessions, frameSession } from '../lib/frameSession';
 import { makeLiveFrames } from '../lib/liveFrame.core';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf, titleMessages } from './frameFixtures';
 
@@ -17,7 +17,7 @@ type Answer = (onMessage: OnMessage, load: boolean) => Promise<NodeResult>;
 
 const streamed = (messages: FrameMessage[]): Answer => (onMessage, load) => {
   for (const message of messages) onMessage(message);
-  return Promise.resolve({ ok: true, reply: { kind: 'streamed', count: messages.length, load } });
+  return Promise.resolve({ ok: true, reply: { kind: 'streamed', load } });
 };
 
 const failing = (result: NodeResult): Answer => () => Promise.resolve(result);
@@ -30,7 +30,6 @@ function harness() {
   const frames = makeLiveFrames({
     load: (url, key, onMessage) => { calls.push({ method: 'GET', url, key }); return answer(onMessage, true); },
     send: (url, key, request, onMessage) => { calls.push({ method: 'POST', url, key, request }); return answer(onMessage, false); },
-    sessions: { start: startFrameLoad, end: endFrameLoad, sink: frameSink },
     newKey: () => { keys += 1; return `key${keys}`; },
     now: () => 5_000,
     toast: (message) => { toasts.push(message); },
@@ -68,7 +67,7 @@ describe('live frames in chats', () => {
       onMessage(NEXT[0] ?? {});
       await rest.promise;
       onMessage({ version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$102' }] } });
-      return { ok: true, reply: { kind: 'streamed', count: 2, load } };
+      return { ok: true, reply: { kind: 'streamed', load } };
     });
     const pending = h.frames.refresh('m1', SENT, NODE);
     await Promise.resolve();
@@ -170,7 +169,7 @@ describe('live frames in chats', () => {
     h.reply(async (onMessage, load) => {
       await slow.promise;
       onMessage(NEXT[0] ?? {});
-      return { ok: true, reply: { kind: 'streamed', count: 1, load } };
+      return { ok: true, reply: { kind: 'streamed', load } };
     });
     const first = h.frames.refresh('m1', SENT, NODE);
     h.reply(streamed(LATER));

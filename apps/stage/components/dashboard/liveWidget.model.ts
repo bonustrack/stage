@@ -1,9 +1,8 @@
-import { type NodeProblem, type NodeResult, type NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
+import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
 import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
-import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
+import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import type { FrameApplied } from '../../lib/frameSession';
-import { frameContentSchema } from '@stage-labs/client/xmtp/frame.schema';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
 import { frameRenders } from '../frame/frame.model';
 
@@ -59,12 +58,6 @@ export function ownsHostedNode(source: LiveSource): boolean {
 
 export interface LivePreview { url: string; host: string; frame: FrameContent; state: LiveState }
 
-export function livePreviewOf(url: string, host: string, state: LiveState): LivePreview | string {
-  const problem = liveProblemText(state);
-  if (problem !== null || state.frame === null) return `Could not load it: ${(problem ?? 'no widget').toLowerCase()}`;
-  return { url, host, frame: state.frame, state };
-}
-
 export const NODE_DELETE_FAILED = {
   title: 'Could not delete the node',
   message: 'Remove the widget anyway? The node then stays online.',
@@ -89,33 +82,25 @@ function fresh(frame: FrameContent, now: number): LiveState {
   return { frame, at: now, problem: null, status: null, failures: 0 };
 }
 
-export type ApplyMessages = (messages: readonly FrameMessage[]) => FrameApplied;
-
-const APPLY_NOTHING: ApplyMessages = () => ({ kind: 'invalid' });
-
-function loaded(prev: LiveState, applied: FrameApplied, now: number): LiveState {
-  return applied.kind === 'frame' ? fresh(applied.frame, now) : failed(prev, 'invalid');
-}
-
-type ApplicableReply = Extract<NodeResult, { ok: true }>['reply'];
-
-function confirmed(prev: LiveState, now: number): LiveState {
-  return { ...prev, at: now, problem: null, status: null, failures: 0 };
-}
-
-function settled(prev: LiveState, reply: ApplicableReply, now: number, apply: ApplyMessages): LiveState {
+function settled(prev: LiveState, step: FrameApplied, now: number): LiveState {
   if (prev.frame === null) return failed(prev, 'empty');
-  const applied = reply.kind === 'unchanged' ? reply : apply(reply.kind === 'messages' ? reply.messages : []);
-  if (applied.kind === 'invalid') return failed(prev, 'invalid');
-  return applied.kind === 'frame' ? fresh(applied.frame, now) : confirmed(prev, now);
+  if (step.kind === 'invalid') return failed(prev, 'invalid');
+  return fresh(step.kind === 'frame' ? step.frame : prev.frame, now);
 }
 
-export function liveStateAfter(prev: LiveState, result: NodeResult, now: number, apply: ApplyMessages = APPLY_NOTHING): LiveState {
+export function liveStateAfter(prev: LiveState, result: NodeResult, now: number, applied: FrameApplied = { kind: 'invalid' }): LiveState {
   if (!result.ok) return failed(prev, result.problem, result.status ?? null);
   const { reply } = result;
   if (reply.kind === 'frame') return frameRenders(reply.frame) ? fresh(reply.frame, now) : failed(prev, 'invalid');
-  if (reply.kind === 'streamed' && reply.load) return loaded(prev, apply([]), now);
-  return settled(prev, reply, now, apply);
+  if (reply.kind === 'streamed' && reply.load) return applied.kind === 'frame' ? fresh(applied.frame, now) : failed(prev, 'invalid');
+  return settled(prev, reply.kind === 'unchanged' ? reply : applied, now);
+}
+
+export function livePreviewOf(node: { url: string; host: string }, result: NodeResult, now: number): LivePreview | string {
+  const state = liveStateAfter(EMPTY_LIVE, result, now);
+  const problem = liveProblemText(state);
+  if (problem !== null || state.frame === null) return `Could not load it: ${(problem ?? 'no widget').toLowerCase()}`;
+  return { url: node.url, host: node.host, frame: state.frame, state };
 }
 
 export function liveRefreshDelay(state: LiveState | undefined): number {
@@ -138,26 +123,18 @@ export function liveStatusText(state: LiveState | undefined, timeOf: (ms: number
   return state.at === null ? problem : `${problem} · ${timeOf(state.at)}`;
 }
 
-function snapshotJson(raw: string): unknown {
+function snapshotJson(raw: string | null): { frame?: unknown; at?: unknown } {
   try {
-    return JSON.parse(raw);
+    return (JSON.parse(raw ?? 'null') ?? {}) as { frame?: unknown; at?: unknown };
   } catch {
-    return null;
+    return {};
   }
 }
 
-function snapshotFrame(frame: unknown): FrameContent | null {
-  const parsed = frameContentSchema.safeParse(frame);
-  return parsed.success && frameRenders(parsed.data) ? parsed.data : null;
-}
-
 export function liveSnapshotOf(raw: string | null): LiveState {
-  const json = raw === null ? null : snapshotJson(raw);
-  if (typeof json !== 'object' || json === null) return EMPTY_LIVE;
-  const { frame, at } = json as { frame?: unknown; at?: unknown };
-  const saved = snapshotFrame(frame);
-  if (saved === null || typeof at !== 'number') return EMPTY_LIVE;
-  return { ...EMPTY_LIVE, frame: saved, at };
+  const { frame, at } = snapshotJson(raw);
+  const parsed = frameContentSchema.safeParse(frame);
+  return typeof at === 'number' && parsed.success && frameRenders(parsed.data) ? { ...EMPTY_LIVE, frame: parsed.data, at } : EMPTY_LIVE;
 }
 
 export function liveSnapshotJson(state: LiveState): string | null {

@@ -6,15 +6,14 @@ export const FRAME_ACTION_MAX_CHARS = 16 * 1024;
 
 export const FRAME_MAX_COMPONENTS = 500;
 
+export const FRAME_MAX_MESSAGES = 200;
+
 export const A2UI_MESSAGE_VERSION = 'v1.0';
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 1000;
 const MAX_ID = 200;
 const MAX_ACTION_NAME = 120;
-const MAX_MESSAGES = 200;
-
-export const FRAME_MAX_MESSAGES = MAX_MESSAGES;
 const MAX_SURFACE_ID = 120;
 const MAX_SOURCE_URL = 2048;
 const MAX_TIMESTAMP = 64;
@@ -36,11 +35,10 @@ type MessageKinds = Readonly<Record<string, (body: Record<string, unknown>) => b
 
 const withSurface = (body: Record<string, unknown>): boolean => surfaceIdSchema.safeParse(body.surfaceId).success;
 const withCallId = (body: Record<string, unknown>): boolean => functionCallIdSchema.safeParse(body.functionCallId).success;
-const anyBody = (): boolean => true;
 
 const SURFACE_KINDS: MessageKinds = { createSurface: withSurface, updateComponents: withSurface, updateDataModel: withSurface, deleteSurface: withSurface };
 const REPLY_KINDS: MessageKinds = { ...SURFACE_KINDS, callRendererFunction: withCallId, agentFunctionResponse: withCallId };
-const RENDERER_KINDS: MessageKinds = { action: withSurface, callAgentFunction: withCallId, rendererFunctionResponse: withCallId, error: anyBody };
+const RENDERER_KINDS: MessageKinds = { action: withSurface, callAgentFunction: withCallId, rendererFunctionResponse: withCallId, error: () => true };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -58,45 +56,37 @@ function a2uiMessage(kinds: MessageKinds, extraKeys: readonly string[]) {
   }, { message: `not one A2UI ${A2UI_MESSAGE_VERSION} message of an allowed kind` });
 }
 
-const messageSchema = a2uiMessage(SURFACE_KINDS, []);
-
-export const frameMessageSchema = messageSchema;
+export const frameMessageSchema = a2uiMessage(SURFACE_KINDS, []);
 
 export const nodeReplyMessageSchema = a2uiMessage(REPLY_KINDS, []);
 
-export type FrameMessage = z.infer<typeof messageSchema>;
+export const rendererMessageSchema = a2uiMessage(RENDERER_KINDS, ['metadata']);
 
-export const SURFACE_MESSAGE_KINDS: readonly string[] = Object.keys(SURFACE_KINDS);
+export type FrameMessage = z.infer<typeof frameMessageSchema>;
 
 export function isSurfaceMessage(message: Record<string, unknown>): boolean {
-  return SURFACE_MESSAGE_KINDS.some(kind => message[kind] !== undefined);
+  return Object.keys(SURFACE_KINDS).some(kind => message[kind] !== undefined);
 }
-
-export const nodeReplyMessagesSchema = z.array(nodeReplyMessageSchema).max(MAX_MESSAGES)
-  .refine(m => jsonChars(m) <= FRAME_MAX_CHARS, { message: `a reply is larger than ${FRAME_MAX_CHARS} characters` })
-  .refine(m => componentCount(m) <= FRAME_MAX_COMPONENTS, { message: `a reply has at most ${FRAME_MAX_COMPONENTS} components` });
-
-export const rendererMessageSchema = a2uiMessage(RENDERER_KINDS, ['metadata']);
 
 export function messageComponentCount(message: Record<string, unknown>): number {
   const body = (message.createSurface ?? message.updateComponents) as { components?: unknown } | undefined;
   return Array.isArray(body?.components) ? body.components.length : 0;
 }
 
-function componentCount(messages: readonly Record<string, unknown>[]): number {
-  return messages.reduce((sum, m) => sum + messageComponentCount(m), 0);
+function withinLimits(messages: readonly Record<string, unknown>[]): boolean {
+  return jsonChars(messages) <= FRAME_MAX_CHARS && messages.reduce((sum, m) => sum + messageComponentCount(m), 0) <= FRAME_MAX_COMPONENTS;
 }
 
-const messagesSchema = z.array(messageSchema).min(1).max(MAX_MESSAGES)
-  .refine(m => jsonChars(m) <= FRAME_MAX_CHARS, { message: `frame messages are larger than ${FRAME_MAX_CHARS} characters` })
-  .refine(m => componentCount(m) <= FRAME_MAX_COMPONENTS, { message: `a frame has at most ${FRAME_MAX_COMPONENTS} components` });
+const LIMITS = { message: `messages are over ${FRAME_MAX_CHARS} characters or ${FRAME_MAX_COMPONENTS} components` };
+
+export const nodeReplyMessagesSchema = z.array(nodeReplyMessageSchema).max(FRAME_MAX_MESSAGES).refine(withinLimits, LIMITS);
 
 export const frameSourceSchema = z.object({ url: z.string().trim().min(1).max(MAX_SOURCE_URL) });
 
 export const frameContentSchema = z.object({
   title: clipped(MAX_TITLE).optional(),
   description: clipped(MAX_DESCRIPTION).optional(),
-  messages: messagesSchema,
+  messages: z.array(frameMessageSchema).min(1).max(FRAME_MAX_MESSAGES).refine(withinLimits, LIMITS),
   start: surfaceIdSchema.optional(),
   source: frameSourceSchema.optional().catch(undefined),
 });

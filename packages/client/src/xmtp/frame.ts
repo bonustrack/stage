@@ -11,47 +11,34 @@ export const FRAME_ACTION_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box', typeId: 'frameAction', versionMajor: 2, versionMinor: 0,
 };
 
-export interface FrameSummary { title?: string; description?: string }
-
 interface Component { id?: unknown; component?: unknown; text?: unknown; variant?: unknown }
 
-function bodyOf(message: FrameMessage): { surfaceId?: unknown; components?: unknown } | undefined {
-  return (message.createSurface ?? message.updateComponents) as { surfaceId?: unknown; components?: unknown } | undefined;
-}
-
-export function frameSurfaceIds(messages: readonly FrameMessage[]): string[] {
-  const ids = messages.map(m => (m.createSurface as { surfaceId?: unknown } | undefined)?.surfaceId);
-  return [...new Set(ids.filter((id): id is string => typeof id === 'string'))];
-}
+type Body = { surfaceId?: unknown; components?: unknown } | undefined;
 
 export function frameStartSurface(frame: Pick<FrameContent, 'messages' | 'start'>): string | undefined {
-  const ids = frameSurfaceIds(frame.messages);
+  const ids = frame.messages.map(m => (m.createSurface as Body)?.surfaceId).filter((id): id is string => typeof id === 'string');
   return frame.start !== undefined && ids.includes(frame.start) ? frame.start : ids[0];
 }
 
 function surfaceComponents(messages: readonly FrameMessage[], surfaceId: string): Component[] {
   const byId = new Map<unknown, Component>();
   for (const message of messages) {
-    const body = bodyOf(message);
+    const body = (message.createSurface ?? message.updateComponents) as Body;
     if (body?.surfaceId !== surfaceId || !Array.isArray(body.components)) continue;
     for (const c of body.components as Component[]) byId.set(c.id, c);
   }
   return [...byId.values()];
 }
 
-function literal(value: unknown): string | undefined {
-  const text = typeof value === 'string' ? value.trim() : '';
-  return text === '' ? undefined : text;
-}
-
-export function frameSummaryOf(frame: Pick<FrameContent, 'messages' | 'start'>, surfaceId = frameStartSurface(frame)): FrameSummary {
-  if (surfaceId === undefined) return {};
-  const components = surfaceComponents(frame.messages, surfaceId);
-  const titles = components.filter(c => c.component === 'Title').map(c => literal(c.text));
-  const texts = components.filter(c => c.component === 'Text' && c.variant !== 'caption').map(c => literal(c.text));
-  const title = titles.find(t => t !== undefined) ?? texts.find(t => t !== undefined);
-  const description = texts.find(t => t !== undefined && t !== title);
-  return { ...(title === undefined ? {} : { title }), ...(description === undefined ? {} : { description }) };
+export function frameSummaryOf(
+  frame: Pick<FrameContent, 'messages' | 'start'>, surfaceId = frameStartSurface(frame),
+): { title?: string; description?: string } {
+  const components = surfaceId === undefined ? [] : surfaceComponents(frame.messages, surfaceId);
+  const textsOf = (match: (c: Component) => boolean): string[] =>
+    components.filter(match).map(c => (typeof c.text === 'string' ? c.text.trim() : '')).filter(text => text !== '');
+  const texts = textsOf(c => c.component === 'Text' && c.variant !== 'caption');
+  const title = textsOf(c => c.component === 'Title')[0] ?? texts[0];
+  return { title, description: texts.find(text => text !== title) };
 }
 
 export function frameFallbackText(frame: FrameContent): string {
@@ -60,8 +47,8 @@ export function frameFallbackText(frame: FrameContent): string {
 }
 
 export function frameActionText(content: { label?: string; action: { name: string; userMessage?: string } }): string {
-  const label = content.label ?? content.action.userMessage;
-  return label === undefined || label === '' ? `Tapped ${content.action.name}` : `Tapped "${label}"`;
+  const label = [content.label, content.action.userMessage].find(text => text !== undefined && text.trim() !== '');
+  return label === undefined ? `Tapped ${content.action.name}` : `Tapped "${label}"`;
 }
 
 export function frameActionFallbackText(content: FrameActionContent): string {
