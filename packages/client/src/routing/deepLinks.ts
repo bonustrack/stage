@@ -51,7 +51,6 @@ function conversationRoute(
   return { pathname, params: { convId, ...(m ? { m } : {}), ...(focus ? { focus } : {}) } };
 }
 
-
 const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
   settings: { pathname: '/(tabs)/settings' },

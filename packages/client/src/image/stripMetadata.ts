@@ -5,8 +5,6 @@ export interface StripResult {
   format: 'jpeg' | 'png' | 'webp' | 'unsupported';
 }
 
-const u8 = (a: number | undefined, b: number): boolean => a === b;
-
 interface TiffReader {
   u16: (o: number) => number;
   u32: (o: number) => number;
@@ -158,33 +156,24 @@ function stripWebp(b: Uint8Array): Uint8Array {
   return Uint8Array.from([...head, ...body]);
 }
 
-function isJpeg(b: Uint8Array): boolean {
-  return b.length >= 3 && u8(b[0], 0xff) && u8(b[1], 0xd8) && u8(b[2], 0xff);
-}
-
-function isPng(b: Uint8Array): boolean {
-  return b.length >= 8 && u8(b[0], 0x89) && u8(b[1], 0x50) && u8(b[2], 0x4e) && u8(b[3], 0x47)
-    && u8(b[4], 0x0d) && u8(b[5], 0x0a) && u8(b[6], 0x1a) && u8(b[7], 0x0a);
-}
-
-function isWebp(b: Uint8Array): boolean {
-  return b.length >= 12 && u8(b[0], 0x52) && u8(b[1], 0x49) && u8(b[2], 0x46) && u8(b[3], 0x46)
-    && u8(b[8], 0x57) && u8(b[9], 0x45) && u8(b[10], 0x42) && u8(b[11], 0x50);
+function hasBytes(b: Uint8Array, at: number, expected: readonly number[]): boolean {
+  return expected.every((value, i) => b[at + i] === value);
 }
 
 function detect(b: Uint8Array): StripResult['format'] {
-  if (isJpeg(b)) return 'jpeg';
-  if (isPng(b)) return 'png';
-  if (isWebp(b)) return 'webp';
+  if (hasBytes(b, 0, [0xff, 0xd8, 0xff])) return 'jpeg';
+  if (hasBytes(b, 0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return 'png';
+  if (hasBytes(b, 0, [0x52, 0x49, 0x46, 0x46]) && hasBytes(b, 8, [0x57, 0x45, 0x42, 0x50])) return 'webp';
   return 'unsupported';
 }
 
+const STRIPPERS: Partial<Record<StripResult['format'], (b: Uint8Array) => Uint8Array>> = { jpeg: stripJpeg, png: stripPng, webp: stripWebp };
+
 export function stripMetadataBytes(input: Uint8Array): StripResult {
   const format = detect(input);
+  const strip = STRIPPERS[format];
   try {
-    if (format === 'jpeg') return { bytes: stripJpeg(input), stripped: true, format };
-    if (format === 'png') return { bytes: stripPng(input), stripped: true, format };
-    if (format === 'webp') return { bytes: stripWebp(input), stripped: true, format };
+    if (strip) return { bytes: strip(input), stripped: true, format };
   } catch {
     return { bytes: input, stripped: false, format };
   }

@@ -5,15 +5,6 @@ export function dbDirFor(id: string): string {
   return `xmtp-${id}`;
 }
 
-function buildLocalAccount(
-  id: string,
-  address: string,
-  type: 'generated' | 'privateKey',
-  now: number = Date.now(),
-): AccountRecord {
-  return { id, address, type, dbDir: dbDirFor(id), registered: false, createdAt: now };
-}
-
 export interface AddLocalResult {
   list: AccountRecord[];
   record: AccountRecord;
@@ -28,7 +19,7 @@ export function addLocalAccountToList(
 ): AddLocalResult {
   const existing = list.find(a => a.id === id);
   if (existing) return { list, record: existing };
-  const rec = buildLocalAccount(id, address, type, now);
+  const rec: AccountRecord = { id, address, type, dbDir: dbDirFor(id), registered: false, createdAt: now };
   return { list: [...list, rec], record: rec };
 }
 

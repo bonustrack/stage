@@ -1,5 +1,5 @@
 
-import { parseOrThrow, type BoundaryName, type OutputSchema } from '../validate';
+import { parseOrThrow, type OutputSchema } from '../validate';
 
 export interface XmtpContentTypeId {
   authorityId: string;
@@ -44,11 +44,6 @@ export function encodeJsonContent(
   };
 }
 
-export function decodeJsonContent<T>(
-  bytes: Uint8Array,
-  schema?: OutputSchema<T>,
-  where: BoundaryName = 'xmtp.codec',
-): T {
-  const data: unknown = JSON.parse(new TextDecoder().decode(bytes));
-  return schema ? parseOrThrow(where, schema, data) : (data as T);
+export function decodeJsonContent<T>(bytes: Uint8Array, schema: OutputSchema<T>, where = 'xmtp.codec'): T {
+  return parseOrThrow(where, schema, JSON.parse(new TextDecoder().decode(bytes)));
 }

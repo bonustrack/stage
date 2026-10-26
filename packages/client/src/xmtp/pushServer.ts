@@ -50,6 +50,10 @@ export interface PushSubscriptionJson {
   isSilent: boolean;
 }
 
+function hmacKeysJson(keys: readonly HmacKeyData[] | undefined): { thirtyDayPeriodsSinceEpoch: number; key: string }[] {
+  return (keys ?? []).map((k) => ({ thirtyDayPeriodsSinceEpoch: k.thirtyDayPeriodsSinceEpoch, key: bytesToBase64(k.hmacKey) }));
+}
+
 export function registerInstallationBody(installationId: string, token: string, platform: PushPlatform): {
   installationId: string;
   deliveryMechanism: { firebaseDeviceToken: string } | { apnsDeviceToken: string };
@@ -68,14 +72,7 @@ export function subscribeWithMetadataBody(
   hmacKeys: HmacKeysByTopic,
   isSilent: (topic: string) => boolean,
 ): { installationId: string; subscriptions: PushSubscriptionJson[] } {
-  const subscriptions = topics.map((topic) => ({
-    topic,
-    hmacKeys: (hmacKeys[topic] ?? []).map((k) => ({
-      thirtyDayPeriodsSinceEpoch: k.thirtyDayPeriodsSinceEpoch,
-      key: bytesToBase64(k.hmacKey),
-    })),
-    isSilent: isSilent(topic),
-  }));
+  const subscriptions = topics.map((topic) => ({ topic, hmacKeys: hmacKeysJson(hmacKeys[topic]), isSilent: isSilent(topic) }));
   return { installationId, subscriptions };
 }
 
@@ -111,9 +108,12 @@ export function pushGroupKeyMessage(address: string): string {
   return `stage.box push device group v1 for ${address.toLowerCase()}`;
 }
 
-export async function derivePushGroupKey(address: string, signOwnerMessage: (message: string) => Promise<Hex>): Promise<string> {
-  const signature = await stableOwnerSignature(pushGroupKeyMessage(address), signOwnerMessage);
-  return bytesToHex(sha256(hexToBytes(signature)));
+async function signatureGroupKey(message: string, signOwnerMessage: (message: string) => Promise<Hex>): Promise<string> {
+  return bytesToHex(sha256(hexToBytes(await stableOwnerSignature(message, signOwnerMessage))));
+}
+
+export function derivePushGroupKey(address: string, signOwnerMessage: (message: string) => Promise<Hex>): Promise<string> {
+  return signatureGroupKey(pushGroupKeyMessage(address), signOwnerMessage);
 }
 
 export function joinDeviceGroupBody(installationId: string, groupKey: string): { installationId: string; groupKey: string } {
@@ -138,20 +138,14 @@ export const SENDER_FILTER_BATCH_SIZE = 256;
 export function senderFilterTopics(topics: readonly string[], keys: HmacKeysByTopic): SenderFilterTopic[] {
   return [...new Set(topics)].filter(topic => !isWelcomeTopic(topic)).sort().map(topic => ({
     topic,
-    hmacKeys: (keys[topic] ?? []).map(key => ({
-      thirtyDayPeriodsSinceEpoch: key.thirtyDayPeriodsSinceEpoch,
-      key: bytesToBase64(key.hmacKey),
-    })).sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
+    hmacKeys: hmacKeysJson(keys[topic]).sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
   })).filter(topic => topic.hmacKeys.length > 0);
 }
 
-export async function deriveSenderFilterGroupKey(
+export function deriveSenderFilterGroupKey(
   address: string, inboxId: string, signOwnerMessage: (message: string) => Promise<Hex>,
 ): Promise<string> {
-  const signature = await stableOwnerSignature(
-    `stage.box sender filter group v1 for ${address.toLowerCase()} inbox ${inboxId.toLowerCase()}`, signOwnerMessage,
-  );
-  return bytesToHex(sha256(hexToBytes(signature)));
+  return signatureGroupKey(`stage.box sender filter group v1 for ${address.toLowerCase()} inbox ${inboxId.toLowerCase()}`, signOwnerMessage);
 }
 
 export function senderFilterSignatureText(payload: string): string {

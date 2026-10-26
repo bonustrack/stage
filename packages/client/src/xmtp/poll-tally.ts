@@ -83,7 +83,7 @@ export function votesByPoll(
     const k = parseVoteKey(e.content);
     return k?.q === questionIndex ? k.o : null;
   };
-  return multiSelect ? multiSelectVotes(events, optOf) : singleSelectVotes(events, optOf);
+  return latestVotes(events, optOf, multiSelect ? (voter, idx) => `${voter} ${idx}` : voter => voter);
 }
 
 function addVoter(out: Map<number, Set<string>>, idx: number, voter: string): void {
@@ -92,36 +92,21 @@ function addVoter(out: Map<number, Set<string>>, idx: number, voter: string): vo
   s.add(voter);
 }
 
-function multiSelectVotes(
+function latestVotes(
   events: VoteEvent[],
   optOf: (e: VoteEvent) => number | null,
+  keyOf: (voter: string, idx: number) => string,
 ): Map<number, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean; idx: number; voter: string }>();
   for (const e of events) {
     const idx = optOf(e);
     if (idx === null) continue;
-    const key = `${e.voter} ${idx}`;
+    const key = keyOf(e.voter, idx);
     const cur = latest.get(key);
     if (!cur || cur.ts < e.ts) latest.set(key, { ts: e.ts, removed: !!e.removed, idx, voter: e.voter });
   }
   const out = new Map<number, Set<string>>();
   for (const v of latest.values()) if (!v.removed) addVoter(out, v.idx, v.voter);
-  return out;
-}
-
-function singleSelectVotes(
-  events: VoteEvent[],
-  optOf: (e: VoteEvent) => number | null,
-): Map<number, Set<string>> {
-  const latest = new Map<string, { ts: string; removed: boolean; idx: number }>();
-  for (const e of events) {
-    const idx = optOf(e);
-    if (idx === null) continue;
-    const cur = latest.get(e.voter);
-    if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, idx });
-  }
-  const out = new Map<number, Set<string>>();
-  for (const [voter, v] of latest) if (!v.removed) addVoter(out, v.idx, voter);
   return out;
 }
 

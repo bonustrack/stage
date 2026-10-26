@@ -43,21 +43,16 @@ function createFailed(err: unknown): Error {
   return new Error(`Couldn't create the channel: ${errorMessage(err)}`);
 }
 
+const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
+
 export function mapCreateGroupError(err: unknown): Error {
-  if (isNoInboxError(errorMessage(err))) {
-    return new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
-  }
-  return createFailed(err);
+  return isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
 }
 
 export function mapAddMembersError(err: unknown): Error {
   const msg = errorMessage(err);
-  if (isNoInboxError(msg)) {
-    return new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
-  }
-  if (isPermissionError(msg)) {
-    return new Error('Only a channel admin can add members.');
-  }
+  if (isNoInboxError(msg)) return new Error(NOT_ON_XMTP);
+  if (isPermissionError(msg)) return new Error('Only a channel admin can add members.');
   return new Error(`Couldn't add members: ${msg}`);
 }
 

@@ -3,7 +3,6 @@ import {
   deriveBarLabels,
   filterChannelRows,
   rowMatchesQuery,
-  sortChannelRows,
   type ChannelListRow,
 } from '../src/xmtp/channelsFilter';
 
@@ -48,19 +47,6 @@ describe('rowMatchesQuery', () => {
     const r = row({ convId: 'x', title: 'say hi', lastPreview: 'bob: yes' });
     expect(rowMatchesQuery(r, 'hi bob')).toBe(false);
     expect(rowMatchesQuery(r, 'say hi')).toBe(true);
-  });
-});
-
-describe('sortChannelRows', () => {
-  test('pinned first, then lastTs descending', () => {
-    const rows = [
-      row({ convId: 'old', lastTs: 1 }),
-      row({ convId: 'new', lastTs: 9 }),
-      row({ convId: 'pin', lastTs: 2 }),
-    ];
-    expect(sortChannelRows(rows, ['pin']).map(r => r.convId)).toEqual(['pin', 'new', 'old']);
-    expect(sortChannelRows(rows, ['old', 'pin']).map(r => r.convId)).toEqual(['old', 'pin', 'new']);
-    expect(sortChannelRows(rows).map(r => r.convId)).toEqual(['new', 'pin', 'old']);
   });
 });
 

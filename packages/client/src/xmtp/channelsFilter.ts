@@ -1,4 +1,3 @@
-import { savedFirst } from './pinOrder';
 export interface ChannelListRow {
   convId: string;
   title: string;
@@ -42,13 +41,6 @@ export function filterChannelRows<T extends ChannelListRow>(
   const q = filter.query?.trim().toLowerCase() ?? '';
   if (q) out = out.filter(r => rowMatchesQuery(r, q));
   return out;
-}
-
-export function sortChannelRows<T extends ChannelListRow>(
-  rows: T[],
-  pinnedOrder: readonly string[] = [],
-): T[] {
-  return savedFirst(rows, pinnedOrder, r => r.convId, (a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
 }
 
 export function deriveBarLabels(rows: readonly { labels?: string[] }[]): string[] {

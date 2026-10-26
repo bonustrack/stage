@@ -3,18 +3,10 @@ import {
   attachmentKindOf, humanizeGroupUpdated, isGroupUpdateTypeId, LEAVE_REQUEST_TYPE_ID, LEFT_CHANNEL_TEXT,
   type GroupUpdatedContent,
 } from './humanize';
-import { type PollContent, pollFallbackText } from './poll';
-import {
-  type SignatureRequestContent, type SignatureReferenceContent,
-  signatureRequestFallbackText, signatureReferenceFallbackText,
-} from './sign';
-import {
-  type WalletSendCallsContent, type TransactionReferenceContent,
-  walletSendCallsFallbackText, transactionReferenceFallbackText,
-} from './tx';
-import {
-  type FrameActionContent, type FrameContent, frameActionText, frameFallbackText,
-} from './frame';
+import { pollFallbackText } from './poll';
+import { signatureRequestFallbackText, signatureReferenceFallbackText } from './sign';
+import { walletSendCallsFallbackText, transactionReferenceFallbackText } from './tx';
+import { type FrameActionContent, frameActionText, frameFallbackText } from './frame';
 import { XMTP_USER_PREFIX } from './line';
 import { parseCallInvite, parseCallSignal } from './call';
 import {
@@ -167,32 +159,18 @@ function callEnvelope(key: 'callInvite' | 'callSignal', parse: (decoded: unknown
   };
 }
 
+function contentEnvelope(key: string, textOf: (content: never) => string): Handler {
+  return (base, typeId, decoded) => ({ ...base, text: textOf(decoded as never), payload: { contentType: typeId, [key]: decoded } });
+}
+
 const ENVELOPE_HANDLERS: Record<string, Handler> = {
   reaction: reactionEnvelope,
-  poll: (base, typeId, decoded) => ({
-    ...base, text: pollFallbackText(decoded as PollContent),
-    payload: { contentType: typeId, poll: decoded as PollContent },
-  }),
-  signatureRequest: (base, typeId, decoded) => ({
-    ...base, text: signatureRequestFallbackText(decoded as SignatureRequestContent),
-    payload: { contentType: typeId, signatureRequest: decoded as SignatureRequestContent },
-  }),
-  signatureReference: (base, typeId, decoded) => ({
-    ...base, text: signatureReferenceFallbackText(decoded as SignatureReferenceContent),
-    payload: { contentType: typeId, signatureReference: decoded as SignatureReferenceContent },
-  }),
-  walletSendCalls: (base, typeId, decoded) => ({
-    ...base, text: walletSendCallsFallbackText(decoded as WalletSendCallsContent),
-    payload: { contentType: typeId, walletSendCalls: decoded as WalletSendCallsContent },
-  }),
-  transactionReference: (base, typeId, decoded) => ({
-    ...base, text: transactionReferenceFallbackText(decoded as TransactionReferenceContent),
-    payload: { contentType: typeId, txReference: decoded as TransactionReferenceContent },
-  }),
-  frame: (base, typeId, decoded) => ({
-    ...base, text: frameFallbackText(decoded as FrameContent),
-    payload: { contentType: typeId, frame: decoded as FrameContent },
-  }),
+  poll: contentEnvelope('poll', pollFallbackText),
+  signatureRequest: contentEnvelope('signatureRequest', signatureRequestFallbackText),
+  signatureReference: contentEnvelope('signatureReference', signatureReferenceFallbackText),
+  walletSendCalls: contentEnvelope('walletSendCalls', walletSendCallsFallbackText),
+  transactionReference: contentEnvelope('txReference', transactionReferenceFallbackText),
+  frame: contentEnvelope('frame', frameFallbackText),
   frameAction: (base, typeId, decoded) => {
     const content = decoded as FrameActionContent;
     return {

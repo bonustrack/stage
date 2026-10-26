@@ -1,4 +1,4 @@
-import { bytesToHex, type TypedDataDefinition, type Hex } from 'viem';
+import { bytesToHex, zeroAddress, type TypedDataDefinition, type Hex } from 'viem';
 import { utf8ToBase64 } from '../text/base64';
 import type { X402Accept } from './challenge';
 import { KNOWN_TOKENS } from '../wallet/txConfirm';
@@ -34,7 +34,7 @@ export function x402ChainNumber(network: string): number {
 }
 
 export function x402AssetForAvatar(accept: X402Accept): string {
-  return accept.asset ?? '0x0000000000000000000000000000000000000000';
+  return accept.asset ?? zeroAddress;
 }
 
 export function formatAtomic(amount: string, decimals: number): string | undefined {
@@ -165,7 +165,7 @@ export function buildTypedData(
       name,
       version,
       chainId,
-      verifyingContract: (accept.asset ?? '0x0000000000000000000000000000000000000000') as Hex,
+      verifyingContract: (accept.asset ?? zeroAddress) as Hex,
     },
     types: TRANSFER_WITH_AUTHORIZATION_TYPES,
     primaryType: 'TransferWithAuthorization',

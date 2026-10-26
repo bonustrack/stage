@@ -1,4 +1,4 @@
-import { base64ToBytes } from '../text/base64';
+import { base64ToBytes, binaryString } from '../text/base64';
 
 export type MailHeaders = ReadonlyMap<string, string>;
 
@@ -11,8 +11,6 @@ export interface MailAddress {
   name: string;
   address: string;
 }
-
-const CHUNK = 0x8000;
 
 export const CP1252_HIGH: Readonly<Record<number, number>> = {
   0x80: 0x20ac, 0x82: 0x201a, 0x83: 0x0192, 0x84: 0x201e, 0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021,
@@ -30,12 +28,6 @@ const ENCODED_WORD = /=\?([^?\s]+)\?([bBqQ])\?([^?\s]*)\?=/g;
 const BETWEEN_WORDS = /(=\?[^?\s]+\?[bBqQ]\?[^?\s]*\?=)\s+(?==\?[^?\s]+\?[bBqQ]\?[^?\s]*\?=)/g;
 const EXTENDED_PARAM = /^([^*]+)(?:\*(\d+))?(\*)?$/;
 
-export function binaryString(bytes: Uint8Array): string {
-  let out = '';
-  for (let i = 0; i < bytes.length; i += CHUNK) out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  return out;
-}
-
 export function binaryBytes(text: string): Uint8Array {
   const out = new Uint8Array(text.length);
   for (let i = 0; i < text.length; i += 1) out[i] = text.charCodeAt(i) & 0xff;
@@ -43,10 +35,7 @@ export function binaryBytes(text: string): Uint8Array {
 }
 
 function windows1252(bytes: Uint8Array): string {
-  const codes = Array.from(bytes, (byte) => CP1252_HIGH[byte] ?? byte);
-  let out = '';
-  for (let i = 0; i < codes.length; i += CHUNK) out += String.fromCharCode(...codes.slice(i, i + CHUNK));
-  return out;
+  return binaryString(Uint16Array.from(bytes, (byte) => CP1252_HIGH[byte] ?? byte));
 }
 
 function namedDecoder(name: string, bytes: Uint8Array): string | null {

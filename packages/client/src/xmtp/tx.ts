@@ -50,10 +50,6 @@ export function requestAmountOf(req: WalletSendCallsContent | null | undefined):
   return verifiedAmountOf(call) ?? metaAmountOf(call.metadata);
 }
 
-function receiptAmountOf(receipt: TransactionReferenceContent | null | undefined): TxAmount | undefined {
-  return metaAmountOf(receipt?.metadata);
-}
-
 export function txAmountLabel(amount: TxAmount | undefined): string | undefined {
   return amount ? `${amount.value} ${amount.unit}` : undefined;
 }
@@ -64,7 +60,7 @@ export function paymentRequestPreview(req: WalletSendCallsContent | null | undef
 }
 
 export function receiptTitle(receipt: TransactionReferenceContent | null | undefined): string {
-  const label = txAmountLabel(receiptAmountOf(receipt));
+  const label = txAmountLabel(metaAmountOf(receipt?.metadata));
   return label ? `Payment sent · ${label}` : 'Transaction sent';
 }
 

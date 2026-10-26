@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { categoryOf, groupTagsOf, LabelPermissionError, writeCategory, writeLabels, type Group } from '../src/xmtp/labels';
+import { categoryOf, groupTagsOf, LabelPermissionError, writeChannelField, writeLabels, type Group } from '../src/xmtp/labels';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
 
@@ -26,20 +26,20 @@ describe('channel category', () => {
 
   test('sets, changes and clears one category while keeping the other fields', async () => {
     const state = appDataGroup(blob({ labels: ['Todo'], assigned: [], custom: 7 }));
-    expect(await writeCategory(state.group, ' Work ')).toBe('Work');
+    expect(await writeChannelField(state.group, 'category', ' Work ')).toBe('Work');
     expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo'], assigned: [], custom: 7, category: 'Work' });
-    expect(await writeCategory(state.group, 'Ops')).toBe('Ops');
+    expect(await writeChannelField(state.group, 'category', 'Ops')).toBe('Ops');
     expect(JSON.parse(state.raw()).category).toBe('Ops');
     await writeLabels(state.group, labels => [...labels, 'Stage']);
     expect(JSON.parse(state.raw()).category).toBe('Ops');
-    expect(await writeCategory(state.group, null)).toBeNull();
+    expect(await writeChannelField(state.group, 'category', null)).toBeNull();
     expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo', 'Stage'], assigned: [], custom: 7 });
-    expect(await writeCategory(state.group, '   ')).toBeNull();
+    expect(await writeChannelField(state.group, 'category', '   ')).toBeNull();
   });
 
   test('turns a permission failure into a readable error', async () => {
     const group: Group = { appData: '', updateAppData: () => Promise.reject(new Error('not authorized')) };
-    const failure = writeCategory(group, 'Work');
+    const failure = writeChannelField(group, 'category', 'Work');
     await expect(failure).rejects.toBeInstanceOf(LabelPermissionError);
     await expect(failure).rejects.toThrow("You don't have permission to edit the project in this channel.");
   });

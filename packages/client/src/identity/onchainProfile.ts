@@ -1,9 +1,9 @@
-import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBytes, type Hex, type PublicClient } from 'viem';
-
-export const PROFILE_TEXT_KEYS = { displayName: 'name', description: 'description', avatar: 'avatar' } as const;
+import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBytes, zeroAddress, type Hex, type PublicClient } from 'viem';
 import { normalize } from 'viem/ens';
 import { base } from 'viem/chains';
 import { broviderRpc } from '../wallet/client';
+
+export const PROFILE_TEXT_KEYS = { displayName: 'name', description: 'description', avatar: 'avatar' } as const;
 
 export const BASENAME_REGISTRY = '0xB94704422c2a1E396835A571837Aa5AE53285a95' as const;
 export const BASENAME_L2_RESOLVER = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD' as const;
@@ -83,41 +83,32 @@ export function baseProfileClient(): PublicClient {
   return cachedBaseClient;
 }
 
-const ZERO_ADDRESS: Hex = '0x0000000000000000000000000000000000000000';
-
-export async function nodeOwner(client: PublicClient, node: Hex): Promise<Hex | null> {
-  const owner: Hex = await client.readContract({
-    address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'owner', args: [node],
-  }).catch(() => ZERO_ADDRESS);
-  return owner === ZERO_ADDRESS ? null : owner;
+async function registryRecord(client: PublicClient, functionName: 'owner' | 'resolver', node: Hex): Promise<Hex | null> {
+  const value: Hex = await client.readContract({
+    address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [node],
+  }).catch(() => zeroAddress);
+  return value === zeroAddress ? null : value;
 }
 
 export async function resolveBasenameAddress(client: PublicClient, name: string): Promise<string | null> {
   const node = namehash(normalize(name));
-  const resolver = await resolverForNode(client, node);
+  const resolver = await registryRecord(client, 'resolver', node);
   if (!resolver) return null;
   const address = await client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node] });
-  if (address !== ZERO_ADDRESS) return address.toLowerCase();
-  return (await nodeOwner(client, node))?.toLowerCase() ?? null;
+  if (address !== zeroAddress) return address.toLowerCase();
+  return (await registryRecord(client, 'owner', node))?.toLowerCase() ?? null;
 }
 
 async function nameBelongsTo(client: PublicClient, node: Hex, forward: string, address: string): Promise<boolean> {
   const wanted = address.toLowerCase();
   if (forward.toLowerCase() === wanted) return true;
-  if (forward !== ZERO_ADDRESS) return false;
-  return (await nodeOwner(client, node))?.toLowerCase() === wanted;
-}
-
-export async function resolverForNode(client: PublicClient, node: Hex): Promise<Hex | null> {
-  const resolver: Hex = await client.readContract({
-    address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [node],
-  }).catch(() => ZERO_ADDRESS);
-  return resolver === ZERO_ADDRESS ? null : resolver;
+  if (forward !== zeroAddress) return false;
+  return (await registryRecord(client, 'owner', node))?.toLowerCase() === wanted;
 }
 
 async function primaryBasename(client: PublicClient, address: string): Promise<string | null> {
   const reverseNode = baseReverseNode(address);
-  const reverseResolver = (await resolverForNode(client, reverseNode)) ?? BASENAME_L2_RESOLVER;
+  const reverseResolver = (await registryRecord(client, 'resolver', reverseNode)) ?? BASENAME_L2_RESOLVER;
   const name = await client.readContract({
     address: reverseResolver, abi: L2_RESOLVER_ABI, functionName: 'name', args: [reverseNode],
   });
@@ -126,7 +117,7 @@ async function primaryBasename(client: PublicClient, address: string): Promise<s
 
 async function profileForName(client: PublicClient, name: string, address: string): Promise<OnchainProfile | null> {
   const node = namehash(normalize(name));
-  const resolverAddress = (await resolverForNode(client, node)) ?? BASENAME_L2_RESOLVER;
+  const resolverAddress = (await registryRecord(client, 'resolver', node)) ?? BASENAME_L2_RESOLVER;
   const resolver = { address: resolverAddress, abi: L2_RESOLVER_ABI } as const;
   const text = (key: string): Promise<string> =>
     client.readContract({ ...resolver, functionName: 'text', args: [node, key] }).catch(() => '');
@@ -155,10 +146,10 @@ export async function inspectNameSetup(
   const owner = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'owner', args: [node], blockNumber });
   if (owner.toLowerCase() !== address.toLowerCase()) return { owned: false, ready: false };
   const resolver = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [node], blockNumber });
-  if (resolver === ZERO_ADDRESS) return { owned: true, ready: false };
+  if (resolver === zeroAddress) return { owned: true, ready: false };
   const reverseNode = baseReverseNode(address);
   const reverseResolver = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [reverseNode], blockNumber });
-  if (reverseResolver === ZERO_ADDRESS) return { owned: true, ready: false };
+  if (reverseResolver === zeroAddress) return { owned: true, ready: false };
   const [forward, primary, text] = await Promise.all([
     client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node], blockNumber }),
     client.readContract({ address: reverseResolver, abi: L2_RESOLVER_ABI, functionName: 'name', args: [reverseNode], blockNumber }),

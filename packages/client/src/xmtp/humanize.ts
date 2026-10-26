@@ -103,10 +103,6 @@ export function humanizeMentions(text: string): string {
   return named.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
 }
 
-function shortContentType(raw: string | undefined | null): string {
-  return raw ? shortTypeId(raw) : 'unknown';
-}
-
 function previewReply(decoded: unknown): string {
   const r = decoded as { content?: { text?: string } | string };
   if (typeof r.content === 'string') return humanizeMentions(r.content);
@@ -176,7 +172,7 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
 };
 
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
-  const typeId = shortContentType(contentTypeId);
+  const typeId = contentTypeId ? shortTypeId(contentTypeId) : 'unknown';
   if (typeof decoded === 'string') return humanizeMentions(decoded);
   const handler = PREVIEW_HANDLERS[typeId];
   return handler ? handler(decoded) : `[${typeId}]`;

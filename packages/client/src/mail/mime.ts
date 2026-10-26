@@ -1,6 +1,7 @@
+import { binaryString } from '../text/base64';
 import {
-  binaryBytes, binaryString, decodeBase64Loose, decodeCharset, decodeQuotedPrintable, headerText, parseHeaderBlock,
-  parseParams, type HeaderParams, type MailHeaders,
+  binaryBytes, decodeBase64Loose, decodeCharset, decodeQuotedPrintable, headerText, parseHeaderBlock, parseParams,
+  type HeaderParams, type MailHeaders,
 } from './mimeHeaders';
 
 export interface MailAttachment {

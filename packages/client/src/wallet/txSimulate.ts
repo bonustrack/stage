@@ -1,6 +1,6 @@
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from './assets';
 import { shortAddress } from '../identity/format';
-import { decodeAbiParameters, getAddress, type Hex } from 'viem';
+import { decodeAbiParameters, getAddress, zeroAddress, type Hex } from 'viem';
 import { broviderRpc } from './client';
 
 const TRANSFER_TOPIC =
@@ -85,7 +85,7 @@ function emitterKey(address?: string): string {
   const emitter = (address ?? '').toLowerCase();
   const isNative =
     emitter === '' ||
-    emitter === '0x0000000000000000000000000000000000000000' ||
+    emitter === zeroAddress ||
     emitter === NATIVE_TOKEN_SENTINEL.toLowerCase();
   return isNative ? '' : emitter;
 }
@@ -211,9 +211,9 @@ async function checkNativeBalance(
   };
 }
 
-async function callForRevert(
-  call: { from: string; to: string; value: string; data?: string }, chainId: number,
-): Promise<string | null> {
+interface SimCallInput { from: string; to: string; value: string; data?: string }
+
+async function callForRevert(call: SimCallInput, chainId: number): Promise<string | null> {
   try {
     const j = await rpc(chainId, 'eth_call', [call, 'latest']);
     if (!j.error) return null;
@@ -221,8 +221,6 @@ async function callForRevert(
     return decodeRevert(typeof data === 'string' ? data : undefined, j.error.message) ?? null;
   } catch { return null; }
 }
-
-interface SimCallInput { from: string; to: string; value: string; data?: string }
 
 interface SimV1Response { result?: { calls?: SimCall[] }[]; error?: { message?: string } }
 

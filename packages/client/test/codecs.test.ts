@@ -15,13 +15,13 @@ describe('encode/decode JSON content round-trip', () => {
   test('content survives a UTF-8 JSON round-trip', () => {
     const enc = encodeJsonContent(POLL_CONTENT_TYPE, poll, 'fallback');
     expect(enc.content).toBeInstanceOf(Uint8Array);
-    expect(decodeJsonContent<PollContent>(enc.content)).toEqual(poll);
+    expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(poll);
   });
 
   test('unicode payloads survive', () => {
     const p = { ...poll, question: 'Ship it? 🚀 café' };
     const enc = encodeJsonContent(POLL_CONTENT_TYPE, p);
-    expect(decodeJsonContent<typeof p>(enc.content)).toEqual(p);
+    expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(p);
   });
 });
 

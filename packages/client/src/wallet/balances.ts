@@ -17,26 +17,20 @@ export interface WalletPortfolio {
 const BTC_PRICE_ID = 'bitcoin:btc';
 
 export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions): Promise<AssetRow[]> {
-  return (await fetchPortfolio(addr, opts, false)).rows;
+  return (await fetchWalletPortfolio(addr, opts, false)).rows;
 }
 
-export function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices = true): Promise<WalletPortfolio> {
-  return fetchPortfolio(addr, opts, requirePrices);
-}
-
-async function fetchPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices: boolean): Promise<WalletPortfolio> {
+export async function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices = true): Promise<WalletPortfolio> {
   const calls = WALLET_ASSETS.map(a => a.address === null
     ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
     : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
   const balances = await publicClientFor(WALLET_CHAIN_ID).multicall({ contracts: calls, allowFailure: false });
 
   const ids = [...new Set([...WALLET_ASSETS.flatMap(a => a.priceId ?? []), BTC_PRICE_ID])];
-  const emptyPrices = (): Record<string, UsdQuote> => ({});
-  const emptyChanges = (): Record<string, number> => ({});
   const currentPrices = getCurrentPrices(ids);
   const [prices, changes] = await Promise.all([
-    requirePrices ? currentPrices : currentPrices.catch(emptyPrices),
-    getPriceChanges(ids).catch(emptyChanges),
+    requirePrices ? currentPrices : currentPrices.catch((): Record<string, UsdQuote> => ({})),
+    getPriceChanges(ids).catch((): Record<string, number> => ({})),
   ]);
   return {
     rows: WALLET_ASSETS.map((a, i) => buildAssetRow(a, balances[i] ?? 0n, prices, changes, opts.tokenLogo)),

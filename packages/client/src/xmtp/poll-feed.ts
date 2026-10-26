@@ -48,47 +48,35 @@ export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, numb
   return out;
 }
 
-export function votesByMessage(
+function byPollQuestion<V>(
   events: HistoryEntry[],
-): Map<string, Map<number, Map<number, Set<string>>>> {
+  tally: (voteEvents: VoteEvent[], pollId: string, question: PollQuestion, questionIndex: number) => V | undefined,
+): Map<string, Map<number, V>> {
+  const out = new Map<string, Map<number, V>>();
   const polls = pollQuestionsInFeed(events);
-  if (polls.size === 0) return new Map();
+  if (polls.size === 0) return out;
   const voteEvents = voteEventsOf(events);
-  const out = new Map<string, Map<number, Map<number, Set<string>>>>();
   for (const [pollId, qs] of polls) {
-    const byQ = new Map<number, Map<number, Set<string>>>();
-    qs.forEach((q, qi) => byQ.set(qi, votesByPoll(voteEvents, pollId, q.multiSelect === true, qi)));
-    out.set(pollId, byQ);
+    const byQ = new Map<number, V>();
+    qs.forEach((q, qi) => {
+      const value = tally(voteEvents, pollId, q, qi);
+      if (value !== undefined) byQ.set(qi, value);
+    });
+    if (byQ.size > 0) out.set(pollId, byQ);
   }
   return out;
 }
 
-export function ownVotesByMessage(
-  events: HistoryEntry[], myUri: string,
-): Map<string, Map<number, Set<number>>> {
-  const polls = pollQuestionsInFeed(events);
-  if (polls.size === 0) return new Map();
-  const voteEvents = voteEventsOf(events);
-  const out = new Map<string, Map<number, Set<number>>>();
-  for (const [pollId, qs] of polls) {
-    const byQ = new Map<number, Set<number>>();
-    qs.forEach((q, qi) => byQ.set(qi, ownVotes(voteEvents, myUri, pollId, q.multiSelect === true, qi)));
-    out.set(pollId, byQ);
-  }
-  return out;
+export function votesByMessage(events: HistoryEntry[]): Map<string, Map<number, Map<number, Set<string>>>> {
+  return byPollQuestion(events, (votes, pollId, q, qi) => votesByPoll(votes, pollId, q.multiSelect === true, qi));
+}
+
+export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<string, Map<number, Set<number>>> {
+  return byPollQuestion(events, (votes, pollId, q, qi) => ownVotes(votes, myUri, pollId, q.multiSelect === true, qi));
 }
 
 export function openAnswersByMessage(
   events: HistoryEntry[],
 ): Map<string, Map<number, Map<string, { text: string; ts: string }>>> {
-  const polls = pollQuestionsInFeed(events);
-  if (polls.size === 0) return new Map();
-  const voteEvents = voteEventsOf(events);
-  const out = new Map<string, Map<number, Map<string, { text: string; ts: string }>>>();
-  for (const [pollId, qs] of polls) {
-    const byQ = new Map<number, Map<string, { text: string; ts: string }>>();
-    qs.forEach((q, qi) => { if (q.open) byQ.set(qi, openAnswersByPoll(voteEvents, pollId, qi)); });
-    if (byQ.size > 0) out.set(pollId, byQ);
-  }
-  return out;
+  return byPollQuestion(events, (votes, pollId, q, qi) => (q.open ? openAnswersByPoll(votes, pollId, qi) : undefined));
 }

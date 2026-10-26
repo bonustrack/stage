@@ -68,7 +68,7 @@ export function deriveConfirmSummary(
 ): ConfirmSummary {
   const to = call.to;
   const data = call.data;
-  const hasData = !!data && data !== '0x' && data.length > 2;
+  const hasData = !!data && data.length > 2;
 
   if (!hasData) return deriveNativeSummary(to, call.value, nativeSymbol);
 
@@ -150,7 +150,7 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
 function fmtFieldValue(v: unknown): string {
   if (v == null) return '';
   if (typeof v === 'object') {
-    try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'.slice(0, 80); }
+    try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'; }
   }
   if (typeof v === 'string') return v.slice(0, 80);
   if (typeof v === 'symbol') return v.toString().slice(0, 80);

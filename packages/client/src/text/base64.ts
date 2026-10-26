@@ -1,9 +1,13 @@
 const CHUNK = 0x8000;
 
+export function binaryString(codes: Uint8Array | Uint16Array): string {
+  let out = '';
+  for (let i = 0; i < codes.length; i += CHUNK) out += String.fromCharCode(...codes.subarray(i, i + CHUNK));
+  return out;
+}
+
 export function bytesToBase64(bytes: Uint8Array): string {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i += CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  return btoa(bin);
+  return btoa(binaryString(bytes));
 }
 
 export function base64ToBytes(b64: string): Uint8Array {

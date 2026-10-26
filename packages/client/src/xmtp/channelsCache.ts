@@ -19,20 +19,13 @@ export function normalizeChannelRowTitle<R extends CachedChannelRow>(row: R): R 
   return title === row.title ? row : { ...row, title };
 }
 
-function findRowIndex(
-  rows: readonly CachedChannelRow[],
-  convId: string,
-): number {
-  return rows.findIndex(r => r.convId === convId);
-}
-
 function patchRow<R extends CachedChannelRow>(
   rows: readonly R[],
   convId: string,
   patch: (cur: R) => R,
   moveToTop = false,
 ): R[] | null {
-  const idx = findRowIndex(rows, convId);
+  const idx = rows.findIndex(r => r.convId === convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
   const updated = patch(cur);
@@ -105,7 +98,7 @@ export function applyInbound<R extends CachedChannelRow & { selfInboxId: string 
   update: InboundRowUpdate,
   patch?: (current: R) => Partial<R>,
 ): InboundApplyResult<R> | null {
-  const idx = update.convId === null ? -1 : findRowIndex(rows, update.convId);
+  const idx = update.convId === null ? -1 : rows.findIndex(r => r.convId === update.convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
   const wasUnread = update.countsAsUnread !== false

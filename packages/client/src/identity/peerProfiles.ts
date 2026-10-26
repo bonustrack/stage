@@ -162,14 +162,16 @@ export function peerProfileEntries(): PeerProfileEntries {
   return out;
 }
 
+function profileOf(address?: string | null): PeerProfile | undefined {
+  return address ? store.get(address.toLowerCase()) : undefined;
+}
+
 export function getPeerAvatar(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  return store.get(address.toLowerCase())?.avatar;
+  return profileOf(address)?.avatar;
 }
 
 export function getPeerProfileSource(address?: string | null): OnchainProfileSource | undefined {
-  if (!address) return undefined;
-  return store.get(address.toLowerCase())?.source;
+  return profileOf(address)?.source;
 }
 
 export function invalidatePeerProfile(address: string): void {
@@ -184,8 +186,7 @@ export function isPeerResolved(address?: string | null): boolean {
 }
 
 export function getPeerName(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  const profile = store.get(address.toLowerCase());
+  const profile = profileOf(address);
   const display = profile?.displayName?.trim();
   if (display) return display;
   const name = profile?.name?.trim();
@@ -193,19 +194,16 @@ export function getPeerName(address?: string | null): string | undefined {
 }
 
 export function getPeerDisplayName(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  return store.get(address.toLowerCase())?.displayName;
+  return profileOf(address)?.displayName;
 }
 
 export function getPeerHandle(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  const n = store.get(address.toLowerCase())?.name;
+  const n = profileOf(address)?.name;
   return n?.trim() ? n.trim() : undefined;
 }
 
 export function getPeerDescription(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  return store.get(address.toLowerCase())?.description;
+  return profileOf(address)?.description;
 }
 
 export function subscribePeerProfiles(listener: () => void): () => void {

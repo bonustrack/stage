@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   CHANNEL_PRIORITIES, channelFieldOf, groupTagsOf, LabelPermissionError, NO_TAGS, priorityOf,
-  writeAssigned, writeCategory, writeChannelField, writeLabels, type ChannelField, type Group,
+  writeAssigned, writeChannelField, writeLabels, type ChannelField, type Group,
 } from '../src/xmtp/labels';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
@@ -99,7 +99,7 @@ describe('channel status and priority', () => {
     await Promise.all([
       writeChannelField(group, 'status', 'Review'),
       writeChannelField({ ...group }, 'priority', 'Urgent'),
-      writeCategory(group, 'Stage'),
+      writeChannelField(group, 'category', 'Stage'),
       writeLabels(group, labels => [...labels, 'Feature']),
       writeAssigned(group, [], () => Promise.resolve([address])),
     ]);

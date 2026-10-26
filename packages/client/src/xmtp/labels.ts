@@ -210,10 +210,6 @@ export async function writeChannelField(
   return next;
 }
 
-export function writeCategory(group: Group, category: string | null): Promise<string | null> {
-  return writeChannelField(group, 'category', category);
-}
-
 export function assignedAddresses(value: unknown): string[] {
   return [...new Set(validMemberAddresses(stringList(value)).map(address => address.toLowerCase()))];
 }

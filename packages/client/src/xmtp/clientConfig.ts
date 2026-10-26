@@ -73,10 +73,6 @@ type Attempt<C> =
   | { kind: 'retry'; error: unknown; mismatched?: string }
   | { kind: 'fail'; error: unknown };
 
-function mismatchIsPersistent(previous: string | null, current: string): boolean {
-  return previous !== null && previous === current;
-}
-
 function closeOpenedClient<C>(deps: PersistedClientDeps<C>, client: C): void {
   try { deps.close(client); } catch { }
 }
@@ -96,7 +92,7 @@ async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: st
     throw e;
   }
   const installationId = deps.installationIdOf(client);
-  if (mismatchIsPersistent(previousMismatch, installationId)) {
+  if (previousMismatch === installationId) {
     deps.onEvent?.('installation-adopted');
     return { kind: 'ready', client };
   }
