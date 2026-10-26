@@ -93,14 +93,29 @@ export type ApplyMessages = (messages: readonly FrameMessage[]) => FrameApplied;
 
 const APPLY_NOTHING: ApplyMessages = () => ({ kind: 'invalid' });
 
+function loaded(prev: LiveState, applied: FrameApplied, now: number): LiveState {
+  return applied.kind === 'frame' ? fresh(applied.frame, now) : failed(prev, 'invalid');
+}
+
+type ApplicableReply = Extract<NodeResult, { ok: true }>['reply'];
+
+function confirmed(prev: LiveState, now: number): LiveState {
+  return { ...prev, at: now, problem: null, status: null, failures: 0 };
+}
+
+function settled(prev: LiveState, reply: ApplicableReply, now: number, apply: ApplyMessages): LiveState {
+  if (prev.frame === null) return failed(prev, 'empty');
+  const applied = reply.kind === 'unchanged' ? reply : apply(reply.kind === 'messages' ? reply.messages : []);
+  if (applied.kind === 'invalid') return failed(prev, 'invalid');
+  return applied.kind === 'frame' ? fresh(applied.frame, now) : confirmed(prev, now);
+}
+
 export function liveStateAfter(prev: LiveState, result: NodeResult, now: number, apply: ApplyMessages = APPLY_NOTHING): LiveState {
   if (!result.ok) return failed(prev, result.problem, result.status ?? null);
   const { reply } = result;
   if (reply.kind === 'frame') return frameRenders(reply.frame) ? fresh(reply.frame, now) : failed(prev, 'invalid');
-  if (prev.frame === null) return failed(prev, 'empty');
-  const applied = reply.kind === 'unchanged' ? reply : apply(reply.messages);
-  if (applied.kind === 'invalid') return failed(prev, 'invalid');
-  return applied.kind === 'frame' ? fresh(applied.frame, now) : { ...prev, at: now, problem: null, status: null, failures: 0 };
+  if (reply.kind === 'streamed' && reply.load) return loaded(prev, apply([]), now);
+  return settled(prev, reply, now, apply);
 }
 
 export function liveRefreshDelay(state: LiveState | undefined): number {

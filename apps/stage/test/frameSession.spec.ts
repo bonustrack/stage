@@ -3,7 +3,8 @@ import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { ROOT_SCOPE } from '@stage-labs/kit/a2ui/evaluate';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import {
-  RENDERER_CAPABILITIES, applyToFrameSession, clearFrameSessions, frameSession, rejectAgentCall, setFrameSessionHost, type FrameSessionHost,
+  RENDERER_CAPABILITIES, applyToFrameSession, clearFrameSessions, endFrameLoad, frameSession, rejectAgentCall, setFrameSessionHost, startFrameLoad,
+  type FrameSessionHost,
 } from '../lib/frameSession';
 import { KIT_CATALOG, titleMessages } from './frameFixtures';
 
@@ -82,4 +83,28 @@ describe('frame sessions', () => {
       'v1.0': { supportedCatalogIds: ['https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json', KIT_CATALOG] },
     });
   });
+
+  test('a load keeps showing the old client until the new one renders, then takes over', () => {
+    const shown = frameSession('m1', FRAME);
+    const token = startFrameLoad('m1');
+    const surface = { version: 'v1.0', createSurface: { surfaceId: 'main', catalogId: KIT_CATALOG } };
+    expect(applyToFrameSession('m1', [surface], token)).toEqual({ kind: 'unchanged' });
+    expect(frameSession('m1', FRAME)).toBe(shown);
+    const root = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: 'Loaded' }] } };
+    const loaded = applyToFrameSession('m1', [root], token);
+    expect(loaded).toEqual({ kind: 'frame', frame: { messages: titleMessages('Loaded') } });
+    const next = frameSession('m1', { messages: titleMessages('Loaded') });
+    expect(next).not.toBe(shown);
+    const after = applyToFrameSession('m1', [{ version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/x', value: 1 } }], token);
+    expect(after.kind === 'frame' ? frameSession('m1', after.frame) : null).toBe(next);
+  });
+
+  test('an abandoned load is dropped and leaves the shown frame alone', () => {
+    const shown = frameSession('m1', FRAME);
+    const token = startFrameLoad('m1');
+    endFrameLoad('m1', token);
+    expect(applyToFrameSession('m1', [...titleMessages('Late')], token)).toEqual({ kind: 'unchanged' });
+    expect(frameSession('m1', FRAME)).toBe(shown);
+  });
 });
+

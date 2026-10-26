@@ -230,3 +230,60 @@ describe('node calls', () => {
     expect(seen).toHaveLength(0);
   });
 });
+
+describe('streamed node replies', () => {
+  const jsonl = (messages: unknown[]): string => messages.map(m => JSON.stringify(m)).join('\n');
+  const PRICE = (value: number) => ({ version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value } });
+
+  test('a JSON Lines reply delivers each message as soon as its line arrives', async () => {
+    const second = Promise.withResolvers<undefined>();
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        controller.enqueue(encoder.encode(`${JSON.stringify(PRICE(1))}\n${JSON.stringify(PRICE(2)).slice(0, 20)}`));
+        await second.promise;
+        controller.enqueue(encoder.encode(`${JSON.stringify(PRICE(2)).slice(20)}\n`));
+        controller.close();
+      },
+    });
+    stubFetch(() => new Response(body, { headers: { 'content-type': 'application/jsonl' } }));
+    const seen: unknown[] = [];
+    const pending = sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, {
+      onMessage: (message) => { seen.push(message); if (seen.length === 1) second.resolve(undefined); },
+    });
+    expect(await pending).toEqual({ ok: true, reply: { kind: 'streamed', count: 2, load: false } });
+    expect(seen).toEqual([PRICE(1), PRICE(2)]);
+  });
+
+  test('a load streams frame messages only, and stops at the first bad line', async () => {
+    const seen: unknown[] = [];
+    stubFetch(() => new Response(jsonl([...MESSAGES, PRICE(3)]), { headers: { 'content-type': 'application/x-ndjson' } }));
+    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: true, reply: { kind: 'streamed', count: 2, load: true } });
+    stubFetch(() => new Response(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`, { headers: { 'content-type': 'application/jsonl' } }));
+    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: false, problem: 'invalid' });
+    const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'f', value: 1 } };
+    stubFetch(() => new Response(jsonl([answer]), { headers: { 'content-type': 'application/jsonl' } }));
+    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
+    expect(seen).toEqual([...MESSAGES, PRICE(3), ...MESSAGES]);
+  });
+
+  test('a plain JSON reply is delivered the same way, and an empty one delivers nothing', async () => {
+    const seen: unknown[] = [];
+    stubFetch(() => Response.json([PRICE(5)]));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
+      .toEqual({ ok: true, reply: { kind: 'streamed', count: 1, load: false } });
+    stubFetch(() => new Response(null, { status: 204 }));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
+      .toEqual({ ok: true, reply: { kind: 'streamed', count: 0, load: false } });
+    expect(seen).toEqual([PRICE(5)]);
+  });
+
+  test('a stream past the size or message limits stops', async () => {
+    stubFetch(() => new Response(jsonl(Array.from({ length: 201 }, (_, i) => PRICE(i))), { headers: { 'content-type': 'application/jsonl' } }));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
+    const big = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/x', value: 'x'.repeat(140 * 1024) } };
+    stubFetch(() => new Response(jsonl([big]), { headers: { 'content-type': 'application/jsonl' } }));
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'too-large' });
+  });
+});
+

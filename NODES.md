@@ -22,6 +22,8 @@ A node is any HTTPS URL that answers with [A2UI v1.0](https://a2ui.org) messages
 }}]
 ```
 
+To stream, answer with `Content-Type: application/jsonl` (or `application/x-ndjson`) and one message per line, flushed as you go: Stage reads the reply as it arrives, applies each line at once and shows the frame as soon as a surface has a root, so a slow part does not hold back the rest. Until then the widget keeps showing what it had. The same works for replies to renderer messages. Other replies are read whole, then applied in order. Either way, a bad line stops the reply there, and the limits below count the whole reply.
+
 Use the A2UI basic catalog (`https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json`) or the Stage Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`), which is the basic catalog plus Stage's design tokens, icons and a few extra components (Title, Badge, ListView, Spinner, QrCode). Stage validates every message against its catalog and drops the ones that do not pass.
 
 A node can create several surfaces. The first one shows (or the one a chat frame names in `start`). A button whose action calls the Kit catalog function `openSurface` with another surface id opens it as a new screen with a back button, and `closeSurface` goes back:

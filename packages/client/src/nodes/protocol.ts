@@ -1,9 +1,10 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import {
-  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, frameContentSchema, nodeReplyMessagesSchema, rendererMessageSchema,
-  type FrameContent, type FrameMessage,
+  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, frameContentSchema, frameMessageSchema, nodeReplyMessageSchema, nodeReplyMessagesSchema,
+  rendererMessageSchema, type FrameContent, type FrameMessage,
 } from '../xmtp/frame.schema';
+import { createMessageGate, isStreamedReply, streamLines, type MessageGate, type StreamEnd } from './stream';
 import { NODE_REPLY_MAX_BYTES } from './hosting';
 import { base64url, nodeSigningText } from './signing';
 
@@ -25,9 +26,17 @@ export type NodeUrl = { ok: true; url: string; host: string } | { ok: false; pro
 
 export interface NodeRequest { message: Record<string, unknown>; dataModel?: Record<string, unknown> }
 
-export interface NodeCallOptions { capabilities?: Record<string, unknown>; signal?: AbortSignal }
+export interface NodeCallOptions {
+  capabilities?: Record<string, unknown>;
+  signal?: AbortSignal;
+  onMessage?: (message: FrameMessage) => void;
+}
 
-export type NodeReply = { kind: 'frame'; frame: FrameContent } | { kind: 'messages'; messages: FrameMessage[] } | { kind: 'unchanged' };
+export type NodeReply =
+  | { kind: 'frame'; frame: FrameContent }
+  | { kind: 'messages'; messages: FrameMessage[] }
+  | { kind: 'streamed'; count: number; load: boolean }
+  | { kind: 'unchanged' };
 
 export type NodeProblem = 'blocked' | 'unreachable' | 'timeout' | 'status' | 'too-large' | 'invalid';
 
@@ -196,6 +205,25 @@ async function readReply(response: Response, replyOf: (json: unknown) => NodeRep
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };
 }
 
+async function deliverReply(response: Response, method: NodeMethod, onMessage: (message: FrameMessage) => void): Promise<NodeResult> {
+  if (!response.ok) return { ok: false, problem: 'status', status: response.status };
+  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
+  const load = method === 'GET';
+  const gate = createMessageGate(load ? frameMessageSchema : nodeReplyMessageSchema, onMessage);
+  const end = response.body !== null && isStreamedReply(response.headers.get('content-type'))
+    ? await streamLines(response.body, gate)
+    : await pushWhole(response, gate);
+  return end === 'done' ? { ok: true, reply: { kind: 'streamed', count: gate.count(), load } } : { ok: false, problem: end };
+}
+
+async function pushWhole(response: Response, gate: MessageGate): Promise<StreamEnd> {
+  const text = await cappedText(response);
+  if (text === null) return 'too-large';
+  const json = parsedJson(text);
+  const messages = json === undefined ? [] : messagesOf(json);
+  return messages !== null && messages.every(gate.push) ? 'done' : 'invalid';
+}
+
 async function callNode(method: NodeMethod, rawUrl: string, key: string, body: string, options: NodeCallOptions): Promise<NodeResult> {
   const node = nodeUrlOf(rawUrl);
   if (!node.ok) return { ok: false, problem: 'blocked' };
@@ -210,6 +238,7 @@ async function callNode(method: NodeMethod, rawUrl: string, key: string, body: s
       credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
     });
+    if (options.onMessage !== undefined) return await deliverReply(response, method, options.onMessage);
     return await readReply(response, method === 'GET' ? loadReplyOf : messageReplyOf);
   } catch {
     return { ok: false, problem: timeout.aborted ? 'timeout' : 'unreachable' };

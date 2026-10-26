@@ -13,6 +13,8 @@ const MAX_DESCRIPTION = 1000;
 const MAX_ID = 200;
 const MAX_ACTION_NAME = 120;
 const MAX_MESSAGES = 200;
+
+export const FRAME_MAX_MESSAGES = MAX_MESSAGES;
 const MAX_SURFACE_ID = 120;
 const MAX_SOURCE_URL = 2048;
 const MAX_TIMESTAMP = 64;
@@ -58,6 +60,10 @@ function a2uiMessage(kinds: MessageKinds, extraKeys: readonly string[]) {
 
 const messageSchema = a2uiMessage(SURFACE_KINDS, []);
 
+export const frameMessageSchema = messageSchema;
+
+export const nodeReplyMessageSchema = a2uiMessage(REPLY_KINDS, []);
+
 export type FrameMessage = z.infer<typeof messageSchema>;
 
 export const SURFACE_MESSAGE_KINDS: readonly string[] = Object.keys(SURFACE_KINDS);
@@ -66,17 +72,19 @@ export function isSurfaceMessage(message: Record<string, unknown>): boolean {
   return SURFACE_MESSAGE_KINDS.some(kind => message[kind] !== undefined);
 }
 
-export const nodeReplyMessagesSchema = z.array(a2uiMessage(REPLY_KINDS, [])).max(MAX_MESSAGES)
+export const nodeReplyMessagesSchema = z.array(nodeReplyMessageSchema).max(MAX_MESSAGES)
   .refine(m => jsonChars(m) <= FRAME_MAX_CHARS, { message: `a reply is larger than ${FRAME_MAX_CHARS} characters` })
   .refine(m => componentCount(m) <= FRAME_MAX_COMPONENTS, { message: `a reply has at most ${FRAME_MAX_COMPONENTS} components` });
 
 export const rendererMessageSchema = a2uiMessage(RENDERER_KINDS, ['metadata']);
 
+export function messageComponentCount(message: Record<string, unknown>): number {
+  const body = (message.createSurface ?? message.updateComponents) as { components?: unknown } | undefined;
+  return Array.isArray(body?.components) ? body.components.length : 0;
+}
+
 function componentCount(messages: readonly Record<string, unknown>[]): number {
-  return messages.reduce((sum, m) => {
-    const body = (m.createSurface ?? m.updateComponents) as { components?: unknown } | undefined;
-    return sum + (Array.isArray(body?.components) ? body.components.length : 0);
-  }, 0);
+  return messages.reduce((sum, m) => sum + messageComponentCount(m), 0);
 }
 
 const messagesSchema = z.array(messageSchema).min(1).max(MAX_MESSAGES)

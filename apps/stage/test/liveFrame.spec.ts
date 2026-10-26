@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { applyToFrameSession, clearFrameSessions, frameSession } from '../lib/frameSession';
+import { clearFrameSessions, endFrameLoad, frameSession, frameSink, startFrameLoad } from '../lib/frameSession';
 import { makeLiveFrames } from '../lib/liveFrame.core';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf, titleMessages } from './frameFixtures';
 
@@ -12,22 +12,30 @@ const LATER = titleMessages('$102');
 
 interface NodeCall { method: 'GET' | 'POST'; url: string; key: string; request?: NodeRequest }
 
-const frameReply = (messages: FrameMessage[]): NodeResult => ({ ok: true, reply: { kind: 'frame', frame: { messages } } });
+type OnMessage = (message: FrameMessage) => void;
+type Answer = (onMessage: OnMessage, load: boolean) => Promise<NodeResult>;
+
+const streamed = (messages: FrameMessage[]): Answer => (onMessage, load) => {
+  for (const message of messages) onMessage(message);
+  return Promise.resolve({ ok: true, reply: { kind: 'streamed', count: messages.length, load } });
+};
+
+const failing = (result: NodeResult): Answer => () => Promise.resolve(result);
 
 function harness() {
   const calls: NodeCall[] = [];
   const toasts: string[] = [];
-  let answer: () => Promise<NodeResult> = () => Promise.resolve(frameReply(NEXT));
+  let answer: Answer = streamed(NEXT);
   let keys = 0;
   const frames = makeLiveFrames({
-    load: (url, key) => { calls.push({ method: 'GET', url, key }); return answer(); },
-    send: (url, key, request) => { calls.push({ method: 'POST', url, key, request }); return answer(); },
-    apply: applyToFrameSession,
+    load: (url, key, onMessage) => { calls.push({ method: 'GET', url, key }); return answer(onMessage, true); },
+    send: (url, key, request, onMessage) => { calls.push({ method: 'POST', url, key, request }); return answer(onMessage, false); },
+    sessions: { start: startFrameLoad, end: endFrameLoad, sink: frameSink },
     newKey: () => { keys += 1; return `key${keys}`; },
     now: () => 5_000,
     toast: (message) => { toasts.push(message); },
   });
-  return { frames, calls, toasts, reply: (next: () => Promise<NodeResult>) => { answer = next; } };
+  return { frames, calls, toasts, reply: (next: Answer) => { answer = next; } };
 }
 
 describe('live frames in chats', () => {
@@ -46,8 +54,28 @@ describe('live frames in chats', () => {
     await h.frames.refresh('m1', SENT, NODE);
     expect(h.calls).toEqual([{ method: 'GET', url: NODE, key: 'key1' }]);
     expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
-    expect(updates).toBe(1);
+    expect(updates).toBe(2);
     expect(h.toasts).toEqual([]);
+  });
+
+  test('a streamed load shows each rendered step before the reply ends', async () => {
+    const h = harness();
+    frameSession('m1', SENT);
+    const rest = Promise.withResolvers<undefined>();
+    const seen: (FrameContent | null)[] = [];
+    h.frames.subscribe(() => { seen.push(h.frames.frameOf('m1')); });
+    h.reply(async (onMessage, load) => {
+      onMessage(NEXT[0] ?? {});
+      await rest.promise;
+      onMessage({ version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$102' }] } });
+      return { ok: true, reply: { kind: 'streamed', count: 2, load } };
+    });
+    const pending = h.frames.refresh('m1', SENT, NODE);
+    await Promise.resolve();
+    expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
+    rest.resolve(undefined);
+    await pending;
+    expect(seen.at(-1)).toEqual({ messages: LATER });
   });
 
   test('a tap posts the A2UI message, and each frame keeps its own key', async () => {
@@ -69,7 +97,7 @@ describe('live frames in chats', () => {
     client.write('main', '/note', 'typed');
     const price = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: { '@path': '/price' } }] } };
     const value = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value: '$103' } };
-    h.reply(() => Promise.resolve({ ok: true, reply: { kind: 'messages', messages: [price, value] } }));
+    h.reply(streamed([price, value]));
     await h.frames.send('m1', SENT, NODE, tapOf('buy'));
     const shown = h.frames.frameOf('m1');
     expect(shown?.source).toEqual({ url: NODE });
@@ -86,16 +114,15 @@ describe('live frames in chats', () => {
   test('a reply of function answers alone changes nothing that is stored', async () => {
     const h = harness();
     frameSession('m1', SENT);
-    const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'unknown', value: 1 } };
-    h.reply(() => Promise.resolve({ ok: true, reply: { kind: 'messages', messages: [answer] } }));
+    h.reply(streamed([{ version: 'v1.0', agentFunctionResponse: { functionCallId: 'unknown', value: 1 } }]));
     await h.frames.send('m1', SENT, NODE, tapOf('quote'));
     expect(h.frames.frameOf('m1')).toEqual(SENT);
     expect(h.toasts).toEqual([]);
   });
 
-  test('an unchanged reply keeps the frame as it was sent', async () => {
+  test('an empty reply keeps the frame as it was sent', async () => {
     const h = harness();
-    h.reply(() => Promise.resolve({ ok: true, reply: { kind: 'unchanged' } }));
+    h.reply(streamed([]));
     await h.frames.send('m1', SENT, NODE, tapOf('noop'));
     expect(h.frames.frameOf('m1')).toEqual(SENT);
     expect(h.toasts).toEqual([]);
@@ -104,17 +131,17 @@ describe('live frames in chats', () => {
   test('a failure keeps the shown frame and says why', async () => {
     const h = harness();
     await h.frames.refresh('m1', SENT, NODE);
-    h.reply(() => Promise.resolve({ ok: false, problem: 'status', status: 503 }));
+    h.reply(failing({ ok: false, problem: 'status', status: 503 }));
     await h.frames.refresh('m1', SENT, NODE);
-    h.reply(() => Promise.resolve({ ok: false, problem: 'timeout' }));
+    h.reply(failing({ ok: false, problem: 'timeout' }));
     await h.frames.send('m1', SENT, NODE, tapOf('buy'));
     expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
     expect(h.toasts).toEqual(['Could not refresh: node error 503', 'Could not send: timed out']);
   });
 
-  test('a reply the frame renderer refuses is not shown', async () => {
+  test('a load the frame renderer refuses is not shown', async () => {
     const h = harness();
-    h.reply(() => Promise.resolve(frameReply(REFUSED_MESSAGES)));
+    h.reply(streamed(REFUSED_MESSAGES));
     await h.frames.refresh('m1', SENT, NODE);
     expect(h.frames.frameOf('m1')).toEqual(SENT);
     expect(h.toasts).toEqual(['Could not refresh: not a widget']);
@@ -132,19 +159,23 @@ describe('live frames in chats', () => {
     await pending;
     expect(h.frames.frameOf('m1')).toBeNull();
     expect(h.toasts).toEqual([]);
-    h.reply(() => Promise.resolve(frameReply(LATER)));
+    h.reply(streamed(LATER));
     await h.frames.refresh('m1', SENT, NODE);
     expect(h.calls.at(-1)).toEqual({ method: 'GET', url: NODE, key: 'key2' });
   });
 
-  test('only the latest call on a frame updates it', async () => {
+  test('only the latest load replaces the frame, and a stale stream writes nothing', async () => {
     const h = harness();
-    const slow = Promise.withResolvers<NodeResult>();
-    h.reply(() => slow.promise);
+    const slow = Promise.withResolvers<undefined>();
+    h.reply(async (onMessage, load) => {
+      await slow.promise;
+      onMessage(NEXT[0] ?? {});
+      return { ok: true, reply: { kind: 'streamed', count: 1, load } };
+    });
     const first = h.frames.refresh('m1', SENT, NODE);
-    h.reply(() => Promise.resolve(frameReply(LATER)));
-    await h.frames.send('m1', SENT, NODE, tapOf('next'));
-    slow.resolve({ ok: false, problem: 'unreachable' });
+    h.reply(streamed(LATER));
+    await h.frames.refresh('m1', SENT, NODE);
+    slow.resolve(undefined);
     await first;
     expect(h.frames.frameOf('m1')).toEqual({ messages: LATER });
     expect(h.toasts).toEqual([]);
