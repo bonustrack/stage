@@ -1,4 +1,3 @@
-
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Platform } from 'react-native';
 import { fontFamily, fontSize, type FontSizeName } from '@stage-labs/kit/tokens';

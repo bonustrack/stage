@@ -35,18 +35,16 @@ function SimOutcome({ sim, chainId }: {
 export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {
-  const pal = usePalette();
-  if (pending) return <SimNote text="Simulating…" sub={sub} fill={pal.border} />;
+  if (pending) return <SimNote text="Simulating…" sub={sub} />;
   if (!sim) return null;
-  if (sim.success === 'unknown') {
-    return <SimNote text="Could not simulate this transaction" sub={sub} fill={pal.border} />;
-  }
+  if (sim.success === 'unknown') return <SimNote text="Could not simulate this transaction" sub={sub} />;
   return <SimOutcome sim={sim} chainId={chainId} />;
 }
 
-function SimNote({ text, sub, fill }: { text: string; sub: string; fill: string }): React.ReactElement {
+function SimNote({ text, sub }: { text: string; sub: string }): React.ReactElement {
+  const { border } = usePalette();
   return (
-    <Column radius="md" background={fill} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Column radius="md" background={border} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconSparklesThree} size={14} color={sub} />
         <Text size="3xs" color="secondary">{text}</Text>

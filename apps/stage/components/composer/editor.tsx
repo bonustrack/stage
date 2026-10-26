@@ -23,22 +23,25 @@ import { IconMapPin } from '@central-icons-react-native/round-outlined-radius-1-
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
-const COMPOSER_ICON_INSET = 7;
 import { usePalette } from '../../lib/theme';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { Column, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 
+const COMPOSER_ICON_INSET = 7;
+
+type AttachAction = [CentralIcon, string, () => void | Promise<void>];
+
 interface EditorProps {
   dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
-  slideThresholdPx: number;
+  slideThresholdPx?: number;
   text: string; setText: (v: string) => void;
   selection: { start: number; end: number };
   setSelection: (s: { start: number; end: number }) => void;
   focusNonce: number; blurNonce: number;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
-  attachActions?: [CentralIcon, string, () => void | Promise<void>][];
+  attachActions?: AttachAction[];
   quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
   hasContent: boolean;
   busy?: boolean;
@@ -214,8 +217,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
     </Column>
   );
 }
-
-type AttachAction = [CentralIcon, string, () => void | Promise<void>];
 
 export function buildAttachActions(a: {
   pickImage: () => void; takePhoto: () => void;

@@ -37,10 +37,6 @@ interface OnchainMeta {
   symbol: string;
 }
 
-const minimalErc20Abi = [
-  ...erc20Abi.filter(x => x.type === 'function' && (x.name === 'balanceOf' || x.name === 'decimals' || x.name === 'symbol')),
-] as const;
-
 async function readOnchain(
   cid: number, token: string | undefined, addr: Hex,
 ): Promise<OnchainMeta | null> {
@@ -53,13 +49,12 @@ async function readOnchain(
   }
 
   if (token === undefined || !isAddress(token)) return null;
-  const t = token;
   const raw = await pub.readContract({
-    address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
+    address: token, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
   });
   const [decimals, symbol] = await Promise.all([
-    pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' }).catch(ignored(18, 'optional')),
-    pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' }).catch(ignored('tokens', 'optional')),
+    pub.readContract({ address: token, abi: erc20Abi, functionName: 'decimals' }).catch(ignored(18, 'optional')),
+    pub.readContract({ address: token, abi: erc20Abi, functionName: 'symbol' }).catch(ignored('tokens', 'optional')),
   ]);
   return { raw, decimals, symbol };
 }

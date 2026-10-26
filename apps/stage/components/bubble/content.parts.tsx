@@ -155,7 +155,7 @@ export function BubbleAttachments({ atts, entryId, fg }: {
 
 function SafeMarkdown({ body, fg, markdownProps }: { body: string; fg: string; markdownProps: MarkdownProps }): React.ReactElement {
   return (
-    <ResetBoundary resetKey={body} fallback={() => <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>{body}</Text>}>
+    <ResetBoundary resetKey={body} fallback={() => <PlainBody body={body} fg={fg} />}>
       <Markdown {...markdownProps}>{body}</Markdown>
     </ResetBoundary>
   );

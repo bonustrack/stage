@@ -15,14 +15,6 @@ interface BubbleGestureInput {
   onOpenMenu?: (anchor: MenuAnchor) => void;
 }
 
-interface BubbleGestures {
-  rowRef: React.RefObject<View | null>;
-  tapGestures: ReturnType<typeof Gesture.Race>;
-  openMenu: (point?: MenuPoint) => void;
-  swipeStyle: ReturnType<typeof useAnimatedStyle>;
-  replyHintStyle: ReturnType<typeof useAnimatedStyle>;
-}
-
 function lightHaptic(): void { Vibration.vibrate(10); }
 
 function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
@@ -33,7 +25,7 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 const THRESHOLD = -64;
 const SWIPE_TO_REPLY = Platform.OS !== 'web';
 
-export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
+export function useBubbleGestures(input: BubbleGestureInput) {
   const { pending, onReply, onReact, onOpenMenu } = input;
   const swipeX = useSharedValue(0);
   const crossed = useSharedValue(false);
@@ -67,9 +59,8 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
       .onBegin(() => { crossed.value = false; })
       .onChange(e => {
         const raw = Math.min(0, e.translationX);
-        const t = THRESHOLD;
-        swipeX.value = raw > t ? raw : t + (raw - t) / 3;
-        const past = raw <= t;
+        swipeX.value = raw > THRESHOLD ? raw : THRESHOLD + (raw - THRESHOLD) / 3;
+        const past = raw <= THRESHOLD;
         if (past && !crossed.value) { crossed.value = true; runOnJS(lightHaptic)(); }
         else if (!past && crossed.value) { crossed.value = false; }
       })

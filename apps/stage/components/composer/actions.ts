@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
-import { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 import { useVoiceRecorder } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
@@ -58,17 +57,10 @@ async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean>
   return true;
 }
 
-async function onPickedCamera(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
+async function onPickedOne(upload: Upload, files: ComposerPickedFile[], label: 'Camera' | 'File'): Promise<void> {
   const file = files[0];
   if (file === undefined) return;
-  setLastAttachment('Camera');
-  await upload(file.uri, file.mime, file.name);
-}
-
-async function onPickedFile(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
-  const file = files[0];
-  if (file === undefined) return;
-  setLastAttachment('File');
+  setLastAttachment(label);
   await upload(file.uri, file.mime, file.name);
 }
 
@@ -125,7 +117,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
   });
 
   return {
-    SLIDE_CANCEL_THRESHOLD_PX,
     startRec: voice.startRec, cancelRec: voice.cancelRec, stopRec: voice.stopRec,
     pickImage: () => { afterKeyboardHides(() => { setImageNonce(n => n + 1); }); },
     takePhoto: () => { afterKeyboardHides(() => { void takePhoto(); }); },
@@ -133,8 +124,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
     pickLocation: () => pickLocation(a),
     imageNonce, cameraNonce, fileNonce,
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
-    onPickedCamera: (files: ComposerPickedFile[]) => onPickedCamera(upload, files),
-    onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
+    onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'Camera'),
+    onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'File'),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a, () => current.current),
     adoptSend: (started: StartedSend) => adoptSend(current.current, started, () => current.current),

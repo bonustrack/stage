@@ -33,16 +33,6 @@ export class ResetBoundary extends Component<ResetBoundaryProps, State> {
   }
 }
 
-const LAST_RESORT = '(this message could not be displayed)';
-
-function fallbackText(entry: HistoryEntry): string {
-  try {
-    return bubbleFallbackText(entry);
-  } catch {
-    return LAST_RESORT;
-  }
-}
-
 export function BubbleErrorBoundary({ children, sub: fallbackColor, entry }: {
   children: ReactNode; sub: string; entry: HistoryEntry;
 }): React.ReactElement {
@@ -59,7 +49,7 @@ export function BubbleErrorBoundary({ children, sub: fallbackColor, entry }: {
       fallback={() => (
         <Column padding={{ x: PAGE_GUTTER, y: 6 }}>
           <Text size="sm" selectable color={fallbackColor} style={{ opacity: 0.85, lineHeight: 21 }}>
-            {fallbackText(entry)}
+            {bubbleFallbackText(entry)}
           </Text>
         </Column>
       )}

@@ -86,7 +86,7 @@ export function PickerSearch({ value, onChangeText, placeholder, onSubmit }: {
   return (
     <>
       <FormField value={value} onChangeText={onChangeText} placeholder={placeholder} autoFocus={anchored}
-        onSubmit={onSubmit === undefined ? undefined : () => { onSubmit(); }}
+        onSubmit={onSubmit}
         leading={<Glyph icon={IconMagnifyingGlass} size={18} color={sub}/>}
         inputProps={{ ...SEARCH_INPUT_PROPS, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}/>
       <DropdownMenuSeparator/>

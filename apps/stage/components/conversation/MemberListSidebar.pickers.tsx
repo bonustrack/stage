@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { uniqueBy } from '@stage-labs/client/collections';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { PickerList, PickerNote, PickerRow, PickerSearch, type SectionDraft } from './SidebarSection';
@@ -43,8 +44,6 @@ export function AssigneePicker({ draft, toggle, entries }: SectionDraft & { entr
   );
 }
 
-interface MemberRights { add: boolean; remove: boolean }
-
 function useLookup(draft: string[], toggle: (key: string) => void): {
   found: PersonOption[]; looking: boolean; look: (raw: string, done: () => void) => void;
 } {
@@ -76,7 +75,7 @@ function LookupRow({ query, looking, onPress }: { query: string; looking: boolea
 }
 
 export function MembersPicker({ draft, toggle, entries, self, rights }: SectionDraft & {
-  entries: MemberListEntry[]; self: string; rights: MemberRights;
+  entries: MemberListEntry[]; self: string; rights: { add: boolean; remove: boolean };
 }): React.ReactElement {
   const [query, setQuery] = useState('');
   const memberAddresses = entries.map(entry => entry.address);
@@ -85,9 +84,8 @@ export function MembersPicker({ draft, toggle, entries, self, rights }: SectionD
   const members: PersonOption[] = useOrderedEntries(entries, draft)
     .filter(entry => matchesQuery(query, entry.name, entry.address))
     .map(entry => ({ address: entry.address, name: entry.name, disabled: !rights.remove || entry.address.toLowerCase() === self.toLowerCase() }));
-  const extra = [...found, ...contacts.map(contact => ({ address: contact.address, name: contact.name, disabled: false }))]
-    .filter((option, index, list) => list.findIndex(other => other.address.toLowerCase() === option.address.toLowerCase()) === index)
-    .filter(option => !includesKey(memberAddresses, option.address));
+  const contactOptions = contacts.map(contact => ({ address: contact.address, name: contact.name, disabled: false }));
+  const extra = uniqueBy([...found, ...contactOptions], option => option.address.toLowerCase(), new Set(memberAddresses.map(a => a.toLowerCase())));
   const others = rights.add ? extra : [];
   const typed = query.trim();
   const add = (): void => { look(typed, () => { setQuery(''); }); };

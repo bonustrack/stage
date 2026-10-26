@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { patchRowSent } from '../../lib/channelsCache';
@@ -15,6 +14,7 @@ import {
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
+import type { OptimisticEntry } from '../composer/types';
 
 function useStickyBottom(
   allBubblesLength: number, convId: string | undefined, atBottom: () => boolean,
@@ -88,11 +88,7 @@ export function useOutboundLayer(
   });
   useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
 
-  const onOptimistic = useCallback(({ localId, text, attachments, replyTo, payload }: {
-    localId: string; text: string;
-    attachments: { mime?: string; name?: string }[];
-    replyTo?: string; payload?: HistoryEntry['payload'];
-  }) => {
+  const onOptimistic = useCallback(({ localId, text, attachments, replyTo, payload }: OptimisticEntry) => {
     setOutbound(s => ({ ...s, optimistic: [{
       id: localId, ts: new Date().toISOString(),
       station: 'xmtp', line: activeLine,

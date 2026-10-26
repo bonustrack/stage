@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import type { A2uiClient } from '@stage-labs/kit/a2ui/client';
 import type { ActionEvent, RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { MEDIA_RENDERERS } from '@stage-labs/kit/react-native/a2ui-media';
@@ -12,6 +12,7 @@ import {
 } from '../../lib/frameSession';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { usePalette } from '../../lib/theme';
+import { ResetBoundary } from '../bubble/boundary';
 import { Column } from '../layout';
 import { frameMediaUrl, type FrameMessageHandler, type FrameNav } from './frame.model';
 
@@ -29,22 +30,6 @@ function FrameNotice({ text }: { text: string }): React.ReactElement {
       <Text variant="caption" size="md" text={text} />
     </Column>
   );
-}
-
-class FrameBoundary extends Component<{ resetKey: unknown; children: ReactNode }, { failed: boolean }> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError(): { failed: boolean } {
-    return { failed: true };
-  }
-
-  override componentDidUpdate(prev: { resetKey: unknown }): void {
-    if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false });
-  }
-
-  override render(): ReactNode {
-    return this.state.failed ? <FrameNotice text="This frame could not be shown." /> : this.props.children;
-  }
 }
 
 function tapLabel(client: A2uiClient, event: ActionEvent): string | undefined {
@@ -101,12 +86,12 @@ export function FrameView(props: FrameViewProps): React.ReactElement {
   const activate = useSessionHost(sessionKey, props);
   return (
     <Column padding={padding} onStartShouldSetResponderCapture={() => { activate(); return false; }}>
-      <FrameBoundary resetKey={client}>
+      <ResetBoundary resetKey={client} fallback={() => <FrameNotice text="This frame could not be shown." />}>
         {client.surface(navigation.screen) === undefined
           ? <FrameNotice text="This screen is not in the frame." />
           : <A2uiSurface client={client} surfaceId={navigation.screen} renderers={MEDIA_RENDERERS} disabled={disabled} mediaUrl={frameMediaUrl}
               fallback={<FrameNotice text="This frame could not be shown." />} />}
-      </FrameBoundary>
+      </ResetBoundary>
     </Column>
   );
 }

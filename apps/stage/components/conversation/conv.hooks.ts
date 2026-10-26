@@ -61,23 +61,20 @@ async function resolvePeerConversation(param: string): Promise<ConvState> {
   return { convId: null, resolving: false, error: res.error, detail: res.detail, pendingAddress: isQueueable(res.error) ? address : null };
 }
 
+function openingState(param: string | undefined, peerRoute: boolean): ConvState {
+  if (!param || !peerRoute || !isPeerHandle(param)) return directState(param);
+  const cached = parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
+  return cached ? directState(cached) : RESOLVING;
+}
+
 export function useResolvedConvId(param: string | undefined, peerRoute = true): ResolvedConv {
-  const peer = peerRoute && isPeerHandle(param);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
-  const [state, setState] = useState<ConvState>(() => {
-    if (!peer) return directState(param);
-    const cached = param && parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
-    return cached ? directState(cached) : RESOLVING;
-  });
+  const [state, setState] = useState<ConvState>(() => openingState(param, peerRoute));
   useEffect(() => {
-    if (!param || !peerRoute || !isPeerHandle(param)) {
-      setState(directState(param));
-      return;
-    }
+    setState(openingState(param, peerRoute));
+    if (!param || !peerRoute || !isPeerHandle(param)) return;
     let cancelled = false;
-    const cached = parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
-    setState(cached ? directState(cached) : RESOLVING);
     resolvePeerConversation(param)
       .then((next) => { if (!cancelled) setState(prev => (prev.convId === next.convId && !prev.resolving ? prev : next)); })
       .catch(() => { if (!cancelled) setState(FAILED); });

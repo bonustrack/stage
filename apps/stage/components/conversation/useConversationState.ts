@@ -35,10 +35,8 @@ import { useTxSignLayer } from './useTxSignLayer';
 import { makeSeenCheck } from './markRead.model';
 import { useOutboundLayer } from './useOutboundLayer';
 import { useClearedChats } from '../../lib/clearedChats';
-import {
-  entriesAfterClear, feedReachedClear, countFromOthers, reactionsByMessage, ownReactionsByMessage,
-  pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
-} from './feed-helpers';
+import { entriesAfterClear, feedReachedClear, countFromOthers, reactionsByMessage, ownReactionsByMessage } from './feed-helpers';
+import { pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage } from '@stage-labs/client/xmtp/poll-feed';
 import { reported } from '../../lib/errorPolicy';
 import { unknownSystemLineInboxIds } from './systemNames.model';
 import { peerLabel } from './convTitle';
@@ -99,15 +97,7 @@ function useFeedDeletions(
   return { deletedIds, isSuperAdmin };
 }
 
-type ConvConsent = Exclude<ReturnType<typeof useConvConsentState>, null>;
-
-interface ConsentGate {
-  consent: ConvConsent;
-  consentKnown: boolean;
-  markAllowed: () => void;
-}
-
-function useConsentGate(convId: string | undefined): ConsentGate {
+function useConsentGate(convId: string | undefined) {
   const streamed = useConvConsentState(convId);
   const [allowedHere, setAllowedHere] = useState(false);
   useEffect(() => { setAllowedHere(false); }, [convId, streamed]);
@@ -119,16 +109,7 @@ function useConsentGate(convId: string | undefined): ConsentGate {
   };
 }
 
-interface ScrollPersistence {
-  savedScrollRef: React.MutableRefObject<number | undefined>;
-  savedAnchorRef: React.MutableRefObject<FeedAnchor | null>;
-  savedScrollLoaded: React.MutableRefObject<boolean>;
-  didRestoreScroll: React.MutableRefObject<boolean>;
-  pinBottomUntil: React.MutableRefObject<number>;
-  isAtBottomRef: React.MutableRefObject<boolean>;
-}
-
-function useConvScrollPersistence(convId: string | undefined): ScrollPersistence {
+function useConvScrollPersistence(convId: string | undefined) {
   const savedScrollRef = useRef<number | undefined>(undefined);
   const savedAnchorRef = useRef<FeedAnchor | null>(null);
   const savedScrollLoaded = useRef(false);
@@ -252,7 +233,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);
 
   const scroll = useConvScrollPersistence(convId);
-  const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
+  const { isAtBottomRef } = scroll;
 
   const { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords } = useFeedDerivations(events, myUri, !isGroup);
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
@@ -285,8 +266,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
-    profilesVersion, mentionCandidates, listRef,
-    savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
+    profilesVersion, mentionCandidates, listRef, ...scroll,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, deletedIds, isSuperAdmin,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,

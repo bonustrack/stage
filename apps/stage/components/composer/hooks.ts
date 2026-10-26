@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraftValue, setDraft, setDraftValue } from '../../lib/drafts';
@@ -12,23 +11,6 @@ const TEXT_SAVE_DELAY_MS = 300;
 export function clearComposerDraft(key: string): void {
   setDraft(key, '');
   keptAttachments.delete(key);
-}
-
-function useKeptInMemory<T>(
-  kept: Map<string, T>, key: string | null, value: T, restore: (value: T) => void, empty: boolean,
-): void {
-  const restoring = useRef(false);
-  useEffect(() => {
-    const found = key === null ? undefined : kept.get(key);
-    if (found === undefined) return;
-    restoring.current = true;
-    restore(found);
-  }, [key]);
-  useEffect(() => {
-    if (key === null) return;
-    if (restoring.current) { restoring.current = false; return; }
-    if (empty) kept.delete(key); else kept.set(key, value);
-  }, [key, value]);
 }
 
 export function useCaretToEnd(
@@ -69,7 +51,18 @@ export function useComposerDrafts(
   s: Pick<ComposerState, 'text' | 'pending' | 'setPending'>,
   restore: (draft: string) => void,
 ): void {
-  useKeptInMemory(keptAttachments, key, s.pending, s.setPending, s.pending.length === 0);
+  const restoring = useRef(false);
+  useEffect(() => {
+    const found = key === null ? undefined : keptAttachments.get(key);
+    if (found === undefined) return;
+    restoring.current = true;
+    s.setPending(found);
+  }, [key]);
+  useEffect(() => {
+    if (key === null) return;
+    if (restoring.current) { restoring.current = false; return; }
+    if (s.pending.length === 0) keptAttachments.delete(key); else keptAttachments.set(key, s.pending);
+  }, [key, s.pending]);
   useSavedDraft(key, s.text.trim() ? s.text : undefined, (saved) => {
     if (typeof saved === 'string' && saved) restore(saved);
   }, TEXT_SAVE_DELAY_MS);

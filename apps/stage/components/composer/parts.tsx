@@ -13,8 +13,7 @@ import { ImageViewer } from '../ImageViewer';
 import { HoverTooltip } from '../HoverTooltip';
 import { LocationTile } from '../MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
-import { shortAddress } from '@stage-labs/client/identity/format';
-import { getPeerName } from '../../lib/peerProfiles';
+import { peerLabel } from '../conversation/convTitle';
 import { type Attachment } from './types';
 import { isLocation } from './location.model';
 import type { Suggest } from './mentions';
@@ -48,7 +47,7 @@ export function ReplyBanner({
           <Text size="sm" numberOfLines={1} style={{ flex: 1 }}>
             <Text size="sm" color="secondary">Replying to </Text>
             <Text size="sm" color={nameColor}>
-              {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
+              {sender ? peerLabel(sender) : 'message'}
             </Text>
           </Text>
           <Pressable onPress={onClear} hitSlop={8}>
@@ -132,79 +131,62 @@ function TrayTile({
   );
 }
 
-function PendingImage({
-  image, fg, onRemove,
-}: {
-  image: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement {
+interface PendingProps { at: Attachment; fg: string; onRemove: () => void }
+
+function PendingImage({ at, fg, onRemove }: PendingProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <TrayTile at={image} fg={fg} label={`Image preview ${image.name ?? image.id}`} removeLabel="Remove image" onRemove={onRemove}>
+      <TrayTile at={at} fg={fg} label={`Image preview ${at.name ?? at.id}`} removeLabel="Remove image" onRemove={onRemove}>
         <Pressable
           onPress={() => { setOpen(true); }}
           pressedOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="View image"
         >
-          <Image url={image.url} size={TRAY_TILE} fit="contain"/>
+          <Image url={at.url} size={TRAY_TILE} fit="contain"/>
         </Pressable>
       </TrayTile>
-      <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
+      <ImageViewer uri={at.url} visible={open} onClose={() => { setOpen(false); }}/>
     </>
   );
 }
 
-function PendingVideo({
-  video, fg, onRemove,
-}: {
-  video: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement {
+function PendingVideo({ at, fg, onRemove }: PendingProps): React.ReactElement {
   const { bg } = usePalette();
   return (
-    <TrayTile at={video} fg={fg} label={`Video preview ${video.name ?? video.id}`} removeLabel="Remove video" onRemove={onRemove}>
-      <CallAwareVideo url={video.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
+    <TrayTile at={at} fg={fg} label={`Video preview ${at.name ?? at.id}`} removeLabel="Remove video" onRemove={onRemove}>
+      <CallAwareVideo url={at.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
     </TrayTile>
   );
 }
 
-function PendingLocation({
-  location, fg, onRemove,
-}: {
-  location: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement | null {
-  const coords = mapCoordsOf(location.url);
+function PendingLocation({ at, fg, onRemove }: PendingProps): React.ReactElement | null {
+  const coords = mapCoordsOf(at.url);
   if (!coords) return null;
   return (
-    <TrayTile at={location} fg={fg} label="Location preview" removeLabel="Remove location" onRemove={onRemove}>
+    <TrayTile at={at} fg={fg} label="Location preview" removeLabel="Remove location" onRemove={onRemove}>
       <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
     </TrayTile>
   );
 }
 
-function PendingFile({
-  file, fg, onRemove,
-}: {
-  file: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement {
+function PendingFile({ at, fg, onRemove }: PendingProps): React.ReactElement {
   return (
-    <TrayTile at={file} fg={fg} label={`File preview ${file.name ?? file.id}`} removeLabel="Remove file" onRemove={onRemove}>
+    <TrayTile at={at} fg={fg} label={`File preview ${at.name ?? at.id}`} removeLabel="Remove file" onRemove={onRemove}>
       <Column size={TRAY_TILE} align="center" justify="center">
-        <Glyph icon={kindIcon(file.kind)} size={24} color={fg}/>
+        <Glyph icon={kindIcon(at.kind)} size={24} color={fg}/>
       </Column>
     </TrayTile>
   );
 }
 
-function PendingItem({
-  at, fg, onRemove,
-}: {
-  at: Attachment; fg: string; onRemove: () => void;
-}): React.ReactElement | null {
-  if (at.kind === 'image') return <PendingImage image={at} fg={fg} onRemove={onRemove}/>;
-  if (at.kind === 'video') return <PendingVideo video={at} fg={fg} onRemove={onRemove}/>;
-  if (isLocation(at)) return <PendingLocation location={at} fg={fg} onRemove={onRemove}/>;
-  return <PendingFile file={at} fg={fg} onRemove={onRemove}/>;
+function PendingItem(props: PendingProps): React.ReactElement | null {
+  const { at } = props;
+  if (at.kind === 'image') return <PendingImage {...props}/>;
+  if (at.kind === 'video') return <PendingVideo {...props}/>;
+  if (isLocation(at)) return <PendingLocation {...props}/>;
+  return <PendingFile {...props}/>;
 }
 
 const TRAY_PADDING = { x: PAGE_GUTTER, top: 10, bottom: 6 };

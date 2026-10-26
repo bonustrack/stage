@@ -27,8 +27,8 @@ function CallMenu({ convId, isGroup, disabled }: {
   const { text, link, sub } = usePalette();
   const hover = useHover();
   const color = disabled ? sub : hover.hovered ? link : text;
-  useEffect(() => { if (disabled) { opening.current++; setAnchor(null); } }, [disabled]);
   const close = (): void => { opening.current++; setAnchor(null); };
+  useEffect(() => { if (disabled) close(); }, [disabled]);
   const open = (event: GestureResponderEvent): void => {
     const request = ++opening.current;
     if (Platform.OS === 'web') setAnchor(menuPointBelowEnd(event));

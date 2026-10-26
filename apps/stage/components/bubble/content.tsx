@@ -26,12 +26,7 @@ import {
 } from './content.parts';
 import { Column, Row } from '../layout';
 
-function descriptorsOf(entry: HistoryEntry): {
-  atts: ReturnType<typeof attachmentsOf>; question: ReturnType<typeof questionOf>;
-  poll: ReturnType<typeof pollOf>; sigReq: ReturnType<typeof sigRequestOf>;
-  sigRef: ReturnType<typeof sigReferenceOf>; txReq: ReturnType<typeof txRequestOf>;
-  txReceipt: ReturnType<typeof txReceiptOf>; frame: ReturnType<typeof frameOf>; frameAction: boolean;
-} {
+function descriptorsOf(entry: HistoryEntry) {
   return {
     atts: attachmentsOf(entry), question: questionOf(entry), poll: pollOf(entry),
     sigReq: sigRequestOf(entry), sigRef: sigReferenceOf(entry),
@@ -40,6 +35,8 @@ function descriptorsOf(entry: HistoryEntry): {
   };
 }
 
+type Descriptors = ReturnType<typeof descriptorsOf>;
+
 type BubbleContentProps = Pick<MessengerBubbleProps,
   'entry' | 'dark' | 'pending' | 'replyPreview' | 'onReplyPreviewPress' | 'onAnswer' | 'votes' | 'ownVotes' | 'onVote'
   | 'openAnswers' | 'onOpenAnswer' | 'myUri' | 'call' | 'onPay' | 'paying' | 'onSign' | 'signing' | 'consentAllowed'
@@ -47,7 +44,7 @@ type BubbleContentProps = Pick<MessengerBubbleProps,
 > & { fg: string; sub: string };
 
 function BubbleMain({ d, entry, fg, call, highlight, markdownProps }: {
-  d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; call?: CallRecord;
+  d: Descriptors; entry: HistoryEntry; fg: string; call?: CallRecord;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
   if (isDeletedPlaceholder(entry)) {
@@ -63,7 +60,7 @@ function BubbleMain({ d, entry, fg, call, highlight, markdownProps }: {
   return <BubbleBody text={entry.text} fg={fg} highlight={highlight} markdownProps={markdownProps} />;
 }
 
-function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleContentProps }): React.ReactElement {
+function BubbleCards({ d, p }: { d: Descriptors; p: BubbleContentProps }): React.ReactElement {
   return (
     <>
       {d.question && p.onAnswer ? (

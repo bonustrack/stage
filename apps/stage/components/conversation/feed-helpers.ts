@@ -1,11 +1,5 @@
-
 import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '@stage-labs/client/types';
-
-export {
-  pollOptionCountsInFeed, pollQuestionsInFeed,
-  votesByMessage, ownVotesByMessage, openAnswersByMessage,
-} from '@stage-labs/client/xmtp/poll-feed';
 
 export function hasAttachments(e: HistoryEntry): boolean {
   return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
@@ -138,27 +132,22 @@ export function isReaction(e: HistoryEntry): boolean {
 }
 
 export function previewOf(e: HistoryEntry): string {
-  return (e.text ? humanizeMentions(e.text).slice(0, 80) : '')
-    || (() => {
-      const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
-      return attachmentEmojiPreview(a?.mime, a?.name);
-    })();
-}
-
-function sentAtMs(entry: HistoryEntry): number {
-  return Date.parse(entry.ts);
+  const text = e.text ? humanizeMentions(e.text).slice(0, 80) : '';
+  if (text) return text;
+  const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
+  return attachmentEmojiPreview(a?.mime, a?.name);
 }
 
 export function entriesAfterClear(events: HistoryEntry[], clearedAtMs: number | undefined): HistoryEntry[] {
   if (clearedAtMs === undefined) return events;
   return events.filter((e) => {
-    const at = sentAtMs(e);
+    const at = Date.parse(e.ts);
     return Number.isNaN(at) || at > clearedAtMs;
   });
 }
 
 export function feedReachedClear(events: HistoryEntry[], clearedAtMs: number | undefined): boolean {
-  return clearedAtMs !== undefined && events.some((e) => sentAtMs(e) <= clearedAtMs);
+  return clearedAtMs !== undefined && events.some((e) => Date.parse(e.ts) <= clearedAtMs);
 }
 
 export function countFromOthers(events: readonly HistoryEntry[], myUri: string): number {

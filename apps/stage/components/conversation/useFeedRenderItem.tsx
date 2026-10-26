@@ -81,11 +81,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     [profilesVersion, optimisticReactions, reactorNames, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId, menuForId, deletedIds],
   );
 
-  const eventsById = useMemo(() => {
-    const m = new Map<string, Bubble>();
-    for (const e of events) m.set(e.id, e);
-    return m;
-  }, [events]);
+  const eventsById = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
 
   const namedEntry = useMemo(() => {
     const selfInboxId = myUri.startsWith(XMTP_USER_PREFIX) ? myUri.slice(XMTP_USER_PREFIX.length) || null : null;

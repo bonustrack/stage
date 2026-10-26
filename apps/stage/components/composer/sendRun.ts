@@ -1,27 +1,13 @@
 import { rememberLocalAttachments } from '../../lib/localAttachmentCache';
 import { uploadAttachments, xmtpSendMultiRemoteAttachment } from '../../lib/xmtp.attachments';
 import { xmtpReply, xmtpSendText } from '../../lib/xmtp.messages';
-import { fileInputs, planSendSteps as plan, unsentDraft, type SendStep } from './send.model';
+import { fileInputs, planSendSteps, unsentDraft, type SendStep } from './send.model';
 import type { ComposerState } from './state';
 import type { Attachment, PostHooks } from './types';
 
 let seq = 0;
 export const mintLocalId = (): string =>
   `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-
-function planSendSteps(
-  xmtpLine: string,
-  body: string,
-  attachments: Attachment[],
-  replyTo: string | undefined,
-  options: SendOptions,
-): SendStep[] {
-  return plan(xmtpLine, body, attachments, replyTo, {
-    text: xmtpSendText,
-    reply: xmtpReply,
-    attachments: xmtpSendMultiRemoteAttachment,
-  }, mintLocalId, options.assertCurrent, options.beforeSend);
-}
 
 export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'>
   & Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {
@@ -64,7 +50,8 @@ function runInOrder(steps: SendStep[], previewUri?: (uri: string) => string): St
 
 export function startSend(line: string, text: string, pending: Attachment[], replyTo?: string, options: SendOptions = {}): StartedSend {
   options.assertCurrent?.();
-  const steps = planSendSteps(line, text, pending, replyTo, options);
+  const senders = { text: xmtpSendText, reply: xmtpReply, attachments: xmtpSendMultiRemoteAttachment };
+  const steps = planSendSteps(line, text, pending, replyTo, senders, mintLocalId, options.assertCurrent, options.beforeSend);
   uploadAttachments(fileInputs(steps.flatMap(step => step.attachments)));
   return { text, pending, replyTo, runs: runInOrder(steps, options.previewUri) };
 }

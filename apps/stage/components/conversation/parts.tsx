@@ -25,9 +25,9 @@ import type { ConvTitle } from './convTitle';
 import { Modal } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 
-export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
-  peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
-}): React.ReactElement | null {
+interface HeaderAvatarProps { peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string }
+
+export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: HeaderAvatarProps): React.ReactElement | null {
   if (peerAddr) {
     return <Avatar address={peerAddr} size="sm" style={{ backgroundColor: border }} />;
   }
@@ -67,9 +67,8 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
   );
 }
 
-export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, border, head, title, onPress }: {
-  peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean;
-  border: string; head: string; title: ConvTitle; onPress?: () => void;
+export function ConvTopnavIdentity({ head, title, onPress, ...avatar }: HeaderAvatarProps & {
+  head: string; title: ConvTitle; onPress?: () => void;
 }): React.ReactElement {
   return (
     <Pressable
@@ -77,8 +76,8 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
       disabled={!onPress}
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
-      <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
-      <TitleText title={title} fontWeight={isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
+      <HeaderAvatar {...avatar}/>
+      <TitleText title={title} fontWeight={avatar.isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
     </Pressable>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { xmtpVote, xmtpOpenAnswer } from '../../lib/xmtp.messages';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { pollQuestionsInFeed } from './feed-helpers';
+import { pollQuestionsInFeed } from '@stage-labs/client/xmtp/poll-feed';
 import type { PollOpenAnswers, PollOwnVotes, PollVotes } from '../bubble/poll.model';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import { useStableCallback } from '../../lib/useStableCallback';
@@ -25,13 +25,13 @@ const cloneVotes = (votes: Votes): Votes => {
   return merged;
 };
 
-const ensureTally = (merged: Votes, pollId: string, q: number): Map<number, Set<string>> => {
-  let byQ = merged.get(pollId);
-  if (!byQ) { byQ = new Map(); merged.set(pollId, byQ); }
-  let tally = byQ.get(q);
-  if (!tally) { tally = new Map(); byQ.set(q, tally); }
-  return tally;
-};
+function child<K, V>(map: Map<K, V>, key: K, make: () => NoInfer<V>): V {
+  const found = map.get(key);
+  if (found !== undefined) return found;
+  const made = make();
+  map.set(key, made);
+  return made;
+}
 
 const applyOptimisticVote = (
   tally: Map<number, Set<string>>,
@@ -40,11 +40,7 @@ const applyOptimisticVote = (
   myUri: string,
 ): void => {
   for (const idx of confirmed) if (!sel.has(idx)) tally.get(idx)?.delete(myUri);
-  for (const idx of sel) {
-    let s = tally.get(idx);
-    if (!s) { s = new Set(); tally.set(idx, s); }
-    s.add(myUri);
-  }
+  for (const idx of sel) child(tally, idx, () => new Set()).add(myUri);
 };
 
 function useOptimisticVotes(
@@ -66,23 +62,21 @@ function useOptimisticVotes(
       const next = new Map<string, Set<number>>();
       for (const [key, sel] of prev) {
         const { pollId, q } = unCk(key);
-        const conf = ownVotes.get(pollId)?.get(q) ?? new Set<number>();
+        const conf = confirmedOwn(pollId, q);
         const same = sel.size === conf.size && [...sel].every(i => conf.has(i));
         if (same) { changed = true; continue; }
         next.set(key, sel);
       }
       return changed ? next : prev;
     });
-  }, [ownVotes]);
+  }, [confirmedOwn]);
 
   const displayOwnVotes = useReconciledMap(useMemo<Own>(() => {
     if (optimistic.size === 0) return ownVotes;
     const merged: Own = new Map([...ownVotes].map(([p, byQ]) => [p, new Map(byQ)]));
     for (const [key, sel] of optimistic) {
       const { pollId, q } = unCk(key);
-      let byQ = merged.get(pollId);
-      if (!byQ) { byQ = new Map(); merged.set(pollId, byQ); }
-      byQ.set(q, sel);
+      child(merged, pollId, () => new Map()).set(q, sel);
     }
     return merged;
   }, [ownVotes, optimistic]));
@@ -92,7 +86,7 @@ function useOptimisticVotes(
     const merged = cloneVotes(votes);
     for (const [key, sel] of optimistic) {
       const { pollId, q } = unCk(key);
-      const tally = ensureTally(merged, pollId, q);
+      const tally = child(child(merged, pollId, () => new Map()), q, () => new Map());
       applyOptimisticVote(tally, confirmedOwn(pollId, q), sel, myUri);
     }
     return merged;
@@ -148,10 +142,7 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
     );
     for (const [key, pending] of optimisticOpen) {
       const { pollId, q } = unCk(key);
-      let byQ = merged.get(pollId);
-      if (!byQ) { byQ = new Map(); merged.set(pollId, byQ); }
-      let m = byQ.get(q);
-      if (!m) { m = new Map(); byQ.set(q, m); }
+      const m = child(child(merged, pollId, () => new Map()), q, () => new Map());
       if (pending.text) m.set(myUri, pending);
       else m.delete(myUri);
     }

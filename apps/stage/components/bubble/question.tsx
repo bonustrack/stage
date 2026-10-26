@@ -7,19 +7,7 @@ import { usePalette } from '../../lib/theme';
 import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { Column } from '../layout';
 
-interface QuestionState {
-  selected: Set<string>;
-  otherOpen: boolean;
-  otherText: string;
-  multi: boolean;
-  allowOther: boolean;
-  setOtherOpen: (v: boolean) => void;
-  setOtherText: (v: string) => void;
-  toggle: (label: string) => void;
-  submit: () => void;
-}
-
-function useQuestionState(question: Question, onAnswer: (label: string) => void): QuestionState {
+function useQuestionState(question: Question, onAnswer: (label: string) => void) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherText, setOtherText] = useState('');
@@ -46,6 +34,8 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
   };
   return { selected, otherOpen, otherText, multi, allowOther, setOtherOpen, setOtherText, toggle, submit };
 }
+
+type QuestionState = ReturnType<typeof useQuestionState>;
 
 function optionBg(isOn: boolean, pressed: boolean, dark: boolean): string {
   if (isOn) return dark ? 'rgba(192,160,110,0.22)' : 'rgba(192,160,110,0.18)';

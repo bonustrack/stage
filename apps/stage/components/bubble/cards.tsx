@@ -32,29 +32,18 @@ import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radi
 import { peerLabel } from '../conversation/convTitle';
 import { Column, Row } from '../layout';
 
-interface TxCardModel {
-  target?: string;
-  eth?: string;
-  amount?: TxAmount;
-  balanceSymbol?: string;
-  needed?: number;
+type TxCardModel = TxCallFields & {
   amountLabel?: string;
-  chainNum: number;
   logoUrl: string;
-  desc: string;
-  recipient?: string;
-  tokenAddr?: string;
   decoded: DecodedCall | null;
   decoding: boolean;
-  sim: ReturnType<typeof useTxSimulation>['result'];
+  sim: SimulateResult | null;
   simulating: boolean;
-  showDecodedBlock: boolean;
   sendsNativeWithCall: boolean;
   actionLabel: string;
   isTransfer: boolean;
   warning?: string;
-  showBalance: boolean;
-}
+};
 export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
   req: WalletSendCallsContent; dark: boolean; paying?: boolean;
   onPay?: () => void;
@@ -166,15 +155,11 @@ function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
   const { call: decoded, pending: decoding } = useDecodedCall(f.target, f.data, f.chainNum);
   const { result: sim, pending: simulating } = useTxSimulation(f.target, f.data, f.value, f.chainNum);
   return {
-    target: f.target, eth: f.eth, amount: f.amount, balanceSymbol: f.balanceSymbol, needed: f.needed,
-    amountLabel, chainNum: f.chainNum, logoUrl, desc: f.desc,
-    recipient: f.recipient, tokenAddr: f.tokenAddr, decoded, decoding, sim, simulating,
-    showDecodedBlock: f.showDecodedBlock,
+    ...f, amountLabel, logoUrl, decoded, decoding, sim, simulating,
     sendsNativeWithCall: f.showDecodedBlock && !!f.eth && f.eth !== '0',
     actionLabel: txActionLabel(decoded, f.isErc20Transfer),
     isTransfer: isTransferRequest(decoded, f.isErc20Transfer),
     warning: spoofWarning(decoded, f.rawDesc),
-    showBalance: f.showBalance,
   };
 }
 function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.ReactElement {
@@ -183,7 +168,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
       {m.warning ? <TxWarning text={m.warning} /> : null}
       <SimulationBlock sim={m.sim} pending={m.simulating} sub={sub} chainId={m.chainNum} />
       {m.showDecodedBlock ? (
-        <DecodedCallBlock decoded={m.decoded} pending={m.decoding} target={m.target} sub={sub} selector={m.decoded?.selector}/>
+        <DecodedCallBlock decoded={m.decoded} pending={m.decoding} target={m.target} sub={sub}/>
       ) : null}
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
@@ -222,21 +207,18 @@ function fmtArgValue(v: string): string {
   if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
   return v;
 }
-function decodedFnLabel(decoded: DecodedCall | null, selector?: string): string {
-  if (!decoded) return selector ?? 'call';
-  if (decoded.source === 'mismatch') {
-    return selector ?? decoded.selector ?? 'unknown function';
-  }
-  return decoded.signature ?? decoded.functionName ?? selector ?? 'call';
+function decodedFnLabel(decoded: DecodedCall | null): string {
+  if (!decoded) return 'call';
+  if (decoded.source === 'mismatch') return decoded.selector ?? 'unknown function';
+  return decoded.signature ?? decoded.functionName ?? decoded.selector ?? 'call';
 }
-function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
-  decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
+function DecodedCallBlock({ decoded, pending, target, sub }: {
+  decoded: DecodedCall | null; pending: boolean; target?: string; sub: string;
 }): React.ReactElement {
   const pal = usePalette();
-  const detailBg = pal.border;
-  const fnLabel = decodedFnLabel(decoded, selector);
+  const fnLabel = decodedFnLabel(decoded);
   return (
-    <Column radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Column radius="md" background={pal.border} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Glyph icon={IconCodeBrackets} size={14} color={sub}/>
         <Text size="3xs" color="secondary">This transaction calls</Text>

@@ -36,14 +36,7 @@ function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void;
   return { ref, onLayout, minHeight: top === null ? undefined : Math.max(0, height - top) };
 }
 
-interface FrameScreens {
-  title: string;
-  navigation: FrameNavigation;
-  onBack?: () => void;
-  scrollRef: RefObject<ScreenScrollHandle | null>;
-}
-
-function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void): FrameScreens {
+function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void) {
   const { screen, depth, navigate: step } = useFrameStack(messageId, frame);
   const back = useCallback((): boolean => {
     if (depth === 0) return false;

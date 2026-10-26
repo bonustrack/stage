@@ -151,7 +151,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const draftOnly = props.xmtpLine === undefined;
   const { convId, draftKey, openLine } = composerTarget(props.xmtpLine, props.draftKey);
   const actions = useComposerActions({ ...props, ...s, openLine });
-  const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
@@ -192,7 +191,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
       <ComposerEditor
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
-        slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={mention.display} setText={dictation.setText}
         selection={s.selection} setSelection={s.setSelection}
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
