@@ -21,7 +21,7 @@ export const KIT_CATALOG_INSTRUCTIONS = [
   '',
   'A message can create several surfaces. The first one shows; a button whose action calls `openSurface` with another surface id shows that surface as a new screen with a back button, and `closeSurface` goes back.',
   '',
-  '## Agent functions',
+  '## Functions',
   '',
-  'Use `{"@call": "agentFunction", "args": {"name": "quote", "args": {...}}}` anywhere a dynamic value is accepted to have the agent compute it: the renderer sends a callAgentFunction and shows the value when the agent answers with an agentFunctionResponse.',
+  'Every basic catalog function is available. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate and pluralize with callRendererFunction.',
 ].join('\n');

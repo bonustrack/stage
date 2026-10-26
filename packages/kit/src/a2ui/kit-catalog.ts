@@ -155,9 +155,12 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   QrCode: component('QrCode', { value: common('DynamicString'), size: SPACING }, ['value'], 'A QR code for a string such as a payment link.'),
 };
 
+const AGENT_CALLABLE = new Set(['formatString', 'formatNumber', 'formatCurrency', 'formatDate', 'pluralize']);
+
 function inheritedFunction(name: string, definition: JsonValue): JsonObject {
   const source = isJsonObject(definition) ? definition : {};
-  const meta = Object.fromEntries(entriesOf(source).filter(([key]) => ['returnType', 'allowedCallers', 'requiresUserActivation', 'description'].includes(key)));
+  const inherited = Object.fromEntries(entriesOf(source).filter(([key]) => ['returnType', 'allowedCallers', 'requiresUserActivation', 'description'].includes(key)));
+  const meta = AGENT_CALLABLE.has(name) ? { ...inherited, allowedCallers: 'rendererOrAgent', requiresUserActivation: false } : inherited;
   const props = isJsonObject(source.properties) ? source.properties : {};
   return {
     type: 'object',

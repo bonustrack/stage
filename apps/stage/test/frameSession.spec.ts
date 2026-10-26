@@ -62,12 +62,12 @@ describe('frame sessions', () => {
     frameSession('m1', FRAME);
     const { host, sent } = recorder();
     setFrameSessionHost('m1', host);
-    const call = { version: 'v1.0', callRendererFunction: { functionCallId: 'r1', callFunction: { '@call': 'formatNumber', catalogId: KIT_CATALOG, args: { value: 1234.5 } } } };
-    applyToFrameSession('m1', [call]);
-    expect(sent).toEqual([{
-      version: 'v1.0',
-      rendererFunctionResponse: { functionCallId: 'r1', error: { code: 'INVALID_FUNCTION_CALL', message: expect.stringContaining('rendererOnly') } },
-    }]);
+    const call = (id: string, name: string) => ({ version: 'v1.0', callRendererFunction: { functionCallId: id, callFunction: { '@call': name, catalogId: KIT_CATALOG, args: { value: 1234.5 } } } });
+    applyToFrameSession('m1', [call('r1', 'formatNumber'), call('r2', 'openSurface')]);
+    expect(sent).toEqual([
+      { version: 'v1.0', rendererFunctionResponse: { functionCallId: 'r1', value: expect.stringContaining('1') } },
+      { version: 'v1.0', rendererFunctionResponse: { functionCallId: 'r2', error: { code: 'INVALID_FUNCTION_CALL', message: expect.stringContaining('rendererOnly') } } },
+    ]);
   });
 
   test('surface messages update the stored frame, and a reply that leaves nothing to show is refused', () => {

@@ -64,16 +64,19 @@ describe('Kit catalog functions', () => {
     expect(navs).toHaveLength(2);
   });
 
-  test('agentFunction validates in a component and becomes a callAgentFunction that the answer settles', () => {
+  test('the agent may call the Kit formatting functions, not the basic ones or navigation', () => {
     const sent: JsonObject[] = [];
     const client = createA2uiClient({ send: (message) => { sent.push(message as unknown as JsonObject); } });
-    const call = { '@call': 'agentFunction', args: { name: 'quote', args: { coin: 'BTC' } } };
-    client.receive(surface('q', { components: [{ id: 'root', component: 'Text', text: call }] }));
-    expect(client.surface('q')?.components.size).toBe(1);
-    expect(client.resolve('q', call, ROOT_SCOPE)).toBeUndefined();
-    const out = sent.find((m) => m.callAgentFunction !== undefined)?.callAgentFunction as JsonObject | undefined;
-    expect(out?.callFunction).toEqual({ ...call, catalogId: KIT_CATALOG_ID });
-    client.receive({ version: 'v1.0', agentFunctionResponse: { functionCallId: out?.functionCallId ?? '', value: '$64,210' } });
-    expect(client.resolve('q', call, ROOT_SCOPE)).toBe('$64,210');
+    const call = (id: string, catalogId: string, name: string, args: JsonObject = {}): JsonObject => ({
+      version: 'v1.0', callRendererFunction: { functionCallId: id, callFunction: { '@call': name, catalogId, args } },
+    });
+    client.receive(call('kit', KIT_CATALOG_ID, 'formatNumber', { value: 1234.5 }));
+    client.receive(call('basic', 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json', 'formatNumber', { value: 1 }));
+    client.receive(call('nav', KIT_CATALOG_ID, 'openSurface', { surfaceId: 'x' }));
+    const answers = Object.fromEntries(sent.map((m) => {
+      const response = m.rendererFunctionResponse as JsonObject;
+      return [String(response.functionCallId), response.error === undefined ? 'value' : (response.error as JsonObject).code];
+    }));
+    expect(answers).toEqual({ kit: 'value', basic: 'INVALID_FUNCTION_CALL', nav: 'INVALID_FUNCTION_CALL' });
   });
 });
