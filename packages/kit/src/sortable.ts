@@ -18,6 +18,7 @@ export interface SortListLayout {
   listId: string;
   direction: SortDirection;
   rect: SortRect;
+  ids: readonly string[];
   items: readonly SortItemLayout[];
 }
 
@@ -40,16 +41,26 @@ function others(list: SortListLayout, itemId: string): readonly SortItemLayout[]
   return list.items.filter(item => item.id !== itemId);
 }
 
+function otherIds(list: SortListLayout, itemId: string): readonly string[] {
+  return list.ids.filter(id => id !== itemId);
+}
+
+function middleOf(list: SortListLayout, rect: SortRect): number {
+  return list.direction === 'vertical' ? rect.y + rect.height / 2 : rect.x + rect.width / 2;
+}
+
 export function insertionIndex(list: SortListLayout, itemId: string, x: number, y: number): number {
   const point = list.direction === 'vertical' ? y : x;
-  return others(list, itemId).filter((item) => {
-    const middle = list.direction === 'vertical' ? item.rect.y + item.rect.height / 2 : item.rect.x + item.rect.width / 2;
-    return middle < point;
-  }).length;
+  const ids = otherIds(list, itemId);
+  const measured = others(list, itemId).filter(item => ids.includes(item.id));
+  const before = measured.filter(item => middleOf(list, item.rect) < point).pop();
+  if (before !== undefined) return ids.indexOf(before.id) + 1;
+  const after = measured[0];
+  return after === undefined ? 0 : ids.indexOf(after.id);
 }
 
 export function sortMove(origin: SortOrigin, target: SortListLayout, index: number): SortMove {
-  const ids = others(target, origin.itemId).map(item => item.id);
+  const ids = otherIds(target, origin.itemId);
   return {
     itemId: origin.itemId,
     fromListId: origin.listId,
@@ -72,20 +83,24 @@ export function stepTarget(
   const list = lists[at];
   if (list === undefined) return current;
   if (step === 'backward' || step === 'forward') {
-    const last = others(list, itemId).length;
+    const last = otherIds(list, itemId).length;
     const index = current.index + (step === 'forward' ? 1 : -1);
     return { listId: list.listId, index: Math.max(0, Math.min(last, index)) };
   }
   const next = lists[at + (step === 'nextList' ? 1 : -1)];
   if (next === undefined) return current;
-  return { listId: next.listId, index: Math.min(current.index, others(next, itemId).length) };
+  return { listId: next.listId, index: Math.min(current.index, otherIds(next, itemId).length) };
+}
+
+function rectOf(list: SortListLayout, id: string | undefined): SortRect | undefined {
+  return id === undefined ? undefined : list.items.find(item => item.id === id)?.rect;
 }
 
 export function indicatorRect(list: SortListLayout, itemId: string, index: number, thickness: number): SortRect {
-  const items = others(list, itemId);
+  const ids = otherIds(list, itemId);
   const vertical = list.direction === 'vertical';
-  const before = items[index - 1]?.rect;
-  const after = items[index]?.rect;
+  const before = rectOf(list, ids[index - 1]);
+  const after = rectOf(list, ids[index]);
   const start = vertical ? list.rect.y : list.rect.x;
   const edge = (rect: SortRect | undefined, end: boolean): number | undefined => {
     if (rect === undefined) return undefined;
@@ -95,7 +110,8 @@ export function indicatorRect(list: SortListLayout, itemId: string, index: numbe
   const low = edge(before, true);
   const high = edge(after, false);
   const middle = low !== undefined && high !== undefined ? (low + high) / 2 : low ?? high ?? start;
-  const offset = middle - start - thickness / 2;
+  const size = vertical ? list.rect.height : list.rect.width;
+  const offset = Math.max(0, Math.min(size - thickness, middle - start - thickness / 2));
   return vertical
     ? { x: 0, y: offset, width: list.rect.width, height: thickness }
     : { x: offset, y: 0, width: thickness, height: list.rect.height };
@@ -111,4 +127,10 @@ export function movedItems<T>(
   const at = Math.max(0, Math.min(toIndex, into.length));
   const placed = [...into.slice(0, at), item, ...into.slice(at)];
   return target === null ? { source: placed, target: placed } : { source: rest, target: placed };
+}
+
+export function shiftOf(index: number, fromIndex: number, toIndex: number, size: number): number {
+  if (index > fromIndex && index <= toIndex) return -size;
+  if (index < fromIndex && index >= toIndex) return size;
+  return 0;
 }

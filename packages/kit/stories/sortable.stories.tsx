@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FlatList } from 'react-native';
 import type { Story } from '../gallery/story';
 import { Badge } from '../src/react-native/badge';
 import { Card } from '../src/react-native/card';
@@ -93,6 +94,59 @@ export const Handle: Story = () => {
           </Row>
         </SortableItem>
       ))}
+    </SortableList>
+  );
+};
+
+export const Shift: Story = () => {
+  const dark = useDark();
+  const [ids, setIds] = useState(['Inbox', 'Today', 'Upcoming', 'Someday', 'Logbook']);
+  return (
+    <SortableList listId="shift" itemIds={ids} indicator="shift" gap={8} onMove={(move) => { setIds(moved(ids, move)); }}>
+      {ids.map(id => (
+        <SortableItem key={id} itemId={id}>
+          {({ dragging }) => <Card size="sm" background={dragging ? 'border' : undefined}><Text text={id}/></Card>}
+        </SortableItem>
+      ))}
+      <Badge dark={dark} label="Drag a row: the others slide to make room." size="sm"/>
+    </SortableList>
+  );
+};
+
+const SECTIONS: Record<string, string[]> = { Work: ['Roadmap', 'Hiring'], Home: ['Groceries'], Hobbies: ['Guitar', 'Running', 'Chess'] };
+
+export const Sections: Story = () => {
+  const [order, setOrder] = useState(Object.keys(SECTIONS));
+  return (
+    <SortableList listId="sections" itemIds={order} indicator="shift" onMove={(move) => { setOrder(moved(order, move)); }}>
+      {order.flatMap(section => [
+        <SortableItem key={section} itemId={section}>
+          <Row padding={{ y: 8 }}><Text fontWeight="semibold" text={section}/></Row>
+        </SortableItem>,
+        ...(SECTIONS[section] ?? []).map(row => (
+          <SortableItem key={row} itemId={row} follows={section}>
+            <Row padding={{ left: 16, y: 6 }}><Text color="secondary" text={row}/></Row>
+          </SortableItem>
+        )),
+      ])}
+    </SortableList>
+  );
+};
+
+const LONG = Array.from({ length: 200 }, (_, i) => `Row ${i + 1}`);
+
+export const Virtualized: Story = () => {
+  const [ids, setIds] = useState(LONG);
+  return (
+    <SortableList listId="long" itemIds={ids} indicator="shift" style={{ height: 360 }} onMove={(move) => { setIds(moved(ids, move)); }}>
+      <FlatList
+        style={{ flex: 1 }}
+        data={ids}
+        keyExtractor={id => id}
+        initialNumToRender={12}
+        windowSize={3}
+        renderItem={({ item }) => <SortableItem itemId={item}><Row padding={{ x: 12, y: 10 }}><Text text={item}/></Row></SortableItem>}
+      />
     </SortableList>
   );
 };

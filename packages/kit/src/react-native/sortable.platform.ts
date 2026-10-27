@@ -39,6 +39,13 @@ export function measureLater(node: unknown): Promise<SortRect | null> {
 
 export const measuresSynchronously = WEB;
 
+export const ghostInViewport = WEB;
+
+export function pinToViewport(node: unknown): void {
+  const el = domOf(node);
+  if (el !== null) el.style.position = 'fixed';
+}
+
 function blockTouchScroll(event: TouchEvent): void {
   if (event.cancelable) event.preventDefault();
 }
@@ -140,4 +147,16 @@ export function listenKeys(node: unknown, onKey: (key: string) => boolean): () =
 export function setGrabCursor(node: unknown, on: boolean): void {
   const el = domOf(node);
   if (el !== null) el.style.cursor = on ? 'grab' : '';
+}
+
+export function raiseWithin(node: unknown, container: unknown): () => void {
+  const start = domOf(node);
+  const stop = domOf(container);
+  if (start === null) return () => undefined;
+  const raised: HTMLElement[] = [];
+  for (let el: HTMLElement | null = start; el !== null && el !== stop; el = el.parentElement) {
+    raised.push(el);
+    el.style.zIndex = '10';
+  }
+  return () => { for (const el of raised) el.style.zIndex = ''; };
 }

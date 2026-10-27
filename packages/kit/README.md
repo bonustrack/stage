@@ -182,7 +182,9 @@ import { Chart } from '@stage-labs/kit/react-native/chart';
 
 - `SortableScope` coordinates the lists inside it and draws the drag preview. A `SortableList` without a scope makes its own.
 - `SortableList` takes `listId`, the `itemIds` in order, `onMove(move, source)`, and optionally `group` (lists of a group exchange items), `direction`, `gap`, `label`, `payload` (handed back as `source.payload`), `accepts(move)`, `indicator` (`line` or `none`), `keyboard` and `disabled`. `children` can be a function of `{ over }`.
-- `SortableItem` takes `itemId`, `disabled`, `onHold` (a touch hold released without moving) and `handle` (drag only from a `SortableHandle` inside it). `children` can be a function of `{ dragging }`.
+- `SortableItem` takes `itemId`, `disabled`, `onHold` (a touch hold released without moving), `handle` (drag only from a `SortableHandle` inside it) and `follows` (the id of another item it moves with: not draggable itself and not in `itemIds`, for example the rows under a section header). `children` can be a function of `{ dragging }`.
+- `indicator` is `line` (a floating preview follows the pointer and a line marks the drop place, the default), `none` (the preview only, for hosts that draw their own feedback with `useSortableTarget(listId)`) or `shift` (in place, within one list: the dragged item and its followers follow the pointer along the list and the items it passes slide by its size).
+- Positions come from `itemIds` and whichever items are rendered, so a `SortableList` around a virtualized list (`FlatList`, a windowed web list) orders correctly with most rows unmounted.
 - A move is `{ itemId, fromListId, toListId, fromIndex, toIndex, beforeId, afterId }`, where `toIndex` and the neighbours count the target list without the moved item. The lists do not reorder anything themselves: the host updates its data in `onMove`.
 - Touch lifts after a long press, a mouse after a few pixels. On web the page and scroll containers scroll at the edges, and the click after a drop is swallowed. With `keyboard`, a focused item lifts with Space or Enter, moves with the arrow keys (into the next list of the group across the other axis), drops with Space or Enter and cancels with Escape, and screen readers get the same moves as accessibility actions, with announcements.
 
@@ -231,6 +233,14 @@ Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.18
+
+- `SortableList` `indicator="shift"`: in-place dragging within one list, where the other items slide to make room.
+- `SortableItem` `follows`: items that move with another one, so a section header carries its rows.
+- `useSortableTarget(listId)`: the live drop target, for custom feedback.
+- Positions and neighbours come from `itemIds`, so sortable lists work inside virtualized lists.
+- Fixes: the drop line stays inside its list and the drag preview is fixed to the viewport on web, so neither can make a list or the page scroll during a drag.
 
 ### 0.1.0-beta.17
 
