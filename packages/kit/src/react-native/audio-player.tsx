@@ -156,7 +156,7 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
           ))}
         </View>
       </Pressable>
-      <RNText style={{ color: onAccent, fontSize: FONT_SIZE['3xs'], minWidth: 34, textAlign: 'right', fontFamily: 'Calibre-Regular' }}>
+      <RNText style={{ color: onAccent, fontSize: FONT_SIZE['3xs'], minWidth: 34, textAlign: 'right', fontFamily: fontName.sans }}>
         {label}
       </RNText>
     </View>

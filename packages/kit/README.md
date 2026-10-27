@@ -214,6 +214,13 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.16
+
+- Renderer: a `radius` of `100%` (a circle) now applies, as the Kit catalog already allowed; the renderer reads its radius tokens from the same scale as the catalog.
+- `AudioPlayer`: the waveform player's time label uses the Kit font instead of a font the kit never loads.
+- New: `useKitPaletteFor(dark)` in `react-native/theme-context`, the palette for an explicit scheme (it replaces three private copies in `Menu`, `Modal` and `Tooltip`).
+- Internal cleanup with no change to rendering, props or defaults: simpler style cores and components, and `radius.ts` folded into `tokens.ts` (same exports).
+
 ### 0.1.0-beta.15
 
 - `QrCode` encodes with `uqr` (ESM only, no dependencies) instead of the CommonJS `qrcode`, so a Vite host that serves the kit sources in dev needs no `optimizeDeps` entry for it. `qrcode` and `@types/qrcode` are no longer dependencies. Codes keep error correction level M and scan the same, but their module pattern can differ from before.
