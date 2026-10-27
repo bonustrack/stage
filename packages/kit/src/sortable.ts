@@ -28,6 +28,8 @@ export interface SortTarget { listId: string; index: number }
 
 export type SortStep = 'backward' | 'forward' | 'previousList' | 'nextList';
 
+export interface SortSlot { listId: string; beforeId: string | null; afterId: string | null }
+
 export function rectContains(rect: SortRect, x: number, y: number): boolean {
   return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
 }
@@ -35,6 +37,28 @@ export function rectContains(rect: SortRect, x: number, y: number): boolean {
 export function listAt(lists: readonly SortListLayout[], x: number, y: number): SortListLayout | undefined {
   const hits = lists.filter(list => rectContains(list.rect, x, y));
   return hits.sort((a, b) => a.rect.width * a.rect.height - b.rect.width * b.rect.height)[0];
+}
+
+function gapTo(start: number, size: number, point: number): number {
+  return point < start ? start - point : Math.max(0, point - start - size);
+}
+
+export function nearestList(lists: readonly SortListLayout[], x: number, y: number): SortListLayout | undefined {
+  const across = lists.filter(({ direction, rect }) => (
+    direction === 'vertical' ? x >= rect.x && x <= rect.x + rect.width : y >= rect.y && y <= rect.y + rect.height
+  ));
+  const distance = ({ direction, rect }: SortListLayout): number => (
+    direction === 'vertical' ? gapTo(rect.y, rect.height, y) : gapTo(rect.x, rect.width, x)
+  );
+  return across.sort((a, b) => distance(a) - distance(b))[0];
+}
+
+export function unionRect(rects: readonly (SortRect | null)[]): SortRect | null {
+  const known = rects.filter((rect): rect is SortRect => rect !== null);
+  if (known.length === 0) return null;
+  const x = Math.min(...known.map(r => r.x));
+  const y = Math.min(...known.map(r => r.y));
+  return { x, y, width: Math.max(...known.map(r => r.x + r.width)) - x, height: Math.max(...known.map(r => r.y + r.height)) - y };
 }
 
 function others(list: SortListLayout, itemId: string): readonly SortItemLayout[] {
@@ -60,16 +84,13 @@ export function insertionIndex(list: SortListLayout, itemId: string, x: number, 
 }
 
 export function sortMove(origin: SortOrigin, target: SortListLayout, index: number): SortMove {
-  const ids = otherIds(target, origin.itemId);
-  return {
-    itemId: origin.itemId,
-    fromListId: origin.listId,
-    toListId: target.listId,
-    fromIndex: origin.index,
-    toIndex: index,
-    beforeId: ids[index - 1] ?? null,
-    afterId: ids[index] ?? null,
-  };
+  const { beforeId, afterId } = slotAt(target.listId, target.ids, origin.itemId, index);
+  return { itemId: origin.itemId, fromListId: origin.listId, toListId: target.listId, fromIndex: origin.index, toIndex: index, beforeId, afterId };
+}
+
+export function slotAt(listId: string, ids: readonly string[], itemId: string, index: number): SortSlot {
+  const rest = ids.filter(id => id !== itemId);
+  return { listId, beforeId: rest[index - 1] ?? null, afterId: rest[index] ?? null };
 }
 
 export function moveAnchor(move: Pick<SortMove, 'fromIndex' | 'toIndex' | 'beforeId' | 'afterId'>): string | null {

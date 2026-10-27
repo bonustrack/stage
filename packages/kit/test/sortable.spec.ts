@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  indicatorRect, insertionIndex, isNoMove, listAt, moveAnchor, movedItems, shiftOf, sortMove, stepTarget, type SortListLayout,
+  indicatorRect, insertionIndex, isNoMove, listAt, moveAnchor, movedItems, nearestList, shiftOf, slotAt, sortMove, stepTarget, unionRect,
+  type SortListLayout,
 } from '../src/sortable';
 
 const row = (id: string, y: number): { id: string; rect: { x: number; y: number; width: number; height: number } } => ({ id, rect: { x: 0, y, width: 100, height: 20 } });
@@ -67,5 +68,24 @@ describe('sortable model', () => {
   test('the anchor is the neighbour the item took the place of', () => {
     expect(moveAnchor({ fromIndex: 0, toIndex: 2, beforeId: 'c', afterId: 'd' })).toBe('c');
     expect(moveAnchor({ fromIndex: 3, toIndex: 1, beforeId: 'a', afterId: 'b' })).toBe('b');
+  });
+
+  test('outside every list the pointer falls to the nearest list across it', () => {
+    const short = { ...done, rect: { ...done.rect, height: 40 } };
+    expect(nearestList([todo, short], 130, 300)?.listId).toBe('done');
+    expect(nearestList([todo, short], 50, -20)?.listId).toBe('todo');
+    expect(nearestList([todo, short], 110, 300)).toBeUndefined();
+    expect(insertionIndex(short, 'a', 130, 300)).toBe(1);
+  });
+
+  test('the preview slot names the items around it', () => {
+    expect(slotAt('todo', ['a', 'b', 'c'], 'a', 1)).toEqual({ listId: 'todo', beforeId: 'b', afterId: 'c' });
+    expect(slotAt('done', ['d'], 'a', 1)).toEqual({ listId: 'done', beforeId: 'd', afterId: null });
+    expect(slotAt('empty', [], 'a', 0)).toEqual({ listId: 'empty', beforeId: null, afterId: null });
+  });
+
+  test('a block measures as the union of its rows', () => {
+    expect(unionRect([row('a', 0).rect, null, row('b', 30).rect])).toEqual({ x: 0, y: 0, width: 100, height: 50 });
+    expect(unionRect([null])).toBeNull();
   });
 });

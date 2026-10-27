@@ -1,29 +1,26 @@
 import type { ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Platform } from 'react-native';
 import {
-  indicatorRect, insertionIndex, isNoMove, listAt, shiftOf, sortMove, stepTarget,
-  type SortDirection, type SortListLayout, type SortMove, type SortOrigin, type SortRect, type SortStep, type SortTarget,
+  indicatorRect, insertionIndex, isNoMove, listAt, nearestList, rectContains, shiftOf, slotAt, sortMove, stepTarget,
+  type SortDirection, type SortListLayout, type SortMove, type SortOrigin, type SortRect, type SortSlot, type SortStep, type SortTarget,
 } from '../sortable';
+import { NO_RECT, blockOf, layoutLater, layoutNow, layoutOf, type MeasuredList } from './sortable.measure';
 import {
   autoScroll, ghostInViewport, liftFeedback, measureLater, measureNow, measuresSynchronously, nextFrame, raiseWithin, setPageDragging, suppressNextClick,
 } from './sortable.platform';
 
-export type SortIndicator = 'line' | 'none' | 'shift' | 'follow';
-
-export interface SortItemEntry { node: () => unknown; offset: Animated.Value; follows: string | undefined }
+export type SortIndicator = 'preview' | 'line' | 'none' | 'shift' | 'follow';
 
 export interface SortSource { listId: string; payload: unknown }
 
-export interface SortListEntry {
-  listId: string;
+export type { SortItemEntry } from './sortable.measure';
+
+export interface SortListEntry extends MeasuredList {
   group: string;
-  direction: SortDirection;
   label: string | undefined;
-  itemIds: readonly string[];
   payload: unknown;
   indicator: SortIndicator;
-  node: () => unknown;
-  items: ReadonlyMap<string, SortItemEntry>;
+  placeAt: ((move: SortMove) => number) | undefined;
   accepts: (move: SortMove) => boolean;
   onMove: (move: SortMove, source: SortSource) => void;
 }
@@ -37,7 +34,16 @@ export interface SortDrag extends SortOrigin {
   inPlace: boolean;
 }
 
-export interface SortState { drag: SortDrag | null; target: SortTarget | null; indicator: SortRect | null }
+export interface SortHidden { listId: string; itemId: string }
+
+export interface SortState {
+  drag: SortDrag | null;
+  target: SortTarget | null;
+  indicator: SortRect | null;
+  slot: SortSlot | null;
+  hidden: readonly SortHidden[];
+  preview: ReactNode;
+}
 
 interface Point { x: number; y: number }
 
@@ -59,9 +65,8 @@ interface Core {
   restore: () => void;
 }
 
-const IDLE: SortState = { drag: null, target: null, indicator: null };
+const IDLE: SortState = { drag: null, target: null, indicator: null, slot: null, hidden: [], preview: null };
 const INDICATOR = 2;
-const NO_RECT: SortRect = { x: 0, y: 0, width: 0, height: 0 };
 const NO_SIZE = { width: 0, height: 0 };
 const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
@@ -82,36 +87,6 @@ function group(core: Core, name: string): SortListEntry[] {
 
 function announce(text: string): void {
   AccessibilityInfo.announceForAccessibility(text);
-}
-
-function blockOf(list: SortListEntry, id: string): SortItemEntry[] {
-  const lead = list.items.get(id);
-  const followers = [...list.items.values()].filter(item => item.follows === id);
-  return lead === undefined ? followers : [lead, ...followers];
-}
-
-function union(rects: readonly (SortRect | null)[]): SortRect | null {
-  const known = rects.filter((rect): rect is SortRect => rect !== null);
-  if (known.length === 0) return null;
-  const x = Math.min(...known.map(r => r.x));
-  const y = Math.min(...known.map(r => r.y));
-  return { x, y, width: Math.max(...known.map(r => r.x + r.width)) - x, height: Math.max(...known.map(r => r.y + r.height)) - y };
-}
-
-function layoutOf(list: SortListEntry, rect: SortRect | null, rects: readonly (SortRect | null)[]): SortListLayout {
-  return {
-    listId: list.listId, direction: list.direction, rect: rect ?? NO_RECT, ids: list.itemIds,
-    items: list.itemIds.flatMap((id, i) => { const r = rects[i]; return r === null || r === undefined ? [] : [{ id, rect: r }]; }),
-  };
-}
-
-function layoutNow(list: SortListEntry): SortListLayout {
-  return layoutOf(list, measureNow(list.node()), list.itemIds.map(id => union(blockOf(list, id).map(item => measureNow(item.node())))));
-}
-
-async function layoutLater(list: SortListEntry): Promise<SortListLayout> {
-  const rects = await Promise.all(list.itemIds.map(async id => union(await Promise.all(blockOf(list, id).map(item => measureLater(item.node()))))));
-  return layoutOf(list, await measureLater(list.node()), rects);
 }
 
 function bareLayouts(core: Core, name: string): SortListLayout[] {
@@ -160,8 +135,34 @@ function measureBlock(core: Core, drag: SortDrag): void {
 }
 
 function accepted(core: Core, drag: SortDrag, layout: SortListLayout, index: number): SortMove | null {
-  const move = sortMove(drag, layout, index);
-  return entry(core, layout.listId)?.accepts(move) === true ? move : null;
+  const list = entry(core, layout.listId);
+  if (list === undefined) return null;
+  const asked = sortMove(drag, layout, index);
+  const last = layout.ids.filter(id => id !== drag.itemId).length;
+  const move = list.placeAt === undefined ? asked : sortMove(drag, layout, Math.max(0, Math.min(last, list.placeAt(asked))));
+  return list.accepts(move) ? move : null;
+}
+
+function lineAt(core: Core, drag: SortDrag, target: SortTarget | null): SortRect | null {
+  const layout = core.layouts.find(l => l.listId === target?.listId);
+  if (target === null || layout === undefined || entry(core, target.listId)?.indicator !== 'line') return null;
+  return indicatorRect(layout, drag.itemId, target.index, INDICATOR);
+}
+
+function viewOf(core: Core, drag: SortDrag, target: SortTarget | null): SortState {
+  const shown = target ?? drag;
+  const into = entry(core, shown.listId);
+  const ready = drag.keyboard || drag.size.width > 0 || drag.size.height > 0;
+  return {
+    drag, target, preview: drag.preview, indicator: lineAt(core, drag, target),
+    slot: ready && into?.indicator === 'preview' ? slotAt(shown.listId, into.itemIds, drag.itemId, shown.index) : null,
+    hidden: ready && entry(core, drag.listId)?.indicator === 'preview' ? [{ listId: drag.listId, itemId: drag.itemId }] : [],
+  };
+}
+
+async function remeasure(core: Core, drag: SortDrag): Promise<void> {
+  const all = await Promise.all(group(core, drag.group).map(layoutLater));
+  if (core.state.drag?.itemId === drag.itemId) core.layouts = all;
 }
 
 function sameTarget(a: SortTarget | null, b: SortTarget | null): boolean {
@@ -169,18 +170,20 @@ function sameTarget(a: SortTarget | null, b: SortTarget | null): boolean {
 }
 
 function targetLayout(core: Core, drag: SortDrag): SortListLayout | undefined {
-  return drag.inPlace ? core.layouts.find(l => l.listId === drag.listId) : listAt(core.layouts, core.pointer.x, core.pointer.y);
+  const { x, y } = core.pointer;
+  if (drag.inPlace) return core.layouts.find(l => l.listId === drag.listId);
+  return listAt(core.layouts, x, y) ?? (rectContains(core.scopeRect, x, y) ? nearestList(core.layouts, x, y) : undefined);
 }
 
 function retarget(core: Core, drag: SortDrag): void {
-  const { pointer, state } = core;
+  const { pointer } = core;
   const layout = targetLayout(core, drag);
-  const index = layout === undefined ? -1 : insertionIndex(layout, drag.itemId, pointer.x, pointer.y);
-  const ok = layout !== undefined && accepted(core, drag, layout, index) !== null;
-  const target = ok ? { listId: layout.listId, index } : null;
-  if (sameTarget(target, state.target)) return;
+  const move = layout === undefined ? null : accepted(core, drag, layout, insertionIndex(layout, drag.itemId, pointer.x, pointer.y));
+  const target = move === null ? null : { listId: move.toListId, index: move.toIndex };
+  if (sameTarget(target, core.state.target)) return;
   if (drag.inPlace) slideOthers(core, drag, target?.index ?? drag.index);
-  set(core, { drag, target, indicator: ok && !drag.inPlace ? indicatorRect(layout, drag.itemId, index, INDICATOR) : null });
+  set(core, viewOf(core, drag, target));
+  if (!measuresSynchronously && !drag.inPlace) nextFrame(() => { void remeasure(core, drag); });
 }
 
 function refresh(core: Core, drag: SortDrag): void {
@@ -216,15 +219,24 @@ function commit(core: Core, drag: SortDrag, target: SortTarget | null): boolean 
   return true;
 }
 
+function settledView({ drag, target, slot, hidden, preview }: SortState): SortState {
+  const landed = drag !== null && target !== null && slot !== null ? [{ listId: target.listId, itemId: drag.itemId }] : [];
+  return { ...IDLE, slot, hidden: [...hidden, ...landed], preview };
+}
+
 function finish(core: Core, settled = false): void {
   core.stopScroll();
   setPageDragging(false);
   core.restore();
   core.restore = () => undefined;
   core.layouts = [];
-  if (settled) nextFrame(() => { resetOffsets(core); });
-  else resetOffsets(core);
-  set(core, IDLE);
+  if (!settled) { resetOffsets(core); set(core, IDLE); return; }
+  const held = settledView(core.state);
+  set(core, held);
+  nextFrame(() => {
+    resetOffsets(core);
+    if (core.state === held) set(core, IDLE);
+  });
 }
 
 function dragOf(list: SortListEntry, itemId: string, keyboard: boolean, preview: ReactNode = null): SortDrag {
@@ -244,7 +256,7 @@ async function measureNative(core: Core, drag: SortDrag, list: SortListEntry): P
   measureBlock(core, drag);
   const next = item === null ? drag : { ...drag, size: { width: item.width, height: item.height }, grab: { x: core.pointer.x - item.x, y: core.pointer.y - item.y } };
   place(core, next);
-  set(core, { ...core.state, drag: next });
+  set(core, viewOf(core, next, core.state.target));
 }
 
 function begin(core: Core, listId: string, itemId: string, preview: ReactNode): void {
@@ -263,7 +275,7 @@ function begin(core: Core, listId: string, itemId: string, preview: ReactNode): 
   measureBlock(core, drag);
   if (drag.inPlace) core.restore = raiseWithin(list.items.get(itemId)?.node(), list.node());
   place(core, drag);
-  set(core, { drag, target: { listId, index: drag.index }, indicator: null });
+  set(core, { ...viewOf(core, drag, { listId, index: drag.index }), indicator: null });
   if (!measuresSynchronously) void measureNative(core, drag, list);
 }
 
@@ -293,13 +305,12 @@ function positionLabel(core: Core, target: SortTarget): string {
   return `Position ${target.index + 1} of ${Math.max(count, target.index + 1)}${label}`;
 }
 
-function keyLift(core: Core, listId: string, itemId: string): void {
+function keyLift(core: Core, listId: string, itemId: string, preview: ReactNode): void {
   const list = entry(core, listId);
   if (list === undefined) return;
-  const drag = dragOf(list, itemId, true);
+  const drag = dragOf(list, itemId, true, preview);
   core.layouts = measuresSynchronously ? group(core, list.group).map(layoutNow) : bareLayouts(core, list.group);
-  const layout = core.layouts.find(l => l.listId === listId);
-  set(core, { drag, target: { listId, index: drag.index }, indicator: layout === undefined ? null : indicatorRect(layout, itemId, drag.index, INDICATOR) });
+  set(core, viewOf(core, drag, { listId, index: drag.index }));
   announce('Picked up. Use the arrow keys to move, Space to drop, Escape to cancel.');
 }
 
@@ -307,10 +318,12 @@ function keyStep(core: Core, step: SortStep): void {
   const { drag, target: current } = core.state;
   if (drag === null || current === null) return;
   const ordered = [...core.layouts].sort((a, b) => (a.rect.x - b.rect.x) || (a.rect.y - b.rect.y));
-  const target = stepTarget(ordered, drag.itemId, current, step);
-  const layout = core.layouts.find(l => l.listId === target.listId);
-  if (layout === undefined || accepted(core, drag, layout, target.index) === null) return;
-  set(core, { drag, target, indicator: indicatorRect(layout, drag.itemId, target.index, INDICATOR) });
+  const next = stepTarget(ordered, drag.itemId, current, step);
+  const layout = core.layouts.find(l => l.listId === next.listId);
+  const move = layout === undefined ? null : accepted(core, drag, layout, next.index);
+  if (move === null) return;
+  const target = { listId: move.toListId, index: move.toIndex };
+  set(core, viewOf(core, drag, target));
   announce(positionLabel(core, target));
 }
 
@@ -318,7 +331,7 @@ function keyDrop(core: Core): void {
   const { drag, target } = core.state;
   const done = drag !== null && commit(core, drag, target);
   const message = done && target !== null ? `Dropped. ${positionLabel(core, target)}` : 'Move cancelled.';
-  finish(core);
+  finish(core, done);
   announce(message);
 }
 
@@ -353,7 +366,7 @@ export function makeSortCoordinator() {
     drop: (): boolean => drop(core),
     cancel: (): void => { finish(core); },
     wasMoved: (): boolean => core.moved,
-    keyLift: (listId: string, itemId: string): void => { keyLift(core, listId, itemId); },
+    keyLift: (listId: string, itemId: string, preview: ReactNode): void => { keyLift(core, listId, itemId, preview); },
     keyStep: (step: SortStep): void => { keyStep(core, step); },
     keyDrop: (): void => { keyDrop(core); },
     keyCancel: (): void => { finish(core); announce('Move cancelled.'); },

@@ -190,7 +190,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     lineThrough: BOOLEAN,
     truncate: BOOLEAN,
     maxLines: MAX_LINES,
-    fontFamily: token(['sans', 'mono'], 'The Kit font family.'),
+    fontFamily: token(['sans', 'head', 'mono'], 'The Kit font family: head is the heading face used by Title.'),
   }),
   Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR }),
   Icon: ICON,
@@ -200,9 +200,11 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   Column: inherit('Column', LAYOUT_EXTRAS),
   List: inherit('List', {
     gap: SPACING,
+    padding: PADDING,
     sortable: { ...BOOLEAN, description: 'Let the user drag the items of a templated list to reorder them, or into another sortable list of the same group.' },
     group: { type: 'string', description: 'Sortable lists with the same group exchange items.' },
     listId: { ...common('DynamicString'), description: 'Identifies this list in the move details, for example the column id.' },
+    indicator: { ...token(['preview', 'line'], 'How a sortable list shows where a dragged item lands: preview shows the item dimmed at its new place, line draws a line there.'), default: 'preview' },
     itemKey: { type: 'string', description: 'The item field holding its stable id. Defaults to id.' },
     move: { ...common('DataBinding'), description: 'Where the renderer writes the last move: itemId, fromListId, toListId, fromIndex, toIndex, beforeId, afterId.' },
     action: common('Action'),
@@ -217,6 +219,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     hint: common('DynamicString'),
     hideLabel: { ...BOOLEAN, description: 'Keep the compact field: the label is read by screen readers only.' },
     pill: { ...BOOLEAN, description: 'Fully rounded corners.' },
+    action: { ...common('Action'), description: 'Runs when the user presses Enter in a single-line field, like a Button press: a submit, never on typing.' },
   }),
   CheckBox: inherit('CheckBox', { displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
   ChoicePicker: inherit('ChoicePicker'),
@@ -337,7 +340,7 @@ const INSTRUCTIONS = [
   '',
   '## Inputs',
   '',
-  'As in the basic catalog, inputs only write to the data model. To act on them, add a Button whose action context references the input paths (or set `sendDataModel` on the surface): for example an Apply button for filters or a Search button for a search field.',
+  'As in the basic catalog, inputs only write to the data model. To act on them, add a Button whose action context references the input paths (or set `sendDataModel` on the surface): for example an Apply button for filters or a Search button for a search field. A single-line TextField can also take an `action` that runs when the user presses Enter (an inline rename, a search), with the same context rules as a Button; it does not run while the field fails its checks.',
 ].join('\n');
 
 export const KIT_CATALOG: JsonObject = {

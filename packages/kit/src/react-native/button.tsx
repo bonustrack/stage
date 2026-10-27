@@ -57,8 +57,12 @@ interface ContainerStyleArgs {
   radius: number | undefined;
   c: ResolvedColors;
   isDisabled: boolean;
+  link: boolean;
   style: ViewStyle | undefined;
 }
+
+const LINK: ViewStyle = { height: undefined, width: undefined, paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0 };
+const LINK_PRESSED: ViewStyle = { ...LINK, opacity: 0.7 };
 
 function pickBackground(c: ResolvedColors, usePressedBg: boolean): string {
   if (usePressedBg && c.pressedBg) return c.pressedBg;
@@ -76,7 +80,7 @@ function containerStyle(
   args: ContainerStyleArgs,
   pressed: boolean,
 ): (ViewStyle | undefined)[] {
-  const { spec, square, stretch, radius, c, isDisabled, style } = args;
+  const { spec, square, stretch, radius, c, isDisabled, link, style } = args;
   const usePressedBg = pressed && !isDisabled;
   const base: ViewStyle = {
     height: spec.height,
@@ -93,7 +97,12 @@ function containerStyle(
     alignSelf: stretch && !square ? 'stretch' : 'flex-start',
     opacity: pickOpacity(c, usePressedBg, isDisabled),
   };
-  return [base, style];
+  return [base, linkStyle(link, usePressedBg), style];
+}
+
+function linkStyle(link: boolean, pressed: boolean): ViewStyle | undefined {
+  if (!link) return undefined;
+  return pressed ? LINK_PRESSED : LINK;
 }
 
 function renderLabel(
@@ -129,11 +138,13 @@ function useResolvedColors(t: TintArgs): ResolvedColors {
   }, [t.color, t.variant, t.dark, t.tintBg, t.tintFg, t.tintPressedBg]);
 }
 
-type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'> & Pick<ButtonProps, 'block' | 'fullWidth' | 'uniform' | 'pill' | 'radius' | 'weight' | 'style'>;
+type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'>
+  & Pick<ButtonProps, 'variant' | 'block' | 'fullWidth' | 'uniform' | 'pill' | 'radius' | 'weight' | 'style'>;
 
 function containerArgs(input: ContainerInput): ContainerStyleArgs {
-  const { spec, c, isDisabled, block, fullWidth, uniform, pill, radius, weight, style } = input;
+  const { spec, c, isDisabled, variant, block, fullWidth, uniform, pill, radius, weight, style } = input;
   return {
+    link: variant === 'borderless',
     spec,
     square: uniform === true,
     stretch: block === true || fullWidth === true,
@@ -181,7 +192,7 @@ export function Button(props: ButtonProps): React.ReactElement {
   const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
   const isDisabled = disabled || loading || failingChecks(checks);
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);
-  const styleArgs = containerArgs({ spec, c, isDisabled, block, fullWidth, uniform, pill, radius, weight, style });
+  const styleArgs = containerArgs({ spec, c, isDisabled, variant, block, fullWidth, uniform, pill, radius, weight, style });
 
   return (
     <Pressable

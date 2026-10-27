@@ -165,6 +165,16 @@ describe('Kit catalog', () => {
     expect(registry.validateComponent(KIT_CATALOG_ID, { ...list, move: '/lastMove' }, []).length).toBeGreaterThan(0);
   });
 
+  test('Kit List takes a preview or line indicator and padding, and Kit TextField a submit action', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'line', padding: { x: 8 } })).toEqual([]);
+    expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'shift' }).length).toBeGreaterThan(0);
+    const field = { id: 'f', component: 'TextField', label: 'Name', value: { '@path': '/name' } };
+    expect(valid({ ...field, action: { event: { name: 'rename', context: { name: { '@path': '/name' } } } } })).toEqual([]);
+    expect(registry.validateComponent(BASIC_CATALOG_ID, { ...field, action: { event: { name: 'rename' } } }, []).length).toBeGreaterThan(0);
+  });
+
   test('Kit catalog takes card surfaces, hidden labels, title line clamps and bound chart series', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);

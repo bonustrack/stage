@@ -25,8 +25,8 @@ import {
   colorOf, colorValueOf, commonProps, hasMarkdown, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
 } from './a2ui-context';
 import { chartRenderer } from './a2ui-renderers.chart';
-import { isSortableList, sortableListRenderer } from './a2ui-renderers.sortable';
-import { INPUT_RENDERERS } from './a2ui-renderers.inputs';
+import { isSortableList, listBoxProps, sortableListRenderer } from './a2ui-renderers.sortable';
+import { INPUT_RENDERERS, useA2uiAction } from './a2ui-renderers.inputs';
 
 const GAP = DENSITY_SCALE.normal.gap;
 const A2UI_ICON_SIZE = 24;
@@ -105,7 +105,7 @@ function textRenderer(ctx: RenderContext): ReactNode {
       lineThrough={asBoolean(p.lineThrough)}
       truncate={asBoolean(p.truncate)}
       maxLines={asNumber(p.maxLines)}
-      fontFamily={asEnum(p.fontFamily, ['sans', 'mono'])}
+      fontFamily={asEnum(p.fontFamily, ['sans', 'head', 'mono'])}
     />
   );
 }
@@ -136,9 +136,10 @@ function iconRenderer(ctx: RenderContext): ReactNode {
   return <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />;
 }
 
-function buttonRenderer(ctx: RenderContext): ReactNode {
+function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const p = ctx.props;
   const label = ctx.childText(p.child);
+  const press = useA2uiAction(ctx);
   return (
     <Button
       {...commonProps(ctx)}
@@ -153,12 +154,14 @@ function buttonRenderer(ctx: RenderContext): ReactNode {
       disabled={ctx.disabled || asBoolean(p.disabled)}
       checks={ctx.checks}
       label={label}
-      onPress={() => { ctx.action(); }}
+      onPress={press}
     >
       {label === undefined ? ctx.child(p.child) : undefined}
     </Button>
   );
 }
+
+const buttonRenderer = (ctx: RenderContext): ReactNode => <A2uiButton ctx={ctx}/>;
 
 function titleRenderer(ctx: RenderContext): ReactNode {
   const level = asNumber(ctx.props.level);
@@ -201,7 +204,7 @@ export const KIT_RENDERERS: A2uiRenderers = {
   Row: (ctx) => withChildren(ctx, (children) => <Row {...flexProps(ctx)}>{children}</Row>),
   Column: (ctx) => withChildren(ctx, (children) => <Column {...flexProps(ctx)}>{children}</Column>),
   List: (ctx) => (isSortableList(ctx) ? sortableListRenderer(ctx) : withChildren(ctx, (children) => (
-    <List {...commonProps(ctx)} direction={asEnum(ctx.props.direction, ['vertical', 'horizontal'])} align={asEnum(ctx.props.align, ALIGN)} gap={asNumber(ctx.props.gap) ?? GAP}>
+    <List {...listBoxProps(ctx)} gap={asNumber(ctx.props.gap) ?? GAP}>
       {children}
     </List>
   ))),

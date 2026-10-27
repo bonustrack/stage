@@ -6,7 +6,7 @@ import { Card } from '../src/react-native/card';
 import { Column } from '../src/react-native/column';
 import { Icon } from '../src/react-native/icon';
 import { Row } from '../src/react-native/row';
-import { SortableHandle, SortableItem, SortableList, SortableScope, type SortDirection, type SortMove } from '../src/react-native/sortable';
+import { SortableHandle, SortableItem, SortableList, SortableScope, type SortDirection, type SortIndicator, type SortMove } from '../src/react-native/sortable';
 import { Text } from '../src/react-native/text';
 import { bool, select, useDark } from './_controls';
 
@@ -21,16 +21,16 @@ function MoveLog({ move }: { move: SortMove | null }): React.ReactElement {
   return <Text size="2xs" fontFamily="mono" color="secondary" text={move === null ? 'Drag an item, or focus it and press Space.' : JSON.stringify(move)}/>;
 }
 
-interface ControlsArgs { direction: SortDirection; keyboard: boolean; disabled: boolean }
+interface ControlsArgs { direction: SortDirection; indicator: SortIndicator; keyboard: boolean; disabled: boolean }
 
-export const Controls: Story<ControlsArgs> = ({ direction, keyboard, disabled }) => {
+export const Controls: Story<ControlsArgs> = ({ direction, indicator, keyboard, disabled }) => {
   const dark = useDark();
   const [ids, setIds] = useState(['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon']);
   const [last, setLast] = useState<SortMove | null>(null);
   return (
     <Column gap={16}>
       <SortableList
-        listId="greek" itemIds={ids} direction={direction} gap={8} label="Greek letters" keyboard={keyboard} disabled={disabled}
+        listId="greek" itemIds={ids} direction={direction} indicator={indicator} gap={8} label="Greek letters" keyboard={keyboard} disabled={disabled}
         onMove={(move) => { setIds(moved(ids, move)); setLast(move); }}
       >
         {ids.map(id => <SortableItem key={id} itemId={id}><Badge dark={dark} label={id} size="lg" pill/></SortableItem>)}
@@ -39,8 +39,8 @@ export const Controls: Story<ControlsArgs> = ({ direction, keyboard, disabled })
     </Column>
   );
 };
-Controls.args = { direction: 'vertical', keyboard: true, disabled: false };
-Controls.argTypes = { direction: select(['vertical', 'horizontal']), keyboard: bool, disabled: bool };
+Controls.args = { direction: 'vertical', indicator: 'preview', keyboard: true, disabled: false };
+Controls.argTypes = { direction: select(['vertical', 'horizontal']), indicator: select(['preview', 'line', 'none', 'shift', 'follow']), keyboard: bool, disabled: bool };
 
 type Lanes = Record<string, string[]>;
 

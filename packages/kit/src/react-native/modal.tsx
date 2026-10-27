@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -22,6 +22,12 @@ export const MODAL = {
   backdrop: 'rgba(0,0,0,0.45)',
   maxHeight: '88%',
 } as const;
+
+const ModalCloseContext = createContext<(() => void) | null>(null);
+
+export function useModalClose(): (() => void) | null {
+  return useContext(ModalCloseContext);
+}
 
 export interface ModalProps extends A2uiCommonProps {
   trigger?: ReactNode;
@@ -142,9 +148,10 @@ export function Modal(props: ModalProps): React.ReactElement {
     if (controlled === undefined) setInternal(false);
     onClose?.();
   };
+  const content = { ...props, children: <ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider> };
   const panel = fullBleedPanel === true
-    ? <FullBleedPanel props={props} open={open} close={close} />
-    : <StagePanel props={props} open={open} close={close} />;
+    ? <FullBleedPanel props={content} open={open} close={close} />
+    : <StagePanel props={content} open={open} close={close} />;
   if (trigger === undefined) return panel;
   return (
     <View {...accessibilityProps(accessibility)} style={weightStyle(weight)}>

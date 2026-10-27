@@ -8,7 +8,7 @@ export type TextSizeToken = FontSizeName;
 
 export type TextAlign = 'start' | 'center' | 'end';
 
-export type TextFontFamily = 'sans' | 'mono';
+export type TextFontFamily = 'sans' | 'head' | 'mono';
 
 export type ResolvedTextAlign = 'left' | 'center' | 'right';
 
@@ -41,5 +41,6 @@ export const TEXT_ALIGN_MAP: Record<TextAlign, ResolvedTextAlign> = {
 };
 
 export function textFontFamily(family: TextFontFamily | undefined, weight: TextWeight): string {
-  return family === 'mono' ? fontName.mono : TEXT_FONTS[weight];
+  if (family === 'mono' || family === 'head') return fontName[family];
+  return TEXT_FONTS[weight];
 }

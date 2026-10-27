@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import { isEventAction } from '../a2ui/protocol';
+import { failingChecks } from './a2ui-props';
+import { useModalClose } from './modal';
 import { CheckBox } from './check-box';
 import { ChoicePicker, type ChoiceOption } from './choice-picker';
 import { DateTimeInput } from './date-time-input';
@@ -27,8 +30,17 @@ function optionsOf(value: unknown): ChoiceOption[] {
   });
 }
 
-function textFieldRenderer(ctx: RenderContext): ReactNode {
+export function useA2uiAction(ctx: RenderContext): () => void {
+  const closeModal = useModalClose();
+  return () => {
+    const result = ctx.action();
+    if (result?.ok === true && isEventAction(ctx.instance.action)) closeModal?.();
+  };
+}
+
+function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const p = ctx.props;
+  const act = useA2uiAction(ctx);
   const binding = ctx.binding<string>('value');
   const field = fieldProps(ctx);
   const hidden = asBoolean(p.hideLabel) === true ? { label: undefined, accessibility: { ...field.accessibility, label: field.accessibility?.label ?? field.label } } : {};
@@ -43,9 +55,12 @@ function textFieldRenderer(ctx: RenderContext): ReactNode {
       pill={asBoolean(p.pill)}
       hint={asOptionalString(p.hint)}
       onChangeText={binding.set}
+      onSubmit={() => { if (!failingChecks(ctx.checks)) act(); }}
     />
   );
 }
+
+const textFieldRenderer = (ctx: RenderContext): ReactNode => <A2uiTextField ctx={ctx}/>;
 
 function checkBoxRenderer(ctx: RenderContext): ReactNode {
   const binding = ctx.binding<boolean>('value');

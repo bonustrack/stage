@@ -1,49 +1,26 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { Animated, View, type AccessibilityActionEvent, type StyleProp, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector, type PanGesture } from 'react-native-gesture-handler';
-import type { SortDirection, SortMove, SortRect, SortStep } from '../sortable';
-import { isTouchPointer, listenKeys, pinToViewport, setGrabCursor, suppressNextClick } from './sortable.platform';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { Animated, View, type StyleProp, type ViewStyle } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
+import type { SortDirection, SortMove, SortRect, SortSlot } from '../sortable';
+import {
+  HandleContext, ListContext, ListsContext, PreviewContext, ScopeContext, isInPlace, useSortState, type ListContextValue, type SortTouchAction,
+} from './sortable.context';
+import { accessibilityProps, useKeyboard, usePan } from './sortable.gesture';
+import { pinToViewport, setGrabCursor } from './sortable.platform';
 import {
   makeSortCoordinator, type SortCoordinator, type SortIndicator, type SortItemEntry, type SortListEntry, type SortSource, type SortState,
 } from './sortable.store';
 import { useKitPalette } from './theme-context';
 
 export type { SortDirection, SortMove } from '../sortable';
+export type { SortTouchAction } from './sortable.context';
 export type { SortIndicator, SortSource } from './sortable.store';
 
-const HOLD_MS = 250;
-const MOVE_SLOP = 6;
 const DRAGGING_OPACITY = 0.4;
 const GHOST_OPACITY = 0.9;
 const EMPTY_DROP_AREA = 40;
 const EMPTY: Record<SortDirection, ViewStyle> = { vertical: { minHeight: EMPTY_DROP_AREA }, horizontal: { minWidth: EMPTY_DROP_AREA } };
-const SORT_STEPS: readonly SortStep[] = ['backward', 'forward', 'previousList', 'nextList'];
-
-interface ListContextValue {
-  coordinator: SortCoordinator;
-  listId: string;
-  group: string;
-  direction: SortDirection;
-  disabled: boolean;
-  keyboard: boolean;
-  inPlace: boolean;
-  touchAction: SortTouchAction;
-  items: Map<string, SortItemEntry>;
-}
-
-export type SortTouchAction = 'manipulation' | 'pan-x' | 'pan-y';
-
-const ScopeContext = createContext<SortCoordinator | null>(null);
-const PreviewContext = createContext(false);
-const ListContext = createContext<ListContextValue | null>(null);
-const ListsContext = createContext<ReadonlyMap<string, ListContextValue>>(new Map());
-interface HandleValue { pan: PanGesture; list: ListContextValue; itemId: string; enabled: boolean }
-
-const HandleContext = createContext<HandleValue | null>(null);
-
-function useSortState<T>(coordinator: SortCoordinator, select: (state: SortState) => T): T {
-  return useSyncExternalStore(coordinator.subscribe, () => select(coordinator.state()), () => select(coordinator.state()));
-}
+const COLLAPSED: ViewStyle = { position: 'absolute', left: 0, top: 0, width: 0, height: 0, minWidth: 0, minHeight: 0, opacity: 0, overflow: 'hidden' };
 
 function Ghost({ coordinator }: { coordinator: SortCoordinator }): React.ReactElement | null {
   const drag = useSortState(coordinator, state => state.drag);
@@ -55,6 +32,11 @@ function Ghost({ coordinator }: { coordinator: SortCoordinator }): React.ReactEl
     width: drag.size.width, height: drag.size.height, transform: coordinator.ghost.getTranslateTransform(),
   };
   return <Animated.View ref={node} pointerEvents="none" style={style}><PreviewContext.Provider value>{drag.preview}</PreviewContext.Provider></Animated.View>;
+}
+
+function Placeholder({ coordinator }: { coordinator: SortCoordinator }): React.ReactElement {
+  const preview = useSortState(coordinator, state => state.preview);
+  return <View pointerEvents="none" style={{ opacity: DRAGGING_OPACITY }}><PreviewContext.Provider value>{preview}</PreviewContext.Provider></View>;
 }
 
 export interface SortableScopeProps {
@@ -76,6 +58,8 @@ export function SortableScope({ children, style }: SortableScopeProps): React.Re
   );
 }
 
+export interface SortableListState { over: boolean; placeholder: ReactNode }
+
 export interface SortableListProps {
   listId: string;
   itemIds: readonly string[];
@@ -90,8 +74,9 @@ export interface SortableListProps {
   indicator?: SortIndicator;
   touchAction?: SortTouchAction;
   accepts?: (move: SortMove) => boolean;
+  placeAt?: (move: SortMove) => number;
   style?: StyleProp<ViewStyle>;
-  children: ReactNode | ((state: { over: boolean }) => ReactNode);
+  children: ReactNode | ((state: SortableListState) => ReactNode);
 }
 
 function listStyle(direction: SortDirection, gap: number | undefined, empty: boolean, style: StyleProp<ViewStyle>): StyleProp<ViewStyle> {
@@ -109,26 +94,29 @@ function Indicator({ rect }: { rect: SortRect }): React.ReactElement {
 }
 
 function useListContext(value: ListContextValue): { context: ListContextValue; lists: ReadonlyMap<string, ListContextValue> } {
-  const { coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items } = value;
+  const { coordinator, listId, group, direction, disabled, keyboard, indicator, touchAction, items } = value;
   const context = useMemo(
-    () => ({ coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items }),
-    [coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items],
+    () => ({ coordinator, listId, group, direction, disabled, keyboard, indicator, touchAction, items }),
+    [coordinator, listId, group, direction, disabled, keyboard, indicator, touchAction, items],
   );
   const parents = useContext(ListsContext);
   const lists = useMemo(() => new Map([...parents, [listId, context]]), [parents, listId, context]);
   return { context, lists };
 }
 
-function listSettings(props: SortableListProps): { group: string; direction: SortDirection; disabled: boolean; keyboard: boolean; indicator: SortIndicator; touchAction: SortTouchAction } {
+function listSettings(props: SortableListProps): Omit<ListContextValue, 'coordinator' | 'listId' | 'items'> {
   return {
     group: props.group ?? props.listId, direction: props.direction ?? 'vertical', disabled: props.disabled ?? false,
-    keyboard: props.keyboard ?? true, indicator: props.indicator ?? 'line', touchAction: props.touchAction ?? 'manipulation',
+    keyboard: props.keyboard ?? true, indicator: props.indicator ?? 'preview', touchAction: props.touchAction ?? 'manipulation',
   };
 }
 
+const isEmptySlot = (slot: SortSlot | null, listId: string): boolean => slot?.listId === listId && slot.beforeId === null && slot.afterId === null;
+
 function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): React.ReactElement {
-  const { coordinator, listId, gap } = props;
-  const { group, direction, disabled, keyboard, indicator, touchAction } = listSettings(props);
+  const { coordinator, listId } = props;
+  const settings = listSettings(props);
+  const { group, direction, indicator } = settings;
   const node = useRef<View>(null);
   const [items] = useState(() => new Map<string, SortItemEntry>());
   const latest = useRef(props);
@@ -136,7 +124,7 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
   useEffect(() => coordinator.register(listId, (): SortListEntry => {
     const p = latest.current;
     return {
-      listId, group, direction, label: p.label, itemIds: p.itemIds, payload: p.payload, indicator,
+      listId, group, direction, label: p.label, itemIds: p.itemIds, payload: p.payload, indicator, placeAt: p.placeAt,
       node: () => node.current, items,
       accepts: move => !(p.disabled ?? false) && (p.accepts?.(move) ?? true),
       onMove: (move, source) => { p.onMove(move, source); },
@@ -144,13 +132,16 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
   }), [coordinator, listId, group, direction, indicator, items]);
   const over = useSortState(coordinator, state => state.target?.listId === listId);
   const line = useSortState(coordinator, state => (state.target?.listId === listId ? state.indicator : null));
-  const { context, lists } = useListContext({ coordinator, listId, group, direction, disabled, keyboard, inPlace: indicator === 'shift' || indicator === 'follow', touchAction, items });
-  const body = typeof props.children === 'function' ? props.children({ over }) : props.children;
+  const empty = useSortState(coordinator, state => isEmptySlot(state.slot, listId));
+  const { context, lists } = useListContext({ coordinator, listId, items, ...settings });
+  const placeholder = empty ? <Placeholder coordinator={coordinator}/> : null;
+  const custom = typeof props.children === 'function';
   return (
     <ListsContext.Provider value={lists}>
       <ListContext.Provider value={context}>
-        <View ref={node} style={listStyle(direction, gap, props.itemIds.length === 0, props.style)}>
-          {body}
+        <View ref={node} style={listStyle(direction, props.gap, props.itemIds.length === 0 && placeholder === null, props.style)}>
+          {typeof props.children === 'function' ? props.children({ over, placeholder }) : props.children}
+          {custom ? null : placeholder}
           {indicator === 'line' && line !== null ? <Indicator rect={line}/> : null}
         </View>
       </ListContext.Provider>
@@ -161,7 +152,7 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
 function PlainList({ direction = 'vertical', gap, style, children }: SortableListProps): React.ReactElement {
   return (
     <View style={listStyle(direction, gap, false, style)}>
-      {typeof children === 'function' ? children({ over: false }) : children}
+      {typeof children === 'function' ? children({ over: false, placeholder: null }) : children}
     </View>
   );
 }
@@ -180,66 +171,6 @@ function Implicit(props: SortableListProps): React.ReactElement {
   const scope = useContext(ScopeContext);
   if (scope === null) throw new Error('SortableScope is missing.');
   return <ListBody {...props} coordinator={scope}/>;
-}
-
-const KEY_STEPS: Record<SortDirection, Record<string, SortStep>> = {
-  vertical: { ArrowUp: 'backward', ArrowDown: 'forward', ArrowLeft: 'previousList', ArrowRight: 'nextList' },
-  horizontal: { ArrowLeft: 'backward', ArrowRight: 'forward', ArrowUp: 'previousList', ArrowDown: 'nextList' },
-};
-
-function useKeyboard(list: ListContextValue, itemId: string, node: () => unknown, enabled: boolean): void {
-  useEffect(() => {
-    if (!enabled) return undefined;
-    const { coordinator, listId, direction } = list;
-    return listenKeys(node(), (key) => {
-      const lifted = coordinator.state().drag?.itemId === itemId && coordinator.state().drag?.keyboard === true;
-      const step = KEY_STEPS[direction][key];
-      if (key === ' ' || key === 'Enter') { if (lifted) coordinator.keyDrop(); else coordinator.keyLift(listId, itemId); return true; }
-      if (!lifted) return false;
-      if (key === 'Escape') { coordinator.keyCancel(); return true; }
-      if (step !== undefined) { coordinator.keyStep(step); return true; }
-      return false;
-    });
-  }, [list, itemId, node, enabled]);
-}
-
-function accessibilityActions(list: ListContextValue): { name: SortStep; label: string }[] {
-  const along = list.direction === 'vertical' ? ['Move up', 'Move down'] : ['Move left', 'Move right'];
-  const base: { name: SortStep; label: string }[] = [{ name: 'backward', label: along[0] ?? '' }, { name: 'forward', label: along[1] ?? '' }];
-  if (list.coordinator.groupSize(list.group) < 2) return base;
-  return [...base, { name: 'previousList', label: 'Move to previous list' }, { name: 'nextList', label: 'Move to next list' }];
-}
-
-function usePan(list: ListContextValue, itemId: string, preview: () => ReactNode, onHold: ((point: { x: number; y: number }) => void) | undefined, enabled: boolean): PanGesture {
-  const touch = isTouchPointer();
-  return useMemo(() => {
-    const { coordinator, listId } = list;
-    const pan = Gesture.Pan()
-      .runOnJS(true)
-      .enabled(enabled)
-      .onBegin((e) => { coordinator.press({ x: e.absoluteX, y: e.absoluteY }); })
-      .onStart((e) => {
-        coordinator.begin(listId, itemId, preview());
-        coordinator.move({ x: e.absoluteX, y: e.absoluteY });
-      })
-      .onUpdate((e) => { coordinator.move({ x: e.absoluteX, y: e.absoluteY }); })
-      .onEnd((e, success) => {
-        const moved = coordinator.wasMoved();
-        if (!success) { coordinator.cancel(); return; }
-        coordinator.drop();
-        if (moved || !touch || onHold === undefined) return;
-        suppressNextClick();
-        onHold({ x: e.absoluteX, y: e.absoluteY });
-      })
-      .onFinalize(() => {
-        const drag = coordinator.state().drag;
-        if (drag?.itemId === itemId && !drag.keyboard) coordinator.cancel();
-      });
-    if (touch) pan.activateAfterLongPress(HOLD_MS);
-    else pan.minDistance(MOVE_SLOP);
-    pan.config.touchAction = list.touchAction;
-    return pan;
-  }, [list, itemId, preview, onHold, enabled, touch]);
 }
 
 export interface SortableItemProps {
@@ -276,58 +207,63 @@ function usePreview(children: SortableItemProps['children']): () => ReactNode {
   }, []);
 }
 
-function accessibilityProps(list: ListContextValue, itemId: string, enabled: boolean) {
-  if (!enabled || !list.keyboard) return {};
-  return {
-    accessibilityActions: accessibilityActions(list),
-    onAccessibilityAction: (event: AccessibilityActionEvent): void => {
-      const step = SORT_STEPS.find(name => name === event.nativeEvent.actionName);
-      if (step !== undefined) list.coordinator.moveBy(list.listId, itemId, step);
-    },
-  };
-}
-
 function itemStyle(list: ListContextValue, offset: Animated.Value, dragging: boolean, custom: boolean): Animated.WithAnimatedValue<ViewStyle> {
   const translate = list.direction === 'vertical' ? { translateY: offset } : { translateX: offset };
-  if (list.inPlace) return { transform: [translate], zIndex: dragging ? 10 : 0 };
+  if (isInPlace(list.indicator)) return { transform: [translate], zIndex: dragging ? 10 : 0 };
   return { transform: [translate], opacity: custom || !dragging ? 1 : DRAGGING_OPACITY };
 }
 
-function ItemView({ list, itemId, enabled, item, style, children }: {
-  list: ListContextValue; itemId: string; enabled: boolean; item: ItemNode;
-  style: StyleProp<ViewStyle>; children: SortableItemProps['children'];
+const isHidden = (state: SortState, listId: string, itemId: string): boolean => (
+  state.hidden.some(entry => entry.listId === listId && entry.itemId === itemId)
+);
+
+function ItemView({ list, lead, item, style, extra, children }: {
+  list: ListContextValue; lead: string; item: ItemNode; style: StyleProp<ViewStyle>; extra?: object; children: SortableItemProps['children'];
 }): React.ReactElement {
-  const dragging = useSortState(list.coordinator, state => state.drag?.itemId === itemId && state.drag.listId === list.listId);
+  const dragging = useSortState(list.coordinator, state => state.drag?.itemId === lead && state.drag.listId === list.listId);
+  const hidden = useSortState(list.coordinator, state => isHidden(state, list.listId, lead));
   const custom = typeof children === 'function';
   return (
-    <Animated.View ref={item.node} style={[itemStyle(list, item.offset, dragging, custom), style]} {...accessibilityProps(list, itemId, enabled)}>
+    <Animated.View ref={item.node} style={[itemStyle(list, item.offset, dragging, custom), style, hidden ? COLLAPSED : null]} {...extra}>
       {custom ? children({ dragging }) : children}
     </Animated.View>
   );
+}
+
+function slotSide(slot: SortSlot | null, listId: string, itemId: string): 'before' | 'after' | null {
+  if (slot?.listId !== listId) return null;
+  if (slot.afterId === itemId) return 'before';
+  return slot.afterId === null && slot.beforeId === itemId ? 'after' : null;
+}
+
+function WithSlot({ list, itemId, children }: { list: ListContextValue; itemId: string; children: React.ReactElement }): React.ReactElement {
+  const side = useSortState(list.coordinator, state => slotSide(state.slot, list.listId, itemId));
+  if (side === null) return children;
+  const placeholder = <Placeholder coordinator={list.coordinator}/>;
+  return side === 'before' ? <>{placeholder}{children}</> : <>{children}{placeholder}</>;
 }
 
 function FollowerItem({ list, itemId, follows, style, children }: {
   list: ListContextValue; itemId: string; follows: string; style: StyleProp<ViewStyle>; children: SortableItemProps['children'];
 }): React.ReactElement {
-  const item = useItemNode(list, itemId, follows);
-  const dragging = useSortState(list.coordinator, state => state.drag?.itemId === follows && state.drag.listId === list.listId);
-  const custom = typeof children === 'function';
-  return (
-    <Animated.View ref={item.node} style={[itemStyle(list, item.offset, dragging, custom), style]}>
-      {custom ? children({ dragging }) : children}
-    </Animated.View>
-  );
+  return <ItemView list={list} lead={follows} item={useItemNode(list, itemId, follows)} style={style}>{children}</ItemView>;
 }
 
 function LeadItem({ list, itemId, disabled = false, handle = false, onHold, style, children }: SortableItemProps & { list: ListContextValue }): React.ReactElement {
   const enabled = !disabled && !list.disabled;
   const item = useItemNode(list, itemId, undefined);
+  const preview = usePreview(children);
   useEffect(() => { if (!handle) setGrabCursor(item.node.current, enabled); }, [item, handle, enabled]);
-  useKeyboard(list, itemId, item.read, enabled && list.keyboard && !handle);
-  const pan = usePan(list, itemId, usePreview(children), onHold, enabled);
-  const view = <ItemView list={list} itemId={itemId} enabled={enabled} item={item} style={style}>{children}</ItemView>;
-  if (handle) return <HandleContext.Provider value={{ pan, list, itemId, enabled }}>{view}</HandleContext.Provider>;
-  return <GestureDetector gesture={pan}>{view}</GestureDetector>;
+  useKeyboard(list, itemId, item.read, preview, enabled && list.keyboard && !handle);
+  const pan = usePan(list, itemId, preview, onHold, enabled);
+  const view = <ItemView list={list} lead={itemId} item={item} style={style} extra={accessibilityProps(list, itemId, enabled)}>{children}</ItemView>;
+  return (
+    <WithSlot list={list} itemId={itemId}>
+      {handle
+        ? <HandleContext.Provider value={{ pan, list, itemId, enabled, preview }}>{view}</HandleContext.Provider>
+        : <GestureDetector gesture={pan}>{view}</GestureDetector>}
+    </WithSlot>
+  );
 }
 
 function LiveItem(props: SortableItemProps): React.ReactElement {
@@ -355,11 +291,11 @@ export function SortableHandle(props: SortableHandleProps): React.ReactElement {
 function LiveHandle({ children, style }: SortableHandleProps): React.ReactElement {
   const handle = useContext(HandleContext);
   if (handle === null) throw new Error('SortableHandle must be inside a SortableItem with handle.');
-  const { pan, list, itemId, enabled } = handle;
+  const { pan, list, itemId, enabled, preview } = handle;
   const node = useRef<View>(null);
   const read = useMemo(() => () => node.current, []);
   useEffect(() => { setGrabCursor(node.current, enabled); }, [enabled]);
-  useKeyboard(list, itemId, read, enabled && list.keyboard);
+  useKeyboard(list, itemId, read, preview, enabled && list.keyboard);
   return <GestureDetector gesture={pan}><View ref={node} style={style}>{children}</View></GestureDetector>;
 }
 

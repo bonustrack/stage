@@ -7,7 +7,7 @@ export default { title: 'Text' };
 
 const VARIANTS = ['body', 'caption'] as const;
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const;
-const FAMILIES = ['sans', 'mono'] as const;
+const FAMILIES = ['sans', 'head', 'mono'] as const;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
 Controls.args = { text: 'The quick brown fox jumps over the lazy dog', variant: 'body', size: 'md', fontWeight: 'normal', fontFamily: 'sans', textAlign: 'start', italic: false, lineThrough: false, truncate: false, markdown: false };
