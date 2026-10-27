@@ -13,7 +13,7 @@ import { ImageViewer } from '../ImageViewer';
 import { HoverTooltip } from '../HoverTooltip';
 import { LocationTile } from '../MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
-import { peerLabel } from '../conversation/convTitle';
+import { peerLabel } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
 import { isLocation } from './location.model';
 import type { Suggest } from './mentions';

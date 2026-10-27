@@ -13,7 +13,7 @@ import type { MenuPoint } from './AnchoredMenu.model';
 import { useHover } from './hover';
 import { usePalette, withAlpha } from '../lib/theme';
 import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
-import { AccountManager } from '../modules/messaging/account';
+import { switchToAccount } from '../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { IMPORT_ROUTE, SIGNUP_ROUTE } from './onboarding/nextRoute.model';
@@ -82,7 +82,7 @@ export function MenuSheet({ visible, anchor, onClose }: {
     if (id === activeId) return;
     void (async () => {
       try {
-        await AccountManager.switch(id);
+        await switchToAccount(id);
       } catch (err) {
         report('menu.switchAccount', err);
         Alert.alert('Switch failed', errorMessage(err));

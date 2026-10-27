@@ -8,8 +8,7 @@ import { Avatar } from './Avatar';
 import { AccountAvatar } from './AccountAvatarButton';
 import { MenuHeading, MenuRow } from './MenuRows';
 import { PickerNote, PickerRow, PickerSearch } from './conversation/SidebarSection';
-import { peerLabel } from './conversation/convTitle';
-import { usePeerProfiles } from '../lib/peerProfiles';
+import { peerLabel, usePeerProfiles } from '../lib/peerProfiles';
 import { memberNamesOf, useSearchFilterSources } from './FilterSearch';
 import {
   FILTER_FIELDS, HAS_OPTIONS, PRIORITY_OPTIONS, ME_OPTION, ME_VALUE, clearQueryFilters, memberFilterOption,

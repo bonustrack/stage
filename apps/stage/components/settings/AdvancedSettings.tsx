@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { errorMessage } from '@stage-labs/client/errors';
-import { AccountManager, useActiveAccountRecord } from '../../modules/messaging/account';
-import { deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
+import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { switchToAccount, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
@@ -31,7 +31,7 @@ async function removeAndMoveOn(id: string): Promise<void> {
     await deleteAccount(id);
     const next = (await getActiveAccount())?.id;
     if (next === undefined) { reloadApp(true); return; }
-    await AccountManager.switch(next);
+    await switchToAccount(next);
     capabilities.navigate('/');
   } catch (err) {
     report('settings.removeAccount', err);

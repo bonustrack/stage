@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { xmtpReply } from '../../lib/xmtp.messages';
@@ -40,7 +40,6 @@ import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xm
 import { pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage } from '@stage-labs/client/xmtp/poll-feed';
 import { reported } from '../../lib/errorPolicy';
 import { unknownSystemLineInboxIds } from './systemNames.model';
-import { peerLabel } from './convTitle';
 import { uniqueBy } from '@stage-labs/client/collections';
 
 function useSystemLineAddresses(

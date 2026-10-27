@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feedLines';
 import { getActiveAccountIdSync, getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
-import { usePeerProfiles, getPeerName } from './peerProfiles';
+import { usePeerProfiles, peerLabel } from './peerProfiles';
 
 export interface Contact {
   address: string;
@@ -25,7 +24,7 @@ function peerAddressesOf(rows: ReturnType<typeof getCachedRows>): string[] {
 
 function toSortedContacts(addresses: string[]): Contact[] {
   return addresses
-    .map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }))
+    .map(address => ({ address, name: peerLabel(address) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

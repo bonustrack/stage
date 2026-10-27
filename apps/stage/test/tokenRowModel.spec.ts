@@ -17,11 +17,11 @@ describe('tokenRowModel', () => {
       logoUrl: 'logo.png',
     }, fmt);
     expect(p).toEqual({
-      symbol: 'Ethereum',
-      name: '$2000.00',
-      priceUsd: '~2 ETH',
-      balance: '$4000.00',
-      change24h: '+1.50%',
+      title: 'Ethereum',
+      subtitle: '$2000.00',
+      detail: '~2 ETH',
+      amount: '$4000.00',
+      change: '+1.50%',
       logoUri: 'logo.png',
     });
   });
@@ -31,8 +31,8 @@ describe('tokenRowModel', () => {
       symbol: 'X', name: 'X', balance: '1',
       priceUsd: 0.1234, change24h: -2.345, logoUrl: 'l',
     }, fmt);
-    expect(p.name).toBe('$0.1234');
-    expect(p.change24h).toBe('-2.35%');
+    expect(p.subtitle).toBe('$0.1234');
+    expect(p.change).toBe('-2.35%');
   });
 
   test('an unpriced token falls back to its symbol and shows no value or change', () => {
@@ -40,9 +40,9 @@ describe('tokenRowModel', () => {
       symbol: 'TEST', name: 'Test', balance: '5',
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
-    expect(p.name).toBe('TEST');
-    expect(p.balance).toBe('');
-    expect(p.change24h).toBe('');
+    expect(p.subtitle).toBe('TEST');
+    expect(p.amount).toBe('');
+    expect(p.change).toBe('');
   });
 
   test('an unpriced zero balance shows a zero value', () => {
@@ -50,6 +50,6 @@ describe('tokenRowModel', () => {
       symbol: 'ETH', name: 'Ethereum', balance: '0',
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
-    expect(p.balance).toBe(fmt.fmtUsd(0));
+    expect(p.amount).toBe(fmt.fmtUsd(0));
   });
 });

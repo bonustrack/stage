@@ -8,7 +8,7 @@ import { getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { Palette } from '../lib/theme';
 import { channelTimestamp } from '../lib/format';
-import { peerLabel } from './conversation/convTitle';
+import { peerLabel } from '../lib/peerProfiles';
 import { Column, Row, PAGE_GUTTER } from './layout';
 
 export function CommonChannels({ peerAddress, c }: {

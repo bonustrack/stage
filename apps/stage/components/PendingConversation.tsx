@@ -4,7 +4,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { enqueueDm, flushDmOutboxFor, queuedDmsFor, subscribeDmOutbox } from '../lib/dmOutbox';
 import { pendingBanner, type OutboxItem } from '../lib/dmOutbox.model';
-import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
+import { getPeerName, usePeerProfiles, peerLabel } from '../lib/peerProfiles';
 import { usePalette } from '../lib/theme';
 import { capabilities } from '../lib/capabilities';
 import { getActiveAccountIdSync } from '../lib/channelsCache';
@@ -14,7 +14,6 @@ import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { PeerTopnav } from './conversation/PeerTopnav';
 import { ChatColumn, ComposerDock } from './conversation/FooterDock';
-import { peerLabel } from './conversation/convTitle';
 import { Column } from './layout';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';

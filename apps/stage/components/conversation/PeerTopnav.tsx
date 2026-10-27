@@ -3,9 +3,8 @@ import { parseHandle } from '@stage-labs/client/routing/handles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
-import { peerLabel } from './convTitle';
 import { ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { homeRoute } from '../tabs/boardHome';
 

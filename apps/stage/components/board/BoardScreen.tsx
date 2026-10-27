@@ -27,7 +27,7 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useStoreValue } from '../../lib/storeCore';
 import { usePinnedOrder } from '../../lib/pins';
 import { useClearedChats } from '../../lib/clearedChats';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
@@ -54,7 +54,6 @@ import { addBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } fro
 import {
   AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
 } from './BoardColumnEdit';
-import { peerLabel } from '../conversation/convTitle';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 

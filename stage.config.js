@@ -59,7 +59,6 @@ export default defineConfig({
       knip: {
         entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'],
         project: ['src/**', 'stories/**', 'gallery/**'],
-        ignoreDependencies: ['react-native-web'],
       },
     },
     'packages/config': {

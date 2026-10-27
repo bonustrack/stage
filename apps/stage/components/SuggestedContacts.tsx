@@ -2,10 +2,9 @@ import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Eyebrow } from './Eyebrow';
 import { ChannelRow } from './ChannelRow';
-import { getPeerDescription, usePeerProfiles } from '../lib/peerProfiles';
+import { getPeerDescription, usePeerProfiles, peerLabel } from '../lib/peerProfiles';
 import { useActiveAccountRecord } from '../modules/messaging/account';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
-import { peerLabel } from './conversation/convTitle';
 import { Column, PAGE_GUTTER } from './layout';
 
 export function SuggestedContacts({ known, headingTop = 16 }: { known: readonly string[]; headingTop?: number }): React.ReactElement | null {

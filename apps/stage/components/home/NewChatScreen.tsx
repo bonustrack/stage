@@ -32,7 +32,7 @@ import { ignored, reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/clearedChats';
 import { createValueStore } from '../../lib/persistedStore';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -46,7 +46,7 @@ import { uploadAttachments } from '../../lib/xmtp.attachments';
 import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
 import { xmtpClient } from '../../lib/xmtp.client';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
-import { mentionLabelOf, peerLabel } from '../conversation/convTitle';
+import { mentionLabelOf } from '../conversation/convTitle';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 
 interface Recipients {

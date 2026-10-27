@@ -48,11 +48,11 @@ function TokenChoiceList({ rows, onPick }: {
             onPress={() => { onPick(r); }}
           >
             <TokenRowBody
-              symbol={r.symbol}
-              name={price}
-              priceUsd={price}
-              balance={`${fmtBalance(r.balance)} ${r.symbol}`}
-              change24h={change}
+              title={r.symbol}
+              subtitle={price}
+              detail={price}
+              amount={`${fmtBalance(r.balance)} ${r.symbol}`}
+              change={change}
               logoUri={r.logoUrl}
               chainBadgeUri={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
             />

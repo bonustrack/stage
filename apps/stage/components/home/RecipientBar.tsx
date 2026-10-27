@@ -11,7 +11,7 @@ import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
 import { includesKey } from '../conversation/SidebarSection.model';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
-import { peerLabel } from '../conversation/convTitle';
+import { peerLabel } from '../../lib/peerProfiles';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 

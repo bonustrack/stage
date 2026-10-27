@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { isStringList } from '@stage-labs/client/collections';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -43,14 +44,10 @@ export function setChannelCategory(convId: string, category: string | null): voi
 
 const NO_LABELS: string[] = [];
 
-function isLabelList(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((label) => typeof label === 'string');
-}
-
 export function useLiveChannelLabels(convId: string | undefined): string[] {
   const read = useCallback((): string => {
     const labels = getCachedRows()?.find((row) => row.convId === convId)?.labels;
-    return isLabelList(labels) ? labels.join('\n') : '';
+    return isStringList(labels) ? labels.join('\n') : '';
   }, [convId]);
   const key = useStoreValue(subscribeCachedRows, read);
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);

@@ -33,12 +33,12 @@ export interface TokenRowFormat {
   fmtBalance: (v: string) => string;
 }
 
-export interface TokenRowModelParams {
-  symbol: string;
-  name: string;
-  priceUsd: string;
-  balance: string;
-  change24h: string;
+export interface TokenRowFields {
+  title: string;
+  subtitle: string;
+  amount: string;
+  detail: string;
+  change: string;
   logoUri: string;
 }
 
@@ -50,16 +50,16 @@ export function tokenChangeText(change24h: number | null): string {
   return change24h === null ? '' : `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
 }
 
-export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowModelParams {
+export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowFields {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   const priceText = tokenPriceText(r, f.fmtUsd);
   const changeText = tokenChangeText(r.change24h);
   return {
-    symbol: r.name,
-    name: priceText,
-    priceUsd: `${f.fmtBalance(r.balance)} ${r.symbol}`,
-    balance: valueUsd !== null ? f.fmtUsd(valueUsd) : Number(r.balance) === 0 ? f.fmtUsd(0) : '',
-    change24h: changeText,
+    title: r.name,
+    subtitle: priceText,
+    detail: `${f.fmtBalance(r.balance)} ${r.symbol}`,
+    amount: valueUsd !== null ? f.fmtUsd(valueUsd) : Number(r.balance) === 0 ? f.fmtUsd(0) : '',
+    change: changeText,
     logoUri: r.logoUrl,
   };
 }

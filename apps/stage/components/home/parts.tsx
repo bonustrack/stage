@@ -18,7 +18,7 @@ import { resetActiveXmtpStore } from '../../lib/xmtp.client';
 import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { reloadApp } from '../../lib/reloadApp';
-import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
+import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
 import type { Row as RowT } from './model';
@@ -30,7 +30,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
 import { rowDataSet } from './rowArrows';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import { peerLabel, type ConvTitle } from '../conversation/convTitle';
+import { type ConvTitle } from '../conversation/convTitle';
 import { Column } from '../layout';
 
 export function rowTitle(item: RowT): ConvTitle {

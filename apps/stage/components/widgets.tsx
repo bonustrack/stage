@@ -1,10 +1,7 @@
-import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
+import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { APP_ICONS, type AppIconName } from './appIcons';
-import { Column } from './layout';
 
 export type AppIconRef = AppIconName | CentralIcon;
 
@@ -25,33 +22,5 @@ export function AppIcon({ name, color, size }: {
       color={color === undefined ? undefined : resolveColorToken(color, scheme)}
       dark={scheme === 'dark'}
     />
-  );
-}
-
-export function WalletActionButton({ label, icon, bg, onPress }: {
-  label: string;
-  icon: CentralIcon;
-  bg: string;
-  onPress: () => void;
-}): React.ReactElement {
-  const scheme = useKitScheme();
-  const dark = scheme === 'dark';
-  const tintBg = resolveColorToken(bg, scheme);
-  return (
-    <Column gap={6} align="center">
-      <Button
-        uniform
-        pill
-        size="xl"
-        color="primary"
-        variant="solid"
-        tintBg={tintBg}
-        tintFg={readableForeground(tintBg)}
-        dark={dark}
-        iconStart={<Glyph icon={icon} size={24} dark={dark} />}
-        onPress={onPress}
-      />
-      <Text text={label} size="2xs" fontWeight="semibold" />
-    </Column>
   );
 }

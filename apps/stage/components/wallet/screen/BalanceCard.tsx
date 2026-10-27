@@ -3,17 +3,47 @@ import Animated, { cancelAnimation, useAnimatedStyle, useReducedMotion, useShare
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { BALANCE_TITLE_STYLE, Title } from '@stage-labs/kit/react-native/title';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import type { CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { useHover } from '../../hover';
-import { WalletActionButton } from '../../widgets';
 import { nextBalanceCurrency, walletBalanceDisplay, type BalanceDisplayInput } from './balance.model';
 import { cycleBalanceCurrency } from './currency';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row, PAGE_GUTTER } from '../../layout';
 
 const BALANCE_SPINNER = 28;
+
+function WalletActionButton({ label, icon, bg, onPress }: {
+  label: string;
+  icon: CentralIcon;
+  bg: string;
+  onPress: () => void;
+}): React.ReactElement {
+  const scheme = useKitScheme();
+  const dark = scheme === 'dark';
+  const tintBg = resolveColorToken(bg, scheme);
+  return (
+    <Column gap={6} align="center">
+      <Button
+        uniform
+        pill
+        size="xl"
+        color="primary"
+        variant="solid"
+        tintBg={tintBg}
+        tintFg={readableForeground(tintBg)}
+        dark={dark}
+        iconStart={<Glyph icon={icon} size={24} dark={dark} />}
+        onPress={onPress}
+      />
+      <Text text={label} size="2xs" fontWeight="semibold" />
+    </Column>
+  );
+}
 
 type WalletAction = '/wallet/send' | '/wallet/receive';
 

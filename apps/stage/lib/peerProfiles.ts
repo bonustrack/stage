@@ -20,6 +20,7 @@ export {
   getPeerName,
   getPeerDisplayName,
   getPeerHandle,
+  peerLabel,
   getPeerDescription,
   getPeerAvatar,
   getPeerProfileSource,

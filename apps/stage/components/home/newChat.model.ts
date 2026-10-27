@@ -1,4 +1,5 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.model';
+import { isStringList } from '@stage-labs/client/collections';
 import { reactorsLabel } from '../conversation/reactors.model';
 import { uniqueKeys } from '../conversation/SidebarSection.model';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
@@ -52,14 +53,10 @@ export interface Picks { added: string[]; chosen: string[] | null }
 
 export const NO_PICKS: Picks = { added: [], chosen: null };
 
-function isAddresses(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every(a => typeof a === 'string');
-}
-
 export function savedPicks(saved: unknown): Picks | null {
   if (typeof saved !== 'object' || saved === null || !('added' in saved) || !('chosen' in saved)) return null;
   const { added, chosen } = saved;
-  return isAddresses(added) && (chosen === null || isAddresses(chosen)) ? { added, chosen } : null;
+  return isStringList(added) && (chosen === null || isStringList(chosen)) ? { added, chosen } : null;
 }
 
 interface PeerRow {
@@ -140,7 +137,7 @@ function isMemberStat(value: unknown): value is MemberStat {
 function memberHistoryOf(parsed: unknown): MemberHistory {
   if (typeof parsed !== 'object' || parsed === null || !('last' in parsed) || !('stats' in parsed)) return NO_MEMBER_HISTORY;
   const { last, stats } = parsed;
-  if (!isAddresses(last) || typeof stats !== 'object' || stats === null) return NO_MEMBER_HISTORY;
+  if (!isStringList(last) || typeof stats !== 'object' || stats === null) return NO_MEMBER_HISTORY;
   return { last, stats: Object.fromEntries(Object.entries(stats).filter((e): e is [string, MemberStat] => isMemberStat(e[1]))) };
 }
 

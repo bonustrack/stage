@@ -5,7 +5,7 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { usePeerProfiles } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -32,7 +32,6 @@ import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
-import { peerLabel } from '../conversation/convTitle';
 import { Column } from '../layout';
 
 export function HomeScreen({ panRef, pane, board = false }: {

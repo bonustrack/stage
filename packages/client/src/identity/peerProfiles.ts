@@ -1,3 +1,4 @@
+import { shortAddress } from './format';
 
 import { STAMP_URL } from '../profile/avatar';
 import type { OnchainProfile, OnchainProfileSource } from './onchainProfile';
@@ -195,6 +196,10 @@ export function getPeerName(address?: string | null): string | undefined {
 
 export function getPeerDisplayName(address?: string | null): string | undefined {
   return profileOf(address)?.displayName;
+}
+
+export function peerLabel(address: string): string {
+  return getPeerName(address) ?? shortAddress(address);
 }
 
 export function getPeerHandle(address?: string | null): string | undefined {

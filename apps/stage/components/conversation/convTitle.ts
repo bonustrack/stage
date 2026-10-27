@@ -1,10 +1,5 @@
-import { getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '@stage-labs/client/identity/format';
+import { peerLabel } from '../../lib/peerProfiles';
 import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
-
-export function peerLabel(address: string): string {
-  return getPeerName(address) ?? shortAddress(address);
-}
 
 export function mentionLabelOf(address: string): string {
   return mentionLabel(peerLabel(address));
