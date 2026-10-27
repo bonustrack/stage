@@ -3,7 +3,7 @@ import {
   addedColumnOrder, boardColumns, deletedColumnOrder, keptColumnOrder, orderedColumns, renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
-import { sectionBlocks } from '../components/home/listDrag.model';
+import { homeDragModel } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 import { categoryOrderWith, categorySectionKeysOf, categorySectionOrderWith, movedCategoryOrder } from '../lib/channelGroups.model';
 
@@ -96,11 +96,11 @@ describe('category section ordering', () => {
 
   test('collapsed built-ins are still full-section reorder targets', () => {
     const items = groupRows(rows, 'category', new Set(['dm', 'none']), false, value => value);
-    const blocks = sectionBlocks(items, 40, 67, new Map([['alpha', 90], ['work', 110]]));
-    expect(blocks.ids).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
-    expect(blocks.heights).toEqual([40, 130, 150, 40]);
-    expect(blocks.blockOf.get('group:none')).toBe(3);
-    expect(blocks.blockOf.has('loose')).toBe(false);
+    const model = homeDragModel(items, true);
+    expect([...model.sectionKeys.values()]).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
+    expect(model.sections).toContain('group:none');
+    expect(model.sectionOf.get('alpha')).toBe('group:category:alpha');
+    expect(model.sectionOf.has('loose')).toBe(false);
   });
 });
 

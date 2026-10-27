@@ -1,5 +1,5 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
-import type { SortMove } from '@stage-labs/kit/sortable';
+import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { CHANNEL_FIELD_NOUNS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
@@ -77,12 +77,8 @@ export const columnEditable = (key: string): boolean => (
   ['label', 'status', 'category'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
 );
 
-export function columnMoveTarget(move: Pick<SortMove, 'fromIndex' | 'toIndex' | 'beforeId' | 'afterId'>): string | null {
-  return move.toIndex > move.fromIndex ? move.beforeId : move.afterId;
-}
-
 export function acceptsColumnMove(move: SortMove): boolean {
-  const target = columnMoveTarget(move);
+  const target = moveAnchor(move);
   return target !== null && target !== move.itemId && columnMovable(target);
 }
 

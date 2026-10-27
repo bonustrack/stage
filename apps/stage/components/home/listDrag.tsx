@@ -1,196 +1,104 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
-import { useWindowDimensions, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
-} from 'react-native-reanimated';
-import { CHANNEL_ROW_HEIGHT } from '../ChannelRow';
+import { useMemo, type ReactNode } from 'react';
+import {
+  SortableHandle, SortableItem, SortableList, SortableScope, useSortableTarget, type SortMove,
+} from '@stage-labs/kit/react-native/sortable';
 import { setChannelCategory } from '../channel/channel.labels';
 import { moveCategory } from '../../lib/channelGroups';
 import { movePin } from '../../lib/pins';
-import { makeListeners } from '../../lib/storeCore';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../../lib/webLayout';
-import { GROUP_HEADER_HEIGHT } from './GroupHeader';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import type { HomeListItem } from './groups.model';
-import {
-  NO_BLOCKS, NO_ZONES, NO_ROW_MEASUREMENTS, blockShift, categoryZones, dragTarget,
-  measuredRowHeights, recordRowMeasurement, rowBlocks, sectionBlocks, sectionShape, type DragBlocks, type RowMeasurements,
-} from './listDrag.model';
-import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from '../dragLift';
+import { Column } from '../layout';
+import { homeDragModel, pinMove, sectionMove, zoneAt, zoneMove, type HomeDragModel } from './listDrag.model';
 
-const SHIFT_MS = 120;
+const PIN_LIST = 'home-pins';
+const SECTION_LIST = 'home-sections';
+const ROW_LIST = 'home-rows';
+const FILL = { flex: 1 };
 
-export interface ListDragMeasurements {
-  heights: ReadonlyMap<string, number>;
-  measure: (item: HomeListItem, width: number, height: number) => void;
+export interface HomeDrag {
+  model: HomeDragModel;
+  pins: readonly string[];
+  onPin: (move: SortMove) => void;
+  onSection: (move: SortMove) => void;
+  onZone: (move: SortMove) => void;
 }
 
-function rowMeasurementsStore(): {
-  subscribe: (cb: () => void) => () => void;
-  get: () => RowMeasurements;
-  measure: ListDragMeasurements['measure'];
-} {
-  let measured = NO_ROW_MEASUREMENTS;
-  const { subscribe, notify } = makeListeners();
-  return {
-    subscribe,
-    get: () => measured,
-    measure: (item, width, height) => {
-      const next = recordRowMeasurement(measured, item, width, height);
-      if (next === measured) return;
-      measured = next;
-      notify();
-    },
-  };
+export function useHomeDrag(items: readonly HomeListItem[], byCategory: boolean, pinned: readonly string[], visiblePinned: readonly string[]): HomeDrag {
+  const model = useMemo(() => homeDragModel(items, byCategory), [items, byCategory]);
+  return useMemo(() => ({
+    model,
+    pins: visiblePinned,
+    onPin: (move) => { const index = pinMove(pinned, move); if (index !== null) movePin(move.itemId, index); },
+    onSection: (move) => { const next = sectionMove(model, move); if (next !== null) moveCategory(next.key, next.target, next.visible); },
+    onZone: (move) => { const next = zoneMove(model, move); if (next !== null) setChannelCategory(next.convId, next.category); },
+  }), [model, pinned, visiblePinned]);
 }
 
-export function useListDragMeasurements(items: readonly HomeListItem[], layoutKey: unknown): ListDragMeasurements {
-  const { fontScale } = useWindowDimensions();
-  const store = useMemo(rowMeasurementsStore, [layoutKey, fontScale]);
-  const measured = useSyncExternalStore(store.subscribe, store.get, store.get);
-  const heights = useMemo(() => measuredRowHeights(items, measured), [items, measured]);
-  return useMemo(() => ({ heights, measure: store.measure }), [heights, store]);
-}
-
-export function MeasuredDragRow({ item, measure, children }: {
-  item: HomeListItem; measure: ListDragMeasurements['measure']; children: ReactNode;
-}): React.ReactElement {
-  const node = useRef<Animated.View>(null);
-  useLayoutEffect(() => {
-    let current = true;
-    node.current?.measure((_x, _y, width, height) => { if (current) measure(item, width, height); });
-    return () => { current = false; };
-  }, [item, measure]);
+export function HomeDragLists({ drag, children }: { drag: HomeDrag; children: ReactNode }): React.ReactElement {
   return (
-    <Animated.View ref={node} collapsable={false} onLayout={({ nativeEvent: { layout } }) => { measure(item, layout.width, layout.height); }}>
-      {children}
-    </Animated.View>
+    <SortableScope style={FILL}>
+      <SortableList listId={PIN_LIST} itemIds={drag.pins} indicator="shift" keyboard={false} touchAction="pan-y" style={FILL} onMove={drag.onPin}>
+        <SortableList
+          listId={SECTION_LIST} itemIds={drag.model.sections} indicator="shift" keyboard={false} touchAction="pan-y" style={FILL} onMove={drag.onSection}
+        >
+          <SortableList
+            listId={ROW_LIST} itemIds={drag.model.rows} indicator="follow" keyboard={false} touchAction="pan-y" style={FILL}
+            accepts={move => zoneMove(drag.model, move) !== null} onMove={drag.onZone}
+          >
+            {children}
+          </SortableList>
+        </SortableList>
+      </SortableList>
+    </SortableScope>
   );
 }
 
-export interface ListDrag extends DragBlocks {
-  from: SharedValue<number>;
-  to: SharedValue<number>;
-  offset: SharedValue<number>;
-  drop: (from: number, to: number) => void;
+function Lifted({ dragging, children }: { dragging: boolean; children: ReactNode }): React.ReactElement {
+  const { border } = usePalette();
+  return <Column background={dragging ? border : undefined}>{children}</Column>;
 }
 
-function useListDrag(blocks: DragBlocks, move: (moved: string, target: string) => void): ListDrag {
-  const from = useSharedValue(-1);
-  const to = useSharedValue(-1);
-  const offset = useSharedValue(0);
-  return useMemo(() => ({
-    ...blocks, from, to, offset,
-    drop: (fromIndex, toIndex) => {
-      const moved = blocks.ids[fromIndex];
-      const target = blocks.ids[toIndex];
-      if (moved !== undefined && target !== undefined && moved !== target) move(moved, target);
-    },
-  }), [blocks, move, from, to, offset]);
+function ZoneShade({ model, id, children }: { model: HomeDragModel; id: string; children: ReactNode }): React.ReactElement {
+  const { inputBg } = usePalette();
+  const target = useSortableTarget(ROW_LIST);
+  const zone = target === null ? undefined : zoneAt(model, target.itemId, target.index);
+  const lit = zone !== undefined && model.zoneOf.get(id) === zone;
+  return <Column background={lit ? inputBg : undefined}>{children}</Column>;
 }
 
-export function usePinDrag(order: readonly string[], visible: readonly string[], heights: ReadonlyMap<string, number>): ListDrag {
-  const blocks = useMemo(() => rowBlocks(visible, CHANNEL_ROW_HEIGHT, heights), [visible, heights]);
-  const move = useCallback((moved: string, target: string) => { movePin(moved, order.indexOf(target)); }, [order]);
-  return useListDrag(blocks, move);
-}
-
-function useSectionLayout<T>(
-  items: readonly HomeListItem[], on: boolean, heights: ReadonlyMap<string, number>, none: T,
-  layout: (items: readonly HomeListItem[], header: number, row: number, measured: ReadonlyMap<string, number>) => T,
-): T {
-  const shape = on ? sectionShape(items) : '';
-  return useMemo(() => (shape === '' ? none : layout(items, GROUP_HEADER_HEIGHT, CHANNEL_ROW_HEIGHT, heights)), [shape, heights]);
-}
-
-export function useSectionDrag(items: readonly HomeListItem[], grouped: boolean, heights: ReadonlyMap<string, number>): ListDrag {
-  const blocks = useSectionLayout(items, grouped, heights, NO_BLOCKS, sectionBlocks);
-  const move = useCallback((moved: string, target: string) => { moveCategory(moved, target, blocks.ids); }, [blocks]);
-  return useListDrag(blocks, move);
-}
-
-export function useCategoryRowDrag(items: readonly HomeListItem[], byCategory: boolean, heights: ReadonlyMap<string, number>): ListDrag {
-  const zones = useSectionLayout(items, byCategory, heights, NO_ZONES, categoryZones);
-  const move = useCallback((convId: string, key: string) => {
-    const category = zones.categories.get(key);
-    if (category !== undefined) setChannelCategory(convId, category);
-  }, [zones]);
-  return useListDrag(zones.blocks, move);
-}
-
-function useBlockStyle(drag: ListDrag, index: number): AnimatedStyle<ViewStyle> {
-  const { border, inputBg } = usePalette();
-  return useAnimatedStyle(() => {
-    const from = drag.from.value;
-    if (from === -1) return { transform: [{ translateY: 0 }], zIndex: 0, backgroundColor: 'transparent' };
-    if (from === index) return { transform: [{ translateY: drag.offset.value }], zIndex: 10, backgroundColor: border };
-    if (drag.zones.length > 0) {
-      return { transform: [{ translateY: 0 }], zIndex: 0, backgroundColor: drag.zones[index] === drag.to.value ? inputBg : 'transparent' };
-    }
-    const shift = blockShift(index, from, drag.to.value, drag.heights[from] ?? 0);
-    return { transform: [{ translateY: withTiming(shift, { duration: SHIFT_MS }) }], zIndex: 0, backgroundColor: 'transparent' };
-  });
-}
-
-export function Shifted({ drag, index, children }: {
-  drag: ListDrag; index: number; children: ReactNode;
+export function PinnedRow({ drag, convId, onHold, children }: {
+  drag: HomeDrag; convId: string; onHold: (anchor: MenuPoint) => void; children: ReactNode;
 }): React.ReactElement {
-  const style = useBlockStyle(drag, index);
-  return <Animated.View style={style}>{children}</Animated.View>;
-}
-
-export function Draggable({ drag, index, onHold, children, shift = true }: {
-  drag: ListDrag; index: number; onHold?: (anchor: { x: number; y: number }) => void; children: ReactNode; shift?: boolean;
-}): React.ReactElement {
-  const touch = isCoarsePointer();
-  const { tops, heights, zones } = drag;
-  const node = useRef<unknown>(null);
-  const holdNode = useCallback((el: unknown) => { node.current = el; lockScrollOnLift(el); }, []);
-  const gesture = useMemo(() => {
-    const onLift = (): void => { lift(node.current); };
-    const dropped = (fromIndex: number, toIndex: number): void => {
-      suppressNextClick();
-      drag.drop(fromIndex, toIndex);
-    };
-    const held = (anchor: { x: number; y: number }): void => {
-      suppressNextClick();
-      onHold?.(anchor);
-    };
-    const pan = Gesture.Pan()
-      .onBegin(() => { runOnJS(setDragging)(true); })
-      .onStart(() => {
-        drag.from.value = index;
-        drag.to.value = index;
-        drag.offset.value = 0;
-        runOnJS(onLift)();
-      })
-      .onUpdate((e) => {
-        drag.offset.value = e.translationY;
-        drag.to.value = dragTarget(tops, heights, zones, index, e.translationY);
-      })
-      .onEnd((e) => {
-        if (Math.abs(e.translationY) >= MOVE_SLOP) runOnJS(dropped)(index, dragTarget(tops, heights, zones, index, e.translationY));
-        else if (touch && onHold !== undefined) runOnJS(held)({ x: e.absoluteX, y: e.absoluteY });
-      })
-      .onFinalize(() => {
-        drag.from.value = -1;
-        drag.to.value = -1;
-        drag.offset.value = 0;
-        runOnJS(settle)();
-      });
-    if (touch) pan.activateAfterLongPress(HOLD_MS);
-    else pan.activeOffsetY([-MOVE_SLOP, MOVE_SLOP]);
-    pan.config.touchAction = 'pan-y';
-    return pan;
-  }, [drag, index, tops, heights, zones, touch, onHold]);
-  const style = useBlockStyle(drag, index);
-
+  if (!drag.pins.includes(convId)) return <>{children}</>;
   return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View style={shift ? style : undefined}>
-        <Animated.View ref={holdNode}>{children}</Animated.View>
-      </Animated.View>
-    </GestureDetector>
+    <SortableItem listId={PIN_LIST} itemId={convId} onHold={onHold}>
+      {({ dragging }) => <Lifted dragging={dragging}>{children}</Lifted>}
+    </SortableItem>
+  );
+}
+
+export function SectionHandle({ children }: { children: React.ReactElement }): React.ReactElement {
+  return <SortableHandle>{children}</SortableHandle>;
+}
+
+export function DragCell({ drag, item, onHold, children }: {
+  drag: HomeDrag; item: HomeListItem; onHold?: (anchor: MenuPoint) => void; children: ReactNode;
+}): React.ReactElement {
+  const { model } = drag;
+  const id = item.convId;
+  const header = model.sectionKeys.has(id);
+  const zoned = model.zoneOf.has(id);
+  const inner = !zoned ? children : (
+    <SortableItem listId={ROW_LIST} itemId={id} disabled={id === model.zoneOf.get(id)} onHold={onHold}>
+      {({ dragging }) => <ZoneShade model={model} id={id}><Lifted dragging={dragging}>{children}</Lifted></ZoneShade>}
+    </SortableItem>
+  );
+  const section = header ? id : model.sectionOf.get(id);
+  if (section === undefined) return <>{inner}</>;
+  return (
+    <SortableItem listId={SECTION_LIST} itemId={id} handle={header} follows={header ? undefined : section}>
+      {({ dragging }) => <Lifted dragging={dragging}>{inner}</Lifted>}
+    </SortableItem>
   );
 }

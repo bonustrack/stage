@@ -13,8 +13,6 @@ export function setDragging(on: boolean): void {
 
 let lifted = false;
 
-export const isLifted = (): boolean => lifted;
-
 function blockScroll(event: TouchEvent): void {
   if (lifted && event.cancelable) event.preventDefault();
 }

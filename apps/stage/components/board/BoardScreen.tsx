@@ -42,7 +42,7 @@ import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import {
   BOARD_GAP, acceptsCardMove, acceptsColumnMove, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable,
-  columnMovable, columnMoveTarget, columnsEditable, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
+  columnMovable, columnsEditable, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
 } from './BoardScreen.model';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
@@ -53,6 +53,7 @@ import {
 } from './BoardColumnEdit';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
+import { moveAnchor } from '@stage-labs/kit/sortable';
 import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
 const DRAGGING_OPACITY = 0.4;
@@ -283,7 +284,7 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
       <SortableList
         listId="board-columns" group="columns" direction="horizontal" gap={BOARD_GAP} keyboard={false} style={LANE}
         itemIds={columns.map(column => column.key)} accepts={acceptsColumnMove}
-        onMove={(move) => { const target = columnMoveTarget(move); if (target !== null) actions.dropColumn(move.itemId, target); }}
+        onMove={(move) => { const target = moveAnchor(move); if (target !== null) actions.dropColumn(move.itemId, target); }}
       >
         {columns.map(column => (
           <BoardColumnView

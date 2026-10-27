@@ -26,7 +26,7 @@ import { BoardScreen } from '../board/BoardScreen';
 import { deriveSortedRows } from './model';
 import { homeSortOf } from './sort.model';
 import { useGroupedRows, useHomeState } from './state';
-import { useCategoryRowDrag, useListDragMeasurements, usePinDrag, useSectionDrag } from './listDrag';
+import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
@@ -95,11 +95,6 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const accountEpoch = useAccountEpoch();
   const fields = useChannelFields('chats');
   const hideAvatar = !fields.avatar;
-  const dragLayoutKey = useMemo(
-    () => [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
-    [accountEpoch, fields, hideAvatar, channelProfilesVersion, draftsVersion],
-  );
-  const dragMeasurements = useListDragMeasurements(list.items, dragLayoutKey);
 
   useChannelsSync({ accountEpoch, setError: st.setError });
 
@@ -113,13 +108,11 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     () => (list.grouped ? [] : visibleRows.map(r => r.convId).filter(id => pinned.includes(id))),
     [list.grouped, visibleRows, pinned],
   );
-  const pinDrag = usePinDrag(pinned, visiblePinned, dragMeasurements.heights);
-  const sectionDrag = useSectionDrag(list.items, groupBy === 'category', dragMeasurements.heights);
-  const rowDrag = useCategoryRowDrag(list.items, groupBy === 'category', dragMeasurements.heights);
+  const drag = useHomeDrag(list.items, groupBy === 'category', pinned, visiblePinned);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, pinDrag, sectionDrag, rowDrag,
-    hideAvatar, fields, dragMeasurements, items: list.items,
+    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, drag,
+    hideAvatar, fields, items: list.items,
   });
 
   const placeholder = st.error ? <HomeError error={st.error} dark={dark} fg={fg}/> : (!rows ? (
@@ -137,6 +130,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
         listExtraData={listExtraData}
         scroll={st.scroll}
         renderRow={renderRow}
+        wrapList={(node) => <HomeDragLists drag={drag}>{node}</HomeDragLists>}
         pane={pane} menu={menu}
       />
       <RowChannelMenu

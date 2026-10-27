@@ -43,9 +43,12 @@ interface ChannelsListProps {
   listExtraData: readonly unknown[];
   scroll: ScrollRefs;
   renderRow: ({ item }: { item: HomeListItem }) => React.ReactElement;
+  wrapList?: (list: React.ReactElement) => React.ReactElement;
   pane: boolean;
   menu: HomeMenuState;
 }
+
+const same = (node: React.ReactElement): React.ReactElement => node;
 
 function knownPeerAddresses(rows: readonly Row[] | null): string[] {
   return (rows ?? []).flatMap(r => (r.peerAddress === null ? [] : [r.peerAddress]));
@@ -158,7 +161,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         {props.placeholder ? <>
           <ChannelsListHeader p={props} search={search}/>
           {props.placeholder}
-        </> : <VirtualList
+        </> : (props.wrapList ?? same)(<VirtualList
           ref={listRef}
           scroll={pane ? 'self' : 'window'}
           simultaneousHandlers={panRef}
@@ -188,7 +191,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           ListHeaderComponent={<ChannelsListHeader p={props} search={search}/>}
           ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers}/>}
           renderItem={renderRow}
-        />}
+        />)}
       </Column>
     </>
   );
