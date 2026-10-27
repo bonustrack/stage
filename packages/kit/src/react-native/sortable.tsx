@@ -27,12 +27,16 @@ interface ListContextValue {
   disabled: boolean;
   keyboard: boolean;
   inPlace: boolean;
+  touchAction: SortTouchAction;
   items: Map<string, SortItemEntry>;
 }
+
+export type SortTouchAction = 'manipulation' | 'pan-x' | 'pan-y';
 
 const ScopeContext = createContext<SortCoordinator | null>(null);
 const PreviewContext = createContext(false);
 const ListContext = createContext<ListContextValue | null>(null);
+const ListsContext = createContext<ReadonlyMap<string, ListContextValue>>(new Map());
 interface HandleValue { pan: PanGesture; list: ListContextValue; itemId: string; enabled: boolean }
 
 const HandleContext = createContext<HandleValue | null>(null);
@@ -84,6 +88,7 @@ export interface SortableListProps {
   disabled?: boolean;
   keyboard?: boolean;
   indicator?: SortIndicator;
+  touchAction?: SortTouchAction;
   accepts?: (move: SortMove) => boolean;
   style?: StyleProp<ViewStyle>;
   children: ReactNode | ((state: { over: boolean }) => ReactNode);
@@ -103,8 +108,27 @@ function Indicator({ rect }: { rect: SortRect }): React.ReactElement {
   );
 }
 
+function useListContext(value: ListContextValue): { context: ListContextValue; lists: ReadonlyMap<string, ListContextValue> } {
+  const { coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items } = value;
+  const context = useMemo(
+    () => ({ coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items }),
+    [coordinator, listId, group, direction, disabled, keyboard, inPlace, touchAction, items],
+  );
+  const parents = useContext(ListsContext);
+  const lists = useMemo(() => new Map([...parents, [listId, context]]), [parents, listId, context]);
+  return { context, lists };
+}
+
+function listSettings(props: SortableListProps): { group: string; direction: SortDirection; disabled: boolean; keyboard: boolean; indicator: SortIndicator; touchAction: SortTouchAction } {
+  return {
+    group: props.group ?? props.listId, direction: props.direction ?? 'vertical', disabled: props.disabled ?? false,
+    keyboard: props.keyboard ?? true, indicator: props.indicator ?? 'line', touchAction: props.touchAction ?? 'manipulation',
+  };
+}
+
 function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): React.ReactElement {
-  const { coordinator, listId, group = listId, direction = 'vertical', gap, disabled = false, keyboard = true, indicator = 'line' } = props;
+  const { coordinator, listId, gap } = props;
+  const { group, direction, disabled, keyboard, indicator, touchAction } = listSettings(props);
   const node = useRef<View>(null);
   const [items] = useState(() => new Map<string, SortItemEntry>());
   const latest = useRef(props);
@@ -120,19 +144,17 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
   }), [coordinator, listId, group, direction, indicator, items]);
   const over = useSortState(coordinator, state => state.target?.listId === listId);
   const line = useSortState(coordinator, state => (state.target?.listId === listId ? state.indicator : null));
-  const inPlace = indicator === 'shift';
-  const context = useMemo(
-    () => ({ coordinator, listId, group, direction, disabled, keyboard, inPlace, items }),
-    [coordinator, listId, group, direction, disabled, keyboard, inPlace, items],
-  );
+  const { context, lists } = useListContext({ coordinator, listId, group, direction, disabled, keyboard, inPlace: indicator === 'shift' || indicator === 'follow', touchAction, items });
   const body = typeof props.children === 'function' ? props.children({ over }) : props.children;
   return (
-    <ListContext.Provider value={context}>
-      <View ref={node} style={listStyle(direction, gap, props.itemIds.length === 0, props.style)}>
-        {body}
-        {indicator === 'line' && line !== null ? <Indicator rect={line}/> : null}
-      </View>
-    </ListContext.Provider>
+    <ListsContext.Provider value={lists}>
+      <ListContext.Provider value={context}>
+        <View ref={node} style={listStyle(direction, gap, props.itemIds.length === 0, props.style)}>
+          {body}
+          {indicator === 'line' && line !== null ? <Indicator rect={line}/> : null}
+        </View>
+      </ListContext.Provider>
+    </ListsContext.Provider>
   );
 }
 
@@ -215,7 +237,7 @@ function usePan(list: ListContextValue, itemId: string, preview: () => ReactNode
       });
     if (touch) pan.activateAfterLongPress(HOLD_MS);
     else pan.minDistance(MOVE_SLOP);
-    pan.config.touchAction = 'manipulation';
+    pan.config.touchAction = list.touchAction;
     return pan;
   }, [list, itemId, preview, onHold, enabled, touch]);
 }
@@ -225,6 +247,7 @@ export interface SortableItemProps {
   disabled?: boolean;
   handle?: boolean;
   follows?: string;
+  listId?: string;
   onHold?: (point: { x: number; y: number }) => void;
   style?: StyleProp<ViewStyle>;
   children: ReactNode | ((state: { dragging: boolean }) => ReactNode);
@@ -308,8 +331,10 @@ function LeadItem({ list, itemId, disabled = false, handle = false, onHold, styl
 }
 
 function LiveItem(props: SortableItemProps): React.ReactElement {
-  const list = useContext(ListContext);
-  if (list === null) throw new Error('SortableItem must be inside a SortableList.');
+  const nearest = useContext(ListContext);
+  const lists = useContext(ListsContext);
+  const list = props.listId === undefined ? nearest : lists.get(props.listId) ?? null;
+  if (list === null) throw new Error('SortableItem must be inside its SortableList.');
   const { itemId, follows, style, children } = props;
   if (follows !== undefined) return <FollowerItem list={list} itemId={itemId} follows={follows} style={style}>{children}</FollowerItem>;
   return <LeadItem {...props} list={list}/>;
@@ -355,4 +380,9 @@ export function useSortableTarget(listId: string): SortableTarget | null {
     const [itemId = '', index = '0'] = key.split('\n');
     return { itemId, listId, index: Number(index) };
   }, [key, listId]);
+}
+
+export function useSortableActive(): () => boolean {
+  const scope = useContext(ScopeContext);
+  return useMemo(() => () => scope?.state().drag != null, [scope]);
 }

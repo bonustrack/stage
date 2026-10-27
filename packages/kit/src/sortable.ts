@@ -72,6 +72,10 @@ export function sortMove(origin: SortOrigin, target: SortListLayout, index: numb
   };
 }
 
+export function moveAnchor(move: Pick<SortMove, 'fromIndex' | 'toIndex' | 'beforeId' | 'afterId'>): string | null {
+  return move.toIndex > move.fromIndex ? move.beforeId : move.afterId;
+}
+
 export function isNoMove(move: SortMove): boolean {
   return move.fromListId === move.toListId && move.fromIndex === move.toIndex;
 }

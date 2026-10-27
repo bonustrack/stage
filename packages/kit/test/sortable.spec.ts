@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  indicatorRect, insertionIndex, isNoMove, listAt, movedItems, shiftOf, sortMove, stepTarget, type SortListLayout,
+  indicatorRect, insertionIndex, isNoMove, listAt, moveAnchor, movedItems, shiftOf, sortMove, stepTarget, type SortListLayout,
 } from '../src/sortable';
 
 const row = (id: string, y: number): { id: string; rect: { x: number; y: number; width: number; height: number } } => ({ id, rect: { x: 0, y, width: 100, height: 20 } });
@@ -62,5 +62,10 @@ describe('sortable model', () => {
   test('items between the old and new place slide by the moved size', () => {
     expect([0, 1, 2, 3, 4].map(i => shiftOf(i, 1, 3, 20))).toEqual([0, 0, -20, -20, 0]);
     expect([0, 1, 2, 3, 4].map(i => shiftOf(i, 3, 1, 20))).toEqual([0, 20, 20, 0, 0]);
+  });
+
+  test('the anchor is the neighbour the item took the place of', () => {
+    expect(moveAnchor({ fromIndex: 0, toIndex: 2, beforeId: 'c', afterId: 'd' })).toBe('c');
+    expect(moveAnchor({ fromIndex: 3, toIndex: 1, beforeId: 'a', afterId: 'b' })).toBe('b');
   });
 });

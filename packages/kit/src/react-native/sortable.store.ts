@@ -8,7 +8,7 @@ import {
   autoScroll, ghostInViewport, liftFeedback, measureLater, measureNow, measuresSynchronously, nextFrame, raiseWithin, setPageDragging, suppressNextClick,
 } from './sortable.platform';
 
-export type SortIndicator = 'line' | 'none' | 'shift';
+export type SortIndicator = 'line' | 'none' | 'shift' | 'follow';
 
 export interface SortItemEntry { node: () => unknown; offset: Animated.Value; follows: string | undefined }
 
@@ -133,7 +133,8 @@ function slideOthers(core: Core, drag: SortDrag, toIndex: number): void {
   if (list === undefined) return;
   list.itemIds.forEach((id, i) => {
     if (id === drag.itemId) return;
-    for (const item of blockOf(list, id)) animateTo(core, item.offset, shiftOf(i, drag.index, toIndex, core.block));
+    const size = list.indicator === 'shift' ? core.block : 0;
+    for (const item of blockOf(list, id)) animateTo(core, item.offset, shiftOf(i, drag.index, toIndex, size));
   });
 }
 
@@ -229,7 +230,7 @@ function finish(core: Core, settled = false): void {
 function dragOf(list: SortListEntry, itemId: string, keyboard: boolean, preview: ReactNode = null): SortDrag {
   return {
     itemId, listId: list.listId, index: list.itemIds.indexOf(itemId), group: list.group, preview, keyboard,
-    inPlace: !keyboard && list.indicator === 'shift', size: NO_SIZE, grab: { x: 0, y: 0 },
+    inPlace: !keyboard && (list.indicator === 'shift' || list.indicator === 'follow'), size: NO_SIZE, grab: { x: 0, y: 0 },
   };
 }
 
