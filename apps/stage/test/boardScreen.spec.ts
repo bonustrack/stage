@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardsRightPadding, revealScrollX,
+  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardLanding, cardsRightPadding, revealScrollX,
   addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
   keptColumnOrder, columnCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
   renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
@@ -411,5 +411,25 @@ describe('boardCardPress', () => {
 
   test('closes the panel when the open channel is pressed again', () => {
     expect(boardCardPress('a', 'a')).toBe('close');
+  });
+});
+
+describe('cardLanding', () => {
+  const card = (convId: string, lastTs: number): { convId: string; lastTs: number } => ({ convId, lastTs });
+  const columns = [
+    { key: 'label:a', label: 'a', rows: [card('x', 30), card('y', 10)] },
+    { key: 'label:b', label: 'b', rows: [card('z', 50), card('w', 5)] },
+  ];
+  const byRecent = (rows: { convId: string; lastTs: number }[]): { convId: string; lastTs: number }[] => [...rows].sort((p, q) => q.lastTs - p.lastTs);
+  const move = (itemId: string, from: string, to: string, toIndex: number) => ({ itemId, fromListId: from, toListId: to, fromIndex: 0, toIndex, beforeId: null, afterId: null });
+
+  test('a card lands where the column sort puts it, wherever it was dropped', () => {
+    expect(cardLanding(columns, move('x', 'label:a', 'label:b', 0), byRecent)).toBe(1);
+    expect(cardLanding(columns, move('y', 'label:a', 'label:b', 0), byRecent)).toBe(1);
+    expect(cardLanding(columns, move('z', 'label:b', 'label:a', 2), byRecent)).toBe(0);
+  });
+
+  test('inside its own column a card keeps its place', () => {
+    expect(cardLanding(columns, move('y', 'label:a', 'label:a', 0), byRecent)).toBe(1);
   });
 });

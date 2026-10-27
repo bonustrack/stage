@@ -84,6 +84,13 @@ export function acceptsColumnMove(move: SortMove): boolean {
 
 export const acceptsCardMove = (move: SortMove): boolean => move.fromListId !== move.toListId;
 
+export function cardLanding<T extends { convId: string }>(columns: readonly BoardColumn<T>[], move: SortMove, sorted: (rows: T[]) => T[]): number {
+  const row = columns.flatMap(column => column.rows).find(r => r.convId === move.itemId);
+  const target = columns.find(column => column.key === move.toListId);
+  if (row === undefined || target === undefined) return move.toIndex;
+  return sorted([...target.rows.filter(r => r.convId !== row.convId), row]).indexOf(row);
+}
+
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {
   return savedFirst(columns, order.map(key => key.toLowerCase()), column => column.key.toLowerCase());
 }

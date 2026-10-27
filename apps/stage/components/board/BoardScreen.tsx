@@ -35,13 +35,13 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { useBoardQuery, useHomeView, useHomeViewOf } from '../../lib/homeView';
-import { homeSortOf } from '../home/sort.model';
+import { homeSortOf, sortHomeRows } from '../home/sort.model';
 import { capabilities } from '../../lib/capabilities';
 import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, acceptsCardMove, acceptsColumnMove, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable,
+  BOARD_GAP, acceptsCardMove, acceptsColumnMove, activeColumnIndex, boardCardPress, boardColumns, cardLanding, cardsRightPadding, columnEditable,
   columnMovable, columnsEditable, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
 } from './BoardScreen.model';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
@@ -53,10 +53,9 @@ import {
 } from './BoardColumnEdit';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
-import { moveAnchor } from '@stage-labs/kit/sortable';
+import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
-const DRAGGING_OPACITY = 0.4;
 const GROW = { flexGrow: 1, flexShrink: 1 };
 const SHRINK = { flexShrink: 1, minHeight: 0 };
 const LANE = { alignSelf: 'stretch', alignItems: 'flex-start' } as const;
@@ -75,6 +74,7 @@ interface ColumnActions {
   editable: boolean;
   dropCard: (convId: string, from: string, to: string) => void;
   dropColumn: (from: string, target: string) => void;
+  placeCard: (move: SortMove) => number;
   rename: (from: string, to: string) => void;
   remove: (label: string) => void;
   create: (name: string) => void;
@@ -144,10 +144,10 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   );
 }
 
-function ColumnCards({ column, pinned, editable, onOpen }: {
-  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; editable: boolean; onOpen: (key: string) => void;
+function ColumnCards({ column, pinned, editable, placeholder, onOpen }: {
+  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; editable: boolean; placeholder: React.ReactNode; onOpen: (key: string) => void;
 }): React.ReactElement | null {
-  if (column.rows.length === 0) return null;
+  if (column.rows.length === 0 && placeholder === null) return null;
   return (
     <List
       {...GUTTER_SCROLLBAR}
@@ -162,6 +162,7 @@ function ColumnCards({ column, pinned, editable, onOpen }: {
           onOpen={() => { onOpen(column.key); }}
         />
       ))}
+      {placeholder}
     </List>
   );
 }
@@ -198,19 +199,17 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   );
   return (
     <SortableItem itemId={column.key} handle disabled={editing || !columnMovable(column.key)} style={maxHeight === undefined ? undefined : { maxHeight }}>
-      {({ dragging }) => (
-        <SortableList
-          listId={column.key} group="cards" itemIds={column.rows.map(row => row.convId)} indicator="none" keyboard={false}
-          accepts={acceptsCardMove} onMove={(move) => { actions.dropCard(move.itemId, move.fromListId, column.key); }} style={SHRINK}
-        >
-          {({ over }) => (
-            <ColumnFrame over={over} opacity={dragging ? DRAGGING_OPACITY : 1} shrink>
-              {heading}
-              <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
-            </ColumnFrame>
-          )}
-        </SortableList>
-      )}
+      <SortableList
+        listId={column.key} group="cards" itemIds={column.rows.map(row => row.convId)} keyboard={false} style={SHRINK}
+        accepts={acceptsCardMove} placeAt={actions.placeCard} onMove={(move) => { actions.dropCard(move.itemId, move.fromListId, column.key); }}
+      >
+        {({ over, placeholder }) => (
+          <ColumnFrame over={over} shrink>
+            {heading}
+            <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen}/>
+          </ColumnFrame>
+        )}
+      </SortableList>
     </SortableItem>
   );
 }
@@ -336,6 +335,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     editable: columnsEditable(columnBy),
     dropCard: (convId, from, to) => { dropCard(columns, order, convId, from, to, columnBy); },
     dropColumn: (from, target) => { dropColumn(columns, order, from, target); },
+    placeCard: move => cardLanding(shown, move, list => sortHomeRows(list, pinned, sort, boardOrder)),
     rename: (from, to) => {
       if (columnsEditable(columnBy)) void renameBoardColumn(rows, columns, order, from, to, columnBy).catch(reported('board.rename'));
     },

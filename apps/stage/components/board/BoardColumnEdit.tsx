@@ -63,8 +63,8 @@ function useTitleEdit(
 
 const SHRINK = { flexShrink: 1, minHeight: 0 };
 
-export function ColumnFrame({ over = false, opacity = 1, maxHeight, shrink = false, children }: {
-  over?: boolean; opacity?: number; maxHeight?: number | string; shrink?: boolean; children: React.ReactNode;
+export function ColumnFrame({ over = false, maxHeight, shrink = false, children }: {
+  over?: boolean; maxHeight?: number | string; shrink?: boolean; children: React.ReactNode;
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
@@ -76,7 +76,7 @@ export function ColumnFrame({ over = false, opacity = 1, maxHeight, shrink = fal
       gap={CARD_GAP}
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
-      style={[{ borderWidth: 1, borderColor: over ? link : 'transparent', opacity }, shrink ? SHRINK : null]}
+      style={[{ borderWidth: 1, borderColor: over ? link : 'transparent' }, shrink ? SHRINK : null]}
     >
       {children}
     </Column>
