@@ -81,7 +81,7 @@ client.receive(jsonlFromAgent);
 
 In React, `useA2uiClient(messages, options)` (`@stage-labs/kit/react-native/a2ui-session`) builds the client for a message list and keeps the latest callbacks; its `send` also gets the client. `A2uiSurface` takes `disabled` (read only: no actions, inputs and buttons disabled) and `mediaUrl`, a filter applied to every `Image`, `Video` and `AudioPlayer` URL (return `''` to block one).
 
-`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner`, `Chart` and `QrCode` components. Every Kit style prop also takes a data binding or a function call (a status colour, a bar width), and `Row`/`Column` take `width`, `height`, their min and max, `aspectRatio` (pixels or a percentage such as `"40%"`), per-side `padding` and a `border`. The renderer keeps only Kit tokens and hex colours, pixel or percentage sizes and known padding sides from the data, and drops anything else. As the spec says, inputs only write to the data model: a Button action whose context references the input paths (or `sendDataModel`) sends their values. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs. `Video` and `AudioPlayer` need Expo (`expo-video`, `expo-audio`), so they are not in the default set: hosts that run Expo pass `MEDIA_RENDERERS` from `react-native/a2ui-media`. `a2ui/*` imports no React, React Native or Expo module, so servers can use the client and the catalog.
+`client.capabilities()` advertises the basic catalog and the **Stage Kit catalog**. The Kit catalog (`https://kit.stage.box/a2ui/v1_0/catalog.json`, built in `src/a2ui/kit-catalog.ts` from the Kit tokens) inherits every basic component and function from the basic catalog and adds the Kit extras: extra props, token enums (font sizes, colours, radii), the HeroIcon and brand icon names, and the `Title`, `Badge`, `ListView`, `ListViewItem`, `Spinner`, `Chart` and `QrCode` components. Every Kit style prop also takes a data binding or a function call (a status colour, a bar width), and `Row`/`Column` take `width`, `height`, their min and max, `aspectRatio` (pixels or a percentage such as `"40%"`), per-side `padding` and a `border`. The renderer keeps only Kit tokens and hex colours, pixel or percentage sizes and known padding sides from the data, and drops anything else. As the spec says, inputs only write to the data model: a Button action whose context references the input paths (or `sendDataModel`) sends their values. The gallery build publishes it at that URL. Stage frames and nodes use these messages as their wire format (see [`NODES.md`](../../NODES.md)). The renderer (`react-native/a2ui-renderers*.tsx`) maps every component of both catalogs onto the Kit components above; hosts can pass extra renderers for their own catalogs. A Kit `List` with `sortable: true` renders through the sortable components: on drop it reorders the bound arrays in the local data model, writes the move to its `move` binding and runs its standard `action`. `Video` and `AudioPlayer` need Expo (`expo-video`, `expo-audio`), so they are not in the default set: hosts that run Expo pass `MEDIA_RENDERERS` from `react-native/a2ui-media`. `a2ui/*` imports no React, React Native or Expo module, so servers can use the client and the catalog.
 
 ## Install
 
@@ -168,6 +168,24 @@ import { Chart } from '@stage-labs/kit/react-native/chart';
 - The tooltip shows the category and the value of each series. It opens on hover over a category with a mouse. On a touch screen a tap opens it and a second tap closes it, and the tap still reaches a pressable parent such as a `ListViewItem`.
 - `dark` picks the scheme. Without it the chart follows `KitThemeProvider`.
 
+## Sortable
+
+`@stage-labs/kit/react-native/sortable` makes items draggable between and within lists on web and native, built on `react-native-gesture-handler` with JS-thread callbacks (no Reanimated worklets).
+
+```tsx
+<SortableScope>
+  <SortableList listId="todo" group="board" itemIds={ids} onMove={(move) => save(move)}>
+    {cards.map(card => <SortableItem key={card.id} itemId={card.id}><Card>{card.title}</Card></SortableItem>)}
+  </SortableList>
+</SortableScope>
+```
+
+- `SortableScope` coordinates the lists inside it and draws the drag preview. A `SortableList` without a scope makes its own.
+- `SortableList` takes `listId`, the `itemIds` in order, `onMove(move, source)`, and optionally `group` (lists of a group exchange items), `direction`, `gap`, `label`, `payload` (handed back as `source.payload`), `accepts(move)`, `indicator` (`line` or `none`), `keyboard` and `disabled`. `children` can be a function of `{ over }`.
+- `SortableItem` takes `itemId`, `disabled`, `onHold` (a touch hold released without moving) and `handle` (drag only from a `SortableHandle` inside it). `children` can be a function of `{ dragging }`.
+- A move is `{ itemId, fromListId, toListId, fromIndex, toIndex, beforeId, afterId }`, where `toIndex` and the neighbours count the target list without the moved item. The lists do not reorder anything themselves: the host updates its data in `onMove`.
+- Touch lifts after a long press, a mouse after a few pixels. On web the page and scroll containers scroll at the edges, and the click after a drop is swallowed. With `keyboard`, a focused item lifts with Space or Enter, moves with the arrow keys (into the next list of the group across the other axis), drops with Space or Enter and cancels with Escape, and screen readers get the same moves as accessibility actions, with announcements.
+
 ## Project structure
 
 ```
@@ -213,6 +231,12 @@ Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`. Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
+
+### 0.1.0-beta.17
+
+- New: `react-native/sortable` (`SortableScope`, `SortableList`, `SortableItem`, `SortableHandle`) and the pure `sortable` model: drag and drop within and between lists on web and native, with keyboard and screen-reader moves.
+- Kit catalog: `List` takes `sortable`, `group`, `listId`, `itemKey`, `move` and `action`, so agents can build reorderable lists and kanban boards from standard A2UI components; the move reaches the agent through a standard event.
+- `RenderContext` has `pointer`, `read` and `write` for custom renderers that update the surface data model.
 
 ### 0.1.0-beta.16
 

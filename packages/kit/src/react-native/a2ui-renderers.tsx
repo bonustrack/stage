@@ -25,6 +25,7 @@ import {
   colorOf, colorValueOf, commonProps, hasMarkdown, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
 } from './a2ui-context';
 import { chartRenderer } from './a2ui-renderers.chart';
+import { isSortableList, sortableListRenderer } from './a2ui-renderers.sortable';
 import { INPUT_RENDERERS } from './a2ui-renderers.inputs';
 
 const GAP = DENSITY_SCALE.normal.gap;
@@ -199,11 +200,11 @@ function tabsRenderer(ctx: RenderContext): ReactNode {
 export const KIT_RENDERERS: A2uiRenderers = {
   Row: (ctx) => withChildren(ctx, (children) => <Row {...flexProps(ctx)}>{children}</Row>),
   Column: (ctx) => withChildren(ctx, (children) => <Column {...flexProps(ctx)}>{children}</Column>),
-  List: (ctx) => withChildren(ctx, (children) => (
+  List: (ctx) => (isSortableList(ctx) ? sortableListRenderer(ctx) : withChildren(ctx, (children) => (
     <List {...commonProps(ctx)} direction={asEnum(ctx.props.direction, ['vertical', 'horizontal'])} align={asEnum(ctx.props.align, ALIGN)} gap={asNumber(ctx.props.gap) ?? GAP}>
       {children}
     </List>
-  )),
+  ))),
   Card: (ctx) => {
     const surface = asEnum(ctx.props.surface, SURFACES);
     const background = colorOf(ctx, ctx.props.background) ?? (surface === undefined ? undefined : surfaceColor(surface, ctx.palette));

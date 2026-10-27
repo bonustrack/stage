@@ -30,6 +30,9 @@ export interface RenderContext {
   childText: (id: unknown) => string | undefined;
   action: () => DispatchResult | undefined;
   binding: <T extends JsonValue>(prop: string) => Binding<T>;
+  pointer: (path: string) => string;
+  read: (pointer: string) => JsonValue | undefined;
+  write: (pointer: string, value: JsonValue) => void;
 }
 
 export type A2uiRenderer = (ctx: RenderContext) => ReactNode;

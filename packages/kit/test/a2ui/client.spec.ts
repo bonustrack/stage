@@ -154,6 +154,17 @@ describe('Kit catalog', () => {
     expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
   });
 
+  test('Kit List takes the sortable props and a standard action', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const list = {
+      id: 'l', component: 'List', children: { componentId: 'card', path: 'cards' }, sortable: true, group: 'board',
+      listId: { '@path': 'id' }, itemKey: 'id', move: { '@path': '/lastMove' },
+      action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
+    };
+    expect(registry.validateComponent(KIT_CATALOG_ID, list, [])).toEqual([]);
+    expect(registry.validateComponent(KIT_CATALOG_ID, { ...list, move: '/lastMove' }, []).length).toBeGreaterThan(0);
+  });
+
   test('Kit catalog takes card surfaces, hidden labels, title line clamps and bound chart series', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);

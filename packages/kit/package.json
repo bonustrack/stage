@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.16",
+  "version": "0.1.0-beta.17",
   "description": "Stage design system for React Native and web: A2UI v1.0 components and renderer, the Stage Kit A2UI catalog, tokens, Central Icons (licensed, installed from npm) with HeroIcon name aliases, and theme contracts.",
   "license": "MIT",
   "repository": {
@@ -42,6 +42,7 @@
     "./link": "./src/link.ts",
     "./markdown-styles": "./src/markdown.styles.ts",
     "./overlay.styles": "./src/overlay.styles.ts",
+    "./sortable": "./src/sortable.ts",
     "./react-native/a2ui-context": "./src/react-native/a2ui-context.ts",
     "./react-native/a2ui-props": "./src/react-native/a2ui-props.ts",
     "./react-native/a2ui-media": "./src/react-native/a2ui-media.tsx",
@@ -75,6 +76,7 @@
     "./react-native/qr-code": "./src/react-native/qr-code.tsx",
     "./react-native/row": "./src/react-native/row.tsx",
     "./react-native/slider": "./src/react-native/slider.tsx",
+    "./react-native/sortable": "./src/react-native/sortable.tsx",
     "./react-native/spinner": "./src/react-native/spinner.tsx",
     "./react-native/tabs": "./src/react-native/tabs.tsx",
     "./react-native/text": "./src/react-native/text.tsx",

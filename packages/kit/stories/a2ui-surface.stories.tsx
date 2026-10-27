@@ -7,7 +7,7 @@ import { A2uiSurface } from '../src/react-native/a2ui-surface';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
 import contactForm from '../test/a2ui/cases/contact_form_example.jsonl?raw';
-import { BASIC_GALLERY, DASHBOARD_BLOCK, PAYMENT_REQUEST } from './a2ui-samples';
+import { BASIC_GALLERY, DASHBOARD_BLOCK, KANBAN, PAYMENT_REQUEST } from './a2ui-samples';
 
 export default { title: 'A2UI Surface' };
 
@@ -43,6 +43,8 @@ function Playground({ messages, surfaceId }: { messages: string | JsonValue[]; s
 }
 
 export const KitPaymentRequest: Story = () => <Playground messages={PAYMENT_REQUEST} surfaceId="payment_request" />;
+
+export const KitKanban: Story = () => <Playground messages={KANBAN} surfaceId="kanban" />;
 
 export const KitDashboardBlock: Story = () => <Playground messages={DASHBOARD_BLOCK} surfaceId="dashboard_block" />;
 

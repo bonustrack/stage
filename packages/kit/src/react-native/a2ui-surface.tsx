@@ -14,6 +14,7 @@ import {
   type A2uiRenderer, type A2uiRenderers, type Binding, type RenderContext, type SurfaceContextValue,
 } from './a2ui-context';
 import { KIT_RENDERERS } from './a2ui-renderers';
+import { SortableScope } from './sortable';
 import { useContentColor } from './content-color';
 import { useKitPalette, useKitScheme } from './theme-context';
 
@@ -42,11 +43,19 @@ export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, 
   if (surface?.components.has(ROOT_ID) !== true) return null;
   if (!renderable) return <>{fallback}</>;
   const value: SurfaceContextValue = { client, surfaceId, renderers: { ...KIT_RENDERERS, ...renderers }, disabled, mediaUrl, onActionError };
+  const root = <A2uiNode key={version < 0 ? 'none' : 'root'} id={ROOT_ID} scope={ROOT_SCOPE} />;
   return (
     <SurfaceContext.Provider value={value}>
-      <A2uiNode key={version < 0 ? 'none' : 'root'} id={ROOT_ID} scope={ROOT_SCOPE} />
+      {hasSortableList(surface.components.values()) ? <SortableScope style={SORT_SCOPE}>{root}</SortableScope> : root}
     </SurfaceContext.Provider>
   );
+}
+
+const SORT_SCOPE = { flexGrow: 1 };
+
+function hasSortableList(components: Iterable<ComponentInstance>): boolean {
+  for (const component of components) if (component.component === 'List' && component.sortable !== undefined && component.sortable !== false) return true;
+  return false;
 }
 
 function resolveAccessibility(ctx: SurfaceContextValue, raw: JsonValue | undefined, scope: Scope): A2uiAccessibility | undefined {
@@ -145,6 +154,9 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     childText: (childId) => plainChildText(ctx, childId, scope),
     action: () => dispatchAction(ctx, instance, scope),
     binding: bindings.binding,
+    pointer: (path) => resolveScopedPath(path, scope.path),
+    read: (pointer) => getAt(ctx.client.dataModel(ctx.surfaceId), pointer),
+    write: (pointer, value) => { ctx.client.write(ctx.surfaceId, pointer, value); },
   };
   return <>{render(renderContext)}</>;
 }

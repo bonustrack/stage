@@ -130,3 +130,34 @@ export const DASHBOARD_BLOCK: JsonObject[] = [
     },
   },
 ];
+
+export const KANBAN: JsonObject[] = [
+  {
+    version: v,
+    createSurface: {
+      surfaceId: 'kanban',
+      catalogId: KIT_CATALOG_ID,
+      dataModel: {
+        lastMove: null,
+        columns: [
+          { id: 'todo', title: 'To do', cards: [{ id: 'c1', title: 'Write the spec' }, { id: 'c2', title: 'Design the board' }] },
+          { id: 'doing', title: 'Doing', cards: [{ id: 'c3', title: 'Build sortable lists' }] },
+          { id: 'done', title: 'Done', cards: [{ id: 'c4', title: 'Kickoff' }] },
+        ],
+      },
+      components: [
+        { id: 'root', component: 'Row', gap: 12, align: 'start', children: { componentId: 'column', path: '/columns' } },
+        { id: 'column', component: 'Column', width: 200, gap: 8, padding: 8, radius: 'md', surface: 'sunken', children: ['column_title', 'cards'] },
+        { id: 'column_title', component: 'Text', fontWeight: 'semibold', text: { '@path': 'title' } },
+        {
+          id: 'cards', component: 'List', gap: 8, sortable: true, group: 'board', listId: { '@path': 'id' },
+          children: { componentId: 'card', path: 'cards' }, move: { '@path': '/lastMove' },
+          accessibility: { label: { '@path': 'title' } },
+          action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
+        },
+        { id: 'card', component: 'Card', size: 'sm', child: 'card_title' },
+        { id: 'card_title', component: 'Text', text: { '@path': 'title' } },
+      ],
+    },
+  },
+];
