@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { acceptsDrop, boardColumns, columnMovable, orderedColumns } from '../components/board/BoardScreen.model';
+import { acceptsColumnMove, boardColumns, columnMovable, orderedColumns } from '../components/board/BoardScreen.model';
 import {
   groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem,
 } from '../components/home/groups.model';
@@ -322,8 +322,9 @@ describe('one category order for the chat list and the board', () => {
   test('no category stays last on the board: it is not dragged and takes no column', () => {
     expect(columnMovable('category:')).toBe(false);
     expect(columnMovable('assignee:')).toBe(true);
-    expect(acceptsDrop({ kind: 'column', key: 'category:Work' }, 'category:')).toBe(false);
-    expect(acceptsDrop({ kind: 'column', key: 'category:Work' }, 'category:Ops')).toBe(true);
+    const move = { itemId: 'category:Work', fromListId: 'board', toListId: 'board', fromIndex: 1, toIndex: 2, afterId: null };
+    expect(acceptsColumnMove({ ...move, beforeId: 'category:' })).toBe(false);
+    expect(acceptsColumnMove({ ...move, beforeId: 'category:Ops' })).toBe(true);
     expect(movedCategoryOrder(['category:ops'], ['category:Ops', 'category:Work', 'category:'], 'category:Work', 'category:'))
       .toEqual(['category:ops']);
   });

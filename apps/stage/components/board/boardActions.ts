@@ -11,7 +11,7 @@ import { toastLabelError } from '../channel/channel.labels';
 import { renameNewChatProject } from '../home/newChatDefaults';
 import {
   addedColumnOrder, cardColumnEdit, columnCarriers, columnNoun, deleteColumnConfirm, deletedColumnOrder, keptColumnOrder,
-  movedColumnOrder, renamedColumnOrder, type BoardColumn, type BoardDrag, type EditableColumnBy,
+  movedColumnOrder, renamedColumnOrder, type BoardColumn, type EditableColumnBy,
 } from './BoardScreen.model';
 
 function saveColumnOrder(order: readonly string[], by: GroupKey): void {
@@ -25,21 +25,21 @@ export function addBoardColumn(
   saveColumnOrder(addedColumnOrder(columns.map(column => column.key), saved, name, by), by);
 }
 
-export function dropOnBoard(
-  columns: readonly BoardColumn<unknown>[], saved: readonly string[], drag: BoardDrag, key: string, by: GroupKey,
+export function dropColumn(columns: readonly BoardColumn<unknown>[], saved: readonly string[], from: string, target: string): void {
+  const shown = columns.map(column => column.key);
+  if (isCategoryKey(from)) { moveCategory(from, target, shown); return; }
+  const next = movedColumnOrder(shown, saved, from, target);
+  if (next !== null) setBoardOrder(next);
+}
+
+export function dropCard(
+  columns: readonly BoardColumn<unknown>[], saved: readonly string[], convId: string, from: string, to: string, by: GroupKey,
 ): void {
-  if (drag.kind === 'column') {
-    const shown = columns.map(column => column.key);
-    if (isCategoryKey(drag.key)) { moveCategory(drag.key, key, shown); return; }
-    const next = movedColumnOrder(shown, saved, drag.key, key);
-    if (next !== null) setBoardOrder(next);
-    return;
-  }
-  const edit = cardColumnEdit(columns, drag.from, key, by);
+  const edit = cardColumnEdit(columns, from, to, by);
   if (edit === null) return;
-  const kept = keptColumnOrder(columns, saved, drag.from);
+  const kept = keptColumnOrder(columns, saved, from);
   if (kept !== null) saveColumnOrder(kept, by);
-  const line = lineOfConv(drag.convId);
+  const line = lineOfConv(convId);
   const write = edit.by === 'label' ? moveGroupLabel(line, edit.from, edit.to) : setGroupField(line, edit.by, edit.value);
   void write.catch((e: unknown) => { toastLabelError(e, edit.by === 'label' ? 'labels' : `the ${columnNoun(edit.by)}`); });
 }

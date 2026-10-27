@@ -1,4 +1,5 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
+import type { SortMove } from '@stage-labs/kit/sortable';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { CHANNEL_FIELD_NOUNS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
 import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
@@ -70,28 +71,22 @@ export function searchedColumns<T extends FilterRow>(
   return columns.map(column => ({ ...column, rows: column.rows.filter(matches) }));
 }
 
-export type BoardDrag = { kind: 'column'; key: string } | { kind: 'card'; convId: string; from: string };
-
-export interface BoardDragSource {
-  nativeID?: string;
-  dragging: boolean;
-}
-
-export interface BoardDropZone {
-  nativeID?: string;
-  over: boolean;
-}
-
 export const columnMovable = (key: string): boolean => key !== columnKeyOf('category', '') && key !== columnKeyOf('status', '');
 
 export const columnEditable = (key: string): boolean => (
   ['label', 'status', 'category'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
 );
 
-export function acceptsDrop(drag: BoardDrag, key: string): boolean {
-  if (drag.kind === 'card') return drag.from !== key;
-  return drag.key !== key && columnMovable(key);
+export function columnMoveTarget(move: Pick<SortMove, 'fromIndex' | 'toIndex' | 'beforeId' | 'afterId'>): string | null {
+  return move.toIndex > move.fromIndex ? move.beforeId : move.afterId;
 }
+
+export function acceptsColumnMove(move: SortMove): boolean {
+  const target = columnMoveTarget(move);
+  return target !== null && target !== move.itemId && columnMovable(target);
+}
+
+export const acceptsCardMove = (move: SortMove): boolean => move.fromListId !== move.toListId;
 
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {
   return savedFirst(columns, order.map(key => key.toLowerCase()), column => column.key.toLowerCase());

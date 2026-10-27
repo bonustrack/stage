@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions, type DimensionValue } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
@@ -13,7 +12,6 @@ import { ChannelRow } from '../ChannelRow';
 import { ChannelRowFields } from '../ChannelRowFields';
 import { useChannelFields } from '../../lib/channelFields';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
-import { LabelText } from '../LabelText';
 import { CountTag } from '../CountTag';
 import { NewChatAction } from '../home/NewChatAction';
 import { HomeError, HomeSpinner, RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../home/parts';
@@ -43,21 +41,25 @@ import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable, columnMovable, columnsEditable, orderedColumns,
-  revealScrollX, searchedColumns, type BoardColumn, type BoardDrag,
+  BOARD_GAP, acceptsCardMove, acceptsColumnMove, activeColumnIndex, boardCardPress, boardColumns, cardsRightPadding, columnEditable,
+  columnMovable, columnMoveTarget, columnsEditable, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
 } from './BoardScreen.model';
-import { useBoardDragSource, useBoardDropZone } from './boardDrag';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
-import { addBoardColumn, deleteBoardColumn, dropOnBoard, renameBoardColumn } from './boardActions';
+import { addBoardColumn, deleteBoardColumn, dropCard, dropColumn, renameBoardColumn } from './boardActions';
 import {
-  AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, HEADER_PADDING, RenameHeading, TITLE_SIZE,
+  AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading,
 } from './BoardColumnEdit';
 import { List } from '@stage-labs/kit/react-native/list';
+import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
 import { Column, Row, ScreenScroll, GUTTER_SCROLLBAR, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
 const DRAGGING_OPACITY = 0.4;
+const GROW = { flexGrow: 1, flexShrink: 1 };
+const SHRINK = { flexShrink: 1, minHeight: 0 };
+const LANE = { alignSelf: 'stretch', alignItems: 'flex-start' } as const;
+const FILL = { flex: 1 };
 type BoardRouter = ReturnType<typeof useRouter>;
 const cardDataSet = (columnKey: string, convId: string): MarkedNode => (
   { dataSet: { boardcard: convId, boardcolumn: columnKey } }
@@ -70,12 +72,13 @@ function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'repla
 }
 interface ColumnActions {
   editable: boolean;
-  drop: (drag: BoardDrag, key: string) => void;
+  dropCard: (convId: string, from: string, to: string) => void;
+  dropColumn: (from: string, target: string) => void;
   rename: (from: string, to: string) => void;
   remove: (label: string) => void;
   create: (name: string) => void;
 }
-function columnMaxHeight(laneHeight: number): number | string | undefined {
+function columnMaxHeight(laneHeight: number): DimensionValue | undefined {
   if (Platform.OS === 'web') return '100%';
   return laneHeight > 0 ? laneHeight : undefined;
 }
@@ -90,18 +93,17 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
   const fields = useChannelFields('board');
-  const source = useBoardDragSource(editable ? { kind: 'card', convId: item.convId, from: columnKey } : null);
   const [menu, setMenu] = useState<RowMenu | null>(null);
   const openMenu = rowMenuOpener(item, setMenu);
   const title = rowTitle(item);
   return (
+    <SortableItem itemId={item.convId} disabled={!editable} onHold={openMenu}>
     <Column
       {...cardDataSet(columnKey, item.convId)}
-      nativeID={source.nativeID}
       surface="surface"
       radius={BLOCK_RADIUS_DEFAULT}
       style={{
-        overflow: 'hidden', opacity: source.dragging ? DRAGGING_OPACITY : 1,
+        overflow: 'hidden',
         borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg,
       }}
     >
@@ -132,21 +134,12 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
           onOpen();
           showInPanel(router, item.convId, press);
         }}
-        onLongPress={source.nativeID === undefined ? openMenu : undefined}
+        onLongPress={editable ? undefined : openMenu}
         onContextMenu={openMenu}
       />
       <RowChannelMenu menu={menu} isPinned={pinned} onClose={() => { setMenu(null); }}/>
     </Column>
-  );
-}
-
-function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }): React.ReactElement {
-  const title = <LabelText label={label} size={TITLE_SIZE} fontWeight="semibold" truncate/>;
-  if (onPress === undefined) return <Column style={{ flexShrink: 1 }}>{title}</Column>;
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Rename column" style={{ flexShrink: 1 }}>
-      {title}
-    </Pressable>
+    </SortableItem>
   );
 }
 
@@ -175,7 +168,7 @@ function ColumnCards({ column, pinned, editable, onOpen }: {
 function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }: {
   column: BoardColumn<ChannelRowData>;
   columns: readonly BoardColumn<ChannelRowData>[];
-  maxHeight?: number | string;
+  maxHeight?: DimensionValue;
   pinned: readonly string[];
   actions: ColumnActions;
   onOpen: (key: string) => void;
@@ -184,30 +177,40 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   const { columnBy } = useHomeView();
   const editable = actions.editable && columnEditable(column.key);
   const [editing, setEditing] = useState(false);
-  const zone = useBoardDropZone(column.key, (drag) => { actions.drop(drag, column.key); });
-  const handle = useBoardDragSource(editing || !columnMovable(column.key) ? null : { kind: 'column', key: column.key }, zone.nativeID);
-  return (
-    <ColumnFrame
-      nativeID={zone.nativeID} over={zone.over} opacity={handle.dragging ? DRAGGING_OPACITY : 1} maxHeight={maxHeight}
-    >
-      {editing ? (
-        <RenameHeading
-          label={label} columns={columns} count={column.rows.length} onRename={actions.rename}
-          onClose={() => { setEditing(false); }}
-        />
-      ) : (
-        <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
-          <Row nativeID={handle.nativeID} weight={1} align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
-            <ColumnTitle label={label} onPress={editable ? () => { setEditing(true); } : undefined}/>
-            <CountTag count={column.rows.length}/>
-            <Column weight={1}/>
-          </Row>
-          {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
-          <NewChatAction by={columnBy} groupKey={column.key} title={label}/>
+  const heading = editing ? (
+    <RenameHeading
+      label={label} columns={columns} count={column.rows.length} onRename={actions.rename}
+      onClose={() => { setEditing(false); }}
+    />
+  ) : (
+    <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
+      <SortableHandle style={GROW}>
+        <Row align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
+          <ColumnTitle label={label} onPress={editable ? () => { setEditing(true); } : undefined}/>
+          <CountTag count={column.rows.length}/>
+          <Column weight={1}/>
         </Row>
+      </SortableHandle>
+      {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
+      <NewChatAction by={columnBy} groupKey={column.key} title={label}/>
+    </Row>
+  );
+  return (
+    <SortableItem itemId={column.key} handle disabled={editing || !columnMovable(column.key)} style={maxHeight === undefined ? undefined : { maxHeight }}>
+      {({ dragging }) => (
+        <SortableList
+          listId={column.key} group="cards" itemIds={column.rows.map(row => row.convId)} indicator="none" keyboard={false}
+          accepts={acceptsCardMove} onMove={(move) => { actions.dropCard(move.itemId, move.fromListId, column.key); }} style={SHRINK}
+        >
+          {({ over }) => (
+            <ColumnFrame over={over} opacity={dragging ? DRAGGING_OPACITY : 1} shrink>
+              {heading}
+              <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
+            </ColumnFrame>
+          )}
+        </SortableList>
       )}
-      <ColumnCards column={column} pinned={pinned} editable={actions.editable} onOpen={onOpen}/>
-    </ColumnFrame>
+    </SortableItem>
   );
 }
 
@@ -263,6 +266,7 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
     scroll.current?.scrollToEnd({ animated: true });
   };
   return (
+    <SortableScope style={FILL}>
     <List
       ref={scroll}
       direction="horizontal"
@@ -276,16 +280,23 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
       scrollEventThrottle={16}
       onContentSizeChange={revealEnd}
     >
-      {columns.map(column => (
-        <BoardColumnView
-          key={column.key}
-          column={column} columns={columns} pinned={pinned}
-          maxHeight={columnMaxHeight(laneHeight)}
-          actions={actions} onOpen={setOpenedFrom}
-        />
-      ))}
+      <SortableList
+        listId="board-columns" group="columns" direction="horizontal" gap={BOARD_GAP} keyboard={false} style={LANE}
+        itemIds={columns.map(column => column.key)} accepts={acceptsColumnMove}
+        onMove={(move) => { const target = columnMoveTarget(move); if (target !== null) actions.dropColumn(move.itemId, target); }}
+      >
+        {columns.map(column => (
+          <BoardColumnView
+            key={column.key}
+            column={column} columns={columns} pinned={pinned}
+            maxHeight={columnMaxHeight(laneHeight)}
+            actions={actions} onOpen={setOpenedFrom}
+          />
+        ))}
+      </SortableList>
       {actions.editable ? <AddColumn columns={columns} onAdd={actions.create} onReveal={() => { reveal.current = true; }}/> : null}
     </List>
+    </SortableScope>
   );
 }
 function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
@@ -322,7 +333,8 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   if (!rows) return <HomeSpinner head={head}/>;
   const actions: ColumnActions = {
     editable: columnsEditable(columnBy),
-    drop: (drag, key) => { dropOnBoard(columns, order, drag, key, columnBy); },
+    dropCard: (convId, from, to) => { dropCard(columns, order, convId, from, to, columnBy); },
+    dropColumn: (from, target) => { dropColumn(columns, order, from, target); },
     rename: (from, to) => {
       if (columnsEditable(columnBy)) void renameBoardColumn(rows, columns, order, from, to, columnBy).catch(reported('board.rename'));
     },

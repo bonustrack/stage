@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BLOCK_RADIUS_DEFAULT, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -9,6 +10,7 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 import { FORM_FIELD_RADIUS, useFieldColors } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
 import { CountTag } from '../CountTag';
+import { LabelText } from '../LabelText';
 import { OverflowMenu, SMALL_OVERFLOW_ICON } from '../MenuRows';
 import { HoverIconButton, useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -59,21 +61,22 @@ function useTitleEdit(
   return { name, tried, setName, finish, close };
 }
 
-export function ColumnFrame({ nativeID, over = false, opacity = 1, maxHeight, children }: {
-  nativeID?: string; over?: boolean; opacity?: number; maxHeight?: number | string; children: React.ReactNode;
+const SHRINK = { flexShrink: 1, minHeight: 0 };
+
+export function ColumnFrame({ over = false, opacity = 1, maxHeight, shrink = false, children }: {
+  over?: boolean; opacity?: number; maxHeight?: number | string; shrink?: boolean; children: React.ReactNode;
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
     <Column
       {...SCROLLBAR_ON_HOVER}
-      nativeID={nativeID}
       background={border}
       radius={BLOCK_RADIUS_DEFAULT}
       padding={{ top: COLUMN_PADDING, bottom: COLUMN_PADDING, left: COLUMN_PADDING }}
       gap={CARD_GAP}
       width={BOARD_COLUMN_WIDTH}
       maxHeight={maxHeight}
-      style={{ borderWidth: 1, borderColor: over ? link : 'transparent', opacity }}
+      style={[{ borderWidth: 1, borderColor: over ? link : 'transparent', opacity }, shrink ? SHRINK : null]}
     >
       {children}
     </Column>
@@ -188,4 +191,14 @@ export function AddColumn({ columns, onAdd, onReveal }: {
   const [drafting, setDrafting] = useState(false);
   if (!drafting) return <AddColumnButton onPress={() => { onReveal(); setDrafting(true); }}/>;
   return <DraftColumn columns={columns} onAdd={onAdd} onAdded={onReveal} onClose={() => { setDrafting(false); }}/>;
+}
+
+export function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }): React.ReactElement {
+  const title = <LabelText label={label} size={TITLE_SIZE} fontWeight="semibold" truncate/>;
+  if (onPress === undefined) return <Column style={{ flexShrink: 1 }}>{title}</Column>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Rename column" style={{ flexShrink: 1 }}>
+      {title}
+    </Pressable>
+  );
 }
