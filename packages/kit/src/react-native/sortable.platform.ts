@@ -41,9 +41,13 @@ export const measuresSynchronously = WEB;
 
 export const ghostInViewport = WEB;
 
-export function pinToViewport(node: unknown): void {
+export function liftToBody(node: unknown): () => void {
   const el = domOf(node);
-  if (el !== null) el.style.position = 'fixed';
+  const home = el?.parentNode;
+  if (el === null || home === null || home === undefined) return () => undefined;
+  el.style.position = 'fixed';
+  document.body.appendChild(el);
+  return () => { home.appendChild(el); };
 }
 
 function blockTouchScroll(event: TouchEvent): void {

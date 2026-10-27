@@ -8,6 +8,7 @@ import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } 
 import { ContentColorProvider } from './content-color';
 import { Spinner } from './spinner';
 import { useKitScheme } from './theme-context';
+import { useTriggerPress } from './trigger-context';
 
 export type { ButtonColor, ButtonControlVariant, ButtonHint, ButtonSize, ButtonVariant } from '../button.styles';
 
@@ -186,6 +187,7 @@ export function Button(props: ButtonProps): React.ReactElement {
     ...rest
   } = props;
 
+  const onPress = useTriggerPress(rest.onPress);
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
   const spec = SIZES[size];
@@ -202,6 +204,7 @@ export function Button(props: ButtonProps): React.ReactElement {
       disabled={isDisabled}
       style={({ pressed }: { pressed: boolean }) => containerStyle(styleArgs, pressed)}
       {...rest}
+      onPress={onPress}
     >
       {loading ? (
         <Spinner size={SPINNER_SIZE[spec.spinner]} color={c.text} />

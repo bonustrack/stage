@@ -236,6 +236,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.22
+
+- Fix: hover tooltips and the drag preview render in a layer on the document body on web, so later components no longer paint over them.
+- Fix: a `Modal` (and an A2UI `DropdownMenu`) trigger no longer turns off pointer events in its content, so tooltips and nested controls inside a trigger work, for example an avatar inside a card that opens a dialog. A kit `Button` inside a trigger opens it, as before.
+
 ### 0.1.0-beta.21
 
 - An empty `SortableList` no longer reserves a 40px drop area: a drag near it still targets it (the nearest list across the pointer), and the dimmed preview gives it room while targeted.

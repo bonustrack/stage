@@ -11,6 +11,7 @@ import { Glyph } from './glyph';
 import { Text } from './text';
 import { Tooltip } from './tooltip';
 import { useKitPaletteFor, useKitScheme } from './theme-context';
+import { TriggerContext } from './trigger-context';
 
 export const MODAL = {
   maxWidth: 480,
@@ -149,15 +150,19 @@ export function Modal(props: ModalProps): React.ReactElement {
     if (controlled === undefined) setInternal(false);
     onClose?.();
   };
-  const content = { ...props, children: <ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider> };
+  const content = {
+    ...props,
+    children: <TriggerContext.Provider value={null}><ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider></TriggerContext.Provider>,
+  };
+  const show = (): void => { if (controlled === undefined) setInternal(true); onOpen?.(); };
   const panel = fullBleedPanel === true
     ? <FullBleedPanel props={content} open={open} close={close} />
     : <StagePanel props={content} open={open} close={close} />;
   if (trigger === undefined) return panel;
   return (
     <View {...accessibilityProps(accessibility)} style={weightStyle(weight)}>
-      <Pressable accessibilityRole="none" onPress={() => { if (controlled === undefined) setInternal(true); onOpen?.(); }}>
-        <View pointerEvents="none">{trigger}</View>
+      <Pressable accessibilityRole="none" onPress={show}>
+        <TriggerContext.Provider value={show}>{trigger}</TriggerContext.Provider>
       </Pressable>
       {panel}
     </View>

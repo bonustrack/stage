@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Modal as NativeModal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { JsonValue } from '../a2ui/protocol';
 import type { SortRect } from '../sortable';
@@ -8,8 +8,9 @@ import { useA2uiAction } from './a2ui-renderers.inputs';
 import { Icon } from './icon';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './menu';
 import { Modal } from './modal';
-import { pinToViewport } from './sortable.platform';
+import { BodyLayer } from './body-layer';
 import { Tooltip, TOOLTIP } from './tooltip';
+import { TriggerContext } from './trigger-context';
 
 const TIP_WIDTH = 280;
 const MENU_GAP = 4;
@@ -19,22 +20,18 @@ function measure(node: View | null, done: (rect: SortRect) => void): void {
 }
 
 function TipAt({ rect, label, dark }: { rect: SortRect; label: string; dark: boolean }): React.ReactElement {
-  const node = useRef<View>(null);
-  useLayoutEffect(() => { pinToViewport(node.current); }, []);
   const below = rect.y < TIP_WIDTH / 4;
   return (
-    <View
-      ref={node}
-      pointerEvents="none"
+    <BodyLayer
       style={{
-        position: 'absolute', zIndex: 1000, width: TIP_WIDTH, alignItems: 'center',
+        zIndex: 1000, width: TIP_WIDTH, alignItems: 'center',
         left: rect.x + rect.width / 2 - TIP_WIDTH / 2,
         top: below ? rect.y + rect.height + TOOLTIP.gap : rect.y - TOOLTIP.gap,
         transform: below ? undefined : [{ translateY: '-100%' }],
       }}
     >
       <Tooltip label={label} arrow={below ? 'up' : 'down'} dark={dark}/>
-    </View>
+    </BodyLayer>
   );
 }
 
@@ -117,13 +114,14 @@ function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: SortR
 function A2uiDropdownMenu({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const trigger = useRef<View>(null);
   const [anchor, setAnchor] = useState<SortRect | null>(null);
+  const open = (): void => { measure(trigger.current, setAnchor); };
   return (
     <View style={weightStyle(ctx.weight)}>
       <Pressable
         ref={trigger} accessibilityRole="button" {...accessibilityProps(ctx.accessibility)} disabled={ctx.disabled}
-        onPress={() => { measure(trigger.current, setAnchor); }}
+        onPress={open}
       >
-        <View pointerEvents="none">{ctx.child(ctx.props.trigger)}</View>
+        <TriggerContext.Provider value={open}>{ctx.child(ctx.props.trigger)}</TriggerContext.Provider>
       </Pressable>
       <MenuPanel ctx={ctx} anchor={anchor} onClose={() => { setAnchor(null); }}/>
     </View>

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Animated, View, type StyleProp, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import type { SortDirection, SortMove, SortRect, SortSlot } from '../sortable';
@@ -6,7 +6,8 @@ import {
   HandleContext, ListContext, ListsContext, PreviewContext, ScopeContext, isInPlace, useSortState, type ListContextValue, type SortTouchAction,
 } from './sortable.context';
 import { accessibilityProps, useKeyboard, usePan } from './sortable.gesture';
-import { pinToViewport, setGrabCursor } from './sortable.platform';
+import { BodyLayer } from './body-layer';
+import { setGrabCursor } from './sortable.platform';
 import {
   makeSortCoordinator, type SortCoordinator, type SortIndicator, type SortItemEntry, type SortListEntry, type SortSource, type SortState,
 } from './sortable.store';
@@ -22,14 +23,12 @@ const COLLAPSED: ViewStyle = { position: 'absolute', left: 0, top: 0, width: 0, 
 
 function Ghost({ coordinator }: { coordinator: SortCoordinator }): React.ReactElement | null {
   const drag = useSortState(coordinator, state => state.drag);
-  const node = useRef<View>(null);
-  useLayoutEffect(() => { pinToViewport(node.current); }, [drag]);
   if (drag === null || drag.keyboard || drag.inPlace) return null;
   const style: Animated.WithAnimatedValue<StyleProp<ViewStyle>> = {
     position: 'absolute', left: 0, top: 0, zIndex: 1000, elevation: 8, opacity: GHOST_OPACITY,
     width: drag.size.width, height: drag.size.height, transform: coordinator.ghost.getTranslateTransform(),
   };
-  return <Animated.View ref={node} pointerEvents="none" style={style}><PreviewContext.Provider value>{drag.preview}</PreviewContext.Provider></Animated.View>;
+  return <BodyLayer style={style}><PreviewContext.Provider value>{drag.preview}</PreviewContext.Provider></BodyLayer>;
 }
 
 function Placeholder({ coordinator }: { coordinator: SortCoordinator }): React.ReactElement {
