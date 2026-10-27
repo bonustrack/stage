@@ -35,6 +35,7 @@ export interface ModalProps extends A2uiCommonProps {
   open?: boolean;
   defaultOpen?: boolean;
   onClose?: () => void;
+  onOpen?: () => void;
   title?: string;
   footer?: ReactNode;
   bottomInset?: number;
@@ -141,7 +142,7 @@ function FullBleedPanel({ props, open, close }: PanelProps): React.ReactElement 
 }
 
 export function Modal(props: ModalProps): React.ReactElement {
-  const { trigger, open: controlled, defaultOpen = false, onClose, fullBleedPanel, weight, accessibility } = props;
+  const { trigger, open: controlled, defaultOpen = false, onClose, onOpen, fullBleedPanel, weight, accessibility } = props;
   const [internal, setInternal] = useState(defaultOpen);
   const open = controlled ?? internal;
   const close = (): void => {
@@ -155,7 +156,7 @@ export function Modal(props: ModalProps): React.ReactElement {
   if (trigger === undefined) return panel;
   return (
     <View {...accessibilityProps(accessibility)} style={weightStyle(weight)}>
-      <Pressable accessibilityRole="none" onPress={() => { setInternal(true); }}>
+      <Pressable accessibilityRole="none" onPress={() => { if (controlled === undefined) setInternal(true); onOpen?.(); }}>
         <View pointerEvents="none">{trigger}</View>
       </Pressable>
       {panel}

@@ -18,8 +18,6 @@ export type { SortIndicator, SortSource } from './sortable.store';
 
 const DRAGGING_OPACITY = 0.4;
 const GHOST_OPACITY = 0.9;
-const EMPTY_DROP_AREA = 40;
-const EMPTY: Record<SortDirection, ViewStyle> = { vertical: { minHeight: EMPTY_DROP_AREA }, horizontal: { minWidth: EMPTY_DROP_AREA } };
 const COLLAPSED: ViewStyle = { position: 'absolute', left: 0, top: 0, width: 0, height: 0, minWidth: 0, minHeight: 0, opacity: 0, overflow: 'hidden' };
 
 function Ghost({ coordinator }: { coordinator: SortCoordinator }): React.ReactElement | null {
@@ -79,8 +77,8 @@ export interface SortableListProps {
   children: ReactNode | ((state: SortableListState) => ReactNode);
 }
 
-function listStyle(direction: SortDirection, gap: number | undefined, empty: boolean, style: StyleProp<ViewStyle>): StyleProp<ViewStyle> {
-  return [{ flexDirection: direction === 'vertical' ? 'column' : 'row', gap }, empty ? EMPTY[direction] : null, style];
+function listStyle(direction: SortDirection, gap: number | undefined, style: StyleProp<ViewStyle>): StyleProp<ViewStyle> {
+  return [{ flexDirection: direction === 'vertical' ? 'column' : 'row', gap }, style];
 }
 
 function Indicator({ rect }: { rect: SortRect }): React.ReactElement {
@@ -139,7 +137,7 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
   return (
     <ListsContext.Provider value={lists}>
       <ListContext.Provider value={context}>
-        <View ref={node} style={listStyle(direction, props.gap, props.itemIds.length === 0 && placeholder === null, props.style)}>
+        <View ref={node} style={listStyle(direction, props.gap, props.style)}>
           {typeof props.children === 'function' ? props.children({ over, placeholder }) : props.children}
           {custom ? null : placeholder}
           {indicator === 'line' && line !== null ? <Indicator rect={line}/> : null}
@@ -151,7 +149,7 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
 
 function PlainList({ direction = 'vertical', gap, style, children }: SortableListProps): React.ReactElement {
   return (
-    <View style={listStyle(direction, gap, false, style)}>
+    <View style={listStyle(direction, gap, style)}>
       {typeof children === 'function' ? children({ over: false, placeholder: null }) : children}
     </View>
   );

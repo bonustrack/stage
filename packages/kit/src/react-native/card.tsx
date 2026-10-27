@@ -71,6 +71,7 @@ export function Card(props: CardProps): React.ReactElement {
     borderColor: c.border,
     borderWidth: 1,
     borderRadius: BLOCK_RADIUS_DEFAULT,
+    overflow: 'hidden',
     padding: padding ?? PADDING[size],
     ...weightStyle(weight),
   };

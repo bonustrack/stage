@@ -9,11 +9,10 @@ import { Button } from './button';
 import { Card } from './card';
 import { Column } from './column';
 import { Divider } from './divider';
-import { Icon, type IconName, type IconProps } from './icon';
+import { Icon } from './icon';
 import { Image, type ImageFit, type ImageVariant } from './image';
 import { List } from './list';
 import { ListView, ListViewItem } from './list-view';
-import { Modal } from './modal';
 import { QrCode } from './qr-code';
 import { Row } from './row';
 import { Spinner } from './spinner';
@@ -22,11 +21,12 @@ import { Text, type TextWeight } from './text';
 import { Title } from './title';
 import {
   asBoolean, asEnum, asNumber, asOptionalString, asString, borderOf,
-  colorOf, colorValueOf, commonProps, hasMarkdown, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
+  colorOf, colorValueOf, commonProps, hasMarkdown, iconNameOf, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
 } from './a2ui-context';
 import { chartRenderer } from './a2ui-renderers.chart';
 import { isSortableList, listBoxProps, sortableListRenderer } from './a2ui-renderers.sortable';
 import { INPUT_RENDERERS, useA2uiAction } from './a2ui-renderers.inputs';
+import { OVERLAY_RENDERERS, withLabelTooltip } from './a2ui-renderers.overlay';
 
 const GAP = DENSITY_SCALE.normal.gap;
 const A2UI_ICON_SIZE = 24;
@@ -41,15 +41,6 @@ const BUTTON_VARIANTS: readonly ButtonVariant[] = ['default', 'primary', 'border
 const BUTTON_SIZES = Object.keys(SIZES) as ButtonSize[];
 const FITS = ['contain', 'cover', 'fill', 'none', 'scaleDown'] as const satisfies readonly ImageFit[];
 const IMAGE_VARIANTS = ['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'] as const satisfies readonly ImageVariant[];
-
-function iconNameOf(value: unknown): IconProps['name'] | undefined {
-  if (typeof value === 'string') return value as IconName;
-  if (typeof value === 'object' && value !== null && 'svgPath' in value) {
-    const { svgPath } = value;
-    return typeof svgPath === 'string' ? { svgPath } : undefined;
-  }
-  return undefined;
-}
 
 function iconNode(value: unknown): ReactNode {
   const name = iconNameOf(value);
@@ -112,7 +103,7 @@ function textRenderer(ctx: RenderContext): ReactNode {
 
 function imageRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;
-  return (
+  return withLabelTooltip(ctx, (
     <Image
       {...commonProps(ctx)}
       url={ctx.mediaUrl(p.url)}
@@ -126,14 +117,14 @@ function imageRenderer(ctx: RenderContext): ReactNode {
       aspectRatio={asNumber(p.aspectRatio)}
       background={colorOf(ctx, p.background)}
     />
-  );
+  ));
 }
 
 function iconRenderer(ctx: RenderContext): ReactNode {
   const name = iconNameOf(ctx.props.name);
   if (name === undefined) return null;
   const color = colorOf(ctx, ctx.props.color) ?? ctx.contentColor;
-  return <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />;
+  return withLabelTooltip(ctx, <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />);
 }
 
 function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
@@ -154,14 +145,14 @@ function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
       disabled={ctx.disabled || asBoolean(p.disabled)}
       checks={ctx.checks}
       label={label}
-      onPress={press}
+      onPress={() => { press(); }}
     >
       {label === undefined ? ctx.child(p.child) : undefined}
     </Button>
   );
 }
 
-const buttonRenderer = (ctx: RenderContext): ReactNode => <A2uiButton ctx={ctx}/>;
+const buttonRenderer = (ctx: RenderContext): ReactNode => withLabelTooltip(ctx, <A2uiButton ctx={ctx}/>, ctx.childText(ctx.props.child) === undefined);
 
 function titleRenderer(ctx: RenderContext): ReactNode {
   const level = asNumber(ctx.props.level);
@@ -218,11 +209,6 @@ export const KIT_RENDERERS: A2uiRenderers = {
     );
   },
   Tabs: tabsRenderer,
-  Modal: (ctx) => (
-    <Modal {...commonProps(ctx)} trigger={ctx.child(ctx.props.trigger)} title={asOptionalString(ctx.props.title)}>
-      {ctx.child(ctx.props.content)}
-    </Modal>
-  ),
   Divider: (ctx) => (
     <Divider {...commonProps(ctx)} axis={asEnum(ctx.props.axis, ['horizontal', 'vertical'])} spacing={asNumber(ctx.props.spacing)} color={colorOf(ctx, ctx.props.color)} />
   ),
@@ -231,6 +217,7 @@ export const KIT_RENDERERS: A2uiRenderers = {
   Icon: iconRenderer,
   Button: buttonRenderer,
   ...INPUT_RENDERERS,
+  ...OVERLAY_RENDERERS,
   Title: titleRenderer,
   Badge: (ctx) => (
     <Badge

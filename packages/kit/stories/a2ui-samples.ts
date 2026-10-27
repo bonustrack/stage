@@ -145,6 +145,7 @@ export const KANBAN: JsonObject[] = [
       catalogId: KIT_CATALOG_ID,
       dataModel: {
         lastMove: null,
+        confirm: { open: false },
         columns: [
           { id: 'todo', title: 'To do', cards: [{ id: 'c1', title: 'Write the spec' }, { id: 'c2', title: 'Design the board' }] },
           { id: 'doing', title: 'Doing', cards: [{ id: 'c3', title: 'Build sortable lists' }] },
@@ -152,9 +153,29 @@ export const KANBAN: JsonObject[] = [
         ],
       },
       components: [
-        { id: 'root', component: 'Row', gap: 12, align: 'start', children: { componentId: 'column', path: '/columns' } },
-        { id: 'column', component: 'Column', width: 200, gap: 8, padding: 8, radius: 'md', surface: 'sunken', children: ['column_title', 'cards'] },
-        { id: 'column_title', component: 'Text', fontWeight: 'semibold', text: { '@path': 'title' } },
+        { id: 'root', component: 'Column', gap: 12, children: ['board', 'confirm'] },
+        { id: 'board', component: 'Row', gap: 12, align: 'start', children: { componentId: 'column', path: '/columns' } },
+        { id: 'column', component: 'Column', width: 200, gap: 8, padding: 8, radius: 'md', surface: 'sunken', children: ['column_head', 'cards'] },
+        { id: 'column_head', component: 'Row', align: 'center', children: ['column_title', 'column_menu'] },
+        { id: 'column_title', component: 'Text', weight: 1, fontWeight: 'semibold', text: { '@path': 'title' } },
+        {
+          id: 'column_menu', component: 'DropdownMenu', align: 'end', trigger: 'column_more', accessibility: { label: 'Column menu' },
+          items: [
+            { label: 'Rename', icon: 'edit', action: { event: { name: 'renameColumn', context: { id: { '@path': 'id' } } } } },
+            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } } },
+          ],
+        },
+        { id: 'column_more', component: 'Icon', name: 'moreHoriz', size: 20 },
+        { id: 'confirm', component: 'Modal', title: 'Delete a column', trigger: 'confirm_open', content: 'confirm_body', open: { '@path': '/confirm/open' } },
+        { id: 'confirm_open', component: 'Button', variant: 'borderless', child: 'confirm_open_label', action: { event: { name: 'noop' } } },
+        { id: 'confirm_open_label', component: 'Text', text: 'Delete a column' },
+        { id: 'confirm_body', component: 'Column', gap: 12, children: ['confirm_text', 'confirm_actions'] },
+        { id: 'confirm_text', component: 'Text', text: 'The cards move to To do.' },
+        { id: 'confirm_actions', component: 'Row', justify: 'end', align: 'center', gap: 12, children: ['confirm_cancel', 'confirm_delete'] },
+        { id: 'confirm_cancel', component: 'Button', variant: 'borderless', child: 'confirm_cancel_label', action: { event: { name: 'cancelDelete' } } },
+        { id: 'confirm_cancel_label', component: 'Text', text: 'Cancel' },
+        { id: 'confirm_delete', component: 'Button', variant: 'solid', color: 'danger', child: 'confirm_delete_label', action: { event: { name: 'confirmDelete' } } },
+        { id: 'confirm_delete_label', component: 'Text', text: 'Delete' },
         {
           id: 'cards', component: 'List', gap: 8, sortable: true, group: 'board', listId: { '@path': 'id' },
           children: { componentId: 'card', path: 'cards' }, move: { '@path': '/lastMove' },

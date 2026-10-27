@@ -175,6 +175,17 @@ describe('Kit catalog', () => {
     expect(registry.validateComponent(BASIC_CATALOG_ID, { ...field, action: { event: { name: 'rename' } } }, []).length).toBeGreaterThan(0);
   });
 
+  test('Kit DropdownMenu takes a trigger and rows with actions, and Kit Modal a bound open', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    const row = { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } } };
+    const menu = { id: 'm', component: 'DropdownMenu', trigger: 'more', align: 'end', items: [row] };
+    expect(valid(menu)).toEqual([]);
+    expect(valid({ ...menu, items: [{ label: 'Delete' }] }).length).toBeGreaterThan(0);
+    expect(valid({ ...menu, items: [{ ...row, bogus: 1 }] }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'd', component: 'Modal', trigger: 'open', content: 'body', open: { '@path': '/confirm/open' } })).toEqual([]);
+  });
+
   test('Kit catalog takes card surfaces, hidden labels, title line clamps and bound chart series', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);

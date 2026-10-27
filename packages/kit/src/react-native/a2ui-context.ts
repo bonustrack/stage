@@ -5,6 +5,7 @@ import type { ComponentInstance, JsonValue, ValidationResult } from '../a2ui/pro
 import type { ResolvedBoxBorder, Size, Spacing } from '../layout';
 import { isColorToken, resolvePaletteColor, type KitPalette } from '../tokens';
 import type { A2uiAccessibility } from './a2ui-props';
+import type { IconName, IconProps } from './icon';
 
 export interface Binding<T> {
   value: T | undefined;
@@ -29,6 +30,7 @@ export interface RenderContext {
   children: (list: unknown) => ReactNode[];
   childText: (id: unknown) => string | undefined;
   action: () => DispatchResult | undefined;
+  dispatch: (action: unknown) => DispatchResult | undefined;
   binding: <T extends JsonValue>(prop: string) => Binding<T>;
   pointer: (path: string) => string;
   read: (pointer: string) => JsonValue | undefined;
@@ -123,4 +125,13 @@ const MARKDOWN = /[*_`#>[\]|~]|^\s*([-+]|\d+\.)\s/m;
 
 export function hasMarkdown(text: string): boolean {
   return MARKDOWN.test(text);
+}
+
+export function iconNameOf(value: unknown): IconProps['name'] | undefined {
+  if (typeof value === 'string') return value as IconName;
+  if (typeof value === 'object' && value !== null && 'svgPath' in value) {
+    const { svgPath } = value;
+    return typeof svgPath === 'string' ? { svgPath } : undefined;
+  }
+  return undefined;
 }

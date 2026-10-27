@@ -152,7 +152,8 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     child: (childId) => (typeof childId === 'string' ? <A2uiNode id={childId} scope={scope} /> : null),
     children: (list) => templateChildren(ctx, list, scope),
     childText: (childId) => plainChildText(ctx, childId, scope),
-    action: () => dispatchAction(ctx, instance, scope),
+    action: () => dispatchAction(ctx, instance.id, instance.action, scope),
+    dispatch: (action) => dispatchAction(ctx, instance.id, action, scope),
     binding: bindings.binding,
     pointer: (path) => resolveScopedPath(path, scope.path),
     read: (pointer) => getAt(ctx.client.dataModel(ctx.surfaceId), pointer),
@@ -170,10 +171,9 @@ function plainChildText(ctx: SurfaceContextValue, childId: unknown, scope: Scope
   return typeof text === 'string' && !hasMarkdown(text) ? text : undefined;
 }
 
-function dispatchAction(ctx: SurfaceContextValue, instance: ComponentInstance, scope: Scope): ReturnType<RenderContext['action']> {
-  const action = instance.action;
+function dispatchAction(ctx: SurfaceContextValue, sourceId: string, action: unknown, scope: Scope): ReturnType<RenderContext['action']> {
   if (ctx.disabled === true || (!isEventAction(action) && !isFunctionAction(action))) return undefined;
-  const result = ctx.client.dispatch(ctx.surfaceId, instance.id, action, scope);
+  const result = ctx.client.dispatch(ctx.surfaceId, sourceId, action, scope);
   if (!result.ok && result.error !== undefined) ctx.onActionError?.(result.error);
   return result;
 }

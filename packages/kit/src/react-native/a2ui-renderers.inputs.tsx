@@ -30,11 +30,11 @@ function optionsOf(value: unknown): ChoiceOption[] {
   });
 }
 
-export function useA2uiAction(ctx: RenderContext): () => void {
+export function useA2uiAction(ctx: RenderContext): (action?: unknown) => void {
   const closeModal = useModalClose();
-  return () => {
-    const result = ctx.action();
-    if (result?.ok === true && isEventAction(ctx.instance.action)) closeModal?.();
+  return (action = ctx.instance.action) => {
+    const result = ctx.dispatch(action);
+    if (result?.ok === true && isEventAction(action)) closeModal?.();
   };
 }
 
