@@ -1,7 +1,9 @@
 name: Publish @stage-labs/config
 
 # Manually-triggered publish of packages/config to npm, always under the
-# `beta` dist-tag, with an npm provenance attestation.
+# `beta` dist-tag. A trusted publish also gets an npm provenance attestation,
+# which npm creates on its own: passing --provenance as well makes it sign twice
+# and the second transparency log entry fails with a 409.
 #
 # Bun builds the tarball (`bun pm pack` turns `workspace:*` ranges into real
 # versions) and npm publishes it, because `bun publish` can't do provenance or
@@ -53,4 +55,4 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
-        run: npm publish "$RUNNER_TEMP"/pack/*.tgz --provenance --tag beta --access public $DRY_RUN
+        run: npm publish "$RUNNER_TEMP"/pack/*.tgz --tag beta --access public $DRY_RUN
