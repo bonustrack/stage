@@ -96,10 +96,10 @@ bun install            # from the repo root
 "dependencies": { "@stage-labs/kit": "workspace:*" }
 ```
 
-Other apps install it from npm. Releases go out under the `beta` tag, so ask for it:
+Other apps install it from npm. Releases go out under the `beta` tag and `latest` follows them, so a plain install gets the newest release:
 
 ```sh
-bun add @stage-labs/kit@beta
+bun add @stage-labs/kit
 ```
 
 The two Central Icons packages and `uqr` (the QR encoder) come with the kit. The app provides the peers: `react`, `react-native`, `react-native-svg`, `react-native-markdown-display`, `react-native-gesture-handler`, `react-native-safe-area-context`, `react-native-reanimated` (`~4.3.1` or `4.5.1`), `expo-audio`, `expo-video`, `expo-document-picker`, `expo-image-picker` and `expo-font`.
@@ -232,7 +232,7 @@ The gallery opens on a Home page with one live example of each component (its `C
 
 Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (`outlineWidth: 0` with `outlineStyle: 'solid'` so the browser's own ring stays off on web). `Modal` renders the Stage look (page background, 1px border, 17px radius, optional title, centered with a 480px max width or a bottom sheet). `DropdownMenu` and `Tooltip` default to the Stage app look and share `OVERLAY_SHADOW` from `overlay.styles.ts`. Cards and images keep `BLOCK_RADIUS_DEFAULT` (12px). Markdown styles come from `markdown.styles.ts` (`@stage-labs/kit/markdown-styles`).
 
-Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml` (`bun pm pack`, then `npm publish` under the `beta` tag, through npm trusted publishing with provenance). Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
+Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml` (`bun pm pack`, then `npm publish` under the `beta` tag, through npm trusted publishing with provenance; `latest` is then moved to the same version). Version `0.1.0-beta.11` moved the component API to A2UI names and removed the ChatKit-only components (`Box`, `Col`, `Caption`, `Markdown`, `Input`, `Textarea`, `Checkbox`, `Switch`, `RadioGroup`, `Select`, `DatePicker`, `Label`, `Form`, `Spacer`, `Table`, `Transition`, `AvatarStack`, `AvatarView`, `FlatList`, `Scroll`, `VideoPlayer`, the public `Dialog`) in favour of their A2UI equivalents, and replaced the ChatKit `Frame` renderer with the A2UI renderer.
 
 ## Changelog
 

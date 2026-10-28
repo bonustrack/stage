@@ -1,13 +1,15 @@
 name: Publish @stage-labs/kit
 
-# Manually-triggered publish of packages/kit to npm, always under the
-# `beta` dist-tag.
+# Manually-triggered publish of packages/kit to npm under the `beta`
+# dist-tag. A real publish then points `latest` at the same version, since
+# every release is a beta and `latest` would otherwise stay on an old one.
 #
 # Bun builds the tarball (`bun pm pack` turns `workspace:*` ranges into real
 # versions) and npm publishes it, because `bun publish` can't do npm trusted
 # publishing. npm logs in with this workflow's GitHub OIDC token through the
 # package's trusted publisher on npmjs.com (repository bonustrack/stage,
-# workflow publish-kit.yml); the package allows no publish tokens. A trusted
+# workflow publish-kit.yml, allowed to publish and to manage dist-tags); the
+# package allows no publish tokens. A trusted
 # publish gets an npm provenance attestation on its own: passing --provenance
 # as well makes npm sign twice, and the second transparency log entry fails
 # with a 409.
@@ -43,7 +45,7 @@ jobs:
           node-version: '24'
 
       - name: Update npm for trusted publishing
-        run: npm install -g npm@^11.5.1
+        run: npm install -g npm@^11.21.1
 
       - name: Pack
         working-directory: packages/kit
@@ -53,3 +55,8 @@ jobs:
         env:
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
         run: npm publish "$RUNNER_TEMP"/pack/*.tgz --tag beta --access public $DRY_RUN
+
+      - name: Point latest at this release
+        if: ${{ !inputs.dry_run }}
+        working-directory: packages/kit
+        run: npm dist-tag add "$(node -p "const p = require('./package.json'); p.name + '@' + p.version")" latest
