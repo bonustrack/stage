@@ -25,6 +25,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      force_build:
+        description: Build this commit instead of reusing another commit's runtime APK
+        type: boolean
+        default: false
       publish_rolling:
         description: Also point the rolling stage-dev-client.apk at this runtime's APK
         type: boolean
@@ -73,12 +77,16 @@ jobs:
         working-directory: apps/stage
         env:
           GH_TOKEN: ${{ github.token }}
+          FORCE_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force_build }}
         run: |
           set -euo pipefail
           RUNTIME="$(bunx expo-updates runtimeversion:resolve --platform android | jq -re .runtimeVersion)"
           ASSETS="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '[.assets[] | {name, digest}]')"
-          BUILT="$(eas build:list --platform android --build-profile development --runtime-version "$RUNTIME" \
-            --status finished --limit 50 --json --non-interactive | jq -r '.[].gitCommitHash // empty')"
+          BUILT=""
+          if [ "$FORCE_BUILD" != true ]; then
+            BUILT="$(eas build:list --platform android --build-profile development --runtime-version "$RUNTIME" \
+              --status finished --limit 50 --json --non-interactive | jq -r '.[].gitCommitHash // empty')"
+          fi
           digest() { jq -r --arg name "$1" '.[] | select(.name == $name) | .digest // "none"' <<< "$ASSETS"; }
           ROLLING_DIGEST="$(digest stage-dev-client.apk)"
           APK=""
