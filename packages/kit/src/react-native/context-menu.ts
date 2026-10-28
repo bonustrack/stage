@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
-import type { MenuPoint } from '../components/AnchoredMenu.model';
+
+export interface ContextMenuPoint { x: number; y: number }
 
 interface ContextMenuEvent {
   preventDefault: () => void;
@@ -13,7 +14,7 @@ interface ContextMenuProps {
   onContextMenu?: (event: ContextMenuEvent) => void;
 }
 
-export function contextMenuProps(open: ((point: MenuPoint) => void) | undefined): ContextMenuProps {
+export function contextMenuProps(open: ((point: ContextMenuPoint) => void) | undefined): ContextMenuProps {
   if (Platform.OS !== 'web' || !open) return {};
   return {
     onContextMenu: (event) => {

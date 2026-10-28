@@ -8,7 +8,7 @@ import { Avatar } from '../Avatar';
 import type { MessengerBubbleProps } from './props';
 import { BubbleContent } from './content';
 import { ReactionsRow } from './reactions';
-import { contextMenuProps } from '../../lib/contextMenu';
+import { contextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import { isFrameActionEntry } from '../frame/frame.model';

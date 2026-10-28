@@ -143,7 +143,7 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
         <Column width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
       ) : null}
       {meta.state ? (
-        <Text color={subColor} size="3xs" style={{ textTransform: 'capitalize' }}>{meta.state}</Text>
+        <Text color={subColor} size="3xs" textTransform="capitalize">{meta.state}</Text>
       ) : null}
       {meta.kind === 'repo' && meta.stars != null ? (
         <Text color={subColor} size="3xs">★ {meta.stars}</Text>

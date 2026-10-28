@@ -8,7 +8,7 @@ import type { A2uiCommonProps } from './a2ui-props';
 
 export type TextFieldVariant = 'shortText' | 'longText' | 'number' | 'obscured';
 
-export type TextFieldAppearance = 'soft' | 'outline' | 'plain';
+export type TextFieldAppearance = 'soft' | 'outline' | 'plain' | 'filled';
 
 export type TextFieldInputType = 'text' | 'email' | 'tel' | 'url';
 
@@ -72,6 +72,8 @@ export interface TextFieldProps extends A2uiCommonProps {
   hint?: string;
   hintTone?: TextFieldHintTone;
   hintColor?: string;
+  leading?: ReactNode;
   trailing?: ReactNode;
+  trailingWidth?: number;
   labelTrailing?: ReactNode;
 }

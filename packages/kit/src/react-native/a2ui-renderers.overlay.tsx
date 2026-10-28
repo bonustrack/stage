@@ -7,6 +7,7 @@ import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useA2uiAction } from './a2ui-renderers.inputs';
 import { Icon } from './icon';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './menu';
+import { contextMenuProps } from './context-menu';
 import { Modal } from './modal';
 import { BodyLayer } from './body-layer';
 import { Tooltip, TOOLTIP } from './tooltip';
@@ -121,13 +122,9 @@ function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: SortR
   );
 }
 
-interface ContextMenuEvent { preventDefault: () => void; clientX: number; clientY: number }
-
 function ContextTrigger({ ctx, onOpen }: { ctx: RenderContext; onOpen: (rect: SortRect) => void }): React.ReactElement {
   const at = (x: number, y: number): void => { onOpen({ x, y, width: 0, height: 0 }); };
-  const rightClick: object = Platform.OS === 'web' && !ctx.disabled
-    ? { onContextMenu: (event: ContextMenuEvent) => { event.preventDefault(); at(event.clientX, event.clientY); } }
-    : {};
+  const rightClick: object = contextMenuProps(ctx.disabled ? undefined : (point) => { at(point.x, point.y); });
   return (
     <Pressable accessibilityRole="none" disabled={ctx.disabled} onLongPress={(event) => { at(event.nativeEvent.pageX, event.nativeEvent.pageY); }} {...rightClick}>
       {ctx.child(ctx.props.trigger)}

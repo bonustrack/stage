@@ -10,7 +10,7 @@ import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import type { MarkedNode } from './arrowKeys.model';
-import { contextMenuProps } from '../lib/contextMenu';
+import { contextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';

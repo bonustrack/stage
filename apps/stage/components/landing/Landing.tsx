@@ -89,10 +89,7 @@ function HeroCopy(): React.ReactElement {
   return (
     <Column>
       <Column background={HERO_YELLOW} padding={{ y: HERO_LAYOUT.blockPadY }} style={{ alignSelf: 'flex-start' }}>
-        <Text
-          size="sm" color={HERO_BLACK}
-          style={{ letterSpacing: HERO_TYPE.eyebrow.letterSpacing, textTransform: 'uppercase' }}
-        >
+        <Text size="sm" color={HERO_BLACK} letterSpacing={HERO_TYPE.eyebrow.letterSpacing} textTransform="uppercase">
           {HERO_COPY.eyebrow}
         </Text>
       </Column>

@@ -236,6 +236,11 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.30
+
+- `TextField` `appearance="filled"`: the form field look of a labelled TextField (the border colour as background, radius 4, label inside above the value) without a label too, where the value sits centred in a 44px field. Filled and labelled fields take a `leading` slot (an icon before the value) and `trailingWidth` (the room kept for a `trailing` slot in a label-less field). `FORM_FIELD_HEIGHT` is exported next to `FORM_FIELD_RADIUS`. Labelled fields render as before.
+- New export `react-native/context-menu`: `contextMenuProps(open)` (right click opens a menu at the pointer on web) and `dismissContextMenuProps(close)`, now shared by Stage and the A2UI DropdownMenu.
+
 ### 0.1.0-beta.29
 
 - Fix: Text switches to markdown only for real markdown syntax (`**bold**`, `*em*` or `_em_` at word edges, backtick code, `~~strike~~`, headings, quotes, lists, fences, tables), so emails, file names and `snake_case` stay plain. Markdown Text keeps the plain Text line height, with 8px between blocks and no space after the last one.

@@ -3,7 +3,7 @@ import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent, 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
-import { dismissContextMenuProps } from '../lib/contextMenu';
+import { dismissContextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { documentScroll, isCoarsePointer, useWebTabRail } from '../lib/webLayout';
 import { MENU_GAP } from './menuStyle';
 import { Modal } from '@stage-labs/kit/react-native/modal';

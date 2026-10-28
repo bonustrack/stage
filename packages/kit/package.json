@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.29",
+  "version": "0.1.0-beta.30",
   "description": "Stage design system for React Native and web: A2UI v1.0 components and renderer, the Stage Kit A2UI catalog, tokens, Central Icons (licensed, installed from npm) with HeroIcon name aliases, and theme contracts.",
   "license": "MIT",
   "repository": {
@@ -59,6 +59,7 @@
     "./react-native/choice-picker": "./src/react-native/choice-picker.tsx",
     "./react-native/color-picker": "./src/react-native/color-picker.tsx",
     "./react-native/column": "./src/react-native/column.tsx",
+    "./react-native/context-menu": "./src/react-native/context-menu.ts",
     "./react-native/content-color": "./src/react-native/content-color.tsx",
     "./react-native/date-time-input": "./src/react-native/date-time-input.tsx",
     "./react-native/divider": "./src/react-native/divider.tsx",

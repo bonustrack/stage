@@ -170,7 +170,7 @@ export function SettingsPage({ title, root = false, backTo = SETTINGS_ROUTE, bac
 export function SettingsSectionLabel({ children }: { children: string }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <Eyebrow color={fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 24, paddingBottom: 8, textTransform: 'uppercase' }}>
+    <Eyebrow color={fg} textTransform="uppercase" style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 24, paddingBottom: 8 }}>
       {children}
     </Eyebrow>
   );
