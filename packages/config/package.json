@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.4",
   "description": "Shared oxlint plugins, TypeScript, knip and madge presets, and the stage CLI.",
   "license": "MIT",
   "repository": {
