@@ -236,6 +236,10 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.25
+
+- No code changes: from this release on, the publish workflow also points `latest` at each release, so a plain install gets the newest version.
+
 ### 0.1.0-beta.24
 
 - No code changes: the first release published through npm trusted publishing, with a provenance attestation.
