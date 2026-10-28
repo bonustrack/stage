@@ -115,7 +115,8 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
 
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
   const pal = useKitPaletteFor(dark);
-  return <View style={{ height: DROPDOWN_MENU.separator, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
+  const space = useContext(SheetMenuContext) ? DROPDOWN_MENU.sheetPadY : DROPDOWN_MENU.padY;
+  return <View style={{ height: DROPDOWN_MENU.separator, marginVertical: space, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
 }
 
 export interface DropdownMenuSheetProps {

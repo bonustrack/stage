@@ -236,6 +236,10 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.23
+
+- `DropdownMenuSeparator` keeps the menu's vertical padding above and below its line (4px, 8px in a sheet), so a separated group has the same space as the top and bottom of the menu.
+
 ### 0.1.0-beta.22
 
 - Fix: hover tooltips and the drag preview render in a layer on the document body on web, so later components no longer paint over them.
