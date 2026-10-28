@@ -1,17 +1,16 @@
 name: Publish @stage-labs/config
 
 # Manually-triggered publish of packages/config to npm, always under the
-# `beta` dist-tag. A trusted publish also gets an npm provenance attestation,
-# which npm creates on its own: passing --provenance as well makes it sign twice
-# and the second transparency log entry fails with a 409.
+# `beta` dist-tag.
 #
 # Bun builds the tarball (`bun pm pack` turns `workspace:*` ranges into real
-# versions) and npm publishes it, because `bun publish` can't do provenance or
-# npm trusted publishing. npm authenticates with this workflow's GitHub OIDC
-# token once packages/config has a trusted publisher on npmjs.com (repository
-# bonustrack/stage, workflow publish-config.yml), and falls back to the
-# `NPM_TOKEN` repository secret until then. After the first trusted publish,
-# disallow token publishing for the package on npmjs.com and delete the secret.
+# versions) and npm publishes it, because `bun publish` can't do npm trusted
+# publishing. npm logs in with this workflow's GitHub OIDC token through the
+# package's trusted publisher on npmjs.com (repository bonustrack/stage,
+# workflow publish-config.yml); the package allows no publish tokens. A trusted
+# publish gets an npm provenance attestation on its own: passing --provenance
+# as well makes npm sign twice, and the second transparency log entry fails
+# with a 409.
 #
 # The published version is whatever is in packages/config/package.json on the
 # selected branch, so bump it there before running. npm refuses to republish
@@ -42,7 +41,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          registry-url: https://registry.npmjs.org
 
       - name: Update npm for trusted publishing
         run: npm install -g npm@^11.5.1
@@ -53,6 +51,5 @@ jobs:
 
       - name: Publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
         run: npm publish "$RUNNER_TEMP"/pack/*.tgz --tag beta --access public $DRY_RUN
