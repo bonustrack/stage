@@ -175,6 +175,14 @@ describe('Kit catalog', () => {
     expect(registry.validateComponent(BASIC_CATALOG_ID, { ...field, action: { event: { name: 'rename' } } }, []).length).toBeGreaterThan(0);
   });
 
+  test('Kit Row and Column take a standard action', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const action = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };
+    expect(registry.validateComponent(KIT_CATALOG_ID, { id: 'c', component: 'Column', children: ['a'], action }, [])).toEqual([]);
+    expect(registry.validateComponent(KIT_CATALOG_ID, { id: 'r', component: 'Row', children: ['a'], action }, [])).toEqual([]);
+    expect(registry.validateComponent(BASIC_CATALOG_ID, { id: 'c', component: 'Column', children: ['a'], action }, []).length).toBeGreaterThan(0);
+  });
+
   test('Kit DropdownMenu takes a trigger and rows with actions, and Kit Modal a bound open', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);

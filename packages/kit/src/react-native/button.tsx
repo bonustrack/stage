@@ -62,7 +62,7 @@ interface ContainerStyleArgs {
   style: ViewStyle | undefined;
 }
 
-const LINK: ViewStyle = { height: undefined, width: undefined, paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0 };
+const LINK: ViewStyle = { height: 'auto', width: 'auto', paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0 };
 const LINK_PRESSED: ViewStyle = { ...LINK, opacity: 0.7 };
 
 function pickBackground(c: ResolvedColors, usePressedBg: boolean): string {

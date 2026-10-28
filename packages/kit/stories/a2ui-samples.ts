@@ -192,3 +192,36 @@ export const KANBAN: JsonObject[] = [
     },
   },
 ];
+
+export const THEME_PICKER: JsonObject[] = [
+  {
+    version: v,
+    createSurface: {
+      surfaceId: 'theme_picker',
+      catalogId: KIT_CATALOG_ID,
+      dataModel: {
+        themes: [
+          { id: 'light', name: 'Light', swatch: '#ffffff' },
+          { id: 'dark', name: 'Dark', swatch: '#111111' },
+          { id: 'sand', name: 'Sand', swatch: '#e8dcc4' },
+        ],
+      },
+      components: [
+        { id: 'root', component: 'Column', gap: 16, children: ['title', 'grid', 'nav'] },
+        { id: 'title', component: 'Title', level: 3, text: 'Theme' },
+        { id: 'grid', component: 'Row', gap: 12, wrap: true, children: { componentId: 'theme', path: '/themes' } },
+        {
+          id: 'theme', component: 'Column', width: 160, gap: 8, padding: 8, radius: 'md', border: { size: 1, color: 'border' },
+          accessibility: { label: { '@path': 'name' } }, children: ['theme_swatch', 'theme_name'],
+          action: { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } },
+        },
+        { id: 'theme_swatch', component: 'Column', height: 96, radius: 'sm', background: { '@path': 'swatch' }, border: { size: 1, color: 'border' }, children: [] },
+        { id: 'theme_name', component: 'Text', fontWeight: 'semibold', text: { '@path': 'name' } },
+        { id: 'nav', component: 'Row', gap: 12, wrap: true, children: { componentId: 'nav_item', path: '/themes' } },
+        { id: 'nav_item', component: 'Button', variant: 'borderless', child: 'nav_box', action: { event: { name: 'openTheme', context: { id: { '@path': 'id' } } } } },
+        { id: 'nav_box', component: 'Column', width: 120, height: 120, padding: 8, radius: 'md', surface: 'sunken', children: ['nav_name'] },
+        { id: 'nav_name', component: 'Text', text: { '@path': 'name' } },
+      ],
+    },
+  },
+];

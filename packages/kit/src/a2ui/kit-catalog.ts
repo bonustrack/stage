@@ -74,6 +74,7 @@ function component(name: string, properties: JsonObject, required: readonly stri
 }
 
 const LAYOUT_EXTRAS: JsonObject = {
+  action: { ...common('Action'), description: 'Makes the whole Row or Column pressable, with hover and pressed feedback and a button role: a clickable card, nav item or list row that keeps the look you give it. Give it an accessibility.label.' },
   gap: SPACING,
   padding: PADDING,
   wrap: BOOLEAN,

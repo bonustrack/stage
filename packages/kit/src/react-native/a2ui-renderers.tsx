@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
 import { BUTTON_COLORS, BUTTON_FILLS, SIZES, type ButtonSize, type ButtonVariant } from '../button.styles';
-import { isChildTemplate } from '../a2ui/protocol';
+import { isChildTemplate, isEventAction, isFunctionAction } from '../a2ui/protocol';
 import { surfaceColor, type Surface } from '../layout';
 import { BOX_RADIUS_SCALE, DENSITY_SCALE, FONT_SIZE, type FontSizeName, type RadiusValue } from '../tokens';
 import { Badge } from './badge';
@@ -72,6 +72,13 @@ function flexProps(ctx: RenderContext) {
     aspectRatio: asNumber(p.aspectRatio),
     style: typeof width === 'string' ? SHRINK_TO_FIT : undefined,
   };
+}
+
+function A2uiFlex({ ctx, row = false, children }: { ctx: RenderContext; row?: boolean; children: ReactNode }): React.ReactElement {
+  const act = useA2uiAction(ctx);
+  const press = isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action) ? { onPress: () => { act(); }, disabled: ctx.disabled } : {};
+  const Flex = row ? Row : Column;
+  return <Flex {...flexProps(ctx)} {...press}>{children}</Flex>;
 }
 
 function withChildren(ctx: RenderContext, render: (children: ReactNode[]) => ReactNode): ReactNode {
@@ -192,8 +199,8 @@ function tabsRenderer(ctx: RenderContext): ReactNode {
 }
 
 export const KIT_RENDERERS: A2uiRenderers = {
-  Row: (ctx) => withChildren(ctx, (children) => <Row {...flexProps(ctx)}>{children}</Row>),
-  Column: (ctx) => withChildren(ctx, (children) => <Column {...flexProps(ctx)}>{children}</Column>),
+  Row: (ctx) => withChildren(ctx, (children) => <A2uiFlex ctx={ctx} row>{children}</A2uiFlex>),
+  Column: (ctx) => withChildren(ctx, (children) => <A2uiFlex ctx={ctx}>{children}</A2uiFlex>),
   List: (ctx) => (isSortableList(ctx) ? sortableListRenderer(ctx) : withChildren(ctx, (children) => (
     <List {...listBoxProps(ctx)} gap={asNumber(ctx.props.gap) ?? GAP}>
       {children}
