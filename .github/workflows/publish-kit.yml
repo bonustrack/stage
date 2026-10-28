@@ -1,11 +1,15 @@
 name: Publish @stage-labs/kit
 
 # Manually-triggered publish of packages/kit to npm, always under the
-# `beta` dist-tag.
+# `beta` dist-tag, with an npm provenance attestation.
 #
-# Prerequisite: an `NPM_TOKEN` repository secret holding an npm automation
-# token with publish rights to the @stage-labs scope.
-# (Settings -> Secrets and variables -> Actions -> New repository secret.)
+# Bun builds the tarball (`bun pm pack` turns `workspace:*` ranges into real
+# versions) and npm publishes it, because `bun publish` can't do provenance or
+# npm trusted publishing. npm authenticates with this workflow's GitHub OIDC
+# token once packages/kit has a trusted publisher on npmjs.com (repository
+# bonustrack/stage, workflow publish-kit.yml), and falls back to the
+# `NPM_TOKEN` repository secret until then. After the first trusted publish,
+# disallow token publishing for the package on npmjs.com and delete the secret.
 #
 # The published version is whatever is in packages/kit/package.json on the
 # selected branch, so bump it there before running. npm refuses to republish
@@ -15,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Dry run (pack only, do not publish)
+        description: Dry run (pack and check only, do not publish)
         type: boolean
         required: false
         default: false
@@ -25,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v6
 
@@ -32,13 +37,20 @@ jobs:
         with:
           bun-version: 1.4.0
 
-      - name: Show what would be published
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@^11.5.1
+
+      - name: Pack
         working-directory: packages/kit
-        run: bun pm pack --dry-run
+        run: bun pm pack --destination "$RUNNER_TEMP/pack"
 
       - name: Publish
-        if: ${{ !inputs.dry_run }}
-        working-directory: packages/kit
         env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: bun publish --tag beta --access public
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: npm publish "$RUNNER_TEMP"/pack/*.tgz --provenance --tag beta --access public $DRY_RUN
