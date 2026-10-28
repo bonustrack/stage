@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { BLOCK_RADIUS_DEFAULT, type Color, type KitPalette } from '../tokens';
 import { SIZES } from '../button.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Button } from './button';
-import { Dialog } from './dialog';
+import { Dialog, type DialogSide } from './dialog';
 import { Glyph } from './glyph';
 import { Text } from './text';
 import { Tooltip } from './tooltip';
@@ -22,6 +22,8 @@ export const MODAL = {
   radius: Math.round(BLOCK_RADIUS_DEFAULT * 1.4),
   backdrop: 'rgba(0,0,0,0.45)',
   maxHeight: '88%',
+  sideWidth: 640,
+  sideMinWindow: 760,
 } as const;
 
 const ModalCloseContext = createContext<(() => void) | null>(null);
@@ -40,7 +42,7 @@ export interface ModalProps extends A2uiCommonProps {
   title?: string;
   footer?: ReactNode;
   bottomInset?: number;
-  side?: 'center' | 'bottom';
+  side?: DialogSide;
   dark?: boolean;
   background?: string;
   borderColor?: string;
@@ -90,11 +92,37 @@ interface PanelProps {
   close: () => void;
 }
 
+interface PanelLayout {
+  borderSides: 'top' | 'start' | 'all';
+  width: string | undefined;
+  maxWidth: number | undefined;
+  maxHeight: string | undefined;
+  top: number;
+  bottom: number;
+  safeAreaBottom: boolean;
+}
+
+function panelLayout(side: DialogSide, topInset: number): PanelLayout {
+  if (side === 'center') {
+    return { borderSides: 'all', width: '100%', maxWidth: MODAL.maxWidth, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.padding, safeAreaBottom: false };
+  }
+  if (side === 'end') {
+    return { borderSides: 'start', width: '100%', maxWidth: MODAL.sideWidth, maxHeight: undefined, top: MODAL.topPadding + topInset, bottom: MODAL.sheetBottomPadding, safeAreaBottom: true };
+  }
+  return { borderSides: 'top', width: undefined, maxWidth: undefined, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.sheetBottomPadding, safeAreaBottom: true };
+}
+
+function useModalSide(side: DialogSide): DialogSide {
+  const { width } = useWindowDimensions();
+  return side === 'end' && width < MODAL.sideMinWindow ? 'bottom' : side;
+}
+
 function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
-  const { children, title, footer, bottomInset, side = 'center', dark, background, borderColor, dismissable = true } = props;
+  const { children, title, footer, bottomInset, dark, background, borderColor, dismissable = true } = props;
   const pal = useKitPaletteFor(dark);
   const scheme = useKitScheme();
-  const centered = side === 'center';
+  const side = useModalSide(props.side ?? 'center');
+  const layout = panelLayout(side, useSafeAreaInsets().top);
   return (
     <Dialog
       open={open}
@@ -109,13 +137,13 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       backdropColor={MODAL.backdrop}
       panelBackground={background ?? pal.bg}
       panelBorderColor={borderColor}
-      panelBorderSides={centered ? 'all' : 'top'}
+      panelBorderSides={layout.borderSides}
       panelRadius={MODAL.radius}
-      panelWidth={centered ? '100%' : undefined}
-      panelMaxWidth={centered ? MODAL.maxWidth : undefined}
-      panelPadding={{ top: MODAL.topPadding, bottom: centered ? MODAL.padding : MODAL.sheetBottomPadding }}
-      panelMaxHeight={MODAL.maxHeight}
-      safeAreaBottom={!centered}
+      panelWidth={layout.width}
+      panelMaxWidth={layout.maxWidth}
+      panelPadding={{ top: layout.top, bottom: layout.bottom }}
+      panelMaxHeight={layout.maxHeight}
+      safeAreaBottom={layout.safeAreaBottom}
       scroll
       keyboardPersistTaps
       scrollPadding={{ x: MODAL.padding, top: 0 }}

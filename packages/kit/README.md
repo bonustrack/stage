@@ -236,6 +236,13 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.27
+
+- Icons: every Central icon the kit ships is also available under its Central name without the `Icon` prefix (`people`, `settingsGear1`, `chevronRightSmall`, `brush`, `dotGrid2x3`, ...), in JSX and in A2UI, and 60 more Central icons are included (small chevrons, `crossSmall`, `crown`, `shield`, `peopleAdded`, `settingsSliderVer`, `sidebar`, `bento`, ...). Kit HeroIcon names still win when a name exists in both. Add another one with a line in `central-icons.named.data.ts` and `central-icons.names.data.ts`.
+- `surface` colour token (the page background), usable as a `background` and as a Text `color`.
+- A2UI: `radius` also takes pixels (Row, Column, Image), DropdownMenu rows take a colour `swatch` and `selected` (a checkmark), a clickable Row or Column takes `feedback` (`opacity`, `highlight` or `none`), Modal takes `side: end` for a full-height side sheet about 640px wide (a bottom sheet on narrow screens), and the Kit catalog adds an `equals` function so `not(equals(...))` can keep Save disabled until a field changes.
+- `Modal` and `Dialog` take `side="end"`; `Row`/`Column` take `feedback`.
+
 ### 0.1.0-beta.26
 
 - Fix: a `borderless` Button sizes to its content again on web. It kept the 40px button height, so a tall child overflowed and wrapped rows overlapped.

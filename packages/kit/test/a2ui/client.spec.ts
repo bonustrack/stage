@@ -175,6 +175,34 @@ describe('Kit catalog', () => {
     expect(registry.validateComponent(BASIC_CATALOG_ID, { ...field, action: { event: { name: 'rename' } } }, []).length).toBeGreaterThan(0);
   });
 
+  test('Kit catalog takes Central icon names, pixel radii, the surface colour, menu swatches, press feedback and side sheets', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 'i', component: 'Icon', name: 'settingsGear1' })).toEqual([]);
+    expect(valid({ id: 'i', component: 'Icon', name: 'chevronRightSmall' })).toEqual([]);
+    expect(valid({ id: 'i', component: 'Icon', name: 'noSuchIcon' }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: 14 })).toEqual([]);
+    expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: -1 }).length).toBeGreaterThan(0);
+    expect(valid({ id: 't', component: 'Text', text: '3', color: 'surface' })).toEqual([]);
+    const action = { event: { name: 'setColor' } };
+    expect(valid({ id: 'm', component: 'DropdownMenu', trigger: 'b', items: [{ label: 'Red', swatch: '#e25507', selected: true, action }] })).toEqual([]);
+    expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'highlight' })).toEqual([]);
+    expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'shake' }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'd', component: 'Modal', trigger: 'b', content: 'c', side: 'end' })).toEqual([]);
+  });
+
+  test('equals compares two bound values, and not(equals) keeps Save disabled until a field changes', () => {
+    const client = createA2uiClient();
+    client.receive([surface('editor', KIT_CATALOG_ID, { dataModel: { name: 'Ada', saved: 'Ada' } })]);
+    const rules = [{ condition: { '@call': 'not', args: { value: { '@call': 'equals', args: { value: { '@path': '/name' }, other: { '@path': '/saved' } } } } }, message: 'No changes yet.' }];
+    expect(client.checks('editor', rules as never, ROOT_SCOPE)[0]?.valid).toBe(false);
+    client.write('editor', '/name', 'Grace');
+    expect(client.checks('editor', rules as never, ROOT_SCOPE)[0]?.valid).toBe(true);
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const button = { id: 'save', component: 'Button', child: 'l', action: { event: { name: 'save' } }, checks: rules };
+    expect(registry.validateComponent(KIT_CATALOG_ID, button, [])).toEqual([]);
+  });
+
   test('Kit Row and Column take a standard action', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const action = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };

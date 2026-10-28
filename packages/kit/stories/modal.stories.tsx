@@ -23,7 +23,7 @@ export const Controls: Story<ControlArgs> = (args) => {
 };
 Controls.args = { title: 'New chat', side: 'center', backdrop: true, dismissable: true, animationType: 'none' };
 Controls.argTypes = {
-  title: text, side: select(['center', 'bottom']), backdrop: bool, dismissable: bool,
+  title: text, side: select(['center', 'bottom', 'end']), backdrop: bool, dismissable: bool,
   animationType: select(['none', 'fade', 'slide']), background: color, borderColor: color,
 };
 

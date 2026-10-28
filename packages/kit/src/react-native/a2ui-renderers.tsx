@@ -49,6 +49,11 @@ function iconNode(value: unknown): ReactNode {
 
 const SHRINK_TO_FIT = { flexShrink: 1 };
 
+function radiusOf(value: unknown): RadiusValue | number | undefined {
+  const pixels = asNumber(value);
+  return pixels !== undefined && pixels >= 0 ? pixels : asEnum(value, RADII);
+}
+
 function flexProps(ctx: RenderContext) {
   const p = ctx.props;
   const width = lengthOf(p.width);
@@ -61,7 +66,7 @@ function flexProps(ctx: RenderContext) {
     wrap: asBoolean(p.wrap),
     surface: asEnum(p.surface, SURFACES),
     background: colorOf(ctx, p.background),
-    radius: asEnum(p.radius, RADII),
+    radius: radiusOf(p.radius),
     border: borderOf(ctx, p.border),
     width,
     height: lengthOf(p.height),
@@ -76,7 +81,9 @@ function flexProps(ctx: RenderContext) {
 
 function A2uiFlex({ ctx, row = false, children }: { ctx: RenderContext; row?: boolean; children: ReactNode }): React.ReactElement {
   const act = useA2uiAction(ctx);
-  const press = isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action) ? { onPress: () => { act(); }, disabled: ctx.disabled } : {};
+  const press = isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action)
+    ? { onPress: () => { act(); }, disabled: ctx.disabled, feedback: asEnum(ctx.props.feedback, ['opacity', 'highlight', 'none']) }
+    : {};
   const Flex = row ? Row : Column;
   return <Flex {...flexProps(ctx)} {...press}>{children}</Flex>;
 }
@@ -117,7 +124,7 @@ function imageRenderer(ctx: RenderContext): ReactNode {
       description={asOptionalString(p.description)}
       fit={asEnum(p.fit, FITS)}
       variant={asEnum(p.variant, IMAGE_VARIANTS)}
-      radius={asEnum(p.radius, RADII)}
+      radius={radiusOf(p.radius)}
       size={asNumber(p.size)}
       width={asNumber(p.width)}
       height={asNumber(p.height)}

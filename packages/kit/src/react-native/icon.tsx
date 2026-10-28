@@ -15,14 +15,16 @@ import { IconVolumeDown } from '@central-icons-react-native/round-outlined-radiu
 import { A2UI_ICONS, isA2uiIconName, type A2uiExtraIcon, type A2uiIconName } from '../icons.a2ui';
 import { brandIconPath, isBrandIconName, type BrandIconName } from '../brand-icons.data';
 import { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
+import { CENTRAL_ICONS } from '../central-icons.named.data';
+import type { CentralIconName } from '../central-icons.names.data';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useContentColor } from './content-color';
 import { Glyph } from './glyph';
 
-export type { A2uiIconName, BrandIconName, CentralIcon, HeroIconName, HeroSolidIconName };
+export type { A2uiIconName, BrandIconName, CentralIcon, CentralIconName, HeroIconName, HeroSolidIconName };
 export { CENTRAL_ICON_ALIASES, centralIcon } from '../central-icons';
 
-export type IconName = KitIconName | A2uiIconName | BrandIconName;
+export type IconName = KitIconName | A2uiIconName | BrandIconName | CentralIconName;
 
 export type IconVariant = IconStyle | 'outline';
 
@@ -62,10 +64,16 @@ function isKitIconName(name: string): name is HeroIconName {
   return Object.hasOwn(CENTRAL_ICON_ALIASES, name);
 }
 
-function resolveIcon(name: KitIconName | A2uiIconName, style: IconStyle): CentralIcon | undefined {
+function namedCentralIcon(name: string, style: IconStyle): CentralIcon | undefined {
+  if (!Object.hasOwn(CENTRAL_ICONS, name)) return undefined;
+  const entry = CENTRAL_ICONS[name as CentralIconName];
+  return style === 'solid' ? entry.solid ?? entry.line : entry.line;
+}
+
+function resolveIcon(name: KitIconName | A2uiIconName | CentralIconName, style: IconStyle): CentralIcon | undefined {
   if (typeof name !== 'string') return name;
   if (isKitIconName(name)) return centralIcon(name, style);
-  return isA2uiIconName(name) ? a2uiIcon(name, style) : undefined;
+  return isA2uiIconName(name) ? a2uiIcon(name, style) : namedCentralIcon(name, style);
 }
 
 interface GlyphOfProps {

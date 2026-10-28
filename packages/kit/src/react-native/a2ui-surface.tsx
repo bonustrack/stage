@@ -152,6 +152,7 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     child: (childId) => (typeof childId === 'string' ? <A2uiNode id={childId} scope={scope} /> : null),
     children: (list) => templateChildren(ctx, list, scope),
     childText: (childId) => plainChildText(ctx, childId, scope),
+    childComponent: (childId) => (typeof childId === 'string' ? ctx.client.surface(ctx.surfaceId)?.components.get(childId)?.component : undefined),
     action: () => dispatchAction(ctx, instance.id, instance.action, scope),
     dispatch: (action) => dispatchAction(ctx, instance.id, action, scope),
     binding: bindings.binding,

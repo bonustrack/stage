@@ -7,6 +7,8 @@ import { resolveBoxRadius, resolveOptionalColor, type Color, type RadiusValue, t
 import { spacingEntries, type SpacingValue } from '../layout';
 import { useKitScheme } from './theme-context';
 
+export type DialogSide = 'center' | 'bottom' | 'end';
+
 export interface DialogProps {
   open: boolean;
   onClose: () => void;
@@ -16,7 +18,7 @@ export interface DialogProps {
   bottomInset?: number;
   backdrop?: boolean;
   backdropColor?: Color;
-  side?: 'center' | 'bottom';
+  side?: DialogSide;
   dismissable?: boolean;
   animationType?: 'slide' | 'fade' | 'none';
   gestureRoot?: boolean;
@@ -28,7 +30,7 @@ export interface DialogProps {
   panelMaxWidth?: number | string;
   panelPadding?: SpacingValue;
   panelBorderColor?: Color;
-  panelBorderSides?: 'top' | 'all';
+  panelBorderSides?: 'top' | 'start' | 'all';
   handle?: boolean;
   handleColor?: Color;
   scroll?: boolean;
@@ -40,7 +42,10 @@ export interface DialogProps {
 
 const NO_FOCUS_RING: ViewStyle = { outlineWidth: 0, outlineStyle: 'solid' };
 
+const SIDE_OVERLAY: ViewStyle = { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'stretch' };
+
 function overlayStyle(props: DialogProps): ViewStyle {
+  if (props.side === 'end' && props.fullBleedPanel !== true) return SIDE_OVERLAY;
   const stretch = props.side === 'bottom' || props.fullBleedPanel === true;
   return {
     flex: 1,
@@ -55,6 +60,7 @@ function overlayStyle(props: DialogProps): ViewStyle {
 function panelRadiusStyle(props: DialogProps): ViewStyle {
   if (props.panelRadius === undefined) return {};
   const radius = resolveBoxRadius(props.panelRadius);
+  if (props.side === 'end') return { borderTopLeftRadius: radius, borderBottomLeftRadius: radius };
   const style: ViewStyle = { borderTopLeftRadius: radius, borderTopRightRadius: radius };
   if (props.side !== 'bottom') {
     style.borderBottomLeftRadius = radius;
@@ -66,7 +72,8 @@ function panelRadiusStyle(props: DialogProps): ViewStyle {
 function panelBorderStyle(props: DialogProps, scheme: Scheme): ViewStyle {
   const border = resolveOptionalColor(props.panelBorderColor, scheme);
   if (border === undefined) return {};
-  return props.panelBorderSides === 'all' ? { borderWidth: 1, borderColor: border } : { borderTopWidth: 1, borderColor: border };
+  if (props.panelBorderSides === 'all') return { borderWidth: 1, borderColor: border };
+  return props.panelBorderSides === 'start' ? { borderLeftWidth: 1, borderColor: border } : { borderTopWidth: 1, borderColor: border };
 }
 
 function panelStyle(props: DialogProps, scheme: Scheme, insetBottom: number): ViewStyle {

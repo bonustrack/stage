@@ -20,7 +20,9 @@
     "**/.vite/**",
     "packages/kit/src/heroicons.data.ts",
     "packages/kit/src/heroicons.solid.data.ts",
-    "packages/kit/src/central-icons.data.ts"
+    "packages/kit/src/central-icons.data.ts",
+    "packages/kit/src/central-icons.named.data.ts",
+    "packages/kit/src/central-icons.names.data.ts"
   ],
   "overrides": [
     {

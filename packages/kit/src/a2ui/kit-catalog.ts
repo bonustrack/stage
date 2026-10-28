@@ -1,3 +1,4 @@
+import { CENTRAL_ICON_NAMES } from '../central-icons.names.data';
 import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
 import { BRAND_ICON_NAMES } from '../brand-icons.data';
 import { BUTTON_COLORS, BUTTON_FILLS, SIZES } from '../button.styles';
@@ -46,12 +47,12 @@ const BORDER = dynamic('A border: a width in pixels, or { size, color, style }.'
 const MAX_LINES = dynamic('Clamp to this many lines.', { type: 'integer', minimum: 1 });
 const ASPECT_RATIO = dynamic('Width divided by height.', { type: 'number', exclusiveMinimum: 0 });
 const SURFACE = token(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background: surface is the page background.');
-const RADIUS: JsonObject = token(Object.keys(BOX_RADIUS_SCALE), 'A Kit corner radius token.');
+const RADIUS: JsonObject = dynamic('A Kit corner radius token, or a radius in density-independent pixels.', { anyOf: [{ type: 'string', enum: Object.keys(BOX_RADIUS_SCALE) }, NON_NEGATIVE] });
 const FONT_SIZES = token(Object.keys(FONT_SIZE), 'A Kit font size token.');
 const ICON_NAME: JsonObject = {
-  description: 'An icon: a basic catalog name, a Kit HeroIcon name or a brand icon name.',
+  description: 'An icon: a basic catalog name, a Kit HeroIcon name, a Central icon name (its Central name without the Icon prefix, such as settingsGear1 or chevronRightSmall) or a brand icon name.',
   oneOf: [
-    strings([...new Set([...A2UI_ICON_NAMES, ...Object.keys(HERO_ICON_PATHS), ...BRAND_ICON_NAMES])], 'Icon name.'),
+    strings([...new Set([...A2UI_ICON_NAMES, ...Object.keys(HERO_ICON_PATHS), ...CENTRAL_ICON_NAMES, ...BRAND_ICON_NAMES])], 'Icon name.'),
     { type: 'object', properties: { svgPath: common('DynamicString') }, required: ['svgPath'], additionalProperties: false },
     common('DataBinding'),
   ],
@@ -75,6 +76,7 @@ function component(name: string, properties: JsonObject, required: readonly stri
 
 const LAYOUT_EXTRAS: JsonObject = {
   action: { ...common('Action'), description: 'Makes the whole Row or Column pressable, with hover and pressed feedback and a button role: a clickable card, nav item or list row that keeps the look you give it. Give it an accessibility.label.' },
+  feedback: token(['opacity', 'highlight', 'none'], 'How a Row or Column with an action reacts to hover and press: opacity fades it (the default), highlight tints its background, none shows nothing.'),
   gap: SPACING,
   padding: PADDING,
   wrap: BOOLEAN,
@@ -212,7 +214,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   }),
   Card: inherit('Card', { size: token(['sm', 'md', 'lg'], 'Card padding size.'), padding: SPACING, surface: SURFACE, background: COLOR }),
   Tabs: inherit('Tabs', { variant: token(['segmented', 'underline'], 'The tab bar style.') }),
-  Modal: inherit('Modal', { title: common('DynamicString'), open: { ...BOOLEAN, description: 'Whether the dialog shows. Bind it to a path to open or close the dialog from the data model: the renderer writes true when the trigger is pressed and false when the dialog closes.' } }),
+  Modal: inherit('Modal', { title: common('DynamicString'), side: token(['center', 'bottom', 'end'], 'Where the dialog opens: centred (default), as a bottom sheet, or as a full-height side sheet at the end edge, about 640px wide, which becomes a bottom sheet on narrow screens.'), open: { ...BOOLEAN, description: 'Whether the dialog shows. Bind it to a path to open or close the dialog from the data model: the renderer writes true when the trigger is pressed and false when the dialog closes.' } }),
   Divider: inherit('Divider', { spacing: SPACING, color: COLOR }),
   Button: BUTTON,
   TextField: inherit('TextField', {
@@ -258,7 +260,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
       description: 'The menu rows. Choosing one closes the menu and runs its action, evaluated in the scope of the menu, so templated menus read their row with relative paths.',
       items: {
         type: 'object',
-        properties: { label: common('DynamicString'), icon: ICON_NAME, danger: BOOLEAN, action: common('Action') },
+        properties: { label: common('DynamicString'), icon: ICON_NAME, swatch: COLOR, selected: BOOLEAN, danger: BOOLEAN, action: common('Action') },
         required: ['label', 'action'],
         additionalProperties: false,
       },
@@ -304,6 +306,23 @@ const KIT_FUNCTIONS: Record<string, JsonObject> = {
     },
     required: ['@call', 'args'],
   },
+  equals: {
+    type: 'object',
+    description: 'Checks that two values are equal (strings, numbers, booleans, or lists and objects compared as JSON). Use it in checks, for example a Save button that stays disabled until a field differs from its saved value: wrap it in not.',
+    returnType: 'boolean',
+    allowedCallers: 'rendererOrAgent',
+    requiresUserActivation: false,
+    properties: {
+      '@call': { const: 'equals' },
+      args: {
+        type: 'object',
+        properties: { value: common('DynamicValue'), other: common('DynamicValue') },
+        required: ['value', 'other'],
+        unevaluatedProperties: false,
+      },
+    },
+    required: ['@call', 'args'],
+  },
   closeSurface: {
     type: 'object',
     description: 'Goes back to the screen shown before the last openSurface (requires user activation). This function has no return value.',
@@ -331,7 +350,7 @@ const INSTRUCTIONS = [
   '',
   '## Text',
   '',
-  'Text takes the Kit `size` tokens (3xs to 3xl, md is the body size), `fontWeight` (normal, medium, semibold, bold) and `color` tokens: text, secondary, muted, link, primary, danger, success, border. Use `variant: caption` for secondary small print and Title for headings.',
+  'Text takes the Kit `size` tokens (3xs to 3xl, md is the body size), `fontWeight` (normal, medium, semibold, bold) and `color` tokens: text, secondary, muted, link, primary, danger, success, border, surface (the page background, for text on a text-coloured pill). Use `variant: caption` for secondary small print and Title for headings.',
   '',
   '## Buttons',
   '',
@@ -339,7 +358,7 @@ const INSTRUCTIONS = [
   '',
   '## Menus and dialogs',
   '',
-  'DropdownMenu shows its `trigger` and opens a menu of `items` below it (`label`, an optional `icon`, `danger` for destructive rows such as Delete, and a standard `action`). A Modal `open` bound to a path opens or closes the dialog from the data model, so the agent can answer a menu row event (Delete) with an updateDataModel that opens a confirmation, and close it the same way after a save. A dialog that only the data model opens can use an empty Column as its trigger.',
+  'DropdownMenu shows its `trigger` and opens a menu of `items` below it (`label`, an optional `icon` or a colour `swatch`, `selected` for a checkmark, `danger` for destructive rows such as Delete, and a standard `action`). A Modal `open` bound to a path opens or closes the dialog from the data model, so the agent can answer a menu row event (Delete) with an updateDataModel that opens a confirmation, and close it the same way after a save. A dialog that only the data model opens can use an empty Column as its trigger.',
   '',
   '## Icons',
   '',
@@ -351,7 +370,7 @@ const INSTRUCTIONS = [
   '',
   '## Functions',
   '',
-  'Every basic catalog function is available. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate and pluralize with callRendererFunction.',
+  'Every basic catalog function is available, plus `equals` ({ value, other }, both bindable), which returns a boolean, so `not` can wrap it: a Save button whose check is `not(equals(field, saved))` stays disabled until the field changes. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate, pluralize and equals with callRendererFunction.',
   '',
   '## Reordering',
   '',

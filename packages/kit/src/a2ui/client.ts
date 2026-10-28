@@ -69,6 +69,7 @@ function functionTable(options: A2uiClientOptions): Runtime['functions'] {
     closeSurface: () => {
       navigate?.({ kind: 'close' });
     },
+    equals: (args) => JSON.stringify(args.value ?? null) === JSON.stringify(args.other ?? null),
   };
   const table: Record<string, Record<string, FunctionImpl>> = { [BASIC_CATALOG_ID]: basic, [KIT_CATALOG_ID]: kit };
   for (const [catalogId, fns] of Object.entries(options.functions ?? {})) table[catalogId] = { ...(table[catalogId] ?? {}), ...fns };

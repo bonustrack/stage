@@ -127,9 +127,9 @@ export function readableForeground(hex: string): string {
   return luminance > 0.6 ? '#000000' : '#ffffff';
 }
 
-export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border';
+export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border' | 'surface';
 
-export const COLOR_TOKENS: readonly ColorToken[] = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border'];
+export const COLOR_TOKENS: readonly ColorToken[] = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border', 'surface'];
 
 const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   text: 'textColor',
@@ -140,6 +140,7 @@ const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   danger: 'dangerColor',
   success: 'successColor',
   border: 'borderColor',
+  surface: 'bgColor',
 };
 
 export function isColorToken(c: string): c is ColorToken {
@@ -159,6 +160,7 @@ const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
   danger: 'danger',
   success: 'success',
   border: 'border',
+  surface: 'bg',
 };
 
 export function resolvePaletteColor(c: string, palette: KitPalette): string {

@@ -29,6 +29,7 @@ export interface RenderContext {
   child: (id: unknown) => ReactNode;
   children: (list: unknown) => ReactNode[];
   childText: (id: unknown) => string | undefined;
+  childComponent: (id: unknown) => string | undefined;
   action: () => DispatchResult | undefined;
   dispatch: (action: unknown) => DispatchResult | undefined;
   binding: <T extends JsonValue>(prop: string) => Binding<T>;
