@@ -34,17 +34,25 @@ const SIDES = ['top', 'right', 'bottom', 'left', 'x', 'y'];
 const PADDING = dynamic('Padding in pixels: one number, or per side with top, right, bottom, left, x and y.', {
   anyOf: [NON_NEGATIVE, { type: 'object', properties: Object.fromEntries(SIDES.map((side) => [side, NON_NEGATIVE])), additionalProperties: false }],
 });
-const BORDER = dynamic('A border: a width in pixels, or { size, color, style }.', {
+const BORDER_SIDE: JsonObject = {
+  type: 'object',
+  properties: { size: NON_NEGATIVE, color: COLOR_LITERAL, style: { type: 'string', enum: ['solid', 'dashed', 'dotted'] } },
+  required: ['size'],
+  additionalProperties: false,
+};
+const BORDER = dynamic('A border: a width in pixels, { size, color, style } on every side, or { top, right, bottom, left } with one of those per side.', {
   anyOf: [
     NON_NEGATIVE,
+    BORDER_SIDE,
     {
       type: 'object',
-      properties: { size: NON_NEGATIVE, color: COLOR_LITERAL, style: { type: 'string', enum: ['solid', 'dashed', 'dotted'] } },
-      required: ['size'],
+      properties: Object.fromEntries(['top', 'right', 'bottom', 'left'].map((side) => [side, { anyOf: [NON_NEGATIVE, BORDER_SIDE] }])),
+      minProperties: 1,
       additionalProperties: false,
     },
   ],
 });
+const OPACITY = dynamic('Opacity from 0 (invisible) to 1 (the default), for muted or inactive content.', { type: 'number', minimum: 0, maximum: 1 });
 const MAX_LINES = dynamic('Clamp to this many lines.', { type: 'integer', minimum: 1 });
 const ASPECT_RATIO = dynamic('Width divided by height.', { type: 'number', exclusiveMinimum: 0 });
 const SURFACE = token(['none', 'surface', 'raised', 'sunken', 'toolbar'], 'A Kit surface background: surface is the page background.');
@@ -76,6 +84,7 @@ function component(name: string, properties: JsonObject, required: readonly stri
 }
 
 const LAYOUT_EXTRAS: JsonObject = {
+  opacity: OPACITY,
   action: { ...common('Action'), description: 'Makes the whole Row or Column pressable, with hover and pressed feedback and a button role: a clickable card, nav item or list row that keeps the look you give it. Give it an accessibility.label.' },
   feedback: token(['opacity', 'highlight', 'none'], 'How a Row or Column with an action reacts to hover and press: opacity fades it (the default), highlight tints its background, none shows nothing.'),
   gap: SPACING,
@@ -117,6 +126,8 @@ const BUTTON: JsonObject = {
         iconStart: ICON_NAME,
         iconEnd: ICON_NAME,
         disabled: common('DynamicBoolean'),
+        loading: { ...common('DynamicBoolean'), description: 'Shows a spinner in place of the label and ignores presses, for a save in progress.' },
+        opacity: OPACITY,
       },
       required: ['component', 'child', 'action'],
     },
@@ -131,6 +142,7 @@ const ICON: JsonObject = {
     size: dynamic('Icon size in pixels. Defaults to 24.', { type: 'number', minimum: 1 }),
     color: COLOR,
     variant: token(['outline', 'solid'], 'Outline (default) or solid HeroIcon.'),
+    opacity: OPACITY,
     weight: basic('/components/Icon/properties/weight'),
   },
   required: ['component', 'name'],
@@ -186,6 +198,8 @@ const CHART: JsonObject = component('Chart', {
 
 const KIT_COMPONENTS: Record<string, JsonObject> = {
   Text: inherit('Text', {
+    opacity: OPACITY,
+    selectable: { ...BOOLEAN, description: 'Let the user select and copy the text.' },
     size: FONT_SIZES,
     fontWeight: token(['normal', 'medium', 'semibold', 'bold'], 'The font weight.'),
     color: COLOR,
@@ -198,7 +212,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     letterSpacing: dynamic('Extra space between letters in density-independent pixels, for example 1 for small uppercase titles.', { type: 'number', minimum: -2, maximum: 10 }),
     textTransform: token(['none', 'uppercase', 'lowercase', 'capitalize'], 'Change the case of the text when it is drawn.'),
   }),
-  Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR }),
+  Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR, opacity: OPACITY }),
   Icon: ICON,
   Video: inherit('Video'),
   AudioPlayer: inherit('AudioPlayer'),

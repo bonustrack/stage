@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { View, type ViewStyle } from 'react-native';
 import { BADGE_COLORS, BADGE_SIZES, BADGE_VARIANTS } from '../badge';
 import { BUTTON_COLORS, BUTTON_FILLS, SIZES, type ButtonSize, type ButtonVariant } from '../button.styles';
 import { isChildTemplate, isEventAction, isFunctionAction } from '../a2ui/protocol';
@@ -27,6 +28,7 @@ import { chartRenderer } from './a2ui-renderers.chart';
 import { isSortableList, listBoxProps, sortableListRenderer } from './a2ui-renderers.sortable';
 import { INPUT_RENDERERS, useA2uiAction } from './a2ui-renderers.inputs';
 import { OVERLAY_RENDERERS, withLabelTooltip } from './a2ui-renderers.overlay';
+import { a2uiLinkProps } from './a2ui-link';
 
 const GAP = DENSITY_SCALE.normal.gap;
 const A2UI_ICON_SIZE = 24;
@@ -49,9 +51,20 @@ function iconNode(value: unknown): ReactNode {
 
 const SHRINK_TO_FIT = { flexShrink: 1 };
 
+function opacityStyle(value: unknown): { opacity: number } | undefined {
+  const opacity = asNumber(value);
+  return opacity === undefined ? undefined : { opacity: Math.max(0, Math.min(1, opacity)) };
+}
+
 function radiusOf(value: unknown): RadiusValue | number | undefined {
   const pixels = asNumber(value);
   return pixels !== undefined && pixels >= 0 ? pixels : asEnum(value, RADII);
+}
+
+function flexStyle(shrink: boolean, opacity: number | undefined): ViewStyle | undefined {
+  if (opacity === undefined) return shrink ? SHRINK_TO_FIT : undefined;
+  const faded = Math.max(0, Math.min(1, opacity));
+  return shrink ? { ...SHRINK_TO_FIT, opacity: faded } : { opacity: faded };
 }
 
 function flexProps(ctx: RenderContext) {
@@ -75,14 +88,14 @@ function flexProps(ctx: RenderContext) {
     maxWidth: lengthOf(p.maxWidth),
     maxHeight: lengthOf(p.maxHeight),
     aspectRatio: asNumber(p.aspectRatio),
-    style: typeof width === 'string' ? SHRINK_TO_FIT : undefined,
+    style: flexStyle(typeof width === 'string', asNumber(p.opacity)),
   };
 }
 
 function A2uiFlex({ ctx, row = false, children }: { ctx: RenderContext; row?: boolean; children: ReactNode }): React.ReactElement {
   const act = useA2uiAction(ctx);
   const press = isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action)
-    ? { onPress: () => { act(); }, disabled: ctx.disabled, feedback: asEnum(ctx.props.feedback, ['opacity', 'highlight', 'none']) }
+    ? { onPress: () => { act(); }, disabled: ctx.disabled, feedback: asEnum(ctx.props.feedback, ['opacity', 'highlight', 'none']), ...a2uiLinkProps(ctx, () => { act(); }) }
     : {};
   const Flex = row ? Row : Column;
   return <Flex {...flexProps(ctx)} {...press}>{children}</Flex>;
@@ -112,6 +125,8 @@ function textRenderer(ctx: RenderContext): ReactNode {
       maxLines={asNumber(p.maxLines)}
       fontFamily={asEnum(p.fontFamily, ['sans', 'head', 'mono'])}
       letterSpacing={asNumber(p.letterSpacing)}
+      selectable={asBoolean(p.selectable)}
+      style={opacityStyle(p.opacity)}
       textTransform={asEnum(p.textTransform, ['none', 'uppercase', 'lowercase', 'capitalize'])}
     />
   );
@@ -132,6 +147,7 @@ function imageRenderer(ctx: RenderContext): ReactNode {
       height={asNumber(p.height)}
       aspectRatio={asNumber(p.aspectRatio)}
       background={colorOf(ctx, p.background)}
+      style={opacityStyle(p.opacity)}
     />
   ));
 }
@@ -140,16 +156,21 @@ function iconRenderer(ctx: RenderContext): ReactNode {
   const name = iconNameOf(ctx.props.name);
   if (name === undefined) return null;
   const color = colorOf(ctx, ctx.props.color) ?? ctx.contentColor;
-  return withLabelTooltip(ctx, <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />);
+  const icon = <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />;
+  const opacity = opacityStyle(ctx.props.opacity);
+  return withLabelTooltip(ctx, opacity === undefined ? icon : <View style={opacity}>{icon}</View>);
 }
 
 function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const p = ctx.props;
   const label = ctx.childText(p.child);
   const press = useA2uiAction(ctx);
+  const opacity = asNumber(p.opacity);
   return (
     <Button
       {...commonProps(ctx)}
+      loading={asBoolean(p.loading)}
+      style={opacityStyle(opacity)}
       variant={asEnum(p.variant, BUTTON_VARIANTS)}
       color={asEnum(p.color, BUTTON_COLORS)}
       size={asEnum(p.size, BUTTON_SIZES)}
@@ -162,6 +183,7 @@ function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
       checks={ctx.checks}
       label={label}
       onPress={() => { press(); }}
+      {...a2uiLinkProps(ctx, () => { press(); })}
     >
       {label === undefined ? ctx.child(p.child) : undefined}
     </Button>

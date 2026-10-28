@@ -99,12 +99,15 @@ export function compositionIssues(
   return out;
 }
 
-export const RENDER_LIMITS = { depth: 32, nodes: 2000 } as const;
+export interface RenderLimits { depth: number; nodes: number }
+
+export const RENDER_LIMITS: RenderLimits = { depth: 32, nodes: 2000 };
 
 interface Walk {
   surface: SurfaceState;
   registry: CatalogRegistry;
   left: number;
+  depth: number;
 }
 
 function templateScopes(walk: Walk, instance: ComponentInstance, info: ComponentInfo, scopePath: string): [string, string][] {
@@ -120,7 +123,7 @@ function templateScopes(walk: Walk, instance: ComponentInstance, info: Component
 
 function fits(walk: Walk, id: string, lineage: readonly string[], scopePath: string): boolean {
   walk.left -= 1;
-  if (walk.left < 0 || lineage.length >= RENDER_LIMITS.depth || lineage.includes(id)) return false;
+  if (walk.left < 0 || lineage.length >= walk.depth || lineage.includes(id)) return false;
   const instance = walk.surface.components.get(id);
   const info = instance === undefined ? undefined : walk.registry.component(instance.catalogId ?? walk.surface.catalogId ?? '', instance.component);
   if (instance === undefined || info === undefined) return true;
@@ -132,7 +135,8 @@ function fits(walk: Walk, id: string, lineage: readonly string[], scopePath: str
     && templates.every(([childId, path]) => fits(walk, childId, next, path));
 }
 
-export function fitsRenderLimits(surface: SurfaceState, registry: CatalogRegistry): boolean {
-  return fits({ surface, registry, left: RENDER_LIMITS.nodes }, ROOT_ID, [], '/');
+export function fitsRenderLimits(surface: SurfaceState, registry: CatalogRegistry, limits: Partial<RenderLimits> = {}): boolean {
+  const { depth, nodes } = { ...RENDER_LIMITS, ...limits };
+  return fits({ surface, registry, left: nodes, depth }, ROOT_ID, [], '/');
 }
 

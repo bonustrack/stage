@@ -236,6 +236,14 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 
 ## Changelog
 
+### 0.1.0-beta.29
+
+- Fix: Text switches to markdown only for real markdown syntax (`**bold**`, `*em*` or `_em_` at word edges, backtick code, `~~strike~~`, headings, quotes, lists, fences, tables), so emails, file names and `snake_case` stay plain. Markdown Text keeps the plain Text line height, with 8px between blocks and no space after the last one.
+- Fix: the Video poster sits under the browser's own controls on web, and has a background natively.
+- A2UI: Button `loading` (a spinner, presses ignored), `opacity` on Row, Column, Text, Image, Icon and Button, `border` per side (`{ top, right, bottom, left }`), and Text `selectable`.
+- A2UI: a Button, Row or Column whose action is only an `openUrl` call renders as a real link on web (`<a href>` with a new-tab target), so middle and Cmd clicks open a new tab while a plain click still runs the action through the host's `openUrl`.
+- `A2uiSurface` takes `limits` (`{ nodes, depth }`, default 2000 and 32) for hosts that render large surfaces; `fitsRenderLimits` takes the same.
+
 ### 0.1.0-beta.28
 
 - `extendKitCatalog({ catalogId, components, title?, description?, instructions? })` in `a2ui/kit-catalog-extend`: a host catalog that inherits every Kit component and function and adds the host's own components (their `component` const is filled in), for things that must stay native, such as a live chat thread. Validate with `createA2uiClient({ catalogs: [BASIC_CATALOG, KIT_CATALOG, hostCatalog] })` (the client runs the Kit functions for any catalog that declares them) and pass the matching `renderers` to `A2uiSurface`.

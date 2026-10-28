@@ -19,7 +19,7 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Buttons',
   '',
-  'Button `variant` accepts the basic hints (default, primary, borderless) or a Kit fill (solid, soft, outline, ghost) combined with `color` (primary, secondary, info, discovery, success, caution, warning, danger). Use exactly one primary button per surface. A button with an event action inside a Modal closes it once the action is sent. Give icon-only buttons, icons and images an `accessibility.label`: screen readers read it and pointers show it as a tooltip.',
+  'Button `variant` accepts the basic hints (default, primary, borderless) or a Kit fill (solid, soft, outline, ghost) combined with `color` (primary, secondary, info, discovery, success, caution, warning, danger). Use exactly one primary button per surface. `loading` shows a spinner and ignores presses while work runs. A Button, Row or Column whose action is only an `openUrl` call renders as a real link on web, so a middle or Cmd click opens a new tab. A button with an event action inside a Modal closes it once the action is sent. Give icon-only buttons, icons and images an `accessibility.label`: screen readers read it and pointers show it as a tooltip.',
   '',
   '## Menus and dialogs',
   '',

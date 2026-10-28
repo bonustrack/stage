@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
 import { markdownStyles } from '../markdown.styles';
-import { resolvePaletteColor, type ColorToken } from '../tokens';
+import { FONT_SIZE, resolvePaletteColor, type ColorToken } from '../tokens';
 import {
   TEXT_ALIGN_MAP, resolveTextSize, textDefaultColor, textFontFamily,
   type TextAlign, type TextFontFamily, type TextSizeToken, type TextVariant, type TextWeight,
@@ -58,13 +58,19 @@ function useTextColor(color: TextProps['color'], variant: TextVariant | undefine
   return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
 }
 
+const PLAIN_LINE_HEIGHT = 1.22;
+const MARKDOWN_BLOCK_GAP = 8;
+const FLOW_BLOCKS = ['paragraph', 'bullet_list', 'ordered_list', 'blockquote', 'fence', 'code_block', 'table', 'heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'] as const;
+
 const A2UI_MARKDOWN = MarkdownIt({ html: false, linkify: false, typographer: false }).disable(['image', 'link', 'autolink']);
 
 function MarkdownText({ value, color, base, style }: { value: string; color: string; base: TextStyle; style: TextProps['style'] }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const styles = useMemo(() => {
-    const sheet = markdownStyles({ fg: color, dark, fontSize: base.fontSize });
-    sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style) };
+    const fontSize = base.fontSize ?? FONT_SIZE.md;
+    const sheet = markdownStyles({ fg: color, dark, fontSize, lineHeight: Math.round(fontSize * PLAIN_LINE_HEIGHT) });
+    for (const block of FLOW_BLOCKS) sheet[block] = { ...sheet[block], marginTop: 0, marginBottom: 0 };
+    sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style), gap: MARKDOWN_BLOCK_GAP };
     return sheet;
   }, [base, color, dark, style]);
   return <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>{value}</RNMarkdown>;

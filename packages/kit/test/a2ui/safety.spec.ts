@@ -65,6 +65,8 @@ describe('render limits', () => {
       text('cell'),
     ], { rows: Array.from({ length: 60 }, () => ({ cells: Array.from({ length: 60 }, () => 0) })) });
     expect(fitsRenderLimits(grid.surface, grid.registry)).toBe(false);
+    expect(fitsRenderLimits(grid.surface, grid.registry, { nodes: 4000 })).toBe(true);
+    expect(fitsRenderLimits(tall.surface, tall.registry, { depth: 64 })).toBe(true);
   });
 });
 

@@ -213,6 +213,18 @@ describe('Kit catalog', () => {
     expect(valid({ id: 'm', component: 'DropdownMenu', trigger: 'row', openOn: 'contextMenu', items: [{ label: 'Rename', action: { event: { name: 'rename' } } }] })).toEqual([]);
   });
 
+  test('Kit catalog takes per-side borders, opacity, Button loading and selectable Text', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { bottom: { size: 1, color: 'border' } } })).toEqual([]);
+    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { left: 2 } })).toEqual([]);
+    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { middle: 1 } }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 0.6 })).toEqual([]);
+    expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 2 }).length).toBeGreaterThan(0);
+    expect(valid({ id: 't', component: 'Text', text: 'x', opacity: 0.5, selectable: true })).toEqual([]);
+    expect(valid({ id: 'b', component: 'Button', child: 'l', loading: { '@path': '/saving' }, action: { event: { name: 'save' } } })).toEqual([]);
+  });
+
   test('Kit Row and Column take a standard action', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const action = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };

@@ -2,7 +2,7 @@ import { createContext, type ReactNode } from 'react';
 import type { A2uiClient, DispatchResult } from '../a2ui/client';
 import type { Scope } from '../a2ui/evaluate';
 import type { ComponentInstance, JsonValue, ValidationResult } from '../a2ui/protocol';
-import type { ResolvedBoxBorder, Size, Spacing } from '../layout';
+import type { ResolvedBoxBorder, ResolvedBoxBorderSide, Size, Spacing } from '../layout';
 import { isColorToken, resolvePaletteColor, type KitPalette } from '../tokens';
 import type { A2uiAccessibility } from './a2ui-props';
 import type { IconName, IconProps } from './icon';
@@ -32,6 +32,7 @@ export interface RenderContext {
   childComponent: (id: unknown) => string | undefined;
   action: () => DispatchResult | undefined;
   dispatch: (action: unknown) => DispatchResult | undefined;
+  resolve: (value: unknown) => unknown;
   binding: <T extends JsonValue>(prop: string) => Binding<T>;
   pointer: (path: string) => string;
   read: (pointer: string) => JsonValue | undefined;
@@ -116,18 +117,41 @@ export function spacingOf(value: unknown): number | Spacing | undefined {
   return Object.keys(spacing).length === 0 ? undefined : spacing;
 }
 
-export function borderOf(ctx: RenderContext, value: unknown): ResolvedBoxBorder | undefined {
+const BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const;
+
+function borderSideOf(ctx: RenderContext, value: unknown): ResolvedBoxBorderSide | undefined {
   const spec = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : { size: value };
   const width = sizeOf(spec.size);
   if (width === undefined) return undefined;
-  const side = { width, color: colorOf(ctx, spec.color) ?? ctx.palette.border, style: asEnum(spec.style, BORDER_STYLES) };
-  return { top: side, right: side, bottom: side, left: side };
+  return { width, color: colorOf(ctx, spec.color) ?? ctx.palette.border, style: asEnum(spec.style, BORDER_STYLES) };
 }
 
-const MARKDOWN = /[*_`#>[\]|~]|^\s*([-+]|\d+\.)\s/m;
+export function borderOf(ctx: RenderContext, value: unknown): ResolvedBoxBorder | undefined {
+  const record = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+  if (record !== undefined && BORDER_SIDES.some((side) => record[side] !== undefined)) {
+    const sides = Object.fromEntries(BORDER_SIDES.flatMap((side) => {
+      const resolved = borderSideOf(ctx, record[side]);
+      return resolved === undefined ? [] : [[side, resolved]];
+    }));
+    return Object.keys(sides).length === 0 ? undefined : sides;
+  }
+  const side = borderSideOf(ctx, value);
+  return side === undefined ? undefined : { top: side, right: side, bottom: side, left: side };
+}
+
+const MARKDOWN_SYNTAX: readonly RegExp[] = [
+  /(\*\*|__)(?=\S)[\s\S]*?\S\1/,
+  /(?<![\w*])\*(?=[^\s*])[^*\n]*[^\s*]\*(?![\w*])/,
+  /(?<![\w*])\*[^\s*]\*(?![\w*])/,
+  /(?<![\w_])_(?=[^\s_])[^_\n]*[^\s_]_(?![\w_])/,
+  /`[^`\n]+`/,
+  /~~(?=\S)[^~\n]*\S~~/,
+  /^\s{0,3}(#{1,6}\s|>\s?|[-*+]\s+\S|\d+[.)]\s+\S|```)/m,
+  /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/m,
+];
 
 export function hasMarkdown(text: string): boolean {
-  return MARKDOWN.test(text);
+  return MARKDOWN_SYNTAX.some((pattern) => pattern.test(text));
 }
 
 export function iconNameOf(value: unknown): IconProps['name'] | undefined {

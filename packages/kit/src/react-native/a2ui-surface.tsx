@@ -7,7 +7,7 @@ import {
   type ComponentInstance, type JsonValue,
 } from '../a2ui/protocol';
 import type { ComponentInfo } from '../a2ui/catalog';
-import { childRefKinds, fitsRenderLimits } from '../a2ui/structure';
+import { childRefKinds, fitsRenderLimits, type RenderLimits } from '../a2ui/structure';
 import type { A2uiAccessibility } from './a2ui-props';
 import {
   SortHandleContext, SurfaceContext, asEnum, asNumber, asOptionalString, asString, hasMarkdown,
@@ -28,6 +28,7 @@ export interface A2uiSurfaceProps {
   disabled?: boolean;
   mediaUrl?: (url: string) => string;
   fallback?: ReactNode;
+  limits?: Partial<RenderLimits>;
   onActionError?: (message: string) => void;
 }
 
@@ -36,10 +37,10 @@ function useSurfaceVersion(client: A2uiClient, surfaceId: string): number {
   return useSyncExternalStore((listener) => client.subscribe(surfaceId, listener), version, version);
 }
 
-export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, fallback = null, onActionError }: A2uiSurfaceProps): React.ReactElement | null {
+export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, fallback = null, limits, onActionError }: A2uiSurfaceProps): React.ReactElement | null {
   const version = useSurfaceVersion(client, surfaceId);
   const surface = client.surface(surfaceId);
-  const renderable = useMemo(() => surface !== undefined && fitsRenderLimits(surface, client.registry), [surface, client, version]);
+  const renderable = useMemo(() => surface !== undefined && fitsRenderLimits(surface, client.registry, limits), [surface, client, version, limits]);
   if (surface?.components.has(ROOT_ID) !== true) return null;
   if (!renderable) return <>{fallback}</>;
   const value: SurfaceContextValue = { client, surfaceId, renderers: { ...KIT_RENDERERS, ...renderers }, disabled, mediaUrl, onActionError };
@@ -156,6 +157,7 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     childComponent: (childId) => (typeof childId === 'string' ? ctx.client.surface(ctx.surfaceId)?.components.get(childId)?.component : undefined),
     action: () => dispatchAction(ctx, instance.id, instance.action, scope),
     dispatch: (action) => dispatchAction(ctx, instance.id, action, scope),
+    resolve: (value) => ctx.client.resolve(ctx.surfaceId, value as never, scope),
     binding: bindings.binding,
     pointer: (path) => resolveScopedPath(path, scope.path),
     read: (pointer) => getAt(ctx.client.dataModel(ctx.surfaceId), pointer),
