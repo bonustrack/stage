@@ -273,6 +273,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
       },
     },
     align: token(['start', 'end'], 'Which edge of the trigger the menu lines up with.'),
+    openOn: token(['press', 'contextMenu'], 'press (default) opens the menu when the trigger is tapped; contextMenu opens it at the pointer on a right click, or on a long press on touch, and leaves taps to the trigger itself (a nav row that navigates on tap).'),
   }, ['trigger', 'items'], 'A menu that opens below its trigger, for row actions such as Rename and Delete.'),
   Spinner: component('Spinner', { size: SPACING, color: COLOR }, [], 'An indeterminate progress indicator.'),
   Chart: CHART,

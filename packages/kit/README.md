@@ -244,6 +244,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 - Text takes `letterSpacing` and `textTransform` (`none`, `uppercase`, `lowercase`, `capitalize`), in JSX and in A2UI.
 - A drop just outside a surface (within 48px of a list) still lands in that list, at its end.
 - The `plusMedium` Central icon, and the side sheet Modal uses 24px padding.
+- A2UI: DropdownMenu takes `openOn: contextMenu`: it opens at the pointer on a right click (a long press on touch) and leaves taps to the trigger, for row menus such as Rename on a nav item.
 
 ### 0.1.0-beta.27
 

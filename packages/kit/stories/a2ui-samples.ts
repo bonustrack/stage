@@ -263,8 +263,15 @@ export const PAGES: JsonObject[] = [
         { id: 'panel_title', component: 'Text', size: '3xs', fontWeight: 'semibold', color: 'secondary', letterSpacing: 1, textTransform: 'uppercase', text: 'Pages' },
         {
           id: 'pages_list', component: 'List', gap: 4, sortable: true, listId: 'pages', handle: 'page_grip',
-          children: { componentId: 'page_row', path: '/pages' },
+          children: { componentId: 'page_menu', path: '/pages' },
           action: { event: { name: 'movePage', context: { order: { '@path': '/pages' } } } },
+        },
+        {
+          id: 'page_menu', component: 'DropdownMenu', openOn: 'contextMenu', trigger: 'page_row',
+          items: [
+            { label: 'Rename', icon: 'pencil', action: { event: { name: 'renamePage', context: { id: { '@path': 'id' } } } } },
+            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deletePage', context: { id: { '@path': 'id' } } } } },
+          ],
         },
         { id: 'page_row', component: 'Row', gap: 8, align: 'center', padding: { x: 8, y: 6 }, radius: 8, surface: 'sunken', children: ['page_grip', 'page_name', 'page_shown'] },
         { id: 'page_grip', component: 'Icon', name: 'dotGrid2x3', size: 18, accessibility: { label: 'Drag to reorder' } },

@@ -121,18 +121,35 @@ function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: SortR
   );
 }
 
+interface ContextMenuEvent { preventDefault: () => void; clientX: number; clientY: number }
+
+function ContextTrigger({ ctx, onOpen }: { ctx: RenderContext; onOpen: (rect: SortRect) => void }): React.ReactElement {
+  const at = (x: number, y: number): void => { onOpen({ x, y, width: 0, height: 0 }); };
+  const rightClick: object = Platform.OS === 'web' && !ctx.disabled
+    ? { onContextMenu: (event: ContextMenuEvent) => { event.preventDefault(); at(event.clientX, event.clientY); } }
+    : {};
+  return (
+    <Pressable accessibilityRole="none" disabled={ctx.disabled} onLongPress={(event) => { at(event.nativeEvent.pageX, event.nativeEvent.pageY); }} {...rightClick}>
+      {ctx.child(ctx.props.trigger)}
+    </Pressable>
+  );
+}
+
 function A2uiDropdownMenu({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const trigger = useRef<View>(null);
   const [anchor, setAnchor] = useState<SortRect | null>(null);
   const open = (): void => { measure(trigger.current, setAnchor); };
+  const contextMenu = asEnum(ctx.props.openOn, ['press', 'contextMenu']) === 'contextMenu';
   return (
     <View style={weightStyle(ctx.weight)}>
-      <Pressable
-        ref={trigger} accessibilityRole={ctx.childComponent(ctx.props.trigger) === 'Button' ? 'none' : 'button'} {...accessibilityProps(ctx.accessibility)} disabled={ctx.disabled}
-        onPress={open}
-      >
-        <TriggerContext.Provider value={open}>{ctx.child(ctx.props.trigger)}</TriggerContext.Provider>
-      </Pressable>
+      {contextMenu ? <ContextTrigger ctx={ctx} onOpen={setAnchor}/> : (
+        <Pressable
+          ref={trigger} accessibilityRole={ctx.childComponent(ctx.props.trigger) === 'Button' ? 'none' : 'button'} {...accessibilityProps(ctx.accessibility)} disabled={ctx.disabled}
+          onPress={open}
+        >
+          <TriggerContext.Provider value={open}>{ctx.child(ctx.props.trigger)}</TriggerContext.Provider>
+        </Pressable>
+      )}
       <MenuPanel ctx={ctx} anchor={anchor} onClose={() => { setAnchor(null); }}/>
     </View>
   );

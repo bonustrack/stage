@@ -210,6 +210,7 @@ describe('Kit catalog', () => {
     expect(valid({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' })).toEqual([]);
     expect(valid({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' })).toEqual([]);
     expect(valid({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' }).length).toBeGreaterThan(0);
+    expect(valid({ id: 'm', component: 'DropdownMenu', trigger: 'row', openOn: 'contextMenu', items: [{ label: 'Rename', action: { event: { name: 'rename' } } }] })).toEqual([]);
   });
 
   test('Kit Row and Column take a standard action', () => {
