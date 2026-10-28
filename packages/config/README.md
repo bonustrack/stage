@@ -30,7 +30,7 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 ## `stage typecheck`
 
-Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It uses `tsgo` (TypeScript 7, from `@typescript/native-preview`) when that is installed, else `tsc`. `stage typecheck --tsc` forces `tsc`. Other flags go to the compiler.
+Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It uses `tsgo` (from `@typescript/native-preview`) when that is installed, else `tsc`, which is the native compiler too from TypeScript 7. `stage typecheck --tsc` forces `tsc`. Other flags go to the compiler.
 
 ## madge
 
