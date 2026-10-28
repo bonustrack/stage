@@ -37,8 +37,8 @@ export function Cell({ label, background }: { label: string; background: string 
 
 export { useDark } from '../gallery/scheme';
 
-export function svgSwatch(fill: string, label = ''): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="${fill}"/><text x="100" y="118" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif">${label}</text></svg>`;
+export function svgSwatch(fill: string, label = '', width = 200, height = 200): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="${fill}"/><text x="${width / 2}" y="${height / 2 + 18}" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif">${label}</text></svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 

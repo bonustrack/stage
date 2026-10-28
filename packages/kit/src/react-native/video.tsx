@@ -68,6 +68,14 @@ function useVideoSize(player: ExpoVideoPlayer, frame: React.RefObject<View | nul
   }, [player, frame, onVideoSize]);
 }
 
+function useWebPoster(frame: React.RefObject<View | null>, posterUrl: string | undefined): void {
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const video = webVideoOf(frame.current);
+    if (video) video.poster = posterUrl ?? '';
+  }, [frame, posterUrl]);
+}
+
 function usePosterVisible(player: ReturnType<typeof useVideoPlayer>, posterUrl: string | undefined): boolean {
   const [showPoster, setShowPoster] = useState(posterUrl !== undefined);
   useEffect(() => {
@@ -76,7 +84,7 @@ function usePosterVisible(player: ReturnType<typeof useVideoPlayer>, posterUrl: 
     });
     return () => { sub.remove(); };
   }, [player]);
-  return posterUrl !== undefined && showPoster;
+  return Platform.OS !== 'web' && posterUrl !== undefined && showPoster;
 }
 
 export function Video(props: VideoProps): React.ReactElement {
@@ -87,6 +95,7 @@ export function Video(props: VideoProps): React.ReactElement {
   const frame = useRef<View>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const showPoster = usePosterVisible(player, posterUrl);
+  useWebPoster(frame, posterUrl);
   useVideoSize(player, frame, onVideoSize);
 
   return (
@@ -106,7 +115,7 @@ export function Video(props: VideoProps): React.ReactElement {
         playsInline
       />
       {showPoster ? (
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}>
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: background }}>
           <Image source={{ uri: posterUrl }} resizeMode={fit} style={{ width: '100%', height: '100%' }} />
         </View>
       ) : null}
