@@ -8,8 +8,9 @@ name: Publish @stage-labs/config
 # versions) and npm publishes it, because `bun publish` can't do npm trusted
 # publishing. npm logs in with this workflow's GitHub OIDC token through the
 # package's trusted publisher on npmjs.com (repository bonustrack/stage,
-# workflow publish-config.yml, allowed to publish and to manage dist-tags); the
-# package allows no publish tokens. A trusted
+# workflow publish-config.yml, environment npm, allowed to publish and to manage
+# dist-tags); the package allows no publish tokens. The npm environment only
+# deploys from main, so a run from any other branch can't get an npm login. A trusted
 # publish gets an npm provenance attestation on its own: passing --provenance
 # as well makes npm sign twice, and the second transparency log entry fails
 # with a 409.
@@ -30,22 +31,23 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
 
       - name: Update npm for trusted publishing
-        run: npm install -g npm@^11.21.1
+        run: npm install -g npm@11.21.1
 
       - name: Pack
         working-directory: packages/config
