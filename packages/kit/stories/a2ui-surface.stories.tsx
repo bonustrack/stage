@@ -7,7 +7,7 @@ import { A2uiSurface } from '../src/react-native/a2ui-surface';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
 import contactForm from '../test/a2ui/cases/contact_form_example.jsonl?raw';
-import { BASIC_GALLERY, DASHBOARD_BLOCK, KANBAN, PAGES, PAYMENT_REQUEST, THEME_PICKER } from './a2ui-samples';
+import { BASIC_GALLERY, CLICKABLE_CARDS, DATA_BLOCK, HANDLE_AND_MENU, PAYMENT_REQUEST, SORTABLE_LISTS } from './a2ui-samples';
 
 export default { title: 'A2UI Surface' };
 
@@ -44,13 +44,13 @@ function Playground({ messages, surfaceId }: { messages: string | JsonValue[]; s
 
 export const KitPaymentRequest: Story = () => <Playground messages={PAYMENT_REQUEST} surfaceId="payment_request" />;
 
-export const KitKanban: Story = () => <Playground messages={KANBAN} surfaceId="kanban" />;
+export const KitSortableLists: Story = () => <Playground messages={SORTABLE_LISTS} surfaceId="sortable_lists" />;
 
-export const KitThemePicker: Story = () => <Playground messages={THEME_PICKER} surfaceId="theme_picker" />;
+export const KitClickableCards: Story = () => <Playground messages={CLICKABLE_CARDS} surfaceId="clickable_cards" />;
 
-export const KitPages: Story = () => <Playground messages={PAGES} surfaceId="pages" />;
+export const KitHandleAndRowMenu: Story = () => <Playground messages={HANDLE_AND_MENU} surfaceId="handle_and_menu" />;
 
-export const KitDashboardBlock: Story = () => <Playground messages={DASHBOARD_BLOCK} surfaceId="dashboard_block" />;
+export const KitDataBlock: Story = () => <Playground messages={DATA_BLOCK} surfaceId="data_block" />;
 
 export const BasicCatalog: Story = () => <Playground messages={BASIC_GALLERY} surfaceId="basic_gallery" />;
 

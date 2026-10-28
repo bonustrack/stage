@@ -39,7 +39,7 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Reordering',
   '',
-  'A List whose children are a template can set `sortable: true`. The user drags an item (long press on touch, Space then the arrow keys on a keyboard) and the renderer reorders the bound array in the local data model, like an input writes its value. Lists with the same `group` exchange items (a kanban is a Row of sortable Lists in one group). After a drop the renderer writes the move to the `move` binding (`itemId`, `fromListId`, `toListId`, `fromIndex`, `toIndex`, `beforeId`, `afterId`) and then runs the List `action`, whose event context can read it with @path. Only the list that receives the item runs its action. Give each list a `listId` and each item a stable `id` (or set `itemKey`).',
+  'A List whose children are a template can set `sortable: true`. The user drags an item (long press on touch, Space then the arrow keys on a keyboard) and the renderer reorders the bound array in the local data model, like an input writes its value. Lists with the same `group` exchange items, for example several sortable Lists side by side in a Row. After a drop the renderer writes the move to the `move` binding (`itemId`, `fromListId`, `toListId`, `fromIndex`, `toIndex`, `beforeId`, `afterId`) and then runs the List `action`, whose event context can read it with @path. Only the list that receives the item runs its action. Give each list a `listId` and each item a stable `id` (or set `itemKey`).',
   '',
   '## Inputs',
   '',

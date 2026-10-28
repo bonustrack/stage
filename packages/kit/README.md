@@ -219,7 +219,7 @@ bun run --cwd packages/kit storybook        # dev server on http://localhost:600
 bun run --cwd packages/kit storybook:build  # static site in packages/kit/build (gitignored)
 ```
 
-The gallery opens on a Home page with one live example of each component (its `Controls` story with the default args); a card's title opens that component. Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls, and the ones with variant axes also have a matrix story. The `A2UI Surface` stories render the official A2UI contact form, a basic catalog tour a Kit catalog payment request and a dashboard block (bound colours, proportional bars, a bound Chart and an Apply button) through the renderer and log every renderer-to-agent message; its `Controls` story renders any JSON you paste. The `Theme` story drives the `ThemeOption` surface through `derivePalette`.
+The gallery opens on a Home page with one live example of each component (its `Controls` story with the default args); a card's title opens that component. Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls, and the ones with variant axes also have a matrix story. The `A2UI Surface` stories render the official A2UI contact form, a basic catalog tour, and Kit catalog samples (a payment request, a data block with bound colours, proportional bars, a bound Chart and an Apply button, sortable lists, clickable cards with a side sheet, and a list with a drag handle and a row menu) through the renderer and log every renderer-to-agent message; its `Controls` story renders any JSON you paste. The `Theme` story drives the `ThemeOption` surface through `derivePalette`.
 
 ## Scripts
 
@@ -307,7 +307,7 @@ Linting is centralised at the repo root (`bun run lint`). The package is publish
 ### 0.1.0-beta.17
 
 - New: `react-native/sortable` (`SortableScope`, `SortableList`, `SortableItem`, `SortableHandle`) and the pure `sortable` model: drag and drop within and between lists on web and native, with keyboard and screen-reader moves.
-- Kit catalog: `List` takes `sortable`, `group`, `listId`, `itemKey`, `move` and `action`, so agents can build reorderable lists and kanban boards from standard A2UI components; the move reaches the agent through a standard event.
+- Kit catalog: `List` takes `sortable`, `group`, `listId`, `itemKey`, `move` and `action`, so agents can build reorderable lists, alone or side by side, from standard A2UI components; the move reaches the agent through a standard event.
 - `RenderContext` has `pointer`, `read` and `write` for custom renderers that update the surface data model.
 
 ### 0.1.0-beta.16

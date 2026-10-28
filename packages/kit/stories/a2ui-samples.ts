@@ -88,11 +88,11 @@ export const BASIC_GALLERY: JsonObject[] = [
   },
 ];
 
-export const DASHBOARD_BLOCK: JsonObject[] = [
+export const DATA_BLOCK: JsonObject[] = [
   {
     version: v,
     createSurface: {
-      surfaceId: 'dashboard_block',
+      surfaceId: 'data_block',
       catalogId: KIT_CATALOG_ID,
       dataModel: {
         filter: { owner: ['all'], query: '' },
@@ -137,83 +137,83 @@ export const DASHBOARD_BLOCK: JsonObject[] = [
   },
 ];
 
-export const KANBAN: JsonObject[] = [
+export const SORTABLE_LISTS: JsonObject[] = [
   {
     version: v,
     createSurface: {
-      surfaceId: 'kanban',
+      surfaceId: 'sortable_lists',
       catalogId: KIT_CATALOG_ID,
       dataModel: {
         lastMove: null,
         confirm: { open: false },
-        columns: [
-          { id: 'todo', title: 'To do', cards: [{ id: 'c1', title: 'Write the spec', owner: 'Ada', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000001?s=48' }, { id: 'c2', title: 'Design the board', owner: 'Grace', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000002?s=48' }] },
-          { id: 'doing', title: 'Doing', cards: [{ id: 'c3', title: 'Build sortable lists', owner: 'Linus', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000003?s=48' }] },
-          { id: 'done', title: 'Done', cards: [{ id: 'c4', title: 'Kickoff', owner: 'Ada', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000001?s=48' }] },
+        lists: [
+          { id: 'a', title: 'List A', items: [{ id: 'i1', title: 'First item', owner: 'Ada', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000001?s=48' }, { id: 'i2', title: 'Second item', owner: 'Grace', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000002?s=48' }] },
+          { id: 'b', title: 'List B', items: [{ id: 'i3', title: 'Third item', owner: 'Linus', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000003?s=48' }] },
+          { id: 'c', title: 'List C', items: [{ id: 'i4', title: 'Fourth item', owner: 'Ada', avatar: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000001?s=48' }] },
         ],
       },
       components: [
-        { id: 'root', component: 'Column', gap: 12, children: ['board', 'confirm'] },
-        { id: 'board', component: 'Row', gap: 12, align: 'start', children: { componentId: 'column', path: '/columns' } },
-        { id: 'column', component: 'Column', width: 200, gap: 8, padding: 8, radius: 'md', surface: 'sunken', children: ['column_head', 'cards'] },
-        { id: 'column_head', component: 'Row', align: 'center', children: ['column_title', 'column_menu'] },
-        { id: 'column_title', component: 'Text', weight: 1, fontWeight: 'semibold', text: { '@path': 'title' } },
+        { id: 'root', component: 'Column', gap: 12, children: ['lists', 'confirm'] },
+        { id: 'lists', component: 'Row', gap: 12, align: 'start', children: { componentId: 'list', path: '/lists' } },
+        { id: 'list', component: 'Column', width: 200, gap: 8, padding: 8, radius: 'md', surface: 'sunken', children: ['list_head', 'items'] },
+        { id: 'list_head', component: 'Row', align: 'center', children: ['list_title', 'list_menu'] },
+        { id: 'list_title', component: 'Text', weight: 1, fontWeight: 'semibold', text: { '@path': 'title' } },
         {
-          id: 'column_menu', component: 'DropdownMenu', align: 'end', trigger: 'column_more', accessibility: { label: 'Column menu' },
+          id: 'list_menu', component: 'DropdownMenu', align: 'end', trigger: 'list_more', accessibility: { label: 'List menu' },
           items: [
-            { label: 'Rename', icon: 'edit', action: { event: { name: 'renameColumn', context: { id: { '@path': 'id' } } } } },
-            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } } },
+            { label: 'Rename', icon: 'edit', action: { event: { name: 'renameList', context: { id: { '@path': 'id' } } } } },
+            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deleteList', context: { id: { '@path': 'id' } } } } },
           ],
         },
-        { id: 'column_more', component: 'Icon', name: 'moreHoriz', size: 20 },
-        { id: 'confirm', component: 'Modal', title: 'Delete a column', trigger: 'confirm_open', content: 'confirm_body', open: { '@path': '/confirm/open' } },
+        { id: 'list_more', component: 'Icon', name: 'moreHoriz', size: 20 },
+        { id: 'confirm', component: 'Modal', title: 'Delete a list', trigger: 'confirm_open', content: 'confirm_body', open: { '@path': '/confirm/open' } },
         { id: 'confirm_open', component: 'Button', variant: 'borderless', child: 'confirm_open_label', action: { event: { name: 'noop' } } },
-        { id: 'confirm_open_label', component: 'Text', text: 'Delete a column' },
+        { id: 'confirm_open_label', component: 'Text', text: 'Delete a list' },
         { id: 'confirm_body', component: 'Column', gap: 12, children: ['confirm_text', 'confirm_actions'] },
-        { id: 'confirm_text', component: 'Text', text: 'The cards move to To do.' },
+        { id: 'confirm_text', component: 'Text', text: 'Its items move to List A.' },
         { id: 'confirm_actions', component: 'Row', justify: 'end', align: 'center', gap: 12, children: ['confirm_cancel', 'confirm_delete'] },
         { id: 'confirm_cancel', component: 'Button', variant: 'borderless', child: 'confirm_cancel_label', action: { event: { name: 'cancelDelete' } } },
         { id: 'confirm_cancel_label', component: 'Text', text: 'Cancel' },
         { id: 'confirm_delete', component: 'Button', variant: 'solid', color: 'danger', child: 'confirm_delete_label', action: { event: { name: 'confirmDelete' } } },
         { id: 'confirm_delete_label', component: 'Text', text: 'Delete' },
         {
-          id: 'cards', component: 'List', gap: 8, sortable: true, group: 'board', listId: { '@path': 'id' },
-          children: { componentId: 'card', path: 'cards' }, move: { '@path': '/lastMove' },
+          id: 'items', component: 'List', gap: 8, sortable: true, group: 'lists', listId: { '@path': 'id' },
+          children: { componentId: 'item', path: 'items' }, move: { '@path': '/lastMove' },
           accessibility: { label: { '@path': 'title' } },
-          action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
+          action: { event: { name: 'moveItem', context: { move: { '@path': '/lastMove' } } } },
         },
-        { id: 'card', component: 'Modal', title: { '@path': 'title' }, trigger: 'card_face', content: 'card_detail' },
-        { id: 'card_face', component: 'Card', size: 'sm', child: 'card_row' },
-        { id: 'card_row', component: 'Row', align: 'center', gap: 8, children: ['card_title', 'card_owner'] },
-        { id: 'card_title', component: 'Text', weight: 1, text: { '@path': 'title' } },
-        { id: 'card_owner', component: 'Image', url: { '@path': 'avatar' }, size: 24, radius: 'full', accessibility: { label: { '@path': 'owner' } } },
-        { id: 'card_detail', component: 'Text', text: { '@call': 'formatString', args: { value: 'Owner: ${owner}' } } },
+        { id: 'item', component: 'Modal', title: { '@path': 'title' }, trigger: 'item_face', content: 'item_detail' },
+        { id: 'item_face', component: 'Card', size: 'sm', child: 'item_row' },
+        { id: 'item_row', component: 'Row', align: 'center', gap: 8, children: ['item_title', 'item_owner'] },
+        { id: 'item_title', component: 'Text', weight: 1, text: { '@path': 'title' } },
+        { id: 'item_owner', component: 'Image', url: { '@path': 'avatar' }, size: 24, radius: 'full', accessibility: { label: { '@path': 'owner' } } },
+        { id: 'item_detail', component: 'Text', text: { '@call': 'formatString', args: { value: 'Owner: ${owner}' } } },
       ],
     },
   },
 ];
 
-export const THEME_PICKER: JsonObject[] = [
+export const CLICKABLE_CARDS: JsonObject[] = [
   {
     version: v,
     createSurface: {
-      surfaceId: 'theme_picker',
+      surfaceId: 'clickable_cards',
       catalogId: KIT_CATALOG_ID,
       dataModel: {
-        themes: [
-          { id: 'light', name: 'Light', swatch: '#ffffff' },
-          { id: 'dark', name: 'Dark', swatch: '#111111' },
-          { id: 'sand', name: 'Sand', swatch: '#e8dcc4' },
+        options: [
+          { id: 'a', name: 'Option A', swatch: '#ffffff' },
+          { id: 'b', name: 'Option B', swatch: '#111111' },
+          { id: 'c', name: 'Option C', swatch: '#e8dcc4' },
         ],
       },
       components: [
         { id: 'root', component: 'Column', gap: 16, children: ['header', 'grid', 'nav', 'tools'] },
         { id: 'header', component: 'Row', gap: 8, align: 'center', children: ['header_icon', 'title', 'count'] },
-        { id: 'header_icon', component: 'Icon', name: 'brush', size: 22 },
-        { id: 'title', component: 'Title', level: 3, text: 'Theme' },
+        { id: 'header_icon', component: 'Icon', name: 'sparkle', size: 22 },
+        { id: 'title', component: 'Title', level: 3, text: 'Options' },
         { id: 'count', component: 'Column', background: 'text', radius: 9, padding: { x: 8, y: 2 }, children: ['count_text'] },
         { id: 'count_text', component: 'Text', size: '3xs', fontWeight: 'semibold', color: 'surface', text: '3' },
-        { id: 'tools', component: 'Row', gap: 12, align: 'center', children: ['color_menu', 'member'] },
+        { id: 'tools', component: 'Row', gap: 12, align: 'center', children: ['color_menu', 'details'] },
         {
           id: 'color_menu', component: 'DropdownMenu', trigger: 'color_button',
           items: [
@@ -223,21 +223,21 @@ export const THEME_PICKER: JsonObject[] = [
           ],
         },
         { id: 'color_button', component: 'Button', variant: 'outline', color: 'secondary', iconEnd: 'chevronDownSmall', child: 'color_label', action: { event: { name: 'noop' } } },
-        { id: 'color_label', component: 'Text', text: 'Role colour' },
-        { id: 'member', component: 'Modal', side: 'end', title: 'Edit member', trigger: 'member_button', content: 'member_body' },
-        { id: 'member_button', component: 'Button', variant: 'borderless', iconStart: 'people', child: 'member_label', action: { event: { name: 'noop' } } },
-        { id: 'member_label', component: 'Text', text: 'Edit member' },
-        { id: 'member_body', component: 'Text', text: 'A side sheet at the end edge.' },
-        { id: 'grid', component: 'Row', gap: 12, wrap: true, children: { componentId: 'theme', path: '/themes' } },
+        { id: 'color_label', component: 'Text', text: 'Colour' },
+        { id: 'details', component: 'Modal', side: 'end', title: 'Details', trigger: 'details_button', content: 'details_body' },
+        { id: 'details_button', component: 'Button', variant: 'borderless', iconStart: 'sidebar', child: 'details_label', action: { event: { name: 'noop' } } },
+        { id: 'details_label', component: 'Text', text: 'Details' },
+        { id: 'details_body', component: 'Text', text: 'A side sheet at the end edge.' },
+        { id: 'grid', component: 'Row', gap: 12, wrap: true, children: { componentId: 'option', path: '/options' } },
         {
-          id: 'theme', component: 'Column', width: 160, gap: 8, padding: 8, radius: 14, feedback: 'highlight', border: { size: 1, color: 'border' },
-          accessibility: { label: { '@path': 'name' } }, children: ['theme_swatch', 'theme_name'],
-          action: { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } },
+          id: 'option', component: 'Column', width: 160, gap: 8, padding: 8, radius: 14, feedback: 'highlight', border: { size: 1, color: 'border' },
+          accessibility: { label: { '@path': 'name' } }, children: ['option_swatch', 'option_name'],
+          action: { event: { name: 'pickOption', context: { id: { '@path': 'id' } } } },
         },
-        { id: 'theme_swatch', component: 'Column', height: 96, radius: 'sm', background: { '@path': 'swatch' }, border: { size: 1, color: 'border' }, children: [] },
-        { id: 'theme_name', component: 'Text', fontWeight: 'semibold', text: { '@path': 'name' } },
-        { id: 'nav', component: 'Row', gap: 12, wrap: true, children: { componentId: 'nav_item', path: '/themes' } },
-        { id: 'nav_item', component: 'Button', variant: 'borderless', child: 'nav_box', action: { event: { name: 'openTheme', context: { id: { '@path': 'id' } } } } },
+        { id: 'option_swatch', component: 'Column', height: 96, radius: 'sm', background: { '@path': 'swatch' }, border: { size: 1, color: 'border' }, children: [] },
+        { id: 'option_name', component: 'Text', fontWeight: 'semibold', text: { '@path': 'name' } },
+        { id: 'nav', component: 'Row', gap: 12, wrap: true, children: { componentId: 'nav_item', path: '/options' } },
+        { id: 'nav_item', component: 'Button', variant: 'borderless', child: 'nav_box', action: { event: { name: 'openOption', context: { id: { '@path': 'id' } } } } },
         { id: 'nav_box', component: 'Column', width: 120, height: 120, padding: 8, radius: 'md', surface: 'sunken', children: ['nav_name'] },
         { id: 'nav_name', component: 'Text', text: { '@path': 'name' } },
       ],
@@ -245,40 +245,40 @@ export const THEME_PICKER: JsonObject[] = [
   },
 ];
 
-export const PAGES: JsonObject[] = [
+export const HANDLE_AND_MENU: JsonObject[] = [
   {
     version: v,
     createSurface: {
-      surfaceId: 'pages',
+      surfaceId: 'handle_and_menu',
       catalogId: KIT_CATALOG_ID,
       dataModel: {
-        pages: [
-          { id: 'home', name: 'Home', shown: true },
-          { id: 'docs', name: 'Docs', shown: false },
-          { id: 'blog', name: 'Blog', shown: true },
+        rows: [
+          { id: 'one', name: 'First row', shown: true },
+          { id: 'two', name: 'Second row', shown: false },
+          { id: 'three', name: 'Third row', shown: true },
         ],
       },
       components: [
-        { id: 'root', component: 'Column', gap: 12, width: 360, children: ['panel_title', 'pages_list'] },
-        { id: 'panel_title', component: 'Text', size: '3xs', fontWeight: 'semibold', color: 'secondary', letterSpacing: 1, textTransform: 'uppercase', text: 'Pages' },
+        { id: 'root', component: 'Column', gap: 12, width: 360, children: ['panel_title', 'rows_list'] },
+        { id: 'panel_title', component: 'Text', size: '3xs', fontWeight: 'semibold', color: 'secondary', letterSpacing: 1, textTransform: 'uppercase', text: 'Rows' },
         {
-          id: 'pages_list', component: 'List', gap: 4, sortable: true, listId: 'pages', handle: 'page_grip',
-          children: { componentId: 'page_menu', path: '/pages' },
-          action: { event: { name: 'movePage', context: { order: { '@path': '/pages' } } } },
+          id: 'rows_list', component: 'List', gap: 4, sortable: true, listId: 'rows', handle: 'row_grip',
+          children: { componentId: 'row_menu', path: '/rows' },
+          action: { event: { name: 'moveRow', context: { order: { '@path': '/rows' } } } },
         },
         {
-          id: 'page_menu', component: 'DropdownMenu', openOn: 'contextMenu', trigger: 'page_row',
+          id: 'row_menu', component: 'DropdownMenu', openOn: 'contextMenu', trigger: 'row',
           items: [
-            { label: 'Rename', icon: 'pencil', action: { event: { name: 'renamePage', context: { id: { '@path': 'id' } } } } },
-            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deletePage', context: { id: { '@path': 'id' } } } } },
+            { label: 'Rename', icon: 'pencil', action: { event: { name: 'renameRow', context: { id: { '@path': 'id' } } } } },
+            { label: 'Delete', icon: 'delete', danger: true, action: { event: { name: 'deleteRow', context: { id: { '@path': 'id' } } } } },
           ],
         },
-        { id: 'page_row', component: 'Row', gap: 8, align: 'center', padding: { x: 8, y: 6 }, radius: 8, surface: 'sunken', children: ['page_grip', 'page_name', 'page_shown'] },
-        { id: 'page_grip', component: 'Icon', name: 'dotGrid2x3', size: 18, accessibility: { label: 'Drag to reorder' } },
-        { id: 'page_name', component: 'Text', weight: 1, text: { '@path': 'name' } },
+        { id: 'row', component: 'Row', gap: 8, align: 'center', padding: { x: 8, y: 6 }, radius: 8, surface: 'sunken', children: ['row_grip', 'row_name', 'row_shown'] },
+        { id: 'row_grip', component: 'Icon', name: 'dotGrid2x3', size: 18, accessibility: { label: 'Drag to reorder' } },
+        { id: 'row_name', component: 'Text', weight: 1, text: { '@path': 'name' } },
         {
-          id: 'page_shown', component: 'CheckBox', displayStyle: 'switch', label: 'In sidebar', value: { '@path': 'shown' },
-          action: { event: { name: 'toggleSidebar', context: { id: { '@path': 'id' }, shown: { '@path': 'shown' } } } },
+          id: 'row_shown', component: 'CheckBox', displayStyle: 'switch', label: 'Visible', value: { '@path': 'shown' },
+          action: { event: { name: 'toggleRow', context: { id: { '@path': 'id' }, shown: { '@path': 'shown' } } } },
         },
       ],
     },
