@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { isChildTemplate, isDataBinding, type JsonValue } from '../a2ui/protocol';
 import { movedItems } from '../sortable';
 import { DENSITY_SCALE } from '../tokens';
-import { asEnum, asNumber, asOptionalString, commonProps, spacingOf, type RenderContext } from './a2ui-context';
+import { SortHandleContext, asEnum, asNumber, asOptionalString, commonProps, spacingOf, type RenderContext } from './a2ui-context';
 import { List, type ListProps } from './list';
 import { SortableItem, SortableList, type SortMove, type SortSource } from './sortable';
 
@@ -56,6 +56,7 @@ export function sortableListRenderer(ctx: RenderContext): ReactNode {
   const children = ctx.children(template);
   const movePath = isDataBinding(ctx.instance.move) ? ctx.pointer(ctx.instance.move['@path']) : null;
   const box = listBoxProps(ctx);
+  const handle = asOptionalString(ctx.instance.handle);
   const onMove = (move: SortMove, source: SortSource): void => {
     applyMove(ctx, here, itemKey, move, source);
     if (movePath !== null) ctx.write(movePath, { ...move });
@@ -75,7 +76,11 @@ export function sortableListRenderer(ctx: RenderContext): ReactNode {
         disabled={ctx.disabled}
         onMove={onMove}
       >
-        {children.map((child, index) => <SortableItem key={ids[index] ?? index} itemId={ids[index] ?? `#${index}`}>{child}</SortableItem>)}
+        {children.map((child, index) => (
+          <SortableItem key={ids[index] ?? index} itemId={ids[index] ?? `#${index}`} handle={handle !== undefined}>
+            <SortHandleContext.Provider value={handle ?? null}>{child}</SortHandleContext.Provider>
+          </SortableItem>
+        ))}
       </SortableList>
     </List>
   );

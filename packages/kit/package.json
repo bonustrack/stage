@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.27",
+  "version": "0.1.0-beta.28",
   "description": "Stage design system for React Native and web: A2UI v1.0 components and renderer, the Stage Kit A2UI catalog, tokens, Central Icons (licensed, installed from npm) with HeroIcon name aliases, and theme contracts.",
   "license": "MIT",
   "repository": {
@@ -28,6 +28,7 @@
     "./a2ui/functions": "./src/a2ui/functions.ts",
     "./a2ui/json-schema": "./src/a2ui/json-schema.ts",
     "./a2ui/kit-catalog": "./src/a2ui/kit-catalog.ts",
+    "./a2ui/kit-catalog-extend": "./src/a2ui/kit-catalog.extend.ts",
     "./a2ui/pointer": "./src/a2ui/pointer.ts",
     "./a2ui/protocol": "./src/a2ui/protocol.ts",
     "./a2ui/schemas": "./src/a2ui/schemas.ts",

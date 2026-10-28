@@ -62,17 +62,23 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
 
 const textFieldRenderer = (ctx: RenderContext): ReactNode => <A2uiTextField ctx={ctx}/>;
 
-function checkBoxRenderer(ctx: RenderContext): ReactNode {
+function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const binding = ctx.binding<boolean>('value');
+  const act = useA2uiAction(ctx);
   return (
     <CheckBox
       {...fieldProps(ctx)}
       value={asBoolean(binding.value) ?? false}
       displayStyle={asEnum(ctx.props.displayStyle, ['checkbox', 'switch'])}
-      onChange={binding.set}
+      onChange={(next) => {
+        binding.set(next);
+        if (ctx.instance.action !== undefined) act();
+      }}
     />
   );
 }
+
+const checkBoxRenderer = (ctx: RenderContext): ReactNode => <A2uiCheckBox ctx={ctx}/>;
 
 function choicePickerRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;

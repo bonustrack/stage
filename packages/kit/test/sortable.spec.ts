@@ -76,6 +76,8 @@ describe('sortable model', () => {
     expect(nearestList([todo, short], 50, -20)?.listId).toBe('todo');
     expect(nearestList([todo, short], 110, 300)).toBeUndefined();
     expect(insertionIndex(short, 'a', 130, 300)).toBe(1);
+    expect(nearestList([todo, short], 130, 300, 48)).toBeUndefined();
+    expect(nearestList([todo, short], 130, 70, 48)?.listId).toBe('done');
   });
 
   test('the preview slot names the items around it', () => {

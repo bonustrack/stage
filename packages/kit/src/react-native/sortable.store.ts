@@ -70,6 +70,7 @@ const INDICATOR = 2;
 const NO_SIZE = { width: 0, height: 0 };
 const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
+const NEAR_LIST = 48;
 const NATIVE_DRIVER = Platform.OS !== 'web';
 
 function set(core: Core, next: SortState): void {
@@ -172,7 +173,7 @@ function sameTarget(a: SortTarget | null, b: SortTarget | null): boolean {
 function targetLayout(core: Core, drag: SortDrag): SortListLayout | undefined {
   const { x, y } = core.pointer;
   if (drag.inPlace) return core.layouts.find(l => l.listId === drag.listId);
-  return listAt(core.layouts, x, y) ?? (rectContains(core.scopeRect, x, y) ? nearestList(core.layouts, x, y) : undefined);
+  return listAt(core.layouts, x, y) ?? nearestList(core.layouts, x, y, rectContains(core.scopeRect, x, y) ? Infinity : NEAR_LIST);
 }
 
 function retarget(core: Core, drag: SortDrag): void {

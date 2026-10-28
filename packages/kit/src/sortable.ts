@@ -43,14 +43,14 @@ function gapTo(start: number, size: number, point: number): number {
   return point < start ? start - point : Math.max(0, point - start - size);
 }
 
-export function nearestList(lists: readonly SortListLayout[], x: number, y: number): SortListLayout | undefined {
+export function nearestList(lists: readonly SortListLayout[], x: number, y: number, maxGap = Infinity): SortListLayout | undefined {
   const across = lists.filter(({ direction, rect }) => (
     direction === 'vertical' ? x >= rect.x && x <= rect.x + rect.width : y >= rect.y && y <= rect.y + rect.height
   ));
   const distance = ({ direction, rect }: SortListLayout): number => (
     direction === 'vertical' ? gapTo(rect.y, rect.height, y) : gapTo(rect.x, rect.width, x)
   );
-  return across.sort((a, b) => distance(a) - distance(b))[0];
+  return across.filter(list => distance(list) <= maxGap).sort((a, b) => distance(a) - distance(b))[0];
 }
 
 export function unionRect(rects: readonly (SortRect | null)[]): SortRect | null {

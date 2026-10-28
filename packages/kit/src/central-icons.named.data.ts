@@ -208,6 +208,7 @@ import { IconPhone } from '@central-icons-react-native/round-outlined-radius-1-s
 import { IconPieChart1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPieChart1';
 import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
+import { IconPlusMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusMedium';
 import { IconPlusSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusSmall';
 import { IconPointer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPointer';
 import { IconPresentationAnalytics } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPresentationAnalytics';
@@ -449,6 +450,7 @@ import { IconPhone as IconPhoneSolid } from '@central-icons-react-native/round-f
 import { IconPieChart1 as IconPieChart1Solid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPieChart1';
 import { IconPlay as IconPlaySolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlay';
 import { IconPlusLarge as IconPlusLargeSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlusLarge';
+import { IconPlusMedium as IconPlusMediumSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlusMedium';
 import { IconPlusSmall as IconPlusSmallSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPlusSmall';
 import { IconPresentationAnalytics as IconPresentationAnalyticsSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPresentationAnalytics';
 import { IconPrinter as IconPrinterSolid } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconPrinter';
@@ -710,6 +712,7 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   pieChart1: { line: IconPieChart1, solid: IconPieChart1Solid },
   play: { line: IconPlay, solid: IconPlaySolid },
   plusLarge: { line: IconPlusLarge, solid: IconPlusLargeSolid },
+  plusMedium: { line: IconPlusMedium, solid: IconPlusMediumSolid },
   plusSmall: { line: IconPlusSmall, solid: IconPlusSmallSolid },
   pointer: { line: IconPointer },
   presentationAnalytics: { line: IconPresentationAnalytics, solid: IconPresentationAnalyticsSolid },

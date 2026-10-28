@@ -8,11 +8,12 @@ export default { title: 'Text' };
 const VARIANTS = ['body', 'caption'] as const;
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const;
 const FAMILIES = ['sans', 'head', 'mono'] as const;
+const TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'] as const;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
-Controls.args = { text: 'The quick brown fox jumps over the lazy dog', variant: 'body', size: 'md', fontWeight: 'normal', fontFamily: 'sans', textAlign: 'start', italic: false, lineThrough: false, truncate: false, markdown: false };
+Controls.args = { text: 'The quick brown fox jumps over the lazy dog', variant: 'body', size: 'md', fontWeight: 'normal', fontFamily: 'sans', letterSpacing: 0, textTransform: 'none', textAlign: 'start', italic: false, lineThrough: false, truncate: false, markdown: false };
 Controls.argTypes = {
-  text, variant: select(VARIANTS), size: select(FONT_SIZES), fontWeight: select(WEIGHTS), fontFamily: select(FAMILIES),
+  text, variant: select(VARIANTS), size: select(FONT_SIZES), fontWeight: select(WEIGHTS), fontFamily: select(FAMILIES), letterSpacing: number, textTransform: select(TRANSFORMS),
   color: select(COLOR_TOKENS), textAlign: select(ALIGNS), italic: bool, lineThrough: bool, truncate: bool, maxLines: number, markdown: bool, weight: number,
 };
 

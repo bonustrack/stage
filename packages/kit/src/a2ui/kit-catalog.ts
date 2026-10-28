@@ -7,6 +7,7 @@ import { HERO_ICON_DATA as HERO_ICON_PATHS } from '../heroicons.data';
 import { A2UI_ICON_NAMES } from '../icons.a2ui';
 import { BOX_RADIUS_SCALE, COLOR_TOKENS, FONT_SIZE } from '../tokens';
 import { A2UI_PROTOCOL_VERSION, BASIC_CATALOG_ID, entriesOf, isJsonObject, type JsonObject, type JsonValue } from './protocol';
+import { KIT_INSTRUCTIONS as INSTRUCTIONS } from './kit-catalog.instructions';
 import { BASIC_CATALOG } from './schemas';
 
 export const KIT_CATALOG_ID = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
@@ -194,6 +195,8 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     truncate: BOOLEAN,
     maxLines: MAX_LINES,
     fontFamily: token(['sans', 'head', 'mono'], 'The Kit font family: head is the heading face used by Title.'),
+    letterSpacing: dynamic('Extra space between letters in density-independent pixels, for example 1 for small uppercase titles.', { type: 'number', minimum: -2, maximum: 10 }),
+    textTransform: token(['none', 'uppercase', 'lowercase', 'capitalize'], 'Change the case of the text when it is drawn.'),
   }),
   Image: inherit('Image', { radius: RADIUS, size: SPACING, width: SPACING, height: SPACING, aspectRatio: ASPECT_RATIO, background: COLOR }),
   Icon: ICON,
@@ -207,6 +210,7 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     sortable: { ...BOOLEAN, description: 'Let the user drag the items of a templated list to reorder them, or into another sortable list of the same group.' },
     group: { type: 'string', description: 'Sortable lists with the same group exchange items.' },
     listId: { ...common('DynamicString'), description: 'Identifies this list in the move details, for example the column id.' },
+    handle: { ...common('ComponentId'), description: 'The id of a component inside the item template that starts drags (a grip icon, a header). Without it the whole item drags.' },
     indicator: { ...token(['preview', 'line'], 'How a sortable list shows where a dragged item lands: preview shows the item dimmed at its new place, line draws a line there.'), default: 'preview' },
     itemKey: { type: 'string', description: 'The item field holding its stable id. Defaults to id.' },
     move: { ...common('DataBinding'), description: 'Where the renderer writes the last move: itemId, fromListId, toListId, fromIndex, toIndex, beforeId, afterId.' },
@@ -224,7 +228,10 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
     pill: { ...BOOLEAN, description: 'Fully rounded corners.' },
     action: { ...common('Action'), description: 'Runs when the user presses Enter in a single-line field, like a Button press: a submit, never on typing.' },
   }),
-  CheckBox: inherit('CheckBox', { displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.') }),
+  CheckBox: inherit('CheckBox', {
+    displayStyle: token(['checkbox', 'switch'], 'Render as a checkbox (default) or a toggle switch.'),
+    action: { ...common('Action'), description: 'Runs each time the user toggles it, after the new value is written to the bound path, so the event context can read it.' },
+  }),
   ChoicePicker: inherit('ChoicePicker'),
   Slider: inherit('Slider'),
   DateTimeInput: inherit('DateTimeInput', { placeholder: common('DynamicString') }),
@@ -333,53 +340,6 @@ const KIT_FUNCTIONS: Record<string, JsonObject> = {
   },
 };
 
-const INSTRUCTIONS = [
-  'This catalog is the A2UI basic catalog rendered with the Stage Kit design system. Every basic catalog component is available with the same props, plus optional Kit props.',
-  '',
-  '## Layout',
-  '',
-  'Use Row and Column to organise components. Kit adds `gap`, `padding` (one number or per side), `wrap`, `surface` (surface, raised, sunken, toolbar), `background`, `radius`, `border`, and `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` in pixels or as a percentage such as "40%". Prefer `gap` on the container over spacing on the children. A proportional bar is a Row whose filled Column has a `width` bound to a percentage.',
-  '',
-  '## Data binding',
-  '',
-  'Every Kit style prop (colours, sizes, variants, widths, flags) also takes a data binding or a function call, so a status colour or a bar width can come from the data model. Values that are not a Kit token, a #rrggbb colour or a valid size are ignored.',
-  '',
-  '## Charts',
-  '',
-  'Chart takes the ChatKit Chart props: `data` (an array of objects, usually bound to the data model), `series` (bar, line or area, each with a `dataKey`), `xAxis` and the optional `yAxis`, `showYAxis`, `showLegend`, `showTooltip`, `barGap`, `barCategoryGap`, `width`, `height` and `aspectRatio`.',
-  '',
-  '## Text',
-  '',
-  'Text takes the Kit `size` tokens (3xs to 3xl, md is the body size), `fontWeight` (normal, medium, semibold, bold) and `color` tokens: text, secondary, muted, link, primary, danger, success, border, surface (the page background, for text on a text-coloured pill). Use `variant: caption` for secondary small print and Title for headings.',
-  '',
-  '## Buttons',
-  '',
-  'Button `variant` accepts the basic hints (default, primary, borderless) or a Kit fill (solid, soft, outline, ghost) combined with `color` (primary, secondary, info, discovery, success, caution, warning, danger). Use exactly one primary button per surface. A button with an event action inside a Modal closes it once the action is sent. Give icon-only buttons, icons and images an `accessibility.label`: screen readers read it and pointers show it as a tooltip.',
-  '',
-  '## Menus and dialogs',
-  '',
-  'DropdownMenu shows its `trigger` and opens a menu of `items` below it (`label`, an optional `icon` or a colour `swatch`, `selected` for a checkmark, `danger` for destructive rows such as Delete, and a standard `action`). A Modal `open` bound to a path opens or closes the dialog from the data model, so the agent can answer a menu row event (Delete) with an updateDataModel that opens a confirmation, and close it the same way after a save. A dialog that only the data model opens can use an empty Column as its trigger.',
-  '',
-  '## Icons',
-  '',
-  'Icon `name` accepts the basic catalog names and the Kit HeroIcon names such as wallet, qrcode, sparkles or chatAlt.',
-  '',
-  '## Screens',
-  '',
-  'A message can create several surfaces. The first one shows; a button whose action calls `openSurface` with another surface id shows that surface as a new screen with a back button, and `closeSurface` goes back.',
-  '',
-  '## Functions',
-  '',
-  'Every basic catalog function is available, plus `equals` ({ value, other }, both bindable), which returns a boolean, so `not` can wrap it: a Save button whose check is `not(equals(field, saved))` stays disabled until the field changes. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate, pluralize and equals with callRendererFunction.',
-  '',
-  '## Reordering',
-  '',
-  'A List whose children are a template can set `sortable: true`. The user drags an item (long press on touch, Space then the arrow keys on a keyboard) and the renderer reorders the bound array in the local data model, like an input writes its value. Lists with the same `group` exchange items (a kanban is a Row of sortable Lists in one group). After a drop the renderer writes the move to the `move` binding (`itemId`, `fromListId`, `toListId`, `fromIndex`, `toIndex`, `beforeId`, `afterId`) and then runs the List `action`, whose event context can read it with @path. Only the list that receives the item runs its action. Give each list a `listId` and each item a stable `id` (or set `itemKey`).',
-  '',
-  '## Inputs',
-  '',
-  'As in the basic catalog, inputs only write to the data model. To act on them, add a Button whose action context references the input paths (or set `sendDataModel` on the surface): for example an Apply button for filters or a Search button for a search field. A single-line TextField can also take an `action` that runs when the user presses Enter (an inline rename, a search), with the same context rules as a Button; it does not run while the field fails its checks.',
-].join('\n');
 
 export const KIT_CATALOG: JsonObject = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',

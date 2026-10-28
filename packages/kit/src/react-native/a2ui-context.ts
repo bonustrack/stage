@@ -53,6 +53,8 @@ export interface SurfaceContextValue {
 
 export const SurfaceContext = createContext<SurfaceContextValue | null>(null);
 
+export const SortHandleContext = createContext<string | null>(null);
+
 export function asString(value: unknown): string {
   if (typeof value === 'string') return value;
   return typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';

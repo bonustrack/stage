@@ -207,6 +207,7 @@ export const CENTRAL_ICON_NAMES = [
   'pieChart1',
   'play',
   'plusLarge',
+  'plusMedium',
   'plusSmall',
   'pointer',
   'presentationAnalytics',

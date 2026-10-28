@@ -244,3 +244,36 @@ export const THEME_PICKER: JsonObject[] = [
     },
   },
 ];
+
+export const PAGES: JsonObject[] = [
+  {
+    version: v,
+    createSurface: {
+      surfaceId: 'pages',
+      catalogId: KIT_CATALOG_ID,
+      dataModel: {
+        pages: [
+          { id: 'home', name: 'Home', shown: true },
+          { id: 'docs', name: 'Docs', shown: false },
+          { id: 'blog', name: 'Blog', shown: true },
+        ],
+      },
+      components: [
+        { id: 'root', component: 'Column', gap: 12, width: 360, children: ['panel_title', 'pages_list'] },
+        { id: 'panel_title', component: 'Text', size: '3xs', fontWeight: 'semibold', color: 'secondary', letterSpacing: 1, textTransform: 'uppercase', text: 'Pages' },
+        {
+          id: 'pages_list', component: 'List', gap: 4, sortable: true, listId: 'pages', handle: 'page_grip',
+          children: { componentId: 'page_row', path: '/pages' },
+          action: { event: { name: 'movePage', context: { order: { '@path': '/pages' } } } },
+        },
+        { id: 'page_row', component: 'Row', gap: 8, align: 'center', padding: { x: 8, y: 6 }, radius: 8, surface: 'sunken', children: ['page_grip', 'page_name', 'page_shown'] },
+        { id: 'page_grip', component: 'Icon', name: 'dotGrid2x3', size: 18, accessibility: { label: 'Drag to reorder' } },
+        { id: 'page_name', component: 'Text', weight: 1, text: { '@path': 'name' } },
+        {
+          id: 'page_shown', component: 'CheckBox', displayStyle: 'switch', label: 'In sidebar', value: { '@path': 'shown' },
+          action: { event: { name: 'toggleSidebar', context: { id: { '@path': 'id' }, shown: { '@path': 'shown' } } } },
+        },
+      ],
+    },
+  },
+];

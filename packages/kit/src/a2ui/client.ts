@@ -57,7 +57,7 @@ export interface A2uiClient {
   dataModel: (surfaceId: string) => JsonObject | undefined;
 }
 
-function functionTable(options: A2uiClientOptions): Runtime['functions'] {
+function functionTable(options: A2uiClientOptions, catalogs: readonly JsonObject[]): Runtime['functions'] {
   const basic = createBasicFunctions(options.locale);
   const { navigate } = options;
   const kit: Record<string, FunctionImpl> = {
@@ -72,6 +72,11 @@ function functionTable(options: A2uiClientOptions): Runtime['functions'] {
     equals: (args) => JSON.stringify(args.value ?? null) === JSON.stringify(args.other ?? null),
   };
   const table: Record<string, Record<string, FunctionImpl>> = { [BASIC_CATALOG_ID]: basic, [KIT_CATALOG_ID]: kit };
+  for (const catalog of catalogs) {
+    const id = catalog.catalogId;
+    if (typeof id !== 'string' || table[id] !== undefined || !isJsonObject(catalog.functions)) continue;
+    table[id] = Object.fromEntries(Object.keys(catalog.functions).flatMap((name) => (kit[name] === undefined ? [] : [[name, kit[name]]])));
+  }
   for (const [catalogId, fns] of Object.entries(options.functions ?? {})) table[catalogId] = { ...(table[catalogId] ?? {}), ...fns };
   return (catalogId) => table[catalogId];
 }
@@ -110,7 +115,7 @@ export function createA2uiClient(options: A2uiClientOptions = {}): A2uiClient {
   const registry = createCatalogRegistry(catalogs);
   const surfaces = new Map<string, SurfaceState>();
   const events = createSurfaceEvents();
-  const functions = functionTable(options);
+  const functions = functionTable(options, catalogs);
   const send = (message: RendererMessage, surfaceId?: string): void => {
     const surface = surfaceId === undefined ? undefined : surfaces.get(surfaceId);
     const metadata: TransportMetadata | undefined = surface?.sendDataModel === true ? { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: { [surface.id]: surface.data } } } : undefined;

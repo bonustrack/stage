@@ -10,11 +10,11 @@ import type { ComponentInfo } from '../a2ui/catalog';
 import { childRefKinds, fitsRenderLimits } from '../a2ui/structure';
 import type { A2uiAccessibility } from './a2ui-props';
 import {
-  SurfaceContext, asEnum, asNumber, asOptionalString, asString, hasMarkdown,
+  SortHandleContext, SurfaceContext, asEnum, asNumber, asOptionalString, asString, hasMarkdown,
   type A2uiRenderer, type A2uiRenderers, type Binding, type RenderContext, type SurfaceContextValue,
 } from './a2ui-context';
 import { KIT_RENDERERS } from './a2ui-renderers';
-import { SortableScope } from './sortable';
+import { SortableHandle, SortableScope } from './sortable';
 import { useContentColor } from './content-color';
 import { useKitPalette, useKitScheme } from './theme-context';
 
@@ -130,6 +130,7 @@ function A2uiNode({ id, scope }: { id: string; scope: Scope }): React.ReactEleme
 }
 
 function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextValue; instance: ComponentInstance; scope: Scope; render: A2uiRenderer }): React.ReactElement {
+  const handleId = useContext(SortHandleContext);
   const dark = useKitScheme() === 'dark';
   const palette = useKitPalette();
   const contentColor = useContentColor();
@@ -160,7 +161,8 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     read: (pointer) => getAt(ctx.client.dataModel(ctx.surfaceId), pointer),
     write: (pointer, value) => { ctx.client.write(ctx.surfaceId, pointer, value); },
   };
-  return <>{render(renderContext)}</>;
+  const node = render(renderContext);
+  return handleId === instance.id ? <SortableHandle>{node}</SortableHandle> : <>{node}</>;
 }
 
 const PLAIN_TEXT_PROPS = new Set(['id', 'component', 'text', 'catalogId']);

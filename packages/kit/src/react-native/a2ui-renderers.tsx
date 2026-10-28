@@ -111,6 +111,8 @@ function textRenderer(ctx: RenderContext): ReactNode {
       truncate={asBoolean(p.truncate)}
       maxLines={asNumber(p.maxLines)}
       fontFamily={asEnum(p.fontFamily, ['sans', 'head', 'mono'])}
+      letterSpacing={asNumber(p.letterSpacing)}
+      textTransform={asEnum(p.textTransform, ['none', 'uppercase', 'lowercase', 'capitalize'])}
     />
   );
 }

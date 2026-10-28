@@ -7,7 +7,7 @@ import { A2uiSurface } from '../src/react-native/a2ui-surface';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
 import contactForm from '../test/a2ui/cases/contact_form_example.jsonl?raw';
-import { BASIC_GALLERY, DASHBOARD_BLOCK, KANBAN, PAYMENT_REQUEST, THEME_PICKER } from './a2ui-samples';
+import { BASIC_GALLERY, DASHBOARD_BLOCK, KANBAN, PAGES, PAYMENT_REQUEST, THEME_PICKER } from './a2ui-samples';
 
 export default { title: 'A2UI Surface' };
 
@@ -47,6 +47,8 @@ export const KitPaymentRequest: Story = () => <Playground messages={PAYMENT_REQU
 export const KitKanban: Story = () => <Playground messages={KANBAN} surfaceId="kanban" />;
 
 export const KitThemePicker: Story = () => <Playground messages={THEME_PICKER} surfaceId="theme_picker" />;
+
+export const KitPages: Story = () => <Playground messages={PAGES} surfaceId="pages" />;
 
 export const KitDashboardBlock: Story = () => <Playground messages={DASHBOARD_BLOCK} surfaceId="dashboard_block" />;
 

@@ -203,6 +203,15 @@ describe('Kit catalog', () => {
     expect(registry.validateComponent(KIT_CATALOG_ID, button, [])).toEqual([]);
   });
 
+  test('Kit CheckBox takes an action, sortable lists a handle, and Text letter spacing and case', () => {
+    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+    expect(valid({ id: 'c', component: 'CheckBox', label: 'In sidebar', value: { '@path': 'shown' }, displayStyle: 'switch', action: { event: { name: 'toggle', context: { shown: { '@path': 'shown' } } } } })).toEqual([]);
+    expect(valid({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' })).toEqual([]);
+    expect(valid({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' })).toEqual([]);
+    expect(valid({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' }).length).toBeGreaterThan(0);
+  });
+
   test('Kit Row and Column take a standard action', () => {
     const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
     const action = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };

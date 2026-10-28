@@ -23,6 +23,7 @@ export const MODAL = {
   backdrop: 'rgba(0,0,0,0.45)',
   maxHeight: '88%',
   sideWidth: 640,
+  sidePadding: 24,
   sideMinWindow: 760,
 } as const;
 
@@ -54,15 +55,15 @@ export interface ModalProps extends A2uiCommonProps {
   gestureRoot?: boolean;
 }
 
-function ModalHeader({ title, onClose, pal, dark, dismissable }: {
-  title: string | undefined; onClose: () => void; pal: KitPalette; dark: boolean; dismissable: boolean;
+function ModalHeader({ title, onClose, pal, dark, dismissable, inset = MODAL.padding }: {
+  title: string | undefined; onClose: () => void; pal: KitPalette; dark: boolean; dismissable: boolean; inset?: number;
 }): React.ReactElement {
   const [hovered, setHovered] = useState(false);
   const [tooltipWidth, setTooltipWidth] = useState(0);
   const insets = useSafeAreaInsets();
-  const tooltipHalfWidth = MODAL.padding + SIZES.md.height / 2 - 8;
+  const tooltipHalfWidth = inset + SIZES.md.height / 2 - 8;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: MODAL.padding + insets.left, marginRight: MODAL.padding + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: inset + insets.left, marginRight: inset + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
       <View style={{ flex: 1, minWidth: 0, minHeight: SIZES.md.height, justifyContent: 'center' }}>
         {title === undefined ? null : <Text accessibilityRole="header" text={title} size="2xl" fontWeight="semibold" color={pal.link} />}
       </View>
@@ -99,17 +100,18 @@ interface PanelLayout {
   maxHeight: string | undefined;
   top: number;
   bottom: number;
+  inset: number;
   safeAreaBottom: boolean;
 }
 
 function panelLayout(side: DialogSide, topInset: number): PanelLayout {
   if (side === 'center') {
-    return { borderSides: 'all', width: '100%', maxWidth: MODAL.maxWidth, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.padding, safeAreaBottom: false };
+    return { borderSides: 'all', width: '100%', maxWidth: MODAL.maxWidth, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.padding, inset: MODAL.padding, safeAreaBottom: false };
   }
   if (side === 'end') {
-    return { borderSides: 'start', width: '100%', maxWidth: MODAL.sideWidth, maxHeight: undefined, top: MODAL.topPadding + topInset, bottom: MODAL.sheetBottomPadding, safeAreaBottom: true };
+    return { borderSides: 'start', width: '100%', maxWidth: MODAL.sideWidth, maxHeight: undefined, top: MODAL.sidePadding + topInset, bottom: MODAL.sidePadding, inset: MODAL.sidePadding, safeAreaBottom: true };
   }
-  return { borderSides: 'top', width: undefined, maxWidth: undefined, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.sheetBottomPadding, safeAreaBottom: true };
+  return { borderSides: 'top', width: undefined, maxWidth: undefined, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.sheetBottomPadding, inset: MODAL.padding, safeAreaBottom: true };
 }
 
 function useModalSide(side: DialogSide): DialogSide {
@@ -129,7 +131,7 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       onClose={close}
       side={side}
       dismissable={dismissable}
-      header={<ModalHeader title={title} onClose={close} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} />}
+      header={<ModalHeader title={title} onClose={close} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} inset={layout.inset} />}
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"
@@ -146,7 +148,7 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       safeAreaBottom={layout.safeAreaBottom}
       scroll
       keyboardPersistTaps
-      scrollPadding={{ x: MODAL.padding, top: 0 }}
+      scrollPadding={{ x: layout.inset, top: 0 }}
     >
       {children}
     </Dialog>

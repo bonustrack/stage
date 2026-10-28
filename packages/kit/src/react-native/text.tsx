@@ -28,11 +28,15 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'>, A2uiComm
   truncate?: boolean;
   maxLines?: number;
   fontFamily?: TextFontFamily;
+  letterSpacing?: number;
+  textTransform?: TextTransform;
   markdown?: boolean;
   style?: TextStyle | TextStyle[];
 }
 
-type StyleProps = Pick<TextProps, 'variant' | 'size' | 'fontWeight' | 'textAlign' | 'italic' | 'lineThrough' | 'fontFamily' | 'weight'>;
+export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+
+type StyleProps = Pick<TextProps, 'variant' | 'size' | 'fontWeight' | 'textAlign' | 'italic' | 'lineThrough' | 'fontFamily' | 'letterSpacing' | 'textTransform' | 'weight'>;
 
 function baseStyle(p: StyleProps, color: string): TextStyle {
   const base: TextStyle = {
@@ -43,6 +47,8 @@ function baseStyle(p: StyleProps, color: string): TextStyle {
   if (p.textAlign) base.textAlign = TEXT_ALIGN_MAP[p.textAlign];
   if (p.italic) base.fontStyle = 'italic';
   if (p.lineThrough) base.textDecorationLine = 'line-through';
+  if (p.letterSpacing !== undefined) base.letterSpacing = p.letterSpacing;
+  if (p.textTransform !== undefined) base.textTransform = p.textTransform;
   return { ...base, ...weightStyle(p.weight) };
 }
 
@@ -67,10 +73,10 @@ function MarkdownText({ value, color, base, style }: { value: string; color: str
 export function Text(props: TextProps): React.ReactElement {
   const {
     text, variant, size, fontWeight, color, textAlign, italic, lineThrough, truncate = false, maxLines,
-    fontFamily, markdown = false, weight, accessibility, style, children, ...rest
+    fontFamily, letterSpacing, textTransform, markdown = false, weight, accessibility, style, children, ...rest
   } = props;
   const resolved = useTextColor(color, variant);
-  const base = baseStyle({ variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, weight }, resolved);
+  const base = baseStyle({ variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, letterSpacing, textTransform, weight }, resolved);
   if (markdown && text !== undefined) return <MarkdownText value={text} color={resolved} base={base} style={style} />;
   return (
     <RNText style={style ? [base, style] : base} numberOfLines={truncate ? 1 : maxLines} {...accessibilityProps(accessibility)} {...rest}>
