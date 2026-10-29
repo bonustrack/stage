@@ -62,8 +62,7 @@
         "typescript/prefer-literal-enum-member": "error",
         "typescript/prefer-namespace-keyword": "error",
         "typescript/triple-slash-reference": "error",
-        "typescript/unified-signatures": "error",
-        "core/quotes": ["error", "single", { "avoidEscape": true }]
+        "typescript/unified-signatures": "error"
       }
     },
     {
@@ -433,13 +432,10 @@
       }
     },
     { "files": ["packages/kit/src/control.styles.ts", "packages/kit/src/glyph.ts"], "rules": { "no-restricted-imports": "off" } },
-    {
-      "files": ["**/*.{js,jsx,cjs,mjs}"],
-      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error", "core/quotes": ["error", "single", { "avoidEscape": true }] }
-    },
+    { "files": ["**/*.{js,jsx,cjs,mjs}"], "rules": { "comments/no-comments": "error", "text/no-em-dash": "error" } },
     {
       "files": ["**/test/**", "**/*.{test,spec}.{ts,tsx}", "**/*.test.*"],
-      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error", "core/quotes": ["error", "single", { "avoidEscape": true }] }
+      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error" }
     }
   ]
 }
