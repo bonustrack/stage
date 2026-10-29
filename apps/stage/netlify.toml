@@ -19,7 +19,7 @@
 # documents committing it as safe). Netlify's secrets scanner flags it as a
 # likely secret and fails the build, so exempt exactly those files.
 [build.environment]
-  BUN_VERSION = "1.4.0"
+  BUN_VERSION = "1.4.4"
   NODE_VERSION = "22"
   # Expo tree shaking for the web export. The @expo/metro-config patch keeps the
   # two XMTP web workers in it; the desktop export-ui.mjs sets the same flags.

@@ -112,7 +112,7 @@
     "expo-font": "*"
   },
   "scripts": {
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "bun check",
     "test": "bun test test/",
     "storybook": "vite",
     "storybook:build": "vite build"

@@ -183,17 +183,23 @@ function spawnCaptured(bin, args) {
   });
 }
 
+function typecheckCommand(argv) {
+  const pretty = process.stdout.isTTY ? ['--pretty'] : [];
+  const flags = argv.filter((arg) => arg !== '--tsc');
+  if (argv.includes('--tsc')) return { name: 'tsc', run: (project) => [localBin('tsc'), ['--noEmit', '-p', project, ...pretty, ...flags]] };
+  return { name: 'bun check', run: (project) => ['bun', ['check', '--no-script', '-p', project, ...pretty, ...flags]] };
+}
+
 async function cmdTypecheck(stageConfig, argv) {
-  const compiler = !argv.includes('--tsc') && findLocalBin('tsgo') ? 'tsgo' : 'tsc';
-  const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv.filter((arg) => arg !== '--tsc')];
+  const command = typecheckCommand(argv);
   const queue = Object.entries(stageConfig.workspaces)
     .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json` }))
     .filter(({ project }) => existsSync(resolve(cwd, project)));
   const failures = [];
   const lane = async () => {
     for (let job = queue.shift(); job; job = queue.shift()) {
-      const { status, output } = await spawnCaptured(localBin(compiler), ['--noEmit', '-p', job.project, ...flags]);
-      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${compiler})\n${output}`, done));
+      const { status, output } = await spawnCaptured(...command.run(job.project));
+      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${command.name})\n${output}`, done));
       if (status !== 0) failures.push(job.path);
     }
   };

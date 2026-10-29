@@ -4,7 +4,7 @@ Stage's Chrome extension bundles the same production Expo web app as the website
 
 ## Build and load
 
-Use Bun 1.4.0 and Node 22 or later, from the repository root:
+Use Bun 1.4.4 and Node 22 or later, from the repository root:
 
 ```sh
 bun install --frozen-lockfile

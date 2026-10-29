@@ -6,7 +6,7 @@
   "build": {
     "base": {
       "node": "22.14.0",
-      "bun": "1.4.0",
+      "bun": "1.4.4",
       "env": {
         "EXPO_PUBLIC_ZERODEV_PROJECT_ID": "c107f734-f7bb-48c1-a5d2-ceb3f70a42f6"
       }

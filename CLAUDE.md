@@ -2,7 +2,7 @@
 
 Stage is a private, encrypted XMTP messenger with multi-account support, group channels, free onchain names and avatars (`*.stage.base.eth` on Base, read like Basenames), and a ZeroDev smart-account wallet on Base (assets, balances, transfers, recovery phrase backup). The product bet is a privacy super app where **agents are contacts**.
 
-It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), a Cloudflare Worker (`apps/proxy`) and the XMTP push server (`apps/push`). Tooling: **Bun 1.4.0** (exact, the only package manager — no npm/npx, no package-lock.json) + Turbo, **Node >=22**.
+It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), a Cloudflare Worker (`apps/proxy`) and the XMTP push server (`apps/push`). Tooling: **Bun 1.4.4** (exact, the only package manager — no npm/npx, no package-lock.json) + Turbo, **Node >=22**.
 
 ## Repo layout
 
@@ -28,8 +28,8 @@ Run quality commands **from the repo root**; lint is configured in the root `.ox
 | `bun install` | Install workspace (CI uses `--frozen-lockfile`) |
 | `bun run lint` / `lint:fix` | `stage lint` over the whole repo: `oxlint --type-aware` with the root `.oxlintrc.json`, one process (type-aware rules through `oxlint-tsgolint`; no-comments, no-em-dash, `stage/*`, `no-restricted-syntax` and `quotes` as JS plugins); git-ignored files are skipped |
 | `bun run lint:changed` | `stage lint --changed`: only files changed since the upstream branch, plus untracked ones (local use; CI stays full). `stage lint <paths>` lints only those paths |
-| `bun run typecheck` | `stage typecheck`: `tsgo --noEmit` (TypeScript 7, `@typescript/native-preview`) per workspace, two at a time |
-| `bun run typecheck:tsc` | the same with `tsc` from TypeScript 5.9, the fallback when tsgo misbehaves |
+| `bun run typecheck` | `stage typecheck`: `bun check` (Bun's built-in TypeScript 7 checker) per workspace, two at a time |
+| `bun run typecheck:tsc` | the same with `tsc` from TypeScript 5.9, the fallback when `bun check` misbehaves |
 | `bun run check` | lint + typecheck |
 | `bun run build` / `test` | turbo pipelines (test dependsOn build) |
 | `bun run test:changed` | `turbo run test --affected` against `origin/main`: only the packages with committed, uncommitted or untracked changes since `origin/main`, plus the packages that depend on them (local use; CI stays full) |
@@ -42,7 +42,7 @@ Per-app:
 | `bun --cwd apps/stage start` | Expo bundler (Metro) |
 | `bun --cwd apps/stage android` / `ios` / `web` | build + run per platform |
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — lint would scan the bundles; use a temp dir |
-| `bun --cwd apps/stage run typecheck` / `test` | `tsgo --noEmit` / `bun test test/` |
+| `bun --cwd apps/stage run typecheck` / `test` | `bun check` / `bun test test/` |
 | `bun --cwd apps/proxy dev` / `bun --cwd apps/dispatch dev` | `wrangler dev` |
 | `bun run --cwd packages/kit storybook` / `storybook:build` | Kit component gallery (hand-rolled Vite page in `packages/kit/gallery/`, stories in `packages/kit/stories/`, one per component with every prop as a control) / static build into `packages/kit/build` |
 | `bun run --cwd apps/stage/desktop start` / `dist` | Export the web UI into `apps/stage/desktop/web` and run Electron / build installers into `apps/stage/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
@@ -96,7 +96,7 @@ Per-app:
 - Snapshot-bearing test files are `*.spec.ts` (bun writes `*.test.ts.snap` files that the `**/*.test.*` lint glob would pick up and always fail). The remaining snapshot suites live in `packages/kit/test/` (button/layout/theme-derive); `apps/stage/test/` is pure-model tests only.
 
 ## CI gates (strict order)
-`.github/workflows/ci.yml`: **lint -> typecheck -> knip -> madge -> build -> test** (Bun 1.4.0, frozen lockfile).
+`.github/workflows/ci.yml`: **lint -> typecheck -> knip -> madge -> build -> test** (Bun 1.4.4, frozen lockfile).
 
 ## Gotchas / footguns
 
@@ -111,7 +111,7 @@ Per-app:
 - The ECDSA Kernel tests (`ecdsaKernel`) never touch the network: `apps/stage/test/recordedBaseRpc.ts` replays the Base RPC answers stored in `apps/stage/test/fixtures/base-rpc.json`. A request with no stored answer fails the test. After a ZeroDev or viem upgrade changes a request, record new answers from `apps/stage` with `STAGE_RPC_RECORD=1 bun test test/ecdsaKernel.test.ts` (not through turbo, which drops the variable). Missing answers are fetched from Base (`EXPO_PUBLIC_ZERODEV_RPC` if set, else mainnet.base.org) and written to the fixture. Only results and `execution reverted` errors are stored, never a transient RPC error. Commit the fixture.
 - Button taxonomy: `variant` is A2UI's `default | primary | borderless` (default `default`) or a fill `solid | soft | outline | ghost` with `color`. The legacy `secondary/danger` variants are gone — don't reintroduce them.
 - `theme.ts` setters call the persist helper; don't mutate display state directly.
-- **Typecheck is tsgo** (`@typescript/native-preview`, pinned exactly), about 8x faster than `tsc`. `typescript` 5.9 stays for the tools that load its API (knip, Expo) and for `bun run typecheck:tsc`. TypeScript 7 gives `ESNext` more APIs and defaults `types` to `[]`, so the shared presets pin both for the two compilers: `lib` comes from `packages/config/tsconfig/lib.json` (ES2024 plus the ESNext parts both compilers declare the same way, so no Temporal, `RegExp.escape`, `Uint8Array` hex/base64, `Map.getOrInsert` or Set methods) and `base.json` sets `types: []`. List any global types a project needs in its own `types`.
+- **Typecheck is `bun check`**, Bun's built-in TypeScript 7 checker (same errors as `tsc`, all CPU cores, the whole repo in under a second), so it needs Bun 1.4.4: every workspace `typecheck` script is `bun check`, and `stage typecheck` runs it with `--no-script` because the root has a `check` script. `typescript` 5.9 stays for the tools that load its API (knip, Expo) and for `bun run typecheck:tsc`. TypeScript 7 gives `ESNext` more APIs and defaults `types` to `[]`, so the shared presets pin both for the two compilers: `lib` comes from `packages/config/tsconfig/lib.json` (ES2024 plus the ESNext parts both compilers declare the same way, so no Temporal, `RegExp.escape`, `Uint8Array` hex/base64, `Map.getOrInsert` or Set methods) and `base.json` sets `types: []`. List any global types a project needs in its own `types`.
 - **Lint is oxlint**, pinned exactly (`oxlint`, `oxlint-tsgolint`). The type-aware rules run in the platform binary that `oxlint-tsgolint` pulls in as an optional dependency, so keep those entries in `bun.lock` (CI needs `@oxlint/binding-linux-x64-gnu` and `@oxlint-tsgolint/linux-x64`). `eslint` stays: the `core` JS plugin wraps ESLint's `no-restricted-syntax` and `quotes`. Not enabled on purpose: `prefer-optional-chain` and the react-hooks `config`/`gating` rules. The React Hooks rules cover only the React Compiler files, listed in `apps/stage/react-compiler-sources.cjs` and again in the react override of `.oxlintrc.json`: change both together.
 
 ## Key paths

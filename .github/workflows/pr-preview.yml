@@ -82,7 +82,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.4
 
       # TMPDIR is repointed at a workspace path (so the Metro cache survives via
       # actions/cache); create it up front so every tool that calls mkdtemp has a
@@ -276,7 +276,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.4
 
       - name: Delete this branch's EAS preview channel + branch
         working-directory: apps/stage

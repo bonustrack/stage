@@ -30,7 +30,7 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 ## `stage typecheck`
 
-Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It uses `tsgo` (from `@typescript/native-preview`) when that is installed, else `tsc`, which is the native compiler too from TypeScript 7. `stage typecheck --tsc` forces `tsc`. Other flags go to the compiler.
+Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker). `stage typecheck --tsc` runs `tsc --noEmit` instead. Other flags go to the checker.
 
 ## madge
 
@@ -51,4 +51,4 @@ Extend the matching `tsconfig` base:
 - `tsconfig/base.json`: strict base for pure-TS packages, with `types: []` (list the global types a project needs)
 - `tsconfig/react-native.json`: layer on top of `expo/tsconfig.base`
 
-`base.json` and `react-native.json` take `lib` from `tsconfig/lib.json`: ES2024, the ESNext parts that TypeScript 5.9 and 7 declare the same way (array, decorators, disposable, error, float16, iterator, promise, shared memory) and the DOM. Plain `ESNext` means more in TypeScript 7 (Temporal, `RegExp.escape`, `Uint8Array` hex and base64, `Map.getOrInsert`, Set methods), so the explicit list keeps `tsc` and `tsgo` on the same APIs. These lib names need TypeScript 5.9 or later.
+`base.json` and `react-native.json` take `lib` from `tsconfig/lib.json`: ES2024, the ESNext parts that TypeScript 5.9 and 7 declare the same way (array, decorators, disposable, error, float16, iterator, promise, shared memory) and the DOM. Plain `ESNext` means more in TypeScript 7 (Temporal, `RegExp.escape`, `Uint8Array` hex and base64, `Map.getOrInsert`, Set methods), so the explicit list keeps `tsc` and `bun check` on the same APIs. These lib names need TypeScript 5.9 or later.

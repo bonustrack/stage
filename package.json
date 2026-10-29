@@ -29,7 +29,6 @@
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "eslint": "^10.3.0",
     "knip": "^6.15.0",
     "madge": "^8.0.0",
@@ -39,7 +38,7 @@
     "typescript": "~5.9.2"
   },
   "trustedDependencies": ["electron"],
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.4",
   "engines": {
     "node": ">=22"
   },

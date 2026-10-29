@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.0'
+          bun-version: '1.4.4'
       - name: Check public client configuration
         run: |
           test -n "$EXPO_PUBLIC_ZERODEV_PROJECT_ID" || {

@@ -40,7 +40,7 @@ architecture guide.
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) `1.4.0` (pinned via the `packageManager` field) — the only package manager
+- [Bun](https://bun.sh) `1.4.4` (pinned via the `packageManager` field) — the only package manager
 - Node.js `>= 22` (per the `engines` field)
 
 ## Install
@@ -57,7 +57,7 @@ Run from the repo root:
 bun run build       # turbo run build
 bun run test        # turbo run test
 bun run test:changed  # test only the packages changed since origin/main and their dependents
-bun run typecheck   # stage typecheck (tsgo, TypeScript 7, per workspace)
+bun run typecheck   # stage typecheck (bun check, per workspace)
 bun run typecheck:tsc  # the same with tsc from TypeScript 5.9 (fallback)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
@@ -156,7 +156,7 @@ restored if a later attachment fails.
 CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
 The gates, in
 order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
-`1.4.0` with a frozen lockfile.
+`1.4.4` with a frozen lockfile.
 
 ## License
 
