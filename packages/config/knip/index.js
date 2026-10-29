@@ -1,4 +1,4 @@
-const base = { $schema: 'https://unpkg.com/knip@6/schema.json', ignoreExportsUsedInFile: true, ignoreBinaries: ['check', 'fmt'] };
+const base = { $schema: 'https://unpkg.com/knip@6/schema.json', ignoreExportsUsedInFile: true, ignoreBinaries: ['check'] };
 
 const preset =
   (defaultEntry, defaultProject) =>

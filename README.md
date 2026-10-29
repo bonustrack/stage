@@ -69,7 +69,7 @@ bun run knip        # unused files / deps / exports
 `stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json`: the
 type-aware rules run through `oxlint-tsgolint`, and the rules oxlint does not
 have natively (no comments, no em dash, `stage/*`, `no-restricted-syntax`,
-`quotes`) run as JS plugins. It skips git-ignored files. `stage lint <paths>`
+`quotes`) run as JS plugins. `import/no-cycle` fails on circular imports. It skips git-ignored files. `stage lint <paths>`
 lints only those paths. CI always runs the full lint, because a type change in
 one file can create findings in another.
 

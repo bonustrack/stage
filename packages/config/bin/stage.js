@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 const requireFromCwd = createRequire(join(process.cwd(), 'noop.js'));
 
@@ -56,32 +56,23 @@ function run(bin, args) {
 const LINT_VALUE_FLAGS = new Set([
   '-c',
   '--config',
-  '--ext',
-  '--global',
-  '--parser',
-  '--parser-options',
-  '--plugin',
-  '--rule',
-  '--fix-type',
+  '--tsconfig',
+  '-A',
+  '--allow',
+  '-W',
+  '--warn',
+  '-D',
+  '--deny',
+  '--ignore-path',
   '--ignore-pattern',
-  '--stdin-filename',
   '--max-warnings',
-  '-o',
-  '--output-file',
   '-f',
   '--format',
+  '--debug',
+  '--threads',
   '--report-unused-disable-directives-severity',
-  '--report-unused-inline-configs',
-  '--cache-file',
-  '--cache-location',
-  '--cache-strategy',
-  '--suppress-rule',
-  '--suppressions-location',
-  '--print-config',
-  '--flag',
-  '--concurrency',
 ]);
-const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue)$/;
+const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 
 function parseLintArgs(argv) {
   const paths = [];
@@ -164,44 +155,15 @@ function cmdKnip(argv) {
   return run(localBin('knip'), ['--config', temp, ...argv]);
 }
 
-const CHECK_JOBS = 2;
-
-function spawnCaptured(bin, args) {
-  return new Promise((done) => {
-    const child = spawn(bin, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
-    let output = '';
-    child.stdout.setEncoding('utf8');
-    child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => {
-      output += chunk;
-    });
-    child.stderr.on('data', (chunk) => {
-      output += chunk;
-    });
-    child.on('error', (error) => done({ status: 2, output: `${error.message}\n` }));
-    child.on('close', (code) => done({ status: code ?? 2, output }));
+function cmdCheck(stageConfig, argv) {
+  const failed = Object.keys(stageConfig.workspaces).filter((path) => {
+    const project = path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`;
+    if (!existsSync(resolve(cwd, project))) return false;
+    writeSync(1, `stage check: ${path}\n`);
+    return run('bun', ['check', '--no-script', '-p', project, ...argv]) !== 0;
   });
-}
-
-async function cmdCheck(stageConfig, argv) {
-  const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv];
-  const queue = Object.entries(stageConfig.workspaces)
-    .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json` }))
-    .filter(({ project }) => existsSync(resolve(cwd, project)));
-  const failures = [];
-  const lane = async () => {
-    for (let job = queue.shift(); job; job = queue.shift()) {
-      const { status, output } = await spawnCaptured('bun', ['check', '--no-script', '-p', job.project, ...flags]);
-      await new Promise((done) => process.stdout.write(`stage check: ${job.path}\n${output}`, done));
-      if (status !== 0) failures.push(job.path);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(CHECK_JOBS, queue.length) }, lane));
-  if (failures.length > 0) {
-    process.stderr.write(`stage check: failed in ${failures.join(', ')}\n`);
-    return 1;
-  }
-  return 0;
+  if (failed.length > 0) process.stderr.write(`stage check: failed in ${failed.join(', ')}\n`);
+  return failed.length > 0 ? 1 : 0;
 }
 
 async function main() {
@@ -219,7 +181,7 @@ async function main() {
     stageConfigPath();
     status = cmdKnip(argv);
   } else if (sub === 'check') {
-    status = await cmdCheck(await loadStageConfig(), argv);
+    status = cmdCheck(await loadStageConfig(), argv);
   }
   process.exit(status);
 }

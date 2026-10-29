@@ -4,14 +4,11 @@ function normalizeWorkspace(path, raw) {
   if (!raw || typeof raw !== 'object') {
     throw new Error(`defineConfig: workspace "${path}" must be an object with a "type".`);
   }
-  const { type, knip = {}, src } = raw;
+  const { type, knip = {} } = raw;
   if (!TYPES.includes(type)) {
     throw new Error(`defineConfig: workspace "${path}" has invalid type "${String(type)}". Expected one of ${TYPES.join(', ')}.`);
   }
-  if (src !== undefined && !Array.isArray(src)) {
-    throw new Error(`defineConfig: workspace "${path}" "src" must be an array of globs.`);
-  }
-  return Object.freeze({ type, knip: knip ?? {}, src: src ?? null });
+  return Object.freeze({ type, knip: knip ?? {} });
 }
 
 function resolveWorkspaces(config) {

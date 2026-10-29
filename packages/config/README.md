@@ -10,7 +10,7 @@ It ships the **generic building blocks only**. Repo-specific topology (monorepo 
 bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 ```
 
-`eslint` is needed only for the `core` oxlint plugin. Version 0.1.0-beta.3 removed the ESLint presets (`eslint/base`, `eslint/single`, `eslint/vue`), the ESLint mode of `stage lint` and the Vue presets: stay on 0.1.0-beta.2 to keep them.
+`eslint` is needed only for the `core` oxlint plugin. Version 0.1.0-beta.3 removed the ESLint presets (`eslint/base`, `eslint/single`, `eslint/vue`), the ESLint mode of `stage lint` and the Vue presets: stay on 0.1.0-beta.2 to keep them. Version 0.1.0-beta.7 renamed `stage typecheck` to `stage check` (`bun check`, no `tsc` fallback), added `stage fmt` and removed the madge preset, `stage madge` and `stage-madge`: turn on oxlint's `import/no-cycle` instead.
 
 ## `stage lint`
 
@@ -30,7 +30,7 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 ## `stage check`
 
-Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker). Other flags go to `bun check`.
+Runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker) on every workspace of `stage.config.js` that has a `tsconfig.json`, one after the other, and lists the ones that failed. Other flags go to `bun check`.
 
 ## `stage fmt`
 
@@ -44,6 +44,10 @@ objectWrap = "collapse"
 ```
 
 `stage fmt --check` fails when a file needs formatting (use it in CI). With root scripts `"fmt": "stage fmt"` and `"check": "stage check"`, plain `bun fmt` and `bun check` run them. Skip vendored or generated files with `ignorePatterns` in the same section.
+
+## `stage knip`
+
+Runs knip with a config built from the `stage.config.js` workspaces (`@stage-labs/config/knip`), or with the repo's own knip config when it has one.
 
 ## TypeScript
 
